@@ -267,7 +267,7 @@ router ospf6
   </session_options>
   <session_metadata>
     <configuration name="annotation a0" value='{"iconcoords": [612.0, 492.0], "type": "text", "label": "wireless network", "labelcolor": "black", "fontfamily": "Arial", "fontsize": 12, "effects": "bold", "canvas": "c1"}'/>
-    <configuration name="annotation a1" value='{"iconcoords": [142.0, 112.0, 393.0, 291.0], "type": "rectangle", "label": "", "labelcolor": "black", "fontfamily": "Arial", "fontsize": 12, "color": "#ebebde", "width": 1, "border": "#ffffff", "rad": 25, "canvas": "c1"}'/>
+    <configuration name="annotation a1" value='{"iconcoords": [142.0, 112.0, 393.0, 291.0], "type": "rectangle", "label": "circle", "labelcolor": "black", "fontfamily": "Arial", "fontsize": 12, "color": "#ebebde", "width": 1, "border": "#ffffff", "rad": 25, "canvas": "c1"}'/>
     <configuration name="annotation a2" value='{"iconcoords": [492.0, 384.0], "type": "text", "label": "gateway", "labelcolor": "black", "fontfamily": "Arial", "fontsize": 12, "effects": "bold", "canvas": "c1"}'/>
     <configuration name="canvas" value='{"name": "Canvas1", "wallpaper-style": 1, "wallpaper": "sample1-bg.gif"}'/>
     <configuration name="global_options" value='{"interface_names": false, "ip_addresses": true, "ipv6_addresses": false, "node_labels": true, "link_labels": true, "show_api": false, "background_images": false, "annotations": true, "grid": false, "traffic_start": false}'/>

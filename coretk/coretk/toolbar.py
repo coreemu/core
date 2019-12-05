@@ -5,7 +5,7 @@ from functools import partial
 from tkinter import ttk
 
 from coretk.dialogs.customnodes import CustomNodesDialog
-from coretk.graph import GraphMode
+from coretk.graph.enums import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
 from coretk.tooltip import Tooltip

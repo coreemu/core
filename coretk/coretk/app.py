@@ -5,12 +5,12 @@ from tkinter import ttk
 
 from coretk import appconfig, themes
 from coretk.coreclient import CoreClient
-from coretk.graph import CanvasGraph
+from coretk.graph.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
 from coretk.menuaction import MenuAction
 from coretk.menubar import Menubar
 from coretk.nodeutils import NodeUtils
-from coretk.status import StatusBar
+from coretk.statusbar import StatusBar
 from coretk.toolbar import Toolbar
 
 

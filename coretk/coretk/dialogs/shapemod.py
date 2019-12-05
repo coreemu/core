@@ -147,7 +147,7 @@ class ShapeDialog(Dialog):
         shape_text = self.shape_text.get()
         size = int(self.font_size.get())
         x0, y0, x1, y1 = self.canvas.bbox(self.id)
-        text_y = y0 + 2 * size
+        text_y = y0 + 1.5 * size
         text_x = (x0 + x1) / 2
         f = [self.font.get(), size]
         if self.bold.get() == 1:

@@ -105,9 +105,11 @@ class Shape:
                     width=data.border_width,
                 )
             _x = (x0 + x1) / 2
-            _y = (y0 + y1) / 2
+            _y = y0 + 1.5 * data.font_size
+            print("create text with text: ", data.text)
+            print(data.text_color)
             self.text_id = self.canvas.create_text(
-                _x, _y, text=data.text, fill=data.text_color
+                _x, _y, tags="shapetext", text=data.text, fill=data.text_color
             )
             self.shape_data = data
         self.cursor_x = None
