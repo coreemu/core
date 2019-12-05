@@ -158,7 +158,12 @@ class ShapeDialog(Dialog):
             f.append("underline")
         if shape.text_id is None:
             shape.text_id = self.canvas.create_text(
-                text_x, text_y, text=shape_text, fill=self.text_color, font=f
+                text_x,
+                text_y,
+                text=shape_text,
+                fill=self.text_color,
+                font=f,
+                tags="shapetext",
             )
             self.canvas.shapes[self.id].created = True
         else:

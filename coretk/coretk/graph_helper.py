@@ -16,6 +16,8 @@ CANVAS_COMPONENT_TAGS = [
     "antenna",
     "wireless",
     "selectednodes",
+    "shape",
+    "shapetext",
 ]
 
 

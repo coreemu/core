@@ -132,6 +132,7 @@ class CanvasGraph(tk.Canvas):
         self.selected = None
         self.nodes.clear()
         self.edges.clear()
+        self.shapes.clear()
         self.wireless_edges.clear()
         self.drawing_edge = None
         self.draw_session(session)
@@ -451,8 +452,6 @@ class CanvasGraph(tk.Canvas):
             self.context.unpost()
             self.context = None
 
-    # TODO rather than delete, might move the data to somewhere else in order to reuse
-    # TODO when the user undo
     def press_delete(self, event):
         """
         delete selected nodes and any data that relates to it
@@ -585,6 +584,7 @@ class CanvasGraph(tk.Canvas):
         if self.adjust_to_dim.get():
             self.resize_to_wallpaper()
         else:
+            print(self.scale_option.get())
             option = ScaleOption(self.scale_option.get())
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
