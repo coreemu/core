@@ -33,6 +33,9 @@ class CanvasComponentManagement:
                 tags="selectednodes",
             )
             self.selected[canvas_node.id] = bbox_id
+        else:
+            bbox_id = self.selected.pop(canvas_node.id)
+            self.canvas.delete(bbox_id)
 
     def node_drag(self, canvas_node, offset_x, offset_y):
         select_id = self.selected.get(canvas_node.id)
@@ -87,7 +90,7 @@ class CanvasComponentManagement:
         for shape_id in self.selected:
             if "shape" in self.canvas.gettags(shape_id):
                 bbox_id = self.selected[node_id]
-                self.canvas.delete(shape_id)
+                self.canvas.shapes[shape_id].delete()
                 self.canvas.delete(bbox_id)
                 self.canvas.shapes.pop(shape_id)
 

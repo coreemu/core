@@ -377,21 +377,28 @@ class CanvasGraph(tk.Canvas):
             self.selected = shape.id
             self.shapes[shape.id] = shape
             self.shape_drawing = True
+        if self.mode == GraphMode.SELECT:
+            if selected is not None:
+                if "shape" in self.gettags(selected):
+                    x, y = self.canvas_xy(event)
+                    self.shapes[selected].cursor_x = x
+                    self.shapes[selected].cursor_y = y
+                    if selected not in self.canvas_management.selected:
+                        self.canvas_management.node_select(self.shapes[selected])
+                    self.selected = selected
+            else:
+                for i in self.find_withtag("selectednodes"):
+                    self.delete(i)
+                self.canvas_management.selected.clear()
+
+    def ctrl_click(self, event):
+        logging.debug("Control left click %s", event)
+        selected = self.get_selected(event)
         if (
             self.mode == GraphMode.SELECT
             and selected is not None
             and "shape" in self.gettags(selected)
         ):
-            x, y = self.canvas_xy(event)
-            self.shapes[selected].cursor_x = x
-            self.shapes[selected].cursor_y = y
-            self.canvas_management.node_select(self.shapes[selected])
-            self.selected = selected
-
-    def ctrl_click(self, event):
-        logging.debug("Control left click %s", event)
-        selected = self.get_selected(event)
-        if self.mode == GraphMode.SELECT and "shape" in self.gettags(selected):
             self.canvas_management.node_select(self.shapes[selected], True)
 
     def click_motion(self, event):
@@ -417,7 +424,19 @@ class CanvasGraph(tk.Canvas):
             and self.selected is not None
             and "shape" in self.gettags(self.selected)
         ):
-            self.shapes[self.selected].motion(event)
+            x, y = self.canvas_xy(event)
+            shape = self.shapes[self.selected]
+            delta_x = x - shape.cursor_x
+            delta_y = y - shape.cursor_y
+            shape.motion(event)
+            # move other selected components
+            for nid in self.canvas_management.selected:
+                if nid != self.selected and nid in self.shapes:
+                    self.shapes[nid].motion(None, delta_x, delta_y)
+                if nid != self.selected and nid in self.nodes:
+                    node_x = self.nodes[nid].core_node.position.x
+                    node_y = self.nodes[nid].core_node.position.y
+                    self.nodes[nid].move(node_x + delta_x, node_y + delta_y)
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)
@@ -448,7 +467,7 @@ class CanvasGraph(tk.Canvas):
         selected = self.get_selected(event)
         if selected is not None and "shape" in self.gettags(selected):
             s = ShapeDialog(self.app, self.app, self.shapes[selected])
-            print(s)
+            s.show()
 
     def add_node(self, x, y):
         if self.selected is None or "shape" in self.gettags(self.selected):
@@ -766,8 +785,9 @@ class CanvasNode:
     def click_press(self, event):
         logging.debug(f"node click press {self.core_node.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
-        self.canvas.canvas_management.node_select(self)
-        self.canvas.selected = self.id
+        if self.id not in self.canvas.canvas_management.selected:
+            self.canvas.canvas_management.node_select(self)
+            self.canvas.selected = self.id
 
     def click_release(self, event):
         logging.debug(f"node click release {self.core_node.name}: {event}")
@@ -778,7 +798,19 @@ class CanvasNode:
         if self.canvas.mode == GraphMode.EDGE:
             return
         x, y = self.canvas.canvas_xy(event)
+        my_x = self.core_node.position.x
+        my_y = self.core_node.position.y
         self.move(x, y)
+        # move other selected components
+        for nid, bboxid in self.canvas.canvas_management.selected.items():
+            if nid != self.id and nid in self.canvas.nodes:
+                other_old_x = self.canvas.nodes[nid].core_node.position.x
+                other_old_y = self.canvas.nodes[nid].core_node.position.y
+                other_new_x = x + other_old_x - my_x
+                other_new_y = y + other_old_y - my_y
+                self.canvas.nodes[nid].move(other_new_x, other_new_y)
+            if nid != self.id and nid in self.canvas.shapes:
+                self.canvas.shapes[nid].motion(None, x - my_x, y - my_y)
 
     def select_multiple(self, event):
         self.canvas.canvas_management.node_select(self, True)

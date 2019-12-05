@@ -46,7 +46,6 @@ class Shape:
                 top_x, top_y, top_x, top_y, tags="shape", dash="-"
             )
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
-        # self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
 
     def shape_motion(self, x1, y1):
         self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
@@ -60,14 +59,18 @@ class Shape:
     def click_release(self, event):
         logging.debug("Click release on shape %s", self.id)
 
-    def motion(self, event):
+    def motion(self, event, delta_x=None, delta_y=None):
         logging.debug("motion on shape %s", self.id)
-        delta_x = event.x - self.cursor_x
-        delta_y = event.y - self.cursor_y
-        x0, y0, x1, y1 = self.canvas.bbox(self.id)
-        self.canvas.coords(
-            self.id, x0 + delta_x, y0 + delta_y, x1 + delta_x, y1 + delta_y
-        )
+        if event is not None:
+            delta_x = event.x - self.cursor_x
+            delta_y = event.y - self.cursor_y
+            self.cursor_x = event.x
+            self.cursor_y = event.y
+        self.canvas.move(self.id, delta_x, delta_y)
         self.canvas.canvas_management.node_drag(self, delta_x, delta_y)
-        self.cursor_x = event.x
-        self.cursor_y = event.y
+        if self.text_id is not None:
+            self.canvas.move(self.text_id, delta_x, delta_y)
+
+    def delete(self):
+        self.canvas.delete(self.id)
+        self.canvas.delete(self.text_id)
