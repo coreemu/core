@@ -7,13 +7,12 @@ import os
 import time
 
 from core.api.grpc import client, core_pb2
-from coretk import appconfig
+from coretk import appconfig, parsedata
 from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
-
-# from coretk.shape import Shape, ShapeData
+from coretk.shape import Shape, ShapeData
 
 OBSERVERS = {
     "processes": "ps",
@@ -283,36 +282,46 @@ class CoreClient:
         return self.state == core_pb2.SessionState.RUNTIME
 
     def parse_metadata(self, config):
-        # for key, value in config.items():
-        #     if "global_options" != key:
-        #         canvas_config = parsedata.parse(value)
-        #         print(canvas_config)
-        #         if canvas_config.get("type"):
-        #             if canvas_config["type"] == "rectangle":
-        #                 data = ShapeData(False, canvas_config["label"],
-        #                                  canvas_config["fontfamily"],
-        #                                  canvas_config["fontsize"],
-        #                                  canvas_config["labelcolor"],
-        #                                  canvas_config["color"],
-        #                                  canvas_config["border"],
-        #                                  canvas_config["width"],
-        #                                  )
-        #                 coords = tuple([float(x) for x in canvas_config["iconcoords"].split()])
-        #                 print(coords)
-        #                 shape = Shape(self.app, self.app.canvas, None, None, coords, data, canvas_config["type"])
-        #                 self.app.canvas.shapes[shape.id] = shape
-        #             elif canvas_config["type"] == "oval":
-        #                 print("not implemented")
-        #             elif canvas_config["type"] == "text":
-        #                 print("not implemented")
-        #         else:
-        #             if "wallpaper" in canvas_config:
-        #                 logging.info("canvas metadata: %s", canvas_config)
-        #                 wallpaper_style = canvas_config["wallpaper-style"]
-        #                 self.app.canvas.scale_option.set(wallpaper_style)
-        #                 wallpaper = canvas_config["wallpaper"]
-        #                 wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-        #                 self.app.canvas.set_wallpaper(wallpaper)
+        for key, value in config.items():
+            if "global_options" != key:
+                canvas_config = parsedata.parse(value)
+                print(canvas_config)
+                if canvas_config.get("type"):
+                    config_type = canvas_config["type"]
+                    if config_type == "rectangle" or config_type == "oval":
+                        data = ShapeData(
+                            False,
+                            canvas_config["label"],
+                            canvas_config["fontfamily"],
+                            canvas_config["fontsize"],
+                            canvas_config["labelcolor"],
+                            canvas_config["color"],
+                            canvas_config["border"],
+                            canvas_config["width"],
+                        )
+                        coords = tuple(
+                            [float(x) for x in canvas_config["iconcoords"].split()]
+                        )
+                        shape = Shape(
+                            self.app,
+                            self.app.canvas,
+                            None,
+                            None,
+                            coords,
+                            data,
+                            config_type,
+                        )
+                        self.app.canvas.shapes[shape.id] = shape
+                    elif canvas_config["type"] == "text":
+                        print("not implemented")
+                else:
+                    if "wallpaper" in canvas_config:
+                        logging.info("canvas metadata: %s", canvas_config)
+                        wallpaper_style = canvas_config["wallpaper-style"]
+                        self.app.canvas.scale_option.set(wallpaper_style)
+                        wallpaper = canvas_config["wallpaper"]
+                        wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
+                        self.app.canvas.set_wallpaper(wallpaper)
         # canvas settings
         canvas_config = config.get("canvas")
         if canvas_config:

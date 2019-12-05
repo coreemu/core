@@ -1,7 +1,6 @@
 """
 parse meta data
 """
-# from coretk.graph import ScaleOption
 
 
 def parse(meta_string):
