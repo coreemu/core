@@ -309,7 +309,6 @@ class CoreClient:
         for key, annotation_config in config.items():
             if "annotation" in key:
                 annotation_config = json.loads(annotation_config)
-                print(annotation_config)
                 config_type = annotation_config["type"]
                 if config_type in ["rectangle", "oval"]:
                     coords = tuple(annotation_config["iconcoords"])
@@ -508,7 +507,6 @@ class CoreClient:
         """
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = list(self.links.values())
-        print(node_protos)
         if self.get_session_state() != core_pb2.SessionState.DEFINITION:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
@@ -535,7 +533,6 @@ class CoreClient:
                 self.created_links.add(
                     tuple([link_proto.node_one_id, link_proto.node_two_id])
                 )
-        print(self.app.core.client.get_session(self.app.core.session_id))
 
     def close(self):
         """
