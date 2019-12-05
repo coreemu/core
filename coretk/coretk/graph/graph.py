@@ -543,8 +543,7 @@ class CanvasGraph(tk.Canvas):
 
         :return: nothing
         """
-        grid = self.find_withtag("rectangle")[0]
-        x0, y0, x1, y1 = self.coords(grid)
+        x0, y0, x1, y1 = self.coords(self.grid)
         canvas_w = abs(x0 - x1)
         canvas_h = abs(y0 - y1)
         return canvas_w, canvas_h
