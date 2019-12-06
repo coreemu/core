@@ -8,7 +8,6 @@ from core.api.grpc.core_pb2 import NodeType
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
 from coretk.graph.enums import GraphMode, ScaleOption
-from coretk.graph.graph_helper import GraphHelper
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
@@ -16,6 +15,18 @@ from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
 
 ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
+CANVAS_COMPONENT_TAGS = [
+    "edge",
+    "node",
+    "nodename",
+    "wallpaper",
+    "linkinfo",
+    "antenna",
+    "wireless",
+    "selectednodes",
+    "shape",
+    "shapetext",
+]
 
 
 class CanvasGraph(tk.Canvas):
@@ -41,7 +52,6 @@ class CanvasGraph(tk.Canvas):
         self.setup_bindings()
         self.draw_grid(width, height)
         self.core = core
-        self.helper = GraphHelper(self, core)
         self.throughput_draw = Throughput(self, core)
         self.shape_drawing = False
 
@@ -97,7 +107,8 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         # delete any existing drawn items
-        self.helper.delete_canvas_components()
+        for tag in CANVAS_COMPONENT_TAGS:
+            self.delete(tag)
 
         # set the private variables to default value
         self.mode = GraphMode.SELECT
@@ -196,9 +207,6 @@ class CanvasGraph(tk.Canvas):
             if link.type == core_pb2.LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node_one, canvas_node_two)
             else:
-                is_node_one_wireless = NodeUtils.is_wireless_node(node_one.type)
-                is_node_two_wireless = NodeUtils.is_wireless_node(node_two.type)
-                has_no_wireless = not (is_node_one_wireless or is_node_two_wireless)
                 edge = CanvasEdge(
                     node_one.position.x,
                     node_one.position.y,
@@ -206,15 +214,14 @@ class CanvasGraph(tk.Canvas):
                     node_two.position.y,
                     canvas_node_one.id,
                     self,
-                    is_wired=has_no_wireless,
                 )
                 edge.token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
                 edge.dst = canvas_node_two.id
+                edge.check_wireless()
                 canvas_node_one.edges.add(edge)
                 canvas_node_two.edges.add(edge)
                 self.edges[edge.token] = edge
                 self.core.links[edge.token] = link
-                self.helper.redraw_antenna(canvas_node_one, canvas_node_two)
                 edge.link_info = LinkInfo(self, edge, link)
                 if link.HasField("interface_one"):
                     canvas_node_one.interfaces.append(link.interface_one)
@@ -314,21 +321,23 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
 
-        # set dst node and snap edge to center
-        x, y = self.coords(self.selected)
-        edge.complete(self.selected, x, y)
-        logging.debug(f"drawing edge token: {edge.token}")
-        if edge.token in self.edges:
+        # ignore repeated edges
+        token = tuple(sorted((edge.src, self.selected)))
+        if token in self.edges:
             edge.delete()
-        else:
-            self.edges[edge.token] = edge
-            node_src = self.nodes[edge.src]
-            node_src.edges.add(edge)
-            node_dst = self.nodes[edge.dst]
-            node_dst.edges.add(edge)
-            link = self.core.create_link(edge, node_src, node_dst)
-            edge.link_info = LinkInfo(self, edge, link)
-        logging.debug(f"edges: {self.find_withtag('edge')}")
+            return
+
+        # set dst node and snap edge to center
+        edge.complete(self.selected)
+        logging.debug("drawing edge token: %s", edge.token)
+
+        self.edges[edge.token] = edge
+        node_src = self.nodes[edge.src]
+        node_src.edges.add(edge)
+        node_dst = self.nodes[edge.dst]
+        node_dst.edges.add(edge)
+        link = self.core.create_link(edge, node_src, node_dst)
+        edge.link_info = LinkInfo(self, edge, link)
 
     def select_object(self, object_id, choose_multiple=False):
         """
@@ -370,28 +379,26 @@ class CanvasGraph(tk.Canvas):
         edges = set()
         nodes = []
         for object_id in self.selection:
-            if object_id in self.nodes:
-                selection_id = self.selection[object_id]
-                canvas_node = self.nodes.pop(object_id)
-                nodes.append(canvas_node)
-                self.delete(object_id)
-                self.delete(selection_id)
-                self.delete(canvas_node.text_id)
+            #  delete selection box
+            selection_id = self.selection[object_id]
+            self.delete(selection_id)
 
-                # delete antennas
+            # delete node and related edges
+            if object_id in self.nodes:
+                canvas_node = self.nodes.pop(object_id)
+                canvas_node.delete()
+                nodes.append(canvas_node)
                 is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
-                if is_wireless:
-                    canvas_node.antenna_draw.delete_antennas()
 
                 # delete related edges
                 for edge in canvas_node.edges:
                     if edge in edges:
                         continue
                     edges.add(edge)
-                    self.edges.pop(edge.token)
-                    self.delete(edge.id)
-                    self.delete(edge.link_info.id1)
-                    self.delete(edge.link_info.id2)
+                    del self.edges[edge.token]
+                    edge.delete()
+
+                    # update node connected to edge being deleted
                     other_id = edge.src
                     other_interface = edge.src_interface
                     if edge.src == object_id:
@@ -404,12 +411,12 @@ class CanvasGraph(tk.Canvas):
                     except ValueError:
                         pass
                     if is_wireless:
-                        other_node.antenna_draw.delete_antenna()
+                        other_node.delete_antenna()
+
+            # delete shape
             if object_id in self.shapes:
-                selection_id = self.selection[object_id]
-                self.shapes[object_id].delete()
-                self.delete(selection_id)
-                self.shapes.pop(object_id)
+                shape = self.shapes.pop(object_id)
+                shape.delete()
 
         self.selection.clear()
         return nodes
@@ -438,7 +445,6 @@ class CanvasGraph(tk.Canvas):
             elif self.annotation_type == ImageEnum.TEXT:
                 x, y = self.canvas_xy(event)
                 self.text = Shape(self.app, self, x, y)
-                # self.shapes[shape.id] = shape
 
         if self.mode == GraphMode.SELECT:
             if selected is not None:

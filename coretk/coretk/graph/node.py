@@ -7,8 +7,8 @@ from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 from coretk.graph.enums import GraphMode
-from coretk.graph.graph_helper import WlanAntennaManager
 from coretk.graph.tooltip import CanvasTooltip
+from coretk.nodeutils import NodeUtils
 
 NODE_TEXT_OFFSET = 5
 
@@ -35,7 +35,6 @@ class CanvasNode:
             font=text_font,
             fill="#0000CD",
         )
-        self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
         self.tooltip = CanvasTooltip(self.canvas)
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
@@ -48,6 +47,54 @@ class CanvasNode:
         self.interfaces = []
         self.wireless_edges = set()
         self.moving = None
+        self.antennae = []
+
+    def delete(self):
+        self.canvas.delete(self.id)
+        self.canvas.delete(self.text_id)
+        self.delete_antennae()
+
+    def add_antenna(self):
+        x, y = self.canvas.coords(self.id)
+        offset = len(self.antennae) * 8
+
+        antenna_id = self.canvas.create_image(
+            x - 16 + offset,
+            y - 23,
+            anchor=tk.CENTER,
+            image=NodeUtils.ANTENNA_ICON,
+            tags="antenna",
+        )
+        self.antennae.append(antenna_id)
+
+    def delete_antenna(self):
+        """
+        delete one antenna
+
+        :return: nothing
+        """
+        if self.antennae:
+            antenna_id = self.antennae.pop()
+            self.canvas.delete(antenna_id)
+
+    def delete_antennae(self):
+        """
+        delete all antennas
+
+        :return: nothing
+        """
+        for antenna_id in self.antennae:
+            self.canvas.delete(antenna_id)
+        self.antennae.clear()
+
+    def move_antennae(self, x_offset, y_offset):
+        """
+        redraw antennas of a node according to the new node position
+
+        :return: nothing
+        """
+        for antenna_id in self.antennae:
+            self.canvas.move(antenna_id, x_offset, y_offset)
 
     def redraw(self):
         self.canvas.itemconfig(self.id, image=self.image)
@@ -62,7 +109,7 @@ class CanvasNode:
         self.core_node.position.y = int(y)
         self.canvas.move(self.id, x_offset, y_offset)
         self.canvas.move(self.text_id, x_offset, y_offset)
-        self.antenna_draw.update_antennas_position(x_offset, y_offset)
+        self.move_antennae(x_offset, y_offset)
         self.canvas.object_drag(self.id, x_offset, y_offset)
         for edge in self.edges:
             x1, y1, x2, y2 = self.canvas.coords(edge.id)

@@ -2,6 +2,7 @@ from core.api.grpc.core_pb2 import NodeType
 from coretk.images import ImageEnum, Images
 
 ICON_SIZE = 48
+ANTENNA_SIZE = 32
 
 
 class NodeDraw:
@@ -49,6 +50,7 @@ class NodeUtils:
     WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
+    ANTENNA_ICON = None
 
     @classmethod
     def is_ignore_node(cls, node_type):
@@ -104,3 +106,4 @@ class NodeUtils:
             node_draw = NodeDraw.from_setup(image_enum, node_type, tooltip=tooltip)
             cls.NETWORK_NODES.append(node_draw)
             cls.NODE_ICONS[(node_type, None)] = node_draw.image
+        cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
