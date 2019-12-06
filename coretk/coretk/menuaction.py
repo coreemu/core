@@ -12,6 +12,7 @@ import grpc
 
 from core.api.grpc import core_pb2
 from coretk.appconfig import XML_PATH
+from coretk.dialogs.about import AboutDialog
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
@@ -150,4 +151,8 @@ class MenuAction:
 
     def edit_observer_widgets(self):
         dialog = ObserverDialog(self.app, self.app)
+        dialog.show()
+
+    def show_about(self):
+        dialog = AboutDialog(self.app, self.app)
         dialog.show()

@@ -462,5 +462,5 @@ class Menubar(tk.Menu):
             label="Core Documentation (www)",
             command=self.menuaction.help_core_documentation,
         )
-        menu.add_command(label="About", state=tk.DISABLED)
+        menu.add_command(label="About", command=self.menuaction.show_about)
         self.add_cascade(label="Help", menu=menu)

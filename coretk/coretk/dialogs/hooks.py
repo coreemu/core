@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.widgets import CodeText
 
 
 class HookDialog(Dialog):
@@ -43,7 +44,7 @@ class HookDialog(Dialog):
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
         frame.grid(row=1, sticky="nsew", pady=2)
-        self.data = tk.Text(frame)
+        self.data = CodeText(frame)
         self.data.insert(
             1.0,
             (
