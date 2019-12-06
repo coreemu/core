@@ -660,7 +660,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         last_check = None
         last_stats = None
         while self._is_running(context):
-            now = time.time()
+            now = time.monotonic()
             stats = get_net_stats()
 
             # calculate average

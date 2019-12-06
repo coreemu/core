@@ -523,7 +523,7 @@ class TestGui:
             MessageFlags.ADD.value,
             [
                 (EventTlvs.TYPE, EventTypes.SCHEDULED.value),
-                (EventTlvs.TIME, str(time.time() + 100)),
+                (EventTlvs.TIME, str(time.monotonic() + 100)),
                 (EventTlvs.NODE, node.id),
                 (EventTlvs.NAME, "event"),
                 (EventTlvs.DATA, "data"),

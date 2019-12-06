@@ -538,13 +538,13 @@ class CoreServices:
             time.sleep(service.validation_timer)
         # non-blocking, attempt to validate periodically, up to validation_timer time
         elif service.validation_mode == ServiceMode.NON_BLOCKING:
-            start = time.time()
+            start = time.monotonic()
             while True:
                 status = self.validate_service(node, service)
                 if not status:
                     break
 
-                if time.time() - start > service.validation_timer:
+                if time.monotonic() - start > service.validation_timer:
                     break
 
                 time.sleep(service.validation_period)

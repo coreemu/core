@@ -33,10 +33,10 @@ class MenuAction:
 
     def cleanup_old_session(self, quitapp=False):
         logging.info("cleaning up old session")
-        start = time.time()
+        start = time.perf_counter()
         self.app.core.stop_session()
         self.app.core.delete_session()
-        process_time = time.time() - start
+        process_time = time.perf_counter() - start
         self.app.statusbar.stop_session_callback(process_time)
         if quitapp:
             self.app.quit()

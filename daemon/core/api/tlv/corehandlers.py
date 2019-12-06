@@ -1710,7 +1710,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             event_type=event_type,
             name=name,
             data=fail_data + ";" + unknown_data,
-            time=str(time.time()),
+            time=str(time.monotonic()),
         )
 
         self.session.broadcast_event(event_data)
