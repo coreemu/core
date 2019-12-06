@@ -219,7 +219,7 @@ class CanvasNode:
                 context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )
-            if is_wlan or is_emane:
+            if NodeUtils.is_wireless_node(self.core_node.type):
                 context.add_command(label="Link To All MDRs", state=tk.DISABLED)
                 context.add_command(label="Select Members", state=tk.DISABLED)
             context.add_command(label="Select Adjacent", state=tk.DISABLED)
