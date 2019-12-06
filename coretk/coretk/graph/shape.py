@@ -1,51 +1,37 @@
 """
 class for shapes
 """
-import logging
-
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.images import ImageEnum
 
 ABOVE_COMPONENT = ["gridline", "edge", "linkinfo", "antenna", "node", "nodename"]
 
 
-class ShapeData:
+class AnnotationData:
     def __init__(
         self,
-        is_default=True,
-        text=None,
-        font=None,
-        font_size=None,
-        text_color=None,
-        fill_color=None,
-        border_color=None,
-        border_width=None,
+        text="",
+        font="Arial",
+        font_size=12,
+        text_color="#000000",
+        fill_color="#CFCFFF",
+        border_color="#000000",
+        border_width=0,
         bold=0,
         italic=0,
         underline=0,
     ):
-        if is_default:
-            self.text = ""
-            self.font = "Arial"
-            self.font_size = 12
-            self.text_color = "#000000"
-            self.fill_color = "#CFCFFF"
-            self.border_color = "#000000"
-            self.border_width = 0
-            self.bold = 0
-            self.italic = 0
-            self.underline = 0
-        else:
-            self.text = text
-            self.font = font
-            self.font_size = font_size
-            self.text_color = text_color
-            self.fill_color = fill_color
-            self.border_color = border_color
-            self.border_width = border_width
-            self.bold = bold
-            self.italic = italic
-            self.underline = underline
+
+        self.text = text
+        self.font = font
+        self.font_size = font_size
+        self.text_color = text_color
+        self.fill_color = fill_color
+        self.border_color = border_color
+        self.border_width = border_width
+        self.bold = bold
+        self.italic = italic
+        self.underline = underline
 
 
 class Shape:
@@ -66,7 +52,7 @@ class Shape:
             self.y0 = top_y
             self.created = False
             self.text_id = None
-            self.shape_data = ShapeData()
+            self.shape_data = AnnotationData()
             canvas.delete(canvas.find_withtag("selectednodes"))
             annotation_type = self.canvas.annotation_type
             if annotation_type == ImageEnum.OVAL:
@@ -112,7 +98,6 @@ class Shape:
             self.shape_data = data
         self.cursor_x = None
         self.cursor_y = None
-        self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
 
     def shape_motion(self, x1, y1):
         self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
@@ -122,9 +107,6 @@ class Shape:
             self.canvas.tag_raise(component)
         s = ShapeDialog(self.app, self.app, self)
         s.show()
-
-    def click_release(self, event):
-        logging.debug("Click release on shape %s", self.id)
 
     def motion(self, event, delta_x=None, delta_y=None):
         if event is not None:
