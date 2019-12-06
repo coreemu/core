@@ -1,9 +1,10 @@
 """
 Link information, such as IPv4, IPv6 and throughput drawn in the canvas
 """
-import logging
 import tkinter as tk
 from tkinter import font
+
+from core.api.grpc import core_pb2
 
 TEXT_DISTANCE = 0.30
 
@@ -76,6 +77,7 @@ class Throughput:
         self.tracker = {}
         # map an edge canvas id to a throughput canvas id
         self.map = {}
+        # map edge canvas id to token
         self.edge_id_to_token = {}
 
     def load_throughput_info(self, interface_throughputs):
@@ -86,21 +88,23 @@ class Throughput:
             throughputs
         :return: nothing
         """
-        for t in interface_throughputs:
-            nid = t.node_id
-            iid = t.interface_id
-            tp = t.throughput
-            token = self.core.interface_to_edge[(nid, iid)]
-            print(token)
-            edge_id = self.canvas.edges[token].id
-
-            self.edge_id_to_token[edge_id] = token
-
-            if edge_id not in self.tracker:
-                self.tracker[edge_id] = tp
-            else:
-                temp = self.tracker[edge_id]
-                self.tracker[edge_id] = (temp + tp) / 2
+        for throughput in interface_throughputs:
+            nid = throughput.node_id
+            iid = throughput.interface_id
+            tp = throughput.throughput
+            token = self.core.interface_to_edge.get((nid, iid))
+            if token:
+                edge = self.canvas.edges.get(token)
+                if edge:
+                    edge_id = edge.id
+                    self.edge_id_to_token[edge_id] = token
+                    if edge_id not in self.tracker:
+                        self.tracker[edge_id] = tp
+                    else:
+                        temp = self.tracker[edge_id]
+                        self.tracker[edge_id] = (temp + tp) / 2
+                else:
+                    self.core.interface_to_edge.pop((nid, iid), None)
 
     def edge_is_wired(self, token):
         """
@@ -112,40 +116,34 @@ class Throughput:
         canvas_edge = self.canvas.edges[token]
         canvas_src_id = canvas_edge.src
         canvas_dst_id = canvas_edge.dst
-        src_node = self.canvas.nodes[canvas_src_id]
-        dst_node = self.canvas.nodes[canvas_dst_id]
-
-        if src_node.node_type == "wlan":
-            if dst_node.node_type == "mdr":
-                return False
-            else:
-                logging.debug("linkinfo.py is_wired WARNING wlan only connected to mdr")
-                return True
-        if dst_node.node_type == "wlan":
-            if src_node.node_type == "mdr":
-                return False
-            else:
-                logging.debug("linkinfo.py is_wired WARNING wlan only connected to mdr")
-                return True
-        return True
+        src = self.canvas.nodes[canvas_src_id].core_node
+        dst = self.canvas.nodes[canvas_dst_id].core_node
+        return not (
+            src.type == core_pb2.NodeType.WIRELESS_LAN
+            and dst.model == "mdr"
+            or src.model == "mdr"
+            and dst.type == core_pb2.NodeType.WIRELESS_LAN
+        )
 
     def draw_wired_throughput(self, edge_id):
 
-        x1, y1, x2, y2 = self.canvas.coords(edge_id)
-        x = (x1 + x2) / 2
-        y = (y1 + y2) / 2
-
+        x0, y0, x1, y1 = self.canvas.coords(edge_id)
+        x = (x0 + x1) / 2
+        y = (y0 + y1) / 2
         if edge_id not in self.map:
-            tp_id = self.canvas.create_text(
-                x, y, text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id])
-            )
-            self.map[edge_id] = tp_id
-
-        # redraw throughput
-        else:
-            self.canvas.itemconfig(
-                self.map[edge_id],
+            tpid = self.canvas.create_text(
+                x,
+                y,
+                tags="throughput",
+                font=("Arial", 8),
                 text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id]),
+            )
+            self.map[edge_id] = tpid
+        else:
+            tpid = self.map[edge_id]
+            self.canvas.coords(tpid, x, y)
+            self.canvas.itemconfig(
+                tpid, text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id])
             )
 
     def draw_wireless_throughput(self, edge_id):
@@ -156,17 +154,19 @@ class Throughput:
         src_node = self.canvas.nodes[canvas_src_id]
         dst_node = self.canvas.nodes[canvas_dst_id]
 
-        # non_wlan_node = None
-        if src_node.node_type == "wlan":
-            non_wlan_node = dst_node
-        else:
-            non_wlan_node = src_node
+        not_wlan = (
+            dst_node
+            if src_node.core_node.type == core_pb2.NodeType.WIRELESS_LAN
+            else src_node
+        )
 
-        x, y = self.canvas.coords(non_wlan_node.id)
+        x, y = self.canvas.coords(not_wlan.id)
         if edge_id not in self.map:
             tp_id = self.canvas.create_text(
                 x + 50,
                 y + 25,
+                font=("Arial", 8),
+                tags="throughput",
                 text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id]),
             )
             self.map[edge_id] = tp_id
@@ -184,43 +184,33 @@ class Throughput:
                 self.draw_wired_throughput(edge_id)
             else:
                 self.draw_wireless_throughput(edge_id)
-                # draw wireless throughput
-
-            # x1, y1, x2, y2 = self.canvas.coords(edge_id)
-            # x = (x1 + x2) / 2
-            # y = (y1 + y2) / 2
-            #
-            # print(self.is_wired(self.edge_id_to_token[edge_id]))
-            # # new throughput
-            # if edge_id not in self.map:
-            #     tp_id = self.canvas.create_text(
-            #         x, y, text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id])
-            #     )
-            #     self.map[edge_id] = tp_id
-            #
-            # # redraw throughput
-            # else:
-            #     self.canvas.itemconfig(
-            #         self.map[edge_id],
-            #         text="{0:.3f} kbps".format(0.001 * self.tracker[edge_id]),
-            #     )
 
     def process_grpc_throughput_event(self, interface_throughputs):
         self.load_throughput_info(interface_throughputs)
         self.draw_throughputs()
 
-    def update_throughtput_location(self, edge):
-        tp_id = self.map[edge.id]
-        if self.edge_is_wired(self.edge_id_to_token[edge.id]):
-            x1, y1 = self.canvas.coords(edge.src)
-            x2, y2 = self.canvas.coords(edge.dst)
-            x = (x1 + x2) / 2
-            y = (y1 + y2) / 2
-            self.canvas.coords(tp_id, x, y)
-        else:
-            if self.canvas.nodes[edge.src].node_type == "wlan":
-                x, y = self.canvas.coords(edge.dst)
-                self.canvas.coords(tp_id, x + 50, y + 20)
+    def move(self, edge):
+        tpid = self.map.get(edge.id)
+        if tpid:
+            if self.edge_is_wired(edge.token):
+                x0, y0, x1, y1 = self.canvas.coords(edge.id)
+                self.canvas.coords(tpid, (x0 + x1) / 2, (y0 + y1) / 2)
             else:
-                x, y = self.canvas.coords(edge.src)
-                self.canvas.coords(tp_id, x + 50, y + 25)
+                if (
+                    self.canvas.nodes[edge.src].core_node.type
+                    == core_pb2.NodeType.WIRELESS_LAN
+                ):
+                    x, y = self.canvas.coords(edge.dst)
+                    self.canvas.coords(tpid, x + 50, y + 20)
+                else:
+                    x, y = self.canvas.coords(edge.src)
+                    self.canvas.coords(tpid, x + 50, y + 25)
+
+    def delete(self, edge):
+        tpid = self.map.get(edge.id)
+        if tpid:
+            eid = edge.id
+            self.canvas.delete(tpid)
+            self.tracker.pop(eid)
+            self.map.pop(eid)
+            self.edge_id_to_token.pop(eid)

@@ -136,7 +136,6 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
-        print(event)
         if event.HasField("link_event"):
             logging.info("link event: %s", event)
             self.handle_link_event(event.link_event)
@@ -161,8 +160,6 @@ class CoreClient:
             self.handle_node_event(event.node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
-        elif event.HasField("throughput_event"):
-            print("throughput")
         else:
             logging.info("unhandled event: %s", event)
 
@@ -189,16 +186,21 @@ class CoreClient:
         canvas_node.move(x, y, update=False)
 
     def handle_throughputs(self, event):
-        interface_throughputs = event.interface_throughputs
-        for i in interface_throughputs:
-            print("")
-        # return
-        throughputs_belong_to_session = []
-        for if_tp in interface_throughputs:
-            if if_tp.node_id in self.node_ids:
-                throughputs_belong_to_session.append(if_tp)
-        self.throughput_draw.process_grpc_throughput_event(
-            throughputs_belong_to_session
+        # interface_throughputs = event.interface_throughputs
+        # # print(interface_throughputs)
+        # # return
+        # # for i in interface_throughputs:
+        # #     print("")
+        # # # return
+        # print(event)
+        # throughputs_belong_to_session = []
+        # print(self.node_ids)
+        # for throughput in interface_throughputs:
+        #     if throughput.node_id in self.node_ids:
+        #         throughputs_belong_to_session.append(throughput)
+        # print(throughputs_belong_to_session)
+        self.app.canvas.throughput_draw.process_grpc_throughput_event(
+            event.interface_throughputs
         )
 
     def join_session(self, session_id, query_location=True):
@@ -214,6 +216,7 @@ class CoreClient:
         session = response.session
         self.state = session.state
         self.client.events(self.session_id, self.handle_events)
+        self.client.throughputs(self.handle_throughputs)
 
         # get location
         if query_location:
