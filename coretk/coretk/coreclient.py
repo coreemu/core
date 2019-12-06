@@ -416,7 +416,7 @@ class CoreClient:
         else:
             emane_config = None
 
-        start = time.time()
+        start = time.perf_counter()
         response = self.client.start_session(
             self.session_id,
             nodes,
@@ -430,7 +430,7 @@ class CoreClient:
             service_configs,
             file_configs,
         )
-        process_time = time.time() - start
+        process_time = time.perf_counter() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
         self.app.statusbar.start_session_callback(process_time)
 
@@ -444,9 +444,9 @@ class CoreClient:
     def stop_session(self, session_id=None):
         if not session_id:
             session_id = self.session_id
-        start = time.time()
+        start = time.perf_counter()
         response = self.client.stop_session(session_id)
-        process_time = time.time() - start
+        process_time = time.perf_counter() - start
         self.app.statusbar.stop_session_callback(process_time)
         logging.debug("stopped session(%s), result: %s", session_id, response.result)
 

@@ -103,7 +103,7 @@ class Session:
 
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
-        self._state_time = time.time()
+        self._state_time = time.monotonic()
         self._state_file = os.path.join(self.session_dir, "state")
 
         # hooks handlers
@@ -1030,7 +1030,7 @@ class Session:
             return
 
         self.state = state_value
-        self._state_time = time.time()
+        self._state_time = time.monotonic()
         logging.info("changing session(%s) to state %s", self.id, state_name)
 
         self.write_state(state_value)
@@ -1038,7 +1038,7 @@ class Session:
         self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state_value, time=str(time.time()))
+            event_data = EventData(event_type=state_value, time=str(time.monotonic()))
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -1821,7 +1821,7 @@ class Session:
         if not in runtime.
         """
         if self.state == EventTypes.RUNTIME_STATE.value:
-            return time.time() - self._state_time
+            return time.monotonic() - self._state_time
         else:
             return 0.0
 

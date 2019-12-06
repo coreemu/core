@@ -1042,7 +1042,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(
-                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.time())
+                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.monotonic())
             )
             session.broadcast_event(event)
 

@@ -1,7 +1,8 @@
 import logging
 import tkinter as tk
 from functools import partial
-from tkinter import ttk
+from tkinter import font, ttk
+from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
 
@@ -155,3 +156,26 @@ class CheckboxList(FrameScroll):
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
         checkbox.grid(sticky="w")
+
+
+class CodeFont(font.Font):
+    def __init__(self):
+        super().__init__(font="TkFixedFont", color="green")
+
+
+class CodeText(ScrolledText):
+    def __init__(self, master, **kwargs):
+        super().__init__(
+            master,
+            bd=0,
+            bg="black",
+            cursor="xterm lime lime",
+            fg="lime",
+            font=CodeFont(),
+            highlightbackground="black",
+            insertbackground="lime",
+            selectbackground="lime",
+            selectforeground="black",
+            relief=tk.FLAT,
+            **kwargs
+        )

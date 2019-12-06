@@ -2,12 +2,11 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
-from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
 from coretk.images import ImageEnum, Images
-from coretk.widgets import ListboxScroll
+from coretk.widgets import CodeText, ListboxScroll
 
 
 class ServiceConfiguration(Dialog):
@@ -182,7 +181,7 @@ class ServiceConfiguration(Dialog):
         button.grid(row=0, column=2)
         frame.grid(row=3, column=0, sticky="nsew")
 
-        self.service_file_data = ScrolledText(tab1)
+        self.service_file_data = CodeText(tab1)
         self.service_file_data.grid(row=4, column=0, sticky="nsew")
         if len(self.filenames) > 0:
             self.filename_combobox.current(0)

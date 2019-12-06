@@ -4,7 +4,6 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import NodeType
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
 from coretk.graph.enums import GraphMode, ScaleOption
@@ -63,40 +62,6 @@ class CanvasGraph(tk.Canvas):
         self.scale_option = tk.IntVar(value=1)
         self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
-
-    def create_node_context(self, canvas_node):
-        node = canvas_node.core_node
-        context = tk.Menu(self.master)
-        context.add_command(label="Configure", command=canvas_node.show_config)
-        if node.type == NodeType.WIRELESS_LAN:
-            context.add_command(
-                label="WLAN Config", command=canvas_node.show_wlan_config
-            )
-            if self.master.core.is_runtime():
-                if canvas_node.core_node.id in self.master.core.mobility_players:
-                    context.add_command(
-                        label="Mobility Player",
-                        command=canvas_node.show_mobility_player,
-                    )
-            else:
-                context.add_command(
-                    label="Mobility Config", command=canvas_node.show_mobility_config
-                )
-        if node.type == NodeType.EMANE:
-            context.add_command(
-                label="EMANE Config", command=canvas_node.show_emane_config
-            )
-        context.add_command(label="Select adjacent", state=tk.DISABLED)
-        context.add_command(label="Create link to", state=tk.DISABLED)
-        context.add_command(label="Assign to", state=tk.DISABLED)
-        context.add_command(label="Move to", state=tk.DISABLED)
-        context.add_command(label="Cut", state=tk.DISABLED)
-        context.add_command(label="Copy", state=tk.DISABLED)
-        context.add_command(label="Paste", state=tk.DISABLED)
-        context.add_command(label="Delete", state=tk.DISABLED)
-        context.add_command(label="Hide", state=tk.DISABLED)
-        context.add_command(label="Services", state=tk.DISABLED)
-        return context
 
     def reset_and_redraw(self, session):
         """
@@ -517,7 +482,7 @@ class CanvasGraph(tk.Canvas):
             canvas_node = self.nodes.get(selected)
             if canvas_node:
                 logging.debug(f"node context: {selected}")
-                self.context = self.create_node_context(canvas_node)
+                self.context = canvas_node.create_context()
                 self.context.post(event.x_root, event.y_root)
         else:
             self.context.unpost()
