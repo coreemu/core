@@ -432,6 +432,14 @@ class CoreClient:
         )
         process_time = time.perf_counter() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
+        # # print(self.client.get_node_service(self.session_id, 1, "DefaultRoute"))
+        # # print(self.client.set_service_defaults(self.session_id, {"router": ["DefaultRouter"]}))
+        # print(self.client.set_node_service(self.session_id, 1, "DefaultRoute", ["echo hello"], [], []))
+        #
+        # # print(self.client.get_service_defaults(self.session_id))
+        #
+        # # print(self.client.get_node_service(self.session_id, 1, "DefaultRoute"))
+        # # print(self.client.get_node_service_file(self.session_id, 1, "DefaultRoute", "defaultroute.sh"))
         self.app.statusbar.start_session_callback(process_time)
 
         # display mobility players
@@ -516,8 +524,11 @@ class CoreClient:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
             )
+
+        # temp
+        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
-            if node_proto.id not in self.created_nodes:
+            if node_proto.id not in self.created_nodes or True:
                 response = self.client.add_node(self.session_id, node_proto)
                 logging.debug("create node: %s", response)
                 self.created_nodes.add(node_proto.id)
@@ -525,6 +536,7 @@ class CoreClient:
             if (
                 tuple([link_proto.node_one_id, link_proto.node_two_id])
                 not in self.created_links
+                or True
             ):
                 response = self.client.add_link(
                     self.session_id,

@@ -144,9 +144,6 @@ class CanvasNode:
     def on_leave(self, event):
         self.tooltip.on_leave(event)
 
-    def click(self, event):
-        print("click")
-
     def double_click(self, event):
         if self.app.core.is_runtime():
             self.canvas.core.launch_terminal(self.core_node.id)
