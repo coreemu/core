@@ -10,7 +10,8 @@ from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
-from coretk.images import ImageEnum, Images
+from coretk.graph.shapeutils import is_draw_shape, is_shape_text
+from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
 ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
@@ -243,13 +244,13 @@ class CanvasGraph(tk.Canvas):
             self.context = None
         else:
             if self.mode == GraphMode.ANNOTATION:
-                if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                if is_draw_shape(self.annotation_type):
                     self.focus_set()
                     x, y = self.canvas_xy(event)
                     if self.shape_drawing:
                         self.shapes[self.selected].shape_complete(x, y)
                         self.shape_drawing = False
-                elif self.annotation_type == ImageEnum.TEXT:
+                elif is_shape_text(self.annotation_type):
                     self.text.shape_complete(self.text.cursor_x, self.text.cursor_y)
             else:
                 self.focus_set()
@@ -401,15 +402,14 @@ class CanvasGraph(tk.Canvas):
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
         if self.mode == GraphMode.ANNOTATION and selected is None:
-            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
-                x, y = self.canvas_xy(event)
-                shape = Shape(self.app, self, x, y)
+            x, y = self.canvas_xy(event)
+            if is_draw_shape(self.annotation_type):
+                shape = Shape(self.app, self, self.annotation_type, x, y)
                 self.selected = shape.id
                 self.shapes[shape.id] = shape
                 self.shape_drawing = True
-            elif self.annotation_type == ImageEnum.TEXT:
-                x, y = self.canvas_xy(event)
-                self.text = Shape(self.app, self, x, y)
+            elif is_shape_text(self.annotation_type):
+                self.text = Shape(self.app, self, self.annotation_type, x, y)
 
         if self.mode == GraphMode.SELECT:
             if selected is not None:
@@ -446,10 +446,7 @@ class CanvasGraph(tk.Canvas):
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
             self.coords(self.drawing_edge.id, x1, y1, x2, y2)
         if self.mode == GraphMode.ANNOTATION:
-            if (
-                self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]
-                and self.shape_drawing
-            ):
+            if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 x, y = self.canvas_xy(event)
                 self.shapes[self.selected].shape_motion(x, y)
         if (

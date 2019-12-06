@@ -5,12 +5,14 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 
 from core.api.grpc import client, core_pb2
 from coretk import appconfig
 from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.graph.shape import AnnotationData, Shape
+from coretk.graph.shapeutils import ShapeType
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
 
@@ -136,7 +138,6 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
-        print(event)
         if event.HasField("link_event"):
             logging.info("link event: %s", event)
             self.handle_link_event(event.link_event)
@@ -162,7 +163,7 @@ class CoreClient:
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
         elif event.HasField("throughput_event"):
-            print("throughput")
+            logging.info("throughput event: %s", event)
         else:
             logging.info("unhandled event: %s", event)
 
@@ -301,35 +302,42 @@ class CoreClient:
     def parse_metadata(self, config):
         # canvas setting
         canvas_config = config.get("canvas")
+        logging.info("canvas metadata: %s", canvas_config)
         if canvas_config:
-            logging.info("canvas metadata: %s", canvas_config)
             canvas_config = json.loads(canvas_config)
             wallpaper_style = canvas_config["wallpaper-style"]
             self.app.canvas.scale_option.set(wallpaper_style)
             wallpaper = canvas_config["wallpaper"]
-            wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            self.app.canvas.set_wallpaper(wallpaper)
-        for key, annotation_config in config.items():
-            if "annotation" in key:
-                annotation_config = json.loads(annotation_config)
-                config_type = annotation_config["type"]
-                if config_type in ["rectangle", "oval"]:
-                    coords = tuple(annotation_config["iconcoords"])
+            if wallpaper:
+                wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
+                self.app.canvas.set_wallpaper(wallpaper)
+
+        # load saved shapes
+        shapes_config = config.get("shapes")
+        if shapes_config:
+            shapes_config = json.loads(shapes_config)
+            for shape_config in shapes_config:
+                logging.info("loading shape: %s", shapes_config)
+                shape_type = shape_config["type"]
+                try:
+                    shape_type = ShapeType(shape_type)
+                    x1, y1, x2, y2 = shape_config["iconcoords"]
                     data = AnnotationData(
-                        annotation_config["label"],
-                        annotation_config["fontfamily"],
-                        annotation_config["fontsize"],
-                        annotation_config["labelcolor"],
-                        annotation_config["color"],
-                        annotation_config["border"],
-                        annotation_config["width"],
+                        shape_config["label"],
+                        shape_config["fontfamily"],
+                        shape_config["fontsize"],
+                        shape_config["labelcolor"],
+                        shape_config["color"],
+                        shape_config["border"],
+                        shape_config["width"],
                     )
                     shape = Shape(
-                        self.app, self.app.canvas, None, None, coords, data, config_type
+                        self.app, self.app.canvas, shape_type, x1, y1, x2, y2, data
                     )
                     self.app.canvas.shapes[shape.id] = shape
-                else:
-                    logging.debug("not implemented")
+                except ValueError:
+                    logging.debug("unknown shape: %s", shape_type)
+
         for tag in LIFT_ORDER:
             self.app.canvas.tag_raise(tag)
 
@@ -427,6 +435,7 @@ class CoreClient:
             service_configs,
             file_configs,
         )
+        self.set_metadata()
         process_time = time.perf_counter() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
         self.app.statusbar.start_session_callback(process_time)
@@ -446,6 +455,24 @@ class CoreClient:
         process_time = time.perf_counter() - start
         self.app.statusbar.stop_session_callback(process_time)
         logging.debug("stopped session(%s), result: %s", session_id, response.result)
+
+    def set_metadata(self):
+        # create canvas data
+        canvas_config = {
+            "wallpaper": Path(self.app.canvas.wallpaper_file).name,
+            "wallpaper-style": self.app.canvas.scale_option.get(),
+        }
+        canvas_config = json.dumps(canvas_config)
+
+        # create shapes data
+        shapes = []
+        for shape in self.app.canvas.shapes.values():
+            shapes.append(shape.metadata())
+        shapes = json.dumps(shapes)
+
+        metadata = {"canvas": canvas_config, "shapes": shapes}
+        response = self.client.set_session_metadata(self.session_id, metadata)
+        logging.info("set session metadata: %s", response)
 
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)

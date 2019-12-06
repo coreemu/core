@@ -16,8 +16,3 @@ class ScaleOption(enum.Enum):
     CENTERED = 2
     SCALED = 3
     TILED = 4
-
-
-class ShapeType(enum.Enum):
-    OVAL = 0
-    RECTANGLE = 1

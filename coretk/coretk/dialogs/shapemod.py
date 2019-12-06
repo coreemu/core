@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import colorchooser, font, ttk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.images import ImageEnum
+from coretk.graph.shapeutils import is_draw_shape, is_shape_text
 
 FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -13,39 +13,33 @@ BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 class ShapeDialog(Dialog):
     def __init__(self, master, app, shape):
-        self.annotation_type = app.canvas.annotation_type
-        self.canvas = app.canvas
-        if self.is_shape():
-            super().__init__(master, app, "Add a new shape", modal=True)
+        if is_draw_shape(shape.shape_type):
+            title = "Add Shape"
             self.id = shape.id
-            self.fill = None
-            self.border = None
         else:
-            super().__init__(master, app, "Add a new text", modal=True)
-
+            title = "Add Text"
+            self.id = None
+        self.canvas = app.canvas
+        super().__init__(master, app, title, modal=True)
+        self.fill = None
+        self.border = None
         self.shape = shape
         data = shape.shape_data
         self.shape_text = tk.StringVar(value=data.text)
         self.font = tk.StringVar(value=data.font)
         self.font_size = tk.IntVar(value=data.font_size)
         self.text_color = data.text_color
-        self.fill_color = data.fill_color
+        fill_color = data.fill_color
+        if not fill_color:
+            fill_color = "#CFCFFF"
+        self.fill_color = fill_color
         self.border_color = data.border_color
-        self.border_width = tk.IntVar(value=data.border_width)
+        self.border_width = tk.IntVar(value=0)
         self.bold = tk.IntVar(value=data.bold)
         self.italic = tk.IntVar(value=data.italic)
         self.underline = tk.IntVar(value=data.underline)
         self.top.columnconfigure(0, weight=1)
         self.draw()
-
-    def is_shape(self):
-        return (
-            self.annotation_type == ImageEnum.OVAL
-            or self.annotation_type == ImageEnum.RECTANGLE
-        )
-
-    def is_text(self):
-        return self.annotation_type == ImageEnum.TEXT
 
     def draw(self):
         frame = ttk.Frame(self.top)
@@ -85,7 +79,7 @@ class ShapeDialog(Dialog):
         button.grid(row=0, column=2)
         frame.grid(row=2, column=0, sticky="nsew", padx=3, pady=3)
 
-        if self.is_shape():
+        if is_draw_shape(self.shape.shape_type):
             frame = ttk.Frame(self.top)
             frame.columnconfigure(0, weight=1)
             frame.columnconfigure(1, weight=1)
@@ -152,15 +146,18 @@ class ShapeDialog(Dialog):
         self.border.config(background=color[1], text=color[1])
 
     def cancel(self):
-        if self.is_shape() and not self.canvas.shapes[self.id].created:
+        if (
+            is_draw_shape(self.shape.shape_type)
+            and not self.canvas.shapes[self.id].created
+        ):
             self.canvas.delete(self.id)
             self.canvas.shapes.pop(self.id)
         self.destroy()
 
     def click_add(self):
-        if self.is_shape():
+        if is_draw_shape(self.shape.shape_type):
             self.add_shape()
-        elif self.is_text():
+        elif is_shape_text(self.shape.shape_type):
             self.add_text()
         self.destroy()
 
@@ -212,8 +209,8 @@ class ShapeDialog(Dialog):
         :return: nothing
         """
         text = self.shape_text.get()
-        x = self.shape.x0
-        y = self.shape.y0
+        x = self.shape.x1
+        y = self.shape.y1
         text_font = self.make_font()
         if self.shape.text_id is None:
             tid = self.canvas.create_text(
