@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from tkinter import font
 
+from core.api.grpc.core_pb2 import NodeType
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
@@ -36,6 +37,15 @@ class CanvasNode:
             fill="#0000CD",
         )
         self.tooltip = CanvasTooltip(self.canvas)
+        self.edges = set()
+        self.interfaces = []
+        self.wireless_edges = set()
+        self.moving = None
+        self.antennae = []
+        self.setup_bindings()
+
+    def setup_bindings(self):
+        # self.canvas.bind("<Button-3>", self.click_context)
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
         self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
@@ -43,11 +53,6 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
-        self.edges = set()
-        self.interfaces = []
-        self.wireless_edges = set()
-        self.moving = None
-        self.antennae = []
 
     def delete(self):
         self.canvas.delete(self.id)
@@ -183,6 +188,51 @@ class CanvasNode:
             elif object_id in self.canvas.shapes:
                 shape = self.canvas.shapes[object_id]
                 shape.motion(None, x - my_x, y - my_y)
+
+    def create_context(self):
+        is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
+        is_emane = self.core_node.type == NodeType.EMANE
+        context = tk.Menu(self.canvas)
+        if self.app.core.is_runtime():
+            context.add_command(label="Configure", command=self.show_config)
+            if is_wlan and self.core_node.id in self.app.core.mobility_players:
+                context.add_command(
+                    label="Mobility Player", command=self.show_mobility_player
+                )
+            context.add_command(label="Select Adjacent", state=tk.DISABLED)
+            context.add_command(label="Hide", state=tk.DISABLED)
+            context.add_command(label="Services", state=tk.DISABLED)
+            if NodeUtils.is_container_node(self.core_node.type):
+                context.add_command(label="Shell Window", state=tk.DISABLED)
+                context.add_command(label="Tcpdump", state=tk.DISABLED)
+                context.add_command(label="Tshark", state=tk.DISABLED)
+                context.add_command(label="Wireshark", state=tk.DISABLED)
+                context.add_command(label="View Log", state=tk.DISABLED)
+        else:
+            context.add_command(label="Configure", command=self.show_config)
+            if is_emane:
+                context.add_command(
+                    label="EMANE Config", command=self.show_emane_config
+                )
+            if is_wlan:
+                context.add_command(label="WLAN Config", command=self.show_wlan_config)
+                context.add_command(
+                    label="Mobility Config", command=self.show_mobility_config
+                )
+            if is_wlan or is_emane:
+                context.add_command(label="Link To All MDRs", state=tk.DISABLED)
+                context.add_command(label="Select Members", state=tk.DISABLED)
+            context.add_command(label="Select Adjacent", state=tk.DISABLED)
+            context.add_command(label="Create Link To", state=tk.DISABLED)
+            context.add_command(label="Assign To", state=tk.DISABLED)
+            context.add_command(label="Move To", state=tk.DISABLED)
+            context.add_command(label="Cut", state=tk.DISABLED)
+            context.add_command(label="Copy", state=tk.DISABLED)
+            context.add_command(label="Paste", state=tk.DISABLED)
+            context.add_command(label="Delete", state=tk.DISABLED)
+            context.add_command(label="Hide", state=tk.DISABLED)
+            context.add_command(label="Services", state=tk.DISABLED)
+        return context
 
     def select_multiple(self, event):
         self.canvas.select_object(self.id, choose_multiple=True)
