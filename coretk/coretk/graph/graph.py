@@ -361,6 +361,7 @@ class CanvasGraph(tk.Canvas):
                     if edge in edges:
                         continue
                     edges.add(edge)
+                    self.throughput_draw.delete(edge)
                     del self.edges[edge.token]
                     edge.delete()
 

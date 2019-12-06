@@ -122,6 +122,8 @@ class CanvasNode:
                 self.canvas.coords(edge.id, x, y, x2, y2)
             else:
                 self.canvas.coords(edge.id, x1, y1, x, y)
+            self.canvas.throughput_draw.move(edge)
+
             edge.link_info.recalculate_info()
         for edge in self.wireless_edges:
             x1, y1, x2, y2 = self.canvas.coords(edge.id)
