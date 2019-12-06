@@ -195,13 +195,14 @@ class CanvasNode:
         context = tk.Menu(self.canvas)
         if self.app.core.is_runtime():
             context.add_command(label="Configure", command=self.show_config)
+            if NodeUtils.is_container_node(self.core_node.type):
+                context.add_command(label="Services", state=tk.DISABLED)
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
                 context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
             context.add_command(label="Select Adjacent", state=tk.DISABLED)
             context.add_command(label="Hide", state=tk.DISABLED)
-            context.add_command(label="Services", state=tk.DISABLED)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Shell Window", state=tk.DISABLED)
                 context.add_command(label="Tcpdump", state=tk.DISABLED)
@@ -210,6 +211,8 @@ class CanvasNode:
                 context.add_command(label="View Log", state=tk.DISABLED)
         else:
             context.add_command(label="Configure", command=self.show_config)
+            if NodeUtils.is_container_node(self.core_node.type):
+                context.add_command(label="Services", state=tk.DISABLED)
             if is_emane:
                 context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -231,7 +234,6 @@ class CanvasNode:
             context.add_command(label="Paste", state=tk.DISABLED)
             context.add_command(label="Delete", state=tk.DISABLED)
             context.add_command(label="Hide", state=tk.DISABLED)
-            context.add_command(label="Services", state=tk.DISABLED)
         return context
 
     def select_multiple(self, event):
