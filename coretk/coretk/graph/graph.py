@@ -34,6 +34,7 @@ class CanvasGraph(tk.Canvas):
         self.nodes = {}
         self.edges = {}
         self.shapes = {}
+        self.texts = {}
         self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
@@ -276,6 +277,8 @@ class CanvasGraph(tk.Canvas):
                     if self.shape_drawing:
                         self.shapes[self.selected].shape_complete(x, y)
                         self.shape_drawing = False
+                elif self.annotation_type == ImageEnum.TEXT:
+                    self.text.shape_complete(self.text.cursor_x, self.text.cursor_y)
             else:
                 self.focus_set()
                 self.selected = self.get_selected(event)
@@ -424,16 +427,19 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
-        if (
-            self.mode == GraphMode.ANNOTATION
-            and self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]
-            and selected is None
-        ):
-            x, y = self.canvas_xy(event)
-            shape = Shape(self.app, self, x, y)
-            self.selected = shape.id
-            self.shapes[shape.id] = shape
-            self.shape_drawing = True
+
+        if self.mode == GraphMode.ANNOTATION and selected is None:
+            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                x, y = self.canvas_xy(event)
+                shape = Shape(self.app, self, x, y)
+                self.selected = shape.id
+                self.shapes[shape.id] = shape
+                self.shape_drawing = True
+            elif self.annotation_type == ImageEnum.TEXT:
+                x, y = self.canvas_xy(event)
+                self.text = Shape(self.app, self, x, y)
+                # self.shapes[shape.id] = shape
+
         if self.mode == GraphMode.SELECT:
             if selected is not None:
                 if selected in self.shapes:

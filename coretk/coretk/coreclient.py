@@ -10,7 +10,7 @@ from core.api.grpc import client, core_pb2
 from coretk import appconfig
 from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.graph.shape import Shape, ShapeData
+from coretk.graph.shape import AnnotationData, Shape
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
 
@@ -136,6 +136,7 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
+        print(event)
         if event.HasField("link_event"):
             logging.info("link event: %s", event)
             self.handle_link_event(event.link_event)
@@ -160,6 +161,8 @@ class CoreClient:
             self.handle_node_event(event.node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
+        elif event.HasField("throughput_event"):
+            print("throughput")
         else:
             logging.info("unhandled event: %s", event)
 
@@ -189,7 +192,7 @@ class CoreClient:
         interface_throughputs = event.interface_throughputs
         for i in interface_throughputs:
             print("")
-        return
+        # return
         throughputs_belong_to_session = []
         for if_tp in interface_throughputs:
             if if_tp.node_id in self.node_ids:
@@ -312,8 +315,7 @@ class CoreClient:
                 config_type = annotation_config["type"]
                 if config_type in ["rectangle", "oval"]:
                     coords = tuple(annotation_config["iconcoords"])
-                    data = ShapeData(
-                        False,
+                    data = AnnotationData(
                         annotation_config["label"],
                         annotation_config["fontfamily"],
                         annotation_config["fontsize"],
