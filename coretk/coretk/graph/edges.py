@@ -85,3 +85,6 @@ class CanvasEdge:
 
     def delete(self):
         self.canvas.delete(self.id)
+        if self.link_info:
+            self.canvas.delete(self.link_info.id1)
+            self.canvas.delete(self.link_info.id2)

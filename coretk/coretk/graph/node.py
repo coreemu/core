@@ -49,6 +49,11 @@ class CanvasNode:
         self.moving = None
         self.antennae = []
 
+    def delete(self):
+        self.canvas.delete(self.id)
+        self.canvas.delete(self.text_id)
+        self.delete_antennae()
+
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
         offset = len(self.antennae) * 8
@@ -78,7 +83,6 @@ class CanvasNode:
 
         :return: nothing
         """
-        logging.info("deleting antennae: %s", self.antennae)
         for antenna_id in self.antennae:
             self.canvas.delete(antenna_id)
         self.antennae.clear()

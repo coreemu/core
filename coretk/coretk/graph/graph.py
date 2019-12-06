@@ -376,14 +376,15 @@ class CanvasGraph(tk.Canvas):
         edges = set()
         nodes = []
         for object_id in self.selection:
+            #  delete selection box
+            selection_id = self.selection[object_id]
+            self.delete(selection_id)
+
+            # delete node and related edges
             if object_id in self.nodes:
-                selection_id = self.selection[object_id]
                 canvas_node = self.nodes.pop(object_id)
+                canvas_node.delete()
                 nodes.append(canvas_node)
-                self.delete(object_id)
-                self.delete(selection_id)
-                self.delete(canvas_node.text_id)
-                canvas_node.delete_antennae()
                 is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
 
                 # delete related edges
@@ -391,10 +392,10 @@ class CanvasGraph(tk.Canvas):
                     if edge in edges:
                         continue
                     edges.add(edge)
-                    self.edges.pop(edge.token)
-                    self.delete(edge.id)
-                    self.delete(edge.link_info.id1)
-                    self.delete(edge.link_info.id2)
+                    del self.edges[edge.token]
+                    edge.delete()
+
+                    # update node connected to edge being deleted
                     other_id = edge.src
                     other_interface = edge.src_interface
                     if edge.src == object_id:
@@ -408,11 +409,11 @@ class CanvasGraph(tk.Canvas):
                         pass
                     if is_wireless:
                         other_node.delete_antenna()
+
+            # delete shape
             if object_id in self.shapes:
-                selection_id = self.selection[object_id]
-                self.shapes[object_id].delete()
-                self.delete(selection_id)
-                self.shapes.pop(object_id)
+                shape = self.shapes.pop(object_id)
+                shape.delete()
 
         self.selection.clear()
         return nodes
