@@ -1,3 +1,4 @@
+import logging
 from tkinter.font import Font
 
 from coretk.dialogs.shapemod import ShapeDialog
@@ -76,6 +77,7 @@ class Shape:
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
             )
+            self.draw_shape_text()
         elif self.shape_type == ShapeType.RECTANGLE:
             self.id = self.canvas.create_rectangle(
                 self.x1,
@@ -88,7 +90,22 @@ class Shape:
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
             )
+            self.draw_shape_text()
+        elif self.shape_type == ShapeType.TEXT:
+            font = Font(family=self.shape_data.font, size=self.shape_data.font_size)
+            self.id = self.canvas.create_text(
+                self.x1,
+                self.y1,
+                tags="shapetext",
+                text=self.shape_data.text,
+                fill=self.shape_data.text_color,
+                font=font,
+            )
+        else:
+            logging.error("unknown shape type: %s", self.shape_type)
+        self.created = True
 
+    def draw_shape_text(self):
         if self.shape_data.text:
             x = (self.x1 + self.x2) / 2
             y = self.y1 + 1.5 * self.shape_data.font_size

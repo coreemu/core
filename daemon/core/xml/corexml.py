@@ -123,9 +123,9 @@ class NodeElement:
         if x is not None and y is not None:
             lat, lon, alt = self.session.location.getgeo(x, y, z)
         position = etree.SubElement(self.element, "position")
-        add_attribute(position, "x", x)
-        add_attribute(position, "y", y)
-        add_attribute(position, "z", z)
+        add_attribute(position, "x", int(x))
+        add_attribute(position, "y", int(y))
+        add_attribute(position, "z", int(z))
         add_attribute(position, "lat", lat)
         add_attribute(position, "lon", lon)
         add_attribute(position, "alt", alt)

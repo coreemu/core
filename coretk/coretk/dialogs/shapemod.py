@@ -15,12 +15,10 @@ class ShapeDialog(Dialog):
     def __init__(self, master, app, shape):
         if is_draw_shape(shape.shape_type):
             title = "Add Shape"
-            self.id = shape.id
         else:
             title = "Add Text"
-            self.id = None
-        self.canvas = app.canvas
         super().__init__(master, app, title, modal=True)
+        self.canvas = app.canvas
         self.fill = None
         self.border = None
         self.shape = shape
@@ -146,12 +144,8 @@ class ShapeDialog(Dialog):
         self.border.config(background=color[1], text=color[1])
 
     def cancel(self):
-        if (
-            is_draw_shape(self.shape.shape_type)
-            and not self.canvas.shapes[self.id].created
-        ):
-            self.canvas.delete(self.id)
-            self.canvas.shapes.pop(self.id)
+        self.shape.delete()
+        self.canvas.shapes.pop(self.shape.id)
         self.destroy()
 
     def click_add(self):
@@ -209,29 +203,15 @@ class ShapeDialog(Dialog):
         :return: nothing
         """
         text = self.shape_text.get()
-        x = self.shape.x1
-        y = self.shape.y1
         text_font = self.make_font()
-        if self.shape.text_id is None:
-            tid = self.canvas.create_text(
-                x, y, text=text, fill=self.text_color, font=text_font, tags="text"
-            )
-            self.shape.text_id = tid
-            self.id = tid
-            self.shape.id = tid
-            self.canvas.texts[tid] = self.shape
-            self.shape.created = True
+        self.canvas.itemconfig(
+            self.shape.id, text=text, fill=self.text_color, font=text_font
+        )
         self.save_text()
-        print(self.canvas.texts)
-        #     self.canvas.shapes[self.id].created = True
-        # else:
-        #     self.canvas.itemconfig(
-        #         self.shape.text_id, text=text, fill=self.text_color, font=f
-        #     )
 
     def add_shape(self):
         self.canvas.itemconfig(
-            self.id,
+            self.shape.id,
             fill=self.fill_color,
             dash="",
             outline=self.border_color,
@@ -239,7 +219,7 @@ class ShapeDialog(Dialog):
         )
         shape_text = self.shape_text.get()
         size = int(self.font_size.get())
-        x0, y0, x1, y1 = self.canvas.bbox(self.id)
+        x0, y0, x1, y1 = self.canvas.bbox(self.shape.id)
         _y = y0 + 1.5 * size
         _x = (x0 + x1) / 2
         text_font = self.make_font()

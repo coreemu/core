@@ -322,11 +322,11 @@ class CoreClient:
         if shapes_config:
             shapes_config = json.loads(shapes_config)
             for shape_config in shapes_config:
-                logging.info("loading shape: %s", shapes_config)
+                logging.info("loading shape: %s", shape_config)
                 shape_type = shape_config["type"]
                 try:
                     shape_type = ShapeType(shape_type)
-                    x1, y1, x2, y2 = shape_config["iconcoords"]
+                    coords = shape_config["iconcoords"]
                     data = AnnotationData(
                         shape_config["label"],
                         shape_config["fontfamily"],
@@ -337,11 +337,11 @@ class CoreClient:
                         shape_config["width"],
                     )
                     shape = Shape(
-                        self.app, self.app.canvas, shape_type, x1, y1, x2, y2, data
+                        self.app, self.app.canvas, shape_type, *coords, data=data
                     )
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
-                    logging.debug("unknown shape: %s", shape_type)
+                    logging.exception("unknown shape: %s", shape_type)
 
         for tag in LIFT_ORDER:
             self.app.canvas.tag_raise(tag)

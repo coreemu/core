@@ -10,7 +10,7 @@ from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
-from coretk.graph.shapeutils import is_draw_shape, is_shape_text
+from coretk.graph.shapeutils import is_draw_shape
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
@@ -45,7 +45,6 @@ class CanvasGraph(tk.Canvas):
         self.nodes = {}
         self.edges = {}
         self.shapes = {}
-        self.texts = {}
         self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
@@ -244,14 +243,12 @@ class CanvasGraph(tk.Canvas):
             self.context = None
         else:
             if self.mode == GraphMode.ANNOTATION:
-                if is_draw_shape(self.annotation_type):
-                    self.focus_set()
-                    x, y = self.canvas_xy(event)
-                    if self.shape_drawing:
-                        self.shapes[self.selected].shape_complete(x, y)
-                        self.shape_drawing = False
-                elif is_shape_text(self.annotation_type):
-                    self.text.shape_complete(self.text.cursor_x, self.text.cursor_y)
+                self.focus_set()
+                x, y = self.canvas_xy(event)
+                if self.shape_drawing:
+                    shape = self.shapes[self.selected]
+                    shape.shape_complete(x, y)
+                    self.shape_drawing = False
             else:
                 self.focus_set()
                 self.selected = self.get_selected(event)
@@ -404,13 +401,10 @@ class CanvasGraph(tk.Canvas):
 
         if self.mode == GraphMode.ANNOTATION and selected is None:
             x, y = self.canvas_xy(event)
-            if is_draw_shape(self.annotation_type):
-                shape = Shape(self.app, self, self.annotation_type, x, y)
-                self.selected = shape.id
-                self.shapes[shape.id] = shape
-                self.shape_drawing = True
-            elif is_shape_text(self.annotation_type):
-                self.text = Shape(self.app, self, self.annotation_type, x, y)
+            shape = Shape(self.app, self, self.annotation_type, x, y)
+            self.selected = shape.id
+            self.shape_drawing = True
+            self.shapes[shape.id] = shape
 
         if self.mode == GraphMode.SELECT:
             if selected is not None:
@@ -449,7 +443,8 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.ANNOTATION:
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 x, y = self.canvas_xy(event)
-                self.shapes[self.selected].shape_motion(x, y)
+                shape = self.shapes[self.selected]
+                shape.shape_motion(x, y)
         if (
             self.mode == GraphMode.SELECT
             and self.selected is not None
