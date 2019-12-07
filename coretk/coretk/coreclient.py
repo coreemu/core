@@ -335,6 +335,9 @@ class CoreClient:
                         shape_config["color"],
                         shape_config["border"],
                         shape_config["width"],
+                        shape_config["bold"],
+                        shape_config["italic"],
+                        shape_config["underline"],
                     )
                     shape = Shape(
                         self.app, self.app.canvas, shape_type, *coords, data=data

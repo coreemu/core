@@ -1,5 +1,4 @@
 import logging
-from tkinter.font import Font
 
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.graph.shapeutils import ShapeType
@@ -17,9 +16,9 @@ class AnnotationData:
         fill_color="",
         border_color="#000000",
         border_width=1,
-        bold=0,
-        italic=0,
-        underline=0,
+        bold=False,
+        italic=False,
+        underline=False,
     ):
         self.text = text
         self.font = font
@@ -92,7 +91,7 @@ class Shape:
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.TEXT:
-            font = Font(family=self.shape_data.font, size=self.shape_data.font_size)
+            font = self.get_font()
             self.id = self.canvas.create_text(
                 self.x1,
                 self.y1,
@@ -105,11 +104,21 @@ class Shape:
             logging.error("unknown shape type: %s", self.shape_type)
         self.created = True
 
+    def get_font(self):
+        font = [self.shape_data.font, self.shape_data.font_size]
+        if self.shape_data.bold:
+            font.append("bold")
+        if self.shape_data.italic:
+            font.append("italic")
+        if self.shape_data.underline:
+            font.append("underline")
+        return font
+
     def draw_shape_text(self):
         if self.shape_data.text:
             x = (self.x1 + self.x2) / 2
             y = self.y1 + 1.5 * self.shape_data.font_size
-            font = Font(family=self.shape_data.font, size=self.shape_data.font_size)
+            font = self.get_font()
             self.text_id = self.canvas.create_text(
                 x,
                 y,
@@ -155,4 +164,7 @@ class Shape:
             "color": self.shape_data.fill_color,
             "border": self.shape_data.border_color,
             "width": self.shape_data.border_width,
+            "bold": self.shape_data.bold,
+            "italic": self.shape_data.italic,
+            "underline": self.shape_data.underline,
         }

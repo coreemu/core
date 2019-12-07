@@ -33,9 +33,9 @@ class ShapeDialog(Dialog):
         self.fill_color = fill_color
         self.border_color = data.border_color
         self.border_width = tk.IntVar(value=0)
-        self.bold = tk.IntVar(value=data.bold)
-        self.italic = tk.IntVar(value=data.italic)
-        self.underline = tk.IntVar(value=data.underline)
+        self.bold = tk.BooleanVar(value=data.bold)
+        self.italic = tk.BooleanVar(value=data.italic)
+        self.underline = tk.BooleanVar(value=data.underline)
         self.top.columnconfigure(0, weight=1)
         self.draw()
 
@@ -162,11 +162,11 @@ class ShapeDialog(Dialog):
         """
         size = int(self.font_size.get())
         text_font = [self.font.get(), size]
-        if self.bold.get() == 1:
+        if self.bold.get():
             text_font.append("bold")
-        if self.italic.get() == 1:
+        if self.italic.get():
             text_font.append("italic")
-        if self.underline.get() == 1:
+        if self.underline.get():
             text_font.append("underline")
         return text_font
 
