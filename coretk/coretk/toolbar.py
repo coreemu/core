@@ -6,6 +6,7 @@ from tkinter import ttk
 
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph.enums import GraphMode
+from coretk.graph.shapeutils import ShapeType
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
 from coretk.tooltip import Tooltip
@@ -291,18 +292,18 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.annotation_picker = ttk.Frame(self.master)
         nodes = [
-            (ImageEnum.MARKER, "marker"),
-            (ImageEnum.OVAL, "oval"),
-            (ImageEnum.RECTANGLE, "rectangle"),
-            (ImageEnum.TEXT, "text"),
+            (ImageEnum.MARKER, ShapeType.MARKER),
+            (ImageEnum.OVAL, ShapeType.OVAL),
+            (ImageEnum.RECTANGLE, ShapeType.RECTANGLE),
+            (ImageEnum.TEXT, ShapeType.TEXT),
         ]
-        for image_enum, tooltip in nodes:
+        for image_enum, shape_type in nodes:
             image = icon(image_enum)
             self.create_picker_button(
                 image,
-                partial(self.update_annotation, image, image_enum),
+                partial(self.update_annotation, image, shape_type),
                 self.annotation_picker,
-                tooltip,
+                shape_type.value,
             )
         self.design_select(self.annotation_button)
         self.annotation_button.after(
@@ -362,13 +363,13 @@ class Toolbar(ttk.Frame):
 
         self.design_frame.tkraise()
 
-    def update_annotation(self, image, image_enum):
+    def update_annotation(self, image, shape_type):
         logging.info("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
         self.app.canvas.mode = GraphMode.ANNOTATION
-        self.app.canvas.annotation_type = image_enum
+        self.app.canvas.annotation_type = shape_type
 
     def click_run_button(self):
         logging.debug("Click on RUN button")

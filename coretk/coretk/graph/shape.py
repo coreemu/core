@@ -1,8 +1,7 @@
-"""
-class for shapes
-"""
+import logging
+
 from coretk.dialogs.shapemod import ShapeDialog
-from coretk.images import ImageEnum
+from coretk.graph.shapeutils import ShapeType
 
 ABOVE_COMPONENT = ["gridline", "edge", "linkinfo", "antenna", "node", "nodename"]
 
@@ -14,14 +13,13 @@ class AnnotationData:
         font="Arial",
         font_size=12,
         text_color="#000000",
-        fill_color="#CFCFFF",
+        fill_color="",
         border_color="#000000",
-        border_width=0,
-        bold=0,
-        italic=0,
-        underline=0,
+        border_width=1,
+        bold=False,
+        italic=False,
+        underline=False,
     ):
-
         self.text = text
         self.font = font
         self.font_size = font_size
@@ -35,72 +33,103 @@ class AnnotationData:
 
 
 class Shape:
-    def __init__(
-        self,
-        app,
-        canvas,
-        top_x=None,
-        top_y=None,
-        coords=None,
-        data=None,
-        shape_type=None,
-    ):
+    def __init__(self, app, canvas, shape_type, x1, y1, x2=None, y2=None, data=None):
         self.app = app
         self.canvas = canvas
+        self.shape_type = shape_type
+        self.id = None
+        self.text_id = None
+        self.x1 = x1
+        self.y1 = y1
+        if x2 is None:
+            x2 = x1
+        self.x2 = x2
+        if y2 is None:
+            y2 = y1
+        self.y2 = y2
         if data is None:
-            self.x0 = top_x
-            self.y0 = top_y
             self.created = False
-            self.text_id = None
             self.shape_data = AnnotationData()
-            canvas.delete(canvas.find_withtag("selectednodes"))
-            annotation_type = self.canvas.annotation_type
-            if annotation_type == ImageEnum.OVAL:
-                self.id = canvas.create_oval(
-                    top_x, top_y, top_x, top_y, tags="shape", dash="-"
-                )
-            elif annotation_type == ImageEnum.RECTANGLE:
-                self.id = canvas.create_rectangle(
-                    top_x, top_y, top_x, top_y, tags="shape", dash="-"
-                )
+            self.cursor_x = x1
+            self.cursor_y = y1
         else:
-            x0, y0, x1, y1 = coords
-            self.x0 = x0
-            self.y0 = y0
             self.created = True
-            if shape_type == "oval":
-                self.id = self.canvas.create_oval(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    tags="shape",
-                    fill=data.fill_color,
-                    outline=data.border_color,
-                    width=data.border_width,
-                )
-            elif shape_type == "rectangle":
-                self.id = self.canvas.create_rectangle(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
-                    tags="shape",
-                    fill=data.fill_color,
-                    outline=data.border_color,
-                    width=data.border_width,
-                )
-            _x = (x0 + x1) / 2
-            _y = y0 + 1.5 * data.font_size
-            self.text_id = self.canvas.create_text(
-                _x, _y, tags="shapetext", text=data.text, fill=data.text_color
-            )
             self.shape_data = data
-        self.cursor_x = None
-        self.cursor_y = None
+            self.cursor_x = None
+            self.cursor_y = None
+        self.draw()
+
+    def draw(self):
+        if self.created:
+            dash = None
+        else:
+            dash = "-"
+        if self.shape_type == ShapeType.OVAL:
+            self.id = self.canvas.create_oval(
+                self.x1,
+                self.y1,
+                self.x2,
+                self.y2,
+                tags="shape",
+                dash=dash,
+                fill=self.shape_data.fill_color,
+                outline=self.shape_data.border_color,
+                width=self.shape_data.border_width,
+            )
+            self.draw_shape_text()
+        elif self.shape_type == ShapeType.RECTANGLE:
+            self.id = self.canvas.create_rectangle(
+                self.x1,
+                self.y1,
+                self.x2,
+                self.y2,
+                tags="shape",
+                dash=dash,
+                fill=self.shape_data.fill_color,
+                outline=self.shape_data.border_color,
+                width=self.shape_data.border_width,
+            )
+            self.draw_shape_text()
+        elif self.shape_type == ShapeType.TEXT:
+            font = self.get_font()
+            self.id = self.canvas.create_text(
+                self.x1,
+                self.y1,
+                tags="shapetext",
+                text=self.shape_data.text,
+                fill=self.shape_data.text_color,
+                font=font,
+            )
+        else:
+            logging.error("unknown shape type: %s", self.shape_type)
+        self.created = True
+
+    def get_font(self):
+        font = [self.shape_data.font, self.shape_data.font_size]
+        if self.shape_data.bold:
+            font.append("bold")
+        if self.shape_data.italic:
+            font.append("italic")
+        if self.shape_data.underline:
+            font.append("underline")
+        return font
+
+    def draw_shape_text(self):
+        if self.shape_data.text:
+            x = (self.x1 + self.x2) / 2
+            y = self.y1 + 1.5 * self.shape_data.font_size
+            font = self.get_font()
+            self.text_id = self.canvas.create_text(
+                x,
+                y,
+                tags="shapetext",
+                text=self.shape_data.text,
+                fill=self.shape_data.text_color,
+                font=font,
+            )
 
     def shape_motion(self, x1, y1):
-        self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
+        self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
     def shape_complete(self, x, y):
         for component in ABOVE_COMPONENT:
@@ -122,3 +151,20 @@ class Shape:
     def delete(self):
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
+
+    def metadata(self):
+        coords = self.canvas.coords(self.id)
+        return {
+            "type": self.shape_type.value,
+            "iconcoords": coords,
+            "label": self.shape_data.text,
+            "fontfamily": self.shape_data.font,
+            "fontsize": self.shape_data.font_size,
+            "labelcolor": self.shape_data.text_color,
+            "color": self.shape_data.fill_color,
+            "border": self.shape_data.border_color,
+            "width": self.shape_data.border_width,
+            "bold": self.shape_data.bold,
+            "italic": self.shape_data.italic,
+            "underline": self.shape_data.underline,
+        }
