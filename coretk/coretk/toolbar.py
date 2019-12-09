@@ -40,6 +40,9 @@ class Toolbar(ttk.Frame):
         self.network_button = None
         self.annotation_button = None
 
+        # runtime buttons
+        self.runtime_select_button = None
+
         # frames
         self.design_frame = None
         self.runtime_frame = None
@@ -89,6 +92,11 @@ class Toolbar(ttk.Frame):
         self.annotation_button.state(["!pressed"])
         button.state(["pressed"])
 
+    def runtime_select(self, button):
+        logging.info("selecting runtime button: %s", button)
+        self.runtime_select_button.state(["!pressed"])
+        button.state(["pressed"])
+
     def draw_runtime_frame(self):
         self.runtime_frame = ttk.Frame(self)
         self.runtime_frame.grid(row=0, column=0, sticky="nsew")
@@ -100,10 +108,10 @@ class Toolbar(ttk.Frame):
             self.click_stop,
             "stop the session",
         )
-        self.create_button(
+        self.runtime_select_button = self.create_button(
             self.runtime_frame,
             icon(ImageEnum.SELECT),
-            self.click_selection,
+            self.click_runtime_selection,
             "selection tool",
         )
         # self.create_observe_button()
@@ -188,6 +196,11 @@ class Toolbar(ttk.Frame):
         self.design_select(self.select_button)
         self.app.canvas.mode = GraphMode.SELECT
 
+    def click_runtime_selection(self):
+        logging.debug("clicked selection tool")
+        self.runtime_select(self.runtime_select_button)
+        self.app.canvas.mode = GraphMode.SELECT
+
     def click_start(self):
         """
         Start session handler redraw buttons, send node and link messages to grpc
@@ -200,6 +213,7 @@ class Toolbar(ttk.Frame):
         thread = threading.Thread(target=self.app.core.start_session)
         thread.start()
         self.runtime_frame.tkraise()
+        self.click_runtime_selection()
 
     def click_link(self):
         logging.debug("Click LINK button")
@@ -355,11 +369,9 @@ class Toolbar(ttk.Frame):
         self.app.statusbar.progress_bar.start(5)
         thread = threading.Thread(target=self.app.core.stop_session)
         thread.start()
-        for cid in self.app.canvas.find_withtag("wireless"):
-            self.app.canvas.itemconfig(cid, state="hidden")
-        # self.app.canvas.delete("wireless")
-
+        self.app.canvas.delete("wireless")
         self.design_frame.tkraise()
+        self.click_selection()
 
     def update_annotation(self, image, shape_type):
         logging.info("clicked annotation: ")

@@ -298,10 +298,11 @@ class CoreClient:
         # update ui to represent current state
         if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
+            self.app.toolbar.click_runtime_selection()
         else:
             self.app.toolbar.design_frame.tkraise()
+            self.app.toolbar.click_selection()
         self.app.statusbar.progress_bar.stop()
-        self.app.toolbar.click_selection()
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
