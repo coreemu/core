@@ -40,8 +40,6 @@ class Toolbar(ttk.Frame):
         self.network_button = None
         self.annotation_button = None
 
-        # runtime buttons
-
         # frames
         self.design_frame = None
         self.runtime_frame = None

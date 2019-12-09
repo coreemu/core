@@ -295,11 +295,13 @@ class CoreClient:
         response = self.client.get_session_metadata(self.session_id)
         self.parse_metadata(response.config)
 
+        # update ui to represent current state
         if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
         self.app.statusbar.progress_bar.stop()
+        self.app.toolbar.click_selection()
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
