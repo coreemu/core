@@ -310,12 +310,26 @@ class CoreClient:
         logging.info("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-            wallpaper_style = canvas_config["wallpaper-style"]
+
+            gridlines = canvas_config.get("gridlines", True)
+            self.app.canvas.show_grid.set(gridlines)
+
+            fit_image = canvas_config.get("fit_image", False)
+            self.app.canvas.adjust_to_dim.set(fit_image)
+
+            wallpaper_style = canvas_config.get("wallpaper-style", 1)
             self.app.canvas.scale_option.set(wallpaper_style)
-            wallpaper = canvas_config["wallpaper"]
+
+            width = self.app.guiconfig["preferences"]["width"]
+            height = self.app.guiconfig["preferences"]["height"]
+            width, height = canvas_config.get("dimensions", [width, height])
+            self.app.canvas.redraw_canvas(width, height)
+
+            wallpaper = canvas_config.get("wallpaper")
             if wallpaper:
                 wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
                 self.app.canvas.set_wallpaper(wallpaper)
+            self.app.canvas.update_grid()
 
         # load saved shapes
         shapes_config = config.get("shapes")
@@ -469,6 +483,9 @@ class CoreClient:
         canvas_config = {
             "wallpaper": Path(self.app.canvas.wallpaper_file).name,
             "wallpaper-style": self.app.canvas.scale_option.get(),
+            "gridlines": self.app.canvas.show_grid.get(),
+            "fit_image": self.app.canvas.adjust_to_dim.get(),
+            "dimensions": self.app.canvas.width_and_height(),
         }
         canvas_config = json.dumps(canvas_config)
 
