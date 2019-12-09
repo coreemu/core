@@ -25,33 +25,42 @@ class StatusBar(ttk.Frame):
         self.columnconfigure(3, weight=1)
         self.columnconfigure(4, weight=1)
 
+        frame = ttk.Frame(self, borderwidth=1, relief=tk.RIDGE)
+        frame.grid(row=0, column=0, sticky="ew")
+        frame.columnconfigure(0, weight=1)
         self.progress_bar = ttk.Progressbar(
-            self, orient="horizontal", mode="indeterminate"
+            frame, orient="horizontal", mode="indeterminate"
         )
-        self.progress_bar.grid(row=0, column=0, sticky="ew")
+        self.progress_bar.grid(sticky="ew")
 
-        self.status = ttk.Label(self, textvariable=self.statusvar, anchor=tk.CENTER)
-        self.statusvar.set("status")
+        self.status = ttk.Label(
+            self,
+            textvariable=self.statusvar,
+            anchor=tk.CENTER,
+            borderwidth=1,
+            relief=tk.RIDGE,
+        )
         self.status.grid(row=0, column=1, sticky="ew")
 
-        self.zoom = ttk.Label(self, text="zoom", anchor=tk.CENTER)
+        self.zoom = ttk.Label(
+            self, text="ZOOM TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
+        )
         self.zoom.grid(row=0, column=2, sticky="ew")
 
-        self.cpu_usage = ttk.Label(self, text="cpu usage", anchor=tk.CENTER)
+        self.cpu_usage = ttk.Label(
+            self, text="CPU TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
+        )
         self.cpu_usage.grid(row=0, column=3, sticky="ew")
 
-        self.emulation_light = ttk.Label(self, text="emulation light", anchor=tk.CENTER)
+        self.emulation_light = ttk.Label(
+            self, text="CEL TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
+        )
         self.emulation_light.grid(row=0, column=4, sticky="ew")
 
     def start_session_callback(self, process_time):
-        num_nodes = len(self.app.core.canvas_nodes)
-        num_links = len(self.app.core.links)
         self.progress_bar.stop()
-        self.statusvar.set(
-            "Network topology instantiated in %s seconds (%s node(s) and %s link(s))"
-            % ("%.3f" % process_time, num_nodes, num_links)
-        )
+        self.statusvar.set(f"Session started in {process_time:.3f} seconds")
 
     def stop_session_callback(self, cleanup_time):
         self.progress_bar.stop()
-        self.statusvar.set("Cleanup completed in %s seconds" % "%.3f" % cleanup_time)
+        self.statusvar.set(f"Stopped session in {cleanup_time:.3f} seconds")
