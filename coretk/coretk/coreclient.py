@@ -11,23 +11,11 @@ from core.api.grpc import client, core_pb2
 from coretk import appconfig
 from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
+from coretk.graph import tags
 from coretk.graph.shape import AnnotationData, Shape
 from coretk.graph.shapeutils import ShapeType
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
-
-LIFT_ORDER = [
-    "wallpaper",
-    "shape",
-    "gridline",
-    "shapetext",
-    "text",
-    "edge",
-    "antenna",
-    "nodename",
-    "linkinfo",
-    "node",
-]
 
 OBSERVERS = {
     "processes": "ps",
@@ -363,7 +351,7 @@ class CoreClient:
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
 
-        for tag in LIFT_ORDER:
+        for tag in tags.ABOVE_WALLPAPER_TAGS:
             self.app.canvas.tag_raise(tag)
 
     def create_new_session(self):

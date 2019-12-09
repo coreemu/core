@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.shapemod import ShapeDialog
+from coretk.graph import tags
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
 from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
@@ -13,30 +14,6 @@ from coretk.graph.shape import Shape
 from coretk.graph.shapeutils import is_draw_shape
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
-
-ABOVE_WALLPAPER = [
-    "gridline",
-    "shape",
-    "shapetext",
-    "edge",
-    "linkinfo",
-    "wireless",
-    "antenna",
-    "nodename",
-    "node",
-]
-CANVAS_COMPONENT_TAGS = [
-    "edge",
-    "node",
-    "nodename",
-    "wallpaper",
-    "linkinfo",
-    "antenna",
-    "wireless",
-    "selectednodes",
-    "shape",
-    "shapetext",
-]
 
 
 class CanvasGraph(tk.Canvas):
@@ -99,7 +76,7 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         # delete any existing drawn items
-        for tag in CANVAS_COMPONENT_TAGS:
+        for tag in tags.COMPONENT_TAGS:
             self.delete(tag)
 
         # set the private variables to default value
@@ -140,10 +117,10 @@ class CanvasGraph(tk.Canvas):
         width = int(width)
         height = int(height)
         for i in range(0, width, 27):
-            self.create_line(i, 0, i, height, dash=(2, 4), tags="gridline")
+            self.create_line(i, 0, i, height, dash=(2, 4), tags=tags.GRIDLINE)
         for i in range(0, height, 27):
-            self.create_line(0, i, width, i, dash=(2, 4), tags="gridline")
-        self.tag_lower("gridline")
+            self.create_line(0, i, width, i, dash=(2, 4), tags=tags.GRIDLINE)
+        self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.grid)
 
     def add_wireless_edge(self, src, dst):
@@ -214,7 +191,7 @@ class CanvasGraph(tk.Canvas):
                     canvas_node_two.interfaces.append(link.interface_two)
 
         # raise the nodes so they on top of the links
-        self.tag_raise("node")
+        self.tag_raise(tags.NODE)
 
     def canvas_xy(self, event):
         """
@@ -336,7 +313,7 @@ class CanvasGraph(tk.Canvas):
                 (x0 - 6, y0 - 6, x1 + 6, y1 + 6),
                 activedash=True,
                 dash="-",
-                tags="selectednodes",
+                tags=tags.SELECTION,
             )
             self.selection[object_id] = selection_id
         else:
@@ -553,7 +530,7 @@ class CanvasGraph(tk.Canvas):
         self.delete(self.wallpaper_id)
         # place left corner of image to the left corner of the canvas
         self.wallpaper_id = self.create_image(
-            (cropx / 2, cropy / 2), image=cropped_tk, tags="wallpaper"
+            (cropx / 2, cropy / 2), image=cropped_tk, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = cropped_tk
 
@@ -581,7 +558,7 @@ class CanvasGraph(tk.Canvas):
         # place the center of the image at the center of the canvas
         self.delete(self.wallpaper_id)
         self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags="wallpaper"
+            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = cropped_tk
 
@@ -595,7 +572,7 @@ class CanvasGraph(tk.Canvas):
         image = Images.create(self.wallpaper_file, int(canvas_w), int(canvas_h))
         self.delete(self.wallpaper_id)
         self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=image, tags="wallpaper"
+            (canvas_w / 2, canvas_h / 2), image=image, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = image
 
@@ -619,7 +596,7 @@ class CanvasGraph(tk.Canvas):
         self.coords(self.grid, 0, 0, width, height)
 
         # redraw gridlines to new canvas size
-        self.delete("gridline")
+        self.delete(tags.GRIDLINE)
         self.draw_grid()
         self.update_grid()
 
@@ -639,15 +616,15 @@ class CanvasGraph(tk.Canvas):
                 logging.warning("tiled background not implemented yet")
 
         # raise items above wallpaper
-        for component in ABOVE_WALLPAPER:
+        for component in tags.ABOVE_WALLPAPER_TAGS:
             self.tag_raise(component)
 
     def update_grid(self):
         logging.info("updating grid show: %s", self.show_grid.get())
         if self.show_grid.get():
-            self.itemconfig("gridline", state=tk.NORMAL)
+            self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
         else:
-            self.itemconfig("gridline", state=tk.HIDDEN)
+            self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
     def set_wallpaper(self, filename):
         logging.info("setting wallpaper: %s", filename)

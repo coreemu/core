@@ -1,9 +1,8 @@
 import logging
 
 from coretk.dialogs.shapemod import ShapeDialog
+from coretk.graph import tags
 from coretk.graph.shapeutils import ShapeType
-
-ABOVE_COMPONENT = ["gridline", "edge", "linkinfo", "antenna", "node", "nodename"]
 
 
 class AnnotationData:
@@ -70,7 +69,7 @@ class Shape:
                 self.y1,
                 self.x2,
                 self.y2,
-                tags="shape",
+                tags=tags.SHAPE,
                 dash=dash,
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
@@ -83,7 +82,7 @@ class Shape:
                 self.y1,
                 self.x2,
                 self.y2,
-                tags="shape",
+                tags=tags.SHAPE,
                 dash=dash,
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
@@ -95,7 +94,7 @@ class Shape:
             self.id = self.canvas.create_text(
                 self.x1,
                 self.y1,
-                tags="shapetext",
+                tags=tags.SHAPE_TEXT,
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
@@ -122,7 +121,7 @@ class Shape:
             self.text_id = self.canvas.create_text(
                 x,
                 y,
-                tags="shapetext",
+                tags=tags.SHAPE_TEXT,
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
@@ -132,7 +131,7 @@ class Shape:
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
     def shape_complete(self, x, y):
-        for component in ABOVE_COMPONENT:
+        for component in tags.ABOVE_SHAPE:
             self.canvas.tag_raise(component)
         s = ShapeDialog(self.app, self.app, self)
         s.show()

@@ -5,6 +5,7 @@ from functools import partial
 from tkinter import ttk
 
 from coretk.dialogs.customnodes import CustomNodesDialog
+from coretk.graph import tags
 from coretk.graph.enums import GraphMode
 from coretk.graph.shapeutils import ShapeType
 from coretk.images import ImageEnum, Images
@@ -369,7 +370,7 @@ class Toolbar(ttk.Frame):
         self.app.statusbar.progress_bar.start(5)
         thread = threading.Thread(target=self.app.core.stop_session)
         thread.start()
-        self.app.canvas.delete("wireless")
+        self.app.canvas.delete(tags.WIRELESS_EDGE)
         self.design_frame.tkraise()
         self.click_selection()
 
