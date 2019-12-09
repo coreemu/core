@@ -422,7 +422,7 @@ class Menubar(tk.Menu):
         menu = tk.Menu(self)
         self.create_observer_widgets_menu(menu)
         self.create_adjacency_menu(menu)
-        menu.add_command(label="Throughput", state=tk.DISABLED)
+        menu.add_checkbutton(label="Throughput", command=self.menuaction.throughput)
         menu.add_separator()
         menu.add_command(label="Configure Adjacency...", state=tk.DISABLED)
         menu.add_command(label="Configure Throughput...", state=tk.DISABLED)

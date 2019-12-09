@@ -77,6 +77,7 @@ class CanvasGraph(tk.Canvas):
 
         # set the private variables to default value
         self.mode = GraphMode.SELECT
+        self.annotation_type = None
         self.node_draw = None
         self.selected = None
         self.nodes.clear()

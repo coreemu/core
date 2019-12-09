@@ -156,3 +156,10 @@ class MenuAction:
     def show_about(self):
         dialog = AboutDialog(self.app, self.app)
         dialog.show()
+
+    def throughput(self):
+        throughput = self.app.core.throughput
+        if throughput:
+            self.app.core.throughput = False
+        else:
+            self.app.core.throughput = True

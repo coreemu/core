@@ -94,6 +94,7 @@ class CoreClient:
         self.service_configs = {}
         self.file_configs = {}
         self.mobility_players = {}
+        self.throughput = False
 
     def reset(self):
         # helpers
@@ -186,22 +187,11 @@ class CoreClient:
         canvas_node.move(x, y, update=False)
 
     def handle_throughputs(self, event):
-        # interface_throughputs = event.interface_throughputs
-        # # print(interface_throughputs)
-        # # return
-        # # for i in interface_throughputs:
-        # #     print("")
-        # # # return
-        # print(event)
-        # throughputs_belong_to_session = []
-        # print(self.node_ids)
-        # for throughput in interface_throughputs:
-        #     if throughput.node_id in self.node_ids:
-        #         throughputs_belong_to_session.append(throughput)
-        # print(throughputs_belong_to_session)
-        self.app.canvas.throughput_draw.process_grpc_throughput_event(
-            event.interface_throughputs
-        )
+        # print(event.interface_throughputs)
+        if self.throughput:
+            self.app.canvas.throughput_draw.process_grpc_throughput_event(
+                event.interface_throughputs
+            )
 
     def join_session(self, session_id, query_location=True):
         # update session and title
@@ -296,6 +286,7 @@ class CoreClient:
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
+            self.app.toolbar.select_button.invoke()
         self.app.statusbar.progress_bar.stop()
 
     def is_runtime(self):
@@ -432,14 +423,6 @@ class CoreClient:
         )
         process_time = time.perf_counter() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
-        # # print(self.client.get_node_service(self.session_id, 1, "DefaultRoute"))
-        # # print(self.client.set_service_defaults(self.session_id, {"router": ["DefaultRouter"]}))
-        # print(self.client.set_node_service(self.session_id, 1, "DefaultRoute", ["echo hello"], [], []))
-        #
-        # # print(self.client.get_service_defaults(self.session_id))
-        #
-        # # print(self.client.get_node_service(self.session_id, 1, "DefaultRoute"))
-        # # print(self.client.get_node_service_file(self.session_id, 1, "DefaultRoute", "defaultroute.sh"))
         self.app.statusbar.start_session_callback(process_time)
 
         # display mobility players
