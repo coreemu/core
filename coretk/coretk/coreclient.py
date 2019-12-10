@@ -282,11 +282,7 @@ class CoreClient:
             self.app.toolbar.click_runtime_selection()
         else:
             self.app.toolbar.design_frame.tkraise()
-            # <<<<<<< HEAD
-            #             self.app.toolbar.select_button.invoke()
-            # =======
             self.app.toolbar.click_selection()
-        # >>>>>>> coretk
         self.app.statusbar.progress_bar.stop()
 
     def is_runtime(self):
