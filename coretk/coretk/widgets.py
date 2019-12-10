@@ -5,7 +5,6 @@ from tkinter import filedialog, font, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
-from coretk import validation
 
 INT_TYPES = {
     core_pb2.ConfigOptionType.UINT8,
@@ -75,8 +74,6 @@ class ConfigFrame(FrameScroll):
         padx = 2
         pady = 2
         group_mapping = {}
-        vcmd_int = self.app.master.register(validation.check_positive_int)
-        vcmd_float = self.app.master.register(validation.check_positive_float)
         for key in self.config:
             option = self.config[key]
             group = group_mapping.setdefault(option.group, [])
@@ -128,8 +125,9 @@ class ConfigFrame(FrameScroll):
                         frame,
                         textvariable=value,
                         validate="key",
-                        validatecommand=(vcmd_int, "%P"),
+                        validatecommand=(self.app.validation.positive_int, "%P"),
                     )
+                    entry.bind("<FocusOut>", self.app.validation.focus_out)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
@@ -137,8 +135,9 @@ class ConfigFrame(FrameScroll):
                         frame,
                         textvariable=value,
                         validate="key",
-                        validatecommand=(vcmd_float, "%P"),
+                        validatecommand=(self.app.validation.positive_float, "%P"),
                     )
+                    entry.bind("<FocusOut>", self.app.validation.focus_out)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
                     logging.error("unhandled config option type: %s", option.type)

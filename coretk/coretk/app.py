@@ -12,6 +12,7 @@ from coretk.menubar import Menubar
 from coretk.nodeutils import NodeUtils
 from coretk.statusbar import StatusBar
 from coretk.toolbar import Toolbar
+from coretk.validation import InputValidation
 
 
 class Application(tk.Frame):
@@ -25,6 +26,7 @@ class Application(tk.Frame):
         self.toolbar = None
         self.canvas = None
         self.statusbar = None
+        self.validation = None
 
         # setup
         self.guiconfig = appconfig.read()
@@ -48,6 +50,7 @@ class Application(tk.Frame):
         image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
+        self.validation = InputValidation(self)
 
     def center(self):
         width = 1000

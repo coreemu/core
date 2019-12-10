@@ -3,7 +3,6 @@ import tkinter as tk
 from functools import partial
 from tkinter import ttk
 
-import coretk.validation as validation
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeService
@@ -70,10 +69,13 @@ class NodeConfigDialog(Dialog):
         # name field
         label = ttk.Label(frame, text="Name")
         label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
-        vcmd = self.app.master.register(validation.check_node_name)
         entry = ttk.Entry(
-            frame, textvariable=self.name, validate="key", validatecommand=(vcmd, "%P")
+            frame,
+            textvariable=self.name,
+            validate="key",
+            validatecommand=(self.app.validation.name, "%P"),
         )
+        entry.bind("<FocusOut>", self.app.validation.name_focus_out)
         entry.grid(row=row, column=1, sticky="ew")
         row += 1
 
