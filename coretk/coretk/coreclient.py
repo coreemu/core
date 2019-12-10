@@ -6,6 +6,9 @@ import logging
 import os
 import time
 from pathlib import Path
+from tkinter import messagebox
+
+import grpc
 
 from core.api.grpc import client, core_pb2
 from coretk import appconfig
@@ -386,28 +389,35 @@ class CoreClient:
 
         :return: existing sessions
         """
-        self.client.connect()
+        try:
+            self.client.connect()
 
-        # get service information
-        response = self.client.get_services()
-        for service in response.services:
-            group_services = self.services.setdefault(service.group, set())
-            group_services.add(service.name)
+            # get service information
+            response = self.client.get_services()
+            for service in response.services:
+                group_services = self.services.setdefault(service.group, set())
+                group_services.add(service.name)
 
-        # if there are no sessions, create a new session, else join a session
-        response = self.client.get_sessions()
-        logging.info("current sessions: %s", response)
-        sessions = response.sessions
-        if len(sessions) == 0:
-            self.create_new_session()
-        else:
-            dialog = SessionsDialog(self.app, self.app)
-            dialog.show()
+            # if there are no sessions, create a new session, else join a session
+            response = self.client.get_sessions()
+            logging.info("current sessions: %s", response)
+            sessions = response.sessions
+            if len(sessions) == 0:
+                self.create_new_session()
+            else:
+                dialog = SessionsDialog(self.app, self.app)
+                dialog.show()
 
-        response = self.client.get_service_defaults(self.session_id)
-        self.default_services = {
-            x.node_type: set(x.services) for x in response.defaults
-        }
+            response = self.client.get_service_defaults(self.session_id)
+            self.default_services = {
+                x.node_type: set(x.services) for x in response.defaults
+            }
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.UNAVAILABLE:
+                messagebox.showerror("Server Error", e.details())
+            else:
+                messagebox.showerror("GRPC Error", e.details())
+            self.app.close()
 
     def get_session_state(self):
         response = self.client.get_session(self.session_id)
