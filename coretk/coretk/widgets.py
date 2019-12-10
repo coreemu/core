@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from functools import partial
-from tkinter import font, ttk
+from tkinter import filedialog, font, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
@@ -18,6 +18,12 @@ INT_TYPES = {
     core_pb2.ConfigOptionType.INT64,
 }
 PAD = 5
+
+
+def file_button_click(value):
+    file_path = filedialog.askopenfilename(title="Select File")
+    if file_path:
+        value.set(file_path)
 
 
 class FrameScroll(ttk.LabelFrame):
@@ -104,8 +110,18 @@ class ConfigFrame(FrameScroll):
                     combobox.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.STRING:
                     value.set(option.value)
-                    entry = ttk.Entry(frame, textvariable=value)
-                    entry.grid(row=index, column=1, sticky="ew", pady=pady)
+                    if "file" in option.label:
+                        file_frame = ttk.Frame(frame)
+                        file_frame.grid(row=index, column=1, sticky="ew", pady=pady)
+                        file_frame.columnconfigure(0, weight=1)
+                        entry = ttk.Entry(file_frame, textvariable=value)
+                        entry.grid(row=0, column=0, sticky="ew", padx=padx)
+                        func = partial(file_button_click, value)
+                        button = ttk.Button(file_frame, text="...", command=func)
+                        button.grid(row=0, column=1)
+                    else:
+                        entry = ttk.Entry(frame, textvariable=value)
+                        entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     entry = ttk.Entry(
@@ -193,3 +209,11 @@ class CodeText(ScrolledText):
             relief=tk.FLAT,
             **kwargs
         )
+
+
+class Spinbox(ttk.Entry):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, "ttk::spinbox", **kwargs)
+
+    def set(self, value):
+        self.tk.call(self._w, "set", value)

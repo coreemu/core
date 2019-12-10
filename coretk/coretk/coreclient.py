@@ -6,28 +6,19 @@ import logging
 import os
 import time
 from pathlib import Path
+from tkinter import messagebox
+
+import grpc
 
 from core.api.grpc import client, core_pb2
 from coretk import appconfig
 from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
+from coretk.graph import tags
 from coretk.graph.shape import AnnotationData, Shape
 from coretk.graph.shapeutils import ShapeType
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
-
-LIFT_ORDER = [
-    "wallpaper",
-    "shape",
-    "gridline",
-    "shapetext",
-    "text",
-    "edge",
-    "antenna",
-    "nodename",
-    "linkinfo",
-    "node",
-]
 
 OBSERVERS = {
     "processes": "ps",
@@ -285,11 +276,17 @@ class CoreClient:
         response = self.client.get_session_metadata(self.session_id)
         self.parse_metadata(response.config)
 
+        # update ui to represent current state
         if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
+            self.app.toolbar.click_runtime_selection()
         else:
             self.app.toolbar.design_frame.tkraise()
-            self.app.toolbar.select_button.invoke()
+            # <<<<<<< HEAD
+            #             self.app.toolbar.select_button.invoke()
+            # =======
+            self.app.toolbar.click_selection()
+        # >>>>>>> coretk
         self.app.statusbar.progress_bar.stop()
 
     def is_runtime(self):
@@ -301,12 +298,26 @@ class CoreClient:
         logging.info("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-            wallpaper_style = canvas_config["wallpaper-style"]
+
+            gridlines = canvas_config.get("gridlines", True)
+            self.app.canvas.show_grid.set(gridlines)
+
+            fit_image = canvas_config.get("fit_image", False)
+            self.app.canvas.adjust_to_dim.set(fit_image)
+
+            wallpaper_style = canvas_config.get("wallpaper-style", 1)
             self.app.canvas.scale_option.set(wallpaper_style)
-            wallpaper = canvas_config["wallpaper"]
+
+            width = self.app.guiconfig["preferences"]["width"]
+            height = self.app.guiconfig["preferences"]["height"]
+            width, height = canvas_config.get("dimensions", [width, height])
+            self.app.canvas.redraw_canvas(width, height)
+
+            wallpaper = canvas_config.get("wallpaper")
             if wallpaper:
                 wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
                 self.app.canvas.set_wallpaper(wallpaper)
+            self.app.canvas.update_grid()
 
         # load saved shapes
         shapes_config = config.get("shapes")
@@ -337,7 +348,7 @@ class CoreClient:
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
 
-        for tag in LIFT_ORDER:
+        for tag in tags.ABOVE_WALLPAPER_TAGS:
             self.app.canvas.tag_raise(tag)
 
     def create_new_session(self):
@@ -372,28 +383,36 @@ class CoreClient:
 
         :return: existing sessions
         """
-        self.client.connect()
+        try:
+            self.client.connect()
 
-        # get service information
-        response = self.client.get_services()
-        for service in response.services:
-            group_services = self.services.setdefault(service.group, set())
-            group_services.add(service.name)
+            # get service information
+            response = self.client.get_services()
+            for service in response.services:
+                group_services = self.services.setdefault(service.group, set())
+                group_services.add(service.name)
 
-        # if there are no sessions, create a new session, else join a session
-        response = self.client.get_sessions()
-        logging.info("current sessions: %s", response)
-        sessions = response.sessions
-        if len(sessions) == 0:
-            self.create_new_session()
-        else:
-            dialog = SessionsDialog(self.app, self.app)
-            dialog.show()
+            # if there are no sessions, create a new session, else join a session
+            response = self.client.get_sessions()
+            logging.info("current sessions: %s", response)
+            sessions = response.sessions
+            if len(sessions) == 0:
+                self.create_new_session()
+            else:
+                dialog = SessionsDialog(self.app, self.app)
+                dialog.show()
 
-        response = self.client.get_service_defaults(self.session_id)
-        self.default_services = {
-            x.node_type: set(x.services) for x in response.defaults
-        }
+            response = self.client.get_service_defaults(self.session_id)
+            self.default_services = {
+                x.node_type: set(x.services) for x in response.defaults
+            }
+        except grpc.RpcError as e:
+            if e.code() == grpc.StatusCode.UNAVAILABLE:
+
+                messagebox.showerror("Server Error", "CORE Daemon Unavailable")
+            else:
+                messagebox.showerror("GRPC Error", e.details())
+            self.app.close()
 
     def get_session_state(self):
         response = self.client.get_session(self.session_id)
@@ -460,6 +479,9 @@ class CoreClient:
         canvas_config = {
             "wallpaper": Path(self.app.canvas.wallpaper_file).name,
             "wallpaper-style": self.app.canvas.scale_option.get(),
+            "gridlines": self.app.canvas.show_grid.get(),
+            "fit_image": self.app.canvas.adjust_to_dim.get(),
+            "dimensions": self.app.canvas.width_and_height(),
         }
         canvas_config = json.dumps(canvas_config)
 

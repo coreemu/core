@@ -88,6 +88,14 @@ def load(style):
                 },
                 "map": {"fieldbackground": [("disabled", Colors.frame)]},
             },
+            "TSpinbox": {
+                "configure": {
+                    "fieldbackground": Colors.white,
+                    "foreground": Colors.black,
+                    "padding": (2, 0),
+                },
+                "map": {"fieldbackground": [("disabled", Colors.frame)]},
+            },
             "TCombobox": {
                 "configure": {
                     "fieldbackground": Colors.white,

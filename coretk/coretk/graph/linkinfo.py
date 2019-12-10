@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import font
 
 from core.api.grpc import core_pb2
+from coretk.graph import tags
 
 TEXT_DISTANCE = 0.30
 
@@ -52,10 +53,20 @@ class LinkInfo:
                 f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
             )
         self.id1 = self.canvas.create_text(
-            x1, y1, text=label_one, justify=tk.CENTER, font=self.font, tags="linkinfo"
+            x1,
+            y1,
+            text=label_one,
+            justify=tk.CENTER,
+            font=self.font,
+            tags=tags.LINK_INFO,
         )
         self.id2 = self.canvas.create_text(
-            x2, y2, text=label_two, justify=tk.CENTER, font=self.font, tags="linkinfo"
+            x2,
+            y2,
+            text=label_two,
+            justify=tk.CENTER,
+            font=self.font,
+            tags=tags.LINK_INFO,
         )
 
     def recalculate_info(self):

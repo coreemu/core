@@ -196,7 +196,7 @@ class SizeAndScaleDialog(Dialog):
 
     def click_apply(self):
         width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.canvas.redraw_grid(width, height)
+        self.canvas.redraw_canvas(width, height)
         if self.canvas.wallpaper:
             self.canvas.redraw()
         location = self.app.core.location

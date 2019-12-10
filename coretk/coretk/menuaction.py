@@ -109,7 +109,6 @@ class MenuAction:
             self.app.statusbar.progress_bar.start(5)
             thread = threading.Thread(target=self.app.core.open_xml, args=([file_path]))
             thread.start()
-            # self.app.core.open_xml(file_path)
 
     def gui_preferences(self):
         dialog = PreferencesDialog(self.app, self.app)

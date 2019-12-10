@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from coretk.graph import tags
 from coretk.nodeutils import NodeUtils
 
 
@@ -10,7 +11,7 @@ class CanvasWirelessEdge:
         self.dst = dst
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            *position, tags="wireless", width=1.5, fill="#009933"
+            *position, tags=tags.WIRELESS_EDGE, width=1.5, fill="#009933"
         )
 
     def delete(self):
@@ -40,7 +41,7 @@ class CanvasEdge:
         self.dst_interface = None
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            x1, y1, x2, y2, tags="edge", width=self.width, fill="#ff0000"
+            x1, y1, x2, y2, tags=tags.EDGE, width=self.width, fill="#ff0000"
         )
         self.token = None
         self.link_info = None

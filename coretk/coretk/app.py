@@ -98,6 +98,9 @@ class Application(tk.Frame):
     def save_config(self):
         appconfig.save(self.guiconfig)
 
+    def close(self):
+        self.master.destroy()
+
 
 if __name__ == "__main__":
     log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"

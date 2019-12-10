@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.shapemod import ShapeDialog
+from coretk.graph import tags
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
 from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
@@ -13,20 +14,6 @@ from coretk.graph.shape import Shape
 from coretk.graph.shapeutils import is_draw_shape
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
-
-ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
-CANVAS_COMPONENT_TAGS = [
-    "edge",
-    "node",
-    "nodename",
-    "wallpaper",
-    "linkinfo",
-    "antenna",
-    "wireless",
-    "selectednodes",
-    "shape",
-    "shapetext",
-]
 
 
 class CanvasGraph(tk.Canvas):
@@ -49,10 +36,11 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge = None
         self.grid = None
         self.setup_bindings()
-        self.draw_grid(width, height)
         self.core = core
         self.throughput_draw = Throughput(self, core)
         self.shape_drawing = False
+        self.default_width = width
+        self.default_height = height
 
         # background related
         self.wallpaper_id = None
@@ -63,6 +51,22 @@ class CanvasGraph(tk.Canvas):
         self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
 
+        # draw base canvas
+        self.draw_canvas()
+        self.draw_grid()
+
+    def draw_canvas(self):
+        self.grid = self.create_rectangle(
+            0,
+            0,
+            self.default_width,
+            self.default_height,
+            outline="#000000",
+            fill="#ffffff",
+            width=1,
+            tags="rectangle",
+        )
+
     def reset_and_redraw(self, session):
         """
         Reset the private variables CanvasGraph object, redraw nodes given the new grpc
@@ -72,7 +76,7 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         # delete any existing drawn items
-        for tag in CANVAS_COMPONENT_TAGS:
+        for tag in tags.COMPONENT_TAGS:
             self.delete(tag)
 
         # set the private variables to default value
@@ -101,7 +105,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
 
-    def draw_grid(self, width=1000, height=800):
+    def draw_grid(self):
         """
         Create grid
 
@@ -110,21 +114,14 @@ class CanvasGraph(tk.Canvas):
 
         :return: nothing
         """
-        self.grid = self.create_rectangle(
-            0,
-            0,
-            width,
-            height,
-            outline="#000000",
-            fill="#ffffff",
-            width=1,
-            tags="rectangle",
-        )
+        width, height = self.width_and_height()
+        width = int(width)
+        height = int(height)
         for i in range(0, width, 27):
-            self.create_line(i, 0, i, height, dash=(2, 4), tags="gridline")
+            self.create_line(i, 0, i, height, dash=(2, 4), tags=tags.GRIDLINE)
         for i in range(0, height, 27):
-            self.create_line(0, i, width, i, dash=(2, 4), tags="gridline")
-        self.tag_lower("gridline")
+            self.create_line(0, i, width, i, dash=(2, 4), tags=tags.GRIDLINE)
+        self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.grid)
 
     def add_wireless_edge(self, src, dst):
@@ -195,7 +192,7 @@ class CanvasGraph(tk.Canvas):
                     canvas_node_two.interfaces.append(link.interface_two)
 
         # raise the nodes so they on top of the links
-        self.tag_raise("node")
+        self.tag_raise(tags.NODE)
 
     def canvas_xy(self, event):
         """
@@ -317,7 +314,7 @@ class CanvasGraph(tk.Canvas):
                 (x0 - 6, y0 - 6, x1 + 6, y1 + 6),
                 activedash=True,
                 dash="-",
-                tags="selectednodes",
+                tags=tags.SELECTION,
             )
             self.selection[object_id] = selection_id
         else:
@@ -534,7 +531,7 @@ class CanvasGraph(tk.Canvas):
         self.delete(self.wallpaper_id)
         # place left corner of image to the left corner of the canvas
         self.wallpaper_id = self.create_image(
-            (cropx / 2, cropy / 2), image=cropped_tk, tags="wallpaper"
+            (cropx / 2, cropy / 2), image=cropped_tk, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = cropped_tk
 
@@ -562,7 +559,7 @@ class CanvasGraph(tk.Canvas):
         # place the center of the image at the center of the canvas
         self.delete(self.wallpaper_id)
         self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags="wallpaper"
+            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = cropped_tk
 
@@ -576,7 +573,7 @@ class CanvasGraph(tk.Canvas):
         image = Images.create(self.wallpaper_file, int(canvas_w), int(canvas_h))
         self.delete(self.wallpaper_id)
         self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=image, tags="wallpaper"
+            (canvas_w / 2, canvas_h / 2), image=image, tags=tags.WALLPAPER
         )
         self.wallpaper_drawn = image
 
@@ -585,36 +582,31 @@ class CanvasGraph(tk.Canvas):
         img_w = image_tk.width()
         img_h = image_tk.height()
         self.delete(self.wallpaper_id)
-        self.delete("rectangle")
-        self.delete("gridline")
-        self.draw_grid(img_w, img_h)
+        self.redraw_canvas(img_w, img_h)
         self.wallpaper_id = self.create_image((img_w / 2, img_h / 2), image=image_tk)
         self.wallpaper_drawn = image_tk
 
-    def redraw_grid(self, width, height):
+    def redraw_canvas(self, width, height):
         """
         redraw grid with new dimension
 
         :return: nothing
         """
+        # resize canvas and scrollregion
         self.config(scrollregion=(0, 0, width + 200, height + 200))
+        self.coords(self.grid, 0, 0, width, height)
 
-        # delete previous grid
-        self.delete("rectangle")
-        self.delete("gridline")
-
-        # redraw
-        self.draw_grid(width=width, height=height)
-
-        # hide/show grid
+        # redraw gridlines to new canvas size
+        self.delete(tags.GRIDLINE)
+        self.draw_grid()
         self.update_grid()
 
     def redraw(self):
         if self.adjust_to_dim.get():
             self.resize_to_wallpaper()
         else:
-            print(self.scale_option.get())
             option = ScaleOption(self.scale_option.get())
+            logging.info("canvas scale option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
             elif option == ScaleOption.CENTERED:
@@ -624,13 +616,16 @@ class CanvasGraph(tk.Canvas):
             elif option == ScaleOption.TILED:
                 logging.warning("tiled background not implemented yet")
 
+        # raise items above wallpaper
+        for component in tags.ABOVE_WALLPAPER_TAGS:
+            self.tag_raise(component)
+
     def update_grid(self):
         logging.info("updating grid show: %s", self.show_grid.get())
         if self.show_grid.get():
-            self.itemconfig("gridline", state=tk.NORMAL)
-            self.tag_raise("gridline")
+            self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
         else:
-            self.itemconfig("gridline", state=tk.HIDDEN)
+            self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
     def set_wallpaper(self, filename):
         logging.info("setting wallpaper: %s", filename)
@@ -639,8 +634,6 @@ class CanvasGraph(tk.Canvas):
             self.wallpaper = img
             self.wallpaper_file = filename
             self.redraw()
-            for component in ABOVE_WALLPAPER:
-                self.tag_raise(component)
         else:
             if self.wallpaper_id is not None:
                 self.delete(self.wallpaper_id)

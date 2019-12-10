@@ -7,6 +7,7 @@ from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
+from coretk.graph import tags
 from coretk.graph.enums import GraphMode
 from coretk.graph.tooltip import CanvasTooltip
 from coretk.nodeutils import NodeUtils
@@ -23,7 +24,7 @@ class CanvasNode:
         x = self.core_node.position.x
         y = self.core_node.position.y
         self.id = self.canvas.create_image(
-            x, y, anchor=tk.CENTER, image=self.image, tags="node"
+            x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
         image_box = self.canvas.bbox(self.id)
         y = image_box[3] + NODE_TEXT_OFFSET
@@ -32,7 +33,7 @@ class CanvasNode:
             x,
             y,
             text=self.core_node.name,
-            tags="nodename",
+            tags=tags.NODE_NAME,
             font=text_font,
             fill="#0000CD",
         )
@@ -62,13 +63,12 @@ class CanvasNode:
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
         offset = len(self.antennae) * 8
-
         antenna_id = self.canvas.create_image(
             x - 16 + offset,
             y - 23,
             anchor=tk.CENTER,
             image=NodeUtils.ANTENNA_ICON,
-            tags="antenna",
+            tags=tags.ANTENNA,
         )
         self.antennae.append(antenna_id)
 
