@@ -87,6 +87,7 @@ class NodeService(Dialog):
         self.current.listbox.delete(0, tk.END)
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
+        self.canvas_node.core_node.services[:] = self.current_services
 
     def click_configure(self):
         current_selection = self.current.listbox.curselection()

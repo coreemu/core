@@ -66,6 +66,7 @@ class FrameScroll(ttk.LabelFrame):
 class ConfigFrame(FrameScroll):
     def __init__(self, master, app, config, **kw):
         super().__init__(master, app, ttk.Notebook, **kw)
+        self.app = app
         self.config = config
         self.values = {}
 
@@ -120,11 +121,23 @@ class ConfigFrame(FrameScroll):
                         entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = ttk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(
+                        frame,
+                        textvariable=value,
+                        validate="key",
+                        validatecommand=(self.app.validation.positive_int, "%P"),
+                    )
+                    entry.bind("<FocusOut>", self.app.validation.focus_out)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = ttk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(
+                        frame,
+                        textvariable=value,
+                        validate="key",
+                        validatecommand=(self.app.validation.positive_float, "%P"),
+                    )
+                    entry.bind("<FocusOut>", self.app.validation.focus_out)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
                     logging.error("unhandled config option type: %s", option.type)

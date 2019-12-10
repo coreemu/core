@@ -69,7 +69,13 @@ class NodeConfigDialog(Dialog):
         # name field
         label = ttk.Label(frame, text="Name")
         label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
-        entry = ttk.Entry(frame, textvariable=self.name)
+        entry = ttk.Entry(
+            frame,
+            textvariable=self.name,
+            validate="key",
+            validatecommand=(self.app.validation.name, "%P"),
+        )
+        entry.bind("<FocusOut>", self.app.validation.name_focus_out)
         entry.grid(row=row, column=1, sticky="ew")
         row += 1
 
@@ -206,5 +212,4 @@ class NodeConfigDialog(Dialog):
 
         # redraw
         self.canvas_node.redraw()
-
         self.destroy()

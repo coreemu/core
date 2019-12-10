@@ -86,6 +86,7 @@ class CoreClient:
         self.service_configs = {}
         self.file_configs = {}
         self.mobility_players = {}
+        self.throughput = False
 
     def reset(self):
         # helpers
@@ -180,22 +181,11 @@ class CoreClient:
         canvas_node.move(x, y)
 
     def handle_throughputs(self, event):
-        # interface_throughputs = event.interface_throughputs
-        # # print(interface_throughputs)
-        # # return
-        # # for i in interface_throughputs:
-        # #     print("")
-        # # # return
-        # print(event)
-        # throughputs_belong_to_session = []
-        # print(self.node_ids)
-        # for throughput in interface_throughputs:
-        #     if throughput.node_id in self.node_ids:
-        #         throughputs_belong_to_session.append(throughput)
-        # print(throughputs_belong_to_session)
-        self.app.canvas.throughput_draw.process_grpc_throughput_event(
-            event.interface_throughputs
-        )
+        # print(event.interface_throughputs)
+        if self.throughput:
+            self.app.canvas.throughput_draw.process_grpc_throughput_event(
+                event.interface_throughputs
+            )
 
     def join_session(self, session_id, query_location=True):
         # update session and title
@@ -595,8 +585,11 @@ class CoreClient:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
             )
+
+        # temp
+        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
-            if node_proto.id not in self.created_nodes:
+            if node_proto.id not in self.created_nodes or True:
                 response = self.client.add_node(self.session_id, node_proto)
                 logging.debug("create node: %s", response)
                 self.created_nodes.add(node_proto.id)
@@ -604,6 +597,7 @@ class CoreClient:
             if (
                 tuple([link_proto.node_one_id, link_proto.node_two_id])
                 not in self.created_links
+                or True
             ):
                 response = self.client.add_link(
                     self.session_id,
