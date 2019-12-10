@@ -4,6 +4,7 @@ size and scale
 import tkinter as tk
 from tkinter import font, ttk
 
+from coretk import validation
 from coretk.dialogs.dialog import Dialog
 
 PAD = 5
@@ -37,6 +38,12 @@ class SizeAndScaleDialog(Dialog):
         self.meters_width = tk.IntVar(value=width / PIXEL_SCALE * location.scale)
         self.meters_height = tk.IntVar(value=height / PIXEL_SCALE * location.scale)
         self.save_default = tk.BooleanVar(value=False)
+        self.vcmd_canvas_int = validation.validate_command(
+            app.master, validation.check_canvas_int
+        )
+        self.vcmd_canvas_float = validation.validate_command(
+            app.master, validation.check_canvas_float
+        )
         self.draw()
 
     def draw(self):
@@ -46,6 +53,11 @@ class SizeAndScaleDialog(Dialog):
         self.draw_reference_point()
         self.draw_save_as_default()
         self.draw_buttons()
+
+    def focus_out(self, event):
+        value = event.widget.get()
+        if value == "":
+            event.widget.insert(tk.END, 0)
 
     def draw_size(self):
         label_frame = ttk.Labelframe(self.top, text="Size", padding=PAD)
@@ -59,11 +71,22 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
         label.grid(row=0, column=0, sticky="w", padx=PAD)
-        entry = ttk.Entry(frame, textvariable=self.pixel_width)
+        entry = ttk.Entry(
+            frame,
+            textvariable=self.pixel_width,
+            validate="key",
+            validatecommand=(self.vcmd_canvas_int, "%P"),
+        )
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
+        entry.bind("<FocusOut>", self.focus_out)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PAD)
-        entry = ttk.Entry(frame, textvariable=self.pixel_height)
+        entry = ttk.Entry(
+            frame,
+            textvariable=self.pixel_height,
+            validate="key",
+            validatecommand=(self.vcmd_canvas_int, "%P"),
+        )
         entry.grid(row=0, column=3, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
@@ -94,7 +117,12 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text=f"{PIXEL_SCALE} Pixels =")
         label.grid(row=0, column=0, sticky="w", padx=PAD)
-        entry = ttk.Entry(frame, textvariable=self.scale)
+        entry = ttk.Entry(
+            frame,
+            textvariable=self.scale,
+            validate="key",
+            validatecommand=(self.vcmd_canvas_float, "%P"),
+        )
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")

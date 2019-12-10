@@ -5,6 +5,7 @@ from tkinter import font, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
+from coretk import validation
 
 INT_TYPES = {
     core_pb2.ConfigOptionType.UINT8,
@@ -60,6 +61,7 @@ class FrameScroll(ttk.LabelFrame):
 class ConfigFrame(FrameScroll):
     def __init__(self, master, app, config, **kw):
         super().__init__(master, app, ttk.Notebook, **kw)
+        self.app = app
         self.config = config
         self.values = {}
 
@@ -67,6 +69,8 @@ class ConfigFrame(FrameScroll):
         padx = 2
         pady = 2
         group_mapping = {}
+        vcmd_int = self.app.master.register(validation.check_positive_int)
+        vcmd_float = self.app.master.register(validation.check_positive_float)
         for key in self.config:
             option = self.config[key]
             group = group_mapping.setdefault(option.group, [])
@@ -104,11 +108,21 @@ class ConfigFrame(FrameScroll):
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = ttk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(
+                        frame,
+                        textvariable=value,
+                        validate="key",
+                        validatecommand=(vcmd_int, "%P"),
+                    )
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = ttk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(
+                        frame,
+                        textvariable=value,
+                        validate="key",
+                        validatecommand=(vcmd_float, "%P"),
+                    )
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
                     logging.error("unhandled config option type: %s", option.type)
