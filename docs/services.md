@@ -195,30 +195,39 @@ In order to be able to do use the Bird Internet Routing Protocol, you must modif
 ### FRRouting
 FRRouting is a routing software package that provides TCP/IP based routing services with routing protocols support such as BGP, RIP, OSPF, IS-IS and more. FRR also supports special BGP Route Reflector and Route Server behavior. In addition to traditional IPv4 routing protocols, FRR also supports IPv6 routing protocols. With an SNMP daemon that supports the AgentX protocol, FRR provides routing protocol MIB read-only access (SNMP Support).
 
-FRR currently supports the following protocols:
-* BGP
+FRR (as of v7.2) currently supports the following protocols:
+* BGPv4
 * OSPFv2
 * OSPFv3
-* RIPv1
-* RIPv2
-* RIPng
+* RIPv1/v2/ng
 * IS-IS
-* PIM-SM/MSDP
+* PIM-SM/MSDP/BSM(AutoRP)
 * LDP
 * BFD
 * Babel
 * PBR
 * OpenFabric
+* VRRPv2/v3
 * EIGRP (alpha)
 * NHRP (alpha)
 
 #### FRRouting Package Install
+Ubuntu 19.10 and later
+```shell
+sudo apt update && sudo apt install frr
+```
+
+Ubuntu 16.04 and Ubuntu 18.04
 ```shell
 sudo apt install curl
 curl -s https://deb.frrouting.org/frr/keys.asc | sudo apt-key add -
 FRRVER="frr-stable"
 echo deb https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
 sudo apt update && sudo apt install frr frr-pythontools
+```
+Fedora 31
+```shell
+sudo dnf update && sudo dnf install frr
 ```
 
 #### FRRouting Source Code Install

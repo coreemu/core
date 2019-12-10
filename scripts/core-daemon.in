@@ -35,7 +35,7 @@ corestart() {
 		echo "$NAME already started"
 	else
 		echo "starting $NAME"
-		sudo $CMD 2>&1 >> "$LOG" &
+		$CMD 2>&1 >> "$LOG" &
 	fi
 
 	echo $! > "$PIDFILE"
