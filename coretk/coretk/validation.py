@@ -4,6 +4,9 @@ input validation
 import logging
 import tkinter as tk
 
+import netaddr
+from netaddr import IPNetwork
+
 
 class InputValidation:
     def __init__(self, app):
@@ -18,16 +21,18 @@ class InputValidation:
         self.positive_float = self.master.register(self.check_positive_float)
         self.name = self.master.register(self.check_node_name)
 
-    def focus_out(self, event):
+    def ip_focus_out(self, event):
         value = event.widget.get()
-        if value == "":
-            event.widget.insert(tk.END, 0)
+        try:
+            IPNetwork(value)
+        except netaddr.core.AddrFormatError:
+            event.widget.delete(0, tk.END)
+            event.widget.insert(tk.END, "invalid")
 
-    def name_focus_out(self, event):
-        logging.debug("name focus out")
+    def focus_out(self, event, default):
         value = event.widget.get()
         if value == "":
-            event.widget.insert(tk.END, "empty")
+            event.widget.insert(tk.END, default)
 
     def check_positive_int(self, s):
         logging.debug("int validation...")

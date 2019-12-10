@@ -127,7 +127,10 @@ class ConfigFrame(FrameScroll):
                         validate="key",
                         validatecommand=(self.app.validation.positive_int, "%P"),
                     )
-                    entry.bind("<FocusOut>", self.app.validation.focus_out)
+                    entry.bind(
+                        "<FocusOut>",
+                        lambda event: self.app.validation.focus_out(event, "0"),
+                    )
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
@@ -137,7 +140,10 @@ class ConfigFrame(FrameScroll):
                         validate="key",
                         validatecommand=(self.app.validation.positive_float, "%P"),
                     )
-                    entry.bind("<FocusOut>", self.app.validation.focus_out)
+                    entry.bind(
+                        "<FocusOut>",
+                        lambda event: self.app.validation.focus_out(event, "0"),
+                    )
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
                     logging.error("unhandled config option type: %s", option.type)

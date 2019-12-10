@@ -75,7 +75,9 @@ class NodeConfigDialog(Dialog):
             validate="key",
             validatecommand=(self.app.validation.name, "%P"),
         )
-        entry.bind("<FocusOut>", self.app.validation.name_focus_out)
+        entry.bind(
+            "<FocusOut>", lambda event: self.app.validation.focus_out(event, "noname")
+        )
         entry.grid(row=row, column=1, sticky="ew")
         row += 1
 
@@ -165,12 +167,14 @@ class NodeConfigDialog(Dialog):
             label.grid(row=1, column=0, padx=PAD, pady=PAD)
             ip4 = tk.StringVar(value=f"{interface.ip4}/{interface.ip4mask}")
             entry = ttk.Entry(frame, textvariable=ip4)
+            entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
             entry.grid(row=1, column=1, columnspan=2, sticky="ew")
 
             label = ttk.Label(frame, text="IPv6")
             label.grid(row=2, column=0, padx=PAD, pady=PAD)
             ip6 = tk.StringVar(value=f"{interface.ip6}/{interface.ip6mask}")
             entry = ttk.Entry(frame, textvariable=ip6)
+            entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
             entry.grid(row=2, column=1, columnspan=2, sticky="ew")
 
             self.interfaces[interface.id] = InterfaceData(is_auto, mac, ip4, ip6)

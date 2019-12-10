@@ -8,6 +8,7 @@ from core.api.grpc.core_pb2 import NodeType
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
+from coretk.dialogs.nodeservice import NodeService
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 from coretk.errors import show_grpc_error
 from coretk.graph import tags
@@ -217,7 +218,7 @@ class CanvasNode:
         else:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
-                context.add_command(label="Services", state=tk.DISABLED)
+                context.add_command(label="Services", command=self.show_services)
             if is_emane:
                 context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -267,4 +268,9 @@ class CanvasNode:
     def show_emane_config(self):
         self.canvas.context = None
         dialog = EmaneConfigDialog(self.app, self.app, self)
+        dialog.show()
+
+    def show_services(self):
+        self.canvas.context = None
+        dialog = NodeService(self.app.master, self.app, self)
         dialog.show()
