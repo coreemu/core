@@ -3,8 +3,11 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+import grpc
+
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
 from coretk.widgets import CodeText, ListboxScroll
 
@@ -47,44 +50,48 @@ class ServiceConfiguration(Dialog):
         self.draw()
 
     def load(self):
-        # create nodes and links in definition state for getting and setting service file
-        self.app.core.create_nodes_and_links()
-
-        service_configs = self.app.core.service_configs
-        if (
-            self.node_id in service_configs
-            and self.service_name in service_configs[self.node_id]
-        ):
-            service_config = self.app.core.service_configs[self.node_id][
-                self.service_name
-            ]
-        else:
-            service_config = self.app.core.get_node_service(
-                self.node_id, self.service_name
-            )
-        self.dependencies = [x for x in service_config.dependencies]
-        self.executables = [x for x in service_config.executables]
-        self.metadata = service_config.meta
-        self.filenames = [x for x in service_config.configs]
-        self.startup_commands = [x for x in service_config.startup]
-        self.validation_commands = [x for x in service_config.validate]
-        self.shutdown_commands = [x for x in service_config.shutdown]
-        self.validation_mode = service_config.validation_mode
-        self.validation_time = service_config.validation_timer
-        self.original_service_files = {
-            x: self.app.core.get_node_service_file(self.node_id, self.service_name, x)
-            for x in self.filenames
-        }
-        self.temp_service_files = {
-            x: self.original_service_files[x] for x in self.original_service_files
-        }
-        file_configs = self.app.core.file_configs
-        if (
-            self.node_id in file_configs
-            and self.service_name in file_configs[self.node_id]
-        ):
-            for file, data in file_configs[self.node_id][self.service_name].items():
-                self.temp_service_files[file] = data
+        try:
+            # create nodes and links in definition state for getting and setting service file
+            self.app.core.create_nodes_and_links()
+            service_configs = self.app.core.service_configs
+            if (
+                self.node_id in service_configs
+                and self.service_name in service_configs[self.node_id]
+            ):
+                service_config = self.app.core.service_configs[self.node_id][
+                    self.service_name
+                ]
+            else:
+                service_config = self.app.core.get_node_service(
+                    self.node_id, self.service_name
+                )
+            self.dependencies = [x for x in service_config.dependencies]
+            self.executables = [x for x in service_config.executables]
+            self.metadata = service_config.meta
+            self.filenames = [x for x in service_config.configs]
+            self.startup_commands = [x for x in service_config.startup]
+            self.validation_commands = [x for x in service_config.validate]
+            self.shutdown_commands = [x for x in service_config.shutdown]
+            self.validation_mode = service_config.validation_mode
+            self.validation_time = service_config.validation_timer
+            self.original_service_files = {
+                x: self.app.core.get_node_service_file(
+                    self.node_id, self.service_name, x
+                )
+                for x in self.filenames
+            }
+            self.temp_service_files = {
+                x: self.original_service_files[x] for x in self.original_service_files
+            }
+            file_configs = self.app.core.file_configs
+            if (
+                self.node_id in file_configs
+                and self.service_name in file_configs[self.node_id]
+            ):
+                for file, data in file_configs[self.node_id][self.service_name].items():
+                    self.temp_service_files[file] = data
+        except grpc.RpcError as e:
+            show_grpc_error(e)
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
@@ -366,30 +373,33 @@ class ServiceConfiguration(Dialog):
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
-        config = self.core.set_node_service(
-            self.node_id,
-            self.service_name,
-            startup_commands,
-            validate_commands,
-            shutdown_commands,
-        )
-        if self.node_id not in service_configs:
-            service_configs[self.node_id] = {}
-        if self.service_name not in service_configs[self.node_id]:
-            self.app.core.service_configs[self.node_id][self.service_name] = config
-        for file in self.modified_files:
-            file_configs = self.app.core.file_configs
-            if self.node_id not in file_configs:
-                file_configs[self.node_id] = {}
-            if self.service_name not in file_configs[self.node_id]:
-                file_configs[self.node_id][self.service_name] = {}
-            file_configs[self.node_id][self.service_name][
-                file
-            ] = self.temp_service_files[file]
-
-            self.app.core.set_node_service_file(
-                self.node_id, self.service_name, file, self.temp_service_files[file]
+        try:
+            config = self.core.set_node_service(
+                self.node_id,
+                self.service_name,
+                startup_commands,
+                validate_commands,
+                shutdown_commands,
             )
+            if self.node_id not in service_configs:
+                service_configs[self.node_id] = {}
+            if self.service_name not in service_configs[self.node_id]:
+                self.app.core.service_configs[self.node_id][self.service_name] = config
+            for file in self.modified_files:
+                file_configs = self.app.core.file_configs
+                if self.node_id not in file_configs:
+                    file_configs[self.node_id] = {}
+                if self.service_name not in file_configs[self.node_id]:
+                    file_configs[self.node_id][self.service_name] = {}
+                file_configs[self.node_id][self.service_name][
+                    file
+                ] = self.temp_service_files[file]
+
+                self.app.core.set_node_service_file(
+                    self.node_id, self.service_name, file, self.temp_service_files[file]
+                )
+        except grpc.RpcError as e:
+            show_grpc_error(e)
         self.destroy()
 
     def display_service_file_data(self, event):

@@ -10,7 +10,6 @@ from tkinter import filedialog, messagebox
 
 import grpc
 
-from core.api.grpc import core_pb2
 from coretk.appconfig import XML_PATH
 from coretk.dialogs.about import AboutDialog
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
@@ -52,12 +51,7 @@ class MenuAction:
             "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
         )
         try:
-            state = self.app.core.get_session_state()
-
-            if (
-                state == core_pb2.SessionState.SHUTDOWN
-                or state == core_pb2.SessionState.DEFINITION
-            ):
+            if not self.app.core.is_runtime():
                 self.app.core.delete_session()
                 if quitapp:
                     self.app.quit()
@@ -73,7 +67,7 @@ class MenuAction:
                 elif quitapp:
                     self.app.quit()
         except grpc.RpcError:
-            logging.error("error getting session state")
+            logging.exception("error deleting session")
             if quitapp:
                 self.app.quit()
 

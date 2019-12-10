@@ -1,7 +1,10 @@
 import logging
 from tkinter import ttk
 
+import grpc
+
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.widgets import ConfigFrame
 
 PAD_X = 2
@@ -12,17 +15,23 @@ class SessionOptionsDialog(Dialog):
     def __init__(self, master, app):
         super().__init__(master, app, "Session Options", modal=True)
         self.config_frame = None
+        self.config = self.get_config()
         self.draw()
+
+    def get_config(self):
+        try:
+            session_id = self.app.core.session_id
+            response = self.app.core.client.get_session_options(session_id)
+            return response.config
+        except grpc.RpcError as e:
+            show_grpc_error(e)
+            self.destroy()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
-        session_id = self.app.core.session_id
-        response = self.app.core.client.get_session_options(session_id)
-        logging.info("session options: %s", response)
-
-        self.config_frame = ConfigFrame(self.top, self.app, config=response.config)
+        self.config_frame = ConfigFrame(self.top, self.app, config=self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew")
 
@@ -37,7 +46,10 @@ class SessionOptionsDialog(Dialog):
 
     def save(self):
         config = self.config_frame.parse_config()
-        session_id = self.app.core.session_id
-        response = self.app.core.client.set_session_options(session_id, config)
-        logging.info("saved session config: %s", response)
+        try:
+            session_id = self.app.core.session_id
+            response = self.app.core.client.set_session_options(session_id, config)
+            logging.info("saved session config: %s", response)
+        except grpc.RpcError as e:
+            show_grpc_error(e)
         self.destroy()

@@ -3,8 +3,11 @@ import threading
 import tkinter as tk
 from tkinter import ttk
 
+import grpc
+
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
 
 
@@ -14,7 +17,17 @@ class SessionsDialog(Dialog):
         self.selected = False
         self.selected_id = None
         self.tree = None
+        self.sessions = self.get_sessions()
         self.draw()
+
+    def get_sessions(self):
+        try:
+            response = self.app.core.client.get_sessions()
+            logging.info("sessions: %s", response)
+            return response.sessions
+        except grpc.RpcError as e:
+            show_grpc_error(e)
+            self.destroy()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -48,9 +61,7 @@ class SessionsDialog(Dialog):
         self.tree.column("nodes", stretch=tk.YES)
         self.tree.heading("nodes", text="Node Count")
 
-        response = self.app.core.client.get_sessions()
-        logging.info("sessions: %s", response)
-        for index, session in enumerate(response.sessions):
+        for index, session in enumerate(self.sessions):
             state_name = core_pb2.SessionState.Enum.Name(session.state)
             self.tree.insert(
                 "",
