@@ -15,14 +15,21 @@ from coretk.graph.shapeutils import is_draw_shape
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
+SCROLL_BUFFER = 25
+ZOOM_IN = 1.1
+ZOOM_OUT = 0.9
+
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, master, core, width, height, cnf=None, **kwargs):
-        if cnf is None:
-            cnf = {}
-        kwargs["highlightthickness"] = 0
-        super().__init__(master, cnf, **kwargs)
+    def __init__(self, master, core, width, height):
+        super().__init__(
+            master,
+            highlightthickness=0,
+            background="#cccccc",
+            scrollregion=(0, 0, width + SCROLL_BUFFER, height + SCROLL_BUFFER),
+        )
         self.app = master
+        self.core = core
         self.mode = GraphMode.SELECT
         self.annotation_type = None
         self.selection = {}
@@ -35,12 +42,13 @@ class CanvasGraph(tk.Canvas):
         self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
-        self.setup_bindings()
-        self.core = core
         self.throughput_draw = Throughput(self, core)
         self.shape_drawing = False
         self.default_width = width
         self.default_height = height
+        self.ratio = 1.0
+        self.offset = (0, 0)
+        self.cursor = (0, 0)
 
         # background related
         self.wallpaper_id = None
@@ -50,6 +58,9 @@ class CanvasGraph(tk.Canvas):
         self.scale_option = tk.IntVar(value=1)
         self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
+
+        # bindings
+        self.setup_bindings()
 
         # draw base canvas
         self.draw_canvas()
@@ -99,17 +110,19 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<Button-3>", self.click_context)
+        self.bind("<ButtonRelease-3>", self.click_context)
         self.bind("<Delete>", self.press_delete)
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
+        self.bind("<MouseWheel>", self.zoom)
+        self.bind("<Button-4>", lambda e: self.zoom(e, ZOOM_IN))
+        self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
+        self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
+        self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
 
     def draw_grid(self):
         """
-        Create grid
-
-        :param int width: the width
-        :param int height: the height
+        Create grid.
 
         :return: nothing
         """
@@ -213,7 +226,8 @@ class CanvasGraph(tk.Canvas):
         :rtype: int
         :return: the item that the mouse point to
         """
-        overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
+        x, y = self.canvas_xy(event)
+        overlapping = self.find_overlapping(x, y, x, y)
         selected = None
         for _id in overlapping:
             if self.drawing_edge and self.drawing_edge.id == _id:
@@ -330,10 +344,10 @@ class CanvasGraph(tk.Canvas):
             self.delete(_id)
         self.selection.clear()
 
-    def object_drag(self, object_id, offset_x, offset_y):
+    def move_selection(self, object_id, x_offset, y_offset):
         select_id = self.selection.get(object_id)
         if select_id is not None:
-            self.move(select_id, offset_x, offset_y)
+            self.move(select_id, x_offset, y_offset)
 
     def delete_selection_objects(self):
         edges = set()
@@ -382,6 +396,20 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         return nodes
 
+    def zoom(self, event, factor=None):
+        if not factor:
+            factor = ZOOM_IN if event.delta > 0 else ZOOM_OUT
+        event.x, event.y = self.canvasx(event.x), self.canvasy(event.y)
+        self.scale("all", event.x, event.y, factor, factor)
+        self.configure(scrollregion=self.bbox("all"))
+        self.ratio *= float(factor)
+        self.offset = (
+            self.offset[0] * factor + event.x * (1 - factor),
+            self.offset[1] * factor + event.y * (1 - factor),
+        )
+        logging.info("ratio: %s", self.ratio)
+        logging.info("offset: %s", self.offset)
+
     def click_press(self, event):
         """
         Start drawing an edge if mouse click is on a node
@@ -389,40 +417,46 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
-        logging.debug(f"click press: {event}")
+        x, y = self.canvas_xy(event)
+        self.cursor = x, y
         selected = self.get_selected(event)
+        logging.debug(f"click press: %s", selected)
         is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
         if self.mode == GraphMode.ANNOTATION and selected is None:
-            x, y = self.canvas_xy(event)
             shape = Shape(self.app, self, self.annotation_type, x, y)
             self.selected = shape.id
             self.shape_drawing = True
             self.shapes[shape.id] = shape
 
-        if self.mode == GraphMode.SELECT:
-            if selected is not None:
+        if selected is not None:
+            if selected not in self.selection:
                 if selected in self.shapes:
-                    x, y = self.canvas_xy(event)
                     shape = self.shapes[selected]
-                    shape.cursor_x = x
-                    shape.cursor_y = y
-                    if selected not in self.selection:
-                        self.select_object(shape.id)
+                    self.select_object(shape.id)
                     self.selected = selected
-            else:
-                self.clear_selection()
+                elif selected in self.nodes:
+                    node = self.nodes[selected]
+                    self.select_object(node.id)
+                    self.selected = selected
+        else:
+            self.clear_selection()
 
     def ctrl_click(self, event):
+        # update cursor location
+        x, y = self.canvas_xy(event)
+        self.cursor = x, y
+
+        # handle multiple selections
         logging.debug("control left click: %s", event)
         selected = self.get_selected(event)
         if (
-            self.mode == GraphMode.SELECT
-            and selected is not None
+            selected not in self.selection
             and selected in self.shapes
+            or selected in self.nodes
         ):
             self.select_object(selected, choose_multiple=True)
 
@@ -433,36 +467,31 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
+        x, y = self.canvas_xy(event)
+        x_offset = x - self.cursor[0]
+        y_offset = y - self.cursor[1]
+        self.cursor = x, y
+
         if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
-            x2, y2 = self.canvas_xy(event)
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
-            self.coords(self.drawing_edge.id, x1, y1, x2, y2)
+            self.coords(self.drawing_edge.id, x1, y1, x, y)
         if self.mode == GraphMode.ANNOTATION:
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
-                x, y = self.canvas_xy(event)
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
-        if (
-            self.mode == GraphMode.SELECT
-            and self.selected is not None
-            and self.selected in self.shapes
-        ):
-            x, y = self.canvas_xy(event)
-            shape = self.shapes[self.selected]
-            delta_x = x - shape.cursor_x
-            delta_y = y - shape.cursor_y
-            shape.motion(event)
 
-            # move other selected components
-            for _id in self.selection:
-                if _id != self.selected and _id in self.shapes:
-                    shape = self.shapes[_id]
-                    shape.motion(None, delta_x, delta_y)
-                if _id != self.selected and _id in self.nodes:
-                    node = self.nodes[_id]
-                    node_x = node.core_node.position.x
-                    node_y = node.core_node.position.y
-                    node.move(node_x + delta_x, node_y + delta_y)
+        if self.mode == GraphMode.EDGE:
+            return
+
+        # move selected objects
+        for selected_id in self.selection:
+            if selected_id in self.shapes:
+                shape = self.shapes[selected_id]
+                shape.motion(x_offset, y_offset)
+
+            if selected_id in self.nodes:
+                node = self.nodes[selected_id]
+                node.motion(x_offset, y_offset, update=self.core.is_runtime())
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)
@@ -592,7 +621,7 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         # resize canvas and scrollregion
-        self.config(scrollregion=(0, 0, width + 200, height + 200))
+        self.config(scrollregion=(0, 0, width + SCROLL_BUFFER, height + SCROLL_BUFFER))
         self.coords(self.grid, 0, 0, width, height)
 
         # redraw gridlines to new canvas size

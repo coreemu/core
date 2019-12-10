@@ -49,13 +49,9 @@ class Shape:
         if data is None:
             self.created = False
             self.shape_data = AnnotationData()
-            self.cursor_x = x1
-            self.cursor_y = y1
         else:
             self.created = True
             self.shape_data = data
-            self.cursor_x = None
-            self.cursor_y = None
         self.draw()
 
     def draw(self):
@@ -136,16 +132,11 @@ class Shape:
         s = ShapeDialog(self.app, self.app, self)
         s.show()
 
-    def motion(self, event, delta_x=None, delta_y=None):
-        if event is not None:
-            delta_x = event.x - self.cursor_x
-            delta_y = event.y - self.cursor_y
-            self.cursor_x = event.x
-            self.cursor_y = event.y
-        self.canvas.move(self.id, delta_x, delta_y)
-        self.canvas.object_drag(self.id, delta_x, delta_y)
+    def motion(self, x_offset, y_offset):
+        self.canvas.move(self.id, x_offset, y_offset)
+        self.canvas.move_selection(self.id, x_offset, y_offset)
         if self.text_id is not None:
-            self.canvas.move(self.text_id, delta_x, delta_y)
+            self.canvas.move(self.text_id, x_offset, y_offset)
 
     def delete(self):
         self.canvas.delete(self.id)

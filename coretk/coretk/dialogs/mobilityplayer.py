@@ -27,6 +27,7 @@ class MobilityPlayer:
         self.dialog = MobilityPlayerDialog(
             self.master, self.app, self.canvas_node, self.config
         )
+        self.dialog.protocol("WM_DELETE_WINDOW", self.handle_close)
         if self.state == MobilityAction.START:
             self.set_play()
         elif self.state == MobilityAction.PAUSE:
@@ -35,17 +36,24 @@ class MobilityPlayer:
             self.set_stop()
         self.dialog.show()
 
+    def handle_close(self):
+        self.dialog.destroy()
+        self.dialog = None
+
     def set_play(self):
-        self.dialog.set_play()
         self.state = MobilityAction.START
+        if self.dialog:
+            self.dialog.set_play()
 
     def set_pause(self):
-        self.dialog.set_pause()
         self.state = MobilityAction.PAUSE
+        if self.dialog:
+            self.dialog.set_pause()
 
     def set_stop(self):
-        self.dialog.set_stop()
         self.state = MobilityAction.STOP
+        if self.dialog:
+            self.dialog.set_stop()
 
 
 class MobilityPlayerDialog(Dialog):
@@ -92,7 +100,6 @@ class MobilityPlayerDialog(Dialog):
         self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
         self.stop_button.image = image
         self.stop_button.grid(row=0, column=2, sticky="ew", padx=PAD)
-        self.stop_button.state(["pressed"])
 
         loop = tk.IntVar(value=int(self.config["loop"].value == "1"))
         checkbutton = ttk.Checkbutton(
