@@ -2,11 +2,14 @@ import logging
 import tkinter as tk
 from tkinter import font
 
+import grpc
+
 from core.api.grpc.core_pb2 import NodeType
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
+from coretk.errors import show_grpc_error
 from coretk.graph import tags
 from coretk.graph.enums import GraphMode
 from coretk.graph.tooltip import CanvasTooltip
@@ -138,8 +141,11 @@ class CanvasNode:
         if self.app.core.is_runtime() and self.app.core.observer:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
-            output = self.app.core.run(self.core_node.id)
-            self.tooltip.text.set(output)
+            try:
+                output = self.app.core.run(self.core_node.id)
+                self.tooltip.text.set(output)
+            except grpc.RpcError as e:
+                show_grpc_error(e)
 
     def on_leave(self, event):
         self.tooltip.on_leave(event)

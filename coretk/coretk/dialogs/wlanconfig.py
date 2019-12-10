@@ -4,7 +4,10 @@ wlan configuration
 
 from tkinter import ttk
 
+import grpc
+
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.widgets import ConfigFrame
 
 PAD = 5
@@ -18,7 +21,11 @@ class WlanConfigDialog(Dialog):
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None
-        self.config = self.app.core.get_wlan_config(self.node.id)
+        try:
+            self.config = self.app.core.get_wlan_config(self.node.id)
+        except grpc.RpcError as e:
+            show_grpc_error(e)
+            self.destroy()
         self.draw()
 
     def draw(self):

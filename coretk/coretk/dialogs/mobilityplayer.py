@@ -1,8 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 
+import grpc
+
 from core.api.grpc.core_pb2 import MobilityAction
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
 
 PAD = 5
@@ -123,20 +126,29 @@ class MobilityPlayerDialog(Dialog):
     def click_play(self):
         self.set_play()
         session_id = self.app.core.session_id
-        self.app.core.client.mobility_action(
-            session_id, self.node.id, MobilityAction.START
-        )
+        try:
+            self.app.core.client.mobility_action(
+                session_id, self.node.id, MobilityAction.START
+            )
+        except grpc.RpcError as e:
+            show_grpc_error(e)
 
     def click_pause(self):
         self.set_pause()
         session_id = self.app.core.session_id
-        self.app.core.client.mobility_action(
-            session_id, self.node.id, MobilityAction.PAUSE
-        )
+        try:
+            self.app.core.client.mobility_action(
+                session_id, self.node.id, MobilityAction.PAUSE
+            )
+        except grpc.RpcError as e:
+            show_grpc_error(e)
 
     def click_stop(self):
         self.set_stop()
         session_id = self.app.core.session_id
-        self.app.core.client.mobility_action(
-            session_id, self.node.id, MobilityAction.STOP
-        )
+        try:
+            self.app.core.client.mobility_action(
+                session_id, self.node.id, MobilityAction.STOP
+            )
+        except grpc.RpcError as e:
+            show_grpc_error(e)

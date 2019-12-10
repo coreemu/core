@@ -6,7 +6,10 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
+import grpc
+
 from coretk.dialogs.dialog import Dialog
+from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
 from coretk.widgets import ConfigFrame
 
@@ -52,9 +55,13 @@ class EmaneModelDialog(Dialog):
         self.model = f"emane_{model}"
         self.interface = interface
         self.config_frame = None
-        self.config = self.app.core.get_emane_model_config(
-            self.node.id, self.model, self.interface
-        )
+        try:
+            self.config = self.app.core.get_emane_model_config(
+                self.node.id, self.model, self.interface
+            )
+        except grpc.RpcError as e:
+            show_grpc_error(e)
+            self.destroy()
         self.draw()
 
     def draw(self):
