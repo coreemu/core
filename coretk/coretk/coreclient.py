@@ -414,7 +414,8 @@ class CoreClient:
             }
         except grpc.RpcError as e:
             if e.code() == grpc.StatusCode.UNAVAILABLE:
-                messagebox.showerror("Server Error", e.details())
+
+                messagebox.showerror("Server Error", "CORE Daemon Unavailable")
             else:
                 messagebox.showerror("GRPC Error", e.details())
             self.app.close()
