@@ -72,7 +72,15 @@ class ServersDialog(Dialog):
 
         label = ttk.Label(frame, text="Port")
         label.grid(row=0, column=4, sticky="w")
-        entry = ttk.Entry(frame, textvariable=self.port)
+        entry = ttk.Entry(
+            frame,
+            textvariable=self.port,
+            validate="key",
+            validatecommand=(self.app.validation.positive_int, "%P"),
+        )
+        entry.bind(
+            "<FocusOut>", lambda event: self.app.validation.focus_out(event, "50051")
+        )
         entry.grid(row=0, column=5, sticky="ew")
 
     def draw_servers_buttons(self):

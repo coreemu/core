@@ -51,7 +51,6 @@ class ServiceConfiguration(Dialog):
 
     def load(self):
         try:
-            # create nodes and links in definition state for getting and setting service file
             self.app.core.create_nodes_and_links()
             service_configs = self.app.core.service_configs
             if (

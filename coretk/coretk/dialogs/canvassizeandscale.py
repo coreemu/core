@@ -66,7 +66,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_int, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PAD)
@@ -76,7 +76,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_int, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=3, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
@@ -94,7 +94,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PAD)
@@ -104,7 +104,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=3, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
@@ -125,7 +125,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
@@ -153,7 +153,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Y")
@@ -164,7 +164,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=3, sticky="ew", padx=PAD)
 
         label = ttk.Label(label_frame, text="Translates To")
@@ -184,7 +184,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Lon")
@@ -195,7 +195,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=3, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Alt")
@@ -206,7 +206,7 @@ class SizeAndScaleDialog(Dialog):
             validate="key",
             validatecommand=(self.validation.positive_float, "%P"),
         )
-        entry.bind("<FocusOut>", self.validation.focus_out)
+        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=5, sticky="ew")
 
     def draw_save_as_default(self):
