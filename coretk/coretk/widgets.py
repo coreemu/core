@@ -117,8 +117,18 @@ class ConfigFrame(FrameScroll):
                         button = ttk.Button(file_frame, text="...", command=func)
                         button.grid(row=0, column=1)
                     else:
-                        entry = ttk.Entry(frame, textvariable=value)
-                        entry.grid(row=index, column=1, sticky="ew", pady=pady)
+                        if "controlnet" in option.name and "script" not in option.name:
+                            entry = ttk.Entry(
+                                frame,
+                                textvariable=value,
+                                validate="key",
+                                validatecommand=(self.app.validation.ip4, "%P"),
+                            )
+                            entry.grid(row=index, column=1, sticky="ew", pady=pady)
+                        else:
+                            entry = ttk.Entry(frame, textvariable=value)
+                            entry.grid(row=index, column=1, sticky="ew", pady=pady)
+
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     entry = ttk.Entry(
