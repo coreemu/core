@@ -43,6 +43,7 @@ class ServiceConfiguration(Dialog):
         self.validation_time_entry = None
         self.validation_mode_entry = None
         self.service_file_data = None
+        self.validation_period_entry = None
         self.original_service_files = {}
         self.temp_service_files = {}
         self.modified_files = set()
@@ -100,8 +101,6 @@ class ServiceConfiguration(Dialog):
         label.grid(row=0, column=0, sticky="ew")
         frame1.grid(row=0, column=0)
         frame2 = ttk.Frame(frame)
-        # frame2.columnconfigure(0, weight=1)
-        # frame2.columnconfigure(1, weight=4)
         label = ttk.Label(frame2, text="Meta-data")
         label.grid(row=0, column=0)
 

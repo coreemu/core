@@ -99,7 +99,11 @@ class InputValidation:
             if len(_32bits) > 4:
                 return False
             for _8bits in _32bits:
-                if (_8bits and int(_8bits) > 255) or len(_8bits) > 3:
+                if (
+                    (_8bits and int(_8bits) > 225)
+                    or len(_8bits) > 3
+                    or (_8bits.startswith("0") and len(_8bits) > 1)
+                ):
                     return False
             return True
         else:

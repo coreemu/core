@@ -2,6 +2,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from coretk.dialogs.cel import CheckLight
+
 
 class StatusBar(ttk.Frame):
     def __init__(self, master, app, **kwargs):
@@ -55,7 +57,12 @@ class StatusBar(ttk.Frame):
         self.emulation_light = ttk.Label(
             self, text="CEL TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
         )
+        self.emulation_light.bind("<Button-1>", self.cel_callback)
         self.emulation_light.grid(row=0, column=4, sticky="ew")
+
+    def cel_callback(self, event):
+        dialog = CheckLight(self.app, self.app)
+        dialog.show()
 
     def start_session_callback(self, process_time):
         self.progress_bar.stop()

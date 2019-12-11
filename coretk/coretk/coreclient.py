@@ -261,12 +261,6 @@ class CoreClient:
                                 self.file_configs[node.id][service] = {}
                             self.file_configs[node.id][service][file] = response.data
 
-            # store links as created links
-            for link in session.links:
-                self.created_links.add(
-                    tuple(sorted([link.node_one_id, link.node_two_id]))
-                )
-
             # draw session
             self.app.canvas.reset_and_redraw(session)
 
