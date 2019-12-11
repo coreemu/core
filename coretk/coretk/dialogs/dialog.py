@@ -9,7 +9,6 @@ DIALOG_PAD = 5
 class Dialog(tk.Toplevel):
     def __init__(self, master, app, title, modal=False):
         super().__init__(master)
-        self.geometry("800x600")
         self.withdraw()
         self.app = app
         self.modal = modal

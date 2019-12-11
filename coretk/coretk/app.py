@@ -42,6 +42,8 @@ class Application(tk.Frame):
         self.style.theme_use(self.guiconfig["preferences"]["theme"])
         func = partial(themes.update_menu, self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", func)
+        func = partial(themes.theme_change, self.style)
+        self.master.bind("<<ThemeChanged>>", func)
 
     def setup_app(self):
         self.master.title("CORE")

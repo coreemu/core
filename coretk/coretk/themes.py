@@ -8,6 +8,7 @@ class Styles:
     tooltip = "Tooltip.TLabel"
     tooltip_frame = "Tooltip.TFrame"
     service_checkbutton = "Service.TCheckbutton"
+    picker_button = "Picker.TButton"
 
 
 class Colors:
@@ -150,3 +151,7 @@ def update_menu(style, event):
     event.widget.config(
         background=bg, foreground=fg, activebackground=abg, activeforeground=fg
     )
+
+
+def theme_change(style, event):
+    style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))

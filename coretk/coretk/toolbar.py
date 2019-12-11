@@ -3,6 +3,7 @@ import threading
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
+from tkinter.font import Font
 
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import tags
@@ -10,13 +11,15 @@ from coretk.graph.enums import GraphMode
 from coretk.graph.shapeutils import ShapeType
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
+from coretk.themes import Styles
 from coretk.tooltip import Tooltip
 
 WIDTH = 32
+PICKER_SIZE = 24
 
 
-def icon(image_enum):
-    return Images.get(image_enum, WIDTH)
+def icon(image_enum, width=WIDTH):
+    return Images.get(image_enum, width)
 
 
 class Toolbar(ttk.Frame):
@@ -33,6 +36,9 @@ class Toolbar(ttk.Frame):
         super().__init__(master, **kwargs)
         self.app = app
         self.master = app.master
+
+        # picker data
+        self.picker_font = Font(size=8)
 
         # design buttons
         self.select_button = None
@@ -140,9 +146,9 @@ class Toolbar(ttk.Frame):
         self.node_picker = ttk.Frame(self.master)
         # draw default nodes
         for node_draw in NodeUtils.NODES:
-            image = icon(node_draw.image_enum)
+            image = icon(node_draw.image_enum, PICKER_SIZE)
             func = partial(self.update_button, self.node_button, image, node_draw)
-            self.create_picker_button(image, func, self.node_picker, node_draw.tooltip)
+            self.create_picker_button(image, func, self.node_picker, node_draw.label)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
@@ -152,7 +158,7 @@ class Toolbar(ttk.Frame):
         # draw edit node
         image = icon(ImageEnum.EDITNODE)
         self.create_picker_button(
-            image, self.click_edit_node, self.node_picker, "custom nodes"
+            image, self.click_edit_node, self.node_picker, "Custom"
         )
         self.design_select(self.node_button)
         self.node_button.after(
@@ -169,21 +175,22 @@ class Toolbar(ttk.Frame):
         self.wait_window(picker)
         self.app.unbind_all("<ButtonRelease-1>")
 
-    def create_picker_button(self, image, func, frame, tooltip):
+    def create_picker_button(self, image, func, frame, label):
         """
         Create button and put it on the frame
 
         :param PIL.Image image: button image
         :param func: the command that is executed when button is clicked
         :param tkinter.Frame frame: frame that contains the button
-        :param str tooltip: tooltip text
+        :param str label: button label
         :return: nothing
         """
-        button = ttk.Button(frame, image=image)
+        button = ttk.Button(
+            frame, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
+        )
         button.image = image
         button.bind("<ButtonRelease-1>", lambda e: func())
         button.grid(pady=1)
-        Tooltip(button, tooltip)
 
     def create_button(self, frame, image, func, tooltip):
         button = ttk.Button(frame, image=image, command=func)
@@ -269,12 +276,12 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
         for node_draw in NodeUtils.NETWORK_NODES:
-            image = icon(node_draw.image_enum)
+            image = icon(node_draw.image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
                 partial(self.update_button, self.network_button, image, node_draw),
                 self.network_picker,
-                node_draw.tooltip,
+                node_draw.label,
             )
         self.design_select(self.network_button)
         self.network_button.after(
@@ -311,7 +318,7 @@ class Toolbar(ttk.Frame):
             (ImageEnum.TEXT, ShapeType.TEXT),
         ]
         for image_enum, shape_type in nodes:
-            image = icon(image_enum)
+            image = icon(image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
                 partial(self.update_annotation, image, shape_type),
