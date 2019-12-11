@@ -4,6 +4,7 @@ from tkinter import ttk
 from coretk.coreclient import CoreServer
 from coretk.dialogs.dialog import Dialog
 
+PAD = 5
 DEFAULT_NAME = "example"
 DEFAULT_ADDRESS = "127.0.0.1"
 DEFAULT_PORT = 50051
@@ -26,13 +27,13 @@ class ServersDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.draw_servers()
-        self.draw_server_configuration()
         self.draw_servers_buttons()
+        self.draw_server_configuration()
         self.draw_apply_buttons()
 
     def draw_servers(self):
         frame = ttk.Frame(self.top)
-        frame.grid(pady=2, sticky="nsew")
+        frame.grid(pady=PAD, sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
@@ -51,27 +52,24 @@ class ServersDialog(Dialog):
         scrollbar.config(command=self.servers.yview)
 
     def draw_server_configuration(self):
-        label = ttk.Label(self.top, text="Server Configuration")
-        label.grid(pady=2, sticky="ew")
-
-        frame = ttk.Frame(self.top)
-        frame.grid(pady=2, sticky="ew")
+        frame = ttk.LabelFrame(self.top, text="Server Configuration", padding=PAD)
+        frame.grid(pady=PAD, sticky="ew")
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(5, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PAD, pady=PAD)
         entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="Address")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky="w", padx=PAD, pady=PAD)
         entry = ttk.Entry(frame, textvariable=self.address)
         entry.grid(row=0, column=3, sticky="ew")
 
         label = ttk.Label(frame, text="Port")
-        label.grid(row=0, column=4, sticky="w")
+        label.grid(row=0, column=4, sticky="w", padx=PAD, pady=PAD)
         entry = ttk.Entry(
             frame,
             textvariable=self.port,
@@ -85,17 +83,17 @@ class ServersDialog(Dialog):
 
     def draw_servers_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(pady=2, sticky="ew")
+        frame.grid(pady=PAD, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PAD)
 
         self.save_button = ttk.Button(
             frame, text="Save", state=tk.DISABLED, command=self.click_save
         )
-        self.save_button.grid(row=0, column=1, sticky="ew")
+        self.save_button.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
@@ -111,7 +109,7 @@ class ServersDialog(Dialog):
         button = ttk.Button(
             frame, text="Save Configuration", command=self.click_save_configuration
         )
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PAD)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

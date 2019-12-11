@@ -140,15 +140,19 @@ def update_bg(style, event):
     event.widget.config(background=bg)
 
 
-def update_menu(style, event):
+def theme_change_menu(style, event):
     if not isinstance(event.widget, tk.Menu):
         return
+    update_menu(style, event.widget)
+
+
+def update_menu(style, widget):
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
     abg = style.lookup(".", "lightcolor")
     if not abg:
         abg = bg
-    event.widget.config(
+    widget.config(
         background=bg, foreground=fg, activebackground=abg, activeforeground=fg
     )
 

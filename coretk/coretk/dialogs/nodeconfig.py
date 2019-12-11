@@ -66,6 +66,19 @@ class NodeConfigDialog(Dialog):
         frame.grid(sticky="ew")
         frame.columnconfigure(1, weight=1)
 
+        # icon field
+        label = ttk.Label(frame, text="Icon")
+        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+        self.image_button = ttk.Button(
+            frame,
+            text="Icon",
+            image=self.image,
+            compound=tk.NONE,
+            command=self.click_icon,
+        )
+        self.image_button.grid(row=row, column=1, sticky="ew")
+        row += 1
+
         # name field
         label = ttk.Label(frame, text="Name")
         label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
@@ -79,19 +92,6 @@ class NodeConfigDialog(Dialog):
             "<FocusOut>", lambda event: self.app.validation.focus_out(event, "noname")
         )
         entry.grid(row=row, column=1, sticky="ew")
-        row += 1
-
-        # icon field
-        label = ttk.Label(frame, text="Icon")
-        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
-        self.image_button = ttk.Button(
-            frame,
-            text="Icon",
-            image=self.image,
-            compound=tk.NONE,
-            command=self.click_icon,
-        )
-        self.image_button.grid(row=row, column=1, sticky="ew")
         row += 1
 
         # node type field
@@ -137,6 +137,7 @@ class NodeConfigDialog(Dialog):
         if self.canvas_node.interfaces:
             self.draw_interfaces()
 
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_interfaces(self):

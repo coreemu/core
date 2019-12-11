@@ -12,8 +12,8 @@ import grpc
 
 from coretk.appconfig import XML_PATH
 from coretk.dialogs.about import AboutDialog
-from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
+from coretk.dialogs.canvaswallpaper import CanvasBackgroundDialog
 from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.observers import ObserverDialog
 from coretk.dialogs.preferences import PreferencesDialog

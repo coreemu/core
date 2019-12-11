@@ -30,3 +30,9 @@ class Dialog(tk.Toplevel):
             self.wait_visibility()
             self.grab_set()
             self.wait_window()
+
+    def draw_spacer(self, row=None):
+        frame = ttk.Frame(self.top)
+        frame.grid(row=row, sticky="nsew")
+        frame.rowconfigure(0, weight=1)
+        self.top.rowconfigure(frame.grid_info()["row"], weight=1)

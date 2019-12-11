@@ -61,6 +61,7 @@ class MobilityPlayerDialog(Dialog):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )
+        self.resizable(False, False)
         self.geometry("")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node

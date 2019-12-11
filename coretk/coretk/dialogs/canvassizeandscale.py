@@ -46,6 +46,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw_scale()
         self.draw_reference_point()
         self.draw_save_as_default()
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_size(self):

@@ -4,6 +4,8 @@ from tkinter import ttk
 from coretk.coreclient import Observer
 from coretk.dialogs.dialog import Dialog
 
+PAD = 5
+
 
 class ObserverDialog(Dialog):
     def __init__(self, master, app):
@@ -27,7 +29,7 @@ class ObserverDialog(Dialog):
 
     def draw_listbox(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky="nsew", pady=PAD)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
@@ -46,22 +48,22 @@ class ObserverDialog(Dialog):
 
     def draw_form_fields(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky="ew", pady=PAD)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="Command")
-        label.grid(row=1, column=0, sticky="w")
+        label.grid(row=1, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.cmd)
         entry.grid(row=1, column=1, sticky="ew")
 
     def draw_config_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(pady=2, sticky="ew")
+        frame.grid(sticky="ew", pady=PAD)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 

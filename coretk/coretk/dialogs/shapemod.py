@@ -8,6 +8,8 @@ from coretk.dialogs.dialog import Dialog
 from coretk.graph import tags
 from coretk.graph.shapeutils import is_draw_shape, is_shape_text
 
+PADX = (0, 5)
+PAD = 5
 FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -37,20 +39,27 @@ class ShapeDialog(Dialog):
         self.bold = tk.BooleanVar(value=data.bold)
         self.italic = tk.BooleanVar(value=data.italic)
         self.underline = tk.BooleanVar(value=data.underline)
-        self.top.columnconfigure(0, weight=1)
         self.draw()
 
     def draw(self):
-        frame = ttk.Frame(self.top)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=2)
-        label = ttk.Label(frame, text="Text for top of shape: ")
-        label.grid(row=0, column=0, sticky="nsew")
-        entry = ttk.Entry(frame, textvariable=self.shape_text)
-        entry.grid(row=0, column=1, sticky="nsew")
-        frame.grid(row=0, column=0, sticky="nsew", padx=3, pady=3)
+        self.top.columnconfigure(0, weight=1)
+        self.draw_label_options()
+        if is_draw_shape(self.shape.shape_type):
+            self.draw_shape_options()
+        self.draw_spacer()
+        self.draw_buttons()
 
-        frame = ttk.Frame(self.top)
+    def draw_label_options(self):
+        label_frame = ttk.LabelFrame(self.top, text="Label", padding=PAD)
+        label_frame.grid(sticky="ew")
+        label_frame.columnconfigure(0, weight=1)
+
+        entry = ttk.Entry(label_frame, textvariable=self.shape_text)
+        entry.grid(sticky="ew", pady=PAD)
+
+        # font options
+        frame = ttk.Frame(label_frame)
+        frame.grid(sticky="nsew", padx=3, pady=3)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -65,70 +74,65 @@ class ShapeDialog(Dialog):
             frame, textvariable=self.font_size, values=FONT_SIZES, state="readonly"
         )
         combobox.grid(row=0, column=1, padx=3, sticky="nsew")
-        button = ttk.Button(frame, text="Text color", command=self.choose_text_color)
+        button = ttk.Button(frame, text="Color", command=self.choose_text_color)
         button.grid(row=0, column=2, sticky="nsew")
-        frame.grid(row=1, column=0, sticky="nsew", padx=3, pady=3)
 
-        frame = ttk.Frame(self.top)
+        # style options
+        frame = ttk.Frame(label_frame)
+        frame.grid(sticky="ew")
+        for i in range(3):
+            frame.columnconfigure(i, weight=1)
         button = ttk.Checkbutton(frame, variable=self.bold, text="Bold")
-        button.grid(row=0, column=0)
+        button.grid(row=0, column=0, sticky="ew")
         button = ttk.Checkbutton(frame, variable=self.italic, text="Italic")
-        button.grid(row=0, column=1, padx=3)
+        button.grid(row=0, column=1, padx=3, sticky="ew")
         button = ttk.Checkbutton(frame, variable=self.underline, text="Underline")
-        button.grid(row=0, column=2)
-        frame.grid(row=2, column=0, sticky="nsew", padx=3, pady=3)
+        button.grid(row=0, column=2, sticky="ew")
 
-        if is_draw_shape(self.shape.shape_type):
-            frame = ttk.Frame(self.top)
-            frame.columnconfigure(0, weight=1)
-            frame.columnconfigure(1, weight=1)
-            frame.columnconfigure(2, weight=1)
-            label = ttk.Label(frame, text="Fill color")
-            label.grid(row=0, column=0, sticky="nsew")
-            self.fill = ttk.Label(
-                frame, text=self.fill_color, background=self.fill_color
-            )
-            self.fill.grid(row=0, column=1, sticky="nsew", padx=3)
-            button = ttk.Button(frame, text="Color", command=self.choose_fill_color)
-            button.grid(row=0, column=2, sticky="nsew")
-            frame.grid(row=3, column=0, sticky="nsew", padx=3, pady=3)
+    def draw_shape_options(self):
+        label_frame = ttk.LabelFrame(self.top, text="Shape", padding=PAD)
+        label_frame.grid(sticky="ew", pady=PAD)
+        label_frame.columnconfigure(0, weight=1)
 
-            frame = ttk.Frame(self.top)
-            frame.columnconfigure(0, weight=1)
-            frame.columnconfigure(1, weight=1)
-            frame.columnconfigure(2, weight=1)
-            label = ttk.Label(frame, text="Border color:")
-            label.grid(row=0, column=0, sticky="nsew")
-            self.border = ttk.Label(
-                frame, text=self.border_color, background=self.fill_color
-            )
-            self.border.grid(row=0, column=1, sticky="nsew", padx=3)
-            button = ttk.Button(frame, text="Color", command=self.choose_border_color)
-            button.grid(row=0, column=2, sticky="nsew")
-            frame.grid(row=4, column=0, sticky="nsew", padx=3, pady=3)
+        frame = ttk.Frame(label_frame)
+        frame.grid(sticky="ew")
+        for i in range(1, 3):
+            frame.columnconfigure(i, weight=1)
+        label = ttk.Label(frame, text="Fill Color")
+        label.grid(row=0, column=0, padx=PADX, sticky="w")
+        self.fill = ttk.Label(frame, text=self.fill_color, background=self.fill_color)
+        self.fill.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button = ttk.Button(frame, text="Color", command=self.choose_fill_color)
+        button.grid(row=0, column=2, sticky="ew")
 
-            frame = ttk.Frame(self.top)
-            frame.columnconfigure(0, weight=1)
-            frame.columnconfigure(1, weight=2)
-            label = ttk.Label(frame, text="Border width:")
-            label.grid(row=0, column=0, sticky="nsew")
-            combobox = ttk.Combobox(
-                frame,
-                textvariable=self.border_width,
-                values=BORDER_WIDTH,
-                state="readonly",
-            )
-            combobox.grid(row=0, column=1, sticky="nsew")
-            frame.grid(row=5, column=0, sticky="nsew", padx=3, pady=3)
+        label = ttk.Label(frame, text="Border Color")
+        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        self.border = ttk.Label(
+            frame, text=self.border_color, background=self.border_color
+        )
+        self.border.grid(row=1, column=1, sticky="ew", padx=PADX)
+        button = ttk.Button(frame, text="Color", command=self.choose_border_color)
+        button.grid(row=1, column=2, sticky="ew")
 
+        frame = ttk.Frame(label_frame)
+        frame.grid(sticky="ew", pady=PAD)
+        frame.columnconfigure(1, weight=1)
+        label = ttk.Label(frame, text="Border Width")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        combobox = ttk.Combobox(
+            frame, textvariable=self.border_width, values=BORDER_WIDTH, state="readonly"
+        )
+        combobox.grid(row=0, column=1, sticky="nsew")
+
+    def draw_buttons(self):
         frame = ttk.Frame(self.top)
+        frame.grid(sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Add shape", command=self.click_add)
-        button.grid(row=0, column=0, sticky="e", padx=3)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.cancel)
-        button.grid(row=0, column=1, sticky="w", pady=3)
-        frame.grid(row=6, column=0, sticky="nsew", padx=3, pady=3)
+        button.grid(row=0, column=1, sticky="ew")
 
     def choose_text_color(self):
         color = colorchooser.askcolor(color="black")
@@ -140,7 +144,7 @@ class ShapeDialog(Dialog):
         self.fill.config(background=color[1], text=color[1])
 
     def choose_border_color(self):
-        color = colorchooser.askcolor(color="black")
+        color = colorchooser.askcolor(color=self.border_color)
         self.border_color = color[1]
         self.border.config(background=color[1], text=color[1])
 

@@ -25,11 +25,10 @@ class GlobalEmaneDialog(Dialog):
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(
-            self.top, self.app, self.app.core.emane_config, borderwidth=0
-        )
+        self.config_frame = ConfigFrame(self.top, self.app, self.app.core.emane_config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PAD)
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self):
@@ -67,9 +66,10 @@ class EmaneModelDialog(Dialog):
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config, borderwidth=0)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PAD)
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self):
@@ -111,6 +111,7 @@ class EmaneConfigDialog(Dialog):
         self.draw_emane_configuration()
         self.draw_emane_models()
         self.draw_emane_buttons()
+        self.draw_spacer()
         self.draw_apply_and_cancel()
 
     def draw_emane_configuration(self):
@@ -123,8 +124,9 @@ class EmaneConfigDialog(Dialog):
             self.top,
             text="The EMANE emulation system provides more complex wireless radio emulation "
             "\nusing pluggable MAC and PHY modules. Refer to the wiki for configuration option details",
+            justify=tk.CENTER,
         )
-        label.grid(sticky="ew", pady=PAD)
+        label.grid(pady=PAD)
 
         image = Images.get(ImageEnum.EDITNODE, 16)
         button = ttk.Button(

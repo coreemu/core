@@ -9,7 +9,7 @@ from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 
-PADX = 5
+PAD = 5
 
 
 class CanvasBackgroundDialog(Dialog):
@@ -36,17 +36,18 @@ class CanvasBackgroundDialog(Dialog):
         self.draw_image_selection()
         self.draw_options()
         self.draw_additional_options()
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_image(self):
         self.image_label = ttk.Label(
             self.top, text="(image preview)", width=32, anchor=tk.CENTER
         )
-        self.image_label.grid(row=0, column=0, pady=5)
+        self.image_label.grid(pady=PAD)
 
     def draw_image_label(self):
         label = ttk.Label(self.top, text="Image filename: ")
-        label.grid(row=1, column=0, sticky="ew")
+        label.grid(sticky="ew")
         if self.filename.get():
             self.draw_preview()
 
@@ -55,14 +56,14 @@ class CanvasBackgroundDialog(Dialog):
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
-        frame.grid(row=2, column=0, sticky="ew")
+        frame.grid(sticky="ew")
 
         entry = ttk.Entry(frame, textvariable=self.filename)
         entry.focus()
-        entry.grid(row=0, column=0, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=0, sticky="ew", padx=PAD)
 
         button = ttk.Button(frame, text="...", command=self.click_open_image)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         button = ttk.Button(frame, text="Clear", command=self.click_clear)
         button.grid(row=0, column=2, sticky="ew")
@@ -73,7 +74,7 @@ class CanvasBackgroundDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
-        frame.grid(row=3, column=0, sticky="ew")
+        frame.grid(sticky="ew")
 
         button = ttk.Radiobutton(
             frame, text="upper-left", value=1, variable=self.scale_option
@@ -103,7 +104,7 @@ class CanvasBackgroundDialog(Dialog):
         checkbutton = ttk.Checkbutton(
             self.top, text="Show grid", variable=self.show_grid
         )
-        checkbutton.grid(row=4, column=0, sticky="ew", padx=PADX)
+        checkbutton.grid(sticky="ew", padx=PAD)
 
         checkbutton = ttk.Checkbutton(
             self.top,
@@ -111,16 +112,16 @@ class CanvasBackgroundDialog(Dialog):
             variable=self.adjust_to_dim,
             command=self.click_adjust_canvas,
         )
-        checkbutton.grid(row=5, column=0, sticky="ew", padx=PADX)
+        checkbutton.grid(sticky="ew", padx=PAD)
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(row=6, column=0, pady=5, sticky="ew")
+        frame.grid(pady=PAD, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky="ew", padx=PAD)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

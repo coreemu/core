@@ -10,6 +10,8 @@ from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
 
+PAD = 5
+
 
 class SessionsDialog(Dialog):
     def __init__(self, master, app):
@@ -31,6 +33,7 @@ class SessionsDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(1, weight=1)
         self.draw_description()
         self.draw_tree()
         self.draw_buttons()
@@ -46,14 +49,19 @@ class SessionsDialog(Dialog):
             "connect to an existing session. Usually, only sessions in \n"
             "the RUNTIME state persist in the daemon, except for the \n"
             "one you might be concurrently editting.",
+            justify=tk.CENTER,
         )
-        label.grid(row=0, sticky="ew", pady=5)
+        label.grid(pady=PAD)
 
     def draw_tree(self):
+        frame = ttk.Frame(self.top)
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
+        frame.grid(sticky="nsew")
         self.tree = ttk.Treeview(
-            self.top, columns=("id", "state", "nodes"), show="headings"
+            frame, columns=("id", "state", "nodes"), show="headings"
         )
-        self.tree.grid(row=1, sticky="nsew")
+        self.tree.grid(sticky="nsew")
         self.tree.column("id", stretch=tk.YES)
         self.tree.heading("id", text="ID")
         self.tree.column("state", stretch=tk.YES)
@@ -72,21 +80,19 @@ class SessionsDialog(Dialog):
         self.tree.bind("<Double-1>", self.on_selected)
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
-        yscrollbar = ttk.Scrollbar(self.top, orient="vertical", command=self.tree.yview)
-        yscrollbar.grid(row=1, column=1, sticky="ns")
+        yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
+        yscrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
-        xscrollbar = ttk.Scrollbar(
-            self.top, orient="horizontal", command=self.tree.xview
-        )
-        xscrollbar.grid(row=2, sticky="ew", pady=5)
+        xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
+        xscrollbar.grid(row=1, sticky="ew", pady=5)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
-        frame.grid(row=3, sticky="ew")
+        frame.grid(sticky="ew")
 
         image = Images.get(ImageEnum.DOCUMENTNEW, 16)
         b = ttk.Button(

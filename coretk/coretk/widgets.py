@@ -65,7 +65,7 @@ class FrameScroll(ttk.LabelFrame):
 
 class ConfigFrame(FrameScroll):
     def __init__(self, master, app, config, **kw):
-        super().__init__(master, app, ttk.Notebook, **kw)
+        super().__init__(master, app, ttk.Notebook, borderwidth=0, **kw)
         self.app = app
         self.config = config
         self.values = {}

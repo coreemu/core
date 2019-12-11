@@ -4,6 +4,7 @@ from tkinter import font
 import grpc
 
 from core.api.grpc.core_pb2 import NodeType
+from coretk import themes
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
@@ -161,6 +162,7 @@ class CanvasNode:
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
         context = tk.Menu(self.canvas)
+        themes.update_menu(self.app.style, context)
         if self.app.core.is_runtime():
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):

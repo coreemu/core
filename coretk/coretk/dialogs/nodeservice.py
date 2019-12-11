@@ -8,6 +8,8 @@ from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.serviceconfiguration import ServiceConfiguration
 from coretk.widgets import CheckboxList, ListboxScroll
 
+PAD = 5
+
 
 class NodeService(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
@@ -38,7 +40,7 @@ class NodeService(Dialog):
         frame.rowconfigure(0, weight=1)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        self.groups = ListboxScroll(frame, text="Groups")
+        self.groups = ListboxScroll(frame, text="Groups", padding=PAD)
         self.groups.grid(row=0, column=0, sticky="nsew")
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
@@ -46,11 +48,11 @@ class NodeService(Dialog):
         self.groups.listbox.selection_set(0)
 
         self.services = CheckboxList(
-            frame, self.app, text="Services", clicked=self.service_clicked
+            frame, self.app, text="Services", clicked=self.service_clicked, padding=PAD
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 
-        self.current = ListboxScroll(frame, text="Selected")
+        self.current = ListboxScroll(frame, text="Selected", padding=PAD)
         self.current.grid(row=0, column=2, sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
@@ -60,9 +62,9 @@ class NodeService(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PAD)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky="ew", padx=PAD)
         button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=2, sticky="ew")
 

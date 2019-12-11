@@ -30,7 +30,8 @@ class WlanConfigDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config, borderwidth=0)
+        self.top.rowconfigure(0, weight=1)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PAD)
         self.draw_apply_buttons()
