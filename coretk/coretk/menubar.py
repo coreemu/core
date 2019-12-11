@@ -80,6 +80,7 @@ class Menubar(tk.Menu):
         :return: nothing
         """
         menu = tk.Menu(self)
+        menu.add_command(label="Preferences", command=self.menuaction.gui_preferences)
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
         menu.add_separator()
@@ -94,9 +95,6 @@ class Menubar(tk.Menu):
         menu.add_separator()
         menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
         menu.add_command(label="Clear marker", state=tk.DISABLED)
-        menu.add_command(
-            label="Preferences...", command=self.menuaction.gui_preferences
-        )
         self.add_cascade(label="Edit", menu=menu)
 
     def draw_canvas_menu(self):
@@ -436,16 +434,14 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(
-            label="Change sessions...",
-            command=self.menuaction.session_change_sessions,
-            underline=0,
+            label="Sessions...", command=self.menuaction.session_change_sessions
         )
         menu.add_separator()
-        menu.add_command(label="Comments...", state=tk.DISABLED)
-        menu.add_command(label="Hooks...", command=self.menuaction.session_hooks)
-        menu.add_command(label="Reset node positions", state=tk.DISABLED)
-        menu.add_command(label="Servers...", command=self.menuaction.session_servers)
         menu.add_command(label="Options...", command=self.menuaction.session_options)
+        menu.add_command(label="Servers...", command=self.menuaction.session_servers)
+        menu.add_command(label="Hooks...", command=self.menuaction.session_hooks)
+        menu.add_command(label="Reset Nodes", state=tk.DISABLED)
+        menu.add_command(label="Comments...", state=tk.DISABLED)
         self.add_cascade(label="Session", menu=menu)
 
     def draw_help_menu(self):

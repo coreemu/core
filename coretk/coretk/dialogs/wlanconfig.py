@@ -8,9 +8,8 @@ import grpc
 
 from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
+from coretk.themes import PADX, PADY
 from coretk.widgets import ConfigFrame
-
-PAD = 5
 
 
 class WlanConfigDialog(Dialog):
@@ -30,9 +29,10 @@ class WlanConfigDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config, borderwidth=0)
+        self.top.rowconfigure(0, weight=1)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PAD)
+        self.config_frame.grid(sticky="nsew", pady=PADY)
         self.draw_apply_buttons()
 
     def draw_apply_buttons(self):
@@ -47,7 +47,7 @@ class WlanConfigDialog(Dialog):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, padx=PAD, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky="ew")
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

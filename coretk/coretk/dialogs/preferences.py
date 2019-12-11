@@ -4,6 +4,7 @@ from tkinter import ttk
 
 from coretk import appconfig
 from coretk.dialogs.dialog import Dialog
+from coretk.themes import FRAME_PAD, PADX, PADY
 
 
 class PreferencesDialog(Dialog):
@@ -18,16 +19,17 @@ class PreferencesDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
         self.draw_preferences()
         self.draw_buttons()
 
     def draw_preferences(self):
-        frame = ttk.LabelFrame(self.top, text="Preferences")
-        frame.grid(sticky="ew", pady=2)
+        frame = ttk.LabelFrame(self.top, text="Preferences", padding=FRAME_PAD)
+        frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Theme")
-        label.grid(row=0, column=0, pady=2, padx=2, sticky="w")
+        label.grid(row=0, column=0, pady=PADY, padx=PADX, sticky="w")
         themes = self.app.style.theme_names()
         combobox = ttk.Combobox(
             frame, textvariable=self.theme, values=themes, state="readonly"
@@ -37,14 +39,14 @@ class PreferencesDialog(Dialog):
         combobox.bind("<<ComboboxSelected>>", self.theme_change)
 
         label = ttk.Label(frame, text="Editor")
-        label.grid(row=1, column=0, pady=2, padx=2, sticky="w")
+        label.grid(row=1, column=0, pady=PADY, padx=PADX, sticky="w")
         combobox = ttk.Combobox(
             frame, textvariable=self.editor, values=appconfig.EDITORS, state="readonly"
         )
         combobox.grid(row=1, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="Terminal")
-        label.grid(row=2, column=0, pady=2, padx=2, sticky="w")
+        label.grid(row=2, column=0, pady=PADY, padx=PADX, sticky="w")
         combobox = ttk.Combobox(
             frame,
             textvariable=self.terminal,
@@ -54,7 +56,7 @@ class PreferencesDialog(Dialog):
         combobox.grid(row=2, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="3D GUI")
-        label.grid(row=3, column=0, pady=2, padx=2, sticky="w")
+        label.grid(row=3, column=0, pady=PADY, padx=PADX, sticky="w")
         entry = ttk.Entry(frame, textvariable=self.gui3d)
         entry.grid(row=3, column=1, sticky="ew")
 
@@ -65,7 +67,7 @@ class PreferencesDialog(Dialog):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

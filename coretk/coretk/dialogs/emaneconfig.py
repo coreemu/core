@@ -11,9 +11,8 @@ import grpc
 from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
+from coretk.themes import PADX, PADY
 from coretk.widgets import ConfigFrame
-
-PAD = 5
 
 
 class GlobalEmaneDialog(Dialog):
@@ -25,11 +24,10 @@ class GlobalEmaneDialog(Dialog):
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(
-            self.top, self.app, self.app.core.emane_config, borderwidth=0
-        )
+        self.config_frame = ConfigFrame(self.top, self.app, self.app.core.emane_config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PAD)
+        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self):
@@ -38,7 +36,7 @@ class GlobalEmaneDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
@@ -67,9 +65,10 @@ class EmaneModelDialog(Dialog):
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config, borderwidth=0)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PAD)
+        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self):
@@ -78,7 +77,7 @@ class EmaneModelDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
@@ -111,6 +110,7 @@ class EmaneConfigDialog(Dialog):
         self.draw_emane_configuration()
         self.draw_emane_models()
         self.draw_emane_buttons()
+        self.draw_spacer()
         self.draw_apply_and_cancel()
 
     def draw_emane_configuration(self):
@@ -123,8 +123,9 @@ class EmaneConfigDialog(Dialog):
             self.top,
             text="The EMANE emulation system provides more complex wireless radio emulation "
             "\nusing pluggable MAC and PHY modules. Refer to the wiki for configuration option details",
+            justify=tk.CENTER,
         )
-        label.grid(sticky="ew", pady=PAD)
+        label.grid(pady=PADY)
 
         image = Images.get(ImageEnum.EDITNODE, 16)
         button = ttk.Button(
@@ -137,7 +138,7 @@ class EmaneConfigDialog(Dialog):
             ),
         )
         button.image = image
-        button.grid(sticky="ew", pady=PAD)
+        button.grid(sticky="ew", pady=PADY)
 
     def draw_emane_models(self):
         """
@@ -146,7 +147,7 @@ class EmaneConfigDialog(Dialog):
         :return: nothing
         """
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Model")
@@ -164,7 +165,7 @@ class EmaneConfigDialog(Dialog):
 
     def draw_emane_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
@@ -177,7 +178,7 @@ class EmaneConfigDialog(Dialog):
             command=self.click_model_config,
         )
         self.emane_model_button.image = image
-        self.emane_model_button.grid(row=0, column=0, padx=PAD, sticky="ew")
+        self.emane_model_button.grid(row=0, column=0, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.EDITNODE, 16)
         button = ttk.Button(
@@ -197,7 +198,7 @@ class EmaneConfigDialog(Dialog):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, padx=PAD, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky="ew")
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

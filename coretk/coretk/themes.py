@@ -1,13 +1,18 @@
 import logging
 import tkinter as tk
 
-DARK = "black"
+THEME_DARK = "black"
+PADX = (0, 5)
+PADY = (0, 5)
+FRAME_PAD = 5
+DIALOG_PAD = 5
 
 
 class Styles:
     tooltip = "Tooltip.TLabel"
     tooltip_frame = "Tooltip.TFrame"
     service_checkbutton = "Service.TCheckbutton"
+    picker_button = "Picker.TButton"
 
 
 class Colors:
@@ -27,7 +32,7 @@ class Colors:
 
 def load(style):
     style.theme_create(
-        DARK,
+        THEME_DARK,
         "clam",
         {
             ".": {
@@ -139,14 +144,22 @@ def update_bg(style, event):
     event.widget.config(background=bg)
 
 
-def update_menu(style, event):
+def theme_change_menu(style, event):
     if not isinstance(event.widget, tk.Menu):
         return
+    update_menu(style, event.widget)
+
+
+def update_menu(style, widget):
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
     abg = style.lookup(".", "lightcolor")
     if not abg:
         abg = bg
-    event.widget.config(
+    widget.config(
         background=bg, foreground=fg, activebackground=abg, activeforeground=fg
     )
+
+
+def theme_change(style, event):
+    style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))

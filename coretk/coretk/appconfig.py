@@ -75,7 +75,7 @@ def check_directory():
         editor = EDITORS[1]
     config = {
         "preferences": {
-            "theme": themes.DARK,
+            "theme": themes.THEME_DARK,
             "editor": editor,
             "terminal": terminal,
             "gui3d": "/usr/local/bin/std3d.sh",

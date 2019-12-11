@@ -2,14 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.images import ImageEnum, Images
-
-DIALOG_PAD = 5
+from coretk.themes import DIALOG_PAD
 
 
 class Dialog(tk.Toplevel):
     def __init__(self, master, app, title, modal=False):
         super().__init__(master)
-        self.geometry("800x600")
         self.withdraw()
         self.app = app
         self.modal = modal
@@ -31,3 +29,9 @@ class Dialog(tk.Toplevel):
             self.wait_visibility()
             self.grab_set()
             self.wait_window()
+
+    def draw_spacer(self, row=None):
+        frame = ttk.Frame(self.top)
+        frame.grid(row=row, sticky="nsew")
+        frame.rowconfigure(0, weight=1)
+        self.top.rowconfigure(frame.grid_info()["row"], weight=1)

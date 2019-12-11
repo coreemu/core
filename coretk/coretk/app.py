@@ -14,6 +14,9 @@ from coretk.statusbar import StatusBar
 from coretk.toolbar import Toolbar
 from coretk.validation import InputValidation
 
+WIDTH = 1000
+HEIGHT = 800
+
 
 class Application(tk.Frame):
     def __init__(self, master=None):
@@ -40,8 +43,10 @@ class Application(tk.Frame):
     def setup_theme(self):
         themes.load(self.style)
         self.style.theme_use(self.guiconfig["preferences"]["theme"])
-        func = partial(themes.update_menu, self.style)
+        func = partial(themes.theme_change_menu, self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", func)
+        func = partial(themes.theme_change, self.style)
+        self.master.bind("<<ThemeChanged>>", func)
 
     def setup_app(self):
         self.master.title("CORE")
@@ -53,13 +58,11 @@ class Application(tk.Frame):
         self.validation = InputValidation(self)
 
     def center(self):
-        width = 1000
-        height = 800
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x = int((screen_width / 2) - (width / 2))
-        y = int((screen_height / 2) - (height / 2))
-        self.master.geometry(f"{width}x{height}+{x}+{y}")
+        x = int((screen_width / 2) - (WIDTH / 2))
+        y = int((screen_height / 2) - (HEIGHT / 2))
+        self.master.geometry(f"{WIDTH}x{HEIGHT}+{x}+{y}")
 
     def draw(self):
         self.master.option_add("*tearOff", tk.FALSE)

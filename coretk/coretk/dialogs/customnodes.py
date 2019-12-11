@@ -6,6 +6,7 @@ from tkinter import ttk
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
 from coretk.nodeutils import NodeDraw
+from coretk.themes import FRAME_PAD, PADX, PADY
 from coretk.widgets import CheckboxList, ListboxScroll
 
 
@@ -23,11 +24,11 @@ class ServicesSelectDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
 
         frame = ttk.Frame(self.top)
-        frame.grid(stick="nsew")
+        frame.grid(stick="nsew", pady=PADY)
         frame.rowconfigure(0, weight=1)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        self.groups = ListboxScroll(frame, text="Groups")
+        self.groups = ListboxScroll(frame, text="Groups", padding=FRAME_PAD)
         self.groups.grid(row=0, column=0, sticky="nsew")
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
@@ -35,11 +36,15 @@ class ServicesSelectDialog(Dialog):
         self.groups.listbox.selection_set(0)
 
         self.services = CheckboxList(
-            frame, self.app, text="Services", clicked=self.service_clicked
+            frame,
+            self.app,
+            text="Services",
+            clicked=self.service_clicked,
+            padding=FRAME_PAD,
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 
-        self.current = ListboxScroll(frame, text="Selected")
+        self.current = ListboxScroll(frame, text="Selected", padding=FRAME_PAD)
         self.current.grid(row=0, column=2, sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
@@ -49,7 +54,7 @@ class ServicesSelectDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=self.destroy)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=1, sticky="ew")
 
@@ -104,12 +109,12 @@ class CustomNodesDialog(Dialog):
 
     def draw_node_config(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
-        self.nodes_list = ListboxScroll(frame, text="Nodes")
-        self.nodes_list.grid(row=0, column=0, sticky="nsew")
+        self.nodes_list = ListboxScroll(frame, text="Nodes", padding=FRAME_PAD)
+        self.nodes_list.grid(row=0, column=0, sticky="nsew", padx=PADX)
         self.nodes_list.listbox.bind("<<ListboxSelect>>", self.handle_node_select)
         for name in sorted(self.app.core.custom_nodes):
             self.nodes_list.listbox.insert(tk.END, name)
@@ -128,17 +133,17 @@ class CustomNodesDialog(Dialog):
 
     def draw_node_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(pady=2, sticky="ew")
+        frame.grid(sticky="ew", pady=PADY)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         self.edit_button = ttk.Button(
             frame, text="Edit", state=tk.DISABLED, command=self.click_edit
         )
-        self.edit_button.grid(row=0, column=1, sticky="ew")
+        self.edit_button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
@@ -152,7 +157,7 @@ class CustomNodesDialog(Dialog):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

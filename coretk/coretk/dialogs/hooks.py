@@ -3,6 +3,7 @@ from tkinter import ttk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.themes import PADX, PADY
 from coretk.widgets import CodeText
 
 
@@ -21,14 +22,14 @@ class HookDialog(Dialog):
 
         # name and states
         frame = ttk.Frame(self.top)
-        frame.grid(row=0, sticky="ew", pady=2)
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=7)
         frame.columnconfigure(2, weight=1)
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="ew")
+        label.grid(row=0, column=0, sticky="ew", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         values = tuple(x for x in core_pb2.SessionState.Enum.keys() if x != "NONE")
         initial_state = core_pb2.SessionState.Enum.Name(core_pb2.SessionState.RUNTIME)
         self.state.set(initial_state)
@@ -40,11 +41,7 @@ class HookDialog(Dialog):
         combobox.bind("<<ComboboxSelected>>", self.state_change)
 
         # data
-        frame = ttk.Frame(self.top)
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(0, weight=1)
-        frame.grid(row=1, sticky="nsew", pady=2)
-        self.data = CodeText(frame)
+        self.data = CodeText(self.top)
         self.data.insert(
             1.0,
             (
@@ -53,19 +50,15 @@ class HookDialog(Dialog):
                 "# specified state\n"
             ),
         )
-        self.data.grid(row=0, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(frame)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-        self.data.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.data.yview)
+        self.data.grid(sticky="nsew")
 
         # button row
         frame = ttk.Frame(self.top)
-        frame.grid(row=2, sticky="ew", pady=2)
+        frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=lambda: self.save())
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=1, sticky="ew")
 
@@ -104,25 +97,25 @@ class HooksDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
 
         self.listbox = tk.Listbox(self.top)
-        self.listbox.grid(row=0, sticky="nsew")
+        self.listbox.grid(sticky="nsew", pady=PADY)
         self.listbox.bind("<<ListboxSelect>>", self.select)
         for hook_file in self.app.core.hooks:
             self.listbox.insert(tk.END, hook_file)
 
         frame = ttk.Frame(self.top)
-        frame.grid(row=1, sticky="ew")
+        frame.grid(sticky="ew")
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         self.edit_button = ttk.Button(
             frame, text="Edit", state=tk.DISABLED, command=self.click_edit
         )
-        self.edit_button.grid(row=0, column=1, sticky="ew")
+        self.edit_button.grid(row=0, column=1, sticky="ew", padx=PADX)
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
-        self.delete_button.grid(row=0, column=2, sticky="ew")
+        self.delete_button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=3, sticky="ew")
 
