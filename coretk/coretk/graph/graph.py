@@ -410,6 +410,7 @@ class CanvasGraph(tk.Canvas):
         )
         logging.info("ratio: %s", self.ratio)
         logging.info("offset: %s", self.offset)
+        self.redraw_wallpaper()
 
     def click_press(self, event):
         """
@@ -545,24 +546,30 @@ class CanvasGraph(tk.Canvas):
         canvas_h = abs(y0 - y1)
         return canvas_w, canvas_h
 
-    def wallpaper_upper_left(self):
-        tk_img = ImageTk.PhotoImage(self.wallpaper)
-        # crop image if it is bigger than canvas
-        canvas_w, canvas_h = self.width_and_height()
-        cropx = img_w = tk_img.width()
-        cropy = img_h = tk_img.height()
-        if img_w > canvas_w:
-            cropx -= img_w - canvas_w
-        if img_h > canvas_h:
-            cropy -= img_h - canvas_h
-        cropped = self.wallpaper.crop((0, 0, cropx, cropy))
-        cropped_tk = ImageTk.PhotoImage(cropped)
-        self.delete(self.wallpaper_id)
-        # place left corner of image to the left corner of the canvas
+    def draw_wallpaper(self, image):
+        x1, y1, x2, y2 = self.bbox(self.grid)
+        x = (x1 + x2) / 2
+        y = (y1 + y2) / 2
         self.wallpaper_id = self.create_image(
-            (cropx / 2, cropy / 2), image=cropped_tk, tags=tags.WALLPAPER
+            (x + 1, y + 1), image=image, tags=tags.WALLPAPER
         )
-        self.wallpaper_drawn = cropped_tk
+        self.wallpaper_drawn = image
+
+    def wallpaper_upper_left(self):
+        self.delete(self.wallpaper_id)
+
+        # place left corner of image to the left corner of the canvas
+        tk_img = ImageTk.PhotoImage(self.wallpaper)
+        width, height = self.width_and_height()
+        cropx = image_width = tk_img.width()
+        cropy = image_height = tk_img.height()
+        if image_width > width:
+            cropx = width
+        if image_height > height:
+            cropy = height
+        cropped = self.wallpaper.crop((0, 0, cropx, cropy))
+        image = ImageTk.PhotoImage(cropped)
+        self.draw_wallpaper(image)
 
     def wallpaper_center(self):
         """
@@ -570,27 +577,26 @@ class CanvasGraph(tk.Canvas):
 
         :return: nothing
         """
-        tk_img = ImageTk.PhotoImage(self.wallpaper)
-        canvas_w, canvas_h = self.width_and_height()
-        cropx = img_w = tk_img.width()
-        cropy = img_h = tk_img.height()
-        # dimension of the cropped image
-        if img_w > canvas_w:
-            cropx -= img_w - canvas_w
-        if img_h > canvas_h:
-            cropy -= img_h - canvas_h
-        x0 = (img_w - cropx) / 2
-        y0 = (img_h - cropy) / 2
-        x1 = x0 + cropx
-        y1 = y0 + cropy
-        cropped = self.wallpaper.crop((x0, y0, x1, y1))
-        cropped_tk = ImageTk.PhotoImage(cropped)
-        # place the center of the image at the center of the canvas
         self.delete(self.wallpaper_id)
-        self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags=tags.WALLPAPER
-        )
-        self.wallpaper_drawn = cropped_tk
+
+        # dimension of the cropped image
+        tk_img = ImageTk.PhotoImage(self.wallpaper)
+        width, height = self.width_and_height()
+        image_width = tk_img.width()
+        image_height = tk_img.height()
+        cropx = 0
+        if image_width > width:
+            cropx = (image_width - width) / 2
+        cropy = 0
+        if image_height > height:
+            cropy = (image_height - height) / 2
+        x1 = 0 + cropx
+        y1 = 0 + cropy
+        x2 = image_width - cropx
+        y2 = image_height - cropy
+        cropped = self.wallpaper.crop((x1, y1, x2, y2))
+        image = ImageTk.PhotoImage(cropped)
+        self.draw_wallpaper(image)
 
     def wallpaper_scaled(self):
         """
@@ -598,22 +604,18 @@ class CanvasGraph(tk.Canvas):
 
         :return: nothing
         """
+        self.delete(self.wallpaper_id)
         canvas_w, canvas_h = self.width_and_height()
         image = Images.create(self.wallpaper_file, int(canvas_w), int(canvas_h))
-        self.delete(self.wallpaper_id)
-        self.wallpaper_id = self.create_image(
-            (canvas_w / 2, canvas_h / 2), image=image, tags=tags.WALLPAPER
-        )
-        self.wallpaper_drawn = image
+        self.draw_wallpaper(image)
 
     def resize_to_wallpaper(self):
-        image_tk = ImageTk.PhotoImage(self.wallpaper)
-        img_w = image_tk.width()
-        img_h = image_tk.height()
         self.delete(self.wallpaper_id)
-        self.redraw_canvas(img_w, img_h)
-        self.wallpaper_id = self.create_image((img_w / 2, img_h / 2), image=image_tk)
-        self.wallpaper_drawn = image_tk
+        image = ImageTk.PhotoImage(self.wallpaper)
+        image_width = image.width()
+        image_height = image.height()
+        self.redraw_canvas(image_width, image_height)
+        self.draw_wallpaper(image)
 
     def redraw_canvas(self, width, height):
         """
@@ -630,7 +632,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
         self.update_grid()
 
-    def redraw(self):
+    def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
             self.resize_to_wallpaper()
         else:
@@ -662,7 +664,7 @@ class CanvasGraph(tk.Canvas):
             img = Image.open(filename)
             self.wallpaper = img
             self.wallpaper_file = filename
-            self.redraw()
+            self.redraw_wallpaper()
         else:
             if self.wallpaper_id is not None:
                 self.delete(self.wallpaper_id)
