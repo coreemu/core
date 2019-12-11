@@ -231,7 +231,7 @@ class SizeAndScaleDialog(Dialog):
         width, height = self.pixel_width.get(), self.pixel_height.get()
         self.canvas.redraw_canvas(width, height)
         if self.canvas.wallpaper:
-            self.canvas.redraw()
+            self.canvas.redraw_wallpaper()
         location = self.app.core.location
         location.x = self.x.get()
         location.y = self.y.get()

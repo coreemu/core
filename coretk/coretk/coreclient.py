@@ -174,7 +174,7 @@ class CoreClient:
         x = event.node.position.x
         y = event.node.position.y
         canvas_node = self.canvas_nodes[node_id]
-        canvas_node.move(x, y, update=False)
+        canvas_node.move(x, y)
 
     def handle_throughputs(self, event):
         if self.throughput:
@@ -412,10 +412,11 @@ class CoreClient:
             show_grpc_error(e)
             self.app.close()
 
-    def edit_node(self, node_id, x, y):
-        position = core_pb2.Position(x=x, y=y)
+    def edit_node(self, core_node):
         try:
-            self.client.edit_node(self.session_id, node_id, position, source="gui")
+            self.client.edit_node(
+                self.session_id, core_node.id, core_node.position, source="gui"
+            )
         except grpc.RpcError as e:
             show_grpc_error(e)
 
