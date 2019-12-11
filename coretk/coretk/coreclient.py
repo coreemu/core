@@ -421,8 +421,8 @@ class CoreClient:
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
-        service_configs = self.get_service_config_proto()
-        file_configs = self.get_service_file_config_proto()
+        service_configs = self.get_service_configs_proto()
+        file_configs = self.get_service_file_configs_proto()
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -512,6 +512,11 @@ class CoreClient:
         :return: nothing
         """
         try:
+            if self.state != core_pb2.SessionState.RUNTIME:
+                logging.debug(
+                    "session state not runtime, send session data to the daemon..."
+                )
+                self.send_data()
             response = self.client.save_xml(self.session_id, file_path)
             logging.info("saved xml(%s): %s", file_path, response)
         except grpc.RpcError as e:
@@ -585,6 +590,52 @@ class CoreClient:
                 link_proto.options,
             )
             logging.debug("create link: %s", response)
+
+    def send_data(self):
+        """
+        send to daemon all session info, but don't start the session
+
+        :return: nothing
+        """
+        self.create_nodes_and_links()
+        for config_proto in self.get_wlan_configs_proto():
+            self.client.set_wlan_config(
+                self.session_id, config_proto.node_id, config_proto.config
+            )
+        for config_proto in self.get_mobility_configs_proto():
+            self.client.set_mobility_config(
+                self.session_id, config_proto.node_id, config_proto.config
+            )
+        for config_proto in self.get_service_configs_proto():
+            self.client.set_node_service(
+                self.session_id,
+                config_proto.node_id,
+                config_proto.service,
+                config_proto.startup,
+                config_proto.validate,
+                config_proto.shutdown,
+            )
+        for config_proto in self.get_service_file_configs_proto():
+            self.client.set_node_service_file(
+                self.session_id,
+                config_proto.node_id,
+                config_proto.service,
+                config_proto.file,
+                config_proto.data,
+            )
+        for hook in self.hooks.values():
+            self.client.add_hook(self.session_id, hook.state, hook.file, hook.data)
+        for config_proto in self.get_emane_model_configs_proto():
+            self.client.set_emane_model_config(
+                self.session_id,
+                config_proto.node_id,
+                config_proto.model,
+                config_proto.config,
+                config_proto.interface_id,
+            )
+        if self.emane_config:
+            config = {x: self.emane_config[x].value for x in self.emane_config}
+            self.client.set_emane_config(self.session_id, config)
 
     def close(self):
         """
@@ -762,7 +813,7 @@ class CoreClient:
             configs.append(config_proto)
         return configs
 
-    def get_service_config_proto(self):
+    def get_service_configs_proto(self):
         configs = []
         for node_id, services in self.service_configs.items():
             for name, config in services.items():
@@ -776,7 +827,7 @@ class CoreClient:
                 configs.append(config_proto)
         return configs
 
-    def get_service_file_config_proto(self):
+    def get_service_file_configs_proto(self):
         configs = []
         for (node_id, file_configs) in self.file_configs.items():
             for service, file_config in file_configs.items():

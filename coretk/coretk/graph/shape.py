@@ -132,6 +132,9 @@ class Shape:
         s = ShapeDialog(self.app, self.app, self)
         s.show()
 
+    def disappear(self):
+        self.canvas.delete(self.id)
+
     def motion(self, x_offset, y_offset):
         self.canvas.move(self.id, x_offset, y_offset)
         self.canvas.move_selection(self.id, x_offset, y_offset)
