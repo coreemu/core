@@ -5,10 +5,8 @@ import grpc
 
 from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
+from coretk.themes import PADX, PADY
 from coretk.widgets import ConfigFrame
-
-PAD_X = 2
-PAD_Y = 2
 
 
 class SessionOptionsDialog(Dialog):
@@ -33,16 +31,16 @@ class SessionOptionsDialog(Dialog):
 
         self.config_frame = ConfigFrame(self.top, self.app, config=self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew")
+        self.config_frame.grid(sticky="nsew", pady=PADY)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=self.save)
-        button.grid(row=0, column=0, pady=PAD_Y, padx=PAD_X, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky="ew")
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
+        button.grid(row=0, column=1, padx=PADX, sticky="ew")
 
     def save(self):
         config = self.config_frame.parse_config()

@@ -9,8 +9,7 @@ from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
-
-PAD = 5
+from coretk.themes import PADX, PADY
 
 
 class SessionsDialog(Dialog):
@@ -51,13 +50,13 @@ class SessionsDialog(Dialog):
             "one you might be concurrently editting.",
             justify=tk.CENTER,
         )
-        label.grid(pady=PAD)
+        label.grid(pady=PADY)
 
     def draw_tree(self):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky="nsew", pady=PADY)
         self.tree = ttk.Treeview(
             frame, columns=("id", "state", "nodes"), show="headings"
         )
@@ -85,7 +84,7 @@ class SessionsDialog(Dialog):
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        xscrollbar.grid(row=1, sticky="ew", pady=5)
+        xscrollbar.grid(row=1, sticky="ew")
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self):
@@ -99,7 +98,7 @@ class SessionsDialog(Dialog):
             frame, image=image, text="New", compound=tk.LEFT, command=self.click_new
         )
         b.image = image
-        b.grid(row=0, padx=2, sticky="ew")
+        b.grid(row=0, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.FILEOPEN, 16)
         b = ttk.Button(
@@ -110,7 +109,7 @@ class SessionsDialog(Dialog):
             command=self.click_connect,
         )
         b.image = image
-        b.grid(row=0, column=1, padx=2, sticky="ew")
+        b.grid(row=0, column=1, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.EDITDELETE, 16)
         b = ttk.Button(
@@ -121,10 +120,10 @@ class SessionsDialog(Dialog):
             command=self.click_shutdown,
         )
         b.image = image
-        b.grid(row=0, column=2, padx=2, sticky="ew")
+        b.grid(row=0, column=2, padx=PADX, sticky="ew")
 
         b = ttk.Button(frame, text="Cancel", command=self.click_new)
-        b.grid(row=0, column=3, padx=2, sticky="ew")
+        b.grid(row=0, column=3, sticky="ew")
 
     def click_new(self):
         self.app.core.create_new_session()

@@ -7,9 +7,8 @@ from tkinter import colorchooser, font, ttk
 from coretk.dialogs.dialog import Dialog
 from coretk.graph import tags
 from coretk.graph.shapeutils import is_draw_shape, is_shape_text
+from coretk.themes import FRAME_PAD, PADX, PADY
 
-PADX = (0, 5)
-PAD = 5
 FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -50,16 +49,16 @@ class ShapeDialog(Dialog):
         self.draw_buttons()
 
     def draw_label_options(self):
-        label_frame = ttk.LabelFrame(self.top, text="Label", padding=PAD)
+        label_frame = ttk.LabelFrame(self.top, text="Label", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
         entry = ttk.Entry(label_frame, textvariable=self.shape_text)
-        entry.grid(sticky="ew", pady=PAD)
+        entry.grid(sticky="ew", pady=PADY)
 
         # font options
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="nsew", padx=3, pady=3)
+        frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -73,7 +72,7 @@ class ShapeDialog(Dialog):
         combobox = ttk.Combobox(
             frame, textvariable=self.font_size, values=FONT_SIZES, state="readonly"
         )
-        combobox.grid(row=0, column=1, padx=3, sticky="nsew")
+        combobox.grid(row=0, column=1, padx=PADX, sticky="nsew")
         button = ttk.Button(frame, text="Color", command=self.choose_text_color)
         button.grid(row=0, column=2, sticky="nsew")
 
@@ -85,13 +84,13 @@ class ShapeDialog(Dialog):
         button = ttk.Checkbutton(frame, variable=self.bold, text="Bold")
         button.grid(row=0, column=0, sticky="ew")
         button = ttk.Checkbutton(frame, variable=self.italic, text="Italic")
-        button.grid(row=0, column=1, padx=3, sticky="ew")
+        button.grid(row=0, column=1, padx=PADX, sticky="ew")
         button = ttk.Checkbutton(frame, variable=self.underline, text="Underline")
         button.grid(row=0, column=2, sticky="ew")
 
     def draw_shape_options(self):
-        label_frame = ttk.LabelFrame(self.top, text="Shape", padding=PAD)
-        label_frame.grid(sticky="ew", pady=PAD)
+        label_frame = ttk.LabelFrame(self.top, text="Shape", padding=FRAME_PAD)
+        label_frame.grid(sticky="ew", pady=PADY)
         label_frame.columnconfigure(0, weight=1)
 
         frame = ttk.Frame(label_frame)
@@ -115,7 +114,7 @@ class ShapeDialog(Dialog):
         button.grid(row=1, column=2, sticky="ew")
 
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Border Width")
         label.grid(row=0, column=0, sticky="w", padx=PADX)

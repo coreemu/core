@@ -1,7 +1,11 @@
 import logging
 import tkinter as tk
 
-DARK = "black"
+THEME_DARK = "black"
+PADX = (0, 5)
+PADY = (0, 5)
+FRAME_PAD = 5
+DIALOG_PAD = 5
 
 
 class Styles:
@@ -28,7 +32,7 @@ class Colors:
 
 def load(style):
     style.theme_create(
-        DARK,
+        THEME_DARK,
         "clam",
         {
             ".": {

@@ -2,8 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.images import ImageEnum, Images
-
-DIALOG_PAD = 5
+from coretk.themes import DIALOG_PAD
 
 
 class Dialog(tk.Toplevel):

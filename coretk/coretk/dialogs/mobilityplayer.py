@@ -7,8 +7,8 @@ from core.api.grpc.core_pb2 import MobilityAction
 from coretk.dialogs.dialog import Dialog
 from coretk.errors import show_grpc_error
 from coretk.images import ImageEnum, Images
+from coretk.themes import PADX, PADY
 
-PAD = 5
 ICON_SIZE = 16
 
 
@@ -77,36 +77,36 @@ class MobilityPlayerDialog(Dialog):
 
         file_name = self.config["file"].value
         label = ttk.Label(self.top, text=file_name)
-        label.grid(sticky="ew", pady=PAD)
+        label.grid(sticky="ew", pady=PADY)
 
         self.progressbar = ttk.Progressbar(self.top, mode="indeterminate")
-        self.progressbar.grid(sticky="ew", pady=PAD)
+        self.progressbar.grid(sticky="ew", pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         image = Images.get(ImageEnum.START, width=ICON_SIZE)
         self.play_button = ttk.Button(frame, image=image, command=self.click_play)
         self.play_button.image = image
-        self.play_button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        self.play_button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         image = Images.get(ImageEnum.PAUSE, width=ICON_SIZE)
         self.pause_button = ttk.Button(frame, image=image, command=self.click_pause)
         self.pause_button.image = image
-        self.pause_button.grid(row=0, column=1, sticky="ew", padx=PAD)
+        self.pause_button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         image = Images.get(ImageEnum.STOP, width=ICON_SIZE)
         self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
         self.stop_button.image = image
-        self.stop_button.grid(row=0, column=2, sticky="ew", padx=PAD)
+        self.stop_button.grid(row=0, column=2, sticky="ew", padx=PADX)
 
         loop = tk.IntVar(value=int(self.config["loop"].value == "1"))
         checkbutton = ttk.Checkbutton(
             frame, text="Loop?", variable=loop, state=tk.DISABLED
         )
-        checkbutton.grid(row=0, column=3, padx=PAD)
+        checkbutton.grid(row=0, column=3, padx=PADX)
 
         rate = self.config["refresh_ms"].value
         label = ttk.Label(frame, text=f"rate {rate} ms")

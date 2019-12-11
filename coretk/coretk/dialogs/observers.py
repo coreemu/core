@@ -3,8 +3,7 @@ from tkinter import ttk
 
 from coretk.coreclient import Observer
 from coretk.dialogs.dialog import Dialog
-
-PAD = 5
+from coretk.themes import PADX, PADY
 
 
 class ObserverDialog(Dialog):
@@ -29,7 +28,7 @@ class ObserverDialog(Dialog):
 
     def draw_listbox(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="nsew", pady=PAD)
+        frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
@@ -48,32 +47,32 @@ class ObserverDialog(Dialog):
 
     def draw_form_fields(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w", padx=PAD)
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="Command")
-        label.grid(row=1, column=0, sticky="w", padx=PAD)
+        label.grid(row=1, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.cmd)
         entry.grid(row=1, column=1, sticky="ew")
 
     def draw_config_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         self.save_button = ttk.Button(
             frame, text="Save", state=tk.DISABLED, command=self.click_save
         )
-        self.save_button.grid(row=0, column=1, sticky="ew")
+        self.save_button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
@@ -87,7 +86,7 @@ class ObserverDialog(Dialog):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Save", command=self.click_save_config)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

@@ -8,8 +8,7 @@ from tkinter import filedialog, ttk
 from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
-
-PAD = 5
+from coretk.themes import PADX, PADY
 
 
 class CanvasBackgroundDialog(Dialog):
@@ -43,7 +42,7 @@ class CanvasBackgroundDialog(Dialog):
         self.image_label = ttk.Label(
             self.top, text="(image preview)", width=32, anchor=tk.CENTER
         )
-        self.image_label.grid(pady=PAD)
+        self.image_label.grid(pady=PADY)
 
     def draw_image_label(self):
         label = ttk.Label(self.top, text="Image filename: ")
@@ -60,10 +59,10 @@ class CanvasBackgroundDialog(Dialog):
 
         entry = ttk.Entry(frame, textvariable=self.filename)
         entry.focus()
-        entry.grid(row=0, column=0, sticky="ew", padx=PAD)
+        entry.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="...", command=self.click_open_image)
-        button.grid(row=0, column=1, sticky="ew", padx=PAD)
+        button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Clear", command=self.click_clear)
         button.grid(row=0, column=2, sticky="ew")
@@ -104,7 +103,7 @@ class CanvasBackgroundDialog(Dialog):
         checkbutton = ttk.Checkbutton(
             self.top, text="Show grid", variable=self.show_grid
         )
-        checkbutton.grid(sticky="ew", padx=PAD)
+        checkbutton.grid(sticky="ew", padx=PADX)
 
         checkbutton = ttk.Checkbutton(
             self.top,
@@ -112,16 +111,16 @@ class CanvasBackgroundDialog(Dialog):
             variable=self.adjust_to_dim,
             command=self.click_adjust_canvas,
         )
-        checkbutton.grid(sticky="ew", padx=PAD)
+        checkbutton.grid(sticky="ew", padx=PADX)
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(pady=PAD, sticky="ew")
+        frame.grid(pady=PADY, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")

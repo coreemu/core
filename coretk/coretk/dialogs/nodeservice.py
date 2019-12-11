@@ -6,9 +6,8 @@ from tkinter import messagebox, ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.serviceconfiguration import ServiceConfiguration
+from coretk.themes import FRAME_PAD, PADX, PADY
 from coretk.widgets import CheckboxList, ListboxScroll
-
-PAD = 5
 
 
 class NodeService(Dialog):
@@ -36,11 +35,11 @@ class NodeService(Dialog):
         self.top.rowconfigure(0, weight=1)
 
         frame = ttk.Frame(self.top)
-        frame.grid(stick="nsew")
+        frame.grid(stick="nsew", pady=PADY)
         frame.rowconfigure(0, weight=1)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        self.groups = ListboxScroll(frame, text="Groups", padding=PAD)
+        self.groups = ListboxScroll(frame, text="Groups", padding=FRAME_PAD)
         self.groups.grid(row=0, column=0, sticky="nsew")
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
@@ -48,11 +47,15 @@ class NodeService(Dialog):
         self.groups.listbox.selection_set(0)
 
         self.services = CheckboxList(
-            frame, self.app, text="Services", clicked=self.service_clicked, padding=PAD
+            frame,
+            self.app,
+            text="Services",
+            clicked=self.service_clicked,
+            padding=FRAME_PAD,
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 
-        self.current = ListboxScroll(frame, text="Selected", padding=PAD)
+        self.current = ListboxScroll(frame, text="Selected", padding=FRAME_PAD)
         self.current.grid(row=0, column=2, sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
@@ -62,9 +65,9 @@ class NodeService(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=1, sticky="ew", padx=PAD)
+        button.grid(row=0, column=1, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=2, sticky="ew")
 

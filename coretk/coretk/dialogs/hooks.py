@@ -3,9 +3,8 @@ from tkinter import ttk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.themes import PADX, PADY
 from coretk.widgets import CodeText
-
-PAD = 5
 
 
 class HookDialog(Dialog):
@@ -23,14 +22,14 @@ class HookDialog(Dialog):
 
         # name and states
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PAD)
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=7)
         frame.columnconfigure(2, weight=1)
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="ew", padx=PAD)
+        label.grid(row=0, column=0, sticky="ew", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         values = tuple(x for x in core_pb2.SessionState.Enum.keys() if x != "NONE")
         initial_state = core_pb2.SessionState.Enum.Name(core_pb2.SessionState.RUNTIME)
         self.state.set(initial_state)
@@ -59,7 +58,7 @@ class HookDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=lambda: self.save())
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=1, sticky="ew")
 
@@ -98,7 +97,7 @@ class HooksDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
 
         self.listbox = tk.Listbox(self.top)
-        self.listbox.grid(sticky="nsew", pady=PAD)
+        self.listbox.grid(sticky="nsew", pady=PADY)
         self.listbox.bind("<<ListboxSelect>>", self.select)
         for hook_file in self.app.core.hooks:
             self.listbox.insert(tk.END, hook_file)
@@ -108,15 +107,15 @@ class HooksDialog(Dialog):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew", padx=PAD)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         self.edit_button = ttk.Button(
             frame, text="Edit", state=tk.DISABLED, command=self.click_edit
         )
-        self.edit_button.grid(row=0, column=1, sticky="ew", padx=PAD)
+        self.edit_button.grid(row=0, column=1, sticky="ew", padx=PADX)
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
-        self.delete_button.grid(row=0, column=2, sticky="ew", padx=PAD)
+        self.delete_button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=3, sticky="ew")
 
