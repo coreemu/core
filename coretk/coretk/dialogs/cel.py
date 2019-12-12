@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
+from coretk.images import ImageEnum, Images
 from coretk.themes import PADX, PADY
 from coretk.widgets import CodeText
 
@@ -14,14 +15,20 @@ class CheckLight(Dialog):
         super().__init__(master, app, "CEL", modal=True)
         self.app = app
         self.tree = None
+        self.text = None
         self.draw()
 
     def draw(self):
         row = 0
         frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        image = Images.get(ImageEnum.ALERT, 18)
+        label = ttk.Label(frame, image=image)
+        label.image = image
+        label.grid(row=0, column=0, sticky="e")
         label = ttk.Label(frame, text="Check Emulation Light")
-        label.grid(row=0, column=0)
+        label.grid(row=0, column=1, sticky="w")
         frame.grid(row=row, column=0, padx=PADX, pady=PADY, sticky="nsew")
         row = row + 1
 
@@ -50,8 +57,8 @@ class CheckLight(Dialog):
         self.tree.configure(xscrollcommand=xscrollbar.set)
         row = row + 1
 
-        text = CodeText(self)
-        text.grid(row=row, column=0, sticky="nsew")
+        self.text = CodeText(self)
+        self.text.grid(row=row, column=0, sticky="nsew")
         row = row + 1
 
         frame = ttk.Frame(self)
@@ -59,7 +66,7 @@ class CheckLight(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
-        button = ttk.Button(frame, text="Reset CEL")
+        button = ttk.Button(frame, text="Reset CEL", command=self.reset_cel)
         button.grid(row=0, column=0, sticky="nsew", padx=PADX)
         button = ttk.Button(frame, text="View core-daemon log", command=self.daemon_log)
         button.grid(row=0, column=1, sticky="nsew", padx=PADX)
@@ -69,6 +76,9 @@ class CheckLight(Dialog):
         button.grid(row=0, column=3, sticky="nsew", padx=PADX)
         frame.grid(row=row, column=0, sticky="nsew")
         row = row + 1
+
+    def reset_cel(self):
+        self.text.delete("1.0", tk.END)
 
     def daemon_log(self):
         dialog = DaemonLog(self, self.app)
