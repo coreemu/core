@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.dialogs.cel import CheckLight
+from coretk.images import ImageEnum, Images
 
 
 class StatusBar(ttk.Frame):
@@ -54,9 +55,11 @@ class StatusBar(ttk.Frame):
         )
         self.cpu_usage.grid(row=0, column=3, sticky="ew")
 
-        self.emulation_light = ttk.Label(
-            self, text="CEL TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
+        image = Images.get(ImageEnum.ALERT, 18)
+        self.emulation_light = ttk.Button(
+            self, image=image, text="Alert", compound="left"
         )
+        self.emulation_light.image = image
         self.emulation_light.bind("<Button-1>", self.cel_callback)
         self.emulation_light.grid(row=0, column=4, sticky="ew")
 

@@ -67,3 +67,4 @@ class ImageEnum(Enum):
     ANTENNA = "antenna"
     DOCKER = "docker"
     LXC = "lxc"
+    ALERT = "alert"
