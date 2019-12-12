@@ -21,11 +21,7 @@ class SizeAndScaleDialog(Dialog):
         self.canvas = self.app.canvas
         self.validation = app.validation
         self.section_font = font.Font(weight="bold")
-        # get current canvas dimensions
-        plot = self.canvas.find_withtag("rectangle")
-        x0, y0, x1, y1 = self.canvas.bbox(plot[0])
-        width = abs(x0 - x1) - 2
-        height = abs(y0 - y1) - 2
+        width, height = self.canvas.current_dimensions
         self.pixel_width = tk.IntVar(value=width)
         self.pixel_height = tk.IntVar(value=height)
         location = self.app.core.location
@@ -232,7 +228,7 @@ class SizeAndScaleDialog(Dialog):
 
     def click_apply(self):
         width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.canvas.redraw_canvas(width, height)
+        self.canvas.redraw_canvas((width, height))
         if self.canvas.wallpaper:
             self.canvas.redraw_wallpaper()
         location = self.app.core.location

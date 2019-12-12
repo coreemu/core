@@ -147,6 +147,16 @@ class Shape:
 
     def metadata(self):
         coords = self.canvas.coords(self.id)
+        # update coords to actual positions
+        if len(coords) == 4:
+            x1, y1, x2, y2 = coords
+            x1, y1 = self.canvas.get_actual_coords(x1, y1)
+            x2, y2 = self.canvas.get_actual_coords(x2, y2)
+            coords = (x1, y1, x2, y2)
+        else:
+            x1, y1 = coords
+            x1, y1 = self.canvas.get_actual_coords(x1, y1)
+            coords = (x1, y1)
         return {
             "type": self.shape_type.value,
             "iconcoords": coords,

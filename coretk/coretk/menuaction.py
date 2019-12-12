@@ -10,7 +10,7 @@ from tkinter import filedialog, messagebox
 
 import grpc
 
-from coretk.appconfig import XML_PATH
+from coretk.appconfig import XMLS_PATH
 from coretk.dialogs.about import AboutDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.canvaswallpaper import CanvasBackgroundDialog
@@ -82,7 +82,7 @@ class MenuAction:
     def file_save_as_xml(self, event=None):
         logging.info("menuaction.py file_save_as_xml()")
         file_path = filedialog.asksaveasfilename(
-            initialdir=str(XML_PATH),
+            initialdir=str(XMLS_PATH),
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
@@ -93,7 +93,7 @@ class MenuAction:
     def file_open_xml(self, event=None):
         logging.info("menuaction.py file_open_xml()")
         file_path = filedialog.askopenfilename(
-            initialdir=str(XML_PATH),
+            initialdir=str(XMLS_PATH),
             title="Open",
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )

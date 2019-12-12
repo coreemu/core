@@ -20,13 +20,11 @@ NODE_TEXT_OFFSET = 5
 
 
 class CanvasNode:
-    def __init__(self, app, core_node, image):
+    def __init__(self, app, x, y, core_node, image):
         self.app = app
         self.canvas = app.canvas
         self.image = image
         self.core_node = core_node
-        x = self.core_node.position.x
-        y = self.core_node.position.y
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
@@ -98,8 +96,10 @@ class CanvasNode:
         return image_box[3] + NODE_TEXT_OFFSET
 
     def move(self, x, y):
-        x_offset = x - self.core_node.position.x
-        y_offset = y - self.core_node.position.y
+        x, y = self.canvas.get_scaled_coords(x, y)
+        current_x, current_y = self.canvas.coords(self.id)
+        x_offset = x - current_x
+        y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
     def motion(self, x_offset, y_offset, update=True):
@@ -107,8 +107,6 @@ class CanvasNode:
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.canvas.move_selection(self.id, x_offset, y_offset)
         x, y = self.canvas.coords(self.id)
-        self.core_node.position.x = int(x)
-        self.core_node.position.y = int(y)
 
         # move antennae
         for antenna_id in self.antennae:
@@ -131,7 +129,10 @@ class CanvasNode:
             else:
                 self.canvas.coords(edge.id, x1, y1, x, y)
 
-        # update core with new location
+        # set actual coords for node and update core is running
+        real_x, real_y = self.canvas.get_actual_coords(x, y)
+        self.core_node.position.x = int(real_x)
+        self.core_node.position.y = int(real_y)
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 

@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<scenario name="/tmp/tmpsn2dcw73">
+<scenario name="/tmp/tmp9vdlfd63">
   <networks>
     <network id="4" name="n4" icon="" type="SWITCH">
       <position x="192" y="252" lat="47.57577240005682" lon="-122.12855068636081" alt="2.0"/>
@@ -18,15 +18,6 @@
         <service name="IPForward"/>
       </services>
     </device>
-    <device id="2" name="n2" icon="" type="router">
-      <position x="264" y="432" lat="47.57333230650302" lon="-122.1271551492028" alt="2.0"/>
-      <services>
-        <service name="zebra"/>
-        <service name="OSPFv2"/>
-        <service name="OSPFv3"/>
-        <service name="IPForward"/>
-      </services>
-    </device>
     <device id="3" name="n3" icon="" type="router">
       <position x="120" y="360" lat="47.57432579524807" lon="-122.13001073884303" alt="2.0"/>
       <services>
@@ -36,8 +27,33 @@
         <service name="IPForward"/>
       </services>
     </device>
+    <device id="2" name="n2" icon="" type="router">
+      <position x="264" y="432" lat="47.57333230650302" lon="-122.1271551492028" alt="2.0"/>
+      <services>
+        <service name="zebra"/>
+        <service name="OSPFv2"/>
+        <service name="OSPFv3"/>
+        <service name="IPForward"/>
+      </services>
+    </device>
+    <device id="9" name="n9" icon="" type="mdr">
+      <position x="672" y="96" z="0" lat="47.57780454700428" lon="-122.11894266318714" alt="2.0"/>
+      <services>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </services>
+    </device>
     <device id="6" name="n6" icon="" type="mdr">
       <position x="780" y="228" z="0" lat="47.57600659186813" lon="-122.11681868175411" alt="2.0"/>
+      <services>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </services>
+    </device>
+    <device id="7" name="n7" icon="" type="mdr">
+      <position x="816" y="348" z="0" lat="47.574381616411884" lon="-122.11612798101025" alt="2.0"/>
       <services>
         <service name="zebra"/>
         <service name="OSPFv3MDR"/>
@@ -61,26 +77,10 @@
         <service name="IPForward"/>
       </services>
     </device>
-    <device id="7" name="n7" icon="" type="mdr">
-      <position x="816" y="348" z="0" lat="47.574381616411884" lon="-122.11612798101025" alt="2.0"/>
-      <services>
-        <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
-        <service name="IPForward"/>
-      </services>
-    </device>
     <device id="11" name="n11" icon="" type="PC">
       <position x="192" y="156" lat="47.57706795991869" lon="-122.1285291884349" alt="2.0"/>
       <services>
         <service name="DefaultRoute"/>
-      </services>
-    </device>
-    <device id="9" name="n9" icon="" type="mdr">
-      <position x="672" y="96" z="0" lat="47.57780454700428" lon="-122.11894266318714" alt="2.0"/>
-      <services>
-        <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
-        <service name="IPForward"/>
       </services>
     </device>
     <device id="12" name="n12" icon="" type="PC">
@@ -117,60 +117,60 @@
       <interface_two id="0" name="eth0" mac="00:00:00:aa:00:11" ip4="10.0.1.21" ip4_mask="24" ip6="a:1::21" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
-    <link node_one="4" node_two="13">
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:12" ip4="10.0.1.22" ip4_mask="24" ip6="a:1::22" ip6_mask="64"/>
+    <link node_one="4" node_two="11">
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:10" ip4="10.0.1.20" ip4_mask="24" ip6="a:1::20" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
-    <link node_one="4" node_two="14">
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:13" ip4="10.0.1.10" ip4_mask="24" ip6="a:1::10" ip6_mask="64"/>
+    <link node_one="4" node_two="13">
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:12" ip4="10.0.1.22" ip4_mask="24" ip6="a:1::22" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="4" node_two="3">
       <interface_two id="0" name="eth0" mac="00:00:00:aa:00:05" ip4="10.0.1.1" ip4_mask="24" ip6="a:1::1" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
-    <link node_one="4" node_two="11">
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:10" ip4="10.0.1.20" ip4_mask="24" ip6="a:1::20" ip6_mask="64"/>
+    <link node_one="4" node_two="14">
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:13" ip4="10.0.1.10" ip4_mask="24" ip6="a:1::10" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
-    </link>
-    <link node_one="10" node_two="6">
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:03" ip4="10.0.0.6" ip4_mask="32" ip6="a::6" ip6_mask="128"/>
-      <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="10" node_two="8">
       <interface_two id="0" name="eth0" mac="00:00:00:aa:00:00" ip4="10.0.0.8" ip4_mask="32" ip6="a::8" ip6_mask="128"/>
       <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
-    <link node_one="10" node_two="5">
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:02" ip4="10.0.0.5" ip4_mask="32" ip6="a::3" ip6_mask="128"/>
+    <link node_one="10" node_two="6">
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:03" ip4="10.0.0.6" ip4_mask="32" ip6="a::6" ip6_mask="128"/>
       <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="10" node_two="7">
       <interface_two id="0" name="eth0" mac="00:00:00:aa:00:01" ip4="10.0.0.7" ip4_mask="32" ip6="a::7" ip6_mask="128"/>
       <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
+    <link node_one="10" node_two="5">
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:02" ip4="10.0.0.5" ip4_mask="32" ip6="a::3" ip6_mask="128"/>
+      <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
+    </link>
     <link node_one="10" node_two="9">
       <interface_two id="0" name="eth0" mac="00:00:00:aa:00:04" ip4="10.0.0.9" ip4_mask="32" ip6="a::9" ip6_mask="128"/>
       <options delay="50000" bandwidth="54000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
-    </link>
-    <link node_one="3" node_two="2">
-      <interface_one id="1" name="eth1" mac="00:00:00:aa:00:06" ip4="10.0.2.1" ip4_mask="24" ip6="a:2::1" ip6_mask="64"/>
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:07" ip4="10.0.2.2" ip4_mask="24" ip6="a:2::2" ip6_mask="64"/>
-      <options delay="25000" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="1" node_two="15">
       <interface_one id="1" name="eth1" mac="00:00:00:aa:00:0c" ip4="10.0.5.1" ip4_mask="24" ip6="a:5::1" ip6_mask="64"/>
       <interface_two id="1" name="eth1" mac="00:00:00:aa:00:0d" ip4="10.0.5.2" ip4_mask="24" ip6="a:5::2" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
-    <link node_one="2" node_two="1">
-      <interface_one id="1" name="eth1" mac="00:00:00:aa:00:08" ip4="10.0.3.1" ip4_mask="24" ip6="a:3::1" ip6_mask="64"/>
-      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:09" ip4="10.0.3.2" ip4_mask="24" ip6="a:3::2" ip6_mask="64"/>
-      <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
+    <link node_one="3" node_two="2">
+      <interface_one id="1" name="eth1" mac="00:00:00:aa:00:06" ip4="10.0.2.1" ip4_mask="24" ip6="a:2::1" ip6_mask="64"/>
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:07" ip4="10.0.2.2" ip4_mask="24" ip6="a:2::2" ip6_mask="64"/>
+      <options delay="25000" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="15" node_two="5">
       <interface_one id="2" name="eth2" mac="00:00:00:aa:00:0e" ip4="10.0.6.1" ip4_mask="24" ip6="a:6::1" ip6_mask="64"/>
       <interface_two id="1" name="eth1" mac="00:00:00:aa:00:0f" ip4="10.0.6.2" ip4_mask="24" ip6="a:6::2" ip6_mask="64"/>
+      <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
+    </link>
+    <link node_one="2" node_two="1">
+      <interface_one id="1" name="eth1" mac="00:00:00:aa:00:08" ip4="10.0.3.1" ip4_mask="24" ip6="a:3::1" ip6_mask="64"/>
+      <interface_two id="0" name="eth0" mac="00:00:00:aa:00:09" ip4="10.0.3.2" ip4_mask="24" ip6="a:3::2" ip6_mask="64"/>
       <options delay="0" bandwidth="100000000" per="0.0" dup="0" jitter="0" type="1" unidirectional="0"/>
     </link>
     <link node_one="2" node_two="15">
@@ -188,7 +188,7 @@
       <configuration name="error" value="0"/>
     </mobility_configuration>
     <mobility_configuration node="10" model="ns2script">
-      <configuration name="file" value="/home/developer/.core/configs/sample1.scen"/>
+      <configuration name="file" value="/home/developer/.coretk/mobility/sample1.scen"/>
       <configuration name="refresh_ms" value="50"/>
       <configuration name="loop" value="1"/>
       <configuration name="autostart" value="5"/>
@@ -347,6 +347,177 @@ bootquagga
       </shutdowns>
     </service>
     <service name="IPForward" node="1">
+      <startups>
+        <startup>sh ipforward.sh</startup>
+      </startups>
+      <files>
+        <file name="ipforward.sh">#!/bin/sh
+# auto-generated by IPForward service (utility.py)
+/sbin/sysctl -w net.ipv4.conf.all.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.default.forwarding=1
+/sbin/sysctl -w net.ipv6.conf.all.forwarding=1
+/sbin/sysctl -w net.ipv6.conf.default.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.all.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.default.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.all.rp_filter=0
+/sbin/sysctl -w net.ipv4.conf.default.rp_filter=0
+/sbin/sysctl -w net.ipv4.conf.eth0.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.eth0.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.eth0.rp_filter=0
+/sbin/sysctl -w net.ipv4.conf.eth1.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.eth1.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.eth1.rp_filter=0
+</file>
+      </files>
+    </service>
+    <service name="zebra" node="3">
+      <directories>
+        <directory>/usr/local/etc/quagga</directory>
+        <directory>/var/run/quagga</directory>
+      </directories>
+      <startups>
+        <startup>sh quaggaboot.sh zebra</startup>
+      </startups>
+      <validates>
+        <validate>pidof zebra</validate>
+      </validates>
+      <shutdowns>
+        <shutdown>killall zebra</shutdown>
+      </shutdowns>
+      <files>
+        <file name="/usr/local/etc/quagga/Quagga.conf">interface eth0
+  ip address 10.0.1.1/24
+  ipv6 address a:1::1/64
+!
+interface eth1
+  ip address 10.0.2.1/24
+  ipv6 address a:2::1/64
+!
+router ospf
+  router-id 10.0.1.1
+  network 10.0.1.0/24 area 0
+  network 10.0.2.0/24 area 0
+!
+router ospf6
+  router-id 10.0.1.1
+  interface eth0 area 0.0.0.0
+  interface eth1 area 0.0.0.0
+!
+</file>
+        <file name="quaggaboot.sh">#!/bin/sh
+# auto-generated by zebra service (quagga.py)
+QUAGGA_CONF=/usr/local/etc/quagga/Quagga.conf
+QUAGGA_SBIN_SEARCH="/usr/local/sbin /usr/sbin /usr/lib/quagga"
+QUAGGA_BIN_SEARCH="/usr/local/bin /usr/bin /usr/lib/quagga"
+QUAGGA_STATE_DIR=/var/run/quagga
+
+searchforprog()
+{
+    prog=$1
+    searchpath=$@
+    ret=
+    for p in $searchpath; do
+        if [ -x $p/$prog ]; then
+            ret=$p
+            break
+        fi
+    done
+    echo $ret
+}
+
+confcheck()
+{
+    CONF_DIR=`dirname $QUAGGA_CONF`
+    # if /etc/quagga exists, point /etc/quagga/Quagga.conf -&gt; CONF_DIR
+    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/Quagga.conf ]; then
+        ln -s $CONF_DIR/Quagga.conf /etc/quagga/Quagga.conf
+    fi
+    # if /etc/quagga exists, point /etc/quagga/vtysh.conf -&gt; CONF_DIR
+    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/vtysh.conf ]; then
+        ln -s $CONF_DIR/vtysh.conf /etc/quagga/vtysh.conf
+    fi
+}
+
+bootdaemon()
+{
+    QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
+    if [ "z$QUAGGA_SBIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's '$1' daemon not found in search path:"
+        echo "  $QUAGGA_SBIN_SEARCH"
+        return 1
+    fi
+
+    flags=""
+
+    if [ "$1" = "xpimd" ] &amp;&amp; \
+        grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
+        flags="$flags -6"
+    fi
+
+    $QUAGGA_SBIN_DIR/$1 $flags -d
+    if [ "$?" != "0" ]; then
+        echo "ERROR: Quagga's '$1' daemon failed to start!:"
+        return 1
+    fi
+}
+
+bootquagga()
+{
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
+    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
+    fi
+
+    # fix /var/run/quagga permissions
+    id -u quagga 2&gt;/dev/null &gt;/dev/null
+    if [ "$?" = "0" ]; then
+        chown quagga $QUAGGA_STATE_DIR
+    fi
+
+    bootdaemon "zebra"
+    for r in rip ripng ospf6 ospf bgp babel; do
+        if grep -q "^router \&lt;${r}\&gt;" $QUAGGA_CONF; then
+            bootdaemon "${r}d"
+        fi
+    done
+
+    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
+        bootdaemon "xpimd"
+    fi
+
+    $QUAGGA_BIN_DIR/vtysh -b
+}
+
+if [ "$1" != "zebra" ]; then
+    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
+    exit 1
+fi
+confcheck
+bootquagga
+</file>
+        <file name="/usr/local/etc/quagga/vtysh.conf">service integrated-vtysh-config
+</file>
+      </files>
+    </service>
+    <service name="OSPFv2" node="3">
+      <validates>
+        <validate>pidof ospfd</validate>
+      </validates>
+      <shutdowns>
+        <shutdown>killall ospfd</shutdown>
+      </shutdowns>
+    </service>
+    <service name="OSPFv3" node="3">
+      <validates>
+        <validate>pidof ospf6d</validate>
+      </validates>
+      <shutdowns>
+        <shutdown>killall ospf6d</shutdown>
+      </shutdowns>
+    </service>
+    <service name="IPForward" node="3">
       <startups>
         <startup>sh ipforward.sh</startup>
       </startups>
@@ -550,7 +721,7 @@ bootquagga
 </file>
       </files>
     </service>
-    <service name="zebra" node="3">
+    <service name="zebra" node="9">
       <directories>
         <directory>/usr/local/etc/quagga</directory>
         <directory>/var/run/quagga</directory>
@@ -566,22 +737,20 @@ bootquagga
       </shutdowns>
       <files>
         <file name="/usr/local/etc/quagga/Quagga.conf">interface eth0
-  ip address 10.0.1.1/24
-  ipv6 address a:1::1/64
-!
-interface eth1
-  ip address 10.0.2.1/24
-  ipv6 address a:2::1/64
-!
-router ospf
-  router-id 10.0.1.1
-  network 10.0.1.0/24 area 0
-  network 10.0.2.0/24 area 0
+  ip address 10.0.0.9/32
+  ipv6 address a::9/128
+  ipv6 ospf6 instance-id 65
+  ipv6 ospf6 hello-interval 2
+  ipv6 ospf6 dead-interval 6
+  ipv6 ospf6 retransmit-interval 5
+  ipv6 ospf6 network manet-designated-router
+  ipv6 ospf6 diffhellos
+  ipv6 ospf6 adjacencyconnectivity uniconnected
+  ipv6 ospf6 lsafullness mincostlsa
 !
 router ospf6
-  router-id 10.0.1.1
+  router-id 10.0.0.9
   interface eth0 area 0.0.0.0
-  interface eth1 area 0.0.0.0
 !
 </file>
         <file name="quaggaboot.sh">#!/bin/sh
@@ -681,15 +850,7 @@ bootquagga
 </file>
       </files>
     </service>
-    <service name="OSPFv2" node="3">
-      <validates>
-        <validate>pidof ospfd</validate>
-      </validates>
-      <shutdowns>
-        <shutdown>killall ospfd</shutdown>
-      </shutdowns>
-    </service>
-    <service name="OSPFv3" node="3">
+    <service name="OSPFv3MDR" node="9">
       <validates>
         <validate>pidof ospf6d</validate>
       </validates>
@@ -697,7 +858,7 @@ bootquagga
         <shutdown>killall ospf6d</shutdown>
       </shutdowns>
     </service>
-    <service name="IPForward" node="3">
+    <service name="IPForward" node="9">
       <startups>
         <startup>sh ipforward.sh</startup>
       </startups>
@@ -715,9 +876,6 @@ bootquagga
 /sbin/sysctl -w net.ipv4.conf.eth0.forwarding=1
 /sbin/sysctl -w net.ipv4.conf.eth0.send_redirects=0
 /sbin/sysctl -w net.ipv4.conf.eth0.rp_filter=0
-/sbin/sysctl -w net.ipv4.conf.eth1.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.eth1.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.eth1.rp_filter=0
 </file>
       </files>
     </service>
@@ -859,6 +1017,164 @@ bootquagga
       </shutdowns>
     </service>
     <service name="IPForward" node="6">
+      <startups>
+        <startup>sh ipforward.sh</startup>
+      </startups>
+      <files>
+        <file name="ipforward.sh">#!/bin/sh
+# auto-generated by IPForward service (utility.py)
+/sbin/sysctl -w net.ipv4.conf.all.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.default.forwarding=1
+/sbin/sysctl -w net.ipv6.conf.all.forwarding=1
+/sbin/sysctl -w net.ipv6.conf.default.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.all.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.default.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.all.rp_filter=0
+/sbin/sysctl -w net.ipv4.conf.default.rp_filter=0
+/sbin/sysctl -w net.ipv4.conf.eth0.forwarding=1
+/sbin/sysctl -w net.ipv4.conf.eth0.send_redirects=0
+/sbin/sysctl -w net.ipv4.conf.eth0.rp_filter=0
+</file>
+      </files>
+    </service>
+    <service name="zebra" node="7">
+      <directories>
+        <directory>/usr/local/etc/quagga</directory>
+        <directory>/var/run/quagga</directory>
+      </directories>
+      <startups>
+        <startup>sh quaggaboot.sh zebra</startup>
+      </startups>
+      <validates>
+        <validate>pidof zebra</validate>
+      </validates>
+      <shutdowns>
+        <shutdown>killall zebra</shutdown>
+      </shutdowns>
+      <files>
+        <file name="/usr/local/etc/quagga/Quagga.conf">interface eth0
+  ip address 10.0.0.7/32
+  ipv6 address a::7/128
+  ipv6 ospf6 instance-id 65
+  ipv6 ospf6 hello-interval 2
+  ipv6 ospf6 dead-interval 6
+  ipv6 ospf6 retransmit-interval 5
+  ipv6 ospf6 network manet-designated-router
+  ipv6 ospf6 diffhellos
+  ipv6 ospf6 adjacencyconnectivity uniconnected
+  ipv6 ospf6 lsafullness mincostlsa
+!
+router ospf6
+  router-id 10.0.0.7
+  interface eth0 area 0.0.0.0
+!
+</file>
+        <file name="quaggaboot.sh">#!/bin/sh
+# auto-generated by zebra service (quagga.py)
+QUAGGA_CONF=/usr/local/etc/quagga/Quagga.conf
+QUAGGA_SBIN_SEARCH="/usr/local/sbin /usr/sbin /usr/lib/quagga"
+QUAGGA_BIN_SEARCH="/usr/local/bin /usr/bin /usr/lib/quagga"
+QUAGGA_STATE_DIR=/var/run/quagga
+
+searchforprog()
+{
+    prog=$1
+    searchpath=$@
+    ret=
+    for p in $searchpath; do
+        if [ -x $p/$prog ]; then
+            ret=$p
+            break
+        fi
+    done
+    echo $ret
+}
+
+confcheck()
+{
+    CONF_DIR=`dirname $QUAGGA_CONF`
+    # if /etc/quagga exists, point /etc/quagga/Quagga.conf -&gt; CONF_DIR
+    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/Quagga.conf ]; then
+        ln -s $CONF_DIR/Quagga.conf /etc/quagga/Quagga.conf
+    fi
+    # if /etc/quagga exists, point /etc/quagga/vtysh.conf -&gt; CONF_DIR
+    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/vtysh.conf ]; then
+        ln -s $CONF_DIR/vtysh.conf /etc/quagga/vtysh.conf
+    fi
+}
+
+bootdaemon()
+{
+    QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
+    if [ "z$QUAGGA_SBIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's '$1' daemon not found in search path:"
+        echo "  $QUAGGA_SBIN_SEARCH"
+        return 1
+    fi
+
+    flags=""
+
+    if [ "$1" = "xpimd" ] &amp;&amp; \
+        grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
+        flags="$flags -6"
+    fi
+
+    $QUAGGA_SBIN_DIR/$1 $flags -d
+    if [ "$?" != "0" ]; then
+        echo "ERROR: Quagga's '$1' daemon failed to start!:"
+        return 1
+    fi
+}
+
+bootquagga()
+{
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
+    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
+    fi
+
+    # fix /var/run/quagga permissions
+    id -u quagga 2&gt;/dev/null &gt;/dev/null
+    if [ "$?" = "0" ]; then
+        chown quagga $QUAGGA_STATE_DIR
+    fi
+
+    bootdaemon "zebra"
+    for r in rip ripng ospf6 ospf bgp babel; do
+        if grep -q "^router \&lt;${r}\&gt;" $QUAGGA_CONF; then
+            bootdaemon "${r}d"
+        fi
+    done
+
+    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
+        bootdaemon "xpimd"
+    fi
+
+    $QUAGGA_BIN_DIR/vtysh -b
+}
+
+if [ "$1" != "zebra" ]; then
+    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
+    exit 1
+fi
+confcheck
+bootquagga
+</file>
+        <file name="/usr/local/etc/quagga/vtysh.conf">service integrated-vtysh-config
+</file>
+      </files>
+    </service>
+    <service name="OSPFv3MDR" node="7">
+      <validates>
+        <validate>pidof ospf6d</validate>
+      </validates>
+      <shutdowns>
+        <shutdown>killall ospf6d</shutdown>
+      </shutdowns>
+    </service>
+    <service name="IPForward" node="7">
       <startups>
         <startup>sh ipforward.sh</startup>
       </startups>
@@ -1224,164 +1540,6 @@ bootquagga
 </file>
       </files>
     </service>
-    <service name="zebra" node="7">
-      <directories>
-        <directory>/usr/local/etc/quagga</directory>
-        <directory>/var/run/quagga</directory>
-      </directories>
-      <startups>
-        <startup>sh quaggaboot.sh zebra</startup>
-      </startups>
-      <validates>
-        <validate>pidof zebra</validate>
-      </validates>
-      <shutdowns>
-        <shutdown>killall zebra</shutdown>
-      </shutdowns>
-      <files>
-        <file name="/usr/local/etc/quagga/Quagga.conf">interface eth0
-  ip address 10.0.0.7/32
-  ipv6 address a::7/128
-  ipv6 ospf6 instance-id 65
-  ipv6 ospf6 hello-interval 2
-  ipv6 ospf6 dead-interval 6
-  ipv6 ospf6 retransmit-interval 5
-  ipv6 ospf6 network manet-designated-router
-  ipv6 ospf6 diffhellos
-  ipv6 ospf6 adjacencyconnectivity uniconnected
-  ipv6 ospf6 lsafullness mincostlsa
-!
-router ospf6
-  router-id 10.0.0.7
-  interface eth0 area 0.0.0.0
-!
-</file>
-        <file name="quaggaboot.sh">#!/bin/sh
-# auto-generated by zebra service (quagga.py)
-QUAGGA_CONF=/usr/local/etc/quagga/Quagga.conf
-QUAGGA_SBIN_SEARCH="/usr/local/sbin /usr/sbin /usr/lib/quagga"
-QUAGGA_BIN_SEARCH="/usr/local/bin /usr/bin /usr/lib/quagga"
-QUAGGA_STATE_DIR=/var/run/quagga
-
-searchforprog()
-{
-    prog=$1
-    searchpath=$@
-    ret=
-    for p in $searchpath; do
-        if [ -x $p/$prog ]; then
-            ret=$p
-            break
-        fi
-    done
-    echo $ret
-}
-
-confcheck()
-{
-    CONF_DIR=`dirname $QUAGGA_CONF`
-    # if /etc/quagga exists, point /etc/quagga/Quagga.conf -&gt; CONF_DIR
-    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/Quagga.conf ]; then
-        ln -s $CONF_DIR/Quagga.conf /etc/quagga/Quagga.conf
-    fi
-    # if /etc/quagga exists, point /etc/quagga/vtysh.conf -&gt; CONF_DIR
-    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/vtysh.conf ]; then
-        ln -s $CONF_DIR/vtysh.conf /etc/quagga/vtysh.conf
-    fi
-}
-
-bootdaemon()
-{
-    QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
-    if [ "z$QUAGGA_SBIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
-        return 1
-    fi
-
-    flags=""
-
-    if [ "$1" = "xpimd" ] &amp;&amp; \
-        grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
-        flags="$flags -6"
-    fi
-
-    $QUAGGA_SBIN_DIR/$1 $flags -d
-    if [ "$?" != "0" ]; then
-        echo "ERROR: Quagga's '$1' daemon failed to start!:"
-        return 1
-    fi
-}
-
-bootquagga()
-{
-    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
-    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
-        echo "  $QUAGGA_BIN_SEARCH"
-        return 1
-    fi
-
-    # fix /var/run/quagga permissions
-    id -u quagga 2&gt;/dev/null &gt;/dev/null
-    if [ "$?" = "0" ]; then
-        chown quagga $QUAGGA_STATE_DIR
-    fi
-
-    bootdaemon "zebra"
-    for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \&lt;${r}\&gt;" $QUAGGA_CONF; then
-            bootdaemon "${r}d"
-        fi
-    done
-
-    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        bootdaemon "xpimd"
-    fi
-
-    $QUAGGA_BIN_DIR/vtysh -b
-}
-
-if [ "$1" != "zebra" ]; then
-    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
-    exit 1
-fi
-confcheck
-bootquagga
-</file>
-        <file name="/usr/local/etc/quagga/vtysh.conf">service integrated-vtysh-config
-</file>
-      </files>
-    </service>
-    <service name="OSPFv3MDR" node="7">
-      <validates>
-        <validate>pidof ospf6d</validate>
-      </validates>
-      <shutdowns>
-        <shutdown>killall ospf6d</shutdown>
-      </shutdowns>
-    </service>
-    <service name="IPForward" node="7">
-      <startups>
-        <startup>sh ipforward.sh</startup>
-      </startups>
-      <files>
-        <file name="ipforward.sh">#!/bin/sh
-# auto-generated by IPForward service (utility.py)
-/sbin/sysctl -w net.ipv4.conf.all.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.default.forwarding=1
-/sbin/sysctl -w net.ipv6.conf.all.forwarding=1
-/sbin/sysctl -w net.ipv6.conf.default.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.all.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.default.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.all.rp_filter=0
-/sbin/sysctl -w net.ipv4.conf.default.rp_filter=0
-/sbin/sysctl -w net.ipv4.conf.eth0.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.eth0.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.eth0.rp_filter=0
-</file>
-      </files>
-    </service>
     <service name="DefaultRoute" node="11">
       <startups>
         <startup>sh defaultroute.sh</startup>
@@ -1391,164 +1549,6 @@ bootquagga
 # auto-generated by DefaultRoute service (utility.py)
 ip route add default via 10.0.1.1
 ip route add default via a:1::1
-</file>
-      </files>
-    </service>
-    <service name="zebra" node="9">
-      <directories>
-        <directory>/usr/local/etc/quagga</directory>
-        <directory>/var/run/quagga</directory>
-      </directories>
-      <startups>
-        <startup>sh quaggaboot.sh zebra</startup>
-      </startups>
-      <validates>
-        <validate>pidof zebra</validate>
-      </validates>
-      <shutdowns>
-        <shutdown>killall zebra</shutdown>
-      </shutdowns>
-      <files>
-        <file name="/usr/local/etc/quagga/Quagga.conf">interface eth0
-  ip address 10.0.0.9/32
-  ipv6 address a::9/128
-  ipv6 ospf6 instance-id 65
-  ipv6 ospf6 hello-interval 2
-  ipv6 ospf6 dead-interval 6
-  ipv6 ospf6 retransmit-interval 5
-  ipv6 ospf6 network manet-designated-router
-  ipv6 ospf6 diffhellos
-  ipv6 ospf6 adjacencyconnectivity uniconnected
-  ipv6 ospf6 lsafullness mincostlsa
-!
-router ospf6
-  router-id 10.0.0.9
-  interface eth0 area 0.0.0.0
-!
-</file>
-        <file name="quaggaboot.sh">#!/bin/sh
-# auto-generated by zebra service (quagga.py)
-QUAGGA_CONF=/usr/local/etc/quagga/Quagga.conf
-QUAGGA_SBIN_SEARCH="/usr/local/sbin /usr/sbin /usr/lib/quagga"
-QUAGGA_BIN_SEARCH="/usr/local/bin /usr/bin /usr/lib/quagga"
-QUAGGA_STATE_DIR=/var/run/quagga
-
-searchforprog()
-{
-    prog=$1
-    searchpath=$@
-    ret=
-    for p in $searchpath; do
-        if [ -x $p/$prog ]; then
-            ret=$p
-            break
-        fi
-    done
-    echo $ret
-}
-
-confcheck()
-{
-    CONF_DIR=`dirname $QUAGGA_CONF`
-    # if /etc/quagga exists, point /etc/quagga/Quagga.conf -&gt; CONF_DIR
-    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/Quagga.conf ]; then
-        ln -s $CONF_DIR/Quagga.conf /etc/quagga/Quagga.conf
-    fi
-    # if /etc/quagga exists, point /etc/quagga/vtysh.conf -&gt; CONF_DIR
-    if [ "$CONF_DIR" != "/etc/quagga" ] &amp;&amp; [ -d /etc/quagga ] &amp;&amp; [ ! -e /etc/quagga/vtysh.conf ]; then
-        ln -s $CONF_DIR/vtysh.conf /etc/quagga/vtysh.conf
-    fi
-}
-
-bootdaemon()
-{
-    QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
-    if [ "z$QUAGGA_SBIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
-        return 1
-    fi
-
-    flags=""
-
-    if [ "$1" = "xpimd" ] &amp;&amp; \
-        grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
-        flags="$flags -6"
-    fi
-
-    $QUAGGA_SBIN_DIR/$1 $flags -d
-    if [ "$?" != "0" ]; then
-        echo "ERROR: Quagga's '$1' daemon failed to start!:"
-        return 1
-    fi
-}
-
-bootquagga()
-{
-    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
-    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
-        echo "  $QUAGGA_BIN_SEARCH"
-        return 1
-    fi
-
-    # fix /var/run/quagga permissions
-    id -u quagga 2&gt;/dev/null &gt;/dev/null
-    if [ "$?" = "0" ]; then
-        chown quagga $QUAGGA_STATE_DIR
-    fi
-
-    bootdaemon "zebra"
-    for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \&lt;${r}\&gt;" $QUAGGA_CONF; then
-            bootdaemon "${r}d"
-        fi
-    done
-
-    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        bootdaemon "xpimd"
-    fi
-
-    $QUAGGA_BIN_DIR/vtysh -b
-}
-
-if [ "$1" != "zebra" ]; then
-    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
-    exit 1
-fi
-confcheck
-bootquagga
-</file>
-        <file name="/usr/local/etc/quagga/vtysh.conf">service integrated-vtysh-config
-</file>
-      </files>
-    </service>
-    <service name="OSPFv3MDR" node="9">
-      <validates>
-        <validate>pidof ospf6d</validate>
-      </validates>
-      <shutdowns>
-        <shutdown>killall ospf6d</shutdown>
-      </shutdowns>
-    </service>
-    <service name="IPForward" node="9">
-      <startups>
-        <startup>sh ipforward.sh</startup>
-      </startups>
-      <files>
-        <file name="ipforward.sh">#!/bin/sh
-# auto-generated by IPForward service (utility.py)
-/sbin/sysctl -w net.ipv4.conf.all.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.default.forwarding=1
-/sbin/sysctl -w net.ipv6.conf.all.forwarding=1
-/sbin/sysctl -w net.ipv6.conf.default.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.all.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.default.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.all.rp_filter=0
-/sbin/sysctl -w net.ipv4.conf.default.rp_filter=0
-/sbin/sysctl -w net.ipv4.conf.eth0.forwarding=1
-/sbin/sysctl -w net.ipv4.conf.eth0.send_redirects=0
-/sbin/sysctl -w net.ipv4.conf.eth0.rp_filter=0
 </file>
       </files>
     </service>
@@ -1842,8 +1842,8 @@ bootquagga
     <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
   </session_options>
   <session_metadata>
-    <configuration name="canvas" value="{&quot;wallpaper&quot;: &quot;sample1-bg.gif&quot;, &quot;wallpaper-style&quot;: 1}"/>
-    <configuration name="shapes" value="[{&quot;type&quot;: &quot;rectangle&quot;, &quot;iconcoords&quot;: [125.0, 108.0, 402.0, 293.0], &quot;label&quot;: &quot;&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;#ebebde&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 0, &quot;bold&quot;: false, &quot;italic&quot;: false, &quot;underline&quot;: false}, {&quot;type&quot;: &quot;text&quot;, &quot;iconcoords&quot;: [502.0, 405.0], &quot;label&quot;: &quot;gateway&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 1, &quot;bold&quot;: true, &quot;italic&quot;: false, &quot;underline&quot;: false}, {&quot;type&quot;: &quot;text&quot;, &quot;iconcoords&quot;: [638.0, 501.0], &quot;label&quot;: &quot;wireless network&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 1, &quot;bold&quot;: true, &quot;italic&quot;: false, &quot;underline&quot;: false}]"/>
+    <configuration name="shapes" value="[{&quot;type&quot;: &quot;text&quot;, &quot;iconcoords&quot;: [543.4965070431643, 411.0598604519878], &quot;label&quot;: &quot;gateway&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 1, &quot;bold&quot;: true, &quot;italic&quot;: false, &quot;underline&quot;: false}, {&quot;type&quot;: &quot;text&quot;, &quot;iconcoords&quot;: [706.3568676636945, 564.7259973605969], &quot;label&quot;: &quot;wireless network&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 1, &quot;bold&quot;: true, &quot;italic&quot;: false, &quot;underline&quot;: false}, {&quot;type&quot;: &quot;rectangle&quot;, &quot;iconcoords&quot;: [135.99999999999994, 109.0, 389.0, 281.99999999999983], &quot;label&quot;: &quot;&quot;, &quot;fontfamily&quot;: &quot;Arial&quot;, &quot;fontsize&quot;: 12, &quot;labelcolor&quot;: &quot;#000000&quot;, &quot;color&quot;: &quot;#ebebde&quot;, &quot;border&quot;: &quot;#000000&quot;, &quot;width&quot;: 0, &quot;bold&quot;: false, &quot;italic&quot;: false, &quot;underline&quot;: false}]"/>
+    <configuration name="canvas" value="{&quot;wallpaper&quot;: &quot;sample1-bg.gif&quot;, &quot;wallpaper-style&quot;: 3, &quot;gridlines&quot;: false, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 800]}"/>
   </session_metadata>
   <default_services>
     <node type="mdr">

@@ -14,19 +14,13 @@ from coretk.graph.shape import Shape
 from coretk.graph.shapeutils import ShapeType, is_draw_shape
 from coretk.nodeutils import NodeUtils
 
-SCROLL_BUFFER = 25
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
 
 
 class CanvasGraph(tk.Canvas):
     def __init__(self, master, core, width, height):
-        super().__init__(
-            master,
-            highlightthickness=0,
-            background="#cccccc",
-            scrollregion=(0, 0, width + SCROLL_BUFFER, height + SCROLL_BUFFER),
-        )
+        super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app = master
         self.core = core
         self.mode = GraphMode.SELECT
@@ -44,8 +38,8 @@ class CanvasGraph(tk.Canvas):
         self.grid = None
         self.throughput_draw = Throughput(self, core)
         self.shape_drawing = False
-        self.default_width = width
-        self.default_height = height
+        self.default_dimensions = (width, height)
+        self.current_dimensions = self.default_dimensions
         self.ratio = 1.0
         self.offset = (0, 0)
         self.cursor = (0, 0)
@@ -66,17 +60,22 @@ class CanvasGraph(tk.Canvas):
         self.draw_canvas()
         self.draw_grid()
 
-    def draw_canvas(self):
+    def draw_canvas(self, dimensions=None):
+        if self.grid is not None:
+            self.delete(self.grid)
+        if not dimensions:
+            dimensions = self.default_dimensions
+        self.current_dimensions = dimensions
         self.grid = self.create_rectangle(
             0,
             0,
-            self.default_width,
-            self.default_height,
+            *dimensions,
             outline="#000000",
             fill="#ffffff",
             width=1,
             tags="rectangle",
         )
+        self.configure(scrollregion=self.bbox(tk.ALL))
 
     def reset_and_redraw(self, session):
         """
@@ -120,6 +119,16 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
+
+    def get_actual_coords(self, x, y):
+        actual_x = (x - self.offset[0]) / self.ratio
+        actual_y = (y - self.offset[1]) / self.ratio
+        return actual_x, actual_y
+
+    def get_scaled_coords(self, x, y):
+        scaled_x = (x * self.ratio) + self.offset[0]
+        scaled_y = (y * self.ratio) + self.offset[1]
+        return scaled_x, scaled_y
 
     def draw_grid(self):
         """
@@ -177,7 +186,9 @@ class CanvasGraph(tk.Canvas):
 
             # draw nodes on the canvas
             image = NodeUtils.node_icon(core_node.type, core_node.model)
-            node = CanvasNode(self.master, core_node, image)
+            x = core_node.position.x
+            y = core_node.position.y
+            node = CanvasNode(self.master, x, y, core_node, image)
             self.nodes[node.id] = node
             self.core.canvas_nodes[core_node.id] = node
 
@@ -422,8 +433,8 @@ class CanvasGraph(tk.Canvas):
         if not factor:
             factor = ZOOM_IN if event.delta > 0 else ZOOM_OUT
         event.x, event.y = self.canvasx(event.x), self.canvasy(event.y)
-        self.scale("all", event.x, event.y, factor, factor)
-        self.configure(scrollregion=self.bbox("all"))
+        self.scale(tk.ALL, event.x, event.y, factor, factor)
+        self.configure(scrollregion=self.bbox(tk.ALL))
         self.ratio *= float(factor)
         self.offset = (
             self.offset[0] * factor + event.x * (1 - factor),
@@ -444,7 +455,10 @@ class CanvasGraph(tk.Canvas):
         x, y = self.canvas_xy(event)
         self.cursor = x, y
         selected = self.get_selected(event)
-        logging.debug("click press: %s", selected)
+        logging.debug("click press(%s): %s", self.cursor, selected)
+        x_check = self.cursor[0] - self.offset[0]
+        y_check = self.cursor[1] - self.offset[1]
+        logging.debug("clock press ofset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
@@ -466,6 +480,11 @@ class CanvasGraph(tk.Canvas):
                     node = self.nodes[selected]
                     self.select_object(node.id)
                     self.selected = selected
+                    logging.info(
+                        "selected coords: (%s, %s)",
+                        node.core_node.position.x,
+                        node.core_node.position.y,
+                    )
         else:
             logging.debug("create selection box")
             if self.mode == GraphMode.SELECT:
@@ -557,10 +576,14 @@ class CanvasGraph(tk.Canvas):
 
     def add_node(self, x, y):
         if self.selected is None or self.selected in self.shapes:
+            actual_x, actual_y = self.get_actual_coords(x, y)
             core_node = self.core.create_node(
-                int(x), int(y), self.node_draw.node_type, self.node_draw.model
+                int(actual_x),
+                int(actual_y),
+                self.node_draw.node_type,
+                self.node_draw.model,
             )
-            node = CanvasNode(self.master, core_node, self.node_draw.image)
+            node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
             return node
@@ -652,18 +675,24 @@ class CanvasGraph(tk.Canvas):
     def resize_to_wallpaper(self):
         self.delete(self.wallpaper_id)
         image = ImageTk.PhotoImage(self.wallpaper)
-        self.redraw_canvas(image.width(), image.height())
+        self.redraw_canvas((image.width(), image.height()))
         self.draw_wallpaper(image)
 
-    def redraw_canvas(self, width, height):
-        """
-        redraw grid with new dimension
+    def redraw_canvas(self, dimensions=None):
+        logging.info("redrawing canvas to dimensions: %s", dimensions)
 
-        :return: nothing
-        """
-        # resize canvas and scrollregion
-        self.config(scrollregion=(0, 0, width + SCROLL_BUFFER, height + SCROLL_BUFFER))
-        self.coords(self.grid, 0, 0, width, height)
+        # reset scale and move back to original position
+        logging.info("resetting scaling: %s %s", self.ratio, self.offset)
+        factor = 1 / self.ratio
+        self.scale(tk.ALL, self.offset[0], self.offset[1], factor, factor)
+        self.move(tk.ALL, -self.offset[0], -self.offset[1])
+
+        # reset ratio and offset
+        self.ratio = 1.0
+        self.offset = (0, 0)
+
+        # redraw canvas rectangle
+        self.draw_canvas(dimensions)
 
         # redraw gridlines to new canvas size
         self.delete(tags.GRIDLINE)
@@ -672,10 +701,11 @@ class CanvasGraph(tk.Canvas):
 
     def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
+            logging.info("drawing wallpaper to canvas dimensions")
             self.resize_to_wallpaper()
         else:
             option = ScaleOption(self.scale_option.get())
-            logging.info("canvas scale option: %s", option)
+            logging.info("drawing canvas using scaling option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
             elif option == ScaleOption.CENTERED:
@@ -698,7 +728,7 @@ class CanvasGraph(tk.Canvas):
 
     def set_wallpaper(self, filename):
         logging.info("setting wallpaper: %s", filename)
-        if filename is not None:
+        if filename:
             img = Image.open(filename)
             self.wallpaper = img
             self.wallpaper_file = filename

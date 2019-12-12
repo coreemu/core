@@ -14,7 +14,7 @@ CUSTOM_EMANE_PATH = HOME_PATH.joinpath("custom_emane")
 CUSTOM_SERVICE_PATH = HOME_PATH.joinpath("custom_services")
 ICONS_PATH = HOME_PATH.joinpath("icons")
 MOBILITY_PATH = HOME_PATH.joinpath("mobility")
-XML_PATH = HOME_PATH.joinpath("xml")
+XMLS_PATH = HOME_PATH.joinpath("xmls")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 
 # local paths
@@ -22,6 +22,7 @@ DATA_PATH = Path(__file__).parent.joinpath("data")
 LOCAL_ICONS_PATH = DATA_PATH.joinpath("icons").absolute()
 LOCAL_BACKGROUND_PATH = DATA_PATH.joinpath("backgrounds").absolute()
 LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
+LOCAL_MOBILITY_PATH = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
 TERMINALS = [
@@ -43,6 +44,12 @@ class IndentDumper(yaml.Dumper):
         return super().increase_indent(flow, False)
 
 
+def copy_files(current_path, new_path):
+    for current_file in current_path.glob("*"):
+        new_file = new_path.joinpath(current_file.name)
+        shutil.copy(current_file, new_file)
+
+
 def check_directory():
     if HOME_PATH.exists():
         logging.info("~/.coretk exists")
@@ -54,16 +61,12 @@ def check_directory():
     CUSTOM_SERVICE_PATH.mkdir()
     ICONS_PATH.mkdir()
     MOBILITY_PATH.mkdir()
-    XML_PATH.mkdir()
-    for image in LOCAL_ICONS_PATH.glob("*"):
-        new_image = ICONS_PATH.joinpath(image.name)
-        shutil.copy(image, new_image)
-    for background in LOCAL_BACKGROUND_PATH.glob("*"):
-        new_background = BACKGROUNDS_PATH.joinpath(background.name)
-        shutil.copy(background, new_background)
-    for xml_file in LOCAL_XMLS_PATH.glob("*"):
-        new_xml = XML_PATH.joinpath(xml_file.name)
-        shutil.copy(xml_file, new_xml)
+    XMLS_PATH.mkdir()
+
+    copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
+    copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)
+    copy_files(LOCAL_XMLS_PATH, XMLS_PATH)
+    copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
 
     if "TERM" in os.environ:
         terminal = TERMINALS[0]

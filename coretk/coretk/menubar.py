@@ -46,7 +46,12 @@ class Menubar(tk.Menu):
         :return: nothing
         """
         menu = tk.Menu(self)
-        menu.add_command(label="New Session", accelerator="Ctrl+N", state=tk.DISABLED)
+        menu.add_command(
+            label="New Session",
+            accelerator="Ctrl+N",
+            command=self.app.core.create_new_session,
+        )
+        self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
         menu.add_command(
             label="Open...", command=self.menuaction.file_open_xml, accelerator="Ctrl+O"
         )
@@ -104,16 +109,16 @@ class Menubar(tk.Menu):
         :return: nothing
         """
         menu = tk.Menu(self)
-        menu.add_command(label="New", state=tk.DISABLED)
-        menu.add_command(label="Manage...", state=tk.DISABLED)
-        menu.add_command(label="Delete", state=tk.DISABLED)
-        menu.add_separator()
         menu.add_command(
             label="Size/scale...", command=self.menuaction.canvas_size_and_scale
         )
         menu.add_command(
             label="Wallpaper...", command=self.menuaction.canvas_set_wallpaper
         )
+        menu.add_separator()
+        menu.add_command(label="New", state=tk.DISABLED)
+        menu.add_command(label="Manage...", state=tk.DISABLED)
+        menu.add_command(label="Delete", state=tk.DISABLED)
         menu.add_separator()
         menu.add_command(label="Previous", accelerator="PgUp", state=tk.DISABLED)
         menu.add_command(label="Next", accelerator="PgDown", state=tk.DISABLED)
