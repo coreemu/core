@@ -183,7 +183,6 @@ class ListboxScroll(ttk.LabelFrame):
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
         )
-        logging.info("listbox background: %s", self.listbox.cget("background"))
         self.listbox.grid(row=0, column=0, sticky="nsew")
         self.scrollbar.config(command=self.listbox.yview)
 
