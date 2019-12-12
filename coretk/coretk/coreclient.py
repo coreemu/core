@@ -479,8 +479,11 @@ class CoreClient:
 
     def set_metadata(self):
         # create canvas data
+        wallpaper = None
+        if self.app.canvas.wallpaper_file:
+            wallpaper = Path(self.app.canvas.wallpaper_file).name
         canvas_config = {
-            "wallpaper": Path(self.app.canvas.wallpaper_file).name,
+            "wallpaper": wallpaper,
             "wallpaper-style": self.app.canvas.scale_option.get(),
             "gridlines": self.app.canvas.show_grid.get(),
             "fit_image": self.app.canvas.adjust_to_dim.get(),
