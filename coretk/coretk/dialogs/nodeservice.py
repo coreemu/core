@@ -12,7 +12,8 @@ from coretk.widgets import CheckboxList, ListboxScroll
 
 class NodeService(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
-        super().__init__(master, app, "Node Services", modal=True)
+        title = f"{canvas_node.core_node.name} Services"
+        super().__init__(master, app, title, modal=True)
         self.app = app
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id
