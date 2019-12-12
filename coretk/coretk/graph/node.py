@@ -3,6 +3,7 @@ from tkinter import font
 
 import grpc
 
+from core.api.grpc import core_pb2
 from core.api.grpc.core_pb2 import NodeType
 from coretk import themes
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
@@ -193,7 +194,9 @@ class CanvasNode:
                     label="Mobility Config", command=self.show_mobility_config
                 )
             if NodeUtils.is_wireless_node(self.core_node.type):
-                context.add_command(label="Link To All MDRs", state=tk.DISABLED)
+                context.add_command(
+                    label="Link To Selected", command=self.wireless_link_selected
+                )
                 context.add_command(label="Select Members", state=tk.DISABLED)
             context.add_command(label="Select Adjacent", state=tk.DISABLED)
             context.add_command(label="Create Link To", state=tk.DISABLED)
@@ -235,3 +238,13 @@ class CanvasNode:
         self.canvas.context = None
         dialog = NodeService(self.app.master, self.app, self)
         dialog.show()
+
+    def wireless_link_selected(self):
+        self.canvas.context = None
+        for canvas_nid in [
+            x for x in self.canvas.selection if "node" in self.canvas.gettags(x)
+        ]:
+            core_node = self.canvas.nodes[canvas_nid].core_node
+            if core_node.type == core_pb2.NodeType.DEFAULT and core_node.model == "mdr":
+                self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
+        self.canvas.clear_selection()

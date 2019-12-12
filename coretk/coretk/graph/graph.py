@@ -11,7 +11,7 @@ from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
-from coretk.graph.shapeutils import is_draw_shape
+from coretk.graph.shapeutils import ShapeType, is_draw_shape
 from coretk.nodeutils import NodeUtils
 
 SCROLL_BUFFER = 25
@@ -32,6 +32,7 @@ class CanvasGraph(tk.Canvas):
         self.mode = GraphMode.SELECT
         self.annotation_type = None
         self.selection = {}
+        self.select_box = None
         self.selected = None
         self.node_draw = None
         self.context = None
@@ -137,6 +138,13 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(self.grid)
 
     def add_wireless_edge(self, src, dst):
+        """
+        add a wireless edge between 2 canvas nodes
+
+        :param CanvasNode src: source node
+        :param CanvasNode dst: destination node
+        :return: nothing
+        """
         token = tuple(sorted((src.id, dst.id)))
         x1, y1 = self.coords(src.id)
         x2, y2 = self.coords(dst.id)
@@ -249,6 +257,7 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
+        logging.debug("click release")
         if self.context:
             self.context.unpost()
             self.context = None
@@ -260,6 +269,19 @@ class CanvasGraph(tk.Canvas):
                     shape = self.shapes[self.selected]
                     shape.shape_complete(x, y)
                     self.shape_drawing = False
+            elif self.mode == GraphMode.SELECT:
+                self.focus_set()
+                if self.select_box:
+                    x0, y0, x1, y1 = self.coords(self.select_box.id)
+                    inside = [
+                        x
+                        for x in self.find_enclosed(x0, y0, x1, y1)
+                        if "node" in self.gettags(x) or "shape" in self.gettags(x)
+                    ]
+                    for i in inside:
+                        self.select_object(i, True)
+                    self.select_box.disappear()
+                    self.select_box = None
             else:
                 self.focus_set()
                 self.selected = self.get_selected(event)
@@ -445,6 +467,10 @@ class CanvasGraph(tk.Canvas):
                     self.select_object(node.id)
                     self.selected = selected
         else:
+            logging.debug("create selection box")
+            if self.mode == GraphMode.SELECT:
+                shape = Shape(self.app, self, ShapeType.RECTANGLE, x, y)
+                self.select_box = shape
             self.clear_selection()
 
     def ctrl_click(self, event):
@@ -486,14 +512,18 @@ class CanvasGraph(tk.Canvas):
             return
 
         # move selected objects
-        for selected_id in self.selection:
-            if selected_id in self.shapes:
-                shape = self.shapes[selected_id]
-                shape.motion(x_offset, y_offset)
+        if len(self.selection) > 0:
+            for selected_id in self.selection:
+                if selected_id in self.shapes:
+                    shape = self.shapes[selected_id]
+                    shape.motion(x_offset, y_offset)
 
-            if selected_id in self.nodes:
-                node = self.nodes[selected_id]
-                node.motion(x_offset, y_offset, update=self.core.is_runtime())
+                if selected_id in self.nodes:
+                    node = self.nodes[selected_id]
+                    node.motion(x_offset, y_offset, update=self.core.is_runtime())
+        else:
+            if self.select_box and self.mode == GraphMode.SELECT:
+                self.select_box.shape_motion(x, y)
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)
@@ -681,3 +711,23 @@ class CanvasGraph(tk.Canvas):
 
     def is_selection_mode(self):
         return self.mode == GraphMode.SELECT
+
+    def create_edge(self, source, dest):
+        """
+        create an edge between source node and destination node
+
+        :param CanvasNode source: source node
+        :param CanvasNode dest: destination node
+        :return: nothing
+        """
+        if tuple([source.id, dest.id]) not in self.edges:
+            pos0 = source.core_node.position
+            x0 = pos0.x
+            y0 = pos0.y
+            edge = CanvasEdge(x0, y0, x0, y0, source.id, self)
+            edge.complete(dest.id)
+            self.edges[edge.token] = edge
+            self.nodes[source.id].edges.add(edge)
+            self.nodes[dest.id].edges.add(edge)
+            link = self.core.create_link(edge, source, dest)
+            edge.link_info = LinkInfo(self, edge, link)
