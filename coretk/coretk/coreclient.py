@@ -228,13 +228,12 @@ class CoreClient:
 
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
-            for node_id in response.configs:
-                config = response.configs[node_id]
+            for config in response.configs:
                 interface = None
                 if config.interface != -1:
                     interface = config.interface
                 self.set_emane_model_config(
-                    node_id, config.model, config.config, interface
+                    config.node_id, config.model, config.config, interface
                 )
 
             # get wlan configurations
