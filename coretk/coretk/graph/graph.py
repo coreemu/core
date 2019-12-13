@@ -4,6 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
+from coretk import nodeutils
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.graph import tags
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
@@ -12,6 +13,7 @@ from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
 from coretk.graph.shapeutils import ShapeType, is_draw_shape
+from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
 ZOOM_IN = 1.1
@@ -186,12 +188,19 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
+            logging.info("drawing core node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
 
             # draw nodes on the canvas
             image = NodeUtils.node_icon(core_node.type, core_node.model)
+            if core_node.icon:
+                try:
+                    image = Images.create(core_node.icon, nodeutils.ICON_SIZE)
+                except OSError:
+                    logging.error("invalid icon: %s", core_node.icon)
+
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)

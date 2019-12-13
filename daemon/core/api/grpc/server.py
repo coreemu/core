@@ -393,15 +393,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             position = core_pb2.Position(
                 x=node.position.x, y=node.position.y, z=node.position.z
             )
-
             services = getattr(node, "services", [])
             if services is None:
                 services = []
             services = [x.name for x in services]
-
             emane_model = None
             if isinstance(node, EmaneNet):
                 emane_model = node.model.name
+            image = getattr(node, "image", None)
 
             node_proto = core_pb2.Node(
                 id=node.id,
@@ -411,6 +410,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 type=node_type.value,
                 position=position,
                 services=services,
+                icon=node.icon,
+                image=image,
             )
             if isinstance(node, (DockerNode, LxcNode)):
                 node_proto.image = node.image
