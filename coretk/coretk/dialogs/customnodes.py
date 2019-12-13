@@ -3,11 +3,12 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
 
+from coretk import nodeutils
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.icondialog import IconDialog
+from coretk.images import Images
 from coretk.nodeutils import NodeDraw
 from coretk.themes import FRAME_PAD, PADX, PADY
-from coretk.widgets import CheckboxList, ListboxScroll
+from coretk.widgets import CheckboxList, ListboxScroll, image_chooser
 
 
 class ServicesSelectDialog(Dialog):
@@ -170,11 +171,11 @@ class CustomNodesDialog(Dialog):
         self.image_button.config(image="")
 
     def click_icon(self):
-        dialog = IconDialog(self, self.app, self.name.get(), self.image)
-        dialog.show()
-        if dialog.image:
-            self.image = dialog.image
-            self.image_file = dialog.file_path.get()
+        file_path = image_chooser(self)
+        if file_path:
+            image = Images.create(file_path, nodeutils.ICON_SIZE)
+            self.image = image
+            self.image_file = file_path
             self.image_button.config(image=self.image)
 
     def click_services(self):

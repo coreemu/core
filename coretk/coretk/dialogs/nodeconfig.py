@@ -3,12 +3,13 @@ import tkinter as tk
 from functools import partial
 from tkinter import ttk
 
+from coretk import nodeutils
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeService
+from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 from coretk.themes import FRAME_PAD, PADX, PADY
-from coretk.widgets import FrameScroll
+from coretk.widgets import FrameScroll, image_chooser
 
 
 def mac_auto(is_auto, entry):
@@ -196,10 +197,9 @@ class NodeConfigDialog(Dialog):
         dialog.show()
 
     def click_icon(self):
-        dialog = IconDialog(self, self.app, self.node.name, self.canvas_node.image)
-        dialog.show()
-        if dialog.image:
-            self.image = dialog.image
+        file_path = image_chooser(self)
+        if file_path:
+            self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_button.config(image=self.image)
 
     def config_apply(self):
