@@ -19,6 +19,7 @@ class StatusBar(ttk.Frame):
         self.memory = None
         self.emulation_light = None
         self.running = False
+        self.core_alarms = []
         self.draw()
 
     def draw(self):

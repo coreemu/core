@@ -620,7 +620,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.ExceptionEvent(
             node_id=event.node,
             session_id=int(event.session),
-            level=event.level.value,
+            level=event.level,
             source=event.source,
             date=event.date,
             text=event.text,
