@@ -140,8 +140,8 @@ class CanvasNode:
 
         # set actual coords for node and update core is running
         real_x, real_y = self.canvas.get_actual_coords(x, y)
-        self.core_node.position.x = int(real_x)
-        self.core_node.position.y = int(real_y)
+        self.core_node.position.x = real_x
+        self.core_node.position.y = real_y
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 
@@ -163,11 +163,6 @@ class CanvasNode:
             self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
-
-    def update_coords(self):
-        x, y = self.canvas.coords(self.id)
-        self.core_node.position.x = int(x)
-        self.core_node.position.y = int(y)
 
     def create_context(self):
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN

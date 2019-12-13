@@ -183,8 +183,7 @@ class CoreClient:
             )
 
     def handle_exception_event(self, event):
-        print(event)
-        print(event.node_id)
+        logging.info("exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
     def join_session(self, session_id, query_location=True):

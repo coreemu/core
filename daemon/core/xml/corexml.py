@@ -117,14 +117,8 @@ class NodeElement:
 
     def add_position(self):
         x = self.node.position.x
-        if x is not None:
-            x = int(x)
         y = self.node.position.y
-        if y is not None:
-            y = int(y)
         z = self.node.position.z
-        if z is not None:
-            z = int(z)
         lat, lon, alt = None, None, None
         if x is not None and y is not None:
             lat, lon, alt = self.session.location.getgeo(x, y, z)
@@ -751,8 +745,8 @@ class CoreXmlReader:
 
         position_element = device_element.find("position")
         if position_element is not None:
-            x = get_int(position_element, "x")
-            y = get_int(position_element, "y")
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
             if all([x, y]):
                 options.set_position(x, y)
 
@@ -773,8 +767,8 @@ class CoreXmlReader:
 
         position_element = network_element.find("position")
         if position_element is not None:
-            x = get_int(position_element, "x")
-            y = get_int(position_element, "y")
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
             if all([x, y]):
                 options.set_position(x, y)
 

@@ -616,10 +616,7 @@ class CanvasGraph(tk.Canvas):
         if self.selected is None or self.selected in self.shapes:
             actual_x, actual_y = self.get_actual_coords(x, y)
             core_node = self.core.create_node(
-                int(actual_x),
-                int(actual_y),
-                self.node_draw.node_type,
-                self.node_draw.model,
+                actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
