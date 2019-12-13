@@ -5,7 +5,6 @@ import signal
 import sys
 
 import core.services
-from core.emulator.emudata import IdGen
 from core.emulator.session import Session
 from core.services.coreservices import ServiceManager
 
@@ -49,7 +48,6 @@ class CoreEmu:
         self.config = config
 
         # session management
-        self.session_id_gen = IdGen()
         self.sessions = {}
 
         # load services
@@ -79,7 +77,6 @@ class CoreEmu:
         :return: nothing
         """
         logging.info("shutting down all sessions")
-        self.session_id_gen.id = 0
         sessions = self.sessions.copy()
         self.sessions.clear()
         for _id in sessions:
@@ -96,11 +93,9 @@ class CoreEmu:
         :rtype: EmuSession
         """
         if not _id:
-            while True:
-                _id = self.session_id_gen.next()
-                if _id not in self.sessions:
-                    break
-
+            _id = 1
+            while _id in self.sessions:
+                _id += 1
         session = _cls(_id, config=self.config)
         logging.info("created session: %s", _id)
         self.sessions[_id] = session
