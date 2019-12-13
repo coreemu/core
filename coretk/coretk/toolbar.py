@@ -14,11 +14,11 @@ from coretk.nodeutils import NodeUtils
 from coretk.themes import Styles
 from coretk.tooltip import Tooltip
 
-WIDTH = 32
+TOOLBAR_SIZE = 32
 PICKER_SIZE = 24
 
 
-def icon(image_enum, width=WIDTH):
+def icon(image_enum, width=TOOLBAR_SIZE):
     return Images.get(image_enum, width)
 
 
@@ -146,17 +146,23 @@ class Toolbar(ttk.Frame):
         self.node_picker = ttk.Frame(self.master)
         # draw default nodes
         for node_draw in NodeUtils.NODES:
+            toolbar_image = icon(node_draw.image_enum)
             image = icon(node_draw.image_enum, PICKER_SIZE)
-            func = partial(self.update_button, self.node_button, image, node_draw)
+            func = partial(
+                self.update_button, self.node_button, toolbar_image, node_draw
+            )
             self.create_picker_button(image, func, self.node_picker, node_draw.label)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
-            image = Images.get_custom(node_draw.image_file, WIDTH)
-            func = partial(self.update_button, self.node_button, image, node_draw)
+            toolbar_image = Images.get_custom(node_draw.image_file, TOOLBAR_SIZE)
+            image = Images.get_custom(node_draw.image_file, PICKER_SIZE)
+            func = partial(
+                self.update_button, self.node_button, toolbar_image, node_draw
+            )
             self.create_picker_button(image, func, self.node_picker, name)
         # draw edit node
-        image = icon(ImageEnum.EDITNODE)
+        image = icon(ImageEnum.EDITNODE, PICKER_SIZE)
         self.create_picker_button(
             image, self.click_edit_node, self.node_picker, "Custom"
         )
@@ -277,10 +283,13 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
         for node_draw in NodeUtils.NETWORK_NODES:
+            toolbar_image = icon(node_draw.image_enum)
             image = icon(node_draw.image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
-                partial(self.update_button, self.network_button, image, node_draw),
+                partial(
+                    self.update_button, self.network_button, toolbar_image, node_draw
+                ),
                 self.network_picker,
                 node_draw.label,
             )
@@ -319,10 +328,11 @@ class Toolbar(ttk.Frame):
             (ImageEnum.TEXT, ShapeType.TEXT),
         ]
         for image_enum, shape_type in nodes:
+            toolbar_image = icon(image_enum)
             image = icon(image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
-                partial(self.update_annotation, image, shape_type),
+                partial(self.update_annotation, toolbar_image, shape_type),
                 self.annotation_picker,
                 shape_type.value,
             )
