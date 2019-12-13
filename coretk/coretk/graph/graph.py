@@ -130,6 +130,12 @@ class CanvasGraph(tk.Canvas):
         scaled_y = (y * self.ratio) + self.offset[1]
         return scaled_x, scaled_y
 
+    def inside_canvas(self, x, y):
+        x1, y1, x2, y2 = self.bbox(self.grid)
+        valid_x = x1 <= x <= x2
+        valid_y = y1 <= y <= y2
+        return valid_x and valid_y
+
     def draw_grid(self):
         """
         Create grid.
@@ -269,13 +275,16 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         logging.debug("click release")
+        x, y = self.canvas_xy(event)
+        if not self.inside_canvas(x, y):
+            return
+
         if self.context:
             self.context.unpost()
             self.context = None
         else:
             if self.mode == GraphMode.ANNOTATION:
                 self.focus_set()
-                x, y = self.canvas_xy(event)
                 if self.shape_drawing:
                     shape = self.shapes[self.selected]
                     shape.shape_complete(x, y)
@@ -302,7 +311,6 @@ class CanvasGraph(tk.Canvas):
                 if self.mode == GraphMode.EDGE:
                     self.handle_edge_release(event)
                 elif self.mode == GraphMode.NODE:
-                    x, y = self.canvas_xy(event)
                     self.add_node(x, y)
                 elif self.mode == GraphMode.PICKNODE:
                     self.mode = GraphMode.NODE
@@ -453,6 +461,9 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         x, y = self.canvas_xy(event)
+        if not self.inside_canvas(x, y):
+            return
+
         self.cursor = x, y
         selected = self.get_selected(event)
         logging.debug("click press(%s): %s", self.cursor, selected)
@@ -495,6 +506,9 @@ class CanvasGraph(tk.Canvas):
     def ctrl_click(self, event):
         # update cursor location
         x, y = self.canvas_xy(event)
+        if not self.inside_canvas(x, y):
+            return
+
         self.cursor = x, y
 
         # handle multiple selections
@@ -515,6 +529,9 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         x, y = self.canvas_xy(event)
+        if not self.inside_canvas(x, y):
+            return
+
         x_offset = x - self.cursor[0]
         y_offset = y - self.cursor[1]
         self.cursor = x, y
@@ -531,7 +548,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         # move selected objects
-        if len(self.selection) > 0:
+        if self.selection:
             for selected_id in self.selection:
                 if selected_id in self.shapes:
                     shape = self.shapes[selected_id]
