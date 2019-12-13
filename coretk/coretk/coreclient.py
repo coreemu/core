@@ -149,8 +149,8 @@ class CoreClient:
             self.handle_node_event(event.node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
-        elif event.HasField("throughput_event"):
-            logging.info("throughput event: %s", event)
+        elif event.HasField("exception_event"):
+            self.handle_exception_event(event.exception_event)
         else:
             logging.info("unhandled event: %s", event)
 
@@ -181,6 +181,11 @@ class CoreClient:
             self.app.canvas.throughput_draw.process_grpc_throughput_event(
                 event.interface_throughputs
             )
+
+    def handle_exception_event(self, event):
+        print(event)
+        print(event.node_id)
+        self.app.statusbar.core_alarms.append(event)
 
     def join_session(self, session_id, query_location=True):
         # update session and title

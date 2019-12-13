@@ -216,6 +216,7 @@ class Toolbar(ttk.Frame):
 
         :return: nothing
         """
+        self.app.statusbar.core_alarms.clear()
         self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
         thread = threading.Thread(target=self.app.core.start_session)
