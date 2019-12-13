@@ -2,22 +2,21 @@
 import tkinter as tk
 from tkinter import ttk
 
-from coretk.dialogs.cel import CheckLight
-from coretk.images import ImageEnum, Images
+from coretk.dialogs.alerts import AlertsDialog
+from coretk.themes import Styles
 
 
 class StatusBar(ttk.Frame):
     def __init__(self, master, app, **kwargs):
         super().__init__(master, **kwargs)
         self.app = app
-
         self.status = None
         self.statusvar = tk.StringVar()
         self.progress_bar = None
         self.zoom = None
         self.cpu_usage = None
         self.memory = None
-        self.emulation_light = None
+        self.alerts_button = None
         self.running = False
         self.core_alarms = []
         self.draw()
@@ -56,16 +55,13 @@ class StatusBar(ttk.Frame):
         )
         self.cpu_usage.grid(row=0, column=3, sticky="ew")
 
-        image = Images.get(ImageEnum.ALERT, 18)
-        self.emulation_light = ttk.Button(
-            self, image=image, text="Alert", compound="left"
+        self.alerts_button = ttk.Button(
+            self, text="Alerts", command=self.click_alerts, style=Styles.green_alert
         )
-        self.emulation_light.image = image
-        self.emulation_light.bind("<Button-1>", self.cel_callback)
-        self.emulation_light.grid(row=0, column=4, sticky="ew")
+        self.alerts_button.grid(row=0, column=4, sticky="ew")
 
-    def cel_callback(self, event):
-        dialog = CheckLight(self.app, self.app)
+    def click_alerts(self):
+        dialog = AlertsDialog(self.app, self.app)
         dialog.show()
 
     def start_session_callback(self, process_time):

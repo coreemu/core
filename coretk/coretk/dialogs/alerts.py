@@ -8,36 +8,26 @@ from grpc import RpcError
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
-from coretk.images import ImageEnum, Images
 from coretk.themes import PADX, PADY
 from coretk.widgets import CodeText
 
 
-class CheckLight(Dialog):
+class AlertsDialog(Dialog):
     def __init__(self, master, app):
-        super().__init__(master, app, "CEL", modal=True)
+        super().__init__(master, app, "Alerts", modal=True)
         self.app = app
         self.tree = None
         self.text = None
         self.draw()
 
     def draw(self):
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
+        self.top.rowconfigure(1, weight=1)
         row = 0
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        image = Images.get(ImageEnum.ALERT, 18)
-        label = ttk.Label(frame, image=image)
-        label.image = image
-        label.grid(row=0, column=0, sticky="e")
-        label = ttk.Label(frame, text="Check Emulation Light")
-        label.grid(row=0, column=1, sticky="w")
-        frame.grid(row=row, column=0, padx=PADX, pady=PADY, sticky="nsew")
-        row = row + 1
-
-        frame = ttk.Frame(self)
-        frame.columnconfigure(0, weight=1)
-        frame.grid(row=row, column=0, sticky="nsew")
+        frame.grid(row=row, column=0, sticky="nsew", pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("time", "level", "session_id", "node", "source"),
@@ -86,27 +76,27 @@ class CheckLight(Dialog):
         self.tree.configure(xscrollcommand=xscrollbar.set)
         row = row + 1
 
-        self.text = CodeText(self)
+        self.text = CodeText(self.top)
         self.text.config(state=tk.DISABLED)
-        self.text.grid(row=row, column=0, sticky="nsew")
+        self.text.grid(row=row, column=0, sticky="nsew", pady=PADY)
         row = row + 1
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
+        frame.grid(row=row, column=0, sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
-        button = ttk.Button(frame, text="Reset CEL", command=self.reset_cel)
-        button.grid(row=0, column=0, sticky="nsew", padx=PADX)
-        button = ttk.Button(frame, text="View core-daemon log", command=self.daemon_log)
-        button.grid(row=0, column=1, sticky="nsew", padx=PADX)
-        button = ttk.Button(frame, text="View node log")
-        button.grid(row=0, column=2, sticky="nsew", padx=PADX)
+        button = ttk.Button(frame, text="Reset", command=self.reset_alerts)
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button = ttk.Button(frame, text="Daemon Log", command=self.daemon_log)
+        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button = ttk.Button(frame, text="Node Log")
+        button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Close", command=self.destroy)
-        button.grid(row=0, column=3, sticky="nsew", padx=PADX)
-        frame.grid(row=row, column=0, sticky="nsew")
+        button.grid(row=0, column=3, sticky="ew")
 
-    def reset_cel(self):
+    def reset_alerts(self):
         self.text.delete("1.0", tk.END)
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -160,20 +150,22 @@ class DaemonLog(Dialog):
         self.draw()
 
     def draw(self):
-        frame = ttk.Frame(self)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(1, weight=1)
+        frame = ttk.Frame(self.top)
+        frame.grid(row=0, column=0, sticky="ew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=9)
         label = ttk.Label(frame, text="File: ")
         label.grid(row=0, column=0)
         entry = ttk.Entry(frame, textvariable=self.path, state="disabled")
-        entry.grid(row=0, column=1, sticky="nsew")
-        frame.grid(row=0, column=0, sticky="nsew")
+        entry.grid(row=0, column=1, sticky="ew")
         try:
             file = open("/var/log/core-daemon.log", "r")
             log = file.readlines()
         except FileNotFoundError:
             log = "Log file not found"
-        text = CodeText(self)
+        text = CodeText(self.top)
         text.insert("1.0", log)
         text.see("end")
         text.config(state=tk.DISABLED)

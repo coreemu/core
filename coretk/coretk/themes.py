@@ -13,6 +13,9 @@ class Styles:
     tooltip_frame = "Tooltip.TFrame"
     service_checkbutton = "Service.TCheckbutton"
     picker_button = "Picker.TButton"
+    green_alert = "GAlert.TButton"
+    red_alert = "RAlert.TButton"
+    yellow_alert = "YAlert.TButton"
 
 
 class Colors:
@@ -163,3 +166,24 @@ def update_menu(style, widget):
 
 def theme_change(style, event):
     style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))
+    style.configure(
+        Styles.green_alert,
+        background="green",
+        padding=0,
+        relief=tk.NONE,
+        font=("TkDefaultFont", 8, "normal"),
+    )
+    style.configure(
+        Styles.yellow_alert,
+        background="yellow",
+        padding=0,
+        relief=tk.NONE,
+        font=("TkDefaultFont", 8, "normal"),
+    )
+    style.configure(
+        Styles.red_alert,
+        background="red",
+        padding=0,
+        relief=tk.NONE,
+        font=("TkDefaultFont", 8, "normal"),
+    )
