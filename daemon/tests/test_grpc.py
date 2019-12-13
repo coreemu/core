@@ -1086,7 +1086,9 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(ExceptionLevels.FATAL, "test", None, "exception message")
+            session.exception(
+                ExceptionLevels.FATAL.value, "test", None, "exception message"
+            )
 
             # then
             queue.get(timeout=5)
