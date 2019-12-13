@@ -138,6 +138,11 @@ class CanvasGraph(tk.Canvas):
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
 
+    def valid_position(self, x1, y1, x2, y2):
+        valid_topleft = self.inside_canvas(x1, y1)
+        valid_bottomright = self.inside_canvas(x2, y2)
+        return valid_topleft and valid_bottomright
+
     def draw_grid(self):
         """
         Create grid.
@@ -539,6 +544,13 @@ class CanvasGraph(tk.Canvas):
         """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
+            if self.select_box:
+                self.select_box.delete()
+                self.select_box = None
+            if is_draw_shape(self.annotation_type) and self.shape_drawing:
+                shape = self.shapes.pop(self.selected)
+                shape.delete()
+                self.shape_drawing = False
             return
 
         x_offset = x - self.cursor[0]

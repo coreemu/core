@@ -103,10 +103,19 @@ class CanvasNode:
         self.motion(x_offset, y_offset, update=False)
 
     def motion(self, x_offset, y_offset, update=True):
+        original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
+        x, y = self.canvas.coords(self.id)
+
+        # check new position
+        bbox = self.canvas.bbox(self.id)
+        if not self.canvas.valid_position(*bbox):
+            self.canvas.coords(self.id, original_position)
+            return
+
+        # move test and selection box
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.canvas.move_selection(self.id, x_offset, y_offset)
-        x, y = self.canvas.coords(self.id)
 
         # move antennae
         for antenna_id in self.antennae:
