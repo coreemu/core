@@ -666,6 +666,7 @@ message GetEmaneModelConfigsResponse {
     message ModelConfig {
         string model = 1;
         map<string, ConfigOption> config = 2;
+        int32 interface = 3;
     }
     map<int32, ModelConfig> configs = 1;
 }

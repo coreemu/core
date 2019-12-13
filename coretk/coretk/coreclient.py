@@ -228,13 +228,11 @@ class CoreClient:
 
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
-            for _id in response.configs:
-                config = response.configs[_id]
+            for node_id in response.configs:
+                config = response.configs[node_id]
                 interface = None
-                node_id = _id
-                if _id >= 1000:
-                    interface = _id % 1000
-                    node_id = int(_id / 1000)
+                if config.interface != -1:
+                    interface = config.interface
                 self.set_emane_model_config(
                     node_id, config.model, config.config, interface
                 )

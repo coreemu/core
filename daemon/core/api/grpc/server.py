@@ -1395,17 +1395,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session_id, context)
         response = core_pb2.GetEmaneModelConfigsResponse()
-        for node_id in session.emane.node_configurations:
-            model_config = session.emane.node_configurations[node_id]
-            if node_id == -1:
+        for _id in session.emane.node_configurations:
+            if _id == -1:
                 continue
 
+            model_config = session.emane.node_configurations[_id]
             for model_name in model_config:
                 model = session.emane.models[model_name]
-                current_config = session.emane.get_model_config(node_id, model_name)
+                current_config = session.emane.get_model_config(_id, model_name)
                 config = get_config_options(current_config, model)
+                node_id, interface = grpcutils.parse_emane_model_id(_id)
                 model_config = core_pb2.GetEmaneModelConfigsResponse.ModelConfig(
-                    model=model_name, config=config
+                    model=model_name, config=config, interface=interface
                 )
                 response.configs[node_id].CopyFrom(model_config)
         return response
