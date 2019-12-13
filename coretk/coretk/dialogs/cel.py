@@ -87,6 +87,7 @@ class CheckLight(Dialog):
         row = row + 1
 
         self.text = CodeText(self)
+        self.text.config(state=tk.DISABLED)
         self.text.grid(row=row, column=0, sticky="nsew")
         row = row + 1
 
