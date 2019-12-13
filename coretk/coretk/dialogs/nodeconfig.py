@@ -46,6 +46,7 @@ class NodeConfigDialog(Dialog):
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.image = canvas_node.image
+        self.image_file = None
         self.image_button = None
         self.name = tk.StringVar(value=self.node.name)
         self.type = tk.StringVar(value=self.node.model)
@@ -201,6 +202,7 @@ class NodeConfigDialog(Dialog):
         if file_path:
             self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_button.config(image=self.image)
+            self.image_file = file_path
 
     def config_apply(self):
         # update core node
@@ -210,6 +212,10 @@ class NodeConfigDialog(Dialog):
         server = self.server.get()
         if NodeUtils.is_container_node(self.node.type) and server != "localhost":
             self.node.server = server
+
+        # set custom icon
+        if self.image_file:
+            self.node.icon = self.image_file
 
         # update canvas node
         self.canvas_node.image = self.image

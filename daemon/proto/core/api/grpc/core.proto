@@ -101,6 +101,8 @@ service CoreApi {
     }
 
     // wlan rpc
+    rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
+    }
     rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
     }
     rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
@@ -585,6 +587,14 @@ message ServiceActionResponse {
     bool result = 1;
 }
 
+message GetWlanConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetWlanConfigsResponse {
+    map<int32, MappedConfig> configs = 1;
+}
+
 message GetWlanConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -654,10 +664,12 @@ message GetEmaneModelConfigsRequest {
 
 message GetEmaneModelConfigsResponse {
     message ModelConfig {
-        string model = 1;
-        map<string, ConfigOption> config = 2;
+        int32 node_id = 1;
+        string model = 2;
+        int32 interface = 3;
+        map<string, ConfigOption> config = 4;
     }
-    map<int32, ModelConfig> configs = 1;
+    repeated ModelConfig configs = 1;
 }
 
 message SaveXmlRequest {
@@ -949,9 +961,9 @@ message SessionLocation {
 }
 
 message Position {
-    int32 x = 1;
-    int32 y = 2;
-    int32 z = 3;
+    float x = 1;
+    float y = 2;
+    float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;

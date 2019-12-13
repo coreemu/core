@@ -827,6 +827,18 @@ class CoreGrpcClient:
         )
         return self.stub.ServiceAction(request)
 
+    def get_wlan_configs(self, session_id):
+        """
+        Get all wlan configurations.
+
+        :param int session_id: session id
+        :return: response with a dict of node ids to wlan configurations
+        :rtype: core_pb2.GetWlanConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetWlanConfigsRequest(session_id=session_id)
+        return self.stub.GetWlanConfigs(request)
+
     def get_wlan_config(self, session_id, node_id):
         """
         Get wlan configuration for a node.

@@ -103,10 +103,19 @@ class CanvasNode:
         self.motion(x_offset, y_offset, update=False)
 
     def motion(self, x_offset, y_offset, update=True):
+        original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
+        x, y = self.canvas.coords(self.id)
+
+        # check new position
+        bbox = self.canvas.bbox(self.id)
+        if not self.canvas.valid_position(*bbox):
+            self.canvas.coords(self.id, original_position)
+            return
+
+        # move test and selection box
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.canvas.move_selection(self.id, x_offset, y_offset)
-        x, y = self.canvas.coords(self.id)
 
         # move antennae
         for antenna_id in self.antennae:
@@ -131,8 +140,8 @@ class CanvasNode:
 
         # set actual coords for node and update core is running
         real_x, real_y = self.canvas.get_actual_coords(x, y)
-        self.core_node.position.x = int(real_x)
-        self.core_node.position.y = int(real_y)
+        self.core_node.position.x = real_x
+        self.core_node.position.y = real_y
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 
@@ -155,11 +164,6 @@ class CanvasNode:
         else:
             self.show_config()
 
-    def update_coords(self):
-        x, y = self.canvas.coords(self.id)
-        self.core_node.position.x = int(x)
-        self.core_node.position.y = int(y)
-
     def create_context(self):
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
@@ -169,6 +173,8 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", state=tk.DISABLED)
+            if is_wlan:
+                context.add_command(label="WLAN Config", command=self.show_wlan_config)
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
                 context.add_command(
                     label="Mobility Player", command=self.show_mobility_player

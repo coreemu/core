@@ -393,15 +393,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             position = core_pb2.Position(
                 x=node.position.x, y=node.position.y, z=node.position.z
             )
-
             services = getattr(node, "services", [])
             if services is None:
                 services = []
             services = [x.name for x in services]
-
             emane_model = None
             if isinstance(node, EmaneNet):
                 emane_model = node.model.name
+            image = getattr(node, "image", None)
 
             node_proto = core_pb2.Node(
                 id=node.id,
@@ -411,6 +410,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 type=node_type.value,
                 position=position,
                 services=services,
+                icon=node.icon,
+                image=image,
             )
             if isinstance(node, (DockerNode, LxcNode)):
                 node_proto.image = node.image
@@ -488,13 +489,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: node event that contains node id, name, model, position, and services
         :rtype: core.api.grpc.core_pb2.NodeEvent
         """
-        x = None
-        if event.x_position is not None:
-            x = int(event.x_position)
-        y = None
-        if event.y_position is not None:
-            y = int(event.y_position)
-        position = core_pb2.Position(x=x, y=y)
+        position = core_pb2.Position(x=event.x_position, y=event.y_position)
         services = event.services or ""
         services = services.split("|")
         node_proto = core_pb2.Node(
@@ -1163,13 +1158,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node service file: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        service = None
-        for current_service in node.services:
-            if current_service.name == request.service:
-                service = current_service
-                break
-        if not service:
-            context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
         file_data = session.services.get_service_file(
             node, request.service, request.file
         )
@@ -1247,6 +1235,31 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = True
 
         return core_pb2.ServiceActionResponse(result=result)
+
+    def GetWlanConfigs(self, request, context):
+        """
+        Retrieve all wireless-lan configurations.
+
+        :param core.api.grpc.core_pb2.GetWlanConfigsRequest request: request
+        :param context: core.api.grpc.core_pb2.GetWlanConfigResponse
+        :return: all wlan configurations
+        :rtype: core.api.grpc.core_pb2.GetWlanConfigsResponse
+        """
+        logging.debug("get wlan configs: %s", request)
+        session = self.get_session(request.session_id, context)
+        response = core_pb2.GetWlanConfigsResponse()
+        for node_id in session.mobility.node_configurations:
+            model_config = session.mobility.node_configurations[node_id]
+            if node_id == -1:
+                continue
+            for model_name in model_config:
+                if model_name != BasicRangeModel.name:
+                    continue
+                current_config = session.mobility.get_model_config(node_id, model_name)
+                config = get_config_options(current_config, BasicRangeModel)
+                mapped_config = core_pb2.MappedConfig(config=config)
+                response.configs[node_id].CopyFrom(mapped_config)
+        return response
 
     def GetWlanConfig(self, request, context):
         """
@@ -1381,21 +1394,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session_id, context)
-        response = core_pb2.GetEmaneModelConfigsResponse()
-        for node_id in session.emane.node_configurations:
-            model_config = session.emane.node_configurations[node_id]
-            if node_id == -1:
+
+        configs = []
+        for _id in session.emane.node_configurations:
+            if _id == -1:
                 continue
 
-            for model_name in model_config:
+            model_configs = session.emane.node_configurations[_id]
+            for model_name in model_configs:
                 model = session.emane.models[model_name]
-                current_config = session.emane.get_model_config(node_id, model_name)
+                current_config = session.emane.get_model_config(_id, model_name)
                 config = get_config_options(current_config, model)
+                node_id, interface = grpcutils.parse_emane_model_id(_id)
                 model_config = core_pb2.GetEmaneModelConfigsResponse.ModelConfig(
-                    model=model_name, config=config
+                    node_id=node_id,
+                    model=model_name,
+                    interface=interface,
+                    config=config,
                 )
-                response.configs[node_id].CopyFrom(model_config)
-        return response
+                configs.append(model_config)
+        return core_pb2.GetEmaneModelConfigsResponse(configs=configs)
 
     def SaveXml(self, request, context):
         """

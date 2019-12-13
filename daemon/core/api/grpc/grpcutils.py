@@ -221,6 +221,22 @@ def get_emane_model_id(node_id, interface_id):
         return node_id
 
 
+def parse_emane_model_id(_id):
+    """
+    Parses EMANE model id to get true node id and interface id.
+
+    :param _id: id to parse
+    :return: node id and interface id
+    :rtype: tuple
+    """
+    interface = -1
+    node_id = _id
+    if _id >= 1000:
+        interface = _id % 1000
+        node_id = int(_id / 1000)
+    return node_id, interface
+
+
 def convert_link(session, link_data):
     """
     Convert link_data into core protobuf Link

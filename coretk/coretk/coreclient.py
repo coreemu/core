@@ -183,8 +183,7 @@ class CoreClient:
             )
 
     def handle_exception_event(self, event):
-        print(event)
-        print(event.node_id)
+        logging.info("exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
     def join_session(self, session_id, query_location=True):
@@ -229,26 +228,25 @@ class CoreClient:
 
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
-            for _id in response.configs:
-                config = response.configs[_id]
+            for config in response.configs:
                 interface = None
-                node_id = _id
-                if _id >= 1000:
-                    interface = _id % 1000
-                    node_id = int(_id / 1000)
+                if config.interface != -1:
+                    interface = config.interface
                 self.set_emane_model_config(
-                    node_id, config.model, config.config, interface
+                    config.node_id, config.model, config.config, interface
                 )
+
+            # get wlan configurations
+            response = self.client.get_wlan_configs(self.session_id)
+            for _id in response.configs:
+                mapped_config = response.configs[_id]
+                self.wlan_configs[_id] = mapped_config.config
 
             # save and retrieve data, needed for session nodes
             for node in session.nodes:
                 # get node service config and file config
-                # get wlan configs for wlan nodes
-                if node.type == core_pb2.NodeType.WIRELESS_LAN:
-                    response = self.client.get_wlan_config(self.session_id, node.id)
-                    self.wlan_configs[node.id] = response.config
                 # retrieve service configurations data for default nodes
-                elif node.type == core_pb2.NodeType.DEFAULT:
+                if node.type == core_pb2.NodeType.DEFAULT:
                     for service in node.services:
                         response = self.client.get_node_service(
                             self.session_id, node.id, service

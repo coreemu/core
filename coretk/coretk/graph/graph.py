@@ -4,6 +4,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
+from coretk import nodeutils
 from coretk.dialogs.shapemod import ShapeDialog
 from coretk.graph import tags
 from coretk.graph.edges import CanvasEdge, CanvasWirelessEdge
@@ -12,6 +13,7 @@ from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
 from coretk.graph.shapeutils import ShapeType, is_draw_shape
+from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
 ZOOM_IN = 1.1
@@ -136,6 +138,11 @@ class CanvasGraph(tk.Canvas):
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
 
+    def valid_position(self, x1, y1, x2, y2):
+        valid_topleft = self.inside_canvas(x1, y1)
+        valid_bottomright = self.inside_canvas(x2, y2)
+        return valid_topleft and valid_bottomright
+
     def draw_grid(self):
         """
         Create grid.
@@ -186,12 +193,19 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
+            logging.info("drawing core node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
 
             # draw nodes on the canvas
             image = NodeUtils.node_icon(core_node.type, core_node.model)
+            if core_node.icon:
+                try:
+                    image = Images.create(core_node.icon, nodeutils.ICON_SIZE)
+                except OSError:
+                    logging.error("invalid icon: %s", core_node.icon)
+
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
@@ -530,6 +544,13 @@ class CanvasGraph(tk.Canvas):
         """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
+            if self.select_box:
+                self.select_box.delete()
+                self.select_box = None
+            if is_draw_shape(self.annotation_type) and self.shape_drawing:
+                shape = self.shapes.pop(self.selected)
+                shape.delete()
+                self.shape_drawing = False
             return
 
         x_offset = x - self.cursor[0]
@@ -595,10 +616,7 @@ class CanvasGraph(tk.Canvas):
         if self.selected is None or self.selected in self.shapes:
             actual_x, actual_y = self.get_actual_coords(x, y)
             core_node = self.core.create_node(
-                int(actual_x),
-                int(actual_y),
-                self.node_draw.node_type,
-                self.node_draw.model,
+                actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node

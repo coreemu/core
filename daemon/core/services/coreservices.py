@@ -396,7 +396,7 @@ class CoreServices:
         """
         Add services to a node.
 
-        :param core.coreobj.PyCoreNode node: node to add services to
+        :param core.nodes.base.CoreNode node: node to add services to
         :param str node_type: node type to add services to
         :param list[str] services: names of services to add to node
         :return: nothing

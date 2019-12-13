@@ -136,7 +136,13 @@ class Shape:
         self.canvas.delete(self.id)
 
     def motion(self, x_offset, y_offset):
+        original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
+        coords = self.canvas.coords(self.id)
+        if not self.canvas.valid_position(*coords):
+            self.canvas.coords(self.id, original_position)
+            return
+
         self.canvas.move_selection(self.id, x_offset, y_offset)
         if self.text_id is not None:
             self.canvas.move(self.text_id, x_offset, y_offset)

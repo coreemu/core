@@ -708,10 +708,11 @@ class TestGrpc:
 
         # then
         assert len(response.configs) == 1
-        assert emane_network.id in response.configs
-        model_config = response.configs[emane_network.id]
+        model_config = response.configs[0]
+        assert emane_network.id == model_config.node_id
         assert model_config.model == EmaneIeee80211abgModel.name
         assert len(model_config.config) > 0
+        assert model_config.interface == -1
 
     def test_set_emane_model_config(self, grpc_server):
         # given
