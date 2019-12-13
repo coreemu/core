@@ -1236,6 +1236,31 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.ServiceActionResponse(result=result)
 
+    def GetWlanConfigs(self, request, context):
+        """
+        Retrieve all wireless-lan configurations.
+
+        :param core.api.grpc.core_pb2.GetWlanConfigsRequest request: request
+        :param context: core.api.grpc.core_pb2.GetWlanConfigResponse
+        :return: all wlan configurations
+        :rtype: core.api.grpc.core_pb2.GetWlanConfigsResponse
+        """
+        logging.debug("get wlan configs: %s", request)
+        session = self.get_session(request.session_id, context)
+        response = core_pb2.GetWlanConfigsResponse()
+        for node_id in session.mobility.node_configurations:
+            model_config = session.mobility.node_configurations[node_id]
+            if node_id == -1:
+                continue
+            for model_name in model_config:
+                if model_name != BasicRangeModel.name:
+                    continue
+                current_config = session.mobility.get_model_config(node_id, model_name)
+                config = get_config_options(current_config, BasicRangeModel)
+                mapped_config = core_pb2.MappedConfig(config=config)
+                response.configs[node_id].CopyFrom(mapped_config)
+        return response
+
     def GetWlanConfig(self, request, context):
         """
         Retrieve wireless-lan configuration of a node

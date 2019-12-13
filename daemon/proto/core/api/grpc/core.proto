@@ -101,6 +101,8 @@ service CoreApi {
     }
 
     // wlan rpc
+    rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
+    }
     rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
     }
     rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
@@ -583,6 +585,14 @@ message ServiceActionRequest {
 
 message ServiceActionResponse {
     bool result = 1;
+}
+
+message GetWlanConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetWlanConfigsResponse {
+    map<int32, MappedConfig> configs = 1;
 }
 
 message GetWlanConfigRequest {

@@ -239,15 +239,17 @@ class CoreClient:
                     node_id, config.model, config.config, interface
                 )
 
+            # get wlan configurations
+            response = self.client.get_wlan_configs(self.session_id)
+            for _id in response.configs:
+                mapped_config = response.configs[_id]
+                self.wlan_configs[_id] = mapped_config.config
+
             # save and retrieve data, needed for session nodes
             for node in session.nodes:
                 # get node service config and file config
-                # get wlan configs for wlan nodes
-                if node.type == core_pb2.NodeType.WIRELESS_LAN:
-                    response = self.client.get_wlan_config(self.session_id, node.id)
-                    self.wlan_configs[node.id] = response.config
                 # retrieve service configurations data for default nodes
-                elif node.type == core_pb2.NodeType.DEFAULT:
+                if node.type == core_pb2.NodeType.DEFAULT:
                     for service in node.services:
                         response = self.client.get_node_service(
                             self.session_id, node.id, service

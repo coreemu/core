@@ -173,6 +173,8 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", state=tk.DISABLED)
+            if is_wlan:
+                context.add_command(label="WLAN Config", command=self.show_wlan_config)
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
                 context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
