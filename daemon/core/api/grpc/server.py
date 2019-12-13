@@ -1158,13 +1158,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node service file: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        service = None
-        for current_service in node.services:
-            if current_service.name == request.service:
-                service = current_service
-                break
-        if not service:
-            context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
         file_data = session.services.get_service_file(
             node, request.service, request.file
         )
