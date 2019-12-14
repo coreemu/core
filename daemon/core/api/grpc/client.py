@@ -731,6 +731,18 @@ class CoreGrpcClient:
         )
         return self.stub.SetServiceDefaults(request)
 
+    def get_node_service_configs(self, session_id):
+        """
+        Get service data for a node.
+
+        :param int session_id: session id
+        :return: response with all node service configs
+        :rtype: core_pb2.GetNodeServiceConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetNodeServiceConfigsRequest(session_id=session_id)
+        return self.stub.GetNodeServiceConfigs(request)
+
     def get_node_service(self, session_id, node_id, service):
         """
         Get service data for a node.

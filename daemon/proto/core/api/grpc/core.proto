@@ -89,6 +89,8 @@ service CoreApi {
     }
     rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
     }
+    rpc GetNodeServiceConfigs (GetNodeServiceConfigsRequest) returns (GetNodeServiceConfigsResponse) {
+    }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
     rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
@@ -536,6 +538,20 @@ message SetServiceDefaultsRequest {
 
 message SetServiceDefaultsResponse {
     bool result = 1;
+}
+
+message GetNodeServiceConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetNodeServiceConfigsResponse {
+    message ServiceConfig {
+        int32 node_id = 1;
+        string service = 2;
+        NodeServiceData data = 3;
+        map<string, string> files = 4;
+    }
+    repeated ServiceConfig configs = 1;
 }
 
 message GetNodeServiceRequest {

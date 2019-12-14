@@ -878,6 +878,24 @@ class TestGrpc:
         assert response.result is True
         assert session.services.default_services[node_type] == services
 
+    def test_get_node_service_configs(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+        service_name = "DefaultRoute"
+        session.services.set_service(node.id, service_name)
+
+        # then
+        with client.context_connect():
+            response = client.get_node_service_configs(session.id)
+
+        # then
+        assert len(response.configs) == 1
+        service_config = response.configs[0]
+        assert service_config.node_id == node.id
+        assert service_config.service == service_name
+
     def test_get_node_service(self, grpc_server):
         # given
         client = CoreGrpcClient()

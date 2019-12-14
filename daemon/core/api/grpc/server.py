@@ -917,6 +917,32 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             ] = service_defaults.services
         return core_pb2.SetServiceDefaultsResponse(result=True)
 
+    def GetNodeServiceConfigs(self, request, context):
+        """
+        Retrieve all node service configurations.
+
+        :param core.api.grpc.core_pb2.GetNodeServiceConfigsRequest request:
+            get-node-service request
+        :param grpc.ServicerContext context: context object
+        :return: all node service configs response
+        :rtype: core.api.grpc.core_pb2.GetNodeServiceConfigsResponse
+        """
+        logging.debug("get node service configs: %s", request)
+        session = self.get_session(request.session_id, context)
+        configs = []
+        for node_id, service_configs in session.services.custom_services.items():
+            for name in service_configs:
+                service = session.services.get_service(node_id, name)
+                service_proto = grpcutils.get_service_configuration(service)
+                config = core_pb2.GetNodeServiceConfigsResponse.ServiceConfig(
+                    node_id=node_id,
+                    service=name,
+                    data=service_proto,
+                    files=service.config_data,
+                )
+                configs.append(config)
+        return core_pb2.GetNodeServiceConfigsResponse(configs=configs)
+
     def GetNodeService(self, request, context):
         """
         Retrieve a requested service from a node
@@ -932,18 +958,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         service = session.services.get_service(
             request.node_id, request.service, default_service=True
         )
-        service_proto = core_pb2.NodeServiceData(
-            executables=service.executables,
-            dependencies=service.dependencies,
-            dirs=service.dirs,
-            configs=service.configs,
-            startup=service.startup,
-            validate=service.validate,
-            validation_mode=service.validation_mode.value,
-            validation_timer=service.validation_timer,
-            shutdown=service.shutdown,
-            meta=service.meta,
-        )
+        service_proto = grpcutils.get_service_configuration(service)
         return core_pb2.GetNodeServiceResponse(service=service_proto)
 
     def GetNodeServiceFile(self, request, context):

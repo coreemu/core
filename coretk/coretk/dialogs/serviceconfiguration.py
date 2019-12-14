@@ -323,7 +323,7 @@ class ServiceConfiguration(Dialog):
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(
-            frame, text="Dafults", command=self.click_defaults, state="disabled"
+            frame, text="Defaults", command=self.click_defaults, state="disabled"
         )
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
         button = ttk.Button(
