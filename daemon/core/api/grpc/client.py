@@ -378,16 +378,17 @@ class CoreGrpcClient:
         )
         return self.stub.AddSessionServer(request)
 
-    def events(self, session_id, handler):
+    def events(self, session_id, handler, events=None):
         """
         Listen for session events.
 
         :param int session_id: id of session
-        :param handler: handler for every event
+        :param handler: handler for received events
+        :param list events: events to listen to, defaults to all
         :return: nothing
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.EventsRequest(session_id=session_id)
+        request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
         start_streamer(stream, handler)
 

@@ -266,6 +266,7 @@ message AddSessionServerResponse {
 
 message EventsRequest {
     int32 session_id = 1;
+    repeated EventType.Enum events = 2;
 }
 
 message ThroughputsRequest {
@@ -740,6 +741,17 @@ message ServiceFileConfig {
     string service = 2;
     string file = 3;
     string data = 4;
+}
+
+message EventType {
+    enum Enum {
+        SESSION = 0;
+        NODE = 1;
+        LINK = 2;
+        CONFIG = 3;
+        EXCEPTION = 4;
+        FILE = 5;
+    }
 }
 
 message MessageType {
