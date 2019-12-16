@@ -27,7 +27,7 @@ from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_INTERFACE_REGEX = re.compile(r"[0-9a-fA-F]+")
+_INTERFACE_REGEX = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -479,7 +479,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     throughput = rx_kbps + tx_kbps
                     if key.startswith("veth"):
                         key = key.split(".")
-                        node_id = int(_INTERFACE_REGEX.search(key[0]).group(), base=16)
+                        node_id = _INTERFACE_REGEX.search(key[0]).group("node")
+                        node_id = int(node_id, base=16)
                         interface_id = int(key[1], base=16)
                         session_id = int(key[2], base=16)
                         if session.id != session_id:
