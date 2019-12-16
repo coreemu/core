@@ -15,6 +15,9 @@ class ColorPicker(Dialog):
         self.blue_entry = None
         self.green_entry = None
         self.hex_entry = None
+        self.red_label = None
+        self.green_label = None
+        self.blue_label = None
         self.display = None
         self.color = initcolor
         red, green, blue = self.get_rgb(initcolor)
@@ -25,16 +28,21 @@ class ColorPicker(Dialog):
         self.red_scale = tk.IntVar(value=red)
         self.green_scale = tk.IntVar(value=green)
         self.blue_scale = tk.IntVar(value=blue)
-
-    def askcolor(self):
         self.draw()
         self.set_bindings()
+
+    def askcolor(self):
         self.show()
         return self.color
 
     def draw(self):
+        self.top.columnconfigure(0, weight=1)
         # rgb frames
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="R: ")
         label.grid(row=0, column=0)
         self.red_entry = ttk.Entry(
@@ -50,15 +58,23 @@ class ColorPicker(Dialog):
             from_=0,
             to=255,
             value=0,
-            length=200,
+            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.red_scale,
             command=lambda x: self.scale_callback(self.red_scale, self.red),
         )
         scale.grid(row=0, column=2, sticky="nsew")
+        self.red_label = ttk.Label(
+            frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0)
+        )
+        self.red_label.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=0, column=0, sticky="nsew")
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="G: ")
         label.grid(row=0, column=0)
         self.green_entry = ttk.Entry(
@@ -74,15 +90,23 @@ class ColorPicker(Dialog):
             from_=0,
             to=255,
             value=0,
-            length=200,
+            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.green_scale,
             command=lambda x: self.scale_callback(self.green_scale, self.green),
         )
         scale.grid(row=0, column=2, sticky="nsew")
-        frame.grid(row=1, column=0)
+        self.green_label = ttk.Label(
+            frame, background="#%02x%02x%02x" % (0, self.green.get(), 0)
+        )
+        self.green_label.grid(row=0, column=3, sticky="nsew")
+        frame.grid(row=1, column=0, sticky="nsew")
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="B: ")
         label.grid(row=0, column=0)
         self.blue_entry = ttk.Entry(
@@ -98,16 +122,20 @@ class ColorPicker(Dialog):
             from_=0,
             to=255,
             value=0,
-            length=200,
+            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.blue_scale,
             command=lambda x: self.scale_callback(self.blue_scale, self.blue),
         )
         scale.grid(row=0, column=2, sticky="nsew")
+        self.blue_label = ttk.Label(
+            frame, background="#%02x%02x%02x" % (0, 0, self.blue.get())
+        )
+        self.blue_label.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=2, column=0, sticky="nsew")
 
         # hex code and color display
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         label = ttk.Label(frame, text="Selection: ")
         label.grid(row=0, column=0, sticky="nsew")
@@ -118,12 +146,12 @@ class ColorPicker(Dialog):
             validatecommand=(self.app.validation.hex, "%P"),
         )
         self.hex_entry.grid(row=1, column=0, sticky="nsew")
-        self.display = ttk.Label(frame, background=self.color)
-        self.display.grid(row=2, column=0, sticky="nsew")
+        self.display = tk.Frame(frame, background=self.color, width=100, height=100)
+        self.display.grid(row=2, column=0)
         frame.grid(row=3, column=0, sticky="nsew")
 
         # button frame
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="OK", command=self.button_ok)
@@ -148,6 +176,12 @@ class ColorPicker(Dialog):
         self.destroy()
 
     def get_hex(self):
+        """
+        convert current RGB values into hex color
+
+        :rtype: str
+        :return: hex color
+        """
         red = self.red_entry.get()
         blue = self.blue_entry.get()
         green = self.green_entry.get()
@@ -166,6 +200,7 @@ class ColorPicker(Dialog):
                 hex_code = "#%02x%02x%02x" % (int(red), int(green), int(blue))
                 self.hex.set(hex_code)
                 self.display.config(background=hex_code)
+                self.set_label(red, green, blue)
         elif self.focus == "hex":
             hex_code = self.hex.get()
             if len(hex_code) == 4 or len(hex_code) == 7:
@@ -175,23 +210,36 @@ class ColorPicker(Dialog):
             self.set_entry(red, green, blue)
             self.set_scale(red, green, blue)
             self.display.config(background=hex_code)
+            self.set_label(red, green, blue)
 
     def scale_callback(self, var, color_var):
         color_var.set(var.get())
         self.focus = "rgb"
         self.update_color()
 
-    def set_scale(self, r, g, b):
-        self.red_scale.set(r)
-        self.green_scale.set(g)
-        self.blue_scale.set(b)
+    def set_scale(self, red, green, blue):
+        self.red_scale.set(red)
+        self.green_scale.set(green)
+        self.blue_scale.set(blue)
 
-    def set_entry(self, r, g, b):
-        self.red.set(r)
-        self.green.set(g)
-        self.blue.set(b)
+    def set_entry(self, red, green, blue):
+        self.red.set(red)
+        self.green.set(green)
+        self.blue.set(blue)
+
+    def set_label(self, red, green, blue):
+        self.red_label.configure(background="#%02x%02x%02x" % (int(red), 0, 0))
+        self.green_label.configure(background="#%02x%02x%02x" % (0, int(green), 0))
+        self.blue_label.configure(background="#%02x%02x%02x" % (0, 0, int(blue)))
 
     def get_rgb(self, hex_code):
+        """
+        convert a valid hex code to RGB values
+
+        :param string hex_code: color in hex
+        :rtype: tuple(int, int, int)
+        :return: the RGB values
+        """
         if len(hex_code) == 4:
             red = hex_code[1]
             green = hex_code[2]

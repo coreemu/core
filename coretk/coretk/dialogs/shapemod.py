@@ -2,7 +2,7 @@
 shape input dialog
 """
 import tkinter as tk
-from tkinter import colorchooser, font, ttk
+from tkinter import font, ttk
 
 from coretk.dialogs.colorpicker import ColorPicker
 from coretk.dialogs.dialog import Dialog
@@ -147,9 +147,11 @@ class ShapeDialog(Dialog):
         self.fill.config(background=color, text=color)
 
     def choose_border_color(self):
-        color = colorchooser.askcolor(color=self.border_color)
-        self.border_color = color[1]
-        self.border.config(background=color[1], text=color[1])
+        color_picker = ColorPicker(self, self.app, self.border_color)
+        color = color_picker.askcolor()
+        # color = colorchooser.askcolor(color=self.border_color)
+        self.border_color = color
+        self.border.config(background=color, text=color)
 
     def cancel(self):
         self.shape.delete()
