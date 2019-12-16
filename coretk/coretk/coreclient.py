@@ -85,6 +85,7 @@ class CoreClient:
         self.file_configs = {}
         self.mobility_players = {}
         self.handling_throughputs = None
+        self.handling_events = None
 
     def reset(self):
         # helpers
@@ -101,6 +102,13 @@ class CoreClient:
         self.service_configs.clear()
         self.file_configs.clear()
         self.mobility_players.clear()
+        # clear streams
+        if self.handling_throughputs:
+            self.handling_throughputs.cancel()
+            self.handling_throughputs = None
+        if self.handling_events:
+            self.handling_events.cancel()
+            self.handling_events = None
 
     def set_observer(self, value):
         self.observer = value
@@ -210,7 +218,9 @@ class CoreClient:
             response = self.client.get_session(self.session_id)
             session = response.session
             self.state = session.state
-            self.client.events(self.session_id, self.handle_events)
+            self.handling_events = self.client.events(
+                self.session_id, self.handle_events
+            )
 
             # get location
             if query_location:
