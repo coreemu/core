@@ -58,6 +58,9 @@ class WlanConfigDialog(Dialog):
 
         :return: nothing
         """
-        self.config_frame.parse_config()
+        config = self.config_frame.parse_config()
         self.app.core.wlan_configs[self.node.id] = self.config
+        if self.app.core.is_runtime():
+            session_id = self.app.core.session_id
+            self.app.core.client.set_wlan_config(session_id, self.node.id, config)
         self.destroy()

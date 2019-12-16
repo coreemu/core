@@ -87,6 +87,9 @@ class CanvasGraph(tk.Canvas):
         :param core.api.grpc.core_pb2.Session session: session to draw
         :return: nothing
         """
+        # hide context
+        self.hide_context()
+
         # delete any existing drawn items
         for tag in tags.COMPONENT_TAGS:
             self.delete(tag)
@@ -121,6 +124,11 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
+
+    def hide_context(self):
+        if self.context:
+            self.context.unpost()
+            self.context = None
 
     def get_actual_coords(self, x, y):
         actual_x = (x - self.offset[0]) / self.ratio
@@ -294,8 +302,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         if self.context:
-            self.context.unpost()
-            self.context = None
+            self.hide_context()
         else:
             if self.mode == GraphMode.ANNOTATION:
                 self.focus_set()
@@ -594,8 +601,7 @@ class CanvasGraph(tk.Canvas):
                 self.context = canvas_node.create_context()
                 self.context.post(event.x_root, event.y_root)
         else:
-            self.context.unpost()
-            self.context = None
+            self.hide_context()
 
     def press_delete(self, event):
         """
