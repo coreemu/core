@@ -385,23 +385,27 @@ class CoreGrpcClient:
         :param int session_id: id of session
         :param handler: handler for received events
         :param list events: events to listen to, defaults to all
-        :return: nothing
+        :return: stream processing events, can be used to cancel stream
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
         start_streamer(stream, handler)
+        return stream
 
-    def throughputs(self, handler):
+    def throughputs(self, session_id, handler):
         """
         Listen for throughput events with information for interfaces and bridges.
 
+        :param int session_id: session id
         :param handler: handler for every event
-        :return: nothing
+        :return: stream processing events, can be used to cancel stream
+        :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.ThroughputsRequest()
+        request = core_pb2.ThroughputsRequest(session_id=session_id)
         stream = self.stub.Throughputs(request)
         start_streamer(stream, handler)
+        return stream
 
     def add_node(self, session_id, node):
         """

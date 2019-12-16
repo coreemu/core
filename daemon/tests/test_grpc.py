@@ -1032,7 +1032,7 @@ class TestGrpc:
 
         # given
         client = CoreGrpcClient()
-        grpc_server.coreemu.create_session()
+        session = grpc_server.coreemu.create_session()
         queue = Queue()
 
         def handle_event(event_data):
@@ -1040,7 +1040,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.throughputs(handle_event)
+            client.throughputs(session.id, handle_event)
             time.sleep(0.1)
 
             # then
