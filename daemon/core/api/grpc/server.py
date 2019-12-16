@@ -27,7 +27,7 @@ from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_INTERFACE_REGEX = re.compile(r"\d+")
+_INTERFACE_REGEX = re.compile(r"[0-9a-fA-F]+")
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -452,9 +452,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param grpc.SrevicerContext context: context object
         :return: nothing
         """
+        session = self.get_session(request.session_id, context)
         delay = 3
         last_check = None
         last_stats = None
+
         while self._is_running(context):
             now = time.monotonic()
             stats = get_net_stats()
@@ -462,7 +464,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             # calculate average
             if last_check is not None:
                 interval = now - last_check
-                throughputs_event = core_pb2.ThroughputsEvent()
+                throughputs_event = core_pb2.ThroughputsEvent(session_id=session.id)
                 for key in stats:
                     current_rxtx = stats[key]
                     previous_rxtx = last_stats.get(key)
@@ -477,8 +479,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     throughput = rx_kbps + tx_kbps
                     if key.startswith("veth"):
                         key = key.split(".")
-                        node_id = int(_INTERFACE_REGEX.search(key[0]).group())
-                        interface_id = int(key[1])
+                        node_id = int(_INTERFACE_REGEX.search(key[0]).group(), base=16)
+                        interface_id = int(key[1], base=16)
+                        session_id = int(key[2], base=16)
+                        if session.id != session_id:
+                            continue
                         interface_throughput = (
                             throughputs_event.interface_throughputs.add()
                         )
@@ -487,7 +492,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         interface_throughput.throughput = throughput
                     elif key.startswith("b."):
                         try:
-                            node_id = int(key.split(".")[1])
+                            key = key.split(".")
+                            node_id = int(key[1], base=16)
+                            session_id = int(key[2], base=16)
+                            if session.id != session_id:
+                                continue
                             bridge_throughput = (
                                 throughputs_event.bridge_throughputs.add()
                             )

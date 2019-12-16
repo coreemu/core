@@ -151,8 +151,7 @@ class MenuAction:
         dialog.show()
 
     def throughput(self):
-        throughput = self.app.core.throughput
-        if throughput:
-            self.app.core.throughput = False
+        if not self.app.core.handling_throughputs:
+            self.app.core.enable_throughputs()
         else:
-            self.app.core.throughput = True
+            self.app.core.cancel_throughputs()

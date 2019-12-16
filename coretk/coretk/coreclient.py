@@ -84,7 +84,7 @@ class CoreClient:
         self.service_configs = {}
         self.file_configs = {}
         self.mobility_players = {}
-        self.throughput = False
+        self.handling_throughputs = None
 
     def reset(self):
         # helpers
@@ -176,11 +176,22 @@ class CoreClient:
         canvas_node = self.canvas_nodes[node_id]
         canvas_node.move(x, y)
 
+    def enable_throughputs(self):
+        self.handling_throughputs = self.client.throughputs(
+            self.session_id, self.handle_throughputs
+        )
+
+    def cancel_throughputs(self):
+        self.handling_throughputs.cancel()
+        self.handling_throughputs = None
+
     def handle_throughputs(self, event):
-        if self.throughput:
-            self.app.canvas.throughput_draw.process_grpc_throughput_event(
-                event.interface_throughputs
-            )
+        if event.session_id != self.session_id:
+            return
+        logging.info("handling throughputs event: %s", event)
+        self.app.canvas.throughput_draw.process_grpc_throughput_event(
+            event.interface_throughputs
+        )
 
     def handle_exception_event(self, event):
         logging.info("exception event: %s", event)
@@ -200,7 +211,6 @@ class CoreClient:
             session = response.session
             self.state = session.state
             self.client.events(self.session_id, self.handle_events)
-            self.client.throughputs(self.handle_throughputs)
 
             # get location
             if query_location:

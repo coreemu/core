@@ -272,11 +272,13 @@ message EventsRequest {
 }
 
 message ThroughputsRequest {
+    int32 session_id = 1;
 }
 
 message ThroughputsEvent {
-    repeated BridgeThroughput bridge_throughputs = 1;
-    repeated InterfaceThroughput interface_throughputs = 2;
+    int32 session_id = 1;
+    repeated BridgeThroughput bridge_throughputs = 2;
+    repeated InterfaceThroughput interface_throughputs = 3;
 }
 
 message InterfaceThroughput {
