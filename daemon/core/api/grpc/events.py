@@ -107,7 +107,6 @@ def handle_session_event(event):
         name=event.name,
         data=event.data,
         time=event_time,
-        session_id=event.session,
     )
 
 
@@ -119,9 +118,6 @@ def handle_config_event(event):
     :return: configuration event
     :rtype: core.api.grpc.core_pb2.ConfigEvent
     """
-    session_id = None
-    if event.session is not None:
-        session_id = int(event.session)
     return core_pb2.ConfigEvent(
         message_type=event.message_type,
         node_id=event.node,
@@ -132,7 +128,6 @@ def handle_config_event(event):
         data_values=event.data_values,
         possible_values=event.possible_values,
         groups=event.groups,
-        session_id=session_id,
         interface=event.interface_number,
         network_id=event.network_id,
         opaque=event.opaque,
@@ -150,7 +145,6 @@ def handle_exception_event(event):
     """
     return core_pb2.ExceptionEvent(
         node_id=event.node,
-        session_id=int(event.session),
         level=event.level,
         source=event.source,
         date=event.date,
@@ -175,7 +169,6 @@ def handle_file_event(event):
         number=event.number,
         type=event.type,
         source=event.source,
-        session_id=event.session,
         data=event.data,
         compressed_data=event.compressed_data,
     )
@@ -224,7 +217,7 @@ class EventStreamer:
         :return: grpc event, or None when invalid event or queue timeout
         :rtype: core.api.grpc.core_pb2.Event
         """
-        event = core_pb2.Event()
+        event = core_pb2.Event(session_id=self.session.id)
         try:
             data = self.queue.get(timeout=1)
             if isinstance(data, NodeData):
@@ -235,8 +228,6 @@ class EventStreamer:
                 event.session_event.CopyFrom(handle_session_event(data))
             elif isinstance(data, ConfigData):
                 event.config_event.CopyFrom(handle_config_event(data))
-                # TODO: remove when config events are fixed
-                event.config_event.session_id = self.session.id
             elif isinstance(data, ExceptionData):
                 event.exception_event.CopyFrom(handle_exception_event(data))
             elif isinstance(data, FileData):

@@ -990,6 +990,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("node_event")
             queue.put(event_data)
 
@@ -1014,6 +1015,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("link_event")
             queue.put(event_data)
 
@@ -1036,6 +1038,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             queue.put(event_data)
 
         # then
@@ -1053,6 +1056,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("session_event")
             queue.put(event_data)
 
@@ -1075,6 +1079,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("config_event")
             queue.put(event_data)
 
@@ -1098,6 +1103,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("exception_event")
             queue.put(event_data)
 
@@ -1120,6 +1126,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("file_event")
             queue.put(event_data)
 
