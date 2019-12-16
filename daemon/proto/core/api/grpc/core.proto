@@ -89,6 +89,8 @@ service CoreApi {
     }
     rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
     }
+    rpc GetNodeServiceConfigs (GetNodeServiceConfigsRequest) returns (GetNodeServiceConfigsResponse) {
+    }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
     rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
@@ -266,6 +268,7 @@ message AddSessionServerResponse {
 
 message EventsRequest {
     int32 session_id = 1;
+    repeated EventType.Enum events = 2;
 }
 
 message ThroughputsRequest {
@@ -537,6 +540,20 @@ message SetServiceDefaultsResponse {
     bool result = 1;
 }
 
+message GetNodeServiceConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetNodeServiceConfigsResponse {
+    message ServiceConfig {
+        int32 node_id = 1;
+        string service = 2;
+        NodeServiceData data = 3;
+        map<string, string> files = 4;
+    }
+    repeated ServiceConfig configs = 1;
+}
+
 message GetNodeServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -740,6 +757,17 @@ message ServiceFileConfig {
     string service = 2;
     string file = 3;
     string data = 4;
+}
+
+message EventType {
+    enum Enum {
+        SESSION = 0;
+        NODE = 1;
+        LINK = 2;
+        CONFIG = 3;
+        EXCEPTION = 4;
+        FILE = 5;
+    }
 }
 
 message MessageType {

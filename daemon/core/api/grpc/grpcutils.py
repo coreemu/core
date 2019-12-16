@@ -352,3 +352,25 @@ def service_configuration(session, config):
     service.startup = tuple(config.startup)
     service.validate = tuple(config.validate)
     service.shutdown = tuple(config.shutdown)
+
+
+def get_service_configuration(service):
+    """
+    Convenience for converting a service to service data proto.
+
+    :param service: service to get proto data for
+    :return: service proto data
+    :rtype: core.api.grpc.core_pb2.NodeServiceData
+    """
+    return core_pb2.NodeServiceData(
+        executables=service.executables,
+        dependencies=service.dependencies,
+        dirs=service.dirs,
+        configs=service.configs,
+        startup=service.startup,
+        validate=service.validate,
+        validation_mode=service.validation_mode.value,
+        validation_timer=service.validation_timer,
+        shutdown=service.shutdown,
+        meta=service.meta,
+    )

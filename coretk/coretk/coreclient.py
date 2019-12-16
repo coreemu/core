@@ -242,27 +242,17 @@ class CoreClient:
                 mapped_config = response.configs[_id]
                 self.wlan_configs[_id] = mapped_config.config
 
-            # save and retrieve data, needed for session nodes
-            for node in session.nodes:
-                # get node service config and file config
-                # retrieve service configurations data for default nodes
-                if node.type == core_pb2.NodeType.DEFAULT:
-                    for service in node.services:
-                        response = self.client.get_node_service(
-                            self.session_id, node.id, service
-                        )
-                        if node.id not in self.service_configs:
-                            self.service_configs[node.id] = {}
-                        self.service_configs[node.id][service] = response.service
-                        for file in response.service.configs:
-                            response = self.client.get_node_service_file(
-                                self.session_id, node.id, service, file
-                            )
-                            if node.id not in self.file_configs:
-                                self.file_configs[node.id] = {}
-                            if service not in self.file_configs[node.id]:
-                                self.file_configs[node.id][service] = {}
-                            self.file_configs[node.id][service][file] = response.data
+            # get service configurations
+            response = self.client.get_node_service_configs(self.session_id)
+            for config in response.configs:
+                service_configs = self.service_configs.setdefault(config.node_id, {})
+                service_configs[config.service] = config.data
+                logging.info("service file configs: %s", config.files)
+                for file_name in config.files:
+                    file_configs = self.file_configs.setdefault(config.node_id, {})
+                    files = file_configs.setdefault(config.service, {})
+                    data = config.files[file_name]
+                    files[file_name] = data
 
             # draw session
             self.app.canvas.reset_and_redraw(session)

@@ -378,16 +378,17 @@ class CoreGrpcClient:
         )
         return self.stub.AddSessionServer(request)
 
-    def events(self, session_id, handler):
+    def events(self, session_id, handler, events=None):
         """
         Listen for session events.
 
         :param int session_id: id of session
-        :param handler: handler for every event
+        :param handler: handler for received events
+        :param list events: events to listen to, defaults to all
         :return: nothing
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.EventsRequest(session_id=session_id)
+        request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
         start_streamer(stream, handler)
 
@@ -729,6 +730,18 @@ class CoreGrpcClient:
             session_id=session_id, defaults=defaults
         )
         return self.stub.SetServiceDefaults(request)
+
+    def get_node_service_configs(self, session_id):
+        """
+        Get service data for a node.
+
+        :param int session_id: session id
+        :return: response with all node service configs
+        :rtype: core_pb2.GetNodeServiceConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetNodeServiceConfigsRequest(session_id=session_id)
+        return self.stub.GetNodeServiceConfigs(request)
 
     def get_node_service(self, session_id, node_id, service):
         """
