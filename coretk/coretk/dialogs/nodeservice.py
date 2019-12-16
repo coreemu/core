@@ -40,8 +40,12 @@ class NodeService(Dialog):
         frame.rowconfigure(0, weight=1)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        self.groups = ListboxScroll(frame, text="Groups", padding=FRAME_PAD)
-        self.groups.grid(row=0, column=0, sticky="nsew")
+        label_frame = ttk.LabelFrame(frame, text="Groups", padding=FRAME_PAD)
+        label_frame.grid(row=0, column=0, sticky="nsew")
+        label_frame.rowconfigure(0, weight=1)
+        label_frame.columnconfigure(0, weight=1)
+        self.groups = ListboxScroll(label_frame)
+        self.groups.grid(sticky="nsew")
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
@@ -56,8 +60,12 @@ class NodeService(Dialog):
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 
-        self.current = ListboxScroll(frame, text="Selected", padding=FRAME_PAD)
-        self.current.grid(row=0, column=2, sticky="nsew")
+        label_frame = ttk.LabelFrame(frame, text="Selected", padding=FRAME_PAD)
+        label_frame.grid(row=0, column=2, sticky="nsew")
+        label_frame.rowconfigure(0, weight=1)
+        label_frame.columnconfigure(0, weight=1)
+        self.current = ListboxScroll(label_frame)
+        self.current.grid(sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 

@@ -175,7 +175,7 @@ class ConfigFrame(FrameScroll):
         return {x: self.config[x].value for x in self.config}
 
 
-class ListboxScroll(ttk.LabelFrame):
+class ListboxScroll(ttk.Frame):
     def __init__(self, master=None, **kw):
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)

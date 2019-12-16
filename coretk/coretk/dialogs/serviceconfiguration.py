@@ -216,32 +216,32 @@ class ServiceConfiguration(Dialog):
         tab.columnconfigure(0, weight=1)
         for i in range(3):
             tab.rowconfigure(i, weight=1)
-        self.notebook.add(tab, text="Startup/shutdown")
+        self.notebook.add(tab, text="Startup/Shutdown")
 
         # tab 3
         for i in range(3):
             label_frame = None
             if i == 0:
                 label_frame = ttk.LabelFrame(
-                    tab, text="Startup commands", padding=FRAME_PAD
+                    tab, text="Startup Commands", padding=FRAME_PAD
                 )
                 commands = self.startup_commands
             elif i == 1:
                 label_frame = ttk.LabelFrame(
-                    tab, text="Shutdown commands", padding=FRAME_PAD
+                    tab, text="Shutdown Commands", padding=FRAME_PAD
                 )
                 commands = self.shutdown_commands
             elif i == 2:
                 label_frame = ttk.LabelFrame(
-                    tab, text="Validation commands", padding=FRAME_PAD
+                    tab, text="Validation Commands", padding=FRAME_PAD
                 )
                 commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
             label_frame.rowconfigure(1, weight=1)
-            label_frame.grid(row=i, column=0, sticky="nsew")
+            label_frame.grid(row=i, column=0, sticky="nsew", pady=PADY)
 
             frame = ttk.Frame(label_frame)
-            frame.grid(row=0, column=0, sticky="nsew")
+            frame.grid(row=0, column=0, sticky="nsew", pady=PADY)
             frame.columnconfigure(0, weight=1)
             entry = ttk.Entry(frame, textvariable=tk.StringVar())
             entry.grid(row=0, column=0, stick="ew", padx=PADX)
@@ -251,7 +251,7 @@ class ServiceConfiguration(Dialog):
             button = ttk.Button(frame, image=self.editdelete_img)
             button.grid(row=0, column=2, sticky="ew")
             button.bind("<Button-1>", self.delete_command)
-            listbox_scroll = ListboxScroll(label_frame, borderwidth=0)
+            listbox_scroll = ListboxScroll(label_frame)
             listbox_scroll.listbox.bind("<<ListboxSelect>>", self.update_entry)
             for command in commands:
                 listbox_scroll.listbox.insert("end", command)
@@ -303,13 +303,21 @@ class ServiceConfiguration(Dialog):
         )
         self.validation_period_entry.grid(row=2, column=1, sticky="ew")
 
-        listbox_scroll = ListboxScroll(tab, text="Executables", padding=FRAME_PAD)
-        listbox_scroll.grid(sticky="nsew", pady=PADY)
+        label_frame = ttk.LabelFrame(tab, text="Executables", padding=FRAME_PAD)
+        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.columnconfigure(0, weight=1)
+        label_frame.rowconfigure(0, weight=1)
+        listbox_scroll = ListboxScroll(label_frame)
+        listbox_scroll.grid(sticky="nsew")
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for executable in self.executables:
             listbox_scroll.listbox.insert("end", executable)
 
-        listbox_scroll = ListboxScroll(tab, text="Dependencies", padding=FRAME_PAD)
+        label_frame = ttk.LabelFrame(tab, text="Dependencies", padding=FRAME_PAD)
+        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.columnconfigure(0, weight=1)
+        label_frame.rowconfigure(0, weight=1)
+        listbox_scroll = ListboxScroll(label_frame)
         listbox_scroll.grid(sticky="nsew")
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for dependency in self.dependencies:
