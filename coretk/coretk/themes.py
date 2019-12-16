@@ -141,13 +141,14 @@ def load(style):
     )
 
 
-def theme_change_menu(style, event):
+def theme_change_menu(event):
     if not isinstance(event.widget, tk.Menu):
         return
-    style_menu(style, event.widget)
+    style_menu(event.widget)
 
 
-def style_menu(style, widget):
+def style_menu(widget):
+    style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
     abg = style.lookup(".", "lightcolor")
@@ -162,17 +163,21 @@ def style_listbox(widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
+    bc = style.lookup(".", "bordercolor")
+    if not bc:
+        bc = "black"
     widget.config(
         background=bg,
         foreground=fg,
         highlightthickness=1,
-        highlightcolor="black",
-        highlightbackground="black",
+        highlightcolor=bc,
+        highlightbackground=bc,
         bd=0,
     )
 
 
-def theme_change(style, event):
+def theme_change(event):
+    style = ttk.Style()
     style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))
     style.configure(
         Styles.green_alert,
