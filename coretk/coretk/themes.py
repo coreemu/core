@@ -1,4 +1,3 @@
-import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -142,19 +141,13 @@ def load(style):
     )
 
 
-def update_bg(style, event):
-    logging.info("updating background: %s", event.widget)
-    bg = style.lookup(".", "background")
-    event.widget.config(background=bg)
-
-
 def theme_change_menu(style, event):
     if not isinstance(event.widget, tk.Menu):
         return
-    update_menu(style, event.widget)
+    style_menu(style, event.widget)
 
 
-def update_menu(style, widget):
+def style_menu(style, widget):
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
     abg = style.lookup(".", "lightcolor")
@@ -165,7 +158,7 @@ def update_menu(style, widget):
     )
 
 
-def update_listbox(widget):
+def style_listbox(widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")

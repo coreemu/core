@@ -185,7 +185,7 @@ class ListboxScroll(ttk.Frame):
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
         )
-        themes.update_listbox(self.listbox)
+        themes.style_listbox(self.listbox)
         self.listbox.grid(row=0, column=0, sticky="nsew")
         self.scrollbar.config(command=self.listbox.yview)
 

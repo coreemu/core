@@ -168,7 +168,7 @@ class CanvasNode:
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
         context = tk.Menu(self.canvas)
-        themes.update_menu(self.app.style, context)
+        themes.style_menu(self.app.style, context)
         if self.app.core.is_runtime():
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
