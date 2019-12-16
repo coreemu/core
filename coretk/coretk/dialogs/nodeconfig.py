@@ -5,7 +5,6 @@ from tkinter import ttk
 
 from coretk import nodeutils
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeservice import NodeService
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 from coretk.themes import FRAME_PAD, PADX, PADY
@@ -130,10 +129,6 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
 
-            # services
-            button = ttk.Button(self.top, text="Services", command=self.click_services)
-            button.grid(sticky="ew", pady=PADY)
-
         # interfaces
         if self.canvas_node.interfaces:
             self.draw_interfaces()
@@ -192,10 +187,6 @@ class NodeConfigDialog(Dialog):
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
-
-    def click_services(self):
-        dialog = NodeService(self, self.app, self.canvas_node)
-        dialog.show()
 
     def click_icon(self):
         file_path = image_chooser(self)
