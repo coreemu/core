@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from tkinter import ttk
 
 THEME_DARK = "black"
 PADX = (0, 5)
@@ -160,7 +161,21 @@ def update_menu(style, widget):
     if not abg:
         abg = bg
     widget.config(
-        background=bg, foreground=fg, activebackground=abg, activeforeground=fg
+        background=bg, foreground=fg, activebackground=abg, activeforeground=fg, bd=0
+    )
+
+
+def update_listbox(widget):
+    style = ttk.Style()
+    bg = style.lookup(".", "background")
+    fg = style.lookup(".", "foreground")
+    widget.config(
+        background=bg,
+        foreground=fg,
+        highlightthickness=1,
+        highlightcolor="black",
+        highlightbackground="black",
+        bd=0,
     )
 
 

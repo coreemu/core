@@ -4,6 +4,7 @@ from tkinter import ttk
 from coretk.coreclient import Observer
 from coretk.dialogs.dialog import Dialog
 from coretk.themes import PADX, PADY
+from coretk.widgets import ListboxScroll
 
 
 class ObserverDialog(Dialog):
@@ -27,23 +28,15 @@ class ObserverDialog(Dialog):
         self.draw_apply_buttons()
 
     def draw_listbox(self):
-        frame = ttk.Frame(self.top)
-        frame.grid(sticky="nsew", pady=PADY)
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(0, weight=1)
-
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-
-        self.observers = tk.Listbox(
-            frame, selectmode=tk.SINGLE, yscrollcommand=scrollbar.set
-        )
+        listbox_scroll = ListboxScroll(self.top)
+        listbox_scroll.grid(sticky="nsew", pady=PADY)
+        listbox_scroll.columnconfigure(0, weight=1)
+        listbox_scroll.rowconfigure(0, weight=1)
+        self.observers = listbox_scroll.listbox
         self.observers.grid(row=0, column=0, sticky="nsew")
         self.observers.bind("<<ListboxSelect>>", self.handle_observer_change)
         for name in sorted(self.app.core.custom_observers):
             self.observers.insert(tk.END, name)
-
-        scrollbar.config(command=self.observers.yview)
 
     def draw_form_fields(self):
         frame = ttk.Frame(self.top)

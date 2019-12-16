@@ -5,6 +5,7 @@ from tkinter import filedialog, font, ttk
 from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
+from coretk import themes
 from coretk.appconfig import ICONS_PATH
 from coretk.themes import FRAME_PAD, PADX, PADY
 
@@ -184,6 +185,7 @@ class ListboxScroll(ttk.LabelFrame):
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
         )
+        themes.update_listbox(self.listbox)
         self.listbox.grid(row=0, column=0, sticky="nsew")
         self.scrollbar.config(command=self.listbox.yview)
 
