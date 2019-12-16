@@ -24,13 +24,17 @@ class ServicesSelectDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
-        frame = ttk.Frame(self.top)
+        frame = ttk.LabelFrame(self.top)
         frame.grid(stick="nsew", pady=PADY)
         frame.rowconfigure(0, weight=1)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        self.groups = ListboxScroll(frame, text="Groups", padding=FRAME_PAD)
-        self.groups.grid(row=0, column=0, sticky="nsew")
+        label_frame = ttk.LabelFrame(frame, text="Groups", padding=FRAME_PAD)
+        label_frame.grid(row=0, column=0, sticky="nsew")
+        label_frame.rowconfigure(0, weight=1)
+        label_frame.columnconfigure(0, weight=1)
+        self.groups = ListboxScroll(label_frame)
+        self.groups.grid(sticky="nsew")
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
@@ -45,8 +49,12 @@ class ServicesSelectDialog(Dialog):
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 
-        self.current = ListboxScroll(frame, text="Selected", padding=FRAME_PAD)
-        self.current.grid(row=0, column=2, sticky="nsew")
+        label_frame = ttk.LabelFrame(frame, text="Selected", padding=FRAME_PAD)
+        label_frame.grid(row=0, column=2, sticky="nsew")
+        label_frame.rowconfigure(0, weight=1)
+        label_frame.columnconfigure(0, weight=1)
+        self.current = ListboxScroll(label_frame)
+        self.current.grid(sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 
@@ -109,12 +117,12 @@ class CustomNodesDialog(Dialog):
         self.draw_buttons()
 
     def draw_node_config(self):
-        frame = ttk.Frame(self.top)
+        frame = ttk.LabelFrame(self.top, text="Nodes", padding=FRAME_PAD)
         frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
-        self.nodes_list = ListboxScroll(frame, text="Nodes", padding=FRAME_PAD)
+        self.nodes_list = ListboxScroll(frame)
         self.nodes_list.grid(row=0, column=0, sticky="nsew", padx=PADX)
         self.nodes_list.listbox.bind("<<ListboxSelect>>", self.handle_node_select)
         for name in sorted(self.app.core.custom_nodes):

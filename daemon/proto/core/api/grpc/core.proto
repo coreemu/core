@@ -301,6 +301,7 @@ message Event {
         ExceptionEvent exception_event = 5;
         FileEvent file_event = 6;
     }
+    int32 session_id = 7;
 }
 
 message NodeEvent {
@@ -319,7 +320,6 @@ message SessionEvent {
     string name = 3;
     string data = 4;
     float time = 5;
-    int32 session_id = 6;
 }
 
 message ConfigEvent {
@@ -333,20 +333,18 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    int32 session_id = 11;
-    int32 interface = 12;
-    int32 network_id = 13;
-    string opaque = 14;
+    int32 interface = 11;
+    int32 network_id = 12;
+    string opaque = 13;
 }
 
 message ExceptionEvent {
     int32 node_id = 1;
-    int32 session_id = 2;
-    ExceptionLevel.Enum level = 3;
-    string source = 4;
-    string date = 5;
-    string text = 6;
-    string opaque = 7;
+    ExceptionLevel.Enum level = 2;
+    string source = 3;
+    string date = 4;
+    string text = 5;
+    string opaque = 6;
 }
 
 message FileEvent {
@@ -357,9 +355,8 @@ message FileEvent {
     int32 number = 5;
     string type = 6;
     string source = 7;
-    int32 session_id = 8;
-    string data = 9;
-    string compressed_data = 10;
+    string data = 8;
+    string compressed_data = 9;
 }
 
 message AddNodeRequest {

@@ -4,6 +4,7 @@ from tkinter import ttk
 from coretk.coreclient import CoreServer
 from coretk.dialogs.dialog import Dialog
 from coretk.themes import FRAME_PAD, PADX, PADY
+from coretk.widgets import ListboxScroll
 
 DEFAULT_NAME = "example"
 DEFAULT_ADDRESS = "127.0.0.1"
@@ -32,24 +33,17 @@ class ServersDialog(Dialog):
         self.draw_apply_buttons()
 
     def draw_servers(self):
-        frame = ttk.Frame(self.top)
-        frame.grid(pady=PADY, sticky="nsew")
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(0, weight=1)
+        listbox_scroll = ListboxScroll(self.top)
+        listbox_scroll.grid(pady=PADY, sticky="nsew")
+        listbox_scroll.columnconfigure(0, weight=1)
+        listbox_scroll.rowconfigure(0, weight=1)
 
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
-        scrollbar.grid(row=0, column=1, sticky="ns")
-
-        self.servers = tk.Listbox(
-            frame, selectmode=tk.SINGLE, yscrollcommand=scrollbar.set
-        )
+        self.servers = listbox_scroll.listbox
         self.servers.grid(row=0, column=0, sticky="nsew")
         self.servers.bind("<<ListboxSelect>>", self.handle_server_change)
 
         for server in self.app.core.servers:
             self.servers.insert(tk.END, server)
-
-        scrollbar.config(command=self.servers.yview)
 
     def draw_server_configuration(self):
         frame = ttk.LabelFrame(self.top, text="Server Configuration", padding=FRAME_PAD)

@@ -24,10 +24,11 @@ class AlertsDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
-        row = 0
+
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        frame.grid(row=row, column=0, sticky="nsew", pady=PADY)
+        frame.rowconfigure(0, weight=1)
+        frame.grid(sticky="nsew", pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("time", "level", "session_id", "node", "source"),
@@ -35,15 +36,15 @@ class AlertsDialog(Dialog):
         )
         self.tree.grid(row=0, column=0, sticky="nsew")
         self.tree.column("time", stretch=tk.YES)
-        self.tree.heading("time", text="time", anchor="w")
+        self.tree.heading("time", text="Time")
         self.tree.column("level", stretch=tk.YES)
-        self.tree.heading("level", text="level", anchor="w")
+        self.tree.heading("level", text="Level")
         self.tree.column("session_id", stretch=tk.YES)
-        self.tree.heading("session_id", text="session id", anchor="w")
+        self.tree.heading("session_id", text="Session ID")
         self.tree.column("node", stretch=tk.YES)
-        self.tree.heading("node", text="node", anchor="w")
+        self.tree.heading("node", text="Node")
         self.tree.column("source", stretch=tk.YES)
-        self.tree.heading("source", text="source", anchor="w")
+        self.tree.heading("source", text="Source")
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
         for alarm in self.app.statusbar.core_alarms:
@@ -74,15 +75,13 @@ class AlertsDialog(Dialog):
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
         xscrollbar.grid(row=1, sticky="ew")
         self.tree.configure(xscrollcommand=xscrollbar.set)
-        row = row + 1
 
         self.text = CodeText(self.top)
         self.text.config(state=tk.DISABLED)
-        self.text.grid(row=row, column=0, sticky="nsew", pady=PADY)
-        row = row + 1
+        self.text.grid(sticky="nsew", pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(row=row, column=0, sticky="nsew")
+        frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)

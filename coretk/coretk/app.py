@@ -1,6 +1,5 @@
 import logging
 import tkinter as tk
-from functools import partial
 from tkinter import ttk
 
 from coretk import appconfig, themes
@@ -42,11 +41,9 @@ class Application(tk.Frame):
 
     def setup_theme(self):
         themes.load(self.style)
+        self.master.bind_class("Menu", "<<ThemeChanged>>", themes.theme_change_menu)
+        self.master.bind("<<ThemeChanged>>", themes.theme_change)
         self.style.theme_use(self.guiconfig["preferences"]["theme"])
-        func = partial(themes.theme_change_menu, self.style)
-        self.master.bind_class("Menu", "<<ThemeChanged>>", func)
-        func = partial(themes.theme_change, self.style)
-        self.master.bind("<<ThemeChanged>>", func)
 
     def setup_app(self):
         self.master.title("CORE")

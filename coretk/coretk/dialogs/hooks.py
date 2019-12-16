@@ -4,7 +4,7 @@ from tkinter import ttk
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
 from coretk.themes import PADX, PADY
-from coretk.widgets import CodeText
+from coretk.widgets import CodeText, ListboxScroll
 
 
 class HookDialog(Dialog):
@@ -96,8 +96,9 @@ class HooksDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
-        self.listbox = tk.Listbox(self.top)
-        self.listbox.grid(sticky="nsew", pady=PADY)
+        listbox_scroll = ListboxScroll(self.top)
+        listbox_scroll.grid(sticky="nsew", pady=PADY)
+        self.listbox = listbox_scroll.listbox
         self.listbox.bind("<<ListboxSelect>>", self.select)
         for hook_file in self.app.core.hooks:
             self.listbox.insert(tk.END, hook_file)

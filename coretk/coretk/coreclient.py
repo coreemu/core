@@ -20,6 +20,7 @@ from coretk.graph.shapeutils import ShapeType
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
 
+GUI_SOURCE = "gui"
 OBSERVERS = {
     "processes": "ps",
     "ifconfig": "ifconfig",
@@ -133,6 +134,14 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
+        if event.session_id != self.session_id:
+            logging.warn(
+                "ignoring event session(%s) current(%s)",
+                event.session_id,
+                self.session_id,
+            )
+            return
+
         if event.HasField("link_event"):
             logging.info("link event: %s", event)
             self.handle_link_event(event.link_event)
@@ -176,7 +185,7 @@ class CoreClient:
             logging.warning("unknown link event: %s", event.message_type)
 
     def handle_node_event(self, event):
-        if event.source == "gui":
+        if event.source == GUI_SOURCE:
             return
         node_id = event.node.id
         x = event.node.position.x
@@ -195,6 +204,11 @@ class CoreClient:
 
     def handle_throughputs(self, event):
         if event.session_id != self.session_id:
+            logging.warn(
+                "ignoring throughput event session(%s) current(%s)",
+                event.session_id,
+                self.session_id,
+            )
             return
         logging.info("handling throughputs event: %s", event)
         self.app.canvas.throughput_draw.process_grpc_throughput_event(
@@ -424,7 +438,7 @@ class CoreClient:
     def edit_node(self, core_node):
         try:
             self.client.edit_node(
-                self.session_id, core_node.id, core_node.position, source="gui"
+                self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:
             show_grpc_error(e)
