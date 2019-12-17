@@ -5,7 +5,6 @@ from tkinter import filedialog, font, ttk
 
 from core.api.grpc import core_pb2
 from coretk import themes
-from coretk.appconfig import ICONS_PATH
 from coretk.themes import FRAME_PAD, PADX, PADY
 
 INT_TYPES = {
@@ -239,11 +238,11 @@ class Spinbox(ttk.Entry):
         self.tk.call(self._w, "set", value)
 
 
-def image_chooser(parent):
+def image_chooser(parent, path):
     return filedialog.askopenfilename(
         parent=parent,
-        initialdir=str(ICONS_PATH),
-        title="Select Icon",
+        initialdir=str(path),
+        title="Select",
         filetypes=(
             ("images", "*.gif *.jpg *.png *.bmp *pcx *.tga ..."),
             ("All Files", "*"),

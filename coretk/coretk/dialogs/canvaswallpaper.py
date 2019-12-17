@@ -3,12 +3,13 @@ set wallpaper
 """
 import logging
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import ttk
 
 from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 from coretk.themes import PADX, PADY
+from coretk.widgets import image_chooser
 
 
 class CanvasBackgroundDialog(Dialog):
@@ -126,14 +127,7 @@ class CanvasBackgroundDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_open_image(self):
-        filename = filedialog.askopenfilename(
-            initialdir=str(BACKGROUNDS_PATH),
-            title="Open",
-            filetypes=(
-                ("images", "*.gif *.jpg *.png *.bmp *pcx *.tga ..."),
-                ("All Files", "*"),
-            ),
-        )
+        filename = image_chooser(self, BACKGROUNDS_PATH)
         if filename:
             self.filename.set(filename)
             self.draw_preview()

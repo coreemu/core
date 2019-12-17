@@ -4,6 +4,7 @@ from functools import partial
 from tkinter import ttk
 
 from coretk import nodeutils
+from coretk.appconfig import ICONS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.emaneconfig import EmaneModelDialog
 from coretk.images import Images
@@ -209,7 +210,7 @@ class NodeConfigDialog(Dialog):
         dialog.show()
 
     def click_icon(self):
-        file_path = image_chooser(self)
+        file_path = image_chooser(self, ICONS_PATH)
         if file_path:
             self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_button.config(image=self.image)

@@ -4,6 +4,7 @@ from pathlib import Path
 from tkinter import ttk
 
 from coretk import nodeutils
+from coretk.appconfig import ICONS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 from coretk.nodeutils import NodeDraw
@@ -179,7 +180,7 @@ class CustomNodesDialog(Dialog):
         self.image_button.config(image="")
 
     def click_icon(self):
-        file_path = image_chooser(self)
+        file_path = image_chooser(self, ICONS_PATH)
         if file_path:
             image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image = image
