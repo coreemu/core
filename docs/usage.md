@@ -650,7 +650,7 @@ Any time you edit the topology
 file, you will need to stop the emulation if it were running and reload the
 file.
 
-The **.xml** [file schema is specified by NRL](http://www.nrl.navy.mil/itd/ncs/products/mnmtools) and there are two versions to date:
+The **.xml** [file schema is specified by NRL](https://github.com/USNavalResearchLaboratory/NCS-Downloads/blob/master/mnmtools/EmulationScriptSchemaDescription.pdf) and there are two versions to date:
 version 0.0  and version 1.0,
 with 1.0 as the current default. CORE can open either XML version. However, the
 xmlfilever line in **/etc/core/core.conf** controls the version of the XML file

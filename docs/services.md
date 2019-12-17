@@ -312,17 +312,17 @@ Currently the Naval Research Laboratory uses this library to develop a wide vari
 * arouted
 
 #### NRL Installation
-In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [official nightly snapshots website](https://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/).
+In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [NRL Protolib Repo](https://github.com/USNavalResearchLaboratory/protolib).
 
 #### Multi-Generator (MGEN)
-Download MGEN from the [NRL MGEN nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
+Download MGEN from the [NRL MGEN Repo](https://github.com/USNavalResearchLaboratory/mgen), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os} mgen
 ```
 
 #### Neighborhood Discovery Protocol (NHDP)
-Download NHDP from the [NRL NHDP nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/nhdp/nightly_snapshots/).
+Download NHDP from the [NRL NHDP Repo](https://github.com/USNavalResearchLaboratory/NCS-Downloads/tree/master/nhdp).
 ```shell
 sudo apt-get install libpcap-dev libboost-all-dev
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-x86_64.zip
@@ -339,14 +339,14 @@ make -f Makefile.{os}
 ```
 
 #### Simplified Multicast Forwarding (SMF)
-Download SMF from the [NRL SMF nightly snapshot](https://downloads.pf.itd.nrl.navy.mil/smf/nightly_snapshots/) , unpack it and place the protolib library inside the *smf* main folder.
+Download SMF from the [NRL SMF Repo](https://github.com/USNavalResearchLaboratory/nrlsmf) , unpack it and place the protolib library inside the *smf* main folder.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os}
 ```
 
 #### Optimized Link State Routing Protocol (OLSR)
-To install the OLSR protocol, download their source code from their [nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/olsr/nightly_snapshots/nrlolsr-svnsnap.tgz). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
+To install the OLSR protocol, download their source code from their [NRL OLSR Repo](https://github.com/USNavalResearchLaboratory/nrlolsr). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
 ```shell
 cd ./unix
 make -f Makefile.{os}
