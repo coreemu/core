@@ -142,14 +142,12 @@ class ShapeDialog(Dialog):
     def choose_fill_color(self):
         color_picker = ColorPicker(self, self.app, self.fill_color)
         color = color_picker.askcolor()
-        # color = colorchooser.askcolor(color=self.fill_color)
         self.fill_color = color
         self.fill.config(background=color, text=color)
 
     def choose_border_color(self):
         color_picker = ColorPicker(self, self.app, self.border_color)
         color = color_picker.askcolor()
-        # color = colorchooser.askcolor(color=self.border_color)
         self.border_color = color
         self.border.config(background=color, text=color)
 
