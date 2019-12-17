@@ -15,6 +15,8 @@ class InputValidation:
         self.positive_float = None
         self.name = None
         self.ip4 = None
+        self.rgb = None
+        self.hex = None
         self.register()
 
     def register(self):
@@ -22,6 +24,8 @@ class InputValidation:
         self.positive_float = self.master.register(self.check_positive_float)
         self.name = self.master.register(self.check_node_name)
         self.ip4 = self.master.register(self.check_ip4)
+        self.rgb = self.master.register(self.check_rbg)
+        self.hex = self.master.register(self.check_hex)
 
     def ip_focus_out(self, event):
         value = event.widget.get()
@@ -100,11 +104,37 @@ class InputValidation:
                 return False
             for _8bits in _32bits:
                 if (
-                    (_8bits and int(_8bits) > 225)
+                    (_8bits and int(_8bits) > 255)
                     or len(_8bits) > 3
                     or (_8bits.startswith("0") and len(_8bits) > 1)
                 ):
                     return False
             return True
+        else:
+            return False
+
+    def check_rbg(self, s):
+        if not s:
+            return True
+        if s.startswith("0") and len(s) >= 2:
+            return False
+        try:
+            value = int(s)
+            if 0 <= value <= 255:
+                return True
+            else:
+                return False
+        except ValueError:
+            return False
+
+    def check_hex(self, s):
+        if not s:
+            return True
+        pat = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
+        if pat.match(s):
+            if 0 <= len(s) <= 7:
+                return True
+            else:
+                return False
         else:
             return False

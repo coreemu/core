@@ -46,7 +46,11 @@ class StatusBar(ttk.Frame):
         self.status.grid(row=0, column=1, sticky="ew")
 
         self.zoom = ttk.Label(
-            self, text="ZOOM TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
+            self,
+            text="%s" % (int(self.app.canvas.ratio * 100)) + "%",
+            anchor=tk.CENTER,
+            borderwidth=1,
+            relief=tk.RIDGE,
         )
         self.zoom.grid(row=0, column=2, sticky="ew")
 

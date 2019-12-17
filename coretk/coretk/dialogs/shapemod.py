@@ -2,8 +2,9 @@
 shape input dialog
 """
 import tkinter as tk
-from tkinter import colorchooser, font, ttk
+from tkinter import font, ttk
 
+from coretk.dialogs.colorpicker import ColorPicker
 from coretk.dialogs.dialog import Dialog
 from coretk.graph import tags
 from coretk.graph.shapeutils import is_draw_shape, is_shape_text
@@ -134,18 +135,21 @@ class ShapeDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def choose_text_color(self):
-        color = colorchooser.askcolor(color="black")
-        self.text_color = color[1]
+        color_picker = ColorPicker(self, self.app, "#000000")
+        color = color_picker.askcolor()
+        self.text_color = color
 
     def choose_fill_color(self):
-        color = colorchooser.askcolor(color=self.fill_color)
-        self.fill_color = color[1]
-        self.fill.config(background=color[1], text=color[1])
+        color_picker = ColorPicker(self, self.app, self.fill_color)
+        color = color_picker.askcolor()
+        self.fill_color = color
+        self.fill.config(background=color, text=color)
 
     def choose_border_color(self):
-        color = colorchooser.askcolor(color=self.border_color)
-        self.border_color = color[1]
-        self.border.config(background=color[1], text=color[1])
+        color_picker = ColorPicker(self, self.app, self.border_color)
+        color = color_picker.askcolor()
+        self.border_color = color
+        self.border.config(background=color, text=color)
 
     def cancel(self):
         self.shape.delete()
