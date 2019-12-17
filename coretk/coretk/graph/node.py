@@ -246,6 +246,23 @@ class CanvasNode:
         dialog = NodeService(self.app.master, self.app, self)
         dialog.show()
 
+    def has_emane_link(self, interface_id):
+        result = None
+        for edge in self.edges:
+            if self.id == edge.src:
+                other_id = edge.dst
+                edge_interface_id = edge.src_interface.id
+            else:
+                other_id = edge.src
+                edge_interface_id = edge.dst_interface.id
+            if edge_interface_id != interface_id:
+                continue
+            other_node = self.canvas.nodes[other_id]
+            if other_node.core_node.type == NodeType.EMANE:
+                result = other_node.core_node
+                break
+        return result
+
     def wireless_link_selected(self):
         self.canvas.context = None
         for canvas_nid in [

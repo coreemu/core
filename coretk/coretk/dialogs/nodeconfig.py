@@ -5,10 +5,11 @@ from tkinter import ttk
 
 from coretk import nodeutils
 from coretk.dialogs.dialog import Dialog
+from coretk.dialogs.emaneconfig import EmaneModelDialog
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 from coretk.themes import FRAME_PAD, PADX, PADY
-from coretk.widgets import FrameScroll, image_chooser
+from coretk.widgets import image_chooser
 
 
 def mac_auto(is_auto, entry):
@@ -137,42 +138,57 @@ class NodeConfigDialog(Dialog):
         self.draw_buttons()
 
     def draw_interfaces(self):
-        scroll = FrameScroll(self.top, self.app, text="Interfaces")
-        scroll.grid(sticky="nsew")
-        scroll.frame.columnconfigure(0, weight=1)
-        scroll.frame.rowconfigure(0, weight=1)
+        notebook = ttk.Notebook(self.top)
+        notebook.grid(sticky="nsew", pady=PADY)
+        self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
+
         for interface in self.canvas_node.interfaces:
             logging.info("interface: %s", interface)
-            frame = ttk.LabelFrame(scroll.frame, text=interface.name, padding=FRAME_PAD)
-            frame.grid(sticky="ew", pady=PADY)
-            frame.columnconfigure(1, weight=1)
-            frame.columnconfigure(2, weight=1)
+            tab = ttk.Frame(notebook, padding=FRAME_PAD)
+            tab.grid(sticky="nsew", pady=PADY)
+            tab.columnconfigure(1, weight=1)
+            tab.columnconfigure(2, weight=1)
+            notebook.add(tab, text=interface.name)
 
-            label = ttk.Label(frame, text="MAC")
-            label.grid(row=0, column=0, padx=PADX, pady=PADY)
+            row = 0
+            emane_node = self.canvas_node.has_emane_link(interface.id)
+            if emane_node:
+                emane_model = emane_node.emane.split("_")[1]
+                button = ttk.Button(
+                    tab,
+                    text=f"Configure EMANE {emane_model}",
+                    command=lambda: self.click_emane_config(emane_model, interface.id),
+                )
+                button.grid(row=row, sticky="ew", columnspan=3, pady=PADY)
+                row += 1
+
+            label = ttk.Label(tab, text="MAC")
+            label.grid(row=row, column=0, padx=PADX, pady=PADY)
             is_auto = tk.BooleanVar(value=True)
-            checkbutton = ttk.Checkbutton(frame, text="Auto?", variable=is_auto)
+            checkbutton = ttk.Checkbutton(tab, text="Auto?", variable=is_auto)
             checkbutton.var = is_auto
-            checkbutton.grid(row=0, column=1, padx=PADX)
+            checkbutton.grid(row=row, column=1, padx=PADX)
             mac = tk.StringVar(value=interface.mac)
-            entry = ttk.Entry(frame, textvariable=mac, state=tk.DISABLED)
-            entry.grid(row=0, column=2, sticky="ew")
+            entry = ttk.Entry(tab, textvariable=mac, state=tk.DISABLED)
+            entry.grid(row=row, column=2, sticky="ew")
             func = partial(mac_auto, is_auto, entry)
             checkbutton.config(command=func)
+            row += 1
 
-            label = ttk.Label(frame, text="IPv4")
-            label.grid(row=1, column=0, padx=PADX, pady=PADY)
+            label = ttk.Label(tab, text="IPv4")
+            label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip4 = tk.StringVar(value=f"{interface.ip4}/{interface.ip4mask}")
-            entry = ttk.Entry(frame, textvariable=ip4)
+            entry = ttk.Entry(tab, textvariable=ip4)
             entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
-            entry.grid(row=1, column=1, columnspan=2, sticky="ew")
+            entry.grid(row=row, column=1, columnspan=2, sticky="ew")
+            row += 1
 
-            label = ttk.Label(frame, text="IPv6")
-            label.grid(row=2, column=0, padx=PADX, pady=PADY)
+            label = ttk.Label(tab, text="IPv6")
+            label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip6 = tk.StringVar(value=f"{interface.ip6}/{interface.ip6mask}")
-            entry = ttk.Entry(frame, textvariable=ip6)
+            entry = ttk.Entry(tab, textvariable=ip6)
             entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
-            entry.grid(row=2, column=1, columnspan=2, sticky="ew")
+            entry.grid(row=row, column=1, columnspan=2, sticky="ew")
 
             self.interfaces[interface.id] = InterfaceData(is_auto, mac, ip4, ip6)
 
@@ -187,6 +203,10 @@ class NodeConfigDialog(Dialog):
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
+
+    def click_emane_config(self, emane_model, interface_id):
+        dialog = EmaneModelDialog(self, self.app, self.node, emane_model, interface_id)
+        dialog.show()
 
     def click_icon(self):
         file_path = image_chooser(self)
