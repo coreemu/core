@@ -1,5 +1,8 @@
+import logging
 import tkinter as tk
 
+from coretk import themes
+from coretk.dialogs.linkconfig import LinkConfiguration
 from coretk.graph import tags
 from coretk.nodeutils import NodeUtils
 
@@ -23,7 +26,7 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    width = 1.4
+    width = 3
 
     def __init__(self, x1, y1, x2, y2, src, canvas):
         """
@@ -46,6 +49,10 @@ class CanvasEdge:
         self.token = None
         self.link_info = None
         self.throughput = None
+        self.set_binding()
+
+    def set_binding(self):
+        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.create_context)
 
     def complete(self, dst):
         self.dst = dst
@@ -89,3 +96,22 @@ class CanvasEdge:
         if self.link_info:
             self.canvas.delete(self.link_info.id1)
             self.canvas.delete(self.link_info.id2)
+
+    def create_context(self, event):
+        logging.debug("create link context")
+        context = tk.Menu(self.canvas)
+        themes.style_menu(context)
+        context.add_command(label="Configure", command=self.configure)
+        context.add_command(label="Delete")
+        context.add_command(label="Split")
+        context.add_command(label="Merge")
+        if self.canvas.app.core.is_runtime():
+            context.entryconfigure(1, state="disabled")
+            context.entryconfigure(2, state="disabled")
+            context.entryconfigure(3, state="disabled")
+        context.post(event.x_root, event.y_root)
+
+    def configure(self):
+        logging.debug("link configuration")
+        dialog = LinkConfiguration(self.canvas, self.canvas.app, self)
+        dialog.show()
