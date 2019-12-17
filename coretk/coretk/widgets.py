@@ -25,7 +25,7 @@ def file_button_click(value):
         value.set(file_path)
 
 
-class FrameScroll(ttk.LabelFrame):
+class FrameScroll(ttk.Frame):
     def __init__(self, master, app, _cls=ttk.Frame, **kw):
         super().__init__(master, **kw)
         self.app = app

@@ -51,14 +51,14 @@ class NodeService(Dialog):
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
 
+        label_frame = ttk.LabelFrame(frame, text="Services")
+        label_frame.grid(row=0, column=1, sticky="nsew")
+        label_frame.columnconfigure(0, weight=1)
+        label_frame.rowconfigure(0, weight=1)
         self.services = CheckboxList(
-            frame,
-            self.app,
-            text="Services",
-            clicked=self.service_clicked,
-            padding=FRAME_PAD,
+            label_frame, self.app, clicked=self.service_clicked, padding=FRAME_PAD
         )
-        self.services.grid(row=0, column=1, sticky="nsew")
+        self.services.grid(sticky="nsew")
 
         label_frame = ttk.LabelFrame(frame, text="Selected", padding=FRAME_PAD)
         label_frame.grid(row=0, column=2, sticky="nsew")
