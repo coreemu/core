@@ -68,7 +68,7 @@ Virtual networks generally require some form of routing in order to work (e.g. t
 tables for routing packets from one subnet to another.) CORE builds OSPF routing protocol configurations by 
 default when the blue router node type is used. 
 
-* [OSPF MANET Designated Routers](http://www.nrl.navy.mil/itd/ncs/products/ospf-manet) (MDR) - the Quagga routing 
+* [OSPF MANET Designated Routers](https://github.com/USNavalResearchLaboratory/ospf-mdr) (MDR) - the Quagga routing 
 suite with a modified version of OSPFv3, optimized for use with mobile wireless networks. The **mdr** node type 
 (and the MDR service) requires this variant of Quagga.
 
@@ -77,7 +77,7 @@ suite with a modified version of OSPFv3, optimized for use with mobile wireless 
 There is a built package which can be used.
 
 ```shell
-wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/quagga-0.99.21mr2.2/quagga-mr_0.99.21mr2.2_amd64.deb
+wget https://github.com/USNavalResearchLaboratory/ospf-mdr/releases/download/v0.99.21mr2.2/quagga-mr_0.99.21mr2.2_amd64.deb
 sudo dpkg -i quagga-mr_0.99.21mr2.2_amd64.deb
 ```
 
@@ -89,9 +89,8 @@ Requires building from source, from the latest nightly snapshot.
 # packages needed beyond what's normally required to build core on ubuntu
 sudo apt install libtool libreadline-dev autoconf
 
-wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-svnsnap.tgz
-tar xzf quagga-svnsnap.tgz
-cd quagga
+git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
+cd ospf-mdr
 ./bootstrap.sh
 ./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
     --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
