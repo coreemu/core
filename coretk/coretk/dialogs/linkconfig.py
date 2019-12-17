@@ -24,7 +24,7 @@ class LinkConfiguration(Dialog):
         self.jitter = tk.DoubleVar()
         self.loss = tk.DoubleVar()
         self.duplicate = tk.DoubleVar()
-        self.color = "#000000"
+        self.color = tk.StringVar(value="#000000")
         self.width = tk.DoubleVar()
 
         self.down_bandwidth = tk.DoubleVar()
@@ -77,7 +77,7 @@ class LinkConfiguration(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.grid(row=3, column=0, sticky="nsew")
 
-        button = ttk.Button(frame, text="Apply")
+        button = ttk.Button(frame, text="Apply", command=self.apply)
         button.grid(row=0, column=0, sticky="nsew")
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="nsew")
@@ -166,7 +166,7 @@ class LinkConfiguration(Dialog):
         frame.grid(row=row, column=0, sticky="nsew")
         label = ttk.Label(frame, text="Color: ")
         label.grid(row=0, column=0, sticky="nsew")
-        button = ttk.Button(frame, text=self.color)
+        button = ttk.Button(frame, textvariable=self.color)
         button.grid(row=0, column=1, sticky="nsew")
         row = row + 1
 
@@ -183,6 +183,9 @@ class LinkConfiguration(Dialog):
 
     def apply(self):
         logging.debug("click apply")
+        width = self.width.get()
+        self.app.canvas.itemconfigure(self.edge.id, width=width)
+        self.destroy()
 
     def change_symmetry(self):
         logging.debug("change symmetry")
@@ -209,4 +212,6 @@ class LinkConfiguration(Dialog):
         :return: nothing
         """
         width = self.app.canvas.itemcget(self.edge.id, "width")
+        # color = self.app.canvas.itemcget(self.edge.id, "fill")
         self.width.set(width)
+        # self.color
