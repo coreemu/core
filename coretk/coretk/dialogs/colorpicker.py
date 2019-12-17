@@ -41,7 +41,7 @@ class ColorPicker(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(2, weight=6)
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="R: ")
         label.grid(row=0, column=0)
@@ -65,7 +65,7 @@ class ColorPicker(Dialog):
         )
         scale.grid(row=0, column=2, sticky="nsew")
         self.red_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0)
+            frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0), width=5
         )
         self.red_label.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=0, column=0, sticky="nsew")
@@ -73,7 +73,7 @@ class ColorPicker(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(2, weight=6)
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="G: ")
         label.grid(row=0, column=0)
@@ -97,7 +97,7 @@ class ColorPicker(Dialog):
         )
         scale.grid(row=0, column=2, sticky="nsew")
         self.green_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, self.green.get(), 0)
+            frame, background="#%02x%02x%02x" % (0, self.green.get(), 0), width=5
         )
         self.green_label.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=1, column=0, sticky="nsew")
@@ -105,7 +105,7 @@ class ColorPicker(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=4)
+        frame.columnconfigure(2, weight=6)
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="B: ")
         label.grid(row=0, column=0)
@@ -129,7 +129,7 @@ class ColorPicker(Dialog):
         )
         scale.grid(row=0, column=2, sticky="nsew")
         self.blue_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, 0, self.blue.get())
+            frame, background="#%02x%02x%02x" % (0, 0, self.blue.get()), width=5
         )
         self.blue_label.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=2, column=0, sticky="nsew")
