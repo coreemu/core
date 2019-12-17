@@ -17,7 +17,7 @@ class AlertsDialog(Dialog):
         super().__init__(master, app, "Alerts", modal=True)
         self.app = app
         self.tree = None
-        self.text = None
+        self.codetext = None
         self.draw()
 
     def draw(self):
@@ -76,9 +76,9 @@ class AlertsDialog(Dialog):
         xscrollbar.grid(row=1, sticky="ew")
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
-        self.text = CodeText(self.top)
-        self.text.config(state=tk.DISABLED)
-        self.text.grid(sticky="nsew", pady=PADY)
+        self.codetext = CodeText(self.top)
+        self.codetext.text.config(state=tk.DISABLED)
+        self.codetext.grid(sticky="nsew", pady=PADY)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -96,7 +96,7 @@ class AlertsDialog(Dialog):
         button.grid(row=0, column=3, sticky="ew")
 
     def reset_alerts(self):
-        self.text.delete("1.0", tk.END)
+        self.codetext.text.delete("1.0", tk.END)
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.app.statusbar.core_alarms.clear()
@@ -137,8 +137,8 @@ class AlertsDialog(Dialog):
             text = text + "node created"
         except RpcError:
             text = text + "node not created"
-        self.text.delete("1.0", "end")
-        self.text.insert("1.0", text)
+        self.codetext.text.delete("1.0", "end")
+        self.codetext.text.insert("1.0", text)
 
 
 class DaemonLog(Dialog):
@@ -155,8 +155,8 @@ class DaemonLog(Dialog):
         frame.grid(row=0, column=0, sticky="ew", pady=PADY)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=9)
-        label = ttk.Label(frame, text="File: ")
-        label.grid(row=0, column=0)
+        label = ttk.Label(frame, text="File", anchor="w")
+        label.grid(row=0, column=0, sticky="ew")
         entry = ttk.Entry(frame, textvariable=self.path, state="disabled")
         entry.grid(row=0, column=1, sticky="ew")
         try:
@@ -164,8 +164,8 @@ class DaemonLog(Dialog):
             log = file.readlines()
         except FileNotFoundError:
             log = "Log file not found"
-        text = CodeText(self.top)
-        text.insert("1.0", log)
-        text.see("end")
-        text.config(state=tk.DISABLED)
-        text.grid(row=1, column=0, sticky="nsew")
+        codetext = CodeText(self.top)
+        codetext.text.insert("1.0", log)
+        codetext.text.see("end")
+        codetext.text.config(state=tk.DISABLED)
+        codetext.grid(row=1, column=0, sticky="nsew")

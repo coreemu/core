@@ -110,7 +110,7 @@ class ServiceConfiguration(Dialog):
 
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
-        self.notebook.grid(sticky="nsew")
+        self.notebook.grid(sticky="nsew", pady=PADY)
         self.draw_tab_files()
         self.draw_tab_directories()
         self.draw_tab_startstop()
@@ -192,11 +192,13 @@ class ServiceConfiguration(Dialog):
         tab.rowconfigure(self.service_file_data.grid_info()["row"], weight=1)
         if len(self.filenames) > 0:
             self.filename_combobox.current(0)
-            self.service_file_data.delete(1.0, "end")
-            self.service_file_data.insert(
+            self.service_file_data.text.delete(1.0, "end")
+            self.service_file_data.text.insert(
                 "end", self.temp_service_files[self.filenames[0]]
             )
-        self.service_file_data.bind("<FocusOut>", self.update_temp_service_file_data)
+        self.service_file_data.text.bind(
+            "<FocusOut>", self.update_temp_service_file_data
+        )
 
     def draw_tab_directories(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -275,14 +277,14 @@ class ServiceConfiguration(Dialog):
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Validation Time")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         self.validation_time_entry = ttk.Entry(frame)
         self.validation_time_entry.insert("end", self.validation_time)
         self.validation_time_entry.config(state=tk.DISABLED)
-        self.validation_time_entry.grid(row=0, column=1, sticky="ew")
+        self.validation_time_entry.grid(row=0, column=1, sticky="ew", pady=PADY)
 
         label = ttk.Label(frame, text="Validation Mode")
-        label.grid(row=1, column=0, sticky="w")
+        label.grid(row=1, column=0, sticky="w", padx=PADX)
         if self.validation_mode == core_pb2.ServiceValidationMode.BLOCKING:
             mode = "BLOCKING"
         elif self.validation_mode == core_pb2.ServiceValidationMode.NON_BLOCKING:
@@ -294,14 +296,14 @@ class ServiceConfiguration(Dialog):
         )
         self.validation_mode_entry.insert("end", mode)
         self.validation_mode_entry.config(state=tk.DISABLED)
-        self.validation_mode_entry.grid(row=1, column=1, sticky="ew")
+        self.validation_mode_entry.grid(row=1, column=1, sticky="ew", pady=PADY)
 
         label = ttk.Label(frame, text="Validation Period")
-        label.grid(row=2, column=0, sticky="w")
+        label.grid(row=2, column=0, sticky="w", padx=PADX)
         self.validation_period_entry = ttk.Entry(
             frame, state=tk.DISABLED, textvariable=tk.StringVar()
         )
-        self.validation_period_entry.grid(row=2, column=1, sticky="ew")
+        self.validation_period_entry.grid(row=2, column=1, sticky="ew", pady=PADY)
 
         label_frame = ttk.LabelFrame(tab, text="Executables", padding=FRAME_PAD)
         label_frame.grid(sticky="nsew", pady=PADY)
@@ -429,8 +431,8 @@ class ServiceConfiguration(Dialog):
     def display_service_file_data(self, event):
         combobox = event.widget
         filename = combobox.get()
-        self.service_file_data.delete(1.0, "end")
-        self.service_file_data.insert("end", self.temp_service_files[filename])
+        self.service_file_data.text.delete(1.0, "end")
+        self.service_file_data.text.insert("end", self.temp_service_files[filename])
 
     def update_temp_service_file_data(self, event):
         scrolledtext = event.widget

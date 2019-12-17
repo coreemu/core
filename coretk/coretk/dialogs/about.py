@@ -38,7 +38,7 @@ class AboutDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
-        text = CodeText(self.top)
-        text.insert("1.0", LICENSE)
-        text.config(state=tk.DISABLED)
-        text.grid(sticky="nsew")
+        codetext = CodeText(self.top)
+        codetext.text.insert("1.0", LICENSE)
+        codetext.text.config(state=tk.DISABLED)
+        codetext.grid(sticky="nsew")

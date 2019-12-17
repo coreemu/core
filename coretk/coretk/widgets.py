@@ -2,7 +2,6 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import filedialog, font, ttk
-from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
 from coretk import themes
@@ -208,10 +207,13 @@ class CodeFont(font.Font):
         super().__init__(font="TkFixedFont", color="green")
 
 
-class CodeText(ScrolledText):
+class CodeText(ttk.Frame):
     def __init__(self, master, **kwargs):
-        super().__init__(
-            master,
+        super().__init__(master, **kwargs)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        self.text = tk.Text(
+            self,
             bd=0,
             bg="black",
             cursor="xterm lime lime",
@@ -222,8 +224,11 @@ class CodeText(ScrolledText):
             selectbackground="lime",
             selectforeground="black",
             relief=tk.FLAT,
-            **kwargs
         )
+        self.text.grid(row=0, column=0, sticky="nsew")
+        yscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
+        yscrollbar.grid(row=0, column=1, sticky="ns")
+        self.text.configure(yscrollcommand=yscrollbar.set)
 
 
 class Spinbox(ttk.Entry):

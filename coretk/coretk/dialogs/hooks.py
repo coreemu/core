@@ -11,7 +11,7 @@ class HookDialog(Dialog):
     def __init__(self, master, app):
         super().__init__(master, app, "Hook", modal=True)
         self.name = tk.StringVar()
-        self.data = None
+        self.codetext = None
         self.hook = core_pb2.Hook()
         self.state = tk.StringVar()
         self.draw()
@@ -41,8 +41,8 @@ class HookDialog(Dialog):
         combobox.bind("<<ComboboxSelected>>", self.state_change)
 
         # data
-        self.data = CodeText(self.top)
-        self.data.insert(
+        self.codetext = CodeText(self.top)
+        self.codetext.text.insert(
             1.0,
             (
                 "#!/bin/sh\n"
@@ -50,7 +50,7 @@ class HookDialog(Dialog):
                 "# specified state\n"
             ),
         )
-        self.data.grid(sticky="nsew")
+        self.codetext.grid(sticky="nsew", pady=PADY)
 
         # button row
         frame = ttk.Frame(self.top)
@@ -69,13 +69,13 @@ class HookDialog(Dialog):
     def set(self, hook):
         self.hook = hook
         self.name.set(hook.file)
-        self.data.delete(1.0, tk.END)
-        self.data.insert(tk.END, hook.data)
+        self.codetext.text.delete(1.0, tk.END)
+        self.codetext.text.insert(tk.END, hook.data)
         state_name = core_pb2.SessionState.Enum.Name(hook.state)
         self.state.set(state_name)
 
     def save(self):
-        data = self.data.get("1.0", tk.END).strip()
+        data = self.codetext.text.get("1.0", tk.END).strip()
         state_value = core_pb2.SessionState.Enum.Value(self.state.get())
         self.hook.file = self.name.get()
         self.hook.data = data
