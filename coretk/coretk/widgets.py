@@ -63,9 +63,9 @@ class FrameScroll(ttk.Frame):
             widget.destroy()
 
 
-class ConfigFrame(FrameScroll):
+class ConfigFrame(ttk.Notebook):
     def __init__(self, master, app, config, **kw):
-        super().__init__(master, app, ttk.Notebook, borderwidth=0, **kw)
+        super().__init__(master, **kw)
         self.app = app
         self.config = config
         self.values = {}
@@ -79,17 +79,17 @@ class ConfigFrame(FrameScroll):
 
         for group_name in sorted(group_mapping):
             group = group_mapping[group_name]
-            frame = ttk.Frame(self.frame, padding=FRAME_PAD)
-            frame.columnconfigure(1, weight=1)
-            self.frame.add(frame, text=group_name)
+            tab = FrameScroll(self, self.app, borderwidth=0, padding=FRAME_PAD)
+            tab.frame.columnconfigure(1, weight=1)
+            self.add(tab, text=group_name)
             for index, option in enumerate(sorted(group, key=lambda x: x.name)):
-                label = ttk.Label(frame, text=option.label)
+                label = ttk.Label(tab.frame, text=option.label)
                 label.grid(row=index, pady=PADY, padx=PADX, sticky="w")
                 value = tk.StringVar()
                 if option.type == core_pb2.ConfigOptionType.BOOL:
                     select = tuple(option.select)
                     combobox = ttk.Combobox(
-                        frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state="readonly"
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                     if option.value == "1":
@@ -100,13 +100,13 @@ class ConfigFrame(FrameScroll):
                     value.set(option.value)
                     select = tuple(option.select)
                     combobox = ttk.Combobox(
-                        frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state="readonly"
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.STRING:
                     value.set(option.value)
                     if "file" in option.label:
-                        file_frame = ttk.Frame(frame)
+                        file_frame = ttk.Frame(tab.frame)
                         file_frame.grid(row=index, column=1, sticky="ew")
                         file_frame.columnconfigure(0, weight=1)
                         entry = ttk.Entry(file_frame, textvariable=value)
@@ -117,20 +117,20 @@ class ConfigFrame(FrameScroll):
                     else:
                         if "controlnet" in option.name and "script" not in option.name:
                             entry = ttk.Entry(
-                                frame,
+                                tab.frame,
                                 textvariable=value,
                                 validate="key",
                                 validatecommand=(self.app.validation.ip4, "%P"),
                             )
                             entry.grid(row=index, column=1, sticky="ew")
                         else:
-                            entry = ttk.Entry(frame, textvariable=value)
+                            entry = ttk.Entry(tab.frame, textvariable=value)
                             entry.grid(row=index, column=1, sticky="ew")
 
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     entry = ttk.Entry(
-                        frame,
+                        tab.frame,
                         textvariable=value,
                         validate="key",
                         validatecommand=(self.app.validation.positive_int, "%P"),
@@ -143,7 +143,7 @@ class ConfigFrame(FrameScroll):
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
                     entry = ttk.Entry(
-                        frame,
+                        tab.frame,
                         textvariable=value,
                         validate="key",
                         validatecommand=(self.app.validation.positive_float, "%P"),
