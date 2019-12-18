@@ -12,7 +12,7 @@ from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
 from coretk.graph.shape import Shape
-from coretk.graph.shapeutils import ShapeType, is_draw_shape
+from coretk.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from coretk.images import Images
 from coretk.nodeutils import NodeUtils
 
@@ -45,6 +45,7 @@ class CanvasGraph(tk.Canvas):
         self.ratio = 1.0
         self.offset = (0, 0)
         self.cursor = (0, 0)
+        self.marker_tool = None
 
         # background related
         self.wallpaper_id = None
@@ -499,10 +500,22 @@ class CanvasGraph(tk.Canvas):
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
         if self.mode == GraphMode.ANNOTATION and selected is None:
-            shape = Shape(self.app, self, self.annotation_type, x, y)
-            self.selected = shape.id
-            self.shape_drawing = True
-            self.shapes[shape.id] = shape
+            if is_marker(self.annotation_type):
+                r = self.app.toolbar.marker_tool.radius
+                self.create_oval(
+                    x - r,
+                    y - r,
+                    x + r,
+                    y + r,
+                    fill=self.app.toolbar.marker_tool.color,
+                    outline="",
+                    tags="marker",
+                )
+            else:
+                shape = Shape(self.app, self, self.annotation_type, x, y)
+                self.selected = shape.id
+                self.shape_drawing = True
+                self.shapes[shape.id] = shape
 
         if selected is not None:
             if selected not in self.selection:
@@ -573,6 +586,18 @@ class CanvasGraph(tk.Canvas):
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
+            elif is_marker(self.annotation_type):
+                marker_tool = self.app.toolbar.marker_tool
+                r = marker_tool.radius
+                self.create_oval(
+                    x - r,
+                    y - r,
+                    x + r,
+                    y + r,
+                    fill=self.app.toolbar.marker_tool.color,
+                    outline="",
+                    tags="marker",
+                )
 
         if self.mode == GraphMode.EDGE:
             return

@@ -6,9 +6,10 @@ from tkinter import ttk
 from tkinter.font import Font
 
 from coretk.dialogs.customnodes import CustomNodesDialog
+from coretk.dialogs.marker import Marker
 from coretk.graph import tags
 from coretk.graph.enums import GraphMode
-from coretk.graph.shapeutils import ShapeType
+from coretk.graph.shapeutils import ShapeType, is_marker
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
 from coretk.themes import Styles
@@ -56,6 +57,9 @@ class Toolbar(ttk.Frame):
         self.node_picker = None
         self.network_picker = None
         self.annotation_picker = None
+
+        # dialog
+        self.marker_tool = None
 
         # draw components
         self.draw()
@@ -401,6 +405,9 @@ class Toolbar(ttk.Frame):
         self.annotation_button.image = image
         self.app.canvas.mode = GraphMode.ANNOTATION
         self.app.canvas.annotation_type = shape_type
+        if is_marker(shape_type):
+            self.marker_tool = Marker(self.master, self.app)
+            self.marker_tool.show()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
@@ -410,6 +417,8 @@ class Toolbar(ttk.Frame):
 
     def click_marker_button(self):
         logging.debug("Click on marker button")
+        dialog = Marker(self.master, self.app)
+        dialog.show()
 
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")
