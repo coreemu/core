@@ -244,6 +244,24 @@ class LinkConfiguration(Dialog):
         loss = self.loss.get()
         if loss != "":
             link.options.per = float(loss)
+
+        if self.app.core.is_runtime() and link.HasField("options"):
+            interface_one = None
+            if link.HasField("interface_one"):
+                interface_one = link.interface_one.id
+            interface_two = None
+            if link.HasField("interface_two"):
+                interface_two = link.interface_two.id
+            session_id = self.app.core.session_id
+            self.app.core.client.edit_link(
+                session_id,
+                link.node_one_id,
+                link.node_two_id,
+                link.options,
+                interface_one,
+                interface_two,
+            )
+
         self.destroy()
 
     def change_symmetry(self):
