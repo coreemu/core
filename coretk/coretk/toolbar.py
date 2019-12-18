@@ -406,8 +406,9 @@ class Toolbar(ttk.Frame):
         self.app.canvas.mode = GraphMode.ANNOTATION
         self.app.canvas.annotation_type = shape_type
         if is_marker(shape_type):
-            self.marker_tool = Marker(self.master, self.app)
-            self.marker_tool.show()
+            if not self.marker_tool:
+                self.marker_tool = Marker(self.master, self.app)
+                self.marker_tool.show()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")

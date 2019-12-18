@@ -2,6 +2,8 @@
 marker dialog
 """
 
+import logging
+import tkinter as tk
 from tkinter import ttk
 
 from coretk.dialogs.colorpicker import ColorPicker
@@ -16,7 +18,9 @@ class Marker(Dialog):
         self.app = app
         self.color = initcolor
         self.radius = MARKER_THICKNESS[0]
+        self.marker_thickness = tk.IntVar(value=MARKER_THICKNESS[0])
         self.draw()
+        self.top.bind("<Destroy>", self.close_marker)
 
     def draw(self):
         button = ttk.Button(self.top, text="clear", command=self.clear_marker)
@@ -24,22 +28,17 @@ class Marker(Dialog):
 
         frame = ttk.Frame(self.top)
         frame.grid(row=1, column=0)
-
-        button = ttk.Button(frame, text="radius 1")
-        button.grid(row=0, column=0)
-        button = ttk.Button(frame, text="radius 2")
-        button.grid(row=0, column=1)
-        button = ttk.Button(frame, text="radius 3")
-        button.grid(row=1, column=0)
-        button = ttk.Button(frame, text="radius 4")
-        button.grid(row=1, column=1)
-
+        combobox = ttk.Combobox(
+            frame,
+            textvariable=self.marker_thickness,
+            values=MARKER_THICKNESS,
+            state="readonly",
+        )
+        combobox.grid(row=0, column=1, sticky="nsew")
+        combobox.bind("<<ComboboxSelected>>", self.change_thickness)
         label = ttk.Label(self.top, background=self.color)
         label.grid(row=2, column=0, sticky="nsew")
         label.bind("<Button-1>", self.change_color)
-
-        # button = ttk.Button(self.top, text="color", command=self.change_color)
-        # button.grid(row=2, column=0)
 
     def clear_marker(self):
         canvas = self.app.canvas
@@ -51,3 +50,10 @@ class Marker(Dialog):
         color = color_picker.askcolor()
         event.widget.configure(background=color)
         self.color = color
+
+    def change_thickness(self, event):
+        self.radius = self.marker_thickness.get()
+
+    def close_marker(self, event):
+        logging.debug("destroy marker dialog")
+        self.app.toolbar.marker_tool = None
