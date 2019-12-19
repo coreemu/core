@@ -36,9 +36,12 @@ setup(
     install_requires=[
         "fabric",
         "grpcio",
+        "netaddr",
         "invoke",
         "lxml",
+        "pillow",
         "protobuf",
+        "pyyaml",
     ],
     tests_require=[
         "pytest",
