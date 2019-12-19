@@ -37,13 +37,13 @@ class AlertsDialog(Dialog):
         self.tree.grid(row=0, column=0, sticky="nsew")
         self.tree.column("time", stretch=tk.YES)
         self.tree.heading("time", text="Time")
-        self.tree.column("level", stretch=tk.YES)
+        self.tree.column("level", stretch=tk.YES, width=100)
         self.tree.heading("level", text="Level")
-        self.tree.column("session_id", stretch=tk.YES)
+        self.tree.column("session_id", stretch=tk.YES, width=100)
         self.tree.heading("session_id", text="Session ID")
-        self.tree.column("node", stretch=tk.YES)
+        self.tree.column("node", stretch=tk.YES, width=100)
         self.tree.heading("node", text="Node")
-        self.tree.column("source", stretch=tk.YES)
+        self.tree.column("source", stretch=tk.YES, width=100)
         self.tree.heading("source", text="Source")
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
@@ -77,7 +77,7 @@ class AlertsDialog(Dialog):
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
         self.codetext = CodeText(self.top)
-        self.codetext.text.config(state=tk.DISABLED)
+        self.codetext.text.config(state=tk.DISABLED, height=11)
         self.codetext.grid(sticky="nsew", pady=PADY)
 
         frame = ttk.Frame(self.top)
