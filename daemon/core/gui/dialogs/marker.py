@@ -6,13 +6,13 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
-from core.gui.dialogs.colorpicker import ColorPicker
+from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 
 MARKER_THICKNESS = [3, 5, 8, 10]
 
 
-class Marker(Dialog):
+class MarkerDialog(Dialog):
     def __init__(self, master, app, initcolor="#000000"):
         super().__init__(master, app, "marker tool", modal=False)
         self.app = app
@@ -56,7 +56,7 @@ class Marker(Dialog):
             canvas.delete(i)
 
     def change_color(self, event):
-        color_picker = ColorPicker(self, self.app, self.color)
+        color_picker = ColorPickerDialog(self, self.app, self.color)
         color = color_picker.askcolor()
         event.widget.configure(background=color)
         self.color = color

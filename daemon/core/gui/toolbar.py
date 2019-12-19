@@ -6,7 +6,7 @@ from tkinter import ttk
 from tkinter.font import Font
 
 from core.gui.dialogs.customnodes import CustomNodesDialog
-from core.gui.dialogs.marker import Marker
+from core.gui.dialogs.marker import MarkerDialog
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
@@ -407,7 +407,7 @@ class Toolbar(ttk.Frame):
         self.app.canvas.annotation_type = shape_type
         if is_marker(shape_type):
             if not self.marker_tool:
-                self.marker_tool = Marker(self.master, self.app)
+                self.marker_tool = MarkerDialog(self.master, self.app)
                 self.marker_tool.show()
 
     def click_run_button(self):
@@ -418,7 +418,7 @@ class Toolbar(ttk.Frame):
 
     def click_marker_button(self):
         logging.debug("Click on marker button")
-        dialog = Marker(self.master, self.app)
+        dialog = MarkerDialog(self.master, self.app)
         dialog.show()
         # dialog.position()
 

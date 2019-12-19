@@ -13,7 +13,7 @@ import grpc
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
-from core.gui.dialogs.canvaswallpaper import CanvasBackgroundDialog
+from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
 from core.gui.dialogs.hooks import HooksDialog
 from core.gui.dialogs.observers import ObserverDialog
 from core.gui.dialogs.preferences import PreferencesDialog
@@ -113,7 +113,7 @@ class MenuAction:
         dialog.show()
 
     def canvas_set_wallpaper(self):
-        dialog = CanvasBackgroundDialog(self.app, self.app)
+        dialog = CanvasWallpaperDialog(self.app, self.app)
         dialog.show()
 
     def help_core_github(self):

@@ -12,7 +12,7 @@ from core.gui.themes import PADX, PADY
 from core.gui.widgets import image_chooser
 
 
-class CanvasBackgroundDialog(Dialog):
+class CanvasWallpaperDialog(Dialog):
     def __init__(self, master, app):
         """
         create an instance of CanvasWallpaper object
