@@ -10,7 +10,6 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 
 | Directory | Description |
 |---|---|
-|corefx|JavaFX based GUI using gRPC API to replace legacy GUI|
 |daemon|Python CORE daemon code that handles receiving API calls and creating containers|
 |docs|Markdown Documentation currently hosted on GitHub|
 |gui|Tcl/Tk GUI|
@@ -23,6 +22,13 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 
 Overview for setting up the pipenv environment, building core, installing the GUI and netns, then running
 the core-daemon for development.
+
+### Clone CORE Repo
+
+```shell
+git clone https://github.com/coreemu/core.git
+cd core
+```
 
 ### Setup Python Environment
 
@@ -40,14 +46,13 @@ pip3 install pipenv
 
 # setup a virtual environment and install all required development dependencies
 python3 -m pipenv install --dev
-
-# setup python variable using pipenv created python
-export PYTHON=$(python3 -m pipenv --py)
 ```
 
 ### Setup pre-commit
 
-Install pre-commit hooks to help automate running tool checks against code.
+Install pre-commit hooks to help automate running tool checks against code. Once installed every time a commit is made
+python utilities will be ran to check validity of code, potentially failing and backing out the commit. This allows
+one to review changes being made by tools ro the fix the issue noted. Then add the changes and commit again.
 
 ```shell
 python3 -m pipenv run pre-commit install
@@ -56,11 +61,6 @@ python3 -m pipenv run pre-commit install
 ### Build CORE
 
 ```shell
-# clone core
-git clone https://github.com/coreemu/core.git
-cd core
-
-# build core
 ./bootstrap.sh
 ./configure --prefix=/usr
 make
@@ -89,7 +89,7 @@ EMANE bindings are not available through pip, you will need to build and install
 ```shell
 # after building emane above
 # ./autogen.sh && ./configure --prefix=/usr && make
-python3 -m pipenv install --skip-lock $EMANEREPO/src/python
+python3 -m pipenv install $EMANEREPO/src/python
 ```
 
 ### Running CORE
@@ -97,20 +97,16 @@ python3 -m pipenv install --skip-lock $EMANEREPO/src/python
 This will run the core-daemon server using the configuration files within the repo.
 
 ```shell
-python3 -m pipenv run coredev
+python3 -m pipenv run core
 ```
 
-## The CORE API
+### Running CORE Python GUI
 
-The CORE API is used between different components of CORE for communication. The GUI communicates with the CORE daemon 
-using the API. One emulation server communicates with another using the API. The API also allows other systems to 
-interact with the CORE emulation. The API allows another system to add, remove, or modify nodes and links, and enables 
-executing commands on the emulated systems. Wireless link parameters are updated on-the-fly based on node positions.
+Must be ran after the daemon above or will fail to connect.
 
-CORE listens on a local TCP port for API messages. The other system could be software running locally or another 
-machine accessible across the network.
-
-The CORE API is currently specified in a separate document, available from the CORE website.
+```shell
+python3 -m pipenv run coretk
+```
 
 ## Linux Network Namespace Commands
 
@@ -169,43 +165,3 @@ tc qdisc show
 # view the rules that make the wireless LAN work
 ebtables -L
 ```
-
-### Example Command Usage
-
-Below is a transcript of creating two emulated nodes and connecting them together with a wired link:
-
-```shell
-# create node 1 namespace container
-vnoded -c /tmp/n1.ctl -l /tmp/n1.log -p /tmp/n1.pid
-# create a virtual Ethernet (veth) pair, installing one end into node 1
-ip link add name n1.0.1 type veth peer name n1.0
-ip link set n1.0 netns `cat /tmp/n1.pid`
-vcmd -c /tmp/n1.ctl -- ip link set lo up
-vcmd -c /tmp/n1.ctl -- ip link set n1.0 name eth0 up
-vcmd -c /tmp/n1.ctl -- ip addr add 10.0.0.1/24 dev eth0
-
-# create node 2 namespace container
-vnoded -c /tmp/n2.ctl -l /tmp/n2.log -p /tmp/n2.pid
-# create a virtual Ethernet (veth) pair, installing one end into node 2
-ip link add name n2.0.1 type veth peer name n2.0
-ip link set n2.0 netns `cat /tmp/n2.pid`
-vcmd -c /tmp/n2.ctl -- ip link set lo up
-vcmd -c /tmp/n2.ctl -- ip link set n2.0 name eth0 up
-vcmd -c /tmp/n2.ctl -- ip addr add 10.0.0.2/24 eth0
-
-# bridge together nodes 1 and 2 using the other end of each veth pair
-brctl addbr b.1.1
-brctl setfd b.1.1 0
-brctl addif b.1.1 n1.0.1
-brctl addif b.1.1 n2.0.1
-ip link set n1.0.1 up
-ip link set n2.0.1 up
-ip link set b.1.1 up
-
-# display connectivity and ping from node 1 to node 2
-brctl show
-vcmd -c /tmp/n1.ctl -- ping 10.0.0.2
-```
-
-The above example script can be found as *twonodes.sh* in the *examples/netns* directory. Use *core-cleanup* to clean 
-up after the script.
