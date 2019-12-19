@@ -228,7 +228,7 @@ class LinkConfiguration(Dialog):
         logging.debug("click apply")
         self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
         self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
-        link = self.edge.link_info.link
+        link = self.edge.link
         bandwidth = self.bandwidth.get()
         if bandwidth != "":
             link.options.bandwidth = int(bandwidth)
@@ -292,7 +292,7 @@ class LinkConfiguration(Dialog):
         self.width.set(width)
         color = self.app.canvas.itemcget(self.edge.id, "fill")
         self.color.set(color)
-        link = self.edge.link_info.link
+        link = self.edge.link
         if link.HasField("options"):
             self.bandwidth.set(str(link.options.bandwidth))
             self.jitter.set(str(link.options.jitter))

@@ -445,7 +445,7 @@ class CoreClient:
 
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]
-        links = list(self.links.values())
+        links = [x.link for x in self.links.values()]
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
@@ -602,7 +602,7 @@ class CoreClient:
         :return: nothing
         """
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
-        link_protos = list(self.links.values())
+        link_protos = [x.link for x in self.links.values()]
         if self.state != core_pb2.SessionState.DEFINITION:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
@@ -813,8 +813,8 @@ class CoreClient:
             interface_one=src_interface,
             interface_two=dst_interface,
         )
-        self.links[edge.token] = link
-        return link
+        edge.set_link(link)
+        self.links[edge.token] = edge
 
     def get_wlan_configs_proto(self):
         configs = []
