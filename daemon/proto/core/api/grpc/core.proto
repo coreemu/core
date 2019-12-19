@@ -150,6 +150,7 @@ message StartSessionRequest {
     repeated MobilityConfig mobility_configs = 9;
     repeated ServiceConfig service_configs = 10;
     repeated ServiceFileConfig service_file_configs = 11;
+    repeated Link asymmetric_links = 12;
 }
 
 message StartSessionResponse {

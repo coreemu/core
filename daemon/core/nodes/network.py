@@ -965,6 +965,7 @@ class PtpNet(CoreNetwork):
         if unidirectional:
             link_data = LinkData(
                 message_type=0,
+                link_type=self.linktype,
                 node1_id=if2.node.id,
                 node2_id=if1.node.id,
                 delay=if2.getparam("delay"),

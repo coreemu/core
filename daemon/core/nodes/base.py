@@ -1053,6 +1053,7 @@ class CoreNetworkBase(NodeBase):
                 message_type=0,
                 node1_id=linked_node.id,
                 node2_id=self.id,
+                link_type=self.linktype,
                 unidirectional=1,
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),

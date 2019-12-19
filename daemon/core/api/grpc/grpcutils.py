@@ -128,7 +128,7 @@ def create_nodes(session, node_protos):
 
 def create_links(session, link_protos):
     """
-    Create nodes using a thread pool and wait for completion.
+    Create links using a thread pool and wait for completion.
 
     :param core.emulator.session.Session session: session to create nodes in
     :param list[core_pb2.Link] link_protos: link proto messages
@@ -146,6 +146,29 @@ def create_links(session, link_protos):
     results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
     logging.debug("grpc created links time: %s", total)
+    return results, exceptions
+
+
+def edit_links(session, link_protos):
+    """
+    Edit links using a thread pool and wait for completion.
+
+    :param core.emulator.session.Session session: session to create nodes in
+    :param list[core_pb2.Link] link_protos: link proto messages
+    :return: results and exceptions for created links
+    :rtype: tuple
+    """
+    funcs = []
+    for link_proto in link_protos:
+        node_one_id = link_proto.node_one_id
+        node_two_id = link_proto.node_two_id
+        interface_one, interface_two, options = add_link_data(link_proto)
+        args = (node_one_id, node_two_id, interface_one.id, interface_two.id, options)
+        funcs.append((session.update_link, args, {}))
+    start = time.monotonic()
+    results, exceptions = utils.threadpool(funcs)
+    total = time.monotonic() - start
+    logging.debug("grpc edit links time: %s", total)
     return results, exceptions
 
 

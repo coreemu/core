@@ -5,9 +5,26 @@ import logging
 import tkinter as tk
 from tkinter import ttk
 
+from core.api.grpc import core_pb2
 from coretk.dialogs.colorpicker import ColorPicker
 from coretk.dialogs.dialog import Dialog
 from coretk.themes import PADX, PADY
+
+
+def get_int(var):
+    value = var.get()
+    if value != "":
+        return int(value)
+    else:
+        return None
+
+
+def get_float(var):
+    value = var.get()
+    if value != "":
+        return float(value)
+    else:
+        return None
 
 
 class LinkConfiguration(Dialog):
@@ -15,7 +32,7 @@ class LinkConfiguration(Dialog):
         super().__init__(master, app, "Link Configuration", modal=True)
         self.app = app
         self.edge = edge
-        self.is_symmetric = True
+        self.is_symmetric = edge.link.options.unidirectional is False
         if self.is_symmetric:
             self.symmetry_var = tk.StringVar(value=">>")
         else:
@@ -26,15 +43,16 @@ class LinkConfiguration(Dialog):
         self.jitter = tk.StringVar()
         self.loss = tk.StringVar()
         self.duplicate = tk.StringVar()
+
+        self.down_bandwidth = tk.StringVar()
+        self.down_delay = tk.StringVar()
+        self.down_jitter = tk.StringVar()
+        self.down_loss = tk.StringVar()
+        self.down_duplicate = tk.StringVar()
+
         self.color = tk.StringVar(value="#000000")
         self.color_button = None
         self.width = tk.DoubleVar()
-
-        self.down_bandwidth = tk.IntVar(value="")
-        self.down_delay = tk.IntVar(value="")
-        self.down_jitter = tk.IntVar(value="")
-        self.down_loss = tk.DoubleVar(value="")
-        self.down_duplicate = tk.IntVar(value="")
 
         self.load_link_config()
         self.symmetric_frame = None
@@ -113,7 +131,7 @@ class LinkConfiguration(Dialog):
                 validate="key",
                 validatecommand=(self.app.validation.positive_int, "%P"),
             )
-            entry.grid(row=row, column=2, sticky="nsew")
+            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Delay (us)")
@@ -132,7 +150,7 @@ class LinkConfiguration(Dialog):
                 validate="key",
                 validatecommand=(self.app.validation.positive_int, "%P"),
             )
-            entry.grid(row=row, column=2, sticky="ew")
+            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Jitter (us)")
@@ -151,7 +169,7 @@ class LinkConfiguration(Dialog):
                 validate="key",
                 validatecommand=(self.app.validation.positive_int, "%P"),
             )
-            entry.grid(row=row, column=2, sticky="ew")
+            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Loss (%)")
@@ -170,7 +188,7 @@ class LinkConfiguration(Dialog):
                 validate="key",
                 validatecommand=(self.app.validation.positive_float, "%P"),
             )
-            entry.grid(row=row, column=2, sticky="ew")
+            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Duplicate (%)")
@@ -189,7 +207,7 @@ class LinkConfiguration(Dialog):
                 validate="key",
                 validatecommand=(self.app.validation.positive_int, "%P"),
             )
-            entry.grid(row=row, column=2, sticky="ew")
+            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Color")
@@ -229,29 +247,56 @@ class LinkConfiguration(Dialog):
         self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
         self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
         link = self.edge.link
-        bandwidth = self.bandwidth.get()
-        if bandwidth != "":
-            link.options.bandwidth = int(bandwidth)
-        jitter = self.jitter.get()
-        if jitter != "":
-            link.options.jitter = int(jitter)
-        delay = self.delay.get()
-        if delay != "":
-            link.options.delay = int(delay)
-        duplicate = self.duplicate.get()
-        if duplicate != "":
-            link.options.dup = int(duplicate)
-        loss = self.loss.get()
-        if loss != "":
-            link.options.per = float(loss)
+        bandwidth = get_int(self.bandwidth)
+        jitter = get_int(self.jitter)
+        delay = get_int(self.delay)
+        duplicate = get_int(self.duplicate)
+        loss = get_float(self.loss)
+        options = core_pb2.LinkOptions(
+            bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, per=loss
+        )
+        link.options.CopyFrom(options)
+
+        interface_one = None
+        if link.HasField("interface_one"):
+            interface_one = link.interface_one.id
+        interface_two = None
+        if link.HasField("interface_two"):
+            interface_two = link.interface_two.id
+
+        if not self.is_symmetric:
+            link.options.unidirectional = True
+            asym_interface_one = None
+            if interface_one:
+                asym_interface_one = core_pb2.Interface(id=interface_one)
+            asym_interface_two = None
+            if interface_two:
+                asym_interface_two = core_pb2.Interface(id=interface_two)
+            down_bandwidth = get_int(self.down_bandwidth)
+            down_jitter = get_int(self.down_jitter)
+            down_delay = get_int(self.down_delay)
+            down_duplicate = get_int(self.down_duplicate)
+            down_loss = get_float(self.down_loss)
+            options = core_pb2.LinkOptions(
+                bandwidth=down_bandwidth,
+                jitter=down_jitter,
+                delay=down_delay,
+                dup=down_duplicate,
+                per=down_loss,
+                unidirectional=True,
+            )
+            self.edge.asymmetric_link = core_pb2.Link(
+                node_one_id=link.node_two_id,
+                node_two_id=link.node_one_id,
+                interface_one=asym_interface_one,
+                interface_two=asym_interface_two,
+                options=options,
+            )
+        else:
+            link.options.unidirectional = False
+            self.edge.asymmetric_link = None
 
         if self.app.core.is_runtime() and link.HasField("options"):
-            interface_one = None
-            if link.HasField("interface_one"):
-                interface_one = link.interface_one.id
-            interface_two = None
-            if link.HasField("interface_two"):
-                interface_two = link.interface_two.id
             session_id = self.app.core.session_id
             self.app.core.client.edit_link(
                 session_id,
@@ -261,6 +306,15 @@ class LinkConfiguration(Dialog):
                 interface_one,
                 interface_two,
             )
+            if self.edge.asymmetric_link:
+                self.app.core.client.edit_link(
+                    session_id,
+                    link.node_two_id,
+                    link.node_one_id,
+                    self.edge.asymmetric_link.options,
+                    interface_one,
+                    interface_two,
+                )
 
         self.destroy()
 
@@ -299,3 +353,10 @@ class LinkConfiguration(Dialog):
             self.duplicate.set(str(link.options.dup))
             self.loss.set(str(link.options.per))
             self.delay.set(str(link.options.delay))
+        if not self.is_symmetric:
+            asym_link = self.edge.asymmetric_link
+            self.down_bandwidth.set(str(asym_link.options.bandwidth))
+            self.down_jitter.set(str(asym_link.options.jitter))
+            self.down_duplicate.set(str(asym_link.options.dup))
+            self.down_loss.set(str(asym_link.options.per))
+            self.down_delay.set(str(asym_link.options.delay))

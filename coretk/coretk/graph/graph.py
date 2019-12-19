@@ -201,12 +201,12 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
-            logging.info("drawing core node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
 
             # draw nodes on the canvas
+            logging.info("drawing core node: %s", core_node)
             image = NodeUtils.node_icon(core_node.type, core_node.model)
             if core_node.icon:
                 try:
@@ -222,33 +222,42 @@ class CanvasGraph(tk.Canvas):
 
         # draw existing links
         for link in session.links:
+            logging.info("drawing link: %s", link)
             canvas_node_one = self.core.canvas_nodes[link.node_one_id]
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
+            token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
+
             if link.type == core_pb2.LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node_one, canvas_node_two)
             else:
-                edge = CanvasEdge(
-                    node_one.position.x,
-                    node_one.position.y,
-                    node_two.position.x,
-                    node_two.position.y,
-                    canvas_node_one.id,
-                    self,
-                )
-                edge.set_link(link)
-                edge.token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
-                edge.dst = canvas_node_two.id
-                edge.check_wireless()
-                canvas_node_one.edges.add(edge)
-                canvas_node_two.edges.add(edge)
-                self.edges[edge.token] = edge
-                self.core.links[edge.token] = edge
-                if link.HasField("interface_one"):
-                    canvas_node_one.interfaces.append(link.interface_one)
-                if link.HasField("interface_two"):
-                    canvas_node_two.interfaces.append(link.interface_two)
+                if token not in self.edges:
+                    edge = CanvasEdge(
+                        node_one.position.x,
+                        node_one.position.y,
+                        node_two.position.x,
+                        node_two.position.y,
+                        canvas_node_one.id,
+                        self,
+                    )
+                    edge.token = token
+                    edge.dst = canvas_node_two.id
+                    edge.set_link(link)
+                    edge.check_wireless()
+                    canvas_node_one.edges.add(edge)
+                    canvas_node_two.edges.add(edge)
+                    self.edges[edge.token] = edge
+                    self.core.links[edge.token] = edge
+                    if link.HasField("interface_one"):
+                        canvas_node_one.interfaces.append(link.interface_one)
+                    if link.HasField("interface_two"):
+                        canvas_node_two.interfaces.append(link.interface_two)
+                elif link.options.unidirectional:
+                    edge = self.edges[token]
+                    edge.asymmetric_link = link
+                else:
+                    logging.error("duplicate link received: %s", link)
 
         # raise the nodes so they on top of the links
         self.tag_raise(tags.NODE)

@@ -452,6 +452,9 @@ class CoreClient:
         hooks = list(self.hooks.values())
         service_configs = self.get_service_configs_proto()
         file_configs = self.get_service_file_configs_proto()
+        asymmetric_links = [
+            x.asymmetric_link for x in self.links.values() if x.asymmetric_link
+        ]
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -471,6 +474,7 @@ class CoreClient:
                 mobility_configs,
                 service_configs,
                 file_configs,
+                asymmetric_links,
             )
             self.set_metadata()
             process_time = time.perf_counter() - start

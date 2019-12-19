@@ -54,6 +54,7 @@ class CanvasEdge:
         self.token = None
         self.font = Font(size=8)
         self.link = None
+        self.asymmetric_link = None
         self.throughput = None
         self.set_binding()
 
