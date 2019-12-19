@@ -356,7 +356,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         # edge dst must be a node
-        logging.debug(f"current selected: {self.selected}")
+        logging.debug("current selected: %s", self.selected)
         dst_node = self.nodes.get(self.selected)
         if not dst_node:
             edge.delete()
@@ -631,7 +631,7 @@ class CanvasGraph(tk.Canvas):
             selected = self.get_selected(event)
             canvas_node = self.nodes.get(selected)
             if canvas_node:
-                logging.debug(f"node context: {selected}")
+                logging.debug("node context: %s", selected)
                 self.context = canvas_node.create_context()
                 self.context.post(event.x_root, event.y_root)
         else:
