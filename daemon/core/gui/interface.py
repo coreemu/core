@@ -21,7 +21,8 @@ class InterfaceManager:
     def next_subnet(self):
         # define currently used subnets
         used_subnets = set()
-        for link in self.app.core.links.values():
+        for edge in self.app.core.links.values():
+            link = edge.link
             if link.HasField("interface_one"):
                 subnet = self.get_subnet(link.interface_one)
                 used_subnets.add(subnet)
