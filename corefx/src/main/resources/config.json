@@ -1,7 +1,0 @@
-{
-  "coreAddress": "127.0.0.1",
-  "corePort": 50051,
-  "xmlPath": null,
-  "mobilityPath": null,
-  "shellCommand": "gnome-terminal --window --"
-}
