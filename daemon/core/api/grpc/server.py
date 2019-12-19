@@ -158,6 +158,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         # create links
         grpcutils.create_links(session, request.links)
 
+        # asymmetric links
+        grpcutils.edit_links(session, request.asymmetric_links)
+
         # set to instantiation and start
         session.set_state(EventTypes.INSTANTIATION_STATE)
         session.instantiate()

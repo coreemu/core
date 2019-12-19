@@ -1,10 +1,13 @@
 import logging
 import tkinter as tk
+from tkinter.font import Font
 
 from coretk import themes
 from coretk.dialogs.linkconfig import LinkConfiguration
 from coretk.graph import tags
 from coretk.nodeutils import NodeUtils
+
+TEXT_DISTANCE = 0.30
 
 
 class CanvasWirelessEdge:
@@ -46,13 +49,74 @@ class CanvasEdge:
         self.id = self.canvas.create_line(
             x1, y1, x2, y2, tags=tags.EDGE, width=self.width, fill="#ff0000"
         )
+        self.text_src = None
+        self.text_dst = None
         self.token = None
-        self.link_info = None
+        self.font = Font(size=8)
+        self.link = None
+        self.asymmetric_link = None
         self.throughput = None
         self.set_binding()
 
     def set_binding(self):
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.create_context)
+
+    def set_link(self, link):
+        self.link = link
+        self.draw_labels()
+
+    def get_coordinates(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.id)
+        v1 = x2 - x1
+        v2 = y2 - y1
+        ux = TEXT_DISTANCE * v1
+        uy = TEXT_DISTANCE * v2
+        x1 = x1 + ux
+        y1 = y1 + uy
+        x2 = x2 - ux
+        y2 = y2 - uy
+        return x1, y1, x2, y2
+
+    def draw_labels(self):
+        x1, y1, x2, y2 = self.get_coordinates()
+        label_one = None
+        if self.link.HasField("interface_one"):
+            label_one = (
+                f"{self.link.interface_one.ip4}/{self.link.interface_one.ip4mask}\n"
+                f"{self.link.interface_one.ip6}/{self.link.interface_one.ip6mask}\n"
+            )
+        label_two = None
+        if self.link.HasField("interface_two"):
+            label_two = (
+                f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
+                f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
+            )
+        self.text_src = self.canvas.create_text(
+            x1,
+            y1,
+            text=label_one,
+            justify=tk.CENTER,
+            font=self.font,
+            tags=tags.LINK_INFO,
+        )
+        self.text_dst = self.canvas.create_text(
+            x2,
+            y2,
+            text=label_two,
+            justify=tk.CENTER,
+            font=self.font,
+            tags=tags.LINK_INFO,
+        )
+
+    def update_labels(self):
+        """
+        Move edge labels based on current position.
+
+        :return: nothing
+        """
+        x1, y1, x2, y2 = self.get_coordinates()
+        self.canvas.coords(self.text_src, x1, y1)
+        self.canvas.coords(self.text_dst, x2, y2)
 
     def complete(self, dst):
         self.dst = dst
@@ -93,9 +157,9 @@ class CanvasEdge:
 
     def delete(self):
         self.canvas.delete(self.id)
-        if self.link_info:
-            self.canvas.delete(self.link_info.id1)
-            self.canvas.delete(self.link_info.id2)
+        if self.link:
+            self.canvas.delete(self.text_src)
+            self.canvas.delete(self.text_dst)
 
     def create_context(self, event):
         logging.debug("create link context")

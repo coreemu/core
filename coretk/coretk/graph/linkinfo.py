@@ -1,83 +1,8 @@
 """
 Link information, such as IPv4, IPv6 and throughput drawn in the canvas
 """
-import tkinter as tk
-from tkinter import font
 
 from core.api.grpc import core_pb2
-from coretk.graph import tags
-
-TEXT_DISTANCE = 0.30
-
-
-class LinkInfo:
-    def __init__(self, canvas, edge, link):
-        """
-        create an instance of LinkInfo object
-        :param coretk.graph.Graph canvas: canvas object
-        :param coretk.graph.CanvasEdge edge: canvas edge onject
-        :param link: core link to draw info for
-        """
-        self.canvas = canvas
-        self.edge = edge
-        self.link = link
-        self.id1 = None
-        self.id2 = None
-        self.font = font.Font(size=8)
-        self.draw_labels()
-
-    def get_coordinates(self):
-        x1, y1, x2, y2 = self.canvas.coords(self.edge.id)
-        v1 = x2 - x1
-        v2 = y2 - y1
-        ux = TEXT_DISTANCE * v1
-        uy = TEXT_DISTANCE * v2
-        x1 = x1 + ux
-        y1 = y1 + uy
-        x2 = x2 - ux
-        y2 = y2 - uy
-        return x1, y1, x2, y2
-
-    def draw_labels(self):
-        x1, y1, x2, y2 = self.get_coordinates()
-        label_one = None
-        if self.link.HasField("interface_one"):
-            label_one = (
-                f"{self.link.interface_one.ip4}/{self.link.interface_one.ip4mask}\n"
-                f"{self.link.interface_one.ip6}/{self.link.interface_one.ip6mask}\n"
-            )
-        label_two = None
-        if self.link.HasField("interface_two"):
-            label_two = (
-                f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
-                f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
-            )
-        self.id1 = self.canvas.create_text(
-            x1,
-            y1,
-            text=label_one,
-            justify=tk.CENTER,
-            font=self.font,
-            tags=tags.LINK_INFO,
-        )
-        self.id2 = self.canvas.create_text(
-            x2,
-            y2,
-            text=label_two,
-            justify=tk.CENTER,
-            font=self.font,
-            tags=tags.LINK_INFO,
-        )
-
-    def recalculate_info(self):
-        """
-        move the node info when the canvas node move
-
-        :return: nothing
-        """
-        x1, y1, x2, y2 = self.get_coordinates()
-        self.canvas.coords(self.id1, x1, y1)
-        self.canvas.coords(self.id2, x2, y2)
 
 
 class Throughput:

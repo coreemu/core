@@ -445,13 +445,16 @@ class CoreClient:
 
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]
-        links = list(self.links.values())
+        links = [x.link for x in self.links.values()]
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
         service_configs = self.get_service_configs_proto()
         file_configs = self.get_service_file_configs_proto()
+        asymmetric_links = [
+            x.asymmetric_link for x in self.links.values() if x.asymmetric_link
+        ]
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -471,6 +474,7 @@ class CoreClient:
                 mobility_configs,
                 service_configs,
                 file_configs,
+                asymmetric_links,
             )
             self.set_metadata()
             process_time = time.perf_counter() - start
@@ -602,7 +606,7 @@ class CoreClient:
         :return: nothing
         """
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
-        link_protos = list(self.links.values())
+        link_protos = [x.link for x in self.links.values()]
         if self.state != core_pb2.SessionState.DEFINITION:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
@@ -813,8 +817,8 @@ class CoreClient:
             interface_one=src_interface,
             interface_two=dst_interface,
         )
-        self.links[edge.token] = link
-        return link
+        edge.set_link(link)
+        self.links[edge.token] = edge
 
     def get_wlan_configs_proto(self):
         configs = []

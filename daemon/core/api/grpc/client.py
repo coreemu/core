@@ -161,6 +161,7 @@ class CoreGrpcClient:
         mobility_configs=None,
         service_configs=None,
         service_file_configs=None,
+        asymmetric_links=None,
     ):
         """
         Start a session.
@@ -176,6 +177,7 @@ class CoreGrpcClient:
         :param list mobility_configs: node mobility configurations
         :param list service_configs: node service configurations
         :param list service_file_configs: node service file configurations
+        :param list asymmetric_links: asymmetric links to edit
         :return: start session response
         :rtype: core_pb2.StartSessionResponse
         """
@@ -191,6 +193,7 @@ class CoreGrpcClient:
             mobility_configs=mobility_configs,
             service_configs=service_configs,
             service_file_configs=service_file_configs,
+            asymmetric_links=asymmetric_links,
         )
         return self.stub.StartSession(request)
 
