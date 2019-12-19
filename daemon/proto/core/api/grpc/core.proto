@@ -89,6 +89,8 @@ service CoreApi {
     }
     rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
     }
+    rpc GetNodeServiceConfigs (GetNodeServiceConfigsRequest) returns (GetNodeServiceConfigsResponse) {
+    }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
     rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
@@ -101,6 +103,8 @@ service CoreApi {
     }
 
     // wlan rpc
+    rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
+    }
     rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
     }
     rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
@@ -144,6 +148,9 @@ message StartSessionRequest {
     repeated WlanConfig wlan_configs = 7;
     repeated EmaneModelConfig emane_model_configs = 8;
     repeated MobilityConfig mobility_configs = 9;
+    repeated ServiceConfig service_configs = 10;
+    repeated ServiceFileConfig service_file_configs = 11;
+    repeated Link asymmetric_links = 12;
 }
 
 message StartSessionResponse {
@@ -262,14 +269,17 @@ message AddSessionServerResponse {
 
 message EventsRequest {
     int32 session_id = 1;
+    repeated EventType.Enum events = 2;
 }
 
 message ThroughputsRequest {
+    int32 session_id = 1;
 }
 
 message ThroughputsEvent {
-    repeated BridgeThroughput bridge_throughputs = 1;
-    repeated InterfaceThroughput interface_throughputs = 2;
+    int32 session_id = 1;
+    repeated BridgeThroughput bridge_throughputs = 2;
+    repeated InterfaceThroughput interface_throughputs = 3;
 }
 
 message InterfaceThroughput {
@@ -292,10 +302,12 @@ message Event {
         ExceptionEvent exception_event = 5;
         FileEvent file_event = 6;
     }
+    int32 session_id = 7;
 }
 
 message NodeEvent {
     Node node = 1;
+    string source = 2;
 }
 
 message LinkEvent {
@@ -309,7 +321,6 @@ message SessionEvent {
     string name = 3;
     string data = 4;
     float time = 5;
-    int32 session_id = 6;
 }
 
 message ConfigEvent {
@@ -323,20 +334,18 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    int32 session_id = 11;
-    int32 interface = 12;
-    int32 network_id = 13;
-    string opaque = 14;
+    int32 interface = 11;
+    int32 network_id = 12;
+    string opaque = 13;
 }
 
 message ExceptionEvent {
     int32 node_id = 1;
-    int32 session_id = 2;
-    ExceptionLevel.Enum level = 3;
-    string source = 4;
-    string date = 5;
-    string text = 6;
-    string opaque = 7;
+    ExceptionLevel.Enum level = 2;
+    string source = 3;
+    string date = 4;
+    string text = 5;
+    string opaque = 6;
 }
 
 message FileEvent {
@@ -347,9 +356,8 @@ message FileEvent {
     int32 number = 5;
     string type = 6;
     string source = 7;
-    int32 session_id = 8;
-    string data = 9;
-    string compressed_data = 10;
+    string data = 8;
+    string compressed_data = 9;
 }
 
 message AddNodeRequest {
@@ -376,6 +384,7 @@ message EditNodeRequest {
     int32 node_id = 2;
     Position position = 3;
     string icon = 4;
+    string source = 5;
 }
 
 message EditNodeResponse {
@@ -531,6 +540,20 @@ message SetServiceDefaultsResponse {
     bool result = 1;
 }
 
+message GetNodeServiceConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetNodeServiceConfigsResponse {
+    message ServiceConfig {
+        int32 node_id = 1;
+        string service = 2;
+        NodeServiceData data = 3;
+        map<string, string> files = 4;
+    }
+    repeated ServiceConfig configs = 1;
+}
+
 message GetNodeServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -554,11 +577,7 @@ message GetNodeServiceFileResponse {
 
 message SetNodeServiceRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    repeated string startup = 4;
-    repeated string validate = 5;
-    repeated string shutdown = 6;
+    ServiceConfig config = 2;
 }
 
 message SetNodeServiceResponse {
@@ -567,10 +586,7 @@ message SetNodeServiceResponse {
 
 message SetNodeServiceFileRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    string file = 4;
-    string data = 5;
+    ServiceFileConfig config = 2;
 }
 
 message SetNodeServiceFileResponse {
@@ -586,6 +602,14 @@ message ServiceActionRequest {
 
 message ServiceActionResponse {
     bool result = 1;
+}
+
+message GetWlanConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetWlanConfigsResponse {
+    map<int32, MappedConfig> configs = 1;
 }
 
 message GetWlanConfigRequest {
@@ -657,10 +681,12 @@ message GetEmaneModelConfigsRequest {
 
 message GetEmaneModelConfigsResponse {
     message ModelConfig {
-        string model = 1;
-        map<string, ConfigOption> config = 2;
+        int32 node_id = 1;
+        string model = 2;
+        int32 interface = 3;
+        map<string, ConfigOption> config = 4;
     }
-    map<int32, ModelConfig> configs = 1;
+    repeated ModelConfig configs = 1;
 }
 
 message SaveXmlRequest {
@@ -718,6 +744,32 @@ message EmaneModelConfig {
     map<string, string> config = 4;
 }
 
+message ServiceConfig {
+    int32 node_id = 1;
+    string service = 2;
+    repeated string startup = 3;
+    repeated string validate = 4;
+    repeated string shutdown = 5;
+}
+
+message ServiceFileConfig {
+    int32 node_id = 1;
+    string service = 2;
+    string file = 3;
+    string data = 4;
+}
+
+message EventType {
+    enum Enum {
+        SESSION = 0;
+        NODE = 1;
+        LINK = 2;
+        CONFIG = 3;
+        EXCEPTION = 4;
+        FILE = 5;
+    }
+}
+
 message MessageType {
     enum Enum {
         NONE = 0;
@@ -765,6 +817,23 @@ message NodeType {
         CONTROL_NET = 13;
         DOCKER = 15;
         LXC = 16;
+    }
+}
+
+message ConfigOptionType {
+    enum Enum {
+        NONE = 0;
+        UINT8 = 1;
+        UINT16 = 2;
+        UINT32 = 3;
+        UINT64 = 4;
+        INT8 = 5;
+        INT16 = 6;
+        INT32 = 7;
+        INT64 = 8;
+        FLOAT = 9;
+        STRING = 10;
+        BOOL = 11;
     }
 }
 
@@ -920,9 +989,9 @@ message SessionLocation {
 }
 
 message Position {
-    int32 x = 1;
-    int32 y = 2;
-    int32 z = 3;
+    float x = 1;
+    float y = 2;
+    float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;

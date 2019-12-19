@@ -159,6 +159,9 @@ class CoreGrpcClient:
         emane_model_configs=None,
         wlan_configs=None,
         mobility_configs=None,
+        service_configs=None,
+        service_file_configs=None,
+        asymmetric_links=None,
     ):
         """
         Start a session.
@@ -169,9 +172,12 @@ class CoreGrpcClient:
         :param core_pb2.SessionLocation location: location to set
         :param list[core_pb2.Hook] hooks: session hooks to set
         :param dict emane_config: emane configuration to set
-        :param list emane_model_configs: emane model configurations to set
-        :param list wlan_configs: wlan configurations to set
-        :param list mobility_configs: mobility configurations to set
+        :param list emane_model_configs: node emane model configurations
+        :param list wlan_configs: node wlan configurations
+        :param list mobility_configs: node mobility configurations
+        :param list service_configs: node service configurations
+        :param list service_file_configs: node service file configurations
+        :param list asymmetric_links: asymmetric links to edit
         :return: start session response
         :rtype: core_pb2.StartSessionResponse
         """
@@ -185,6 +191,9 @@ class CoreGrpcClient:
             emane_model_configs=emane_model_configs,
             wlan_configs=wlan_configs,
             mobility_configs=mobility_configs,
+            service_configs=service_configs,
+            service_file_configs=service_file_configs,
+            asymmetric_links=asymmetric_links,
         )
         return self.stub.StartSession(request)
 
@@ -372,29 +381,34 @@ class CoreGrpcClient:
         )
         return self.stub.AddSessionServer(request)
 
-    def events(self, session_id, handler):
+    def events(self, session_id, handler, events=None):
         """
         Listen for session events.
 
         :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
+        :param handler: handler for received events
+        :param list events: events to listen to, defaults to all
+        :return: stream processing events, can be used to cancel stream
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.EventsRequest(session_id=session_id)
+        request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
         start_streamer(stream, handler)
+        return stream
 
-    def throughputs(self, handler):
+    def throughputs(self, session_id, handler):
         """
         Listen for throughput events with information for interfaces and bridges.
 
+        :param int session_id: session id
         :param handler: handler for every event
-        :return: nothing
+        :return: stream processing events, can be used to cancel stream
+        :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.ThroughputsRequest()
+        request = core_pb2.ThroughputsRequest(session_id=session_id)
         stream = self.stub.Throughputs(request)
         start_streamer(stream, handler)
+        return stream
 
     def add_node(self, session_id, node):
         """
@@ -422,7 +436,7 @@ class CoreGrpcClient:
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session_id, node_id, position, icon=None):
+    def edit_node(self, session_id, node_id, position, icon=None, source=None):
         """
         Edit a node, currently only changes position.
 
@@ -430,12 +444,17 @@ class CoreGrpcClient:
         :param int node_id: node id
         :param core_pb2.Position position: position to set node to
         :param str icon: path to icon for gui to use for node
+        :param str source: application source editing node
         :return: response with result of success or failure
         :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.EditNodeRequest(
-            session_id=session_id, node_id=node_id, position=position, icon=icon
+            session_id=session_id,
+            node_id=node_id,
+            position=position,
+            icon=icon,
+            source=source,
         )
         return self.stub.EditNode(request)
 
@@ -719,6 +738,18 @@ class CoreGrpcClient:
         )
         return self.stub.SetServiceDefaults(request)
 
+    def get_node_service_configs(self, session_id):
+        """
+        Get service data for a node.
+
+        :param int session_id: session id
+        :return: response with all node service configs
+        :rtype: core_pb2.GetNodeServiceConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetNodeServiceConfigsRequest(session_id=session_id)
+        return self.stub.GetNodeServiceConfigs(request)
+
     def get_node_service(self, session_id, node_id, service):
         """
         Get service data for a node.
@@ -768,14 +799,14 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetNodeServiceResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        request = core_pb2.SetNodeServiceRequest(
-            session_id=session_id,
+        config = core_pb2.ServiceConfig(
             node_id=node_id,
             service=service,
             startup=startup,
             validate=validate,
             shutdown=shutdown,
         )
+        request = core_pb2.SetNodeServiceRequest(session_id=session_id, config=config)
         return self.stub.SetNodeService(request)
 
     def set_node_service_file(self, session_id, node_id, service, file_name, data):
@@ -791,12 +822,11 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetNodeServiceFileResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
+        config = core_pb2.ServiceFileConfig(
+            node_id=node_id, service=service, file=file_name, data=data
+        )
         request = core_pb2.SetNodeServiceFileRequest(
-            session_id=session_id,
-            node_id=node_id,
-            service=service,
-            file=file_name,
-            data=data,
+            session_id=session_id, config=config
         )
         return self.stub.SetNodeServiceFile(request)
 
@@ -816,6 +846,18 @@ class CoreGrpcClient:
             session_id=session_id, node_id=node_id, service=service, action=action
         )
         return self.stub.ServiceAction(request)
+
+    def get_wlan_configs(self, session_id):
+        """
+        Get all wlan configurations.
+
+        :param int session_id: session id
+        :return: response with a dict of node ids to wlan configurations
+        :rtype: core_pb2.GetWlanConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetWlanConfigsRequest(session_id=session_id)
+        return self.stub.GetWlanConfigs(request)
 
     def get_wlan_config(self, session_id, node_id):
         """

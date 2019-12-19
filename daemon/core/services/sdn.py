@@ -4,6 +4,7 @@ sdn.py defines services to start Open vSwitch and the Ryu SDN Controller.
 
 import re
 
+from core.nodes import ipaddress
 from core.services.coreservices import CoreService
 
 
@@ -56,11 +57,12 @@ class OvsService(SdnService):
             # remove ip address of eths because quagga/zebra will assign same IPs to rtr interfaces
             # or assign them manually to rtr interfaces if zebra is not running
             for ifcaddr in ifc.addrlist:
-                if ifcaddr.find(".") >= 0:
+                addr = ifcaddr.split("/")[0]
+                if ipaddress.is_ipv4_address(addr):
                     cfg += "ip addr del %s dev %s\n" % (ifcaddr, ifc.name)
                     if has_zebra == 0:
                         cfg += "ip addr add %s dev rtr%s\n" % (ifcaddr, ifnum)
-                elif ifcaddr.find(":") >= 0:
+                elif ipaddress.is_ipv6_address(addr):
                     cfg += "ip -6 addr del %s dev %s\n" % (ifcaddr, ifc.name)
                     if has_zebra == 0:
                         cfg += "ip -6 addr add %s dev rtr%s\n" % (ifcaddr, ifnum)

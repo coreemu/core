@@ -76,6 +76,7 @@ NodeData = collections.namedtuple(
         "altitude",
         "icon",
         "opaque",
+        "source",
     ],
 )
 NodeData.__new__.__defaults__ = (None,) * len(NodeData._fields)

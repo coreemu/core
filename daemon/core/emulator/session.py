@@ -30,7 +30,7 @@ from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
-from core.location.mobility import MobilityManager
+from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
@@ -103,7 +103,7 @@ class Session:
 
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
-        self._state_time = time.time()
+        self._state_time = time.monotonic()
         self._state_file = os.path.join(self.session_dir, "state")
 
         # hooks handlers
@@ -703,6 +703,13 @@ class Session:
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
 
+        # ensure default emane configuration
+        if isinstance(node, EmaneNet) and options.emane:
+            self.emane.set_model_config(_id, options.emane)
+        # set default wlan config if needed
+        if isinstance(node, WlanNode):
+            self.mobility.set_model_config(_id, BasicRangeModel.name)
+
         # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
@@ -1023,7 +1030,7 @@ class Session:
             return
 
         self.state = state_value
-        self._state_time = time.time()
+        self._state_time = time.monotonic()
         logging.info("changing session(%s) to state %s", self.id, state_name)
 
         self.write_state(state_value)
@@ -1031,7 +1038,7 @@ class Session:
         self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state_value, time=str(time.time()))
+            event_data = EventData(event_type=state_value, time=str(time.monotonic()))
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -1814,7 +1821,7 @@ class Session:
         if not in runtime.
         """
         if self.state == EventTypes.RUNTIME_STATE.value:
-            return time.time() - self._state_time
+            return time.monotonic() - self._state_time
         else:
             return 0.0
 

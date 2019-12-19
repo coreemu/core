@@ -396,7 +396,7 @@ class CoreServices:
         """
         Add services to a node.
 
-        :param core.coreobj.PyCoreNode node: node to add services to
+        :param core.nodes.base.CoreNode node: node to add services to
         :param str node_type: node type to add services to
         :param list[str] services: names of services to add to node
         :return: nothing
@@ -461,8 +461,8 @@ class CoreServices:
         :param core.netns.vnode.LxcNode node: node to start services on
         :return: nothing
         """
-        funcs = []
         boot_paths = ServiceDependencies(node.services).boot_paths()
+        funcs = []
         for boot_path in boot_paths:
             args = (node, boot_path)
             funcs.append((self._start_boot_paths, args, {}))
@@ -484,6 +484,7 @@ class CoreServices:
             " -> ".join([x.name for x in boot_path]),
         )
         for service in boot_path:
+            service = self.get_service(node.id, service.name, default_service=True)
             try:
                 self.boot_service(node, service)
             except Exception:
@@ -538,13 +539,13 @@ class CoreServices:
             time.sleep(service.validation_timer)
         # non-blocking, attempt to validate periodically, up to validation_timer time
         elif service.validation_mode == ServiceMode.NON_BLOCKING:
-            start = time.time()
+            start = time.monotonic()
             while True:
                 status = self.validate_service(node, service)
                 if not status:
                     break
 
-                if time.time() - start > service.validation_timer:
+                if time.monotonic() - start > service.validation_timer:
                     break
 
                 time.sleep(service.validation_period)
@@ -744,7 +745,9 @@ class CoreServices:
             config_files = service.get_configs(node)
 
         for file_name in config_files:
-            logging.debug("generating service config: %s", file_name)
+            logging.debug(
+                "generating service config custom(%s): %s", service.custom, file_name
+            )
             if service.custom:
                 cfg = service.config_data.get(file_name)
                 if cfg is None:

@@ -57,7 +57,7 @@ class EbtablesQueue:
         :return: nothing
         """
         with self.updatelock:
-            self.last_update_time[wlan] = time.time()
+            self.last_update_time[wlan] = time.monotonic()
 
         if self.doupdateloop:
             return
@@ -108,9 +108,9 @@ class EbtablesQueue:
         :rtype: float
         """
         try:
-            elapsed = time.time() - self.last_update_time[wlan]
+            elapsed = time.monotonic() - self.last_update_time[wlan]
         except KeyError:
-            self.last_update_time[wlan] = time.time()
+            self.last_update_time[wlan] = time.monotonic()
             elapsed = 0.0
 
         return elapsed
@@ -122,7 +122,7 @@ class EbtablesQueue:
         :param wlan: wlan entity
         :return: nothing
         """
-        self.last_update_time[wlan] = time.time()
+        self.last_update_time[wlan] = time.monotonic()
         self.updates.remove(wlan)
 
     def updateloop(self):
@@ -965,6 +965,7 @@ class PtpNet(CoreNetwork):
         if unidirectional:
             link_data = LinkData(
                 message_type=0,
+                link_type=self.linktype,
                 node1_id=if2.node.id,
                 node2_id=if1.node.id,
                 delay=if2.getparam("delay"),
@@ -1017,7 +1018,7 @@ class WlanNode(CoreNetwork):
     """
 
     apitype = NodeTypes.WIRELESS_LAN.value
-    linktype = LinkTypes.WIRELESS.value
+    linktype = LinkTypes.WIRED.value
     policy = "DROP"
     type = "wlan"
 

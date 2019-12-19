@@ -109,9 +109,10 @@ class Zebra(CoreService):
         """
         helper for mapping IP addresses to zebra config statements
         """
-        if x.find(".") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv4_address(addr):
             return "ip address %s" % x
-        elif x.find(":") >= 0:
+        elif ipaddress.is_ipv6_address(addr):
             return "ipv6 address %s" % x
         else:
             raise ValueError("invalid address: %s", x)
@@ -255,8 +256,9 @@ class QuaggaService(CoreService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    return a.split("/")[0]
+                a = a.split("/")[0]
+                if ipaddress.is_ipv4_address(a):
+                    return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -338,10 +340,10 @@ class Ospfv2(QuaggaService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") < 0:
-                    continue
-                net = ipaddress.Ipv4Prefix(a)
-                cfg += "  network %s area 0\n" % net
+                addr = a.split("/")[0]
+                if ipaddress.is_ipv4_address(addr):
+                    net = ipaddress.Ipv4Prefix(a)
+                    cfg += "  network %s area 0\n" % net
         cfg += "!\n"
         return cfg
 

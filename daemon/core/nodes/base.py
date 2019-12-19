@@ -176,7 +176,7 @@ class NodeBase:
         self.ifindex += 1
         return ifindex
 
-    def data(self, message_type, lat=None, lon=None, alt=None):
+    def data(self, message_type, lat=None, lon=None, alt=None, source=None):
         """
         Build a data object for this node.
 
@@ -184,6 +184,7 @@ class NodeBase:
         :param str lat: latitude
         :param str lon: longitude
         :param str alt: altitude
+        :param str source: source of node data
         :return: node data object
         :rtype: core.emulator.data.NodeData
         """
@@ -217,6 +218,7 @@ class NodeBase:
             model=model,
             server=server,
             services=services,
+            source=source,
         )
 
         return node_data
@@ -1051,6 +1053,7 @@ class CoreNetworkBase(NodeBase):
                 message_type=0,
                 node1_id=linked_node.id,
                 node2_id=self.id,
+                link_type=self.linktype,
                 unidirectional=1,
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),

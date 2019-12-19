@@ -27,7 +27,6 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        nodes = []
         position = core_pb2.Position(x=50, y=100)
         node_one = core_pb2.Node(id=1, position=position, model="PC")
         position = core_pb2.Position(x=100, y=100)
@@ -36,8 +35,7 @@ class TestGrpc:
         wlan_node = core_pb2.Node(
             id=3, type=NodeTypes.WIRELESS_LAN.value, position=position
         )
-        nodes.extend([node_one, node_two, wlan_node])
-        links = []
+        nodes = [node_one, node_two, wlan_node]
         interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
         interface_one = interface_helper.create_interface(node_one.id, 0)
         interface_two = interface_helper.create_interface(node_two.id, 0)
@@ -48,12 +46,11 @@ class TestGrpc:
             interface_one=interface_one,
             interface_two=interface_two,
         )
-        links.append(link)
-        hooks = []
+        links = [link]
         hook = core_pb2.Hook(
             state=core_pb2.SessionState.RUNTIME, file="echo.sh", data="echo hello"
         )
-        hooks.append(hook)
+        hooks = [hook]
         location_x = 5
         location_y = 10
         location_z = 15
@@ -73,7 +70,6 @@ class TestGrpc:
         emane_config_key = "platform_id_start"
         emane_config_value = "2"
         emane_config = {emane_config_key: emane_config_value}
-        model_configs = []
         model_node_id = 20
         model_config_key = "bandwidth"
         model_config_value = "500000"
@@ -83,21 +79,30 @@ class TestGrpc:
             model=EmaneIeee80211abgModel.name,
             config={model_config_key: model_config_value},
         )
-        model_configs.append(model_config)
-        wlan_configs = []
+        model_configs = [model_config]
         wlan_config_key = "range"
         wlan_config_value = "333"
         wlan_config = core_pb2.WlanConfig(
             node_id=wlan_node.id, config={wlan_config_key: wlan_config_value}
         )
-        wlan_configs.append(wlan_config)
+        wlan_configs = [wlan_config]
         mobility_config_key = "refresh_ms"
         mobility_config_value = "60"
-        mobility_configs = []
         mobility_config = core_pb2.MobilityConfig(
             node_id=wlan_node.id, config={mobility_config_key: mobility_config_value}
         )
-        mobility_configs.append(mobility_config)
+        mobility_configs = [mobility_config]
+        service_config = core_pb2.ServiceConfig(
+            node_id=node_one.id, service="DefaultRoute", validate=["echo hello"]
+        )
+        service_configs = [service_config]
+        service_file_config = core_pb2.ServiceFileConfig(
+            node_id=node_one.id,
+            service="DefaultRoute",
+            file="defaultroute.sh",
+            data="echo hello",
+        )
+        service_file_configs = [service_file_config]
 
         # when
         with patch.object(CoreXmlWriter, "write"):
@@ -112,6 +117,8 @@ class TestGrpc:
                     model_configs,
                     wlan_configs,
                     mobility_configs,
+                    service_configs,
+                    service_file_configs,
                 )
 
         # then
@@ -139,6 +146,14 @@ class TestGrpc:
             model_node_id, EmaneIeee80211abgModel.name
         )
         assert set_model_config[model_config_key] == model_config_value
+        service = session.services.get_service(
+            node_one.id, service_config.service, default_service=True
+        )
+        assert service.validate == tuple(service_config.validate)
+        service_file = session.services.get_service_file(
+            node_one, service_file_config.service, service_file_config.file
+        )
+        assert service_file.data == service_file_config.data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(self, grpc_server, session_id):
@@ -677,7 +692,9 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        options = NodeOptions()
+        options.emane = EmaneIeee80211abgModel.name
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "platform_id_start"
         config_value = "2"
@@ -691,17 +708,20 @@ class TestGrpc:
 
         # then
         assert len(response.configs) == 1
-        assert emane_network.id in response.configs
-        model_config = response.configs[emane_network.id]
+        model_config = response.configs[0]
+        assert emane_network.id == model_config.node_id
         assert model_config.model == EmaneIeee80211abgModel.name
         assert len(model_config.config) > 0
+        assert model_config.interface == -1
 
     def test_set_emane_model_config(self, grpc_server):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        options = NodeOptions()
+        options.emane = EmaneIeee80211abgModel.name
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "bandwidth"
         config_value = "900000"
@@ -727,7 +747,9 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        options = NodeOptions()
+        options.emane = EmaneIeee80211abgModel.name
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
         # then
@@ -856,6 +878,24 @@ class TestGrpc:
         assert response.result is True
         assert session.services.default_services[node_type] == services
 
+    def test_get_node_service_configs(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+        service_name = "DefaultRoute"
+        session.services.set_service(node.id, service_name)
+
+        # then
+        with client.context_connect():
+            response = client.get_node_service_configs(session.id)
+
+        # then
+        assert len(response.configs) == 1
+        service_config = response.configs[0]
+        assert service_config.node_id == node.id
+        assert service_config.service == service_name
+
     def test_get_node_service(self, grpc_server):
         # given
         client = CoreGrpcClient()
@@ -950,6 +990,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("node_event")
             queue.put(event_data)
 
@@ -974,6 +1015,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("link_event")
             queue.put(event_data)
 
@@ -992,15 +1034,16 @@ class TestGrpc:
 
         # given
         client = CoreGrpcClient()
-        grpc_server.coreemu.create_session()
+        session = grpc_server.coreemu.create_session()
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.throughputs(handle_event)
+            client.throughputs(session.id, handle_event)
             time.sleep(0.1)
 
             # then
@@ -1013,6 +1056,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("session_event")
             queue.put(event_data)
 
@@ -1021,7 +1065,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(
-                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.time())
+                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.monotonic())
             )
             session.broadcast_event(event)
 
@@ -1035,6 +1079,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("config_event")
             queue.put(event_data)
 
@@ -1058,6 +1103,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("exception_event")
             queue.put(event_data)
 
@@ -1065,7 +1111,9 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(ExceptionLevels.FATAL, "test", None, "exception message")
+            session.exception(
+                ExceptionLevels.FATAL.value, "test", None, "exception message"
+            )
 
             # then
             queue.get(timeout=5)
@@ -1078,6 +1126,7 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.session_id == session.id
             assert event_data.HasField("file_event")
             queue.put(event_data)
 

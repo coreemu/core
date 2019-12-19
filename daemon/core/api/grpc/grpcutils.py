@@ -30,6 +30,8 @@ def add_node_data(node_proto):
     options.opaque = node_proto.opaque
     options.image = node_proto.image
     options.services = node_proto.services
+    if node_proto.emane:
+        options.emane = node_proto.emane
     if node_proto.server:
         options.server = node_proto.server
 
@@ -126,7 +128,7 @@ def create_nodes(session, node_protos):
 
 def create_links(session, link_protos):
     """
-    Create nodes using a thread pool and wait for completion.
+    Create links using a thread pool and wait for completion.
 
     :param core.emulator.session.Session session: session to create nodes in
     :param list[core_pb2.Link] link_protos: link proto messages
@@ -144,6 +146,29 @@ def create_links(session, link_protos):
     results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
     logging.debug("grpc created links time: %s", total)
+    return results, exceptions
+
+
+def edit_links(session, link_protos):
+    """
+    Edit links using a thread pool and wait for completion.
+
+    :param core.emulator.session.Session session: session to create nodes in
+    :param list[core_pb2.Link] link_protos: link proto messages
+    :return: results and exceptions for created links
+    :rtype: tuple
+    """
+    funcs = []
+    for link_proto in link_protos:
+        node_one_id = link_proto.node_one_id
+        node_two_id = link_proto.node_two_id
+        interface_one, interface_two, options = add_link_data(link_proto)
+        args = (node_one_id, node_two_id, interface_one.id, interface_two.id, options)
+        funcs.append((session.update_link, args, {}))
+    start = time.monotonic()
+    results, exceptions = utils.threadpool(funcs)
+    total = time.monotonic() - start
+    logging.debug("grpc edit links time: %s", total)
     return results, exceptions
 
 
@@ -217,6 +242,22 @@ def get_emane_model_id(node_id, interface_id):
         return node_id * 1000 + interface_id
     else:
         return node_id
+
+
+def parse_emane_model_id(_id):
+    """
+    Parses EMANE model id to get true node id and interface id.
+
+    :param _id: id to parse
+    :return: node id and interface id
+    :rtype: tuple
+    """
+    interface = -1
+    node_id = _id
+    if _id >= 1000:
+        interface = _id % 1000
+        node_id = int(_id / 1000)
+    return node_id, interface
 
 
 def convert_link(session, link_data):
@@ -319,3 +360,40 @@ def session_location(session, location):
     session.location.refxyz = (location.x, location.y, location.z)
     session.location.setrefgeo(location.lat, location.lon, location.alt)
     session.location.refscale = location.scale
+
+
+def service_configuration(session, config):
+    """
+    Convenience method for setting a node service configuration.
+
+    :param core.emulator.session.Session session: session for service configuration
+    :param core_pb2.ServiceConfig config: service configuration
+    :return:
+    """
+    session.services.set_service(config.node_id, config.service)
+    service = session.services.get_service(config.node_id, config.service)
+    service.startup = tuple(config.startup)
+    service.validate = tuple(config.validate)
+    service.shutdown = tuple(config.shutdown)
+
+
+def get_service_configuration(service):
+    """
+    Convenience for converting a service to service data proto.
+
+    :param service: service to get proto data for
+    :return: service proto data
+    :rtype: core.api.grpc.core_pb2.NodeServiceData
+    """
+    return core_pb2.NodeServiceData(
+        executables=service.executables,
+        dependencies=service.dependencies,
+        dirs=service.dirs,
+        configs=service.configs,
+        startup=service.startup,
+        validate=service.validate,
+        validation_mode=service.validation_mode.value,
+        validation_timer=service.validation_timer,
+        shutdown=service.shutdown,
+        meta=service.meta,
+    )

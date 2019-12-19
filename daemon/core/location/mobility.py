@@ -174,7 +174,7 @@ class MobilityManager(ModelManager):
             event_type=event_type,
             name=f"mobility:{model.name}",
             data=data,
-            time=str(time.time()),
+            time=str(time.monotonic()),
         )
 
         self.session.broadcast_event(event_data)
@@ -612,7 +612,7 @@ class WayPointMobility(WirelessModel):
         if self.state != self.STATE_RUNNING:
             return
         t = self.lasttime
-        self.lasttime = time.time()
+        self.lasttime = time.monotonic()
         now = self.lasttime - self.timezero
         dt = self.lasttime - t
 
@@ -664,7 +664,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         logging.info("running mobility scenario")
-        self.timezero = time.time()
+        self.timezero = time.monotonic()
         self.lasttime = self.timezero - (0.001 * self.refresh_ms)
         self.movenodesinitial()
         self.runround()
@@ -811,12 +811,6 @@ class WayPointMobility(WirelessModel):
         :param z: z position
         :return: nothing
         """
-        if x is not None:
-            x = int(x)
-        if y is not None:
-            y = int(y)
-        if z is not None:
-            z = int(z)
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)
@@ -850,7 +844,7 @@ class WayPointMobility(WirelessModel):
             self.lasttime = 0
             self.run()
         elif laststate == self.STATE_PAUSED:
-            now = time.time()
+            now = time.monotonic()
             self.timezero += now - self.lasttime
             self.lasttime = now - (0.001 * self.refresh_ms)
             self.runround()
@@ -877,7 +871,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         self.state = self.STATE_PAUSED
-        self.lasttime = time.time()
+        self.lasttime = time.monotonic()
 
 
 class Ns2ScriptedMobility(WayPointMobility):

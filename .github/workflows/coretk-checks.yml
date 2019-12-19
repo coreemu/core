@@ -1,0 +1,35 @@
+name: CORE Tk Checks
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install pipenv
+        run: |
+          python -m pip install --upgrade pip
+          pip install pipenv
+          cd daemon
+          cp setup.py.in setup.py
+          cp core/constants.py.in core/constants.py
+          sed -i 's/True/False/g' core/constants.py
+          cd ../coretk
+          pipenv install --dev
+      - name: isort
+        run: |
+          cd coretk
+          pipenv run isort -c
+      - name: black
+        run: |
+          cd coretk
+          pipenv run black --check .
+      - name: flake8
+        run: |
+          cd coretk
+          pipenv run flake8

@@ -745,8 +745,8 @@ class CoreXmlReader:
 
         position_element = device_element.find("position")
         if position_element is not None:
-            x = get_int(position_element, "x")
-            y = get_int(position_element, "y")
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
             if all([x, y]):
                 options.set_position(x, y)
 
@@ -767,8 +767,8 @@ class CoreXmlReader:
 
         position_element = network_element.find("position")
         if position_element is not None:
-            x = get_int(position_element, "x")
-            y = get_int(position_element, "y")
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
             if all([x, y]):
                 options.set_position(x, y)
 
