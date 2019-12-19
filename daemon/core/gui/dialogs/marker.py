@@ -70,4 +70,10 @@ class Marker(Dialog):
 
     def position(self):
         print(self.winfo_width(), self.winfo_height())
-        self.geometry("+{}+{}".format(self.app.master.winfo_x, self.app.master.winfo_y))
+        # print(self.app.master.winfo_x(), self.app.master.winfo_y())
+        print(self.app.canvas.winfo_rootx())
+        self.geometry(
+            "+{}+{}".format(
+                self.app.canvas.winfo_rootx(), self.app.canvas.master.winfo_rooty()
+            )
+        )

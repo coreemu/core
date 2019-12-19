@@ -50,6 +50,11 @@ class Toolbar(ttk.Frame):
 
         # runtime buttons
         self.runtime_select_button = None
+        self.stop_button = None
+        self.plot_button = None
+        self.runtime_marker_button = None
+        self.node_command_button = None
+        self.run_command_button = None
 
         # frames
         self.design_frame = None
@@ -106,6 +111,11 @@ class Toolbar(ttk.Frame):
     def runtime_select(self, button):
         logging.info("selecting runtime button: %s", button)
         self.runtime_select_button.state(["!pressed"])
+        self.stop_button.state(["!pressed"])
+        self.plot_button.state(["!pressed"])
+        self.runtime_marker_button.state(["!pressed"])
+        self.node_command_button.state(["!pressed"])
+        self.run_command_button.state(["!pressed"])
         button.state(["pressed"])
 
     def draw_runtime_frame(self):
@@ -113,7 +123,7 @@ class Toolbar(ttk.Frame):
         self.runtime_frame.grid(row=0, column=0, sticky="nsew")
         self.runtime_frame.columnconfigure(0, weight=1)
 
-        self.create_button(
+        self.stop_button = self.create_button(
             self.runtime_frame,
             icon(ImageEnum.STOP),
             self.click_stop,
@@ -125,23 +135,22 @@ class Toolbar(ttk.Frame):
             self.click_runtime_selection,
             "selection tool",
         )
-        # self.create_observe_button()
-        self.create_button(
+        self.plot_button = self.create_button(
             self.runtime_frame, icon(ImageEnum.PLOT), self.click_plot_button, "plot"
         )
-        self.create_button(
+        self.runtime_marker_button = self.create_button(
             self.runtime_frame,
             icon(ImageEnum.MARKER),
             self.click_marker_button,
             "marker",
         )
-        self.create_button(
+        self.node_command_button = self.create_button(
             self.runtime_frame,
             icon(ImageEnum.TWONODE),
             self.click_two_node_button,
             "run command from one node to another",
         )
-        self.create_button(
+        self.run_command_button = self.create_button(
             self.runtime_frame, icon(ImageEnum.RUN), self.click_run_button, "run"
         )
 
@@ -409,6 +418,7 @@ class Toolbar(ttk.Frame):
             if not self.marker_tool:
                 self.marker_tool = Marker(self.master, self.app)
                 self.marker_tool.show()
+                self.marker_tool.position()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
@@ -418,9 +428,13 @@ class Toolbar(ttk.Frame):
 
     def click_marker_button(self):
         logging.debug("Click on marker button")
-        dialog = Marker(self.master, self.app)
-        dialog.show()
-        # dialog.position()
+        self.runtime_select(self.runtime_marker_button)
+        self.app.canvas.mode = GraphMode.ANNOTATION
+        self.app.canvas.annotation_type = ShapeType.MARKER
+        if not self.marker_tool:
+            self.marker_tool = Marker(self.master, self.app)
+            self.marker_tool.show()
+            self.marker_tool.position()
 
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")

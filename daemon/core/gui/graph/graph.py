@@ -508,6 +508,7 @@ class CanvasGraph(tk.Canvas):
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
         if self.mode == GraphMode.ANNOTATION:
+
             if is_marker(self.annotation_type):
                 r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
