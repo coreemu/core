@@ -420,6 +420,7 @@ class Toolbar(ttk.Frame):
         logging.debug("Click on marker button")
         dialog = Marker(self.master, self.app)
         dialog.show()
+        # dialog.position()
 
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")

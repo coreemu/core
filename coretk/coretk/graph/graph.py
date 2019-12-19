@@ -499,7 +499,7 @@ class CanvasGraph(tk.Canvas):
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
-        if self.mode == GraphMode.ANNOTATION and selected is None:
+        if self.mode == GraphMode.ANNOTATION:
             if is_marker(self.annotation_type):
                 r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
@@ -511,7 +511,8 @@ class CanvasGraph(tk.Canvas):
                     outline="",
                     tags="marker",
                 )
-            else:
+                return
+            if selected is None:
                 shape = Shape(self.app, self, self.annotation_type, x, y)
                 self.selected = shape.id
                 self.shape_drawing = True
@@ -587,8 +588,7 @@ class CanvasGraph(tk.Canvas):
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
             elif is_marker(self.annotation_type):
-                marker_tool = self.app.toolbar.marker_tool
-                r = marker_tool.radius
+                r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
                     x - r,
                     y - r,
@@ -598,6 +598,7 @@ class CanvasGraph(tk.Canvas):
                     outline="",
                     tags="marker",
                 )
+            return
 
         if self.mode == GraphMode.EDGE:
             return

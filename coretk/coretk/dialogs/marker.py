@@ -24,10 +24,14 @@ class Marker(Dialog):
 
     def draw(self):
         button = ttk.Button(self.top, text="clear", command=self.clear_marker)
-        button.grid(row=0, column=0)
+        button.grid(row=0, column=0, sticky="nsew")
 
         frame = ttk.Frame(self.top)
-        frame.grid(row=1, column=0)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=4)
+        frame.grid(row=1, column=0, sticky="nsew")
+        label = ttk.Label(frame, text="Thickness: ")
+        label.grid(row=0, column=0, sticky="nsew")
         combobox = ttk.Combobox(
             frame,
             textvariable=self.marker_thickness,
@@ -36,8 +40,14 @@ class Marker(Dialog):
         )
         combobox.grid(row=0, column=1, sticky="nsew")
         combobox.bind("<<ComboboxSelected>>", self.change_thickness)
-        label = ttk.Label(self.top, background=self.color)
-        label.grid(row=2, column=0, sticky="nsew")
+        frame = ttk.Frame(self.top)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=4)
+        frame.grid(row=2, column=0, sticky="nsew")
+        label = ttk.Label(frame, text="Color: ")
+        label.grid(row=0, column=0, sticky="nsew")
+        label = ttk.Label(frame, background=self.color)
+        label.grid(row=0, column=1, sticky="nsew")
         label.bind("<Button-1>", self.change_color)
 
     def clear_marker(self):
@@ -57,3 +67,7 @@ class Marker(Dialog):
     def close_marker(self, event):
         logging.debug("destroy marker dialog")
         self.app.toolbar.marker_tool = None
+
+    def position(self):
+        print(self.winfo_width(), self.winfo_height())
+        self.geometry("+{}+{}".format(self.app.master.winfo_x, self.app.master.winfo_y))
