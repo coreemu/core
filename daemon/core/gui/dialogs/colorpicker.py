@@ -8,7 +8,7 @@ from tkinter import ttk
 from core.gui.dialogs.dialog import Dialog
 
 
-class ColorPicker(Dialog):
+class ColorPickerDialog(Dialog):
     def __init__(self, master, app, initcolor="#000000"):
         super().__init__(master, app, "color picker", modal=True)
         self.red_entry = None

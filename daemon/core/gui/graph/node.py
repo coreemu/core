@@ -9,7 +9,7 @@ from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
-from core.gui.dialogs.nodeservice import NodeService
+from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
@@ -243,7 +243,7 @@ class CanvasNode:
 
     def show_services(self):
         self.canvas.context = None
-        dialog = NodeService(self.app.master, self.app, self)
+        dialog = NodeServiceDialog(self.app.master, self.app, self)
         dialog.show()
 
     def has_emane_link(self, interface_id):

@@ -5,12 +5,12 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from core.gui.dialogs.dialog import Dialog
-from core.gui.dialogs.serviceconfiguration import ServiceConfiguration
+from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
 
-class NodeService(Dialog):
+class NodeServiceDialog(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(master, app, title, modal=True)
@@ -106,7 +106,7 @@ class NodeService(Dialog):
     def click_configure(self):
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
-            dialog = ServiceConfiguration(
+            dialog = ServiceConfigDialog(
                 master=self,
                 app=self.app,
                 service_name=self.current.listbox.get(current_selection[0]),

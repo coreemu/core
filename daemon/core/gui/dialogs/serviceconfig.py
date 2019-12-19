@@ -13,7 +13,7 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
 
-class ServiceConfiguration(Dialog):
+class ServiceConfigDialog(Dialog):
     def __init__(self, master, app, service_name, node_id):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)

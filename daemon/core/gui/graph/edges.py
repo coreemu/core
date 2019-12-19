@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter.font import Font
 
 from core.gui import themes
-from core.gui.dialogs.linkconfig import LinkConfiguration
+from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
 
@@ -177,5 +177,5 @@ class CanvasEdge:
 
     def configure(self):
         logging.debug("link configuration")
-        dialog = LinkConfiguration(self.canvas, self.canvas.app, self)
+        dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
         dialog.show()

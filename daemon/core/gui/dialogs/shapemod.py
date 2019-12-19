@@ -4,7 +4,7 @@ shape input dialog
 import tkinter as tk
 from tkinter import font, ttk
 
-from core.gui.dialogs.colorpicker import ColorPicker
+from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.graph import tags
 from core.gui.graph.shapeutils import is_draw_shape, is_shape_text
@@ -135,18 +135,18 @@ class ShapeDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def choose_text_color(self):
-        color_picker = ColorPicker(self, self.app, "#000000")
+        color_picker = ColorPickerDialog(self, self.app, "#000000")
         color = color_picker.askcolor()
         self.text_color = color
 
     def choose_fill_color(self):
-        color_picker = ColorPicker(self, self.app, self.fill_color)
+        color_picker = ColorPickerDialog(self, self.app, self.fill_color)
         color = color_picker.askcolor()
         self.fill_color = color
         self.fill.config(background=color, text=color)
 
     def choose_border_color(self):
-        color_picker = ColorPicker(self, self.app, self.border_color)
+        color_picker = ColorPickerDialog(self, self.app, self.border_color)
         color = color_picker.askcolor()
         self.border_color = color
         self.border.config(background=color, text=color)

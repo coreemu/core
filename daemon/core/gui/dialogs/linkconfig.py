@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from core.api.grpc import core_pb2
-from core.gui.dialogs.colorpicker import ColorPicker
+from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 
@@ -27,7 +27,7 @@ def get_float(var):
         return None
 
 
-class LinkConfiguration(Dialog):
+class LinkConfigurationDialog(Dialog):
     def __init__(self, master, app, edge):
         super().__init__(master, app, "Link Configuration", modal=True)
         self.app = app
@@ -237,7 +237,7 @@ class LinkConfiguration(Dialog):
         return frame
 
     def click_color(self):
-        dialog = ColorPicker(self, self.app, self.color.get())
+        dialog = ColorPickerDialog(self, self.app, self.color.get())
         color = dialog.askcolor()
         self.color.set(color)
         self.color_button.config(background=color)
