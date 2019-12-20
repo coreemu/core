@@ -5,6 +5,7 @@ emane.py: definition of an Emane class for implementing configuration control of
 import logging
 import os
 import threading
+from collections import OrderedDict
 
 from core import utils
 from core.config import ConfigGroup, Configuration, ModelManager
@@ -40,6 +41,7 @@ EMANE_MODELS = [
     EmaneTdmaModel,
 ]
 DEFAULT_EMANE_PREFIX = "/usr"
+DEFAULT_DEV = "ctrl0"
 
 
 class EmaneManager(ModelManager):
@@ -817,57 +819,61 @@ class EmaneManager(ModelManager):
         return result
 
 
-class EmaneGlobalModel(EmaneModel):
+class EmaneGlobalModel:
     """
     Global EMANE configuration options.
     """
 
-    _DEFAULT_DEV = "ctrl0"
-
     name = "emane"
+    bitmap = None
 
-    emulator_xml = "/usr/share/emane/manifest/nemmanager.xml"
-    emulator_defaults = {
-        "eventservicedevice": _DEFAULT_DEV,
-        "eventservicegroup": "224.1.2.8:45703",
-        "otamanagerdevice": _DEFAULT_DEV,
-        "otamanagergroup": "224.1.2.8:45702",
-    }
-    emulator_config = emanemanifest.parse(emulator_xml, emulator_defaults)
-    emulator_config.insert(
-        0,
-        Configuration(
-            _id="platform_id_start",
-            _type=ConfigDataTypes.INT32,
-            default="1",
-            label="Starting Platform ID (core)",
-        ),
-    )
+    def __init__(self, session):
+        self.session = session
+        self.nem_config = [
+            Configuration(
+                _id="nem_id_start",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Starting NEM ID (core)",
+            )
+        ]
+        self.emulator_config = None
+        self.parse_config()
 
-    nem_config = [
-        Configuration(
-            _id="nem_id_start",
-            _type=ConfigDataTypes.INT32,
-            default="1",
-            label="Starting NEM ID (core)",
+    def parse_config(self):
+        emane_prefix = self.session.options.get_config(
+            "emane_prefix", default=DEFAULT_EMANE_PREFIX
         )
-    ]
+        emulator_xml = os.path.join(emane_prefix, "share/emane/manifest/nemmanager.xml")
+        emulator_defaults = {
+            "eventservicedevice": DEFAULT_DEV,
+            "eventservicegroup": "224.1.2.8:45703",
+            "otamanagerdevice": DEFAULT_DEV,
+            "otamanagergroup": "224.1.2.8:45702",
+        }
+        self.emulator_config = emanemanifest.parse(emulator_xml, emulator_defaults)
+        self.emulator_config.insert(
+            0,
+            Configuration(
+                _id="platform_id_start",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Starting Platform ID (core)",
+            ),
+        )
 
-    @classmethod
-    def configurations(cls):
-        return cls.emulator_config + cls.nem_config
+    def configurations(self):
+        return self.emulator_config + self.nem_config
 
-    @classmethod
-    def config_groups(cls):
-        emulator_len = len(cls.emulator_config)
-        config_len = len(cls.configurations())
+    def config_groups(self):
+        emulator_len = len(self.emulator_config)
+        config_len = len(self.configurations())
         return [
             ConfigGroup("Platform Attributes", 1, emulator_len),
             ConfigGroup("NEM Parameters", emulator_len + 1, config_len),
         ]
 
-    def __init__(self, session, _id=None):
-        super().__init__(session, _id)
-
-    def build_xml_files(self, config, interface=None):
-        raise NotImplementedError
+    def default_values(self):
+        return OrderedDict(
+            [(config.id, config.default) for config in self.configurations()]
+        )
