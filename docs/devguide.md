@@ -97,7 +97,7 @@ python3 -m pipenv install $EMANEREPO/src/python
 This will run the core-daemon server using the configuration files within the repo.
 
 ```shell
-python3 -m pipenv run core
+sudo python3 -m pipenv run core
 ```
 
 ### Running CORE Python GUI
