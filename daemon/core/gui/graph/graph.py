@@ -46,6 +46,7 @@ class CanvasGraph(tk.Canvas):
         self.offset = (0, 0)
         self.cursor = (0, 0)
         self.marker_tool = None
+        self.to_copy = []
 
         # background related
         self.wallpaper_id = None
@@ -441,7 +442,8 @@ class CanvasGraph(tk.Canvas):
                         continue
                     edges.add(edge)
                     self.throughput_draw.delete(edge)
-                    del self.edges[edge.token]
+                    self.edges.pop(edge.token, None)
+                    # del self.edges[edge.token]
                     edge.delete()
 
                     # update node connected to edge being deleted
@@ -838,3 +840,47 @@ class CanvasGraph(tk.Canvas):
             self.nodes[source.id].edges.add(edge)
             self.nodes[dest.id].edges.add(edge)
             self.core.create_link(edge, source, dest)
+
+    def copy(self):
+        if self.selection:
+            logging.debug(
+                "store current selection to to_copy, number of nodes: %s",
+                len(self.selection),
+            )
+            self.to_copy = self.selection.keys()
+
+    def paste(self):
+        logging.debug("copy")
+        # maps original node canvas id to copy node canvas id
+        copy_map = {}
+        # the edges that will be copy over
+        to_copy_edges = []
+        for canvas_nid in self.to_copy:
+            core_node = self.nodes[canvas_nid].core_node
+            actual_x = core_node.position.x + 50
+            actual_y = core_node.position.y + 50
+            scaled_x, scaled_y = self.get_scaled_coords(actual_x, actual_y)
+
+            copy = self.core.create_node(
+                actual_x, actual_y, core_node.type, core_node.model
+            )
+            node = CanvasNode(
+                self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
+            )
+            copy_map[canvas_nid] = node.id
+            self.core.canvas_nodes[copy.id] = node
+            self.nodes[node.id] = node
+
+            edges = self.nodes[canvas_nid].edges
+            for edge in edges:
+                if edge.src not in self.to_copy or edge.dst not in self.to_copy:
+                    if canvas_nid == edge.src:
+                        self.create_edge(node, self.nodes[edge.dst])
+                    elif canvas_nid == edge.dst:
+                        self.create_edge(self.nodes[edge.src], node)
+                else:
+                    to_copy_edges.append(tuple([edge.src, edge.dst]))
+        for e in to_copy_edges:
+            source_node_copy = self.nodes[copy_map[e[0]]]
+            dest_node_copy = self.nodes[copy_map[e[1]]]
+            self.create_edge(source_node_copy, dest_node_copy)

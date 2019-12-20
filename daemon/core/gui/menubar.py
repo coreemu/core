@@ -90,8 +90,12 @@ class Menubar(tk.Menu):
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
         menu.add_separator()
         menu.add_command(label="Cut", accelerator="Ctrl+X", state=tk.DISABLED)
-        menu.add_command(label="Copy", accelerator="Ctrl+C", state=tk.DISABLED)
-        menu.add_command(label="Paste", accelerator="Ctrl+V", state=tk.DISABLED)
+        menu.add_command(
+            label="Copy", accelerator="Ctrl+C", command=self.menuaction.copy
+        )
+        menu.add_command(
+            label="Paste", accelerator="Ctrl+V", command=self.menuaction.paste
+        )
         menu.add_separator()
         menu.add_command(label="Select all", accelerator="Ctrl+A", state=tk.DISABLED)
         menu.add_command(
@@ -101,6 +105,9 @@ class Menubar(tk.Menu):
         menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
         menu.add_command(label="Clear marker", state=tk.DISABLED)
         self.add_cascade(label="Edit", menu=menu)
+
+        self.app.master.bind_all("<Control-c>", self.menuaction.copy)
+        self.app.master.bind_all("<Control-v>", self.menuaction.paste)
 
     def draw_canvas_menu(self):
         """

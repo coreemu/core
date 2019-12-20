@@ -30,6 +30,7 @@ class MenuAction:
     def __init__(self, app, master):
         self.master = master
         self.app = app
+        self.canvas = app.canvas
 
     def cleanup_old_session(self, quitapp=False):
         logging.info("cleaning up old session")
@@ -155,3 +156,11 @@ class MenuAction:
             self.app.core.enable_throughputs()
         else:
             self.app.core.cancel_throughputs()
+
+    def copy(self, event=None):
+        logging.debug("copy")
+        self.app.canvas.copy()
+
+    def paste(self, event=None):
+        logging.debug("paste")
+        self.app.canvas.paste()

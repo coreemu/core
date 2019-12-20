@@ -760,9 +760,10 @@ class CoreClient:
                 if edge in edges:
                     continue
                 edges.add(edge)
-                if edge.token not in self.links:
-                    logging.error("unknown edge: %s", edge.token)
-                del self.links[edge.token]
+                #
+                # if edge.token not in self.links:
+                #     logging.error("unknown edge: %s", edge.token)
+                self.links.pop(edge.token, None)
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node
