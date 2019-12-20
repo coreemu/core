@@ -22,7 +22,6 @@ install-exec-hook:
 	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
 		--root=/$(DESTDIR) \
 		--prefix=$(prefix) \
-		--install-lib=$(pythondir) \
 		--single-version-externally-managed \
 		--no-compile
 
