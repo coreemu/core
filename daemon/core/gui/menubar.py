@@ -435,7 +435,9 @@ class Menubar(tk.Menu):
         menu.add_checkbutton(label="Throughput", command=self.menuaction.throughput)
         menu.add_separator()
         menu.add_command(label="Configure Adjacency...", state=tk.DISABLED)
-        menu.add_command(label="Configure Throughput...", state=tk.DISABLED)
+        menu.add_command(
+            label="Configure Throughput...", command=self.menuaction.config_throughput
+        )
         self.add_cascade(label="Widgets", menu=menu)
 
     def draw_session_menu(self):
