@@ -48,6 +48,7 @@ setup(
     ],
     data_files=data_files,
     scripts=glob.glob("scripts/*"),
+    include_package_data=True,
     description="Python components of CORE",
     url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
