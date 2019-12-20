@@ -20,6 +20,7 @@ from core.gui.dialogs.preferences import PreferencesDialog
 from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
+from core.gui.dialogs.throughput import ThroughputDialog
 
 
 class MenuAction:
@@ -161,3 +162,8 @@ class MenuAction:
     def paste(self, event=None):
         logging.debug("paste")
         self.app.canvas.paste()
+
+    def config_throughput(self):
+        logging.debug("not implemented")
+        dialog = ThroughputDialog(self.app, self.app)
+        dialog.show()
