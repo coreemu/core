@@ -380,12 +380,13 @@ class CoreNodeBase(NodeBase):
 
         return common
 
-    def cmd(self, args, wait=True):
+    def cmd(self, args, wait=True, shell=False):
         """
         Runs a command within a node container.
 
         :param str args: command to run
         :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
@@ -561,19 +562,20 @@ class CoreNode(CoreNodeBase):
             finally:
                 self.rmnodedir()
 
-    def cmd(self, args, wait=True):
+    def cmd(self, args, wait=True, shell=False):
         """
         Runs a command that is used to configure and setup the network within a
         node.
 
         :param str args: command to run
         :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
-            return self.client.check_cmd(args, wait=wait)
+            return self.client.check_cmd(args, wait=wait, shell=shell)
         else:
             args = self.client.create_cmd(args)
             return self.server.remote_cmd(args, wait=wait)

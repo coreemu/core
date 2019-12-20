@@ -53,16 +53,17 @@ class VnodeClient:
     def create_cmd(self, args):
         return f"{VCMD_BIN} -c {self.ctrlchnlname} -- {args}"
 
-    def check_cmd(self, args, wait=True):
+    def check_cmd(self, args, wait=True, shell=False):
         """
         Run command and return exit status and combined stdout and stderr.
 
         :param str args: command to run
         :param bool wait: True to wait for command status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
         self._verify_connection()
         args = self.create_cmd(args)
-        return utils.cmd(args, wait=wait)
+        return utils.cmd(args, wait=wait, shell=shell)
