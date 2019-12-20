@@ -13,7 +13,7 @@ fi
 # check install was found
 if [[ ${os} == "Ubuntu" ]]; then
     # install system dependencies
-    sudo apt install  -y automake pkg-config gcc libev-dev bridge-utils ebtables \
+    sudo apt install  -y automake pkg-config gcc libev-dev bridge-utils ebtables gawk \
         python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
 
     # install python dependencies
