@@ -870,6 +870,7 @@ class CanvasGraph(tk.Canvas):
             copy_map[canvas_nid] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
+            self.core.copy_node_config(core_node.id, copy.id)
 
             edges = self.nodes[canvas_nid].edges
             for edge in edges:

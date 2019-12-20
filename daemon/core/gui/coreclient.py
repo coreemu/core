@@ -909,3 +909,33 @@ class CoreClient:
     def set_emane_model_config(self, node_id, model, config, interface=None):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)
         self.emane_model_configs[(node_id, model, interface)] = config
+
+    def copy_node_service(self, _from, _to):
+        services = self.canvas_nodes[_from].core_node.services
+        self.canvas_nodes[_to].core_node.services[:] = services
+
+    def copy_node_config(self, _from, _to):
+        node_type = self.canvas_nodes[_from].core_node.type
+        if node_type == core_pb2.NodeType.DEFAULT:
+            services = self.canvas_nodes[_from].core_node.services
+            self.canvas_nodes[_to].core_node.services[:] = services
+            config = self.service_configs.get(_from)
+            if config:
+                self.service_configs[_to] = config
+            file_configs = self.file_configs.get(_from)
+            if file_configs:
+                for key, value in file_configs.items():
+                    if _to not in self.file_configs:
+                        self.file_configs[_to] = {}
+                    self.file_configs[_to][key] = value
+        elif node_type == core_pb2.NodeType.WIRELESS_LAN:
+            config = self.wlan_configs.get(_from)
+            if config:
+                self.wlan_configs[_to] = config
+            config = self.mobility_configs.get(_from)
+            if config:
+                self.mobility_configs[_to] = config
+        elif node_type == core_pb2.NodeType.EMANE:
+            config = self.emane_model_configs.get(_from)
+            if config:
+                self.emane_model_configs[_to] = config
