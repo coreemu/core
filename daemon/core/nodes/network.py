@@ -275,6 +275,7 @@ class CoreNetwork(CoreNetworkBase):
         sessionid = self.session.short_session_id()
         self.brname = f"b.{self.id}.{sessionid}"
         self.up = False
+        self.has_ebtables_chain = False
         if start:
             self.startup()
             ebq.startupdateloop(self)
