@@ -48,24 +48,21 @@ class MenuAction:
 
         :return: nothing
         """
-        logging.info(
-            "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
-        )
         try:
             if not self.app.core.is_runtime():
                 self.app.core.delete_session()
                 if quitapp:
                     self.app.quit()
             else:
-                result = messagebox.askyesnocancel("stop", "Stop the running session?")
-                if result:
+                result = messagebox.askyesnocancel("Exit", "Stop the running session?")
+                if result is True:
                     self.app.statusbar.progress_bar.start(5)
                     thread = threading.Thread(
                         target=self.cleanup_old_session, args=([quitapp])
                     )
                     thread.daemon = True
                     thread.start()
-                elif quitapp:
+                elif result is False and quitapp:
                     self.app.quit()
         except grpc.RpcError:
             logging.exception("error deleting session")
