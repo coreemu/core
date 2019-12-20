@@ -534,9 +534,10 @@ class CoreClient:
 
     def launch_terminal(self, node_id):
         try:
+            terminal = self.app.guiconfig["preferences"]["terminal"]
             response = self.client.get_node_terminal(self.session_id, node_id)
             logging.info("get terminal %s", response.terminal)
-            os.system(f"xterm -e {response.terminal} &")
+            os.system(f"{terminal} {response.terminal} &")
         except grpc.RpcError as e:
             show_grpc_error(e)
 
