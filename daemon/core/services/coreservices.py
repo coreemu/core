@@ -14,7 +14,7 @@ import time
 from core import utils
 from core.constants import which
 from core.emulator.data import FileData
-from core.emulator.enumerations import MessageFlags, RegisterTlvs
+from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError
 
 
@@ -628,7 +628,13 @@ class CoreServices:
         for args in service.shutdown:
             try:
                 node.cmd(args)
-            except CoreCommandError:
+            except CoreCommandError as e:
+                self.session.exception(
+                    ExceptionLevels.ERROR,
+                    "services",
+                    node.id,
+                    f"error stopping service {service.name}: {e.stderr}",
+                )
                 logging.exception("error running stop command %s", args)
                 status = -1
         return status

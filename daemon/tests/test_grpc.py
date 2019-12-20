@@ -1101,19 +1101,26 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         queue = Queue()
+        exception_level = ExceptionLevels.FATAL
+        source = "test"
+        node_id = None
+        text = "exception message"
 
         def handle_event(event_data):
             assert event_data.session_id == session.id
             assert event_data.HasField("exception_event")
+            exception_event = event_data.exception_event
+            assert exception_event.level == exception_level.value
+            assert exception_event.node_id == 0
+            assert exception_event.source == source
+            assert exception_event.text == text
             queue.put(event_data)
 
         # then
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(
-                ExceptionLevels.FATAL.value, "test", None, "exception message"
-            )
+            session.exception(exception_level, source, node_id, text)
 
             # then
             queue.get(timeout=5)

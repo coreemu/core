@@ -1411,13 +1411,12 @@ class Session:
         """
         Generate and broadcast an exception event.
 
-        :param str level: exception level
+        :param core.emulator.enumerations.ExceptionLevel level: exception level
         :param str source: source name
         :param int node_id: node related to exception
         :param str text: exception message
         :return: nothing
         """
-
         exception_data = ExceptionData(
             node=node_id,
             session=str(self.id),
@@ -1426,7 +1425,6 @@ class Session:
             date=time.ctime(),
             text=text,
         )
-
         self.broadcast_exception(exception_data)
 
     def instantiate(self):

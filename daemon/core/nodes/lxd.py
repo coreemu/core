@@ -47,9 +47,9 @@ class LxdClient:
     def create_ns_cmd(self, cmd):
         return f"nsenter -t {self.pid} -m -u -i -p -n {cmd}"
 
-    def check_cmd(self, cmd, wait=True):
+    def check_cmd(self, cmd, wait=True, shell=False):
         args = self.create_cmd(cmd)
-        return utils.cmd(args, wait=wait)
+        return utils.cmd(args, wait=wait, shell=shell)
 
     def copy_file(self, source, destination):
         if destination[0] != "/":

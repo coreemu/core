@@ -43,9 +43,9 @@ class DockerClient:
     def stop_container(self):
         self.run(f"docker rm -f {self.name}")
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, cmd, wait=True, shell=False):
         logging.info("docker cmd output: %s", cmd)
-        return utils.cmd(f"docker exec {self.name} {cmd}")
+        return utils.cmd(f"docker exec {self.name} {cmd}", wait=wait, shell=shell)
 
     def create_ns_cmd(self, cmd):
         return f"nsenter -t {self.pid} -u -i -p -n {cmd}"
@@ -148,10 +148,10 @@ class DockerNode(CoreNode):
             self.client.stop_container()
             self.up = False
 
-    def nsenter_cmd(self, args, wait=True):
+    def nsenter_cmd(self, args, wait=True, shell=False):
         if self.server is None:
             args = self.client.create_ns_cmd(args)
-            return utils.cmd(args, wait=wait)
+            return utils.cmd(args, wait=wait, shell=shell)
         else:
             args = self.client.create_ns_cmd(args)
             return self.server.remote_cmd(args, wait=wait)

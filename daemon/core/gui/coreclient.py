@@ -167,7 +167,7 @@ class CoreClient:
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
         elif event.HasField("exception_event"):
-            self.handle_exception_event(event.exception_event)
+            self.handle_exception_event(event)
         else:
             logging.info("unhandled event: %s", event)
 
@@ -204,7 +204,7 @@ class CoreClient:
 
     def handle_throughputs(self, event):
         if event.session_id != self.session_id:
-            logging.warn(
+            logging.warning(
                 "ignoring throughput event session(%s) current(%s)",
                 event.session_id,
                 self.session_id,

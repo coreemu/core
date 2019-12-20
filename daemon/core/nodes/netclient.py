@@ -126,7 +126,10 @@ class LinuxNetClient:
         :param str device: device to flush
         :return: nothing
         """
-        self.run(f"{IP_BIN} -6 address flush dev {device}")
+        self.run(
+            f"[ -e /sys/class/net/{device} ] && {IP_BIN} -6 address flush dev {device} || true",
+            shell=True,
+        )
 
     def device_mac(self, device, mac):
         """

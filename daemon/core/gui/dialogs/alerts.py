@@ -4,9 +4,7 @@ check engine light
 import tkinter as tk
 from tkinter import ttk
 
-from grpc import RpcError
-
-from core.api.grpc import core_pb2
+from core.api.grpc.core_pb2 import ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
@@ -18,6 +16,7 @@ class AlertsDialog(Dialog):
         self.app = app
         self.tree = None
         self.codetext = None
+        self.alarm_map = {}
         self.draw()
 
     def draw(self):
@@ -48,25 +47,31 @@ class AlertsDialog(Dialog):
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
         for alarm in self.app.statusbar.core_alarms:
-            level = self.get_level(alarm.level)
-            self.tree.insert(
+            exception = alarm.exception_event
+            level_name = ExceptionLevel.Enum.Name(exception.level)
+            insert_id = self.tree.insert(
                 "",
                 tk.END,
-                text=str(alarm.date),
+                text=exception.date,
                 values=(
-                    alarm.date,
-                    level + " (%s)" % alarm.level,
+                    exception.date,
+                    level_name,
                     alarm.session_id,
-                    alarm.node_id,
-                    alarm.source,
+                    exception.node_id,
+                    exception.source,
                 ),
-                tags=(level,),
+                tags=(level_name,),
             )
+            self.alarm_map[insert_id] = alarm
 
-        self.tree.tag_configure("ERROR", background="#ff6666")
-        self.tree.tag_configure("FATAL", background="#d9d9d9")
-        self.tree.tag_configure("WARNING", background="#ffff99")
-        self.tree.tag_configure("NOTICE", background="#85e085")
+        error_name = ExceptionLevel.Enum.Name(ExceptionLevel.ERROR)
+        self.tree.tag_configure(error_name, background="#ff6666")
+        fatal_name = ExceptionLevel.Enum.Name(ExceptionLevel.FATAL)
+        self.tree.tag_configure(fatal_name, background="#d9d9d9")
+        warning_name = ExceptionLevel.Enum.Name(ExceptionLevel.WARNING)
+        self.tree.tag_configure(warning_name, background="#ffff99")
+        notice_name = ExceptionLevel.Enum.Name(ExceptionLevel.NOTICE)
+        self.tree.tag_configure(notice_name, background="#85e085")
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
         yscrollbar.grid(row=0, column=1, sticky="ns")
@@ -105,40 +110,13 @@ class AlertsDialog(Dialog):
         dialog = DaemonLog(self, self.app)
         dialog.show()
 
-    def get_level(self, level):
-        if level == core_pb2.ExceptionLevel.ERROR:
-            return "ERROR"
-        if level == core_pb2.ExceptionLevel.FATAL:
-            return "FATAL"
-        if level == core_pb2.ExceptionLevel.WARNING:
-            return "WARNING"
-        if level == core_pb2.ExceptionLevel.NOTICE:
-            return "NOTICE"
-
     def click_select(self, event):
-        current = self.tree.selection()
-        values = self.tree.item(current)["values"]
-        time = values[0]
-        level = values[1]
-        session_id = values[2]
-        node_id = values[3]
-        source = values[4]
-        text = "DATE: %s\nLEVEL: %s\nNODE: %s (%s)\nSESSION: %s\nSOURCE: %s\n\n" % (
-            time,
-            level,
-            node_id,
-            self.app.core.canvas_nodes[node_id].core_node.name,
-            session_id,
-            source,
-        )
-        try:
-            sid = self.app.core.session_id
-            self.app.core.client.get_node(sid, node_id)
-            text = text + "node created"
-        except RpcError:
-            text = text + "node not created"
+        current = self.tree.selection()[0]
+        alarm = self.alarm_map[current]
+        self.codetext.text.config(state=tk.NORMAL)
         self.codetext.text.delete("1.0", "end")
-        self.codetext.text.insert("1.0", text)
+        self.codetext.text.insert("1.0", alarm.exception_event.text)
+        self.codetext.text.config(state=tk.DISABLED)
 
 
 class DaemonLog(Dialog):

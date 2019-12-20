@@ -145,7 +145,7 @@ def handle_exception_event(event):
     """
     return core_pb2.ExceptionEvent(
         node_id=event.node,
-        level=event.level,
+        level=event.level.value,
         source=event.source,
         date=event.date,
         text=event.text,

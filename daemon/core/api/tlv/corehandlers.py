@@ -299,7 +299,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             [
                 (ExceptionTlvs.NODE, exception_data.node),
                 (ExceptionTlvs.SESSION, exception_data.session),
-                (ExceptionTlvs.LEVEL, exception_data.level),
+                (ExceptionTlvs.LEVEL, exception_data.level.value),
                 (ExceptionTlvs.SOURCE, exception_data.source),
                 (ExceptionTlvs.DATE, exception_data.date),
                 (ExceptionTlvs.TEXT, exception_data.text),
