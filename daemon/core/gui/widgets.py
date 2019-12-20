@@ -19,8 +19,8 @@ INT_TYPES = {
 }
 
 
-def file_button_click(value):
-    file_path = filedialog.askopenfilename(title="Select File")
+def file_button_click(value, parent):
+    file_path = filedialog.askopenfilename(title="Select File", parent=parent)
     if file_path:
         value.set(file_path)
 
@@ -111,7 +111,7 @@ class ConfigFrame(ttk.Notebook):
                         file_frame.columnconfigure(0, weight=1)
                         entry = ttk.Entry(file_frame, textvariable=value)
                         entry.grid(row=0, column=0, sticky="ew", padx=PADX)
-                        func = partial(file_button_click, value)
+                        func = partial(file_button_click, value, self)
                         button = ttk.Button(file_frame, text="...", command=func)
                         button.grid(row=0, column=1)
                     else:
