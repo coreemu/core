@@ -45,7 +45,6 @@ setup(
     ],
     tests_require=[
         "pytest",
-        "mock",
     ],
     data_files=data_files,
     scripts=glob.glob("scripts/*"),

@@ -1,4 +1,3 @@
-import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -96,12 +95,3 @@ class Application(tk.Frame):
 
     def close(self):
         self.master.destroy()
-
-
-if __name__ == "__main__":
-    log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=log_format)
-    Images.load_all()
-    appconfig.check_directory()
-    app = Application()
-    app.mainloop()
