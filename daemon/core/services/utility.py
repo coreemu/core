@@ -8,7 +8,7 @@ from core import constants, utils
 from core.errors import CoreCommandError
 from core.nodes import ipaddress
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
-from core.services.coreservices import CoreService
+from core.services.coreservices import CoreService, ServiceMode
 
 
 class UtilService(CoreService):
@@ -173,6 +173,7 @@ class SshService(UtilService):
     startup = ("sh startsshd.sh",)
     shutdown = ("killall sshd",)
     validate = ()
+    validation_mode = ServiceMode.BLOCKING
 
     @classmethod
     def generate_config(cls, node, filename):

@@ -155,6 +155,7 @@ message StartSessionRequest {
 
 message StartSessionResponse {
     bool result = 1;
+    repeated string exceptions = 2;
 }
 
 message StopSessionRequest {

@@ -6,6 +6,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from tkinter import messagebox
 
 import grpc
 
@@ -476,21 +477,31 @@ class CoreClient:
                 file_configs,
                 asymmetric_links,
             )
-            self.set_metadata()
-            process_time = time.perf_counter() - start
             logging.debug(
                 "start session(%s), result: %s", self.session_id, response.result
             )
-            self.app.statusbar.start_session_callback(process_time)
+            process_time = time.perf_counter() - start
 
-            # display mobility players
-            for node_id, config in self.mobility_configs.items():
-                canvas_node = self.canvas_nodes[node_id]
-                mobility_player = MobilityPlayer(
-                    self.app, self.app, canvas_node, config
-                )
-                mobility_player.show()
-                self.mobility_players[node_id] = mobility_player
+            # stop progress bar and update status
+            self.app.statusbar.progress_bar.stop()
+            message = f"Start ran for {process_time:.3f} seconds"
+            self.app.statusbar.set_status(message)
+
+            if response.result:
+                self.set_metadata()
+                self.app.toolbar.set_runtime()
+
+                # display mobility players
+                for node_id, config in self.mobility_configs.items():
+                    canvas_node = self.canvas_nodes[node_id]
+                    mobility_player = MobilityPlayer(
+                        self.app, self.app, canvas_node, config
+                    )
+                    mobility_player.show()
+                    self.mobility_players[node_id] = mobility_player
+            else:
+                message = "\n".join(response.exceptions)
+                messagebox.showerror("Start Error", message)
         except grpc.RpcError as e:
             show_grpc_error(e)
 

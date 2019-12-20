@@ -635,7 +635,6 @@ class Session:
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
-
         # validate node type, get class, or throw error
         if _cls is None:
             node_class = self.get_node_class(_type)
@@ -1450,17 +1449,19 @@ class Session:
             return
 
         # boot node services and then start mobility
-        self.boot_nodes()
-        self.mobility.startup()
+        exceptions = self.boot_nodes()
+        if not exceptions:
+            self.mobility.startup()
 
-        # notify listeners that instantiation is complete
-        event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
-        self.broadcast_event(event)
+            # notify listeners that instantiation is complete
+            event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
+            self.broadcast_event(event)
 
-        # assume either all nodes have booted already, or there are some
-        # nodes on slave servers that will be booted and those servers will
-        # send a node status response message
-        self.check_runtime()
+            # assume either all nodes have booted already, or there are some
+            # nodes on slave servers that will be booted and those servers will
+            # send a node status response message
+            self.check_runtime()
+        return exceptions
 
     def get_node_count(self):
         """
@@ -1577,6 +1578,9 @@ class Session:
         Invoke the boot() procedure for all nodes and send back node
         messages to the GUI for node messages that had the status
         request flag.
+
+        :return: service boot exceptions
+        :rtype: list[core.services.coreservices.ServiceBootError]
         """
         with self._nodes_lock:
             funcs = []
@@ -1589,9 +1593,9 @@ class Session:
             results, exceptions = utils.threadpool(funcs)
             total = time.monotonic() - start
             logging.debug("boot run time: %s", total)
-            if exceptions:
-                raise CoreError(exceptions)
-        self.update_control_interface_hosts()
+        if not exceptions:
+            self.update_control_interface_hosts()
+        return exceptions
 
     def get_control_net_prefixes(self):
         """

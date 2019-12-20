@@ -124,7 +124,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session.add_hook(hook.state, hook.file, None, hook.data)
 
         # create nodes
-        grpcutils.create_nodes(session, request.nodes)
+        _, exceptions = grpcutils.create_nodes(session, request.nodes)
+        if exceptions:
+            exceptions = [str(x) for x in exceptions]
+            return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # emane configs
         config = session.emane.get_configs()
@@ -156,14 +159,28 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             )
 
         # create links
-        grpcutils.create_links(session, request.links)
+        _, exceptions = grpcutils.create_links(session, request.links)
+        if exceptions:
+            exceptions = [str(x) for x in exceptions]
+            return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # asymmetric links
-        grpcutils.edit_links(session, request.asymmetric_links)
+        _, exceptions = grpcutils.edit_links(session, request.asymmetric_links)
+        if exceptions:
+            exceptions = [str(x) for x in exceptions]
+            return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # set to instantiation and start
         session.set_state(EventTypes.INSTANTIATION_STATE)
-        session.instantiate()
+
+        # boot services
+        boot_exceptions = session.instantiate()
+        if boot_exceptions:
+            exceptions = []
+            for boot_exception in boot_exceptions:
+                for service_exception in boot_exception.args:
+                    exceptions.append(str(service_exception))
+            return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         return core_pb2.StartSessionResponse(result=True)
 

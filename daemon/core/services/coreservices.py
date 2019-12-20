@@ -458,7 +458,7 @@ class CoreServices:
         """
         Start all services on a node.
 
-        :param core.netns.vnode.LxcNode node: node to start services on
+        :param core.nodes.base.CoreNode node: node to start services on
         :return: nothing
         """
         boot_paths = ServiceDependencies(node.services).boot_paths()
@@ -468,7 +468,7 @@ class CoreServices:
             funcs.append((self._start_boot_paths, args, {}))
         result, exceptions = utils.threadpool(funcs)
         if exceptions:
-            raise ServiceBootError(exceptions)
+            raise ServiceBootError(*exceptions)
 
     def _start_boot_paths(self, node, boot_path):
         """
