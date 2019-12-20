@@ -9,19 +9,19 @@ This section will describe how to install CORE from source or from a pre-built p
 
 # Required Hardware
 
-Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous 
+Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
 virtual machines, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 # Operating System
 
-CORE requires a Linux operating system because it uses virtualization provided by the kernel. It does not run on 
-Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The virtualization 
+CORE requires a Linux operating system because it uses virtualization provided by the kernel. It does not run on
+Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The virtualization
 technology that CORE currently uses is Linux network namespaces.
 
-Ubuntu and Fedora/CentOS Linux are the recommended distributions for running CORE. However, these distributions are 
+Ubuntu and Fedora/CentOS Linux are the recommended distributions for running CORE. However, these distributions are
 not strictly required. CORE will likely work on other flavors of Linux as well, assuming dependencies are met.
 
-**NOTE: CORE Services determine what run on each node. You may require other software packages depending on the 
+**NOTE: CORE Services determine what run on each node. You may require other software packages depending on the
 services you wish to use. For example, the HTTP service will require the apache2 package.**
 
 # Installed Files
@@ -64,12 +64,12 @@ sudo python3 -m pip install -r requirements.txt
 
 # Pre-Req Installing OSPF MDR
 
-Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing 
-tables for routing packets from one subnet to another.) CORE builds OSPF routing protocol configurations by 
-default when the blue router node type is used. 
+Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing
+tables for routing packets from one subnet to another.) CORE builds OSPF routing protocol configurations by
+default when the blue router node type is used.
 
-* [OSPF MANET Designated Routers](https://github.com/USNavalResearchLaboratory/ospf-mdr) (MDR) - the Quagga routing 
-suite with a modified version of OSPFv3, optimized for use with mobile wireless networks. The **mdr** node type 
+* [OSPF MANET Designated Routers](https://github.com/USNavalResearchLaboratory/ospf-mdr) (MDR) - the Quagga routing
+suite with a modified version of OSPFv3, optimized for use with mobile wireless networks. The **mdr** node type
 (and the MDR service) requires this variant of Quagga.
 
 ## Ubuntu <= 16.04 and Fedora/CentOS
@@ -87,7 +87,7 @@ Requires building from source, from the latest nightly snapshot.
 
 ```shell
 # packages needed beyond what's normally required to build core on ubuntu
-sudo apt install libtool libreadline-dev autoconf
+sudo apt install libtool libreadline-dev autoconf gawk
 
 git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
 cd ospf-mdr
@@ -99,8 +99,8 @@ make
 sudo make install
 ```
 
-Note that the configuration directory */usr/local/etc/quagga* shown for Quagga above could be */etc/quagga*, 
-if you create a symbolic link from */etc/quagga/Quagga.conf -> /usr/local/etc/quagga/Quagga.conf* on the host. 
+Note that the configuration directory */usr/local/etc/quagga* shown for Quagga above could be */etc/quagga*,
+if you create a symbolic link from */etc/quagga/Quagga.conf -> /usr/local/etc/quagga/Quagga.conf* on the host.
 The *quaggaboot.sh* script in a Linux network namespace will try and do this for you if needed.
 
 If you try to run quagga after installing from source and get an error such as:
@@ -113,8 +113,8 @@ this is usually a sign that you have to run ```sudo ldconfig```` to refresh the 
 
 # Installing from Packages
 
-The easiest way to install CORE is using the pre-built packages. The package managers on Ubuntu or Fedora/CentOS 
-will help in automatically installing most dependencies, except for the python ones described previously. 
+The easiest way to install CORE is using the pre-built packages. The package managers on Ubuntu or Fedora/CentOS
+will help in automatically installing most dependencies, except for the python ones described previously.
 
 You can obtain the CORE packages from [CORE Releases](https://github.com/coreemu/core/releases).
 
@@ -134,13 +134,13 @@ Run the CORE GUI as a normal user:
 core-gui
 ```
 
-After running the *core-gui* command, a GUI should appear with a canvas for drawing topologies. 
+After running the *core-gui* command, a GUI should appear with a canvas for drawing topologies.
 Messages will print out on the console about connecting to the CORE daemon.
 
 ## Fedora/CentOS
 
 **NOTE: tkimg is not required for the core-gui, but if you get an error message about it you can install the package
-on CentOS <= 6, or build from source otherwise** 
+on CentOS <= 6, or build from source otherwise**
 
 ```shell
 yum install ./core_python3_$VERSION_x86_64.rpm
@@ -198,7 +198,7 @@ After running the *core-gui* command, a GUI should appear with a canvas for draw
 
 # Building and Installing from Source
 
-This option is listed here for developers and advanced users who are comfortable patching and building source code. 
+This option is listed here for developers and advanced users who are comfortable patching and building source code.
 Please consider using the binary packages instead for a simplified install experience.
 
 ## Download and Extract Source Code
@@ -210,7 +210,7 @@ You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu
 Python module grpcio-tools is currently needed to generate code from the CORE protobuf file during the build.
 
 ```shell
-python3 -m pip install grpcio-tools 
+python3 -m pip install grpcio-tools
 ```
 
 ## Distro Requirements
@@ -270,4 +270,4 @@ mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build
 ```
 
-This will produce and RPM and Deb package for the currently configured python version.     
+This will produce and RPM and Deb package for the currently configured python version.

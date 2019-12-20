@@ -21,13 +21,57 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 ## Getting started
 
 Overview for setting up the pipenv environment, building core, installing the GUI and netns, then running
-the core-daemon for development.
+the core-daemon for development based on Ubuntu 18.04.
+
+### Install Dependencies
+
+```shell
+sudo apt install  -y automake pkg-config gcc libev-dev bridge-utils ebtables gawk \
+        python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
+```
+
+### Install OSPF MDR
+
+```shell
+cd ~/Documents
+git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
+cd ospf-mdr
+./bootstrap.sh
+./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
+    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+    --localstatedir=/var/run/quagga
+make
+sudo make install
+```
 
 ### Clone CORE Repo
 
 ```shell
+cd ~/Documents
 git clone https://github.com/coreemu/core.git
 cd core
+```
+
+### Build CORE
+
+```shell
+./bootstrap.sh
+./configure
+make -j8
+```
+
+### Install netns and GUI
+
+Install legacy GUI if desired and mandatory netns executables.
+
+```shell
+# install GUI
+cd $REPO/gui
+sudo make install
+
+# install netns scripts
+cd $REPO/netns
+sudo make install
 ```
 
 ### Setup Python Environment
@@ -38,14 +82,11 @@ To leverage the dev environment you need python 3.6+.
 # change to daemon directory
 cd $REPO/daemon
 
-# copy setup.py for installation
-cp setup.py.in setup.py
-
 # install pipenv
-pip3 install pipenv
+sudo pip3 install pipenv
 
 # setup a virtual environment and install all required development dependencies
-python3 -m pipenv install --dev
+pipenv install --dev
 ```
 
 ### Setup pre-commit
@@ -55,29 +96,7 @@ python utilities will be ran to check validity of code, potentially failing and 
 one to review changes being made by tools ro the fix the issue noted. Then add the changes and commit again.
 
 ```shell
-python3 -m pipenv run pre-commit install
-```
-
-### Build CORE
-
-```shell
-./bootstrap.sh
-./configure --prefix=/usr
-make
-```
-
-### Install netns and GUI
-
-Below commands assume your development will be focused on the daemon.
-
-```shell
-# install GUI
-cd $REPO/gui
-sudo make install
-
-# install netns scripts
-cd $REPO/netns
-sudo make install
+pipenv run pre-commit install
 ```
 
 ### Adding EMANE to Pipenv
@@ -99,7 +118,8 @@ sudo apt install libxml2-dev libprotobuf-dev uuid-dev libpcap-dev protobuf-compi
 make -j8
 
 # install emane binding in pipenv
-python3 -m pipenv install $EMANEREPO/src/python
+# NOTE: this will mody pipenv Pipfiles and we do not want that, use git checkout -- Pipfile*, to remove changes
+pipenv install $EMANEREPO/src/python
 ```
 
 ### Running CORE
@@ -107,15 +127,14 @@ python3 -m pipenv install $EMANEREPO/src/python
 This will run the core-daemon server using the configuration files within the repo.
 
 ```shell
-sudo python3 -m pipenv run core
-```
+# runs for daemon
+sudo pipenv run core
 
-### Running CORE Python GUI
+# runs coretk gui
+pipenv run coretk
 
-Must be ran after the daemon above or will fail to connect.
-
-```shell
-python3 -m pipenv run coretk
+# runs mocked unit tests
+pipenv run test-mock
 ```
 
 ## Linux Network Namespace Commands
