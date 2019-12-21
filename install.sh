@@ -21,7 +21,7 @@ function install_ospf_mdr() {
 
 function install_core() {
     ./bootstrap.sh
-    ./configure
+    ./configure $1
     make -j8
     sudo make install
 }
@@ -43,11 +43,11 @@ case ${os} in
     install_core
     ;;
 "CentOS Linux")
-    sudo yum install -y automake pkgconf-pkg-config gcc libev-devel bridge-utils iptables-ebtables gawk \
-        python36 python36-devel python3-pip python3-tk tk ethtool libtool readline-devel autoconf
+    sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel bridge-utils iptables-ebtables gawk \
+        python36 python36-devel python3-pip python3-tkinter tk ethtool libtool readline-devel autoconf
     install_python_depencencies
     install_ospf_mdr
-    install_core
+    install_core --prefix=/usr
     ;;
 *)
     echo "unknown os ${os} cannot install"
