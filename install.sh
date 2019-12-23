@@ -35,8 +35,15 @@ function install_core() {
 }
 
 function install_dev_core() {
+  cd gui
+  sudo make install
+  cd -
+  cd netns
+  sudo make install
+  cd -
   cd daemon
   pipenv install --dev
+  cd -
 }
 
 # detect os/ver for install type
