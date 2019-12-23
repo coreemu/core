@@ -70,7 +70,7 @@ shift $((OPTIND - 1))
 case ${os} in
 "ubuntu")
   echo "Installing CORE for Ubuntu"
-  sudo apt install -y automake pkg-config gcc libev-dev bridge-utils ebtables gawk iproute2 \
+  sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk iproute2 \
     python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
   install_ospf_mdr
   if [[ -z ${dev} ]]; then
@@ -86,7 +86,7 @@ case ${os} in
   fi
   ;;
 "centos")
-  sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel bridge-utils iptables-ebtables iproute \
+  sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
     python36 python36-devel python3-pip python3-tkinter tk ethtool libtool readline-devel autoconf gawk
   install_ospf_mdr
   if [[ -z ${dev} ]]; then

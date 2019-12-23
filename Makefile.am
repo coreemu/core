@@ -60,7 +60,6 @@ fpm -s dir -t rpm -n core \
 	-d "tk" \
 	-d "procps-ng" \
 	-d "bash >= 3.0" \
-	-d "bridge-utils" \
 	-d "ebtables" \
 	-d "iproute" \
 	-d "libev" \
@@ -88,7 +87,6 @@ fpm -s dir -t deb -n core \
 	-d "procps" \
 	-d "libc6 >= 2.14" \
 	-d "bash >= 3.0" \
-	-d "bridge-utils" \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
@@ -128,7 +126,6 @@ $(info creating file $1 from $1.in)
 	-e 's,[@]CORE_DATA_DIR[@],$(CORE_DATA_DIR),g' \
 	-e 's,[@]CORE_CONF_DIR[@],$(CORE_CONF_DIR),g' \
 	-e 's,[@]CORE_GUI_CONF_DIR[@],$(CORE_GUI_CONF_DIR),g' \
-	-e 's,[@]brctl_path[@],$(brctl_path),g' \
 	-e 's,[@]sysctl_path[@],$(sysctl_path),g' \
 	-e 's,[@]ip_path[@],$(ip_path),g' \
 	-e 's,[@]tc_path[@],$(tc_path),g' \

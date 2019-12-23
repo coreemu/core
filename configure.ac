@@ -113,11 +113,6 @@ if test "x$enable_daemon" = "xyes"; then
   AM_PATH_PYTHON(3.6)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
-  AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
-  if test "x$brctl_path" = "xno" ; then
-    AC_MSG_ERROR([Could not locate brctl (from bridge-utils package).])
-  fi
-
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
   if test "x$sysctl_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate sysctl (from procps package).])

@@ -218,26 +218,26 @@ python3 -m pip install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python3-dev python3-setuptools tk libtk-img ethtool
+sudo apt install automake pkg-config gcc libev-dev ebtables python3-dev python3-setuptools tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python3-dev libev-dev python3-setuptools libtk-img ethtool
+sudo apt-get install automake ebtables python3-dev libev-dev python3-setuptools libtk-img ethtool
 ```
 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python3-devel python3-devel libev-devel tk ethtool
+sudo yum -y install automake gcc python36 python36-devel libev-devel tk ethtool
 ```
 
 ## Build and Install
 
 ```shell
 ./bootstrap.sh
-PYTHON=python3 ./configure
+./configure
 make
 sudo make install
 ```
@@ -251,7 +251,7 @@ sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-PYTHON=python3 ./configure
+./configure
 make doc
 ```
 
@@ -264,7 +264,7 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-PYTHON=python3 ./configure
+./configure
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build

@@ -26,7 +26,7 @@ the core-daemon for development based on Ubuntu 18.04.
 ### Install Dependencies
 
 ```shell
-sudo apt install  -y automake pkg-config gcc libev-dev bridge-utils ebtables gawk \
+sudo apt install  -y automake pkg-config gcc libev-dev ebtables gawk \
         python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
 ```
 
@@ -188,7 +188,7 @@ Here are some other Linux commands that are useful for managing the Linux networ
 
 ```shell
 # view the Linux bridging setup
-brctl show
+ip link show type bridge
 # view the netem rules used for applying link effects
 tc qdisc show
 # view the rules that make the wireless LAN work

@@ -15,7 +15,7 @@ CORE can be used via the GUI or [Python_Scripting](scripting.md). Often the GUI 
 The following image shows the various phases of a CORE session:
 ![](static/core-workflow.jpg)
 
-After pressing the start button, CORE will proceed through these phases, staying in the **runtime** phase.  After the session is stopped, CORE will proceed to the **data collection** phase before tearing down the emulated state. 
+After pressing the start button, CORE will proceed through these phases, staying in the **runtime** phase.  After the session is stopped, CORE will proceed to the **data collection** phase before tearing down the emulated state.
 
 CORE can be customized to perform any action at each phase in the workflow above. See the *Hooks...* entry on the **Session Menu** for details about when these session states are reached.
 
@@ -33,7 +33,7 @@ sudo systemctl start core-daemon
 sudo service core-daemon start
 ```
 
-You can also invoke the daemon directly from the command line, which can be useful if you'd like to see the logging output directly.  
+You can also invoke the daemon directly from the command line, which can be useful if you'd like to see the logging output directly.
 ```
 # direct invocation
 sudo core-daemon
@@ -94,7 +94,7 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 | ![alt text](../gui/icons/tiny/rj45.gif) *RJ45* | with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation. |
 | ![alt text](../gui/icons/tiny/tunnel.gif) *Tunnel* | the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels. |
 
-### Anotation Tools 
+### Anotation Tools
 
 | Tool | Functionality |
 |---|---|
@@ -206,7 +206,7 @@ The tools menu lists different utility functions.
 |---|---|
 | *Random* | nodes are randomly placed about the canvas, but are not linked together. This can be used in conjunction with a WLAN node to quickly create a wireless network. |
 | *Grid* | nodes are placed in horizontal rows starting in the upper-left corner, evenly spaced to the right; nodes are not linked to each other. |
-| *Connected Grid* | nodes are placed in an N x M (width and height) rectangular grid, and each node is linked to the node above, below, left and right of itself. | 
+| *Connected Grid* | nodes are placed in an N x M (width and height) rectangular grid, and each node is linked to the node above, below, left and right of itself. |
 | *Chain* | nodes are linked together one after the other in a chain. |
 | *Star* |  one node is placed in the center with N nodes surrounding it in a circular pattern, with each node linked to the center node. |
 | *Cycle* | nodes are arranged in a circular pattern with every node connected to its neighbor to form a closed circular path. |
@@ -464,7 +464,7 @@ to **dummy0**, and link this to a node in your scenario. After starting the
 session, configure an address on the host.
 
 ```shell
-sudo brctl show
+sudo ip link show type bridge
 # determine bridge name from the above command
 # assign an IP address on the same network as the linked node
 sudo ip addr add 10.0.1.2/24 dev b.48304.34658
@@ -500,7 +500,7 @@ The wireless LAN (WLAN) is covered in the next section.
 The wireless LAN node allows you to build wireless networks where moving nodes
 around affects the connectivity between them. Connection between a pair of nodes is stronger
 when the nodes are closer while connection is weaker when the nodes are further away.
-The wireless LAN, or WLAN, node appears as a small cloud. The WLAN offers 
+The wireless LAN, or WLAN, node appears as a small cloud. The WLAN offers
 several levels of wireless emulation fidelity, depending on your modeling needs.
 
 The WLAN tool can be extended with plug-ins for different levels of wireless

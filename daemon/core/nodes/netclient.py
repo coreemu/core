@@ -1,8 +1,9 @@
 """
 Clients for dealing with bridge/interface commands.
 """
+import json
 
-from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
+from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
 
 
 def get_net_client(use_ovs, run):
@@ -231,16 +232,11 @@ class LinuxNetClient:
         :param str name: bridge name
         :return: nothing
         """
-        self.run(f"{BRCTL_BIN} addbr {name}")
-        self.run(f"{BRCTL_BIN} stp {name} off")
-        self.run(f"{BRCTL_BIN} setfd {name} 0")
+        self.run(f"{IP_BIN} link add name {name} type bridge")
+        self.run(f"{IP_BIN} link set {name} type bridge stp_state 0")
+        self.run(f"{IP_BIN} link set {name} type bridge forward_delay 0")
+        self.run(f"{IP_BIN} link set {name} type bridge mcast_snooping 0")
         self.device_up(name)
-
-        # turn off multicast snooping so forwarding occurs w/o IGMP joins
-        snoop_file = "multicast_snooping"
-        snoop = f"/sys/devices/virtual/net/{name}/bridge/{snoop_file}"
-        self.run(f"echo 0 > /tmp/{snoop_file}", shell=True)
-        self.run(f"cp /tmp/{snoop_file} {snoop}")
 
     def delete_bridge(self, name):
         """
@@ -250,7 +246,7 @@ class LinuxNetClient:
         :return: nothing
         """
         self.device_down(name)
-        self.run(f"{BRCTL_BIN} delbr {name}")
+        self.run(f"{IP_BIN} link delete {name} type bridge")
 
     def create_interface(self, bridge_name, interface_name):
         """
@@ -260,7 +256,7 @@ class LinuxNetClient:
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run(f"{BRCTL_BIN} addif {bridge_name} {interface_name}")
+        self.run(f"{IP_BIN} link set dev {interface_name} master {bridge_name}")
         self.device_up(interface_name)
 
     def delete_interface(self, bridge_name, interface_name):
@@ -271,7 +267,7 @@ class LinuxNetClient:
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run(f"{BRCTL_BIN} delif {bridge_name} {interface_name}")
+        self.run(f"{IP_BIN} link set dev {interface_name} nomaster")
 
     def existing_bridges(self, _id):
         """
@@ -279,11 +275,10 @@ class LinuxNetClient:
 
         :param _id: node id to check bridges for
         """
-        output = self.run(f"{BRCTL_BIN} show")
-        lines = output.split("\n")
-        for line in lines[1:]:
-            columns = line.split()
-            name = columns[0]
+        output = self.run(f"{IP_BIN} -j link show type bridge")
+        bridges = json.loads(output)
+        for bridge in bridges:
+            name = bridge["ifname"]
             fields = name.split(".")
             if len(fields) != 3:
                 continue
@@ -298,7 +293,7 @@ class LinuxNetClient:
         :param str name: bridge name
         :return: nothing
         """
-        self.run(f"{BRCTL_BIN} setageing {name} 0")
+        self.run(f"{IP_BIN} link set {name} type bridge ageing_time 0")
 
 
 class OvsNetClient(LinuxNetClient):
