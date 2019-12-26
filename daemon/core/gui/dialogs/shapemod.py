@@ -135,9 +135,8 @@ class ShapeDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def choose_text_color(self):
-        color_picker = ColorPickerDialog(self, self.app, "#000000")
-        color = color_picker.askcolor()
-        self.text_color = color
+        color_picker = ColorPickerDialog(self, self.app, self.text_color)
+        self.text_color = color_picker.askcolor()
 
     def choose_fill_color(self):
         color_picker = ColorPickerDialog(self, self.app, self.fill_color)
