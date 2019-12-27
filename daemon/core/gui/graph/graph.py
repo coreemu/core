@@ -57,6 +57,11 @@ class CanvasGraph(tk.Canvas):
         self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
 
+        # throughput related
+        self.throughput_threshold = 250.0
+        self.throughput_width = 10
+        self.throughput_color = "#FF0000"
+
         # bindings
         self.setup_bindings()
 
