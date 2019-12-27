@@ -9,7 +9,6 @@ from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.enums import GraphMode, ScaleOption
-from core.gui.graph.linkinfo import Throughput
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
@@ -38,7 +37,6 @@ class CanvasGraph(tk.Canvas):
         self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
-        self.throughput_draw = Throughput(self, core)
         self.shape_drawing = False
         self.default_dimensions = (width, height)
         self.current_dimensions = self.default_dimensions
@@ -158,6 +156,21 @@ class CanvasGraph(tk.Canvas):
         valid_bottomright = self.inside_canvas(x2, y2)
         return valid_topleft and valid_bottomright
 
+    def set_throughputs(self, throughputs_event):
+        for interface_throughput in throughputs_event.interface_throughputs:
+            node_id = interface_throughput.node_id
+            interface_id = interface_throughput.interface_id
+            throughput = interface_throughput.throughput
+            interface_to_edge_id = (node_id, interface_id)
+            token = self.core.interface_to_edge.get(interface_to_edge_id)
+            if not token:
+                continue
+            edge = self.edges.get(token)
+            if edge:
+                edge.set_throughput(throughput)
+            else:
+                del self.core.interface_to_edge[interface_to_edge_id]
+
     def draw_grid(self):
         """
         Create grid.
@@ -268,6 +281,20 @@ class CanvasGraph(tk.Canvas):
 
         # raise the nodes so they on top of the links
         self.tag_raise(tags.NODE)
+
+    def stopped_session(self):
+        # clear wireless edges
+        for edge in self.wireless_edges.values():
+            edge.delete()
+            src_node = self.nodes[edge.src]
+            src_node.wireless_edges.remove(edge)
+            dst_node = self.nodes[edge.dst]
+            dst_node.wireless_edges.remove(edge)
+        self.wireless_edges.clear()
+
+        # clear all middle edge labels
+        for edge in self.edges.values():
+            edge.reset()
 
     def canvas_xy(self, event):
         """
@@ -446,9 +473,7 @@ class CanvasGraph(tk.Canvas):
                     if edge in edges:
                         continue
                     edges.add(edge)
-                    self.throughput_draw.delete(edge)
                     self.edges.pop(edge.token, None)
-                    # del self.edges[edge.token]
                     edge.delete()
 
                     # update node connected to edge being deleted

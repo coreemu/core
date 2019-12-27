@@ -9,6 +9,7 @@ NODE_NAME = "nodename"
 NODE = "node"
 WALLPAPER = "wallpaper"
 SELECTION = "selectednodes"
+THROUGHPUT = "throughput"
 ABOVE_WALLPAPER_TAGS = [
     GRIDLINE,
     SHAPE,

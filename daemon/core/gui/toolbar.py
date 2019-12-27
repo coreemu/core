@@ -7,7 +7,6 @@ from tkinter.font import Font
 
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
-from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
@@ -404,7 +403,6 @@ class Toolbar(ttk.Frame):
         self.app.statusbar.progress_bar.start(5)
         thread = threading.Thread(target=self.app.core.stop_session)
         thread.start()
-        self.app.canvas.delete(tags.WIRELESS_EDGE)
         self.design_frame.tkraise()
         self.click_selection()
 

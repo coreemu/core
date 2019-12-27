@@ -128,7 +128,6 @@ class CanvasNode:
                 self.canvas.coords(edge.id, x, y, x2, y2)
             else:
                 self.canvas.coords(edge.id, x1, y1, x, y)
-            self.canvas.throughput_draw.move(edge)
             edge.update_labels()
 
         for edge in self.wireless_edges:

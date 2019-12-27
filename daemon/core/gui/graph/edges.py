@@ -8,6 +8,8 @@ from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
 
 TEXT_DISTANCE = 0.30
+EDGE_WIDTH = 3
+EDGE_COLOR = "#ff0000"
 
 
 class CanvasWirelessEdge:
@@ -29,8 +31,6 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    width = 3
-
     def __init__(self, x1, y1, x2, y2, src, canvas):
         """
         Create an instance of canvas edge object
@@ -47,10 +47,11 @@ class CanvasEdge:
         self.dst_interface = None
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            x1, y1, x2, y2, tags=tags.EDGE, width=self.width, fill="#ff0000"
+            x1, y1, x2, y2, tags=tags.EDGE, width=EDGE_WIDTH, fill=EDGE_COLOR
         )
         self.text_src = None
         self.text_dst = None
+        self.text_middle = None
         self.token = None
         self.font = Font(size=8)
         self.link = None
@@ -76,6 +77,12 @@ class CanvasEdge:
         x2 = x2 - ux
         y2 = y2 - uy
         return x1, y1, x2, y2
+
+    def get_midpoint(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.id)
+        x = (x1 + x2) / 2
+        y = (y1 + y2) / 2
+        return x, y
 
     def draw_labels(self):
         x1, y1, x2, y2 = self.get_coordinates()
@@ -117,6 +124,28 @@ class CanvasEdge:
         x1, y1, x2, y2 = self.get_coordinates()
         self.canvas.coords(self.text_src, x1, y1)
         self.canvas.coords(self.text_dst, x2, y2)
+        if self.text_middle is not None:
+            x, y = self.get_midpoint()
+            self.canvas.coords(self.text_middle, x, y)
+
+    def set_throughput(self, throughput):
+        throughput = 0.001 * throughput
+        value = f"{throughput:.3f} kbps"
+        if self.text_middle is None:
+            x, y = self.get_midpoint()
+            self.text_middle = self.canvas.create_text(
+                x, y, tags=tags.THROUGHPUT, font=self.font, text=value
+            )
+        else:
+            self.canvas.itemconfig(self.text_middle, text=value)
+
+        if throughput > self.canvas.throughput_threshold:
+            color = self.canvas.throughput_color
+            width = self.canvas.throughput_width
+        else:
+            color = EDGE_COLOR
+            width = EDGE_WIDTH
+        self.canvas.itemconfig(self.id, fill=color, width=width)
 
     def complete(self, dst):
         self.dst = dst
@@ -128,14 +157,17 @@ class CanvasEdge:
         self.canvas.tag_raise(self.src)
         self.canvas.tag_raise(self.dst)
 
-    def check_wireless(self):
+    def is_wireless(self):
         src_node = self.canvas.nodes[self.src]
         dst_node = self.canvas.nodes[self.dst]
         src_node_type = src_node.core_node.type
         dst_node_type = dst_node.core_node.type
         is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
         is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
-        if is_src_wireless or is_dst_wireless:
+        return is_src_wireless or is_dst_wireless
+
+    def check_wireless(self):
+        if self.is_wireless():
             self.canvas.itemconfig(self.id, state=tk.HIDDEN)
             self._check_antenna()
 
@@ -160,6 +192,12 @@ class CanvasEdge:
         if self.link:
             self.canvas.delete(self.text_src)
             self.canvas.delete(self.text_dst)
+        self.canvas.delete(self.text_middle)
+
+    def reset(self):
+        self.canvas.delete(self.text_middle)
+        self.text_middle = None
+        self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
 
     def create_context(self, event):
         logging.debug("create link context")

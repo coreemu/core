@@ -212,9 +212,7 @@ class CoreClient:
             )
             return
         logging.info("handling throughputs event: %s", event)
-        self.app.canvas.throughput_draw.process_grpc_throughput_event(
-            event.interface_throughputs
-        )
+        self.app.canvas.set_throughputs(event)
 
     def handle_exception_event(self, event):
         logging.info("exception event: %s", event)
@@ -511,6 +509,7 @@ class CoreClient:
         start = time.perf_counter()
         try:
             response = self.client.stop_session(session_id)
+            self.app.canvas.stopped_session()
             logging.debug(
                 "stopped session(%s), result: %s", session_id, response.result
             )
