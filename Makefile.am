@@ -65,6 +65,7 @@ fpm -s dir -t rpm -n core \
 	-d "libev" \
 	-d "net-tools" \
 	-d "python3 >= 3.6" \
+	-d "python3-tkinter" \
 	-C $(DESTDIR)
 endef
 
@@ -91,6 +92,7 @@ fpm -s dir -t deb -n core \
 	-d "iproute2" \
 	-d "libev4" \
 	-d "python3 >= 3.6" \
+	-d "python3-tk" \
 	-C $(DESTDIR)
 endef
 
@@ -117,8 +119,6 @@ define change-files =
 $(info creating file $1 from $1.in)
 @$(SED) -e 's,[@]sbindir[@],$(sbindir),g' \
 	-e 's,[@]bindir[@],$(bindir),g' \
-	-e 's,[@]pythondir[@],$(pythondir),g' \
-	-e 's,[@]PYTHON[@],$(PYTHON),g' \
 	-e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
 	-e 's,[@]PACKAGE_DATE[@],$(PACKAGE_DATE),g' \
 	-e 's,[@]CORE_LIB_DIR[@],$(CORE_LIB_DIR),g' \
@@ -126,14 +126,6 @@ $(info creating file $1 from $1.in)
 	-e 's,[@]CORE_DATA_DIR[@],$(CORE_DATA_DIR),g' \
 	-e 's,[@]CORE_CONF_DIR[@],$(CORE_CONF_DIR),g' \
 	-e 's,[@]CORE_GUI_CONF_DIR[@],$(CORE_GUI_CONF_DIR),g' \
-	-e 's,[@]sysctl_path[@],$(sysctl_path),g' \
-	-e 's,[@]ip_path[@],$(ip_path),g' \
-	-e 's,[@]tc_path[@],$(tc_path),g' \
-	-e 's,[@]ebtables_path[@],$(ebtables_path),g' \
-	-e 's,[@]mount_path[@],$(mount_path),g' \
-	-e 's,[@]umount_path[@],$(umount_path),g' \
-	-e 's,[@]ovs_vs_path[@],$(ovs_vs_path),g' \
-	-e 's,[@]ovs_of_path[@],$(ovs_of_path),g' \
 	< $1.in > $1
 endef
 

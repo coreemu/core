@@ -217,7 +217,7 @@ sudo pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc iproute2 libev-dev ebtables python3.6 python3.6-dev python3-pip tk libtk-img ethtool
+sudo apt install automake pkg-config gcc iproute2 libev-dev ebtables python3.6 python3.6-dev python3-pip tk libtk-img ethtool python3-tk
 ```
 
 ### Ubuntu 16.04 Requirements
