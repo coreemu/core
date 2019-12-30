@@ -31,6 +31,7 @@ CORE files are installed to the following directories, when the installation pre
 Install Path | Description
 -------------|------------
 /usr/bin/core-gui|GUI startup command
+/usr/bin/coretk-gui|BETA Python GUI
 /usr/bin/core-daemon|Daemon startup command
 /usr/bin/{core-cleanup, coresendmsg, core-manage}|Misc. helper commands/scripts
 /usr/lib/core|GUI files
@@ -48,7 +49,7 @@ You may already have these installed, and can ignore this step if so, but if
  needed you can run the following to install python and pip.
 
 ```shell
-sudo apt install python3
+sudo apt install python3.6
 sudo apt install python3-pip
 ```
 
@@ -59,7 +60,7 @@ To account for this it would be recommended to install the python dependencies u
 the latest [CORE Release](https://github.com/coreemu/core/releases).
 
 ```shell
-sudo python3 -m pip install -r requirements.txt
+sudo pip3 install -r requirements.txt
 ```
 
 # Pre-Req Installing OSPF MDR
@@ -123,9 +124,7 @@ You can obtain the CORE packages from [CORE Releases](https://github.com/coreemu
 Ubuntu package defaults to using systemd for running as a service.
 
 ```shell
-# $PYTHON and $VERSION represent the python and CORE
-# versions the package was built for
-sudo apt install ./core_$PYTHON_$VERSION_amd64.deb
+sudo apt install ./core_$VERSION_amd64.deb
 ```
 
 Run the CORE GUI as a normal user:
@@ -143,7 +142,7 @@ Messages will print out on the console about connecting to the CORE daemon.
 on CentOS <= 6, or build from source otherwise**
 
 ```shell
-yum install ./core_python3_$VERSION_x86_64.rpm
+yum install ./core_$VERSION_x86_64.rpm
 ```
 
 Disabling SELINUX:
@@ -210,7 +209,7 @@ You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu
 Python module grpcio-tools is currently needed to generate code from the CORE protobuf file during the build.
 
 ```shell
-python3 -m pip install grpcio-tools
+sudo pip3 install grpcio-tools
 ```
 
 ## Distro Requirements
@@ -218,7 +217,7 @@ python3 -m pip install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev ebtables python3-dev python3-setuptools tk libtk-img ethtool
+sudo apt install automake pkg-config gcc iproute2 libev-dev ebtables python3.6 python3.6-dev python3-pip tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
@@ -230,7 +229,7 @@ sudo apt-get install automake ebtables python3-dev libev-dev python3-setuptools 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python36 python36-devel libev-devel tk ethtool
+sudo yum -y install automake gcc python36 python36-devel libev-devel tk ethtool iptables-ebtables iproute python3-pip python3-tkinter
 ```
 
 ## Build and Install

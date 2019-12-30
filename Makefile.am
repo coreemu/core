@@ -51,7 +51,7 @@ fpm -s dir -t rpm -n core \
 	--description "Common Open Research Emulator" \
 	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_$(PYTHON)_VERSION_ARCH.rpm \
+	-p core_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
 	--rpm-init scripts/core-daemon \
 	--config-files "/etc/core" \
@@ -75,7 +75,7 @@ fpm -s dir -t deb -n core \
 	--description "Common Open Research Emulator" \
 	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_$(PYTHON)_VERSION_ARCH.deb \
+	-p core_VERSION_ARCH.deb \
 	-v $(PACKAGE_VERSION) \
 	--deb-systemd scripts/core-daemon.service \
 	--deb-no-default-config-files \
