@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.widgets import CodeText
@@ -42,3 +43,8 @@ class AboutDialog(Dialog):
         codetext.text.insert("1.0", LICENSE)
         codetext.text.config(state=tk.DISABLED)
         codetext.grid(sticky="nsew")
+
+        label = ttk.Label(
+            self.top, text="Icons from https://icons8.com", anchor=tk.CENTER
+        )
+        label.grid(sticky="ew")
