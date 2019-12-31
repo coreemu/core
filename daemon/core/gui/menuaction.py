@@ -3,12 +3,8 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
-import threading
-import time
 import webbrowser
 from tkinter import filedialog, messagebox
-
-import grpc
 
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
@@ -21,6 +17,7 @@ from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
+from core.gui.task import BackgroundTask
 
 
 class MenuAction:
@@ -35,13 +32,10 @@ class MenuAction:
 
     def cleanup_old_session(self, quitapp=False):
         logging.info("cleaning up old session")
-        start = time.perf_counter()
         self.app.core.stop_session()
         self.app.core.delete_session()
-        process_time = time.perf_counter() - start
-        self.app.statusbar.stop_session_callback(process_time)
-        if quitapp:
-            self.app.quit()
+        # if quitapp:
+        #     self.app.quit()
 
     def prompt_save_running_session(self, quitapp=False):
         """
@@ -49,26 +43,18 @@ class MenuAction:
 
         :return: nothing
         """
-        try:
-            if not self.app.core.is_runtime():
-                self.app.core.delete_session()
-                if quitapp:
-                    self.app.quit()
-            else:
-                result = messagebox.askyesnocancel("Exit", "Stop the running session?")
-                if result is True:
-                    self.app.statusbar.progress_bar.start(5)
-                    thread = threading.Thread(
-                        target=self.cleanup_old_session, args=([quitapp])
-                    )
-                    thread.daemon = True
-                    thread.start()
-                elif result is False and quitapp:
-                    self.app.quit()
-        except grpc.RpcError:
-            logging.exception("error deleting session")
+        result = True
+        if self.app.core.is_runtime():
+            result = messagebox.askyesnocancel("Exit", "Stop the running session?")
+
+        if result:
+            callback = None
             if quitapp:
-                self.app.quit()
+                callback = self.app.quit
+            task = BackgroundTask(self.app, self.cleanup_old_session, callback)
+            task.start()
+        elif quitapp:
+            self.app.quit()
 
     def on_quit(self, event=None):
         """
@@ -100,8 +86,8 @@ class MenuAction:
             logging.info("opening xml: %s", file_path)
             self.prompt_save_running_session()
             self.app.statusbar.progress_bar.start(5)
-            thread = threading.Thread(target=self.app.core.open_xml, args=([file_path]))
-            thread.start()
+            task = BackgroundTask(self.app, self.app.core.open_xml, args=(file_path,))
+            task.start()
 
     def gui_preferences(self):
         dialog = PreferencesDialog(self.app, self.app)

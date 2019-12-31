@@ -1,5 +1,4 @@
 import logging
-import threading
 import tkinter as tk
 from tkinter import ttk
 
@@ -9,6 +8,7 @@ from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
+from core.gui.task import BackgroundTask
 from core.gui.themes import PADX, PADY
 
 
@@ -164,10 +164,8 @@ class SessionsDialog(Dialog):
 
     def join_session(self, session_id):
         self.app.statusbar.progress_bar.start(5)
-        thread = threading.Thread(
-            target=self.app.core.join_session, args=([session_id])
-        )
-        thread.start()
+        task = BackgroundTask(self.app, self.app.core.join_session, args=(session_id,))
+        task.start()
         self.destroy()
 
     def on_selected(self, event):

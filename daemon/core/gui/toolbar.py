@@ -1,8 +1,8 @@
 import logging
-import threading
+import time
 import tkinter as tk
 from functools import partial
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from tkinter.font import Font
 
 from core.gui.dialogs.customnodes import CustomNodesDialog
@@ -11,6 +11,7 @@ from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import NodeUtils
+from core.gui.task import BackgroundTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
 
@@ -36,6 +37,7 @@ class Toolbar(ttk.Frame):
         super().__init__(master, **kwargs)
         self.app = app
         self.master = app.master
+        self.time = None
 
         # picker data
         self.picker_font = Font(size=8)
@@ -237,12 +239,31 @@ class Toolbar(ttk.Frame):
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
-        thread = threading.Thread(target=self.app.core.start_session)
-        thread.start()
+        self.time = time.perf_counter()
+        task = BackgroundTask(self, self.app.core.start_session, self.start_callback)
+        task.start()
+
+    def start_callback(self, response):
+        self.app.statusbar.progress_bar.stop()
+        total = time.perf_counter() - self.time
+        message = f"Start ran for {total:.3f} seconds"
+        self.app.statusbar.set_status(message)
+        self.time = None
+        if response.result:
+            self.set_runtime()
+            self.app.core.set_metadata()
+            self.app.core.show_mobility_players()
+        else:
+            message = "\n".join(response.exceptions)
+            messagebox.showerror("Start Error", message)
 
     def set_runtime(self):
         self.runtime_frame.tkraise()
         self.click_runtime_selection()
+
+    def set_design(self):
+        self.design_frame.tkraise()
+        self.click_selection()
 
     def click_link(self):
         logging.debug("Click LINK button")
@@ -401,10 +422,19 @@ class Toolbar(ttk.Frame):
         """
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
-        thread = threading.Thread(target=self.app.core.stop_session)
-        thread.start()
-        self.design_frame.tkraise()
-        self.click_selection()
+        self.time = time.perf_counter()
+        task = BackgroundTask(self, self.app.core.stop_session, self.stop_callback)
+        task.start()
+
+    def stop_callback(self, response):
+        self.app.statusbar.progress_bar.stop()
+        self.set_design()
+        total = time.perf_counter() - self.time
+        message = f"Stopped in {total:.3f} seconds"
+        self.app.statusbar.set_status(message)
+        self.app.canvas.stopped_session()
+        if not response.result:
+            messagebox.showerror("Stop Error", "Errors stopping session")
 
     def update_annotation(self, image, shape_type):
         logging.info("clicked annotation: ")
@@ -414,10 +444,10 @@ class Toolbar(ttk.Frame):
         self.app.canvas.mode = GraphMode.ANNOTATION
         self.app.canvas.annotation_type = shape_type
         if is_marker(shape_type):
-            if not self.marker_tool:
-                self.marker_tool = MarkerDialog(self.master, self.app)
-                self.marker_tool.show()
-                self.marker_tool.position()
+            if self.marker_tool:
+                self.marker_tool.destroy()
+            self.marker_tool = MarkerDialog(self.master, self.app)
+            self.marker_tool.show()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
@@ -430,10 +460,10 @@ class Toolbar(ttk.Frame):
         self.runtime_select(self.runtime_marker_button)
         self.app.canvas.mode = GraphMode.ANNOTATION
         self.app.canvas.annotation_type = ShapeType.MARKER
-        if not self.marker_tool:
-            self.marker_tool = MarkerDialog(self.master, self.app)
-            self.marker_tool.show()
-            self.marker_tool.position()
+        if self.marker_tool:
+            self.marker_tool.destroy()
+        self.marker_tool = MarkerDialog(self.master, self.app)
+        self.marker_tool.show()
 
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")

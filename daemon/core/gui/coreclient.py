@@ -4,9 +4,7 @@ Incorporate grpc into python tkinter GUI
 import json
 import logging
 import os
-import time
 from pathlib import Path
-from tkinter import messagebox
 
 import grpc
 
@@ -294,16 +292,10 @@ class CoreClient:
             response = self.client.get_session_metadata(self.session_id)
             self.parse_metadata(response.config)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
         # update ui to represent current state
-        if self.is_runtime():
-            self.app.toolbar.runtime_frame.tkraise()
-            self.app.toolbar.click_runtime_selection()
-        else:
-            self.app.toolbar.design_frame.tkraise()
-            self.app.toolbar.click_selection()
-        self.app.statusbar.progress_bar.stop()
+        self.app.after(0, self.app.joined_session_update)
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
@@ -390,7 +382,7 @@ class CoreClient:
             )
             self.join_session(response.session_id, query_location=False)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def delete_session(self, session_id=None):
         if session_id is None:
@@ -399,7 +391,7 @@ class CoreClient:
             response = self.client.delete_session(session_id)
             logging.info("deleted session result: %s", response)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def set_up(self):
         """
@@ -431,7 +423,7 @@ class CoreClient:
                 x.node_type: set(x.services) for x in response.defaults
             }
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
             self.app.close()
 
     def edit_node(self, core_node):
@@ -440,7 +432,7 @@ class CoreClient:
                 self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]
@@ -459,7 +451,7 @@ class CoreClient:
         else:
             emane_config = None
 
-        start = time.perf_counter()
+        response = core_pb2.StartSessionResponse(result=False)
         try:
             response = self.client.start_session(
                 self.session_id,
@@ -478,45 +470,30 @@ class CoreClient:
             logging.debug(
                 "start session(%s), result: %s", self.session_id, response.result
             )
-            process_time = time.perf_counter() - start
-
-            # stop progress bar and update status
-            self.app.statusbar.progress_bar.stop()
-            message = f"Start ran for {process_time:.3f} seconds"
-            self.app.statusbar.set_status(message)
 
             if response.result:
                 self.set_metadata()
-                self.app.toolbar.set_runtime()
-
-                # display mobility players
-                for node_id, config in self.mobility_configs.items():
-                    canvas_node = self.canvas_nodes[node_id]
-                    mobility_player = MobilityPlayer(
-                        self.app, self.app, canvas_node, config
-                    )
-                    mobility_player.show()
-                    self.mobility_players[node_id] = mobility_player
-            else:
-                message = "\n".join(response.exceptions)
-                messagebox.showerror("Start Error", message)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
+        return response
 
     def stop_session(self, session_id=None):
         if not session_id:
             session_id = self.session_id
-        start = time.perf_counter()
+        response = core_pb2.StopSessionResponse(result=False)
         try:
             response = self.client.stop_session(session_id)
-            self.app.canvas.stopped_session()
-            logging.debug(
-                "stopped session(%s), result: %s", session_id, response.result
-            )
-            process_time = time.perf_counter() - start
-            self.app.statusbar.stop_session_callback(process_time)
+            logging.debug("stopped session(%s), result: %s", session_id, response)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
+        return response
+
+    def show_mobility_players(self):
+        for node_id, config in self.mobility_configs.items():
+            canvas_node = self.canvas_nodes[node_id]
+            mobility_player = MobilityPlayer(self.app, self.app, canvas_node, config)
+            mobility_player.show()
+            self.mobility_players[node_id] = mobility_player
 
     def set_metadata(self):
         # create canvas data
@@ -549,7 +526,7 @@ class CoreClient:
             logging.info("get terminal %s", response.terminal)
             os.system(f"{terminal} {response.terminal} &")
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def save_xml(self, file_path):
         """
@@ -567,7 +544,7 @@ class CoreClient:
             response = self.client.save_xml(self.session_id, file_path)
             logging.info("saved xml(%s): %s", file_path, response)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def open_xml(self, file_path):
         """
@@ -581,7 +558,7 @@ class CoreClient:
             logging.debug("open xml: %s", response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.app.after(0, show_grpc_error, e)
 
     def get_node_service(self, node_id, service_name):
         response = self.client.get_node_service(self.session_id, node_id, service_name)

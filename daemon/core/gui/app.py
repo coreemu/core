@@ -93,5 +93,12 @@ class Application(tk.Frame):
     def save_config(self):
         appconfig.save(self.guiconfig)
 
+    def joined_session_update(self):
+        self.statusbar.progress_bar.stop()
+        if self.core.is_runtime():
+            self.toolbar.set_runtime()
+        else:
+            self.toolbar.set_design()
+
     def close(self):
         self.master.destroy()

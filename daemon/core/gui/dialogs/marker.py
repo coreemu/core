@@ -2,7 +2,6 @@
 marker dialog
 """
 
-import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -20,7 +19,6 @@ class MarkerDialog(Dialog):
         self.radius = MARKER_THICKNESS[0]
         self.marker_thickness = tk.IntVar(value=MARKER_THICKNESS[0])
         self.draw()
-        self.top.bind("<Destroy>", self.close_marker)
 
     def draw(self):
         button = ttk.Button(self.top, text="clear", command=self.clear_marker)
@@ -64,16 +62,8 @@ class MarkerDialog(Dialog):
     def change_thickness(self, event):
         self.radius = self.marker_thickness.get()
 
-    def close_marker(self, event):
-        logging.debug("destroy marker dialog")
-        self.app.toolbar.marker_tool = None
-
-    def position(self):
-        print(self.winfo_width(), self.winfo_height())
-        # print(self.app.master.winfo_x(), self.app.master.winfo_y())
-        print(self.app.canvas.winfo_rootx())
+    def show(self):
+        super().show()
         self.geometry(
-            "+{}+{}".format(
-                self.app.canvas.winfo_rootx(), self.app.canvas.master.winfo_rooty()
-            )
+            f"+{self.app.canvas.winfo_rootx()}+{self.app.canvas.master.winfo_rooty()}"
         )
