@@ -5,7 +5,6 @@ import signal
 import sys
 
 import core.services
-from core.emulator.emudata import IdGen
 from core.emulator.session import Session
 from core.services.coreservices import ServiceManager
 
@@ -29,7 +28,7 @@ signal.signal(signal.SIGUSR1, signal_handler)
 signal.signal(signal.SIGUSR2, signal_handler)
 
 
-class CoreEmu(object):
+class CoreEmu:
     """
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
@@ -49,7 +48,6 @@ class CoreEmu(object):
         self.config = config
 
         # session management
-        self.session_id_gen = IdGen(_id=0)
         self.sessions = {}
 
         # load services
@@ -85,27 +83,21 @@ class CoreEmu(object):
             session = sessions[_id]
             session.shutdown()
 
-    def create_session(self, _id=None, master=True, _cls=Session):
+    def create_session(self, _id=None, _cls=Session):
         """
-        Create a new CORE session, set to master if running standalone.
+        Create a new CORE session.
 
         :param int _id: session id for new session
-        :param bool master: sets session to master
         :param class _cls: Session class to use
         :return: created session
         :rtype: EmuSession
         """
         if not _id:
-            while True:
-                _id = self.session_id_gen.next()
-                if _id not in self.sessions:
-                    break
-
+            _id = 1
+            while _id in self.sessions:
+                _id += 1
         session = _cls(_id, config=self.config)
         logging.info("created session: %s", _id)
-        if master:
-            session.master = True
-
         self.sessions[_id] = session
         return session
 

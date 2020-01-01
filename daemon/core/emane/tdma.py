@@ -32,7 +32,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             emane_prefix,
             "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
         )
-        super(EmaneTdmaModel, cls).load(emane_prefix)
+        super().load(emane_prefix)
         cls.mac_config.insert(
             0,
             Configuration(
@@ -62,4 +62,5 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         logging.info(
             "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
         )
-        utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])
+        args = f"emaneevent-tdmaschedule -i {event_device} {schedule}"
+        utils.cmd(args)

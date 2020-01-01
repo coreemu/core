@@ -6,11 +6,10 @@ import logging
 import random
 import socket
 import struct
-from builtins import bytes, int, range
 from socket import AF_INET, AF_INET6
 
 
-class MacAddress(object):
+class MacAddress:
     """
     Provides mac address utilities for use within core.
     """
@@ -19,7 +18,7 @@ class MacAddress(object):
         """
         Creates a MacAddress instance.
 
-        :param str address: mac address
+        :param bytes address: mac address
         """
         self.addr = address
 
@@ -30,7 +29,7 @@ class MacAddress(object):
         :return: string representation
         :rtype: str
         """
-        return ":".join("%02x" % x for x in bytearray(self.addr))
+        return ":".join(f"{x:02x}" for x in bytearray(self.addr))
 
     def to_link_local(self):
         """
@@ -42,7 +41,7 @@ class MacAddress(object):
         """
         if not self.addr:
             return IpAddress.from_string("::")
-        tmp = struct.unpack("!Q", "\x00\x00" + self.addr)[0]
+        tmp = struct.unpack("!Q", b"\x00\x00" + self.addr)[0]
         nic = int(tmp) & 0x000000FFFFFF
         oui = int(tmp) & 0xFFFFFF000000
         # toggle U/L bit
@@ -78,7 +77,7 @@ class MacAddress(object):
         return cls(tmpbytes[2:])
 
 
-class IpAddress(object):
+class IpAddress:
     """
     Provides ip utilities and functionality for use within core.
     """
@@ -88,7 +87,7 @@ class IpAddress(object):
         Create a IpAddress instance.
 
         :param int af: address family
-        :param str address: ip address
+        :param bytes address: ip address
         :return:
         """
         # check if (af, addr) is valid
@@ -203,7 +202,7 @@ class IpAddress(object):
         return struct.unpack("!I", value)[0]
 
 
-class IpPrefix(object):
+class IpPrefix:
     """
     Provides ip address generation and prefix utilities.
     """
@@ -218,14 +217,14 @@ class IpPrefix(object):
         # prefixstr format: address/prefixlen
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
-            raise ValueError("invalid prefix: %s" % prefixstr)
+            raise ValueError(f"invalid prefix: {prefixstr}")
         self.af = af
         if self.af == AF_INET:
             self.addrlen = 32
         elif self.af == AF_INET6:
             self.addrlen = 128
         else:
-            raise ValueError("invalid address family: %s" % self.af)
+            raise ValueError(f"invalid address family: {self.af}")
         if len(tmp) == 2:
             self.prefixlen = int(tmp[1])
         else:
@@ -248,7 +247,8 @@ class IpPrefix(object):
         :return: string representation
         :rtype: str
         """
-        return "%s/%s" % (socket.inet_ntop(self.af, self.prefix), self.prefixlen)
+        address = socket.inet_ntop(self.af, self.prefix)
+        return f"{address}/{self.prefixlen}"
 
     def __eq__(self, other):
         """
@@ -284,7 +284,7 @@ class IpPrefix(object):
             return NotImplemented
 
         a = IpAddress(self.af, self.prefix) + (tmp << (self.addrlen - self.prefixlen))
-        prefixstr = "%s/%s" % (a, self.prefixlen)
+        prefixstr = f"{a}/{self.prefixlen}"
         if self.__class__ == IpPrefix:
             return self.__class__(self.af, prefixstr)
         else:
@@ -325,7 +325,7 @@ class IpPrefix(object):
                 self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1
             )
         ):
-            raise ValueError("invalid hostid for prefix %s: %s" % (self, hostid))
+            raise ValueError(f"invalid hostid for prefix {self}: {hostid}")
 
         addr = bytes(b"")
         prefix_endpoint = -1
@@ -375,7 +375,7 @@ class IpPrefix(object):
         :return: prefix string
         :rtype: str
         """
-        return "%s" % socket.inet_ntop(self.af, self.prefix)
+        return socket.inet_ntop(self.af, self.prefix)
 
     def netmask_str(self):
         """
@@ -401,7 +401,7 @@ class Ipv4Prefix(IpPrefix):
 
         :param str prefixstr: ip prefix
         """
-        IpPrefix.__init__(self, AF_INET, prefixstr)
+        super().__init__(AF_INET, prefixstr)
 
 
 class Ipv6Prefix(IpPrefix):
@@ -415,7 +415,7 @@ class Ipv6Prefix(IpPrefix):
 
         :param str prefixstr: ip prefix
         """
-        IpPrefix.__init__(self, AF_INET6, prefixstr)
+        super().__init__(AF_INET6, prefixstr)
 
 
 def is_ip_address(af, addrstr):

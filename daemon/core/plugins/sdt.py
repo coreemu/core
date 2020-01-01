@@ -4,10 +4,10 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from core import constants
+from core.constants import CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     EventTypes,
@@ -24,7 +24,7 @@ from core.nodes.network import WlanNode
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this
-class Bunch(object):
+class Bunch:
     """
     Helper class for recording a collection of attributes.
     """
@@ -38,7 +38,7 @@ class Bunch(object):
         self.__dict__.update(kwargs)
 
 
-class Sdt(object):
+class Sdt:
     """
     Helper class for exporting session objects to NRL"s SDT3D.
     The connect() method initializes the display, and can be invoked
@@ -76,7 +76,6 @@ class Sdt(object):
         # node information for remote nodes not in session._objs
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
-        session.broker.handlers.add(self.handle_distributed)
 
         # add handler for node updates
         self.session.node_handlers.append(self.handle_node_update)
@@ -163,7 +162,7 @@ class Sdt(object):
             return False
 
         self.seturl()
-        logging.info("connecting to SDT at %s://%s" % (self.protocol, self.address))
+        logging.info("connecting to SDT at %s://%s", self.protocol, self.address)
         if self.sock is None:
             try:
                 if self.protocol.lower() == "udp":
@@ -194,14 +193,14 @@ class Sdt(object):
         :return: initialize command status
         :rtype: bool
         """
-        if not self.cmd('path "%s/icons/normal"' % constants.CORE_DATA_DIR):
+        if not self.cmd(f'path "{CORE_DATA_DIR}/icons/normal"'):
             return False
         # send node type to icon mappings
         for node_type, icon in self.DEFAULT_SPRITES:
-            if not self.cmd("sprite %s image %s" % (node_type, icon)):
+            if not self.cmd(f"sprite {node_type} image {icon}"):
                 return False
         lat, long = self.session.location.refgeo[:2]
-        return self.cmd("flyto %.6f,%.6f,%d" % (long, lat, self.DEFAULT_ALT))
+        return self.cmd(f"flyto {long:.6f},{lat:.6f},{self.DEFAULT_ALT}")
 
     def disconnect(self):
         """
@@ -242,8 +241,8 @@ class Sdt(object):
         if self.sock is None:
             return False
         try:
-            logging.info("sdt: %s" % cmdstr)
-            self.sock.sendall("%s\n" % cmdstr)
+            logging.info("sdt: %s", cmdstr)
+            self.sock.sendall(f"{cmdstr}\n")
             return True
         except IOError:
             logging.exception("SDT connection error")
@@ -268,23 +267,21 @@ class Sdt(object):
         if not self.connect():
             return
         if flags & MessageFlags.DELETE.value:
-            self.cmd("delete node,%d" % nodenum)
+            self.cmd(f"delete node,{nodenum}")
             return
         if x is None or y is None:
             return
         lat, lon, alt = self.session.location.getgeo(x, y, z)
-        pos = "pos %.6f,%.6f,%.6f" % (lon, lat, alt)
+        pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
         if flags & MessageFlags.ADD.value:
             if icon is not None:
                 node_type = name
                 icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
                 icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
-                self.cmd("sprite %s image %s" % (type, icon))
-            self.cmd(
-                'node %d type %s label on,"%s" %s' % (nodenum, node_type, name, pos)
-            )
+                self.cmd(f"sprite {node_type} image {icon}")
+            self.cmd(f'node {nodenum} type {node_type} label on,"{name}" {pos}')
         else:
-            self.cmd("node %d %s" % (nodenum, pos))
+            self.cmd(f"node {nodenum} {pos}")
 
     def updatenodegeo(self, nodenum, lat, long, alt):
         """
@@ -300,8 +297,8 @@ class Sdt(object):
         # TODO: received Node Message with lat/long/alt.
         if not self.connect():
             return
-        pos = "pos %.6f,%.6f,%.6f" % (long, lat, alt)
-        self.cmd("node %d %s" % (nodenum, pos))
+        pos = f"pos {long:.6f},{lat:.6f},{alt:.6f}"
+        self.cmd(f"node {nodenum} {pos}")
 
     def updatelink(self, node1num, node2num, flags, wireless=False):
         """
@@ -318,14 +315,13 @@ class Sdt(object):
         if not self.connect():
             return
         if flags & MessageFlags.DELETE.value:
-            self.cmd("delete link,%s,%s" % (node1num, node2num))
+            self.cmd(f"delete link,{node1num},{node2num}")
         elif flags & MessageFlags.ADD.value:
-            attr = ""
             if wireless:
                 attr = " line green,2"
             else:
                 attr = " line red,2"
-            self.cmd("link %s,%s%s" % (node1num, node2num, attr))
+            self.cmd(f"link {node1num},{node2num}{attr}")
 
     def sendobjs(self):
         """

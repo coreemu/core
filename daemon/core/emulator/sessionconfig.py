@@ -61,7 +61,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     config_type = RegisterTlvs.UTILITY.value
 
     def __init__(self):
-        super(SessionConfig, self).__init__()
+        super().__init__()
         self.set_configs(self.default_values())
 
     def get_config(
@@ -71,9 +71,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         config_type=ConfigurableManager._default_type,
         default=None,
     ):
-        value = super(SessionConfig, self).get_config(
-            _id, node_id, config_type, default
-        )
+        value = super().get_config(_id, node_id, config_type, default)
         if value == "":
             value = default
         return value
@@ -89,14 +87,3 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         if value is not None:
             value = int(value)
         return value
-
-
-class SessionMetaData(ConfigurableManager):
-    """
-    Metadata is simply stored in a configs[] dict. Key=value pairs are
-    passed in from configure messages destined to the "metadata" object.
-    The data is not otherwise interpreted or processed.
-    """
-
-    name = "metadata"
-    config_type = RegisterTlvs.UTILITY.value

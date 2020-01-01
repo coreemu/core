@@ -5,8 +5,7 @@ event.py: event loop implementation using a heap queue and threads.
 import heapq
 import threading
 import time
-
-from past.builtins import cmp
+from functools import total_ordering
 
 
 class Timer(threading.Thread):
@@ -24,7 +23,7 @@ class Timer(threading.Thread):
         :param args: function arguments
         :param kwargs: function keyword arguments
         """
-        super(Timer, self).__init__()
+        super().__init__()
         self.interval = interval
         self.function = function
 
@@ -70,7 +69,8 @@ class Timer(threading.Thread):
             self.finished.set()
 
 
-class Event(object):
+@total_ordering
+class Event:
     """
     Provides event objects that can be used within the EventLoop class.
     """
@@ -92,18 +92,11 @@ class Event(object):
         self.kwds = kwds
         self.canceled = False
 
-    def __cmp__(self, other):
-        """
-        Comparison function.
-
-        :param Event other: event to compare with
-        :return: comparison result
-        :rtype: int
-        """
-        tmp = cmp(self.time, other.time)
-        if tmp == 0:
-            tmp = cmp(self.eventnum, other.eventnum)
-        return tmp
+    def __lt__(self, other):
+        result = self.time < other.time
+        if result:
+            result = self.eventnum < other.eventnum
+        return result
 
     def run(self):
         """
@@ -125,7 +118,7 @@ class Event(object):
         self.canceled = True
 
 
-class EventLoop(object):
+class EventLoop:
     """
     Provides an event loop for running events.
     """
@@ -152,7 +145,7 @@ class EventLoop(object):
             with self.lock:
                 if not self.running or not self.queue:
                     break
-                now = time.time()
+                now = time.monotonic()
                 if self.queue[0].time > now:
                     schedule = True
                     break
@@ -177,7 +170,7 @@ class EventLoop(object):
                 raise ValueError("scheduling event while not running")
             if not self.queue:
                 return
-            delay = self.queue[0].time - time.time()
+            delay = self.queue[0].time - time.monotonic()
             if self.timer:
                 raise ValueError("timer was already set")
             self.timer = Timer(delay, self.__run_events)
@@ -194,7 +187,7 @@ class EventLoop(object):
             if self.running:
                 return
             self.running = True
-            self.start = time.time()
+            self.start = time.monotonic()
             for event in self.queue:
                 event.time += self.start
             self.__schedule_event()
@@ -232,7 +225,7 @@ class EventLoop(object):
             self.eventnum += 1
             evtime = float(delaysec)
             if self.running:
-                evtime += time.time()
+                evtime += time.monotonic()
             event = Event(eventnum, evtime, func, *args, **kwds)
 
             if self.queue:

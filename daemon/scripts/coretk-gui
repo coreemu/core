@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+import logging
+
+from core.gui import appconfig
+from core.gui.app import Application
+from core.gui.images import Images
+
+if __name__ == "__main__":
+    log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=log_format)
+    logging.getLogger("PIL").setLevel(logging.ERROR)
+    Images.load_all()
+    appconfig.check_directory()
+    app = Application()
+    app.mainloop()

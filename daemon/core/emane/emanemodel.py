@@ -102,6 +102,11 @@ class EmaneModel(WirelessModel):
         mac_name = emanexml.mac_file_name(self, interface)
         phy_name = emanexml.phy_file_name(self, interface)
 
+        # remote server for file
+        server = None
+        if interface is not None:
+            server = interface.node.server
+
         # check if this is external
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
@@ -111,16 +116,16 @@ class EmaneModel(WirelessModel):
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
         emanexml.create_nem_xml(
-            self, config, nem_file, transport_name, mac_name, phy_name
+            self, config, nem_file, transport_name, mac_name, phy_name, server
         )
 
         # create mac xml file
         mac_file = os.path.join(self.session.session_dir, mac_name)
-        emanexml.create_mac_xml(self, config, mac_file)
+        emanexml.create_mac_xml(self, config, mac_file, server)
 
         # create phy xml file
         phy_file = os.path.join(self.session.session_dir, phy_name)
-        emanexml.create_phy_xml(self, config, phy_file)
+        emanexml.create_phy_xml(self, config, phy_file, server)
 
     def post_startup(self):
         """

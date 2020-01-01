@@ -6,8 +6,9 @@ import os
 
 from core import constants, utils
 from core.errors import CoreCommandError
+from core.nodes import ipaddress
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
-from core.services.coreservices import CoreService
+from core.services.coreservices import CoreService, ServiceMode
 
 
 class UtilService(CoreService):
@@ -87,7 +88,8 @@ class DefaultRouteService(UtilService):
 
     @staticmethod
     def addrstr(x):
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
         else:
             net = Ipv4Prefix(x)
@@ -147,7 +149,8 @@ class StaticRouteService(UtilService):
 
     @staticmethod
     def routestr(x):
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
             dst = "3ffe:4::/64"
         else:
@@ -170,6 +173,7 @@ class SshService(UtilService):
     startup = ("sh startsshd.sh",)
     shutdown = ("killall sshd",)
     validate = ()
+    validation_mode = ServiceMode.BLOCKING
 
     @classmethod
     def generate_config(cls, node, filename):
@@ -280,7 +284,8 @@ ddns-update-style none;
         Generate a subnet declaration block given an IPv4 prefix string
         for inclusion in the dhcpd3 config file.
         """
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             return ""
         else:
             addr = x.split("/")[0]
@@ -415,9 +420,11 @@ class HttpService(UtilService):
         Detect the apache2 version using the 'a2query' command.
         """
         try:
-            status, result = utils.cmd_output(["a2query", "-v"])
-        except CoreCommandError:
-            status = -1
+            result = utils.cmd("a2query -v")
+            status = 0
+        except CoreCommandError as e:
+            status = e.returncode
+            result = e.stderr
 
         if status == 0 and result[:3] == "2.4":
             return cls.APACHEVER24
@@ -700,7 +707,8 @@ interface %s
         Generate a subnet declaration block given an IPv6 prefix string
         for inclusion in the RADVD config file.
         """
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
             return str(net)
         else:

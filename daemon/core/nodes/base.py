@@ -2,29 +2,26 @@
 Defines the base logic for nodes used within core.
 """
 
-import errno
 import logging
 import os
-import random
 import shutil
-import signal
 import socket
-import string
 import threading
-from builtins import range
 from socket import AF_INET, AF_INET6
 
-from core import constants, utils
+from core import utils
+from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.errors import CoreCommandError
 from core.nodes import client, ipaddress
-from core.nodes.interface import CoreInterface, TunTap, Veth
-from core.nodes.netclient import LinuxNetClient, OvsNetClient
+from core.nodes.interface import TunTap, Veth
+from core.nodes.netclient import get_net_client
 
 _DEFAULT_MTU = 1500
 
 
-class NodeBase(object):
+class NodeBase:
     """
     Base class for CORE nodes (nodes and networks)
     """
@@ -32,7 +29,7 @@ class NodeBase(object):
     apitype = None
 
     # TODO: appears start has no usage, verify and remove
-    def __init__(self, session, _id=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True, server=None):
         """
         Creates a PyCoreObj instance.
 
@@ -40,7 +37,8 @@ class NodeBase(object):
         :param int _id: id
         :param str name: object name
         :param bool start: start value
-        :return:
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
 
         self.session = session
@@ -48,10 +46,11 @@ class NodeBase(object):
             _id = session.get_node_id()
         self.id = _id
         if name is None:
-            name = "o%s" % self.id
+            name = f"o{self.id}"
         self.name = name
+        self.server = server
+
         self.type = None
-        self.server = None
         self.services = None
         # ifindex is key, CoreInterface instance is value
         self._netif = {}
@@ -61,10 +60,8 @@ class NodeBase(object):
         self.opaque = None
         self.position = Position()
 
-        if session.options.get_config("ovs") == "True":
-            self.net_client = OvsNetClient(self.net_cmd)
-        else:
-            self.net_client = LinuxNetClient(self.net_cmd)
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.net_client = get_net_client(use_ovs, self.host_cmd)
 
     def startup(self):
         """
@@ -82,17 +79,23 @@ class NodeBase(object):
         """
         raise NotImplementedError
 
-    def net_cmd(self, args):
+    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
         """
-        Runs a command that is used to configure and setup the network on the host
-        system.
+        Runs a command on the host system or distributed server.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
+        :param dict env: environment to run command with
+        :param str cwd: directory to run command in
+        :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        return utils.check_cmd(args)
+        if self.server is None:
+            return utils.cmd(args, env, cwd, wait, shell)
+        else:
+            return self.server.remote_cmd(args, env, cwd, wait)
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -136,7 +139,7 @@ class NodeBase(object):
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
         else:
-            return self._netif.values()
+            return list(self._netif.values())
 
     def numnetif(self):
         """
@@ -155,11 +158,9 @@ class NodeBase(object):
         :return: interface index if found, -1 otherwise
         :rtype: int
         """
-
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
-
         return -1
 
     def newifindex(self):
@@ -175,7 +176,7 @@ class NodeBase(object):
         self.ifindex += 1
         return ifindex
 
-    def data(self, message_type, lat=None, lon=None, alt=None):
+    def data(self, message_type, lat=None, lon=None, alt=None, source=None):
         """
         Build a data object for this node.
 
@@ -183,6 +184,7 @@ class NodeBase(object):
         :param str lat: latitude
         :param str lon: longitude
         :param str alt: altitude
+        :param str source: source of node data
         :return: node data object
         :rtype: core.emulator.data.NodeData
         """
@@ -191,7 +193,9 @@ class NodeBase(object):
 
         x, y, _ = self.getposition()
         model = self.type
-        emulation_server = self.server
+        server = None
+        if self.server is not None:
+            server = self.server.name
 
         services = self.services
         if services is not None:
@@ -212,8 +216,9 @@ class NodeBase(object):
             longitude=lon,
             altitude=alt,
             model=model,
-            emulation_server=emulation_server,
+            server=server,
             services=services,
+            source=source,
         )
 
         return node_data
@@ -236,7 +241,7 @@ class CoreNodeBase(NodeBase):
     Base class for CORE nodes.
     """
 
-    def __init__(self, session, _id=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True, server=None):
         """
         Create a CoreNodeBase instance.
 
@@ -244,8 +249,10 @@ class CoreNodeBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: boolean for starting
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
-        super(CoreNodeBase, self).__init__(session, _id, name, start=start)
+        super().__init__(session, _id, name, start, server)
         self.services = []
         self.nodedir = None
         self.tmpnodedir = False
@@ -258,7 +265,7 @@ class CoreNodeBase(NodeBase):
         """
         if self.nodedir is None:
             self.nodedir = os.path.join(self.session.session_dir, self.name + ".conf")
-            os.makedirs(self.nodedir)
+            self.host_cmd(f"mkdir -p {self.nodedir}")
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
@@ -274,7 +281,7 @@ class CoreNodeBase(NodeBase):
             return
 
         if self.tmpnodedir:
-            shutil.rmtree(self.nodedir, ignore_errors=True)
+            self.host_cmd(f"rm -rf {self.nodedir}")
 
     def addnetif(self, netif, ifindex):
         """
@@ -285,9 +292,8 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex in self._netif:
-            raise ValueError("ifindex %s already exists" % ifindex)
+            raise ValueError(f"ifindex {ifindex} already exists")
         self._netif[ifindex] = netif
-        # TODO: this should have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
@@ -298,18 +304,16 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         netif = self._netif.pop(ifindex)
         netif.shutdown()
         del netif
 
-    # TODO: net parameter is not used, remove
-    def netif(self, ifindex, net=None):
+    def netif(self, ifindex):
         """
         Retrieve network interface.
 
         :param int ifindex: index of interface to retrieve
-        :param core.nodes.interface.CoreInterface net: network node
         :return: network interface, or None if not found
         :rtype: core.nodes.interface.CoreInterface
         """
@@ -323,11 +327,11 @@ class CoreNodeBase(NodeBase):
         Attach a network.
 
         :param int ifindex: interface of index to attach
-        :param core.nodes.interface.CoreInterface net: network to attach
+        :param core.nodes.base.CoreNetworkBase net: network to attach
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].attachnet(net)
 
     def detachnet(self, ifindex):
@@ -338,7 +342,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].detachnet()
 
     def setposition(self, x=None, y=None, z=None):
@@ -350,7 +354,7 @@ class CoreNodeBase(NodeBase):
         :param z: z position
         :return: nothing
         """
-        changed = super(CoreNodeBase, self).setposition(x, y, z)
+        changed = super().setposition(x, y, z)
         if changed:
             for netif in self.netifs(sort=True):
                 netif.setposition(x, y, z)
@@ -376,47 +380,16 @@ class CoreNodeBase(NodeBase):
 
         return common
 
-    def node_net_cmd(self, args):
+    def cmd(self, args, wait=True, shell=False):
         """
-        Runs a command that is used to configure and setup the network within a
-        node.
+        Runs a command within a node container.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
+        :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        raise NotImplementedError
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
         """
         raise NotImplementedError
 
@@ -439,7 +412,14 @@ class CoreNode(CoreNodeBase):
     valid_address_types = {"inet", "inet6", "inet6link"}
 
     def __init__(
-        self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True
+        self,
+        session,
+        _id=None,
+        name=None,
+        nodedir=None,
+        bootsh="boot.sh",
+        start=True,
+        server=None,
     ):
         """
         Create a CoreNode instance.
@@ -450,8 +430,10 @@ class CoreNode(CoreNodeBase):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
-        super(CoreNode, self).__init__(session, _id, name, start)
+        super().__init__(session, _id, name, start, server)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
@@ -463,13 +445,21 @@ class CoreNode(CoreNodeBase):
         self._mounts = []
         self.bootsh = bootsh
 
-        if session.options.get_config("ovs") == "True":
-            self.node_net_client = OvsNetClient(self.node_net_cmd)
-        else:
-            self.node_net_client = LinuxNetClient(self.node_net_cmd)
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.node_net_client = self.create_node_net_client(use_ovs)
 
         if start:
             self.startup()
+
+    def create_node_net_client(self, use_ovs):
+        """
+        Create node network client for running network commands within the nodes
+        container.
+
+        :param bool use_ovs: True for OVS bridges, False for Linux bridges
+        :return:node network client
+        """
+        return get_net_client(use_ovs, self.cmd)
 
     def alive(self):
         """
@@ -479,8 +469,8 @@ class CoreNode(CoreNodeBase):
         :rtype: bool
         """
         try:
-            os.kill(self.pid, 0)
-        except OSError:
+            self.host_cmd(f"kill -0 {self.pid}")
+        except CoreCommandError:
             return False
 
         return True
@@ -499,24 +489,19 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("starting a node that is already up")
 
             # create a new namespace for this node using vnoded
-            vnoded = [
-                constants.VNODED_BIN,
-                "-v",
-                "-c",
-                self.ctrlchnlname,
-                "-l",
-                self.ctrlchnlname + ".log",
-                "-p",
-                self.ctrlchnlname + ".pid",
-            ]
+            vnoded = (
+                f"{VNODED_BIN} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log "
+                f"-p {self.ctrlchnlname}.pid"
+            )
             if self.nodedir:
-                vnoded += ["-C", self.nodedir]
+                vnoded += f" -C {self.nodedir}"
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
 
-            output = utils.check_cmd(vnoded, env=env)
+            output = self.host_cmd(vnoded, env=env)
             self.pid = int(output)
+            logging.debug("node(%s) pid: %s", self.name, self.pid)
 
             # create vnode client
             self.client = client.VnodeClient(self.name, self.ctrlchnlname)
@@ -556,21 +541,17 @@ class CoreNode(CoreNodeBase):
                 for netif in self.netifs():
                     netif.shutdown()
 
-                # attempt to kill node process and wait for termination of children
+                # kill node process if present
                 try:
-                    os.kill(self.pid, signal.SIGTERM)
-                    os.waitpid(self.pid, 0)
-                except OSError as e:
-                    if e.errno != 10:
-                        logging.exception("error killing process")
+                    self.host_cmd(f"kill -9 {self.pid}")
+                except CoreCommandError:
+                    logging.exception("error killing process")
 
                 # remove node directory if present
                 try:
-                    os.unlink(self.ctrlchnlname)
-                except OSError as e:
-                    # no such file or directory
-                    if e.errno != errno.ENOENT:
-                        logging.exception("error removing node directory")
+                    self.host_cmd(f"rm -rf {self.ctrlchnlname}")
+                except CoreCommandError:
+                    logging.exception("error removing node directory")
 
                 # clear interface data, close client, and mark self and not up
                 self._netif.clear()
@@ -581,49 +562,23 @@ class CoreNode(CoreNodeBase):
             finally:
                 self.rmnodedir()
 
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        return self.client.cmd(args, wait)
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        return self.client.cmd_output(args)
-
-    def node_net_cmd(self, args):
+    def cmd(self, args, wait=True, shell=False):
         """
         Runs a command that is used to configure and setup the network within a
         node.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
+        :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        return self.check_cmd(args)
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        return self.client.check_cmd(args)
+        if self.server is None:
+            return self.client.check_cmd(args, wait=wait, shell=shell)
+        else:
+            args = self.client.create_cmd(args)
+            return self.server.remote_cmd(args, wait=wait)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -632,7 +587,11 @@ class CoreNode(CoreNodeBase):
         :param str sh: shell to execute command in
         :return: str
         """
-        return self.client.termcmdstring(sh)
+        terminal = self.client.create_cmd(sh)
+        if self.server is None:
+            return terminal
+        else:
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def privatedir(self, path):
         """
@@ -642,11 +601,11 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         if path[0] != "/":
-            raise ValueError("path not fully qualified: %s" % path)
+            raise ValueError(f"path not fully qualified: {path}")
         hostpath = os.path.join(
             self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
         )
-        os.mkdir(hostpath)
+        self.host_cmd(f"mkdir -p {hostpath}")
         self.mount(hostpath, path)
 
     def mount(self, source, target):
@@ -660,8 +619,8 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        self.client.check_cmd(["mkdir", "-p", target])
-        self.client.check_cmd([constants.MOUNT_BIN, "-n", "--bind", source, target])
+        self.cmd(f"mkdir -p {target}")
+        self.cmd(f"{MOUNT_BIN} -n --bind {source} {target}")
         self._mounts.append((source, target))
 
     def newifindex(self):
@@ -672,15 +631,14 @@ class CoreNode(CoreNodeBase):
         :rtype: int
         """
         with self.lock:
-            return super(CoreNode, self).newifindex()
+            return super().newifindex()
 
-    def newveth(self, ifindex=None, ifname=None, net=None):
+    def newveth(self, ifindex=None, ifname=None):
         """
         Create a new interface.
 
         :param int ifindex: index for the new interface
         :param str ifname: name for the new interface
-        :param core.nodes.base.CoreNetworkBase net: network to associate interface with
         :return: nothing
         """
         with self.lock:
@@ -688,25 +646,25 @@ class CoreNode(CoreNodeBase):
                 ifindex = self.newifindex()
 
             if ifname is None:
-                ifname = "eth%d" % ifindex
+                ifname = f"eth{ifindex}"
 
             sessionid = self.session.short_session_id()
 
             try:
-                suffix = "%x.%s.%s" % (self.id, ifindex, sessionid)
+                suffix = f"{self.id:x}.{ifindex}.{sessionid}"
             except TypeError:
-                suffix = "%s.%s.%s" % (self.id, ifindex, sessionid)
+                suffix = f"{self.id}.{ifindex}.{sessionid}"
 
-            localname = "veth" + suffix
+            localname = f"veth{suffix}"
             if len(localname) >= 16:
-                raise ValueError("interface local name (%s) too long" % localname)
+                raise ValueError(f"interface local name ({localname}) too long")
 
             name = localname + "p"
             if len(name) >= 16:
-                raise ValueError("interface name (%s) too long" % name)
+                raise ValueError(f"interface name ({name}) too long")
 
             veth = Veth(
-                node=self, name=name, localname=localname, net=net, start=self.up
+                self.session, self, name, localname, start=self.up, server=self.server
             )
 
             if self.up:
@@ -717,16 +675,9 @@ class CoreNode(CoreNodeBase):
             veth.name = ifname
 
             if self.up:
-                # TODO: potentially find better way to query interface ID
-                # retrieve interface information
-                output = self.node_net_client.device_show(veth.name)
-                logging.debug("interface command output: %s", output)
-                output = output.split("\n")
-                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
+                flow_id = self.node_net_client.get_ifindex(veth.name)
+                veth.flow_id = int(flow_id)
                 logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                # TODO: mimic packed hwaddr
-                # veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
-                logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the
@@ -739,13 +690,12 @@ class CoreNode(CoreNodeBase):
 
             return ifindex
 
-    def newtuntap(self, ifindex=None, ifname=None, net=None):
+    def newtuntap(self, ifindex=None, ifname=None):
         """
         Create a new tunnel tap.
 
         :param int ifindex: interface index
         :param str ifname: interface name
-        :param net: network to associate with
         :return: interface index
         :rtype: int
         """
@@ -754,14 +704,12 @@ class CoreNode(CoreNodeBase):
                 ifindex = self.newifindex()
 
             if ifname is None:
-                ifname = "eth%d" % ifindex
+                ifname = f"eth{ifindex}"
 
             sessionid = self.session.short_session_id()
-            localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
+            localname = f"tap{self.id}.{ifindex}.{sessionid}"
             name = ifname
-            tuntap = TunTap(
-                node=self, name=name, localname=localname, net=net, start=self.up
-            )
+            tuntap = TunTap(self.session, self, name, localname, start=self.up)
 
             try:
                 self.addnetif(tuntap, ifindex)
@@ -818,7 +766,7 @@ class CoreNode(CoreNodeBase):
         try:
             interface.deladdr(addr)
         except ValueError:
-            logging.exception("trying to delete unknown address: %s" % addr)
+            logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
             self.node_net_client.delete_address(interface.name, str(addr))
@@ -852,7 +800,7 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
-                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newtuntap(ifindex, ifname)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
@@ -864,7 +812,7 @@ class CoreNode(CoreNodeBase):
                     netif.addaddr(address)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newveth(ifindex, ifname)
 
             if net is not None:
                 self.attachnet(ifindex, net)
@@ -878,35 +826,6 @@ class CoreNode(CoreNodeBase):
             self.ifup(ifindex)
             return ifindex
 
-    def connectnode(self, ifname, othernode, otherifname):
-        """
-        Connect a node.
-
-        :param str ifname: name of interface to connect
-        :param core.nodes.base.CoreNode othernode: node to connect to
-        :param str otherifname: interface name to connect to
-        :return: nothing
-        """
-        tmplen = 8
-        tmp1 = "tmp." + "".join(
-            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
-        )
-        tmp2 = "tmp." + "".join(
-            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
-        )
-        self.net_client.create_veth(tmp1, tmp2)
-        self.net_client.device_ns(tmp1, str(self.pid))
-        self.node_net_client.device_name(tmp1, ifname)
-        interface = CoreInterface(node=self, name=ifname, mtu=_DEFAULT_MTU)
-        self.addnetif(interface, self.newifindex())
-
-        self.net_client.device_ns(tmp2, str(othernode.pid))
-        othernode.node_net_client.device_name(tmp2, otherifname)
-        other_interface = CoreInterface(
-            node=othernode, name=otherifname, mtu=_DEFAULT_MTU
-        )
-        othernode.addnetif(other_interface, othernode.newifindex())
-
     def addfile(self, srcname, filename):
         """
         Add a file.
@@ -918,9 +837,13 @@ class CoreNode(CoreNodeBase):
         """
         logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
-        self.client.check_cmd(["mkdir", "-p", directory])
-        self.client.check_cmd(["mv", srcname, filename])
-        self.client.check_cmd(["sync"])
+        if self.server is None:
+            self.client.check_cmd(f"mkdir -p {directory}")
+            self.client.check_cmd(f"mv {srcname} {filename}")
+            self.client.check_cmd("sync")
+        else:
+            self.host_cmd(f"mkdir -p {directory}")
+            self.server.remote_put(srcname, filename)
 
     def hostfilename(self, filename):
         """
@@ -931,43 +854,37 @@ class CoreNode(CoreNodeBase):
         """
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError("no basename for filename: %s" % filename)
+            raise ValueError(f"no basename for filename: {filename}")
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         return os.path.join(dirname, basename)
 
-    def opennodefile(self, filename, mode="w"):
-        """
-        Open a node file, within it"s directory.
-
-        :param str filename: file name to open
-        :param str mode: mode to open file in
-        :return: open file
-        :rtype: file
-        """
-        hostfilename = self.hostfilename(filename)
-        dirname, _basename = os.path.split(hostfilename)
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0o755)
-        return open(hostfilename, mode)
-
     def nodefile(self, filename, contents, mode=0o644):
         """
         Create a node file with a given mode.
 
         :param str filename: name of file to create
-        :param contents: contents of file
+        :param str contents: contents of file
         :param int mode: mode for file
         :return: nothing
         """
-        with self.opennodefile(filename, "w") as open_file:
-            open_file.write(contents)
-            os.chmod(open_file.name, mode)
-            logging.debug(
-                "node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode
-            )
+        hostfilename = self.hostfilename(filename)
+        dirname, _basename = os.path.split(hostfilename)
+        if self.server is None:
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname, mode=0o755)
+            with open(hostfilename, "w") as open_file:
+                open_file.write(contents)
+                os.chmod(open_file.name, mode)
+        else:
+            self.host_cmd(f"mkdir -m {0o755:o} -p {dirname}")
+            self.server.remote_put_temp(hostfilename, contents)
+            self.host_cmd(f"chmod {mode:o} {hostfilename}")
+        logging.debug(
+            "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
+        )
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -980,9 +897,12 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         hostfilename = self.hostfilename(filename)
-        shutil.copy2(srcfilename, hostfilename)
+        if self.server is None:
+            shutil.copy2(srcfilename, hostfilename)
+        else:
+            self.server.remote_put(srcfilename, hostfilename)
         if mode is not None:
-            os.chmod(hostfilename, mode)
+            self.host_cmd(f"chmod {mode:o} {hostfilename}")
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )
@@ -996,7 +916,7 @@ class CoreNetworkBase(NodeBase):
     linktype = LinkTypes.WIRED.value
     is_emane = False
 
-    def __init__(self, session, _id, name, start=True):
+    def __init__(self, session, _id, name, start=True, server=None):
         """
         Create a CoreNetworkBase instance.
 
@@ -1004,8 +924,10 @@ class CoreNetworkBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: should object start
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
-        super(CoreNetworkBase, self).__init__(session, _id, name, start=start)
+        super().__init__(session, _id, name, start, server)
         self._linked = {}
         self._linked_lock = threading.Lock()
 
@@ -1133,6 +1055,7 @@ class CoreNetworkBase(NodeBase):
                 message_type=0,
                 node1_id=linked_node.id,
                 node2_id=self.id,
+                link_type=self.linktype,
                 unidirectional=1,
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),
@@ -1147,7 +1070,7 @@ class CoreNetworkBase(NodeBase):
         return all_links
 
 
-class Position(object):
+class Position:
     """
     Helper class for Cartesian coordinate position
     """

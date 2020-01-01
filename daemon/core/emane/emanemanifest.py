@@ -115,7 +115,7 @@ def parse(manifest_path, defaults):
         # define description and account for gui quirks
         config_descriptions = config_name
         if config_name.endswith("uri"):
-            config_descriptions = "%s file" % config_descriptions
+            config_descriptions = f"{config_descriptions} file"
 
         configuration = Configuration(
             _id=config_name,

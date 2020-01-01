@@ -3,42 +3,28 @@ Unit tests for testing basic CORE networks.
 """
 
 import os
-import stat
 import threading
 
 import pytest
 
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import MessageFlags, NodeTypes
+from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.client import VnodeClient
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
 
 
-def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
-    """
-    Create clients
-
-    :param str sessiondir: session directory to create clients
-    :param class clientcls: class to create clients from
-    :param func cmdchnlfilterfunc: command channel filter function
-    :return: list of created clients
-    :rtype: list
-    """
-    direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
-    cmdchnls = list(filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries))
-    if cmdchnlfilterfunc:
-        cmdchnls = list(filter(cmdchnlfilterfunc, cmdchnls))
-    cmdchnls.sort()
-    return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
-
-
 def ping(from_node, to_node, ip_prefixes):
     address = ip_prefixes.ip4_address(to_node)
-    return from_node.cmd(["ping", "-c", "3", address])
+    try:
+        from_node.cmd(f"ping -c 1 {address}")
+        status = 0
+    except CoreCommandError as e:
+        status = e.returncode
+    return status
 
 
 class TestCore:
@@ -71,14 +57,14 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_vnode_client(self, session, ip_prefixes):
+    def test_vnode_client(self, request, session, ip_prefixes):
         """
         Test vnode client methods.
 
+        :param request: pytest request
         :param session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
-
         # create ptp
         ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
 
@@ -100,25 +86,9 @@ class TestCore:
         # check we are connected
         assert client.connected()
 
-        # check various command using vcmd module
-        command = ["ls"]
-        assert not client.cmd(command)
-        status, output = client.cmd_output(command)
-        assert not status
-        p, stdin, stdout, stderr = client.popen(command)
-        assert not p.wait()
-        assert not client.icmd(command)
-
-        # check various command using command line
-        assert not client.cmd(command)
-        status, output = client.cmd_output(command)
-        assert not status
-        p, stdin, stdout, stderr = client.popen(command)
-        assert not p.wait()
-        assert not client.icmd(command)
-
-        # check module methods
-        assert createclients(session.session_dir)
+        # validate command
+        if not request.config.getoption("mock"):
+            assert client.check_cmd("echo hello") == "hello"
 
     def test_netif(self, session, ip_prefixes):
         """
@@ -177,10 +147,10 @@ class TestCore:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(0, 0)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(0, 0)
+        node_one = session.add_node(options=options)
+        node_two = session.add_node(options=options)
 
         # link nodes
         for node in [node_one, node_two]:
@@ -207,10 +177,10 @@ class TestCore:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(0, 0)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(0, 0)
+        node_one = session.add_node(options=options)
+        node_two = session.add_node(options=options)
 
         # link nodes
         for node in [node_one, node_two]:

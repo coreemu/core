@@ -10,7 +10,6 @@ import socketserver
 import sys
 import threading
 import time
-from builtins import range
 from itertools import repeat
 from queue import Empty, Queue
 
@@ -37,7 +36,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
-from core.errors import CoreError
+from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
@@ -76,7 +75,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.handler_threads = []
         num_threads = int(server.config["numthreads"])
         if num_threads < 1:
-            raise ValueError("invalid number of threads: %s" % num_threads)
+            raise ValueError(f"invalid number of threads: {num_threads}")
 
         logging.debug("launching core server handler threads: %s", num_threads)
         for _ in range(num_threads):
@@ -84,12 +83,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.handler_threads.append(thread)
             thread.start()
 
-        self.master = False
         self.session = None
-
-        # core emulator
+        self.session_clients = {}
         self.coreemu = server.coreemu
-
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
@@ -127,7 +123,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for thread in self.handler_threads:
             logging.info("waiting for thread: %s", thread.getName())
             thread.join(timeout)
-            if thread.isAlive():
+            if thread.is_alive():
                 logging.warning(
                     "joining %s failed: still alive after %s sec",
                     thread.getName(),
@@ -138,8 +134,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if self.session:
             # remove client from session broker and shutdown if there are no clients
             self.remove_session_handlers()
-            self.session.broker.session_clients.remove(self)
-            if not self.session.broker.session_clients and not self.session.is_active():
+            clients = self.session_clients[self.session.id]
+            clients.remove(self)
+            if not clients and not self.session.is_active():
                 logging.info(
                     "no session clients left and not active, initiating shutdown"
                 )
@@ -302,7 +299,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             [
                 (ExceptionTlvs.NODE, exception_data.node),
                 (ExceptionTlvs.SESSION, exception_data.session),
-                (ExceptionTlvs.LEVEL, exception_data.level),
+                (ExceptionTlvs.LEVEL, exception_data.level.value),
                 (ExceptionTlvs.SOURCE, exception_data.source),
                 (ExceptionTlvs.DATE, exception_data.date),
                 (ExceptionTlvs.TEXT, exception_data.text),
@@ -407,9 +404,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             RegisterTlvs.EMULATION_SERVER.value, "core-daemon"
         )
-        tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.broker.config_type, self.session.broker.name
-        )
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "broker")
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.location.config_type, self.session.location.name
         )
@@ -435,9 +430,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.options.config_type, self.session.options.name
         )
-        tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.metadata.config_type, self.session.metadata.name
-        )
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "metadata")
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -461,7 +454,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
         except IOError as e:
-            raise IOError("error receiving header (%s)" % e)
+            raise IOError(f"error receiving header ({e})")
 
         if len(header) != coreapi.CoreMessage.header_len:
             if len(header) == 0:
@@ -479,10 +472,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         while len(data) < message_len:
             data += self.request.recv(message_len - len(data))
             if len(data) > message_len:
-                error_message = (
-                    "received message length does not match received data (%s != %s)"
-                    % (len(data), message_len)
-                )
+                error_message = f"received message length does not match received data ({len(data)} != {message_len})"
                 logging.error(error_message)
                 raise IOError(error_message)
 
@@ -533,10 +523,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message to handle
         :return: nothing
         """
-        if self.session and self.session.broker.handle_message(message):
-            logging.debug("message not being handled locally")
-            return
-
         logging.debug(
             "%s handling message:\n%s", threading.currentThread().getName(), message
         )
@@ -578,11 +564,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 )
             except KeyError:
                 # multiple TLVs of same type cause KeyError exception
-                reply_message = "CoreMessage (type %d flags %d length %d)" % (
-                    message_type,
-                    message_flags,
-                    message_length,
-                )
+                reply_message = f"CoreMessage (type {message_type} flags {message_flags} length {message_length})"
 
             logging.debug("sending reply:\n%s", reply_message)
 
@@ -603,15 +585,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         port = self.request.getpeername()[1]
 
         # TODO: add shutdown handler for session
-        self.session = self.coreemu.create_session(port, master=False)
+        self.session = self.coreemu.create_session(port)
         logging.debug("created new session for client: %s", self.session.id)
-
-        # TODO: hack to associate this handler with this sessions broker for broadcasting
-        # TODO: broker needs to be pulled out of session to the server/handler level
-        if self.master:
-            logging.debug("session set to master")
-            self.session.master = True
-        self.session.broker.session_clients.append(self)
+        clients = self.session_clients.setdefault(self.session.id, [])
+        clients.append(self)
 
         # add handlers for various data
         self.add_session_handlers()
@@ -643,7 +620,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ]:
                 continue
 
-            for client in self.session.broker.session_clients:
+            clients = self.session_clients[self.session.id]
+            for client in clients:
                 if client == self:
                     continue
 
@@ -710,12 +688,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
-        node_options = NodeOptions(
+        options = NodeOptions(
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value),
         )
 
-        node_options.set_position(
+        options.set_position(
             x=message.get_tlv(NodeTlvs.X_POSITION.value),
             y=message.get_tlv(NodeTlvs.Y_POSITION.value),
         )
@@ -729,18 +707,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
         if alt is not None:
             alt = float(alt)
-        node_options.set_location(lat=lat, lon=lon, alt=alt)
+        options.set_location(lat=lat, lon=lon, alt=alt)
 
-        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
-        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+        options.icon = message.get_tlv(NodeTlvs.ICON.value)
+        options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
+        options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+        options.server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
         services = message.get_tlv(NodeTlvs.SERVICES.value)
         if services:
-            node_options.services = services.split("|")
+            options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, node_options)
+            node = self.session.add_node(node_type, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
@@ -759,7 +738,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.update_node(node_id, node_options)
+            self.session.edit_node(node_id, options)
 
         return replies
 
@@ -887,11 +866,20 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     message.flags & MessageFlags.STRING.value
                     or message.flags & MessageFlags.TEXT.value
                 ):
-                    # shlex.split() handles quotes within the string
                     if message.flags & MessageFlags.LOCAL.value:
-                        status, res = utils.cmd_output(command)
+                        try:
+                            res = utils.cmd(command)
+                            status = 0
+                        except CoreCommandError as e:
+                            res = e.stderr
+                            status = e.returncode
                     else:
-                        status, res = node.cmd_output(command)
+                        try:
+                            res = node.cmd(command)
+                            status = 0
+                        except CoreCommandError as e:
+                            res = e.stderr
+                            status = e.returncode
                     logging.info(
                         "done exec cmd=%s with status=%d res=(%d bytes)",
                         command,
@@ -944,9 +932,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 file_name = sys.argv[0]
 
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.coreemu.create_session(master=False)
+                    session = self.coreemu.create_session()
                     try:
-                        session.open_xml(file_name, start=True)
+                        session.open_xml(file_name)
                     except Exception:
                         self.coreemu.delete_session(session.id)
                         raise
@@ -994,7 +982,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         RegisterTlvs.EXECUTE_SERVER.value, execute_server
                     )
                     tlv_data += coreapi.CoreRegisterTlv.pack(
-                        RegisterTlvs.SESSION.value, "%s" % sid
+                        RegisterTlvs.SESSION.value, str(sid)
                     )
                     message = coreapi.CoreRegMessage.pack(0, tlv_data)
                     replies.append(message)
@@ -1014,16 +1002,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.debug("ignoring Register message")
         else:
             # register capabilities with the GUI
-            self.master = True
-
-            # find the session containing this client and set the session to master
-            for _id in self.coreemu.sessions:
-                session = self.coreemu.sessions[_id]
-                if self in session.broker.session_clients:
-                    logging.debug("setting session to master: %s", session.id)
-                    session.master = True
-                    break
-
             replies.append(self.register())
             replies.append(self.session_message())
 
@@ -1066,9 +1044,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             replies = self.handle_config_session(message_type, config_data)
         elif config_data.object == self.session.location.name:
             self.handle_config_location(message_type, config_data)
-        elif config_data.object == self.session.metadata.name:
+        elif config_data.object == "metadata":
             replies = self.handle_config_metadata(message_type, config_data)
-        elif config_data.object == self.session.broker.name:
+        elif config_data.object == "broker":
             self.handle_config_broker(message_type, config_data)
         elif config_data.object == self.session.services.name:
             replies = self.handle_config_services(message_type, config_data)
@@ -1093,12 +1071,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if message_type == ConfigFlags.RESET:
             node_id = config_data.node
-            self.session.location.reset()
-            self.session.services.reset()
-            self.session.mobility.config_reset(node_id)
-            self.session.emane.config_reset(node_id)
+            if node_id is not None:
+                self.session.mobility.config_reset(node_id)
+                self.session.emane.config_reset(node_id)
+            else:
+                self.session.location.reset()
+                self.session.services.reset()
+                self.session.mobility.config_reset()
+                self.session.emane.config_reset()
         else:
-            raise Exception("cant handle config all: %s" % message_type)
+            raise Exception(f"cant handle config all: {message_type}")
 
         return replies
 
@@ -1148,17 +1130,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
-            metadata_configs = self.session.metadata.get_configs()
+            metadata_configs = self.session.metadata
             if metadata_configs is None:
                 metadata_configs = {}
             data_values = "|".join(
-                ["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs]
+                [f"{x}={metadata_configs[x]}" for x in metadata_configs]
             )
             data_types = tuple(ConfigDataTypes.STRING.value for _ in metadata_configs)
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,
@@ -1168,12 +1150,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             values = ConfigShim.str_to_dict(config_data.data_values)
             for key in values:
                 value = values[key]
-                self.session.metadata.set_config(key, value)
+                self.session.metadata[key] = value
         return replies
 
     def handle_config_broker(self, message_type, config_data):
         if message_type not in [ConfigFlags.REQUEST, ConfigFlags.RESET]:
-            session_id = config_data.session
             if not config_data.data_values:
                 logging.info("emulation server data missing")
             else:
@@ -1185,29 +1166,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 for server in server_list:
                     server_items = server.split(":")
-                    name, host, port = server_items[:3]
-
-                    if host == "":
-                        host = None
-
-                    if port == "":
-                        port = None
-                    else:
-                        port = int(port)
-
-                    if session_id is not None:
-                        # receive session ID and my IP from master
-                        self.session.broker.session_id_master = int(
-                            session_id.split("|")[0]
-                        )
-                        self.session.broker.myip = host
-                        host = None
-                        port = None
-
-                    # this connects to the server immediately; maybe we should wait
-                    # or spin off a new "client" thread here
-                    self.session.broker.addserver(name, host, port)
-                    self.session.broker.setupserver(name)
+                    name, host, _ = server_items[:3]
+                    self.session.distributed.add_server(name, host)
+        elif message_type == ConfigFlags.RESET:
+            self.session.distributed.shutdown()
 
     def handle_config_services(self, message_type, config_data):
         replies = []
@@ -1253,7 +1215,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     services = sorted(group_map[group], key=lambda x: x.name.lower())
                     logging.debug("sorted services for group(%s): %s", group, services)
                     end_index = start_index + len(services) - 1
-                    group_strings.append("%s:%s-%s" % (group, start_index, end_index))
+                    group_strings.append(f"{group}:{start_index}-{end_index}")
                     start_index += len(services)
                     for service_name in services:
                         captions.append(service_name.name)
@@ -1458,11 +1420,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = ConfigShim.str_to_dict(values_str)
                 self.session.emane.set_configs(config)
 
-        # extra logic to start slave Emane object after nemid has been configured from the master
-        if message_type == ConfigFlags.UPDATE and self.session.master is False:
-            # instantiation was previously delayed by setup returning Emane.NOT_READY
-            self.session.instantiate()
-
         return replies
 
     def handle_config_emane_models(self, message_type, config_data):
@@ -1630,20 +1587,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: RUNTIME state received at session master"
-                )
-            else:
-                # master event queue is started in session.checkruntime()
-                self.session.start_events()
+            logging.warning("Unexpected event message: RUNTIME state received")
         elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
         elif event_type == EventTypes.SHUTDOWN_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: SHUTDOWN state received at session master"
-                )
+            logging.warning("Unexpected event message: SHUTDOWN state received")
         elif event_type in {
             EventTypes.START,
             EventTypes.STOP,
@@ -1728,24 +1676,24 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ):
                 status = self.session.services.stop_service(node, service)
                 if status:
-                    fail += "Stop %s," % service.name
+                    fail += f"Stop {service.name},"
             if (
                 event_type == EventTypes.START.value
                 or event_type == EventTypes.RESTART.value
             ):
                 status = self.session.services.startup_service(node, service)
                 if status:
-                    fail += "Start %s(%s)," % service.name
+                    fail += f"Start ({service.name}),"
             if event_type == EventTypes.PAUSE.value:
                 status = self.session.services.validate_service(node, service)
                 if status:
-                    fail += "%s," % service.name
+                    fail += f"{service.name},"
             if event_type == EventTypes.RECONFIGURE.value:
                 self.session.services.service_reconfigure(node, service)
 
         fail_data = ""
         if len(fail) > 0:
-            fail_data += "Fail:" + fail
+            fail_data += f"Fail:{fail}"
         unknown_data = ""
         num = len(unknown)
         if num > 0:
@@ -1755,14 +1703,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     unknown_data += ", "
                 num -= 1
             logging.warning("Event requested for unknown service(s): %s", unknown_data)
-            unknown_data = "Unknown:" + unknown_data
+            unknown_data = f"Unknown:{unknown_data}"
 
         event_data = EventData(
             node=node_id,
             event_type=event_type,
             name=name,
             data=fail_data + ";" + unknown_data,
-            time="%s" % time.time(),
+            time=str(time.monotonic()),
         )
 
         self.session.broadcast_event(event_data)
@@ -1783,7 +1731,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         thumb = message.get_tlv(SessionTlvs.THUMB.value)
         user = message.get_tlv(SessionTlvs.USER.value)
         logging.debug(
-            "SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str)
+            "SESSION message flags=0x%x sessions=%s", message.flags, session_id_str
         )
 
         if message.flags == 0:
@@ -1833,20 +1781,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                     # remove client from session broker and shutdown if needed
                     self.remove_session_handlers()
-                    self.session.broker.session_clients.remove(self)
-                    if (
-                        not self.session.broker.session_clients
-                        and not self.session.is_active()
-                    ):
+                    clients = self.session_clients[self.session.id]
+                    clients.remove(self)
+                    if not clients and not self.session.is_active():
                         self.coreemu.delete_session(self.session.id)
 
                     # set session to join
                     self.session = session
 
-                    # add client to session broker and set master if needed
-                    if self.master:
-                        self.session.master = True
-                    self.session.broker.session_clients.append(self)
+                    # add client to session broker
+                    clients = self.session_clients.setdefault(self.session.id, [])
+                    clients.append(self)
 
                     # add broadcast handlers
                     logging.info("adding session broadcast handlers")
@@ -1955,7 +1900,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         # service customizations
         service_configs = self.session.services.all_configs()
         for node_id, service in service_configs:
-            opaque = "service:%s" % service.name
+            opaque = f"service:{service.name}"
             data_types = tuple(
                 repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys))
             )
@@ -1991,7 +1936,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 file_data = FileData(
                     message_type=MessageFlags.ADD.value,
                     name=str(file_name),
-                    type="hook:%s" % state,
+                    type=f"hook:{state}",
                     data=str(config_data),
                 )
                 self.session.broadcast_file(file_data)
@@ -2004,18 +1949,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.session.broadcast_config(config_data)
 
         # send session metadata
-        metadata_configs = self.session.metadata.get_configs()
+        metadata_configs = self.session.metadata
         if metadata_configs:
             data_values = "|".join(
-                ["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs]
+                [f"{x}={metadata_configs[x]}" for x in metadata_configs]
             )
             data_types = tuple(
-                ConfigDataTypes.STRING.value
-                for _ in self.session.metadata.get_configs()
+                ConfigDataTypes.STRING.value for _ in self.session.metadata
             )
             config_data = ConfigData(
                 message_type=0,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,
@@ -2040,7 +1984,6 @@ class CoreUdpHandler(CoreHandler):
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }
-        self.master = False
         self.session = None
         self.coreemu = server.mainserver.coreemu
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -2056,7 +1999,7 @@ class CoreUdpHandler(CoreHandler):
         data = self.request[0]
         header = data[: coreapi.CoreMessage.header_len]
         if len(header) < coreapi.CoreMessage.header_len:
-            raise IOError("error receiving header (received %d bytes)" % len(header))
+            raise IOError(f"error receiving header (received {len(header)} bytes)")
 
         message_type, message_flags, message_len = coreapi.CoreMessage.unpack_header(
             header
@@ -2097,6 +2040,7 @@ class CoreUdpHandler(CoreHandler):
                     logging.debug("session handling message: %s", session.session_id)
                     self.session = session
                     self.handle_message(message)
+                    self.session.sdt.handle_distributed(message)
                     self.broadcast(message)
                 else:
                     logging.error(
@@ -2121,6 +2065,7 @@ class CoreUdpHandler(CoreHandler):
             if session or message.message_type == MessageTypes.REGISTER.value:
                 self.session = session
                 self.handle_message(message)
+                self.session.sdt.handle_distributed(message)
                 self.broadcast(message)
             else:
                 logging.error(
@@ -2131,7 +2076,8 @@ class CoreUdpHandler(CoreHandler):
         if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
             return
 
-        for client in self.session.broker.session_clients:
+        clients = self.session_clients[self.session.id]
+        for client in clients:
             try:
                 client.sendall(message.raw_message)
             except IOError:
@@ -2148,7 +2094,7 @@ class CoreUdpHandler(CoreHandler):
         :return:
         """
         raise Exception(
-            "Unable to queue %s message for later processing using UDP!" % msg
+            f"Unable to queue {msg} message for later processing using UDP!"
         )
 
     def sendall(self, data):

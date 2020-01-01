@@ -1,14 +1,26 @@
 """
 Clients for dealing with bridge/interface commands.
 """
+import json
 
-import os
-
-from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
-from core.utils import check_cmd
+from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
 
 
-class LinuxNetClient(object):
+def get_net_client(use_ovs, run):
+    """
+    Retrieve desired net client for running network commands.
+
+    :param bool use_ovs: True for OVS bridges, False for Linux bridges
+    :param func run: function used to run net client commands
+    :return: net client class
+    """
+    if use_ovs:
+        return OvsNetClient(run)
+    else:
+        return LinuxNetClient(run)
+
+
+class LinuxNetClient:
     """
     Client for creating Linux bridges and ip interfaces for nodes.
     """
@@ -28,7 +40,7 @@ class LinuxNetClient(object):
         :param str name: name for hostname
         :return: nothing
         """
-        self.run(["hostname", name])
+        self.run(f"hostname {name}")
 
     def create_route(self, route, device):
         """
@@ -38,7 +50,7 @@ class LinuxNetClient(object):
         :param str device: device to add route to
         :return: nothing
         """
-        self.run([IP_BIN, "route", "add", route, "dev", device])
+        self.run(f"{IP_BIN} route add {route} dev {device}")
 
     def device_up(self, device):
         """
@@ -47,7 +59,7 @@ class LinuxNetClient(object):
         :param str device: device to bring up
         :return: nothing
         """
-        self.run([IP_BIN, "link", "set", device, "up"])
+        self.run(f"{IP_BIN} link set {device} up")
 
     def device_down(self, device):
         """
@@ -56,7 +68,7 @@ class LinuxNetClient(object):
         :param str device: device to bring down
         :return: nothing
         """
-        self.run([IP_BIN, "link", "set", device, "down"])
+        self.run(f"{IP_BIN} link set {device} down")
 
     def device_name(self, device, name):
         """
@@ -66,7 +78,7 @@ class LinuxNetClient(object):
         :param str name: name to set
         :return: nothing
         """
-        self.run([IP_BIN, "link", "set", device, "name", name])
+        self.run(f"{IP_BIN} link set {device} name {name}")
 
     def device_show(self, device):
         """
@@ -76,7 +88,27 @@ class LinuxNetClient(object):
         :return: device information
         :rtype: str
         """
-        return self.run([IP_BIN, "link", "show", device])
+        return self.run(f"{IP_BIN} link show {device}")
+
+    def get_mac(self, device):
+        """
+        Retrieve MAC address for a given device.
+
+        :param str device: device to get mac for
+        :return: MAC address
+        :rtype: str
+        """
+        return self.run(f"cat /sys/class/net/{device}/address")
+
+    def get_ifindex(self, device):
+        """
+        Retrieve ifindex for a given device.
+
+        :param str device: device to get ifindex for
+        :return: ifindex
+        :rtype: str
+        """
+        return self.run(f"cat /sys/class/net/{device}/ifindex")
 
     def device_ns(self, device, namespace):
         """
@@ -86,7 +118,7 @@ class LinuxNetClient(object):
         :param str namespace: namespace to set device to
         :return: nothing
         """
-        self.run([IP_BIN, "link", "set", device, "netns", namespace])
+        self.run(f"{IP_BIN} link set {device} netns {namespace}")
 
     def device_flush(self, device):
         """
@@ -95,7 +127,10 @@ class LinuxNetClient(object):
         :param str device: device to flush
         :return: nothing
         """
-        self.run([IP_BIN, "-6", "address", "flush", "dev", device])
+        self.run(
+            f"[ -e /sys/class/net/{device} ] && {IP_BIN} -6 address flush dev {device} || true",
+            shell=True,
+        )
 
     def device_mac(self, device, mac):
         """
@@ -105,7 +140,7 @@ class LinuxNetClient(object):
         :param str mac: mac to set
         :return: nothing
         """
-        self.run([IP_BIN, "link", "set", "dev", device, "address", mac])
+        self.run(f"{IP_BIN} link set dev {device} address {mac}")
 
     def delete_device(self, device):
         """
@@ -114,7 +149,7 @@ class LinuxNetClient(object):
         :param str device: device to delete
         :return: nothing
         """
-        self.run([IP_BIN, "link", "delete", device])
+        self.run(f"{IP_BIN} link delete {device}")
 
     def delete_tc(self, device):
         """
@@ -123,7 +158,7 @@ class LinuxNetClient(object):
         :param str device: device to remove tc
         :return: nothing
         """
-        self.run([TC_BIN, "qdisc", "del", "dev", device, "root"])
+        self.run(f"{TC_BIN} qdisc delete dev {device} root")
 
     def checksums_off(self, interface_name):
         """
@@ -132,7 +167,7 @@ class LinuxNetClient(object):
         :param str interface_name: interface to update
         :return: nothing
         """
-        self.run([ETHTOOL_BIN, "-K", interface_name, "rx", "off", "tx", "off"])
+        self.run(f"{ETHTOOL_BIN} -K {interface_name} rx off tx off")
 
     def create_address(self, device, address, broadcast=None):
         """
@@ -145,19 +180,10 @@ class LinuxNetClient(object):
         """
         if broadcast is not None:
             self.run(
-                [
-                    IP_BIN,
-                    "address",
-                    "add",
-                    address,
-                    "broadcast",
-                    broadcast,
-                    "dev",
-                    device,
-                ]
+                f"{IP_BIN} address add {address} broadcast {broadcast} dev {device}"
             )
         else:
-            self.run([IP_BIN, "address", "add", address, "dev", device])
+            self.run(f"{IP_BIN} address add {address} dev {device}")
 
     def delete_address(self, device, address):
         """
@@ -167,7 +193,7 @@ class LinuxNetClient(object):
         :param str address: address to remove
         :return: nothing
         """
-        self.run([IP_BIN, "address", "delete", address, "dev", device])
+        self.run(f"{IP_BIN} address delete {address} dev {device}")
 
     def create_veth(self, name, peer):
         """
@@ -177,9 +203,7 @@ class LinuxNetClient(object):
         :param str peer: peer name
         :return: nothing
         """
-        self.run(
-            [IP_BIN, "link", "add", "name", name, "type", "veth", "peer", "name", peer]
-        )
+        self.run(f"{IP_BIN} link add name {name} type veth peer name {peer}")
 
     def create_gretap(self, device, address, local, ttl, key):
         """
@@ -188,17 +212,17 @@ class LinuxNetClient(object):
         :param str device: device to add tap to
         :param str address: address to add tap for
         :param str local: local address to tie to
-        :param str ttl: time to live value
-        :param str key: key for tap
+        :param int ttl: time to live value
+        :param int key: key for tap
         :return: nothing
         """
-        cmd = [IP_BIN, "link", "add", device, "type", "gretap", "remote", address]
+        cmd = f"{IP_BIN} link add {device} type gretap remote {address}"
         if local is not None:
-            cmd.extend(["local", local])
+            cmd += f" local {local}"
         if ttl is not None:
-            cmd.extend(["ttl", ttl])
+            cmd += f" ttl {ttl}"
         if key is not None:
-            cmd.extend(["key", key])
+            cmd += f" key {key}"
         self.run(cmd)
 
     def create_bridge(self, name):
@@ -208,16 +232,11 @@ class LinuxNetClient(object):
         :param str name: bridge name
         :return: nothing
         """
-        self.run([BRCTL_BIN, "addbr", name])
-        self.run([BRCTL_BIN, "stp", name, "off"])
-        self.run([BRCTL_BIN, "setfd", name, "0"])
+        self.run(f"{IP_BIN} link add name {name} type bridge")
+        self.run(f"{IP_BIN} link set {name} type bridge stp_state 0")
+        self.run(f"{IP_BIN} link set {name} type bridge forward_delay 0")
+        self.run(f"{IP_BIN} link set {name} type bridge mcast_snooping 0")
         self.device_up(name)
-
-        # turn off multicast snooping so forwarding occurs w/o IGMP joins
-        snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % name
-        if os.path.exists(snoop):
-            with open(snoop, "w") as f:
-                f.write("0")
 
     def delete_bridge(self, name):
         """
@@ -227,7 +246,7 @@ class LinuxNetClient(object):
         :return: nothing
         """
         self.device_down(name)
-        self.run([BRCTL_BIN, "delbr", name])
+        self.run(f"{IP_BIN} link delete {name} type bridge")
 
     def create_interface(self, bridge_name, interface_name):
         """
@@ -237,7 +256,7 @@ class LinuxNetClient(object):
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run([BRCTL_BIN, "addif", bridge_name, interface_name])
+        self.run(f"{IP_BIN} link set dev {interface_name} master {bridge_name}")
         self.device_up(interface_name)
 
     def delete_interface(self, bridge_name, interface_name):
@@ -248,7 +267,7 @@ class LinuxNetClient(object):
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run([BRCTL_BIN, "delif", bridge_name, interface_name])
+        self.run(f"{IP_BIN} link set dev {interface_name} nomaster")
 
     def existing_bridges(self, _id):
         """
@@ -256,11 +275,10 @@ class LinuxNetClient(object):
 
         :param _id: node id to check bridges for
         """
-        output = self.run([BRCTL_BIN, "show"])
-        lines = output.split("\n")
-        for line in lines[1:]:
-            columns = line.split()
-            name = columns[0]
+        output = self.run(f"{IP_BIN} -j link show type bridge")
+        bridges = json.loads(output)
+        for bridge in bridges:
+            name = bridge["ifname"]
             fields = name.split(".")
             if len(fields) != 3:
                 continue
@@ -275,7 +293,7 @@ class LinuxNetClient(object):
         :param str name: bridge name
         :return: nothing
         """
-        check_cmd([BRCTL_BIN, "setageing", name, "0"])
+        self.run(f"{IP_BIN} link set {name} type bridge ageing_time 0")
 
 
 class OvsNetClient(LinuxNetClient):
@@ -290,10 +308,10 @@ class OvsNetClient(LinuxNetClient):
         :param str name: bridge name
         :return: nothing
         """
-        self.run([OVS_BIN, "add-br", name])
-        self.run([OVS_BIN, "set", "bridge", name, "stp_enable=false"])
-        self.run([OVS_BIN, "set", "bridge", name, "other_config:stp-max-age=6"])
-        self.run([OVS_BIN, "set", "bridge", name, "other_config:stp-forward-delay=4"])
+        self.run(f"{OVS_BIN} add-br {name}")
+        self.run(f"{OVS_BIN} set bridge {name} stp_enable=false")
+        self.run(f"{OVS_BIN} set bridge {name} other_config:stp-max-age=6")
+        self.run(f"{OVS_BIN} set bridge {name} other_config:stp-forward-delay=4")
         self.device_up(name)
 
     def delete_bridge(self, name):
@@ -304,7 +322,7 @@ class OvsNetClient(LinuxNetClient):
         :return: nothing
         """
         self.device_down(name)
-        self.run([OVS_BIN, "del-br", name])
+        self.run(f"{OVS_BIN} del-br {name}")
 
     def create_interface(self, bridge_name, interface_name):
         """
@@ -314,7 +332,7 @@ class OvsNetClient(LinuxNetClient):
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run([OVS_BIN, "add-port", bridge_name, interface_name])
+        self.run(f"{OVS_BIN} add-port {bridge_name} {interface_name}")
         self.device_up(interface_name)
 
     def delete_interface(self, bridge_name, interface_name):
@@ -325,7 +343,7 @@ class OvsNetClient(LinuxNetClient):
         :param str interface_name: interface name
         :return: nothing
         """
-        self.run([OVS_BIN, "del-port", bridge_name, interface_name])
+        self.run(f"{OVS_BIN} del-port {bridge_name} {interface_name}")
 
     def existing_bridges(self, _id):
         """
@@ -333,7 +351,7 @@ class OvsNetClient(LinuxNetClient):
 
         :param _id: node id to check bridges for
         """
-        output = self.run([OVS_BIN, "list-br"])
+        output = self.run(f"{OVS_BIN} list-br")
         if output:
             for line in output.split("\n"):
                 fields = line.split(".")
@@ -348,4 +366,4 @@ class OvsNetClient(LinuxNetClient):
         :param str name: bridge name
         :return: nothing
         """
-        self.run([OVS_BIN, "set", "bridge", name, "other_config:mac-aging-time=0"])
+        self.run(f"{OVS_BIN} set bridge {name} other_config:mac-aging-time=0")

@@ -64,7 +64,7 @@ NodeData = collections.namedtuple(
         "ip6_address",
         "model",
         "emulation_id",
-        "emulation_server",
+        "server",
         "session",
         "x_position",
         "y_position",
@@ -76,6 +76,7 @@ NodeData = collections.namedtuple(
         "altitude",
         "icon",
         "opaque",
+        "source",
     ],
 )
 NodeData.__new__.__defaults__ = (None,) * len(NodeData._fields)

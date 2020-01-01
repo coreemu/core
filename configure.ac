@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.5.2)
+AC_INIT(core, 6.0.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -54,12 +54,6 @@ if test "x$enable_python" = "xyes" ; then
 else
   want_python=no
 fi
-
-AC_ARG_ENABLE([python3],
-	       [AS_HELP_STRING([--enable-python3],
-		[sets python3 flag for building packages])],
-		[enable_python3=yes], [enable_python3=no])
-AM_CONDITIONAL([PYTHON3], [test "x$enable_python3" == "xyes"])
 
 AC_ARG_ENABLE([daemon],
 	       [AS_HELP_STRING([--enable-daemon[=ARG]],
@@ -116,13 +110,8 @@ if test "x$enable_daemon" = "xyes"; then
   AC_FUNC_REALLOC
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
-  AM_PATH_PYTHON(2.7)
+  AM_PATH_PYTHON(3.6)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
-
-  AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
-  if test "x$brctl_path" = "xno" ; then
-    AC_MSG_ERROR([Could not locate brctl (from bridge-utils package).])
-  fi
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
   if test "x$sysctl_path" = "xno" ; then

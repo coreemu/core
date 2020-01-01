@@ -10,7 +10,10 @@ class CoreCommandError(subprocess.CalledProcessError):
     """
 
     def __str__(self):
-        return "Command(%s), Status(%s):\n%s" % (self.cmd, self.returncode, self.output)
+        return (
+            f"Command({self.cmd}), Status({self.returncode}):\n"
+            f"stdout: {self.output}\nstderr: {self.stderr}"
+        )
 
 
 class CoreError(Exception):

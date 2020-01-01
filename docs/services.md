@@ -195,30 +195,39 @@ In order to be able to do use the Bird Internet Routing Protocol, you must modif
 ### FRRouting
 FRRouting is a routing software package that provides TCP/IP based routing services with routing protocols support such as BGP, RIP, OSPF, IS-IS and more. FRR also supports special BGP Route Reflector and Route Server behavior. In addition to traditional IPv4 routing protocols, FRR also supports IPv6 routing protocols. With an SNMP daemon that supports the AgentX protocol, FRR provides routing protocol MIB read-only access (SNMP Support).
 
-FRR currently supports the following protocols:
-* BGP
+FRR (as of v7.2) currently supports the following protocols:
+* BGPv4
 * OSPFv2
 * OSPFv3
-* RIPv1
-* RIPv2
-* RIPng
+* RIPv1/v2/ng
 * IS-IS
-* PIM-SM/MSDP
+* PIM-SM/MSDP/BSM(AutoRP)
 * LDP
 * BFD
 * Babel
 * PBR
 * OpenFabric
+* VRRPv2/v3
 * EIGRP (alpha)
 * NHRP (alpha)
 
 #### FRRouting Package Install
+Ubuntu 19.10 and later
+```shell
+sudo apt update && sudo apt install frr
+```
+
+Ubuntu 16.04 and Ubuntu 18.04
 ```shell
 sudo apt install curl
 curl -s https://deb.frrouting.org/frr/keys.asc | sudo apt-key add -
 FRRVER="frr-stable"
 echo deb https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
 sudo apt update && sudo apt install frr frr-pythontools
+```
+Fedora 31
+```shell
+sudo dnf update && sudo dnf install frr
 ```
 
 #### FRRouting Source Code Install
@@ -303,17 +312,17 @@ Currently the Naval Research Laboratory uses this library to develop a wide vari
 * arouted
 
 #### NRL Installation
-In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [official nightly snapshots website](https://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/).
+In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [NRL Protolib Repo](https://github.com/USNavalResearchLaboratory/protolib).
 
 #### Multi-Generator (MGEN)
-Download MGEN from the [NRL MGEN nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
+Download MGEN from the [NRL MGEN Repo](https://github.com/USNavalResearchLaboratory/mgen), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os} mgen
 ```
 
 #### Neighborhood Discovery Protocol (NHDP)
-Download NHDP from the [NRL NHDP nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/nhdp/nightly_snapshots/).
+Download NHDP from the [NRL NHDP Repo](https://github.com/USNavalResearchLaboratory/NCS-Downloads/tree/master/nhdp).
 ```shell
 sudo apt-get install libpcap-dev libboost-all-dev
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-x86_64.zip
@@ -330,14 +339,14 @@ make -f Makefile.{os}
 ```
 
 #### Simplified Multicast Forwarding (SMF)
-Download SMF from the [NRL SMF nightly snapshot](https://downloads.pf.itd.nrl.navy.mil/smf/nightly_snapshots/) , unpack it and place the protolib library inside the *smf* main folder.
+Download SMF from the [NRL SMF Repo](https://github.com/USNavalResearchLaboratory/nrlsmf) , unpack it and place the protolib library inside the *smf* main folder.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os}
 ```
 
 #### Optimized Link State Routing Protocol (OLSR)
-To install the OLSR protocol, download their source code from their [nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/olsr/nightly_snapshots/nrlolsr-svnsnap.tgz). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
+To install the OLSR protocol, download their source code from their [NRL OLSR Repo](https://github.com/USNavalResearchLaboratory/nrlolsr). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
 ```shell
 cd ./unix
 make -f Makefile.{os}

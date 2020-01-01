@@ -58,3 +58,6 @@ ns3/setup.py
 
 # ignore corefx build
 corefx/target
+
+# python
+__pycache__

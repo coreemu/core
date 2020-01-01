@@ -25,12 +25,12 @@ class EmaneNet(CoreNetworkBase):
     """
 
     apitype = NodeTypes.EMANE.value
-    linktype = LinkTypes.WIRELESS.value
+    linktype = LinkTypes.WIRED.value
     type = "wlan"
     is_emane = True
 
-    def __init__(self, session, _id=None, name=None, start=True):
-        super(EmaneNet, self).__init__(session, _id, name, start)
+    def __init__(self, session, _id=None, name=None, start=True, server=None):
+        super().__init__(session, _id, name, start, server)
         self.conf = ""
         self.up = False
         self.nemidmap = {}
@@ -210,7 +210,7 @@ class EmaneNet(CoreNetworkBase):
             nemid = self.getnemid(netif)
             ifname = netif.localname
             if nemid is None:
-                logging.info("nemid for %s is unknown" % ifname)
+                logging.info("nemid for %s is unknown", ifname)
                 continue
             x, y, z = netif.node.getposition()
             lat, lon, alt = self.session.location.getgeo(x, y, z)

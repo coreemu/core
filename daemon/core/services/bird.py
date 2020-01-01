@@ -1,7 +1,7 @@
 """
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
-
+from core.nodes import ipaddress
 from core.services.coreservices import CoreService
 
 
@@ -38,8 +38,9 @@ class Bird(CoreService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    return a.split("/")[0]
+                a = a.split("/")[0]
+                if ipaddress.is_ipv4_address(a):
+                    return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 

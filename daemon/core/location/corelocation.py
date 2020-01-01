@@ -11,7 +11,7 @@ from core.emulator.enumerations import RegisterTlvs
 from core.location import utm
 
 
-class CoreLocation(object):
+class CoreLocation:
     """
     Member of session class for handling global location data. This keeps
     track of a latitude/longitude/altitude reference point and scale in
@@ -128,8 +128,6 @@ class CoreLocation(object):
                 z,
             )
             lat, lon = self.refgeo[:2]
-        # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
-        #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))
         return lat, lon, alt
 
     def getxyz(self, lat, lon, alt):

@@ -7,6 +7,10 @@ option java_outer_classname = "CoreProto";
 
 service CoreApi {
     // session rpc
+    rpc StartSession (StartSessionRequest) returns (StartSessionResponse) {
+    }
+    rpc StopSession (StopSessionRequest) returns (StopSessionResponse) {
+    }
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
     }
     rpc DeleteSession (DeleteSessionRequest) returns (DeleteSessionResponse) {
@@ -19,11 +23,17 @@ service CoreApi {
     }
     rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
     }
+    rpc SetSessionMetadata (SetSessionMetadataRequest) returns (SetSessionMetadataResponse) {
+    }
+    rpc GetSessionMetadata (GetSessionMetadataRequest) returns (GetSessionMetadataResponse) {
+    }
     rpc GetSessionLocation (GetSessionLocationRequest) returns (GetSessionLocationResponse) {
     }
     rpc SetSessionLocation (SetSessionLocationRequest) returns (SetSessionLocationResponse) {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
+    }
+    rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
     }
 
     // streams
@@ -79,6 +89,8 @@ service CoreApi {
     }
     rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
     }
+    rpc GetNodeServiceConfigs (GetNodeServiceConfigsRequest) returns (GetNodeServiceConfigsResponse) {
+    }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
     rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
@@ -91,6 +103,8 @@ service CoreApi {
     }
 
     // wlan rpc
+    rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
+    }
     rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
     }
     rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
@@ -124,6 +138,34 @@ service CoreApi {
 }
 
 // rpc request/response messages
+message StartSessionRequest {
+    int32 session_id = 1;
+    repeated Node nodes = 2;
+    repeated Link links = 3;
+    repeated Hook hooks = 4;
+    SessionLocation location = 5;
+    map<string, string> emane_config = 6;
+    repeated WlanConfig wlan_configs = 7;
+    repeated EmaneModelConfig emane_model_configs = 8;
+    repeated MobilityConfig mobility_configs = 9;
+    repeated ServiceConfig service_configs = 10;
+    repeated ServiceFileConfig service_file_configs = 11;
+    repeated Link asymmetric_links = 12;
+}
+
+message StartSessionResponse {
+    bool result = 1;
+    repeated string exceptions = 2;
+}
+
+message StopSessionRequest {
+    int32 session_id = 1;
+}
+
+message StopSessionResponse {
+    bool result = 1;
+}
+
 message CreateSessionRequest {
     int32 session_id = 1;
 }
@@ -161,7 +203,7 @@ message GetSessionOptionsRequest {
 }
 
 message GetSessionOptionsResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 2;
 }
 
 message SetSessionOptionsRequest {
@@ -173,19 +215,34 @@ message SetSessionOptionsResponse {
     bool result = 1;
 }
 
+message SetSessionMetadataRequest {
+    int32 session_id = 1;
+    map<string, string> config = 2;
+}
+
+message SetSessionMetadataResponse {
+    bool result = 1;
+}
+
+message GetSessionMetadataRequest {
+    int32 session_id = 1;
+}
+
+message GetSessionMetadataResponse {
+    map<string, string> config = 1;
+}
+
 message GetSessionLocationRequest {
     int32 session_id = 1;
 }
 
 message GetSessionLocationResponse {
-    SessionPosition position = 1;
-    float scale = 2;
+    SessionLocation location = 1;
 }
 
 message SetSessionLocationRequest {
     int32 session_id = 1;
-    SessionPosition position = 2;
-    float scale = 3;
+    SessionLocation location = 2;
 }
 
 message SetSessionLocationResponse {
@@ -201,16 +258,29 @@ message SetSessionStateResponse {
     bool result = 1;
 }
 
+message AddSessionServerRequest {
+    int32 session_id = 1;
+    string name = 2;
+    string host = 3;
+}
+
+message AddSessionServerResponse {
+    bool result = 1;
+}
+
 message EventsRequest {
     int32 session_id = 1;
+    repeated EventType.Enum events = 2;
 }
 
 message ThroughputsRequest {
+    int32 session_id = 1;
 }
 
 message ThroughputsEvent {
-    repeated BridgeThroughput bridge_throughputs = 1;
-    repeated InterfaceThroughput interface_throughputs = 2;
+    int32 session_id = 1;
+    repeated BridgeThroughput bridge_throughputs = 2;
+    repeated InterfaceThroughput interface_throughputs = 3;
 }
 
 message InterfaceThroughput {
@@ -233,10 +303,12 @@ message Event {
         ExceptionEvent exception_event = 5;
         FileEvent file_event = 6;
     }
+    int32 session_id = 7;
 }
 
 message NodeEvent {
     Node node = 1;
+    string source = 2;
 }
 
 message LinkEvent {
@@ -250,7 +322,6 @@ message SessionEvent {
     string name = 3;
     string data = 4;
     float time = 5;
-    int32 session_id = 6;
 }
 
 message ConfigEvent {
@@ -264,20 +335,18 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    int32 session_id = 11;
-    int32 interface = 12;
-    int32 network_id = 13;
-    string opaque = 14;
+    int32 interface = 11;
+    int32 network_id = 12;
+    string opaque = 13;
 }
 
 message ExceptionEvent {
     int32 node_id = 1;
-    int32 session_id = 2;
-    ExceptionLevel.Enum level = 3;
-    string source = 4;
-    string date = 5;
-    string text = 6;
-    string opaque = 7;
+    ExceptionLevel.Enum level = 2;
+    string source = 3;
+    string date = 4;
+    string text = 5;
+    string opaque = 6;
 }
 
 message FileEvent {
@@ -288,9 +357,8 @@ message FileEvent {
     int32 number = 5;
     string type = 6;
     string source = 7;
-    int32 session_id = 8;
-    string data = 9;
-    string compressed_data = 10;
+    string data = 8;
+    string compressed_data = 9;
 }
 
 message AddNodeRequest {
@@ -316,6 +384,8 @@ message EditNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     Position position = 3;
+    string icon = 4;
+    string source = 5;
 }
 
 message EditNodeResponse {
@@ -415,10 +485,7 @@ message GetMobilityConfigsRequest {
 }
 
 message GetMobilityConfigsResponse {
-    message MobilityConfig {
-        repeated ConfigGroup groups = 1;
-    }
-    map<int32, MobilityConfig> configs = 1;
+    map<int32, MappedConfig> configs = 1;
 }
 
 message GetMobilityConfigRequest {
@@ -427,13 +494,12 @@ message GetMobilityConfigRequest {
 }
 
 message GetMobilityConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetMobilityConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    MobilityConfig mobility_config = 2;
 }
 
 message SetMobilityConfigResponse {
@@ -475,6 +541,20 @@ message SetServiceDefaultsResponse {
     bool result = 1;
 }
 
+message GetNodeServiceConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetNodeServiceConfigsResponse {
+    message ServiceConfig {
+        int32 node_id = 1;
+        string service = 2;
+        NodeServiceData data = 3;
+        map<string, string> files = 4;
+    }
+    repeated ServiceConfig configs = 1;
+}
+
 message GetNodeServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -498,11 +578,7 @@ message GetNodeServiceFileResponse {
 
 message SetNodeServiceRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    repeated string startup = 4;
-    repeated string validate = 5;
-    repeated string shutdown = 6;
+    ServiceConfig config = 2;
 }
 
 message SetNodeServiceResponse {
@@ -511,10 +587,7 @@ message SetNodeServiceResponse {
 
 message SetNodeServiceFileRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    string file = 4;
-    string data = 5;
+    ServiceFileConfig config = 2;
 }
 
 message SetNodeServiceFileResponse {
@@ -532,19 +605,26 @@ message ServiceActionResponse {
     bool result = 1;
 }
 
+message GetWlanConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetWlanConfigsResponse {
+    map<int32, MappedConfig> configs = 1;
+}
+
 message GetWlanConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;
 }
 
 message GetWlanConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetWlanConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    WlanConfig wlan_config = 2;
 }
 
 message SetWlanConfigResponse {
@@ -556,7 +636,7 @@ message GetEmaneConfigRequest {
 }
 
 message GetEmaneConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetEmaneConfigRequest {
@@ -584,15 +664,12 @@ message GetEmaneModelConfigRequest {
 }
 
 message GetEmaneModelConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetEmaneModelConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    int32 interface_id = 3;
-    string model = 4;
-    map<string, string> config = 5;
+    EmaneModelConfig emane_model_config = 2;
 }
 
 message SetEmaneModelConfigResponse {
@@ -605,10 +682,12 @@ message GetEmaneModelConfigsRequest {
 
 message GetEmaneModelConfigsResponse {
     message ModelConfig {
-        string model = 1;
-        repeated ConfigGroup groups = 2;
+        int32 node_id = 1;
+        string model = 2;
+        int32 interface = 3;
+        map<string, ConfigOption> config = 4;
     }
-    map<int32, ModelConfig> configs = 1;
+    repeated ModelConfig configs = 1;
 }
 
 message SaveXmlRequest {
@@ -621,6 +700,8 @@ message SaveXmlResponse {
 
 message OpenXmlRequest {
     string data = 1;
+    bool start = 2;
+    string file = 3;
 }
 
 message OpenXmlResponse {
@@ -647,6 +728,49 @@ message EmaneLinkResponse {
 }
 
 // data structures for messages below
+message WlanConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message MobilityConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message EmaneModelConfig {
+    int32 node_id = 1;
+    int32 interface_id = 2;
+    string model = 3;
+    map<string, string> config = 4;
+}
+
+message ServiceConfig {
+    int32 node_id = 1;
+    string service = 2;
+    repeated string startup = 3;
+    repeated string validate = 4;
+    repeated string shutdown = 5;
+}
+
+message ServiceFileConfig {
+    int32 node_id = 1;
+    string service = 2;
+    string file = 3;
+    string data = 4;
+}
+
+message EventType {
+    enum Enum {
+        SESSION = 0;
+        NODE = 1;
+        LINK = 2;
+        CONFIG = 3;
+        EXCEPTION = 4;
+        FILE = 5;
+    }
+}
+
 message MessageType {
     enum Enum {
         NONE = 0;
@@ -683,20 +807,34 @@ message NodeType {
     enum Enum {
         DEFAULT = 0;
         PHYSICAL = 1;
-        TBD = 3;
         SWITCH = 4;
         HUB = 5;
         WIRELESS_LAN = 6;
         RJ45 = 7;
         TUNNEL = 8;
-        KTUNNEL = 9;
         EMANE = 10;
         TAP_BRIDGE = 11;
         PEER_TO_PEER = 12;
         CONTROL_NET = 13;
-        EMANE_NET = 14;
         DOCKER = 15;
         LXC = 16;
+    }
+}
+
+message ConfigOptionType {
+    enum Enum {
+        NONE = 0;
+        UINT8 = 1;
+        UINT16 = 2;
+        UINT32 = 3;
+        UINT64 = 4;
+        INT8 = 5;
+        INT16 = 6;
+        INT32 = 7;
+        INT64 = 8;
+        FLOAT = 9;
+        STRING = 10;
+        BOOL = 11;
     }
 }
 
@@ -764,9 +902,8 @@ message NodeServiceData {
     string meta = 10;
 }
 
-message ConfigGroup {
-    string name = 1;
-    repeated ConfigOption options = 2;
+message MappedConfig {
+    map<string, ConfigOption> config = 1;
 }
 
 message ConfigOption {
@@ -775,6 +912,7 @@ message ConfigOption {
     string value = 3;
     int32 type = 4;
     repeated string select = 5;
+    string group = 6;
 }
 
 message Session {
@@ -788,6 +926,7 @@ message SessionSummary {
     int32 id = 1;
     SessionState.Enum state = 2;
     int32 nodes = 3;
+    string file = 4;
 }
 
 message Node {
@@ -801,6 +940,7 @@ message Node {
     string icon = 8;
     string opaque = 9;
     string image = 10;
+    string server = 11;
 }
 
 message Link {
@@ -839,19 +979,20 @@ message Interface {
     int32 mtu = 10;
 }
 
-message SessionPosition {
+message SessionLocation {
     float x = 1;
     float y = 2;
     float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;
+    float scale = 7;
 }
 
 message Position {
-    int32 x = 1;
-    int32 y = 2;
-    int32 z = 3;
+    float x = 1;
+    float y = 2;
+    float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;

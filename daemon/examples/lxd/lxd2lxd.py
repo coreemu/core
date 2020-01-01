@@ -5,7 +5,7 @@ from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
 
     coreemu = CoreEmu()
     session = coreemu.create_session()
@@ -14,14 +14,14 @@ if __name__ == "__main__":
     # create nodes and interfaces
     try:
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        options = NodeOptions(image="ubuntu")
+        options = NodeOptions(image="ubuntu:18.04")
 
         # create node one
-        node_one = session.add_node(_type=NodeTypes.LXC, node_options=options)
+        node_one = session.add_node(_type=NodeTypes.LXC, options=options)
         interface_one = prefixes.create_interface(node_one)
 
         # create node two
-        node_two = session.add_node(_type=NodeTypes.LXC, node_options=options)
+        node_two = session.add_node(_type=NodeTypes.LXC, options=options)
         interface_two = prefixes.create_interface(node_two)
 
         # add link

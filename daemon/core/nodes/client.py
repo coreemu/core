@@ -4,15 +4,11 @@ over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls using the vcmd shell.
 """
 
-import logging
-import os
-from subprocess import PIPE, Popen
-
-from core import constants, utils
-from core.errors import CoreCommandError
+from core import utils
+from core.constants import VCMD_BIN
 
 
-class VnodeClient(object):
+class VnodeClient:
     """
     Provides client functionality for interacting with a virtual node.
     """
@@ -54,133 +50,20 @@ class VnodeClient(object):
         """
         pass
 
-    def _cmd_args(self):
-        return [constants.VCMD_BIN, "-c", self.ctrlchnlname, "--"]
+    def create_cmd(self, args):
+        return f"{VCMD_BIN} -c {self.ctrlchnlname} -- {args}"
 
-    def cmd(self, args, wait=True):
-        """
-        Execute a command on a node and return the status (return code).
-
-        :param list[str]|str args: command arguments
-        :param bool wait: wait for command to end or not
-        :return: command status
-        :rtype: int
-        """
-        self._verify_connection()
-        args = utils.split_args(args)
-
-        # run command, return process when not waiting
-        cmd = self._cmd_args() + args
-        logging.debug("cmd wait(%s): %s", wait, cmd)
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        if not wait:
-            return 0
-
-        # wait for and return exit status
-        return p.wait()
-
-    def cmd_output(self, args):
-        """
-        Execute a command on a node and return a tuple containing the
-        exit status and result string. stderr output
-        is folded into the stdout result string.
-
-        :param list[str]|str args: command to run
-        :return: command status and combined stdout and stderr output
-        :rtype: tuple[int, str]
-        """
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-        output = stdout.read() + stderr.read()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        return status, output.decode("utf-8").strip()
-
-    def check_cmd(self, args):
+    def check_cmd(self, args, wait=True, shell=False):
         """
         Run command and return exit status and combined stdout and stderr.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
+        :param bool wait: True to wait for command status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
-        status, output = self.cmd_output(args)
-        if status != 0:
-            raise CoreCommandError(status, args, output)
-        return output.strip()
-
-    def popen(self, args):
-        """
-        Execute a popen command against the node.
-
-        :param list[str]|str args: command arguments
-        :return: popen object, stdin, stdout, and stderr
-        :rtype: tuple
-        """
         self._verify_connection()
-        args = utils.split_args(args)
-        cmd = self._cmd_args() + args
-        logging.debug("popen: %s", cmd)
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        return p, p.stdin, p.stdout, p.stderr
-
-    def icmd(self, args):
-        """
-        Execute an icmd against a node.
-
-        :param list[str]|str args: command arguments
-        :return: command result
-        :rtype: int
-        """
-        args = utils.split_args(args)
-        return os.spawnlp(
-            os.P_WAIT,
-            constants.VCMD_BIN,
-            constants.VCMD_BIN,
-            "-c",
-            self.ctrlchnlname,
-            "--",
-            *args
-        )
-
-    def term(self, sh="/bin/sh"):
-        """
-        Open a terminal on a node.
-
-        :param str sh: shell to open terminal with
-        :return: terminal command result
-        :rtype: int
-        """
-        args = (
-            "xterm",
-            "-ut",
-            "-title",
-            self.name,
-            "-e",
-            constants.VCMD_BIN,
-            "-c",
-            self.ctrlchnlname,
-            "--",
-            sh,
-        )
-        if "SUDO_USER" in os.environ:
-            args = (
-                "su",
-                "-s",
-                "/bin/sh",
-                "-c",
-                "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
-                os.environ["SUDO_USER"],
-            )
-        return os.spawnvp(os.P_NOWAIT, args[0], args)
-
-    def termcmdstring(self, sh="/bin/sh"):
-        """
-        Create a terminal command string.
-
-        :param str sh: shell to execute command in
-        :return: str
-        """
-        return "%s -c %s -- %s" % (constants.VCMD_BIN, self.ctrlchnlname, sh)
+        args = self.create_cmd(args)
+        return utils.cmd(args, wait=wait, shell=shell)

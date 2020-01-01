@@ -8,7 +8,7 @@ from collections import OrderedDict
 from core.emulator.data import ConfigData
 
 
-class ConfigShim(object):
+class ConfigShim:
     """
     Provides helper methods for converting newer configuration values into TLV compatible formats.
     """
@@ -40,10 +40,8 @@ class ConfigShim(object):
         """
         group_strings = []
         for config_group in config_groups:
-            group_string = "%s:%s-%s" % (
-                config_group.name,
-                config_group.start,
-                config_group.stop,
+            group_string = (
+                f"{config_group.name}:{config_group.start}-{config_group.stop}"
             )
             group_strings.append(group_string)
         return "|".join(group_strings)
@@ -74,7 +72,7 @@ class ConfigShim(object):
             if not captions:
                 captions = configuration.label
             else:
-                captions += "|%s" % configuration.label
+                captions += f"|{configuration.label}"
 
             data_types.append(configuration.type.value)
 
@@ -83,11 +81,11 @@ class ConfigShim(object):
 
             _id = configuration.id
             config_value = config.get(_id, configuration.default)
-            key_value = "%s=%s" % (_id, config_value)
+            key_value = f"{_id}={config_value}"
             if not key_values:
                 key_values = key_value
             else:
-                key_values += "|%s" % key_value
+                key_values += f"|{key_value}"
 
         groups_str = cls.groups_to_str(configurable_options.config_groups())
         return ConfigData(
@@ -104,7 +102,7 @@ class ConfigShim(object):
         )
 
 
-class Configuration(object):
+class Configuration:
     """
     Represents a configuration options.
     """
@@ -130,16 +128,10 @@ class Configuration(object):
         self.label = label
 
     def __str__(self):
-        return "%s(id=%s, type=%s, default=%s, options=%s)" % (
-            self.__class__.__name__,
-            self.id,
-            self.type,
-            self.default,
-            self.options,
-        )
+        return f"{self.__class__.__name__}(id={self.id}, type={self.type}, default={self.default}, options={self.options})"
 
 
-class ConfigurableManager(object):
+class ConfigurableManager:
     """
     Provides convenience methods for storing and retrieving configuration options for nodes.
     """
@@ -248,7 +240,7 @@ class ConfigurableManager(object):
         return self.node_configurations.get(node_id)
 
 
-class ConfigGroup(object):
+class ConfigGroup:
     """
     Defines configuration group tabs used for display by ConfigurationOptions.
     """
@@ -266,7 +258,7 @@ class ConfigGroup(object):
         self.stop = stop
 
 
-class ConfigurableOptions(object):
+class ConfigurableOptions:
     """
     Provides a base for defining configuration options within CORE.
     """
@@ -317,7 +309,7 @@ class ModelManager(ConfigurableManager):
         """
         Creates a ModelManager object.
         """
-        super(ModelManager, self).__init__()
+        super().__init__()
         self.models = {}
         self.node_models = {}
 
@@ -333,7 +325,7 @@ class ModelManager(ConfigurableManager):
         # get model class to configure
         model_class = self.models.get(model_name)
         if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
+            raise ValueError(f"{model_name} is an invalid model")
 
         # retrieve default values
         model_config = self.get_model_config(node_id, model_name)
@@ -361,7 +353,7 @@ class ModelManager(ConfigurableManager):
         # get model class to configure
         model_class = self.models.get(model_name)
         if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
+            raise ValueError(f"{model_name} is an invalid model")
 
         config = self.get_configs(node_id=node_id, config_type=model_name)
         if not config:

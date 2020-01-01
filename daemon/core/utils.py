@@ -2,6 +2,7 @@
 Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
+import concurrent.futures
 import fcntl
 import hashlib
 import importlib
@@ -11,10 +12,8 @@ import logging
 import logging.config
 import os
 import shlex
-import subprocess
 import sys
-
-from past.builtins import basestring
+from subprocess import PIPE, STDOUT, Popen
 
 from core.errors import CoreCommandError
 
@@ -139,7 +138,7 @@ def which(command, required):
             break
 
     if found_path is None and required:
-        raise ValueError("failed to find required executable(%s) in path" % command)
+        raise ValueError(f"failed to find required executable({command}) in path")
 
     return found_path
 
@@ -177,20 +176,6 @@ def make_tuple_fromstr(s, value_type):
     return tuple(value_type(i) for i in values)
 
 
-def split_args(args):
-    """
-    Convenience method for splitting potential string commands into a shell-like
-    syntax list.
-
-    :param list/str args: command list or string
-    :return: shell-like syntax list
-    :rtype: list
-    """
-    if isinstance(args, basestring):
-        args = shlex.split(args)
-    return args
-
-
 def mute_detach(args, **kwargs):
     """
     Run a muted detached process by forking it.
@@ -200,106 +185,43 @@ def mute_detach(args, **kwargs):
     :return: process id of the command
     :rtype: int
     """
-    args = split_args(args)
+    args = shlex.split(args)
     kwargs["preexec_fn"] = _detach_init
     kwargs["stdout"] = DEVNULL
-    kwargs["stderr"] = subprocess.STDOUT
-    return subprocess.Popen(args, **kwargs).pid
+    kwargs["stderr"] = STDOUT
+    return Popen(args, **kwargs).pid
 
 
-def cmd(args, wait=True):
-    """
-    Runs a command on and returns the exit status.
-
-    :param list[str]|str args: command arguments
-    :param bool wait: wait for command to end or not
-    :return: command status
-    :rtype: int
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args)
-        if not wait:
-            return 0
-        return p.wait()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
-def cmd_output(args):
+def cmd(args, env=None, cwd=None, wait=True, shell=False):
     """
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
 
-    :param list[str]|str args: command arguments
-    :return: command status and stdout
-    :rtype: tuple[int, str]
-    :raises CoreCommandError: when the file to execute is not found
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        return status, stdout.decode("utf-8").strip()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
-def check_cmd(args, **kwargs):
-    """
-    Execute a command on the host and return a tuple containing the exit status and
-    result string. stderr output is folded into the stdout result string.
-
-    :param list[str]|str args: command arguments
-    :param dict kwargs: keyword arguments to pass to subprocess.Popen
+    :param str args: command arguments
+    :param dict env: environment to run command with
+    :param str cwd: directory to run command in
+    :param bool wait: True to wait for status, False otherwise
+    :param bool shell: True to use shell, False otherwise
     :return: combined stdout and stderr
     :rtype: str
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    kwargs["stdout"] = subprocess.PIPE
-    kwargs["stderr"] = subprocess.STDOUT
-    args = split_args(args)
-    logging.debug("command: %s", args)
+    logging.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    if shell is False:
+        args = shlex.split(args)
     try:
-        p = subprocess.Popen(args, **kwargs)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        if status != 0:
-            raise CoreCommandError(status, args, stdout)
-        return stdout.decode("utf-8").strip()
+        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
+        if wait:
+            stdout, stderr = p.communicate()
+            status = p.wait()
+            if status != 0:
+                raise CoreCommandError(status, args, stdout, stderr)
+            return stdout.decode("utf-8").strip()
+        else:
+            return ""
     except OSError:
         raise CoreCommandError(-1, args)
-
-
-def hex_dump(s, bytes_per_word=2, words_per_line=8):
-    """
-    Hex dump of a string.
-
-    :param str s: string to hex dump
-    :param bytes_per_word: number of bytes per word
-    :param words_per_line: number of words per line
-    :return: hex dump of string
-    """
-    dump = ""
-    count = 0
-    total_bytes = bytes_per_word * words_per_line
-
-    while s:
-        line = s[:total_bytes]
-        s = s[total_bytes:]
-        tmp = map(
-            lambda x: ("%02x" * bytes_per_word) % x,
-            zip(*[iter(map(ord, line))] * bytes_per_word),
-        )
-        if len(line) % 2:
-            tmp.append("%x" % ord(line[-1]))
-        dump += "0x%08x: %s\n" % (count, " ".join(tmp))
-        count += len(line)
-    return dump[:-1]
 
 
 def file_munge(pathname, header, text):
@@ -315,9 +237,9 @@ def file_munge(pathname, header, text):
     file_demunge(pathname, header)
 
     with open(pathname, "a") as append_file:
-        append_file.write("# BEGIN %s\n" % header)
+        append_file.write(f"# BEGIN {header}\n")
         append_file.write(text)
-        append_file.write("# END %s\n" % header)
+        append_file.write(f"# END {header}\n")
 
 
 def file_demunge(pathname, header):
@@ -335,9 +257,9 @@ def file_demunge(pathname, header):
     end = None
 
     for i, line in enumerate(lines):
-        if line == "# BEGIN %s\n" % header:
+        if line == f"# BEGIN {header}\n":
             start = i
-        elif line == "# END %s\n" % header:
+        elif line == f"# END {header}\n":
             end = i + 1
 
     if start is None or end is None:
@@ -359,7 +281,7 @@ def expand_corepath(pathname, session=None, node=None):
     :rtype: str
     """
     if session is not None:
-        pathname = pathname.replace("~", "/home/%s" % session.user)
+        pathname = pathname.replace("~", f"/home/{session.user}")
         pathname = pathname.replace("%SESSION%", str(session.id))
         pathname = pathname.replace("%SESSION_DIR%", session.session_dir)
         pathname = pathname.replace("%SESSION_USER%", session.user)
@@ -418,7 +340,7 @@ def load_classes(path, clazz):
     # validate path exists
     logging.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
-        logging.warning("invalid custom module directory specified" ": %s" % path)
+        logging.warning("invalid custom module directory specified" ": %s", path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:
@@ -434,7 +356,7 @@ def load_classes(path, clazz):
     # import and add all service modules in the path
     classes = []
     for module_name in module_names:
-        import_statement = "%s.%s" % (base_module, module_name)
+        import_statement = f"{base_module}.{module_name}"
         logging.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
@@ -460,3 +382,29 @@ def load_logging_config(config_path):
     with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)
         logging.config.dictConfig(log_config)
+
+
+def threadpool(funcs, workers=10):
+    """
+    Run provided functions, arguments, and keywords within a threadpool
+    collecting results and exceptions.
+
+    :param iter funcs: iterable that provides a func, args, kwargs
+    :param int workers: number of workers for the threadpool
+    :return: results and exceptions from running functions with args and kwargs
+    :rtype: tuple
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = []
+        for func, args, kwargs in funcs:
+            future = executor.submit(func, *args, **kwargs)
+            futures.append(future)
+        results = []
+        exceptions = []
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                exceptions.append(e)
+    return results, exceptions

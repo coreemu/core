@@ -4,9 +4,11 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [scripts]
-core = "python scripts/core-daemon -f data/core.conf -l data/logging.conf --grpc"
+core = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+coretk = "python scripts/coretk-gui"
 test = "pytest -v tests"
-test_emane = "pytest -v tests/emane"
+test-mock = "pytest -v --mock tests"
+test-emane = "pytest -v tests/emane"
 
 [dev-packages]
 grpcio-tools = "*"

@@ -4,7 +4,7 @@ from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 from core.nodes.physical import PhysicalNode
 
 
-class IdGen(object):
+class IdGen:
     def __init__(self, _id=0):
         self.id = _id
 
@@ -29,7 +29,7 @@ def create_interface(node, network, interface_data):
         ifindex=interface_data.id,
         ifname=interface_data.name,
     )
-    return node.netif(interface_data.id, network)
+    return node.netif(interface_data.id)
 
 
 def link_config(network, interface, link_options, devname=None, interface_two=None):
@@ -61,7 +61,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
     network.linkconfig(**config)
 
 
-class NodeOptions(object):
+class NodeOptions:
     """
     Options for creating and updating nodes within core.
     """
@@ -87,8 +87,9 @@ class NodeOptions(object):
         self.lon = None
         self.alt = None
         self.emulation_id = None
-        self.emulation_server = None
+        self.server = None
         self.image = image
+        self.emane = None
 
     def set_position(self, x, y):
         """
@@ -115,7 +116,7 @@ class NodeOptions(object):
         self.alt = alt
 
 
-class LinkOptions(object):
+class LinkOptions:
     """
     Options for creating and updating links within core.
     """
@@ -145,7 +146,7 @@ class LinkOptions(object):
         self.opaque = None
 
 
-class IpPrefixes(object):
+class IpPrefixes:
     """
     Convenience class to help generate IP4 and IP6 addresses for nodes within CORE.
     """
@@ -236,7 +237,7 @@ class IpPrefixes(object):
         )
 
 
-class InterfaceData(object):
+class InterfaceData:
     """
     Convenience class for storing interface data.
     """
@@ -284,7 +285,7 @@ class InterfaceData(object):
         :return: ip4 string or None
         """
         if self.has_ip4():
-            return "%s/%s" % (self.ip4, self.ip4_mask)
+            return f"{self.ip4}/{self.ip4_mask}"
         else:
             return None
 
@@ -295,7 +296,7 @@ class InterfaceData(object):
         :return: ip4 string or None
         """
         if self.has_ip6():
-            return "%s/%s" % (self.ip6, self.ip6_mask)
+            return f"{self.ip6}/{self.ip6_mask}"
         else:
             return None
 

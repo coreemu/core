@@ -4,6 +4,7 @@ xorp.py: defines routing services provided by the XORP routing suite.
 
 import logging
 
+from core.nodes import ipaddress
 from core.services.coreservices import CoreService
 
 
@@ -150,8 +151,9 @@ class XorpService(CoreService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    return a.split("/")[0]
+                a = a.split("/")[0]
+                if ipaddress.is_ipv4_address(a):
+                    return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -187,9 +189,9 @@ class XorpOspfv2(XorpService):
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
             for a in ifc.addrlist:
-                if a.find(".") < 0:
-                    continue
                 addr = a.split("/")[0]
+                if not ipaddress.is_ipv4_address(addr):
+                    continue
                 cfg += "\t\t    address %s {\n" % addr
                 cfg += "\t\t    }\n"
             cfg += "\t\t}\n"
@@ -280,9 +282,9 @@ class XorpRip(XorpService):
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
             for a in ifc.addrlist:
-                if a.find(".") < 0:
-                    continue
                 addr = a.split("/")[0]
+                if not ipaddress.is_ipv4_address(addr):
+                    continue
                 cfg += "\t\taddress %s {\n" % addr
                 cfg += "\t\t    disable: false\n"
                 cfg += "\t\t}\n"
@@ -312,13 +314,6 @@ class XorpRipng(XorpService):
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
-            #            for a in ifc.addrlist:
-            #                if a.find(":") < 0:
-            #                    continue
-            #                addr = a.split("/")[0]
-            #                cfg += "\t\taddress %s {\n" % addr
-            #                cfg += "\t\t    disable: false\n"
-            #                cfg += "\t\t}\n"
             cfg += "\t\taddress %s {\n" % ifc.hwaddr.tolinklocal()
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"
@@ -469,9 +464,9 @@ class XorpOlsr(XorpService):
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
             for a in ifc.addrlist:
-                if a.find(".") < 0:
-                    continue
                 addr = a.split("/")[0]
+                if not ipaddress.is_ipv4_address(addr):
+                    continue
                 cfg += "\t\taddress %s {\n" % addr
                 cfg += "\t\t}\n"
             cfg += "\t    }\n"

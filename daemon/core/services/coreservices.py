@@ -10,12 +10,11 @@ services.
 import enum
 import logging
 import time
-from multiprocessing.pool import ThreadPool
 
 from core import utils
 from core.constants import which
 from core.emulator.data import FileData
-from core.emulator.enumerations import MessageFlags, RegisterTlvs
+from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError
 
 
@@ -29,7 +28,7 @@ class ServiceMode(enum.Enum):
     TIMER = 2
 
 
-class ServiceDependencies(object):
+class ServiceDependencies:
     """
     Can generate boot paths for services, based on their dependencies. Will validate
     that all services will be booted and that all dependencies exist within the services provided.
@@ -127,7 +126,7 @@ class ServiceDependencies(object):
         return self.path
 
 
-class ServiceShim(object):
+class ServiceShim:
     keys = [
         "dirs",
         "files",
@@ -235,7 +234,7 @@ class ServiceShim(object):
         return servicesstring[1].split(",")
 
 
-class ServiceManager(object):
+class ServiceManager:
     """
     Manages services available for CORE nodes to use.
     """
@@ -306,7 +305,7 @@ class ServiceManager(object):
         return service_errors
 
 
-class CoreServices(object):
+class CoreServices:
     """
     Class for interacting with a list of available startup services for
     nodes. Mostly used to convert a CoreService into a Config API
@@ -397,7 +396,7 @@ class CoreServices(object):
         """
         Add services to a node.
 
-        :param core.coreobj.PyCoreNode node: node to add services to
+        :param core.nodes.base.CoreNode node: node to add services to
         :param str node_type: node type to add services to
         :param list[str] services: names of services to add to node
         :return: nothing
@@ -459,21 +458,17 @@ class CoreServices(object):
         """
         Start all services on a node.
 
-        :param core.netns.vnode.LxcNode node: node to start services on
+        :param core.nodes.base.CoreNode node: node to start services on
         :return: nothing
         """
-        pool = ThreadPool()
-        results = []
-
         boot_paths = ServiceDependencies(node.services).boot_paths()
+        funcs = []
         for boot_path in boot_paths:
-            result = pool.apply_async(self._start_boot_paths, (node, boot_path))
-            results.append(result)
-
-        pool.close()
-        pool.join()
-        for result in results:
-            result.get()
+            args = (node, boot_path)
+            funcs.append((self._start_boot_paths, args, {}))
+        result, exceptions = utils.threadpool(funcs)
+        if exceptions:
+            raise ServiceBootError(*exceptions)
 
     def _start_boot_paths(self, node, boot_path):
         """
@@ -489,6 +484,7 @@ class CoreServices(object):
             " -> ".join([x.name for x in boot_path]),
         )
         for service in boot_path:
+            service = self.get_service(node.id, service.name, default_service=True)
             try:
                 self.boot_service(node, service)
             except Exception:
@@ -543,13 +539,13 @@ class CoreServices(object):
             time.sleep(service.validation_timer)
         # non-blocking, attempt to validate periodically, up to validation_timer time
         elif service.validation_mode == ServiceMode.NON_BLOCKING:
-            start = time.time()
+            start = time.monotonic()
             while True:
                 status = self.validate_service(node, service)
                 if not status:
                     break
 
-                if time.time() - start > service.validation_timer:
+                if time.monotonic() - start > service.validation_timer:
                     break
 
                 time.sleep(service.validation_period)
@@ -598,7 +594,7 @@ class CoreServices(object):
         for cmd in cmds:
             logging.debug("validating service(%s) using: %s", service.name, cmd)
             try:
-                node.check_cmd(cmd)
+                node.cmd(cmd)
             except CoreCommandError as e:
                 logging.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
@@ -631,8 +627,14 @@ class CoreServices(object):
         status = 0
         for args in service.shutdown:
             try:
-                node.check_cmd(args)
-            except CoreCommandError:
+                node.cmd(args)
+            except CoreCommandError as e:
+                self.session.exception(
+                    ExceptionLevels.ERROR,
+                    "services",
+                    node.id,
+                    f"error stopping service {service.name}: {e.stderr}",
+                )
                 logging.exception("error running stop command %s", args)
                 status = -1
         return status
@@ -729,10 +731,7 @@ class CoreServices(object):
         status = 0
         for cmd in cmds:
             try:
-                if wait:
-                    node.check_cmd(cmd)
-                else:
-                    node.cmd(cmd, wait=False)
+                node.cmd(cmd, wait)
             except CoreCommandError:
                 logging.exception("error starting command")
                 status = -1
@@ -752,7 +751,9 @@ class CoreServices(object):
             config_files = service.get_configs(node)
 
         for file_name in config_files:
-            logging.debug("generating service config: %s", file_name)
+            logging.debug(
+                "generating service config custom(%s): %s", service.custom, file_name
+            )
             if service.custom:
                 cfg = service.config_data.get(file_name)
                 if cfg is None:
@@ -794,7 +795,7 @@ class CoreServices(object):
             node.nodefile(file_name, cfg)
 
 
-class CoreService(object):
+class CoreService:
     """
     Parent class used for defining services.
     """

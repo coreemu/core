@@ -60,7 +60,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
 
         if not isinstance(net, CoreNs3Net):
             return CoreNode.newnetif(self, net, addrlist, hwaddr, ifindex, ifname)
-        ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
+        ifindex = self.newtuntap(ifindex, ifname)
         self.attachnet(ifindex, net)
         netif = self.netif(ifindex)
         netif.sethwaddr(hwaddr)
@@ -68,7 +68,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             netif.addaddr(addr)
 
         addrstr = netif.addrlist[0]
-        (addr, mask) = addrstr.split('/')
+        addr, mask = addrstr.split('/')
         tap = net._tapdevs[netif]
         tap.SetAttribute(
             "IpAddress",
@@ -76,9 +76,9 @@ class CoreNs3Node(CoreNode, ns.network.Node):
         )
         tap.SetAttribute(
             "Netmask",
-            ns.network.Ipv4MaskValue(ns.network.Ipv4Mask("/" + mask))
+            ns.network.Ipv4MaskValue(ns.network.Ipv4Mask(f"/{mask}"))
         )
-        ns.core.Simulator.Schedule(ns.core.Time('0'), netif.install)
+        ns.core.Simulator.Schedule(ns.core.Time("0"), netif.install)
         return ifindex
 
     def getns3position(self):
@@ -117,8 +117,10 @@ class CoreNs3Net(CoreNetworkBase):
     # icon used
     type = "wlan"
 
-    def __init__(self, session, _id=None, name=None, start=True, policy=None):
-        CoreNetworkBase.__init__(self, session, _id, name)
+    def __init__(
+        self, session, _id=None, name=None, start=True, server=None
+    ):
+        CoreNetworkBase.__init__(self, session, _id, name, start, server)
         self.tapbridge = ns.tap_bridge.TapBridgeHelper()
         self._ns3devs = {}
         self._tapdevs = {}
