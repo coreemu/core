@@ -910,8 +910,42 @@ class CanvasGraph(tk.Canvas):
                     elif canvas_nid == edge.dst:
                         self.create_edge(self.nodes[edge.src], node)
                 else:
-                    to_copy_edges.append(tuple([edge.src, edge.dst]))
-        for e in to_copy_edges:
-            source_node_copy = self.nodes[copy_map[e[0]]]
-            dest_node_copy = self.nodes[copy_map[e[1]]]
+                    to_copy_edges.append(edge)
+        # copy link and link config
+        for edge in to_copy_edges:
+            source_node_copy = self.nodes[copy_map[edge.token[0]]]
+            dest_node_copy = self.nodes[copy_map[edge.token[1]]]
             self.create_edge(source_node_copy, dest_node_copy)
+            copy_edge = self.edges[
+                tuple(sorted([source_node_copy.id, dest_node_copy.id]))
+            ]
+            copy_link = copy_edge.link
+            options = edge.link.options
+            copy_link.options.CopyFrom(options)
+            interface_one = None
+            if copy_link.HasField("interface_one"):
+                interface_one = copy_link.interface_one.id
+            interface_two = None
+            if copy_link.HasField("interface_two"):
+                interface_two = copy_link.interface_two.id
+            if not options.unidirectional:
+                copy_edge.asymmetric_link = None
+            else:
+                asym_interface_one = None
+                if interface_one:
+                    asym_interface_one = core_pb2.Interface(id=interface_one)
+                asym_interface_two = None
+                if interface_two:
+                    asym_interface_two = core_pb2.Interface(id=interface_two)
+                copy_edge.asymmetric_link = core_pb2.Link(
+                    node_one_id=copy_link.node_two_id,
+                    node_two_id=copy_link.node_one_id,
+                    interface_one=asym_interface_one,
+                    interface_two=asym_interface_two,
+                    options=edge.asymmetric_link.options,
+                )
+            self.itemconfig(
+                copy_edge.id,
+                width=self.itemcget(edge.id, "width"),
+                fill=self.itemcget(edge.id, "fill"),
+            )
