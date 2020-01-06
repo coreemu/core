@@ -664,10 +664,13 @@ class CoreXmlReader:
 
             file_elements = service_configuration.find("files")
             if file_elements is not None:
+                files = []
                 for file_element in file_elements.iterchildren():
                     name = file_element.get("name")
                     data = file_element.text
                     service.config_data[name] = data
+                    files.append(name)
+                service.configs = tuple(files)
 
     def read_emane_configs(self):
         emane_configurations = self.scenario.find("emane_configurations")
