@@ -17,6 +17,7 @@ class ServiceConfigDialog(Dialog):
     def __init__(self, master, app, service_name, node_id):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)
+        self.master = master
         self.app = app
         self.core = app.core
         self.node_id = node_id
@@ -30,6 +31,9 @@ class ServiceConfigDialog(Dialog):
         self.startup_commands = []
         self.validation_commands = []
         self.shutdown_commands = []
+        self.default_startup = []
+        self.default_validate = []
+        self.default_shutdown = []
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = None
@@ -58,6 +62,9 @@ class ServiceConfigDialog(Dialog):
             default_config = self.app.core.get_node_service(
                 self.node_id, self.service_name
             )
+            self.default_startup = default_config.startup[:]
+            self.default_validate = default_config.validate[:]
+            self.default_shutdown = default_config.shutdown[:]
             custom_configs = self.app.core.service_configs
             if (
                 self.node_id in custom_configs
@@ -389,6 +396,11 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, tk.END)
 
     def click_apply(self):
+        current_listbox = self.master.current.listbox
+        if not self.is_custom_service():
+            current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
+            self.destroy()
+            return
         service_configs = self.app.core.service_configs
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
@@ -403,7 +415,6 @@ class ServiceConfigDialog(Dialog):
             )
             if self.node_id not in service_configs:
                 service_configs[self.node_id] = {}
-            # if self.service_name not in service_configs[self.node_id]:
             self.app.core.service_configs[self.node_id][self.service_name] = config
             for file in self.modified_files:
                 file_configs = self.app.core.file_configs
@@ -418,6 +429,7 @@ class ServiceConfigDialog(Dialog):
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
+            current_listbox.itemconfig(current_listbox.curselection()[0], bg="green")
         except grpc.RpcError as e:
             show_grpc_error(e)
         self.destroy()
@@ -437,13 +449,23 @@ class ServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(filename)
 
+    def is_custom_service(self):
+        startup_commands = self.startup_commands_listbox.get(0, "end")
+        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
+        validate_commands = self.validate_commands_listbox.get(0, "end")
+        return (
+            set(self.default_startup) != set(startup_commands)
+            or set(self.default_validate) != set(validate_commands)
+            or set(self.default_shutdown) != set(shutdown_commands)
+            or len(self.modified_files) > 0
+        )
+
     def click_defaults(self):
         self.app.core.service_configs.pop(self.node_id, None)
         self.app.core.file_configs.pop(self.node_id, None)
-        service_config = self.app.core.get_node_service(self.node_id, self.service_name)
-        self.startup_commands = service_config.startup[:]
-        self.validation_commands = service_config.validate[:]
-        self.shutdown_commands = service_config.shutdown[:]
+        self.startup_commands = self.default_startup
+        self.validation_commands = self.default_validate
+        self.shutdown_commands = self.default_shutdown
         self.temp_service_files = dict(self.original_service_files)
         filename = self.filename_combobox.get()
         self.service_file_data.text.delete(1.0, "end")
