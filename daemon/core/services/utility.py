@@ -4,9 +4,10 @@ utility.py: defines miscellaneous utility services.
 
 import os
 
+import netaddr
+
 from core import constants, utils
 from core.errors import CoreCommandError
-from core.nodes import ipaddress
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService, ServiceMode
 
@@ -89,7 +90,7 @@ class DefaultRouteService(UtilService):
     @staticmethod
     def addrstr(x):
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
+        if netaddr.valid_ipv6(addr):
             net = Ipv6Prefix(x)
         else:
             net = Ipv4Prefix(x)
@@ -150,7 +151,7 @@ class StaticRouteService(UtilService):
     @staticmethod
     def routestr(x):
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
+        if netaddr.valid_ipv6(addr):
             net = Ipv6Prefix(x)
             dst = "3ffe:4::/64"
         else:
@@ -285,7 +286,7 @@ ddns-update-style none;
         for inclusion in the dhcpd3 config file.
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
+        if netaddr.valid_ipv6(addr):
             return ""
         else:
             addr = x.split("/")[0]
@@ -708,7 +709,7 @@ interface %s
         for inclusion in the RADVD config file.
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
+        if netaddr.valid_ipv6(addr):
             net = Ipv6Prefix(x)
             return str(net)
         else:

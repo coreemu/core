@@ -2,10 +2,10 @@
 frr.py: defines routing services provided by FRRouting.
 Assumes installation of FRR via https://deb.frrouting.org/
 """
+import netaddr
 
 from core import constants
 from core.emulator.enumerations import LinkTypes
-from core.nodes import ipaddress
 from core.nodes.network import PtpNet
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
@@ -85,7 +85,7 @@ class FRRZebra(CoreService):
 
             if want_ipv4:
                 ipv4list = filter(
-                    lambda x: ipaddress.is_ipv4_address(x.split("/")[0]), ifc.addrlist
+                    lambda x: netaddr.valid_ipv4(x.split("/")[0]), ifc.addrlist
                 )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv4list))
@@ -93,7 +93,7 @@ class FRRZebra(CoreService):
                 cfg += cfgv4
             if want_ipv6:
                 ipv6list = filter(
-                    lambda x: ipaddress.is_ipv6_address(x.split("/")[0]), ifc.addrlist
+                    lambda x: netaddr.valid_ipv6(x.split("/")[0]), ifc.addrlist
                 )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv6list))
@@ -113,9 +113,9 @@ class FRRZebra(CoreService):
         helper for mapping IP addresses to zebra config statements
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv4_address(addr):
+        if netaddr.valid_ipv4(addr):
             return "ip address %s" % x
-        elif ipaddress.is_ipv6_address(addr):
+        elif netaddr.valid_ipv6(addr):
             return "ipv6 address %s" % x
         else:
             raise ValueError("invalid address: %s", x)
@@ -330,7 +330,7 @@ class FrrService(CoreService):
                 continue
             for a in ifc.addrlist:
                 a = a.split("/")[0]
-                if ipaddress.is_ipv4_address(a):
+                if netaddr.valid_ipv4(a):
                     return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
@@ -414,29 +414,15 @@ class FRROspfv2(FrrService):
                 continue
             for a in ifc.addrlist:
                 addr = a.split("/")[0]
-                if not ipaddress.is_ipv4_address(addr):
+                if not netaddr.valid_ipv4(addr):
                     continue
-                net = ipaddress.Ipv4Prefix(a)
-                cfg += "  network %s area 0\n" % net
+                cfg += "  network %s area 0\n" % a
         cfg += "!\n"
         return cfg
 
     @classmethod
     def generatefrrifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ip ospf hello-interval 2
-#  ip ospf dead-interval 6
-#  ip ospf retransmit-interval 5
-# """
 
 
 class FRROspfv3(FrrService):

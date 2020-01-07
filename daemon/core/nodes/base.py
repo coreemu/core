@@ -9,6 +9,8 @@ import socket
 import threading
 from socket import AF_INET, AF_INET6
 
+import netaddr
+
 from core import utils
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
@@ -1015,7 +1017,7 @@ class CoreNetworkBase(NodeBase):
             for address in netif.addrlist:
                 ip, _sep, mask = address.partition("/")
                 mask = int(mask)
-                if ipaddress.is_ipv4_address(ip):
+                if netaddr.valid_ipv4(ip):
                     family = AF_INET
                     ipl = socket.inet_pton(family, ip)
                     interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)

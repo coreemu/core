@@ -8,6 +8,8 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
+import netaddr
+
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData
@@ -908,7 +910,7 @@ class PtpNet(CoreNetwork):
         for address in if1.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
-            if ipaddress.is_ipv4_address(ip):
+            if netaddr.valid_ipv4(ip):
                 family = AF_INET
                 ipl = socket.inet_pton(family, ip)
                 interface1_ip4 = ipaddress.IpAddress(af=family, address=ipl)
@@ -926,7 +928,7 @@ class PtpNet(CoreNetwork):
         for address in if2.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
-            if ipaddress.is_ipv4_address(ip):
+            if netaddr.valid_ipv4(ip):
                 family = AF_INET
                 ipl = socket.inet_pton(family, ip)
                 interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)

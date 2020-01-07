@@ -4,7 +4,8 @@ xorp.py: defines routing services provided by the XORP routing suite.
 
 import logging
 
-from core.nodes import ipaddress
+import netaddr
+
 from core.services.coreservices import CoreService
 
 
@@ -152,7 +153,7 @@ class XorpService(CoreService):
                 continue
             for a in ifc.addrlist:
                 a = a.split("/")[0]
-                if ipaddress.is_ipv4_address(a):
+                if netaddr.valid_ipv4(a):
                     return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
@@ -190,7 +191,7 @@ class XorpOspfv2(XorpService):
             cfg += "\t\tvif %s {\n" % ifc.name
             for a in ifc.addrlist:
                 addr = a.split("/")[0]
-                if not ipaddress.is_ipv4_address(addr):
+                if not netaddr.valid_ipv4(addr):
                     continue
                 cfg += "\t\t    address %s {\n" % addr
                 cfg += "\t\t    }\n"
@@ -283,7 +284,7 @@ class XorpRip(XorpService):
             cfg += "\t    vif %s {\n" % ifc.name
             for a in ifc.addrlist:
                 addr = a.split("/")[0]
-                if not ipaddress.is_ipv4_address(addr):
+                if not netaddr.valid_ipv4(addr):
                     continue
                 cfg += "\t\taddress %s {\n" % addr
                 cfg += "\t\t    disable: false\n"
@@ -465,7 +466,7 @@ class XorpOlsr(XorpService):
             cfg += "\t    vif %s {\n" % ifc.name
             for a in ifc.addrlist:
                 addr = a.split("/")[0]
-                if not ipaddress.is_ipv4_address(addr):
+                if not netaddr.valid_ipv4(addr):
                     continue
                 cfg += "\t\taddress %s {\n" % addr
                 cfg += "\t\t}\n"
