@@ -2,8 +2,6 @@
 gRpc client for interfacing with CORE, when gRPC mode is enabled.
 """
 
-from __future__ import print_function
-
 import logging
 import threading
 from contextlib import contextmanager
@@ -1019,6 +1017,16 @@ class CoreGrpcClient:
             session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
         )
         return self.stub.EmaneLink(request)
+
+    def get_interfaces(self):
+        """
+        Retrieves a list of interfaces available on the host machine that are not
+        a part of a CORE session.
+
+        :return: core_pb2.GetInterfacesResponse
+        """
+        request = core_pb2.GetInterfacesRequest()
+        return self.stub.GetInterfaces(request)
 
     def connect(self):
         """
