@@ -22,6 +22,9 @@ class ServiceConfigDialog(Dialog):
         self.core = app.core
         self.node_id = node_id
         self.service_name = service_name
+        self.service_configs = app.core.service_configs
+        self.file_configs = app.core.file_configs
+
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
         self.metadata = ""
@@ -65,7 +68,7 @@ class ServiceConfigDialog(Dialog):
             self.default_startup = default_config.startup[:]
             self.default_validate = default_config.validate[:]
             self.default_shutdown = default_config.shutdown[:]
-            custom_configs = self.app.core.service_configs
+            custom_configs = self.service_configs
             if (
                 self.node_id in custom_configs
                 and self.service_name in custom_configs[self.node_id]
@@ -398,10 +401,11 @@ class ServiceConfigDialog(Dialog):
     def click_apply(self):
         current_listbox = self.master.current.listbox
         if not self.is_custom_service():
+            if self.node_id in self.app.core.service_configs:
+                self.service_configs[self.node_id].pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-        service_configs = self.app.core.service_configs
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
@@ -413,16 +417,15 @@ class ServiceConfigDialog(Dialog):
                 validate_commands,
                 shutdown_commands,
             )
-            if self.node_id not in service_configs:
-                service_configs[self.node_id] = {}
+            if self.node_id not in self.service_configs:
+                self.service_configs[self.node_id] = {}
             self.app.core.service_configs[self.node_id][self.service_name] = config
             for file in self.modified_files:
-                file_configs = self.app.core.file_configs
-                if self.node_id not in file_configs:
-                    file_configs[self.node_id] = {}
-                if self.service_name not in file_configs[self.node_id]:
-                    file_configs[self.node_id][self.service_name] = {}
-                file_configs[self.node_id][self.service_name][
+                if self.node_id not in self.file_configs:
+                    self.file_configs[self.node_id] = {}
+                if self.service_name not in self.file_configs[self.node_id]:
+                    self.file_configs[self.node_id][self.service_name] = {}
+                self.file_configs[self.node_id][self.service_name][
                     file
                 ] = self.temp_service_files[file]
 
@@ -461,8 +464,10 @@ class ServiceConfigDialog(Dialog):
         )
 
     def click_defaults(self):
-        self.app.core.service_configs.pop(self.node_id, None)
-        self.app.core.file_configs.pop(self.node_id, None)
+        if self.node_id in self.service_configs:
+            self.service_configs[self.node_id].pop(self.service_name, None)
+        if self.node_id in self.file_configs:
+            self.app.core.file_configs[self.node_id].pop(self.service_name, None)
         self.startup_commands = self.default_startup
         self.validation_commands = self.default_validate
         self.shutdown_commands = self.default_shutdown
