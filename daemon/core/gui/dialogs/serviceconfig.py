@@ -55,25 +55,25 @@ class ServiceConfigDialog(Dialog):
     def load(self):
         try:
             self.app.core.create_nodes_and_links()
-            service_configs = self.app.core.service_configs
+            default_config = self.app.core.get_node_service(
+                self.node_id, self.service_name
+            )
+            custom_configs = self.app.core.service_configs
             if (
-                self.node_id in service_configs
-                and self.service_name in service_configs[self.node_id]
+                self.node_id in custom_configs
+                and self.service_name in custom_configs[self.node_id]
             ):
-                service_config = self.app.core.service_configs[self.node_id][
-                    self.service_name
-                ]
+                service_config = custom_configs[self.node_id][self.service_name]
             else:
-                service_config = self.app.core.get_node_service(
-                    self.node_id, self.service_name
-                )
-            self.dependencies = [x for x in service_config.dependencies]
-            self.executables = [x for x in service_config.executables]
+                service_config = default_config
+
+            self.dependencies = service_config.dependencies[:]
+            self.executables = service_config.executables[:]
             self.metadata = service_config.meta
-            self.filenames = [x for x in service_config.configs]
-            self.startup_commands = [x for x in service_config.startup]
-            self.validation_commands = [x for x in service_config.validate]
-            self.shutdown_commands = [x for x in service_config.shutdown]
+            self.filenames = service_config.configs[:]
+            self.startup_commands = service_config.startup[:]
+            self.validation_commands = service_config.validate[:]
+            self.shutdown_commands = service_config.shutdown[:]
             self.validation_mode = service_config.validation_mode
             self.validation_time = service_config.validation_timer
             self.original_service_files = {
@@ -82,9 +82,7 @@ class ServiceConfigDialog(Dialog):
                 )
                 for x in self.filenames
             }
-            self.temp_service_files = {
-                x: self.original_service_files[x] for x in self.original_service_files
-            }
+            self.temp_service_files = dict(self.original_service_files)
             file_configs = self.app.core.file_configs
             if (
                 self.node_id in file_configs
@@ -116,8 +114,6 @@ class ServiceConfigDialog(Dialog):
         self.draw_tab_startstop()
         self.draw_tab_configuration()
 
-        button = ttk.Button(self.top, text="Only Save Changes")
-        button.grid(sticky="ew", pady=PADY)
         self.draw_buttons()
 
     def draw_tab_files(self):
@@ -332,9 +328,7 @@ class ServiceConfigDialog(Dialog):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
-        button = ttk.Button(
-            frame, text="Defaults", command=self.click_defaults, state="disabled"
-        )
+        button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
         button = ttk.Button(
             frame, text="Copy...", command=self.click_copy, state="disabled"
@@ -409,8 +403,8 @@ class ServiceConfigDialog(Dialog):
             )
             if self.node_id not in service_configs:
                 service_configs[self.node_id] = {}
-            if self.service_name not in service_configs[self.node_id]:
-                self.app.core.service_configs[self.node_id][self.service_name] = config
+            # if self.service_name not in service_configs[self.node_id]:
+            self.app.core.service_configs[self.node_id][self.service_name] = config
             for file in self.modified_files:
                 file_configs = self.app.core.file_configs
                 if self.node_id not in file_configs:
@@ -444,10 +438,25 @@ class ServiceConfigDialog(Dialog):
             self.modified_files.discard(filename)
 
     def click_defaults(self):
-        logging.info("not implemented")
+        self.app.core.service_configs.pop(self.node_id, None)
+        self.app.core.file_configs.pop(self.node_id, None)
+        service_config = self.app.core.get_node_service(self.node_id, self.service_name)
+        self.startup_commands = service_config.startup[:]
+        self.validation_commands = service_config.validate[:]
+        self.shutdown_commands = service_config.shutdown[:]
+        self.temp_service_files = dict(self.original_service_files)
+        filename = self.filename_combobox.get()
+        self.service_file_data.text.delete(1.0, "end")
+        self.service_file_data.text.insert("end", self.temp_service_files[filename])
+        self.startup_commands_listbox.delete(0, tk.END)
+        self.validate_commands_listbox.delete(0, tk.END)
+        self.shutdown_commands_listbox.delete(0, tk.END)
+        for cmd in self.startup_commands:
+            self.startup_commands_listbox.insert(tk.END, cmd)
+        for cmd in self.validation_commands:
+            self.validate_commands_listbox.insert(tk.END, cmd)
+        for cmd in self.shutdown_commands:
+            self.shutdown_commands_listbox.insert(tk.END, cmd)
 
     def click_copy(self):
-        logging.info("not implemented")
-
-    def click_cancel(self):
         logging.info("not implemented")
