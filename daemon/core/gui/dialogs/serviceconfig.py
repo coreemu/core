@@ -93,7 +93,7 @@ class ServiceConfigDialog(Dialog):
                 for x in self.filenames
             }
             self.temp_service_files = dict(self.original_service_files)
-            file_configs = self.app.core.file_configs
+            file_configs = self.file_configs
             if (
                 self.node_id in file_configs
                 and self.service_name in file_configs[self.node_id]
@@ -401,7 +401,7 @@ class ServiceConfigDialog(Dialog):
     def click_apply(self):
         current_listbox = self.master.current.listbox
         if not self.is_custom_service():
-            if self.node_id in self.app.core.service_configs:
+            if self.node_id in self.service_configs:
                 self.service_configs[self.node_id].pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
@@ -419,7 +419,7 @@ class ServiceConfigDialog(Dialog):
             )
             if self.node_id not in self.service_configs:
                 self.service_configs[self.node_id] = {}
-            self.app.core.service_configs[self.node_id][self.service_name] = config
+            self.service_configs[self.node_id][self.service_name] = config
             for file in self.modified_files:
                 if self.node_id not in self.file_configs:
                     self.file_configs[self.node_id] = {}
@@ -467,10 +467,7 @@ class ServiceConfigDialog(Dialog):
         if self.node_id in self.service_configs:
             self.service_configs[self.node_id].pop(self.service_name, None)
         if self.node_id in self.file_configs:
-            self.app.core.file_configs[self.node_id].pop(self.service_name, None)
-        self.startup_commands = self.default_startup
-        self.validation_commands = self.default_validate
-        self.shutdown_commands = self.default_shutdown
+            self.file_configs[self.node_id].pop(self.service_name, None)
         self.temp_service_files = dict(self.original_service_files)
         filename = self.filename_combobox.get()
         self.service_file_data.text.delete(1.0, "end")
@@ -478,11 +475,11 @@ class ServiceConfigDialog(Dialog):
         self.startup_commands_listbox.delete(0, tk.END)
         self.validate_commands_listbox.delete(0, tk.END)
         self.shutdown_commands_listbox.delete(0, tk.END)
-        for cmd in self.startup_commands:
+        for cmd in self.default_startup:
             self.startup_commands_listbox.insert(tk.END, cmd)
-        for cmd in self.validation_commands:
+        for cmd in self.default_validate:
             self.validate_commands_listbox.insert(tk.END, cmd)
-        for cmd in self.shutdown_commands:
+        for cmd in self.default_shutdown:
             self.shutdown_commands_listbox.insert(tk.END, cmd)
 
     def click_copy(self):
