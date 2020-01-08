@@ -3,10 +3,8 @@ Defines network nodes used within core.
 """
 
 import logging
-import socket
 import threading
 import time
-from socket import AF_INET, AF_INET6
 
 import netaddr
 
@@ -15,7 +13,6 @@ from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
-from core.nodes import ipaddress
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import GreTap, Veth
 from core.nodes.netclient import get_net_client
@@ -752,28 +749,30 @@ class CtrlNet(CoreNetwork):
         :param serverintf: server interface
         :return:
         """
-        self.prefix = ipaddress.Ipv4Prefix(prefix)
+        self.prefix = netaddr.IPNetwork(prefix).cidr
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
         super().__init__(session, _id, name, start, server)
 
-    def add_addresses(self, address):
+    def add_addresses(self, index):
         """
         Add addresses used for created control networks,
 
-        :param core.nodes.interfaces.IpAddress address: starting address to use
-        :return:
+        :param int index: starting address index
+        :return: nothing
         """
         use_ovs = self.session.options.get_config("ovs") == "True"
+        address = self.prefix[index]
         current = f"{address}/{self.prefix.prefixlen}"
         net_client = get_net_client(use_ovs, utils.cmd)
         net_client.create_address(self.brname, current)
         servers = self.session.distributed.servers
         for name in servers:
             server = servers[name]
-            address -= 1
+            index -= 1
+            address = self.prefix[index]
             current = f"{address}/{self.prefix.prefixlen}"
             net_client = get_net_client(use_ovs, server.remote_cmd)
             net_client.create_address(self.brname, current)
@@ -792,11 +791,9 @@ class CtrlNet(CoreNetwork):
         logging.info("added control network bridge: %s %s", self.brname, self.prefix)
 
         if self.hostid and self.assign_address:
-            address = self.prefix.addr(self.hostid)
-            self.add_addresses(address)
+            self.add_addresses(self.hostid)
         elif self.assign_address:
-            address = self.prefix.max_addr()
-            self.add_addresses(address)
+            self.add_addresses(-2)
 
         if self.updown_script:
             logging.info(
@@ -911,14 +908,10 @@ class PtpNet(CoreNetwork):
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
-                family = AF_INET
-                ipl = socket.inet_pton(family, ip)
-                interface1_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                interface1_ip4 = ip
                 interface1_ip4_mask = mask
             else:
-                family = AF_INET6
-                ipl = socket.inet_pton(family, ip)
-                interface1_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                interface1_ip6 = ip
                 interface1_ip6_mask = mask
 
         interface2_ip4 = None
@@ -929,14 +922,10 @@ class PtpNet(CoreNetwork):
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
-                family = AF_INET
-                ipl = socket.inet_pton(family, ip)
-                interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                interface2_ip4 = ip
                 interface2_ip4_mask = mask
             else:
-                family = AF_INET6
-                ipl = socket.inet_pton(family, ip)
-                interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                interface2_ip6 = ip
                 interface2_ip6_mask = mask
 
         link_data = LinkData(

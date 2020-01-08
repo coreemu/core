@@ -202,255 +202,255 @@ class IpAddress:
         return struct.unpack("!I", value)[0]
 
 
-class IpPrefix:
-    """
-    Provides ip address generation and prefix utilities.
-    """
-
-    def __init__(self, af, prefixstr):
-        """
-        Create a IpPrefix instance.
-
-        :param int af: address family for ip prefix
-        :param str prefixstr: ip prefix string
-        """
-        # prefixstr format: address/prefixlen
-        tmp = prefixstr.split("/")
-        if len(tmp) > 2:
-            raise ValueError(f"invalid prefix: {prefixstr}")
-        self.af = af
-        if self.af == AF_INET:
-            self.addrlen = 32
-        elif self.af == AF_INET6:
-            self.addrlen = 128
-        else:
-            raise ValueError(f"invalid address family: {self.af}")
-        if len(tmp) == 2:
-            self.prefixlen = int(tmp[1])
-        else:
-            self.prefixlen = self.addrlen
-        self.prefix = socket.inet_pton(self.af, tmp[0])
-        self.prefix = bytes(self.prefix)
-        if self.addrlen > self.prefixlen:
-            addrbits = self.addrlen - self.prefixlen
-            netmask = ((1 << self.prefixlen) - 1) << addrbits
-            prefix = bytes(b"")
-            for i in range(-1, -(addrbits >> 3) - 2, -1):
-                prefix = bytes([self.prefix[i] & (netmask & 0xFF)]) + prefix
-                netmask >>= 8
-            self.prefix = self.prefix[:i] + prefix
-
-    def __str__(self):
-        """
-        String representation of an ip prefix.
-
-        :return: string representation
-        :rtype: str
-        """
-        address = socket.inet_ntop(self.af, self.prefix)
-        return f"{address}/{self.prefixlen}"
-
-    def __eq__(self, other):
-        """
-        Compare equality with another ip prefix.
-
-        :param IpPrefix other: other ip prefix to compare with
-        :return: True is equal, False otherwise
-        :rtype: bool
-        """
-        if not isinstance(other, IpPrefix):
-            return False
-        elif self is other:
-            return True
-        else:
-            return (
-                other.af == self.af
-                and other.prefixlen == self.prefixlen
-                and other.prefix == self.prefix
-            )
-
-    def __add__(self, other):
-        """
-        Add a value to this ip prefix.
-
-        :param int other: value to add
-        :return: added ip prefix instance
-        :rtype: IpPrefix
-        """
-        try:
-            tmp = int(other)
-        except ValueError:
-            logging.exception("error during addition")
-            return NotImplemented
-
-        a = IpAddress(self.af, self.prefix) + (tmp << (self.addrlen - self.prefixlen))
-        prefixstr = f"{a}/{self.prefixlen}"
-        if self.__class__ == IpPrefix:
-            return self.__class__(self.af, prefixstr)
-        else:
-            return self.__class__(prefixstr)
-
-    def __sub__(self, other):
-        """
-        Subtract value from this ip prefix.
-
-        :param int other: value to subtract
-        :return: subtracted ip prefix instance
-        :rtype: IpPrefix
-        """
-        try:
-            tmp = -int(other)
-        except ValueError:
-            logging.exception("error during subtraction")
-            return NotImplemented
-
-        return self.__add__(tmp)
-
-    def addr(self, hostid):
-        """
-        Create an ip address for a given host id.
-
-        :param hostid: host id for an ip address
-        :return: ip address
-        :rtype: IpAddress
-        """
-        tmp = int(hostid)
-        if tmp in [-1, 0, 1] and self.addrlen == self.prefixlen:
-            return IpAddress(self.af, self.prefix)
-
-        if (
-            tmp == 0
-            or tmp > (1 << (self.addrlen - self.prefixlen)) - 1
-            or (
-                self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1
-            )
-        ):
-            raise ValueError(f"invalid hostid for prefix {self}: {hostid}")
-
-        addr = bytes(b"")
-        prefix_endpoint = -1
-        for i in range(-1, -(self.addrlen >> 3) - 1, -1):
-            prefix_endpoint = i
-            addr = bytes([self.prefix[i] | (tmp & 0xFF)]) + addr
-            tmp >>= 8
-            if not tmp:
-                break
-        addr = self.prefix[:prefix_endpoint] + addr
-        return IpAddress(self.af, addr)
-
-    def min_addr(self):
-        """
-        Return the minimum ip address for this prefix.
-
-        :return: minimum ip address
-        :rtype: IpAddress
-        """
-        return self.addr(1)
-
-    def max_addr(self):
-        """
-        Return the maximum ip address for this prefix.
-
-        :return: maximum ip address
-        :rtype: IpAddress
-        """
-        if self.af == AF_INET:
-            return self.addr((1 << (self.addrlen - self.prefixlen)) - 2)
-        else:
-            return self.addr((1 << (self.addrlen - self.prefixlen)) - 1)
-
-    def num_addr(self):
-        """
-        Retrieve the number of ip addresses for this prefix.
-
-        :return: maximum number of ip addresses
-        :rtype: int
-        """
-        return max(0, (1 << (self.addrlen - self.prefixlen)) - 2)
-
-    def prefix_str(self):
-        """
-        Retrieve the prefix string for this ip address.
-
-        :return: prefix string
-        :rtype: str
-        """
-        return socket.inet_ntop(self.af, self.prefix)
-
-    def netmask_str(self):
-        """
-        Retrieve the netmask string for this ip address.
-
-        :return: netmask string
-        :rtype: str
-        """
-        addrbits = self.addrlen - self.prefixlen
-        netmask = ((1 << self.prefixlen) - 1) << addrbits
-        netmaskbytes = struct.pack("!L", netmask)
-        return IpAddress(af=AF_INET, address=netmaskbytes).__str__()
-
-
-class Ipv4Prefix(IpPrefix):
-    """
-    Provides an ipv4 specific class for ip prefixes.
-    """
-
-    def __init__(self, prefixstr):
-        """
-        Create a Ipv4Prefix instance.
-
-        :param str prefixstr: ip prefix
-        """
-        super().__init__(AF_INET, prefixstr)
+# class IpPrefix:
+#     """
+#     Provides ip address generation and prefix utilities.
+#     """
+#
+#     def __init__(self, af, prefixstr):
+#         """
+#         Create a IpPrefix instance.
+#
+#         :param int af: address family for ip prefix
+#         :param str prefixstr: ip prefix string
+#         """
+#         # prefixstr format: address/prefixlen
+#         tmp = prefixstr.split("/")
+#         if len(tmp) > 2:
+#             raise ValueError(f"invalid prefix: {prefixstr}")
+#         self.af = af
+#         if self.af == AF_INET:
+#             self.addrlen = 32
+#         elif self.af == AF_INET6:
+#             self.addrlen = 128
+#         else:
+#             raise ValueError(f"invalid address family: {self.af}")
+#         if len(tmp) == 2:
+#             self.prefixlen = int(tmp[1])
+#         else:
+#             self.prefixlen = self.addrlen
+#         self.prefix = socket.inet_pton(self.af, tmp[0])
+#         self.prefix = bytes(self.prefix)
+#         if self.addrlen > self.prefixlen:
+#             addrbits = self.addrlen - self.prefixlen
+#             netmask = ((1 << self.prefixlen) - 1) << addrbits
+#             prefix = bytes(b"")
+#             for i in range(-1, -(addrbits >> 3) - 2, -1):
+#                 prefix = bytes([self.prefix[i] & (netmask & 0xFF)]) + prefix
+#                 netmask >>= 8
+#             self.prefix = self.prefix[:i] + prefix
+#
+#     def __str__(self):
+#         """
+#         String representation of an ip prefix.
+#
+#         :return: string representation
+#         :rtype: str
+#         """
+#         address = socket.inet_ntop(self.af, self.prefix)
+#         return f"{address}/{self.prefixlen}"
+#
+#     def __eq__(self, other):
+#         """
+#         Compare equality with another ip prefix.
+#
+#         :param IpPrefix other: other ip prefix to compare with
+#         :return: True is equal, False otherwise
+#         :rtype: bool
+#         """
+#         if not isinstance(other, IpPrefix):
+#             return False
+#         elif self is other:
+#             return True
+#         else:
+#             return (
+#                 other.af == self.af
+#                 and other.prefixlen == self.prefixlen
+#                 and other.prefix == self.prefix
+#             )
+#
+#     def __add__(self, other):
+#         """
+#         Add a value to this ip prefix.
+#
+#         :param int other: value to add
+#         :return: added ip prefix instance
+#         :rtype: IpPrefix
+#         """
+#         try:
+#             tmp = int(other)
+#         except ValueError:
+#             logging.exception("error during addition")
+#             return NotImplemented
+#
+#         a = IpAddress(self.af, self.prefix) + (tmp << (self.addrlen - self.prefixlen))
+#         prefixstr = f"{a}/{self.prefixlen}"
+#         if self.__class__ == IpPrefix:
+#             return self.__class__(self.af, prefixstr)
+#         else:
+#             return self.__class__(prefixstr)
+#
+#     def __sub__(self, other):
+#         """
+#         Subtract value from this ip prefix.
+#
+#         :param int other: value to subtract
+#         :return: subtracted ip prefix instance
+#         :rtype: IpPrefix
+#         """
+#         try:
+#             tmp = -int(other)
+#         except ValueError:
+#             logging.exception("error during subtraction")
+#             return NotImplemented
+#
+#         return self.__add__(tmp)
+#
+#     def addr(self, hostid):
+#         """
+#         Create an ip address for a given host id.
+#
+#         :param hostid: host id for an ip address
+#         :return: ip address
+#         :rtype: IpAddress
+#         """
+#         tmp = int(hostid)
+#         if tmp in [-1, 0, 1] and self.addrlen == self.prefixlen:
+#             return IpAddress(self.af, self.prefix)
+#
+#         if (
+#             tmp == 0
+#             or tmp > (1 << (self.addrlen - self.prefixlen)) - 1
+#             or (
+#                 self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1
+#             )
+#         ):
+#             raise ValueError(f"invalid hostid for prefix {self}: {hostid}")
+#
+#         addr = bytes(b"")
+#         prefix_endpoint = -1
+#         for i in range(-1, -(self.addrlen >> 3) - 1, -1):
+#             prefix_endpoint = i
+#             addr = bytes([self.prefix[i] | (tmp & 0xFF)]) + addr
+#             tmp >>= 8
+#             if not tmp:
+#                 break
+#         addr = self.prefix[:prefix_endpoint] + addr
+#         return IpAddress(self.af, addr)
+#
+#     def min_addr(self):
+#         """
+#         Return the minimum ip address for this prefix.
+#
+#         :return: minimum ip address
+#         :rtype: IpAddress
+#         """
+#         return self.addr(1)
+#
+#     def max_addr(self):
+#         """
+#         Return the maximum ip address for this prefix.
+#
+#         :return: maximum ip address
+#         :rtype: IpAddress
+#         """
+#         if self.af == AF_INET:
+#             return self.addr((1 << (self.addrlen - self.prefixlen)) - 2)
+#         else:
+#             return self.addr((1 << (self.addrlen - self.prefixlen)) - 1)
+#
+#     def num_addr(self):
+#         """
+#         Retrieve the number of ip addresses for this prefix.
+#
+#         :return: maximum number of ip addresses
+#         :rtype: int
+#         """
+#         return max(0, (1 << (self.addrlen - self.prefixlen)) - 2)
+#
+#     def prefix_str(self):
+#         """
+#         Retrieve the prefix string for this ip address.
+#
+#         :return: prefix string
+#         :rtype: str
+#         """
+#         return socket.inet_ntop(self.af, self.prefix)
+#
+#     def netmask_str(self):
+#         """
+#         Retrieve the netmask string for this ip address.
+#
+#         :return: netmask string
+#         :rtype: str
+#         """
+#         addrbits = self.addrlen - self.prefixlen
+#         netmask = ((1 << self.prefixlen) - 1) << addrbits
+#         netmaskbytes = struct.pack("!L", netmask)
+#         return IpAddress(af=AF_INET, address=netmaskbytes).__str__()
 
 
-class Ipv6Prefix(IpPrefix):
-    """
-    Provides an ipv6 specific class for ip prefixes.
-    """
-
-    def __init__(self, prefixstr):
-        """
-        Create a Ipv6Prefix instance.
-
-        :param str prefixstr: ip prefix
-        """
-        super().__init__(AF_INET6, prefixstr)
-
-
-def is_ip_address(af, addrstr):
-    """
-    Check if ip address string is a valid ip address.
-
-    :param int af: address family
-    :param str addrstr: ip address string
-    :return: True if a valid ip address, False otherwise
-    :rtype: bool
-    """
-    try:
-        socket.inet_pton(af, addrstr)
-        return True
-    except IOError:
-        return False
-
-
-def is_ipv4_address(addrstr):
-    """
-    Check if ipv4 address string is a valid ipv4 address.
-
-    :param str addrstr: ipv4 address string
-    :return: True if a valid ipv4 address, False otherwise
-    :rtype: bool
-    """
-    return is_ip_address(AF_INET, addrstr)
-
-
-def is_ipv6_address(addrstr):
-    """
-    Check if ipv6 address string is a valid ipv6 address.
-
-    :param str addrstr: ipv6 address string
-    :return: True if a valid ipv6 address, False otherwise
-    :rtype: bool
-    """
-    return is_ip_address(AF_INET6, addrstr)
+# class Ipv4Prefix(IpPrefix):
+#     """
+#     Provides an ipv4 specific class for ip prefixes.
+#     """
+#
+#     def __init__(self, prefixstr):
+#         """
+#         Create a Ipv4Prefix instance.
+#
+#         :param str prefixstr: ip prefix
+#         """
+#         super().__init__(AF_INET, prefixstr)
+#
+#
+# class Ipv6Prefix(IpPrefix):
+#     """
+#     Provides an ipv6 specific class for ip prefixes.
+#     """
+#
+#     def __init__(self, prefixstr):
+#         """
+#         Create a Ipv6Prefix instance.
+#
+#         :param str prefixstr: ip prefix
+#         """
+#         super().__init__(AF_INET6, prefixstr)
+#
+#
+# def is_ip_address(af, addrstr):
+#     """
+#     Check if ip address string is a valid ip address.
+#
+#     :param int af: address family
+#     :param str addrstr: ip address string
+#     :return: True if a valid ip address, False otherwise
+#     :rtype: bool
+#     """
+#     try:
+#         socket.inet_pton(af, addrstr)
+#         return True
+#     except IOError:
+#         return False
+#
+#
+# def is_ipv4_address(addrstr):
+#     """
+#     Check if ipv4 address string is a valid ipv4 address.
+#
+#     :param str addrstr: ipv4 address string
+#     :return: True if a valid ipv4 address, False otherwise
+#     :rtype: bool
+#     """
+#     return is_ip_address(AF_INET, addrstr)
+#
+#
+# def is_ipv6_address(addrstr):
+#     """
+#     Check if ipv6 address string is a valid ipv6 address.
+#
+#     :param str addrstr: ipv6 address string
+#     :return: True if a valid ipv6 address, False otherwise
+#     :rtype: bool
+#     """
+#     return is_ip_address(AF_INET6, addrstr)

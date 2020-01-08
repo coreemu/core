@@ -1764,7 +1764,7 @@ class Session:
         control_ip = node.id
 
         try:
-            address = control_net.prefix.addr(control_ip)
+            address = control_net.prefix[control_ip]
             prefix = control_net.prefix.prefixlen
             addrlist = [f"{address}/{prefix}"]
         except ValueError:

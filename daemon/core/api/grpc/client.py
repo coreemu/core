@@ -7,9 +7,10 @@ import threading
 from contextlib import contextmanager
 
 import grpc
+import netaddr
 
 from core.api.grpc import core_pb2, core_pb2_grpc
-from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.nodes.ipaddress import MacAddress
 
 
 class InterfaceHelper:
@@ -30,10 +31,10 @@ class InterfaceHelper:
 
         self.ip4 = None
         if ip4_prefix:
-            self.ip4 = Ipv4Prefix(ip4_prefix)
+            self.ip4 = netaddr.IPNetwork(ip4_prefix)
         self.ip6 = None
         if ip6_prefix:
-            self.ip6 = Ipv6Prefix(ip6_prefix)
+            self.ip6 = netaddr.IPNetwork(ip6_prefix)
 
     def ip4_address(self, node_id):
         """
@@ -45,7 +46,7 @@ class InterfaceHelper:
         """
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
-        return str(self.ip4.addr(node_id))
+        return str(self.ip4[node_id])
 
     def ip6_address(self, node_id):
         """
@@ -57,7 +58,7 @@ class InterfaceHelper:
         """
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
-        return str(self.ip6.addr(node_id))
+        return str(self.ip6[node_id])
 
     def create_interface(self, node_id, interface_id, name=None, mac=None):
         """
@@ -75,14 +76,14 @@ class InterfaceHelper:
         ip4 = None
         ip4_mask = None
         if self.ip4:
-            ip4 = str(self.ip4.addr(node_id))
+            ip4 = self.ip4_address(node_id)
             ip4_mask = self.ip4.prefixlen
 
         # generate ip6 data
         ip6 = None
         ip6_mask = None
         if self.ip6:
-            ip6 = str(self.ip6.addr(node_id))
+            ip6 = self.ip6_address(node_id)
             ip6_mask = self.ip6.prefixlen
 
         # random mac

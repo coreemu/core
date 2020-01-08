@@ -5,6 +5,7 @@ import os
 import time
 
 import mock
+import netaddr
 import pytest
 from mock import MagicMock
 
@@ -26,7 +27,6 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
-from core.nodes.ipaddress import Ipv4Prefix
 
 
 def dict_to_str(values):
@@ -101,8 +101,8 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         switch = 2
         coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -125,8 +125,8 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         switch = 2
         coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -149,9 +149,9 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         node_two = 2
         coretlv.session.add_node(_id=node_two)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
-        interface_two = ip_prefix.addr(node_two)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
+        interface_two = str(ip_prefix[node_two])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -179,8 +179,8 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         switch = 2
         coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -221,9 +221,9 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         node_two = 2
         coretlv.session.add_node(_id=node_two)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
-        interface_two = ip_prefix.addr(node_two)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
+        interface_two = str(ip_prefix[node_two])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -265,8 +265,8 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         switch = 2
         coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
@@ -301,8 +301,8 @@ class TestGui:
         coretlv.session.add_node(_id=node_one)
         switch = 2
         coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
-        ip_prefix = Ipv4Prefix("10.0.0.0/24")
-        interface_one = ip_prefix.addr(node_one)
+        ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
+        interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [

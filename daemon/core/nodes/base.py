@@ -5,9 +5,7 @@ Defines the base logic for nodes used within core.
 import logging
 import os
 import shutil
-import socket
 import threading
-from socket import AF_INET, AF_INET6
 
 import netaddr
 
@@ -16,7 +14,7 @@ from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
-from core.nodes import client, ipaddress
+from core.nodes import client
 from core.nodes.interface import TunTap, Veth
 from core.nodes.netclient import get_net_client
 
@@ -741,25 +739,24 @@ class CoreNode(CoreNodeBase):
         Add interface address.
 
         :param int ifindex: index of interface to add address to
-        :param core.nodes.ipaddress.IpAddress addr: address to add to interface
+        :param str addr: address to add to interface
         :return: nothing
         """
         interface = self._netif[ifindex]
         interface.addaddr(addr)
         if self.up:
-            address = str(addr)
-            # ipv6 check
+            # ipv4 check
             broadcast = None
-            if ":" not in address:
+            if netaddr.valid_ipv4(addr):
                 broadcast = "+"
-            self.node_net_client.create_address(interface.name, address, broadcast)
+            self.node_net_client.create_address(interface.name, addr, broadcast)
 
     def deladdr(self, ifindex, addr):
         """
         Delete address from an interface.
 
         :param int ifindex: index of interface to delete address from
-        :param core.nodes.ipaddress.IpAddress addr: address to delete from interface
+        :param str addr: address to delete from interface
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -771,7 +768,7 @@ class CoreNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.node_net_client.delete_address(interface.name, str(addr))
+            self.node_net_client.delete_address(interface.name, addr)
 
     def ifup(self, ifindex):
         """
@@ -1018,14 +1015,10 @@ class CoreNetworkBase(NodeBase):
                 ip, _sep, mask = address.partition("/")
                 mask = int(mask)
                 if netaddr.valid_ipv4(ip):
-                    family = AF_INET
-                    ipl = socket.inet_pton(family, ip)
-                    interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                    interface2_ip4 = ip
                     interface2_ip4_mask = mask
                 else:
-                    family = AF_INET6
-                    ipl = socket.inet_pton(family, ip)
-                    interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                    interface2_ip6 = ip
                     interface2_ip6_mask = mask
 
             link_data = LinkData(

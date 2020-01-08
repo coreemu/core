@@ -8,7 +8,6 @@ import netaddr
 
 from core import constants, utils
 from core.errors import CoreCommandError
-from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService, ServiceMode
 
 
@@ -89,19 +88,15 @@ class DefaultRouteService(UtilService):
 
     @staticmethod
     def addrstr(x):
-        addr = x.split("/")[0]
-        if netaddr.valid_ipv6(addr):
-            net = Ipv6Prefix(x)
-        else:
-            net = Ipv4Prefix(x)
-        if net.max_addr() == net.min_addr():
+        net = netaddr.IPNetwork(x)
+        if net[1] == net[-2]:
             return ""
         else:
             if os.uname()[0] == "Linux":
                 rtcmd = "ip route add default via"
             else:
                 raise Exception("unknown platform")
-            return "%s %s" % (rtcmd, net.min_addr())
+            return "%s %s" % (rtcmd, net[1])
 
 
 class DefaultMulticastRouteService(UtilService):
@@ -152,19 +147,18 @@ class StaticRouteService(UtilService):
     def routestr(x):
         addr = x.split("/")[0]
         if netaddr.valid_ipv6(addr):
-            net = Ipv6Prefix(x)
             dst = "3ffe:4::/64"
         else:
-            net = Ipv4Prefix(x)
             dst = "10.9.8.0/24"
-        if net.max_addr() == net.min_addr():
+        net = netaddr.IPNetwork(x)
+        if net[-2] == net[1]:
             return ""
         else:
             if os.uname()[0] == "Linux":
                 rtcmd = "#/sbin/ip route add %s via" % dst
             else:
                 raise Exception("unknown platform")
-            return "%s %s" % (rtcmd, net.min_addr())
+            return "%s %s" % (rtcmd, net[1])
 
 
 class SshService(UtilService):
@@ -289,11 +283,11 @@ ddns-update-style none;
         if netaddr.valid_ipv6(addr):
             return ""
         else:
-            addr = x.split("/")[0]
-            net = Ipv4Prefix(x)
+            net = netaddr.IPNetwork(x)
             # divide the address space in half
-            rangelow = net.addr(net.num_addr() / 2)
-            rangehigh = net.max_addr()
+            index = (net.size - 2) / 2
+            rangelow = net[index]
+            rangehigh = net[-2]
             return """
 subnet %s netmask %s {
   pool {
@@ -303,8 +297,8 @@ subnet %s netmask %s {
   }
 }
 """ % (
-                net.prefix_str(),
-                net.netmask_str(),
+                net.ip,
+                net.netmask,
                 rangelow,
                 rangehigh,
                 addr,
@@ -710,8 +704,7 @@ interface %s
         """
         addr = x.split("/")[0]
         if netaddr.valid_ipv6(addr):
-            net = Ipv6Prefix(x)
-            return str(net)
+            return x
         else:
             return ""
 

@@ -24,7 +24,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
-from core.nodes.ipaddress import IpAddress, MacAddress
+from core.nodes.ipaddress import MacAddress
 
 
 class CoreTlvData:
@@ -258,7 +258,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
     Utility class for packing/unpacking Ipv4 addresses.
     """
 
-    data_type = IpAddress.from_string
+    data_type = str
     data_format = "!2x4s"
     pad_len = 2
 
@@ -267,21 +267,22 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         """
         Retrieve Ipv4 address value from object.
 
-        :param core.misc.ipaddress.IpAddress obj: ip address to get value from
-        :return:
+        :param str obj: ip address to get value from
+        :return: packed address
+        :rtype: bytes
         """
-        return obj.addr
+        return socket.inet_pton(socket.AF_INET, obj)
 
     @staticmethod
     def new_obj(value):
         """
         Retrieve Ipv4 address from a string representation.
 
-        :param str value: value to get Ipv4 address from
+        :param bytes value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.nodes.ipaddress.IpAddress
+        :rtype: str
         """
-        return IpAddress(af=socket.AF_INET, address=value)
+        return socket.inet_ntop(socket.AF_INET, value)
 
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
@@ -290,7 +291,7 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
     """
 
     data_format = "!16s2x"
-    data_type = IpAddress.from_string
+    data_type = str
     pad_len = 2
 
     @staticmethod
@@ -298,21 +299,22 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
         """
         Retrieve Ipv6 address value from object.
 
-        :param core.nodes.ipaddress.IpAddress obj: ip address to get value from
-        :return:
+        :param str obj: ip address to get value from
+        :return: packed address
+        :rtype: bytes
         """
-        return obj.addr
+        return socket.inet_pton(socket.AF_INET6, obj)
 
     @staticmethod
     def new_obj(value):
         """
         Retrieve Ipv6 address from a string representation.
 
-        :param str value: value to get Ipv4 address from
+        :param bytes value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.nodes.ipaddress.IpAddress
+        :rtype: str
         """
-        return IpAddress(af=socket.AF_INET6, address=value)
+        return socket.inet_ntop(socket.AF_INET6, value)
 
 
 class CoreTlvDataMacAddr(CoreTlvDataObj):
