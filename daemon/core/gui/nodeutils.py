@@ -47,6 +47,7 @@ class NodeUtils:
     CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
     IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
     WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+    RJ45_NODES = {NodeType.RJ45}
     IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
     ANTENNA_ICON = None
@@ -70,6 +71,10 @@ class NodeUtils:
     @classmethod
     def is_wireless_node(cls, node_type):
         return node_type in cls.WIRELESS_NODES
+
+    @classmethod
+    def is_rj45_node(cls, node_type):
+        return node_type in cls.RJ45_NODES
 
     @classmethod
     def node_icon(cls, node_type, model):

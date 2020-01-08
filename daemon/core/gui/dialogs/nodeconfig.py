@@ -10,7 +10,7 @@ from core.gui.dialogs.emaneconfig import EmaneModelDialog
 from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
-from core.gui.widgets import image_chooser
+from core.gui.widgets import ListboxScroll, image_chooser
 
 
 def mac_auto(is_auto, entry):
@@ -131,6 +131,18 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
 
+        if NodeUtils.is_rj45_node(self.node.type):
+            response = self.app.core.client.get_interfaces()
+            logging.debug("host machine available interfaces: %s", response)
+            interfaces = ListboxScroll(frame)
+            interfaces.grid(
+                row=row, column=0, columnspan=2, sticky="ew", padx=PADX, pady=PADY
+            )
+            for inf in sorted(response.interfaces[:]):
+                interfaces.listbox.insert(tk.END, inf)
+            row += 1
+            interfaces.listbox.bind("<<ListboxSelect>>", self.interface_select)
+
         # interfaces
         if self.canvas_node.interfaces:
             self.draw_interfaces()
@@ -235,3 +247,10 @@ class NodeConfigDialog(Dialog):
         # redraw
         self.canvas_node.redraw()
         self.destroy()
+
+    def interface_select(self, event):
+        listbox = event.widget
+        cur = listbox.curselection()
+        if cur:
+            interface = listbox.get(cur[0])
+            self.name.set(interface)
