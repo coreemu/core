@@ -68,22 +68,26 @@ class NodeServiceDialog(Dialog):
         self.current.grid(sticky="nsew")
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
+            if self.is_custom_service(service):
+                self.current.listbox.itemconfig(tk.END, bg="green")
 
         frame = ttk.Frame(self.top)
         frame.grid(stick="ew")
-        for i in range(3):
+        for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Save", command=self.click_save)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button = ttk.Button(frame, text="Remove", command=self.click_remove)
+        button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
-        button.grid(row=0, column=2, sticky="ew")
+        button.grid(row=0, column=3, sticky="ew")
 
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event):
+    def handle_group_change(self, event=None):
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -101,6 +105,8 @@ class NodeServiceDialog(Dialog):
         self.current.listbox.delete(0, tk.END)
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
+            if self.is_custom_service(name):
+                self.current.listbox.itemconfig(tk.END, bg="green")
         self.canvas_node.core_node.services[:] = self.current_services
 
     def click_configure(self):
@@ -132,3 +138,27 @@ class NodeServiceDialog(Dialog):
     def click_cancel(self):
         self.current_services = None
         self.destroy()
+
+    def click_remove(self):
+        cur = self.current.listbox.curselection()
+        if cur:
+            service = self.current.listbox.get(cur[0])
+            self.current.listbox.delete(cur[0])
+            self.current_services.remove(service)
+            for checkbutton in self.services.frame.winfo_children():
+                if checkbutton["text"] == service:
+                    checkbutton.invoke()
+                    return
+
+    def is_custom_service(self, service):
+        service_configs = self.app.core.service_configs
+        file_configs = self.app.core.file_configs
+        if self.node_id in service_configs and service in service_configs[self.node_id]:
+            return True
+        if (
+            self.node_id in file_configs
+            and service in file_configs[self.node_id]
+            and file_configs[self.node_id][service]
+        ):
+            return True
+        return False
