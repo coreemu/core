@@ -702,10 +702,17 @@ class CoreClient:
         emane = None
         if node_type == core_pb2.NodeType.EMANE:
             emane = self.emane_models[0]
+            name = f"EMANE{node_id}"
+        elif node_type == core_pb2.NodeType.WIRELESS_LAN:
+            name = f"WLAN{node_id}"
+        elif node_type in [core_pb2.NodeType.RJ45, core_pb2.NodeType.TUNNEL]:
+            name = "UNASSIGNED"
+        else:
+            name = f"n{node_id}"
         node = core_pb2.Node(
             id=node_id,
             type=node_type,
-            name=f"n{node_id}",
+            name=name,
             model=model,
             position=position,
             image=image,
