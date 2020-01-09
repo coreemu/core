@@ -729,6 +729,7 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
+        addr = utils.validate_mac(addr)
         interface = self._netif[ifindex]
         interface.sethwaddr(addr)
         if self.up:
@@ -742,6 +743,7 @@ class CoreNode(CoreNodeBase):
         :param str addr: address to add to interface
         :return: nothing
         """
+        addr = utils.validate_ip(addr)
         interface = self._netif[ifindex]
         interface.addaddr(addr)
         if self.up:

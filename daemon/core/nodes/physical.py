@@ -59,19 +59,30 @@ class PhysicalNode(CoreNodeBase):
     def sethwaddr(self, ifindex, addr):
         """
         Set hardware address for an interface.
+
+        :param int ifindex: index of interface to set hardware address for
+        :param str addr: hardware address to set
+        :return: nothing
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
+        addr = utils.validate_mac(addr)
         interface = self._netif[ifindex]
         interface.sethwaddr(addr)
         if self.up:
-            self.net_client.device_mac(interface.name, str(addr))
+            self.net_client.device_mac(interface.name, addr)
 
     def addaddr(self, ifindex, addr):
         """
         Add an address to an interface.
+
+        :param int ifindex: index of interface to add address to
+        :param str addr: address to add
+        :return: nothing
         """
+        addr = utils.validate_ip(addr)
         interface = self._netif[ifindex]
         if self.up:
-            self.net_client.create_address(interface.name, str(addr))
+            self.net_client.create_address(interface.name, addr)
         interface.addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -408,9 +419,9 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
+        addr = utils.validate_ip(addr)
         if self.up:
-            self.net_client.create_address(self.name, str(addr))
-
+            self.net_client.create_address(self.name, addr)
         CoreInterface.addaddr(self, addr)
 
     def deladdr(self, addr):
