@@ -800,7 +800,7 @@ class CoreNode(CoreNodeBase):
 
         with self.lock:
             # TODO: emane specific code
-            if net.is_emane is True:
+            if net is not None and net.is_emane is True:
                 ifindex = self.newtuntap(ifindex, ifname)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
