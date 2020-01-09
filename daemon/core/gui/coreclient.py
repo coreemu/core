@@ -933,6 +933,3 @@ class CoreClient:
             config = self.emane_model_configs.get(_from)
             if config:
                 self.emane_model_configs[_to] = config
-
-    def get_service_commands(self):
-        self.create_nodes_and_links()
