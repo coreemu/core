@@ -8,7 +8,6 @@ from core.emane.nodes import EmaneNet
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import MacAddress
 from core.nodes.network import CtrlNet
 
 
@@ -48,8 +47,6 @@ def create_interface_data(interface_element):
     interface_id = int(interface_element.get("id"))
     name = interface_element.get("name")
     mac = interface_element.get("mac")
-    if mac:
-        mac = MacAddress.from_string(mac)
     ip4 = interface_element.get("ip4")
     ip4_mask = get_int(interface_element, "ip4_mask")
     ip6 = interface_element.get("ip6")

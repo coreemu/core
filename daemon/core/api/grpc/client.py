@@ -9,8 +9,8 @@ from contextlib import contextmanager
 import grpc
 import netaddr
 
+from core import utils
 from core.api.grpc import core_pb2, core_pb2_grpc
-from core.nodes.ipaddress import MacAddress
 
 
 class InterfaceHelper:
@@ -88,7 +88,7 @@ class InterfaceHelper:
 
         # random mac
         if not mac:
-            mac = MacAddress.random()
+            mac = utils.random_mac()
 
         return core_pb2.Interface(
             id=interface_id,

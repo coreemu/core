@@ -6,7 +6,6 @@ from core.api.grpc import core_pb2
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import MacAddress
 
 WORKERS = 10
 
@@ -57,8 +56,6 @@ def link_interface(interface_proto):
         mac = interface_proto.mac
         if mac == "":
             mac = None
-        else:
-            mac = MacAddress.from_string(mac)
         interface = InterfaceData(
             _id=interface_proto.id,
             name=name,

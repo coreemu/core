@@ -1,8 +1,8 @@
 import netaddr
 
+from core import utils
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
-from core.nodes.ipaddress import MacAddress
 from core.nodes.physical import PhysicalNode
 
 
@@ -226,7 +226,7 @@ class IpPrefixes:
 
         # random mac
         if not mac:
-            mac = MacAddress.random()
+            mac = utils.random_mac()
 
         return InterfaceData(
             _id=inteface_id,
@@ -250,7 +250,7 @@ class InterfaceData:
 
         :param int _id: interface id
         :param str name: name for interface
-        :param core.nodes.ipaddress.MacAddress mac: mac address
+        :param str mac: mac address
         :param str ip4: ipv4 address
         :param int ip4_mask: ipv4 bit mask
         :param str ip6: ipv6 address

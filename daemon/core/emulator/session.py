@@ -33,7 +33,6 @@ from core.location.event import EventLoop
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.ipaddress import MacAddress
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -1778,7 +1777,7 @@ class Session:
             net=control_net,
             ifindex=control_net.CTRLIF_IDX_BASE + net_index,
             ifname=f"ctrl{net_index}",
-            hwaddr=MacAddress.random(),
+            hwaddr=utils.random_mac(),
             addrlist=addrlist,
         )
         node.netif(interface1).control = True

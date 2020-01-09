@@ -725,14 +725,14 @@ class CoreNode(CoreNodeBase):
         Set hardware addres for an interface.
 
         :param int ifindex: index of interface to set hardware address for
-        :param core.nodes.ipaddress.MacAddress addr: hardware address to set
+        :param str addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         interface = self._netif[ifindex]
         interface.sethwaddr(addr)
         if self.up:
-            self.node_net_client.device_mac(interface.name, str(addr))
+            self.node_net_client.device_mac(interface.name, addr)
 
     def addaddr(self, ifindex, addr):
         """
@@ -787,7 +787,7 @@ class CoreNode(CoreNodeBase):
 
         :param core.nodes.base.CoreNetworkBase net: network to associate with
         :param list addrlist: addresses to add on the interface
-        :param core.nodes.ipaddress.MacAddress hwaddr: hardware address to set for interface
+        :param str hwaddr: hardware address to set for interface
         :param int ifindex: index of interface to create
         :param str ifname: name for interface
         :return: interface index

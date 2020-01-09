@@ -11,9 +11,12 @@ import json
 import logging
 import logging.config
 import os
+import random
 import shlex
 import sys
 from subprocess import PIPE, STDOUT, Popen
+
+import netaddr
 
 from core.errors import CoreCommandError
 
@@ -408,3 +411,17 @@ def threadpool(funcs, workers=10):
             except Exception as e:
                 exceptions.append(e)
     return results, exceptions
+
+
+def random_mac():
+    """
+    Create a random mac address using Xen OID 00:16:3E.
+
+    :return: random mac address
+    :rtype: str
+    """
+    value = random.randint(0, 0xFFFFFF)
+    value |= 0x00163E << 24
+    mac = netaddr.EUI(value)
+    mac.dialect = netaddr.mac_unix
+    return str(mac)

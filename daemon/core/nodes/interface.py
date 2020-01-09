@@ -130,7 +130,7 @@ class CoreInterface:
         """
         Set hardware address.
 
-        :param core.nodes.ipaddress.MacAddress addr: hardware address to set to.
+        :param str addr: hardware address to set to.
         :return: nothing
         """
         self.hwaddr = addr
