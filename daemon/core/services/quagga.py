@@ -406,6 +406,7 @@ class Ospfv3(QuaggaService):
     def generatequaggaconfig(cls, node):
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
+        cfg += "  instance-id 65\n"
         cfg += "  router-id %s\n" % rtrid
         for ifc in node.netifs():
             if hasattr(ifc, "control") and ifc.control is True:
@@ -417,19 +418,6 @@ class Ospfv3(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ipv6 ospf6 hello-interval 2
-#  ipv6 ospf6 dead-interval 6
-#  ipv6 ospf6 retransmit-interval 5
-# """
 
 
 class Ospfv3mdr(Ospfv3):
@@ -446,8 +434,6 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
-        # Uncomment the following line to use Address Family Translation for IPv4
-        cfg += "  ipv6 ospf6 instance-id 65\n"
         if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNet)):
             return (
                 cfg
@@ -456,7 +442,7 @@ class Ospfv3mdr(Ospfv3):
   ipv6 ospf6 dead-interval 6
   ipv6 ospf6 retransmit-interval 5
   ipv6 ospf6 network manet-designated-router
-  ipv6 ospf6 diffhellos
+  ipv6 ospf6 twohoprefresh 3
   ipv6 ospf6 adjacencyconnectivity uniconnected
   ipv6 ospf6 lsafullness mincostlsa
 """
