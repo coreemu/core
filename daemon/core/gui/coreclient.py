@@ -134,7 +134,7 @@ class CoreClient:
 
     def handle_events(self, event):
         if event.session_id != self.session_id:
-            logging.warn(
+            logging.warning(
                 "ignoring event session(%s) current(%s)",
                 event.session_id,
                 self.session_id,
