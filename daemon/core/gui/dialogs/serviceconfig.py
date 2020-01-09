@@ -1,5 +1,4 @@
 "Service configuration dialog"
-import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -399,26 +398,29 @@ class ServiceConfigDialog(Dialog):
 
     def click_apply(self):
         current_listbox = self.master.current.listbox
-        if not self.is_custom_service():
+        if not self.is_custom_service_config() and not self.is_custom_service_file():
             if self.node_id in self.service_configs:
                 self.service_configs[self.node_id].pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-        startup_commands = self.startup_commands_listbox.get(0, "end")
-        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-        validate_commands = self.validate_commands_listbox.get(0, "end")
+
         try:
-            config = self.core.set_node_service(
-                self.node_id,
-                self.service_name,
-                startup_commands,
-                validate_commands,
-                shutdown_commands,
-            )
-            if self.node_id not in self.service_configs:
-                self.service_configs[self.node_id] = {}
-            self.service_configs[self.node_id][self.service_name] = config
+            if self.is_custom_service_config():
+                startup_commands = self.startup_commands_listbox.get(0, "end")
+                shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
+                validate_commands = self.validate_commands_listbox.get(0, "end")
+                config = self.core.set_node_service(
+                    self.node_id,
+                    self.service_name,
+                    startup_commands,
+                    validate_commands,
+                    shutdown_commands,
+                )
+                if self.node_id not in self.service_configs:
+                    self.service_configs[self.node_id] = {}
+                self.service_configs[self.node_id][self.service_name] = config
+
             for file in self.modified_files:
                 if self.node_id not in self.file_configs:
                     self.file_configs[self.node_id] = {}
@@ -452,7 +454,7 @@ class ServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(filename)
 
-    def is_custom_service(self):
+    def is_custom_service_config(self):
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
@@ -460,8 +462,10 @@ class ServiceConfigDialog(Dialog):
             set(self.default_startup) != set(startup_commands)
             or set(self.default_validate) != set(validate_commands)
             or set(self.default_shutdown) != set(shutdown_commands)
-            or len(self.modified_files) > 0
         )
+
+    def is_custom_service_file(self):
+        return len(self.modified_files) > 0
 
     def click_defaults(self):
         if self.node_id in self.service_configs:
@@ -483,6 +487,10 @@ class ServiceConfigDialog(Dialog):
             self.shutdown_commands_listbox.insert(tk.END, cmd)
 
     def click_copy(self):
-        logging.info("not implemented")
         dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
         dialog.show()
+
+    def append_commands(self, commands, listbox, to_add):
+        for cmd in to_add:
+            commands.append(cmd)
+            listbox.insert(tk.END, cmd)

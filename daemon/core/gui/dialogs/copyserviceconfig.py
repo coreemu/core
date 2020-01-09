@@ -42,9 +42,27 @@ class CopyServiceConfigDialog(Dialog):
                         treeid, "end", text=service, tags="service"
                     )
                     tree_ids[service] = serviceid
-                    print(config)
-                    # for filename, data in config.items():
-                    #     self.tree.insert(serviceid, "end", text=filename)
+                    cmdup = config.startup[:]
+                    cmddown = config.shutdown[:]
+                    cmdval = config.validate[:]
+                    self.tree.insert(
+                        serviceid,
+                        "end",
+                        text=f"cmdup=({str(cmdup)[1:-1]})",
+                        tags=("cmd", "up"),
+                    )
+                    self.tree.insert(
+                        serviceid,
+                        "end",
+                        text=f"cmddown=({str(cmddown)[1:-1]})",
+                        tags=("cmd", "down"),
+                    )
+                    self.tree.insert(
+                        serviceid,
+                        "end",
+                        text=f"cmdval=({str(cmdval)[1:-1]})",
+                        tags=("cmd", "val"),
+                    )
             if files:
                 for service, configs in files.items():
                     if service in tree_ids:
@@ -83,6 +101,29 @@ class CopyServiceConfigDialog(Dialog):
                     if self.parent.filename_combobox.get() == filename:
                         self.parent.service_file_data.text.delete(1.0, "end")
                         self.parent.service_file_data.text.insert("end", data)
+            if "cmd" in item["tags"]:
+                nid, service = self.get_node_service(selected)
+                if service == self.master.service_name:
+                    cmds = self.service_configs[nid][service]
+                    if "up" in item["tags"]:
+                        self.master.append_commands(
+                            self.master.startup_commands,
+                            self.master.startup_commands_listbox,
+                            cmds.startup,
+                        )
+                    elif "down" in item["tags"]:
+                        self.master.append_commands(
+                            self.master.shutdown_commands,
+                            self.master.shutdown_commands_listbox,
+                            cmds.shutdown,
+                        )
+
+                    elif "val" in item["tags"]:
+                        self.master.append_commands(
+                            self.master.validate_commands,
+                            self.master.validate_commands_listbox,
+                            cmds.validate,
+                        )
         self.destroy()
 
     def click_view(self):
@@ -92,6 +133,17 @@ class CopyServiceConfigDialog(Dialog):
             if "file" in item["tags"]:
                 nid, service = self.get_node_service(selected)
                 data = self.file_configs[nid][service][item["text"]]
+                dialog = ViewConfigDialog(self, self.app, self.node_id, data)
+                dialog.show()
+            if "cmd" in item["tags"]:
+                nid, service = self.get_node_service(selected)
+                cmds = self.service_configs[nid][service]
+                if "up" in item["tags"]:
+                    data = f"({str(cmds.startup[:])[1:-1]})"
+                elif "down" in item["tags"]:
+                    data = f"({str(cmds.shutdown[:])[1:-1]})"
+                elif "val" in item["tags"]:
+                    data = f"({str(cmds.validate[:])[1:-1]})"
                 dialog = ViewConfigDialog(self, self.app, self.node_id, data)
                 dialog.show()
 
@@ -115,7 +167,7 @@ class ViewConfigDialog(Dialog):
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
         frame.grid(row=0, column=0)
         label = ttk.Label(frame, text="File: ")
-        label.grid(row=0, column=0, sticky="ew")
+        label.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         self.service_data = CodeText(self.top)
         self.service_data.grid(row=1, column=0, sticky="nsew")
