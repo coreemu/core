@@ -133,18 +133,28 @@ class CopyServiceConfigDialog(Dialog):
             if "file" in item["tags"]:
                 nid, service = self.get_node_service(selected)
                 data = self.file_configs[nid][service][item["text"]]
-                dialog = ViewConfigDialog(self, self.app, self.node_id, data)
+                dialog = ViewConfigDialog(
+                    self, self.app, nid, data, item["text"].split("/")[-1]
+                )
                 dialog.show()
             if "cmd" in item["tags"]:
                 nid, service = self.get_node_service(selected)
                 cmds = self.service_configs[nid][service]
                 if "up" in item["tags"]:
                     data = f"({str(cmds.startup[:])[1:-1]})"
+                    dialog = ViewConfigDialog(
+                        self, self.app, self.node_id, data, "cmdup"
+                    )
                 elif "down" in item["tags"]:
                     data = f"({str(cmds.shutdown[:])[1:-1]})"
+                    dialog = ViewConfigDialog(
+                        self, self.app, self.node_id, data, "cmdup"
+                    )
                 elif "val" in item["tags"]:
                     data = f"({str(cmds.validate[:])[1:-1]})"
-                dialog = ViewConfigDialog(self, self.app, self.node_id, data)
+                    dialog = ViewConfigDialog(
+                        self, self.app, self.node_id, data, "cmdup"
+                    )
                 dialog.show()
 
     def get_node_service(self, selected):
@@ -156,18 +166,24 @@ class CopyServiceConfigDialog(Dialog):
 
 
 class ViewConfigDialog(Dialog):
-    def __init__(self, master, app, node_id, data):
+    def __init__(self, master, app, node_id, data, filename=None):
         super().__init__(master, app, f"n{node_id} config data", modal=True)
         self.data = data
         self.service_data = None
+        self.filepath = tk.StringVar(value=f"/tmp/services.tmp-n{node_id}-{filename}")
         self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
-        frame.grid(row=0, column=0)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=10)
+        frame.grid(row=0, column=0, sticky="ew")
         label = ttk.Label(frame, text="File: ")
         label.grid(row=0, column=0, sticky="ew", padx=PADX)
+        entry = ttk.Entry(frame, textvariable=self.filepath)
+        entry.config(state="disabled")
+        entry.grid(row=0, column=1, sticky="ew")
 
         self.service_data = CodeText(self.top)
         self.service_data.grid(row=1, column=0, sticky="nsew")
