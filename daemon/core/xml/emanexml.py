@@ -5,7 +5,6 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 
 from core import utils
-from core.nodes.ipaddress import MacAddress
 from core.xml import corexml
 
 _hwaddr_prefix = "02:02"
@@ -208,7 +207,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         node.setnemid(netif, nem_id)
         macstr = _hwaddr_prefix + ":00:00:"
         macstr += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-        netif.sethwaddr(MacAddress.from_string(macstr))
+        netif.sethwaddr(macstr)
 
         # increment nem id
         nem_id += 1

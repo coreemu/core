@@ -8,12 +8,11 @@ import logging
 import optparse
 import sys
 
+import netaddr
 import ns.core
 import ns.mobility
 from corens3.obj import Ns3LteNet
 from corens3.obj import Ns3Session
-
-from core.nodes import ipaddress
 
 
 def ltesession(opt):
@@ -28,10 +27,10 @@ def ltesession(opt):
         stream = ascii_helper.CreateFileStream('/tmp/ns3lte.tr')
         lte.lte.EnableAsciiAll(stream)
 
-    prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
+    prefix = netaddr.IPNetwork("10.0.0.0/16")
     mobb = None
     nodes = []
-    for i in xrange(1, opt.numnodes + 1):
+    for i in range(1, opt.numnodes + 1):
         node = session.addnode(name="n%d" % i)
         mob = ns.mobility.ConstantPositionMobilityModel()
         mob.SetPosition(ns.core.Vector3D(10.0 * i, 0.0, 0.0))
@@ -39,7 +38,7 @@ def ltesession(opt):
             # first node is nodeb
             lte.setnodeb(node)
             mobb = mob
-        node.newnetif(lte, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
+        node.newnetif(lte, ["%s/%s" % (prefix[i], prefix.prefixlen)])
         nodes.append(node)
         if i == 1:
             _tmp, ns3dev = lte.findns3dev(node)

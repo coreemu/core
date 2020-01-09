@@ -1,12 +1,12 @@
 import os
 import socket
 
+import netaddr
 from lxml import etree
 
 from core import utils
 from core.constants import IP_BIN
 from core.emane.nodes import EmaneNet
-from core.nodes import ipaddress
 from core.nodes.base import CoreNodeBase
 
 
@@ -56,9 +56,9 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
 
 def get_address_type(address):
     addr, _slash, _prefixlen = address.partition("/")
-    if ipaddress.is_ipv4_address(addr):
+    if netaddr.valid_ipv4(addr):
         address_type = "IPv4"
-    elif ipaddress.is_ipv6_address(addr):
+    elif netaddr.valid_ipv6(addr):
         address_type = "IPv6"
     else:
         raise NotImplementedError

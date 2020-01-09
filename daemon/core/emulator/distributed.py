@@ -8,13 +8,13 @@ import threading
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 
+import netaddr
 from fabric import Connection
 from invoke import UnexpectedExit
 
 from core import utils
 from core.errors import CoreCommandError
 from core.nodes.interface import GreTap
-from core.nodes.ipaddress import IpAddress
 from core.nodes.network import CoreNetwork, CtrlNet
 
 LOCK = threading.Lock()
@@ -196,7 +196,7 @@ class DistributedController:
         :rtype: tuple
         """
         host = server.host
-        key = self.tunnel_key(node.id, IpAddress.to_int(host))
+        key = self.tunnel_key(node.id, netaddr.IPAddress(host).value)
         tunnel = self.tunnels.get(key)
         if tunnel is not None:
             return tunnel

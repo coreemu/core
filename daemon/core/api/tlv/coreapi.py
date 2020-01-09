@@ -5,9 +5,12 @@ types and objects used for parsing and building CORE API messages.
 CORE API messaging is leveraged for communication with the GUI.
 """
 
+import binascii
 import socket
 import struct
 from enum import Enum
+
+import netaddr
 
 from core.api.tlv import structutils
 from core.emulator.enumerations import (
@@ -24,7 +27,6 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
-from core.nodes.ipaddress import IpAddress, MacAddress
 
 
 class CoreTlvData:
@@ -258,7 +260,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
     Utility class for packing/unpacking Ipv4 addresses.
     """
 
-    data_type = IpAddress.from_string
+    data_type = str
     data_format = "!2x4s"
     pad_len = 2
 
@@ -267,21 +269,22 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         """
         Retrieve Ipv4 address value from object.
 
-        :param core.misc.ipaddress.IpAddress obj: ip address to get value from
-        :return:
+        :param str obj: ip address to get value from
+        :return: packed address
+        :rtype: bytes
         """
-        return obj.addr
+        return socket.inet_pton(socket.AF_INET, obj)
 
     @staticmethod
     def new_obj(value):
         """
         Retrieve Ipv4 address from a string representation.
 
-        :param str value: value to get Ipv4 address from
+        :param bytes value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.nodes.ipaddress.IpAddress
+        :rtype: str
         """
-        return IpAddress(af=socket.AF_INET, address=value)
+        return socket.inet_ntop(socket.AF_INET, value)
 
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
@@ -290,7 +293,7 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
     """
 
     data_format = "!16s2x"
-    data_type = IpAddress.from_string
+    data_type = str
     pad_len = 2
 
     @staticmethod
@@ -298,21 +301,22 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
         """
         Retrieve Ipv6 address value from object.
 
-        :param core.nodes.ipaddress.IpAddress obj: ip address to get value from
-        :return:
+        :param str obj: ip address to get value from
+        :return: packed address
+        :rtype: bytes
         """
-        return obj.addr
+        return socket.inet_pton(socket.AF_INET6, obj)
 
     @staticmethod
     def new_obj(value):
         """
         Retrieve Ipv6 address from a string representation.
 
-        :param str value: value to get Ipv4 address from
+        :param bytes value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.nodes.ipaddress.IpAddress
+        :rtype: str
         """
-        return IpAddress(af=socket.AF_INET6, address=value)
+        return socket.inet_ntop(socket.AF_INET6, value)
 
 
 class CoreTlvDataMacAddr(CoreTlvDataObj):
@@ -321,7 +325,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
     """
 
     data_format = "!2x8s"
-    data_type = MacAddress.from_string
+    data_type = str
     pad_len = 2
 
     @staticmethod
@@ -329,23 +333,27 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         """
         Retrieve Ipv6 address value from object.
 
-        :param core.nodes.ipaddress.MacAddress obj: mac address to get value from
-        :return:
+        :param str obj: mac address to get value from
+        :return: packed mac address
+        :rtype: bytes
         """
         # extend to 64 bits
-        return b"\0\0" + obj.addr
+        return b"\0\0" + netaddr.EUI(obj).packed
 
     @staticmethod
     def new_obj(value):
         """
         Retrieve mac address from a string representation.
 
-        :param str value: value to get Ipv4 address from
-        :return: Ipv4 address
-        :rtype: core.nodes.ipaddress.MacAddress
+        :param bytes value: value to get Ipv4 address from
+        :return: mac address
+        :rtype: str
         """
         # only use 48 bits
-        return MacAddress(address=value[2:])
+        value = binascii.hexlify(value[2:]).decode()
+        mac = netaddr.EUI(value)
+        mac.dialect = netaddr.mac_unix
+        return str(mac)
 
 
 class CoreTlv:

@@ -5,16 +5,16 @@ Defines the base logic for nodes used within core.
 import logging
 import os
 import shutil
-import socket
 import threading
-from socket import AF_INET, AF_INET6
+
+import netaddr
 
 from core import utils
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
-from core.nodes import client, ipaddress
+from core.nodes import client
 from core.nodes.interface import TunTap, Veth
 from core.nodes.netclient import get_net_client
 
@@ -725,39 +725,40 @@ class CoreNode(CoreNodeBase):
         Set hardware addres for an interface.
 
         :param int ifindex: index of interface to set hardware address for
-        :param core.nodes.ipaddress.MacAddress addr: hardware address to set
+        :param str addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
+        addr = utils.validate_mac(addr)
         interface = self._netif[ifindex]
         interface.sethwaddr(addr)
         if self.up:
-            self.node_net_client.device_mac(interface.name, str(addr))
+            self.node_net_client.device_mac(interface.name, addr)
 
     def addaddr(self, ifindex, addr):
         """
         Add interface address.
 
         :param int ifindex: index of interface to add address to
-        :param core.nodes.ipaddress.IpAddress addr: address to add to interface
+        :param str addr: address to add to interface
         :return: nothing
         """
+        addr = utils.validate_ip(addr)
         interface = self._netif[ifindex]
         interface.addaddr(addr)
         if self.up:
-            address = str(addr)
-            # ipv6 check
+            # ipv4 check
             broadcast = None
-            if ":" not in address:
+            if netaddr.valid_ipv4(addr):
                 broadcast = "+"
-            self.node_net_client.create_address(interface.name, address, broadcast)
+            self.node_net_client.create_address(interface.name, addr, broadcast)
 
     def deladdr(self, ifindex, addr):
         """
         Delete address from an interface.
 
         :param int ifindex: index of interface to delete address from
-        :param core.nodes.ipaddress.IpAddress addr: address to delete from interface
+        :param str addr: address to delete from interface
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -769,7 +770,7 @@ class CoreNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.node_net_client.delete_address(interface.name, str(addr))
+            self.node_net_client.delete_address(interface.name, addr)
 
     def ifup(self, ifindex):
         """
@@ -788,7 +789,7 @@ class CoreNode(CoreNodeBase):
 
         :param core.nodes.base.CoreNetworkBase net: network to associate with
         :param list addrlist: addresses to add on the interface
-        :param core.nodes.ipaddress.MacAddress hwaddr: hardware address to set for interface
+        :param str hwaddr: hardware address to set for interface
         :param int ifindex: index of interface to create
         :param str ifname: name for interface
         :return: interface index
@@ -799,7 +800,7 @@ class CoreNode(CoreNodeBase):
 
         with self.lock:
             # TODO: emane specific code
-            if net.is_emane is True:
+            if net is not None and net.is_emane is True:
                 ifindex = self.newtuntap(ifindex, ifname)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
@@ -1015,15 +1016,11 @@ class CoreNetworkBase(NodeBase):
             for address in netif.addrlist:
                 ip, _sep, mask = address.partition("/")
                 mask = int(mask)
-                if ipaddress.is_ipv4_address(ip):
-                    family = AF_INET
-                    ipl = socket.inet_pton(family, ip)
-                    interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                if netaddr.valid_ipv4(ip):
+                    interface2_ip4 = ip
                     interface2_ip4_mask = mask
                 else:
-                    family = AF_INET6
-                    ipl = socket.inet_pton(family, ip)
-                    interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                    interface2_ip6 = ip
                     interface2_ip6_mask = mask
 
             link_data = LinkData(

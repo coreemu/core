@@ -114,7 +114,7 @@ class CoreInterface:
         :param str addr: address to add
         :return: nothing
         """
-
+        addr = utils.validate_ip(addr)
         self.addrlist.append(addr)
 
     def deladdr(self, addr):
@@ -130,9 +130,10 @@ class CoreInterface:
         """
         Set hardware address.
 
-        :param core.nodes.ipaddress.MacAddress addr: hardware address to set to.
+        :param str addr: hardware address to set to.
         :return: nothing
         """
+        addr = utils.validate_mac(addr)
         self.hwaddr = addr
 
     def getparam(self, key):
