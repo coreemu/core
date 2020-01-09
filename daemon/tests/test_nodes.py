@@ -47,6 +47,54 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id)
 
+    def test_node_sethwaddr(self, session):
+        # given
+        node = session.add_node()
+        index = node.newnetif()
+        interface = node.netif(index)
+        mac = "aa:aa:aa:ff:ff:ff"
+
+        # when
+        node.sethwaddr(index, mac)
+
+        # then
+        assert interface.hwaddr == mac
+
+    def test_node_sethwaddr_exception(self, session):
+        # given
+        node = session.add_node()
+        index = node.newnetif()
+        node.netif(index)
+        mac = "aa:aa:aa:ff:ff:fff"
+
+        # when
+        with pytest.raises(CoreError):
+            node.sethwaddr(index, mac)
+
+    def test_node_addaddr(self, session):
+        # given
+        node = session.add_node()
+        index = node.newnetif()
+        interface = node.netif(index)
+        addr = "192.168.0.1/24"
+
+        # when
+        node.addaddr(index, addr)
+
+        # then
+        assert interface.addrlist[0] == addr
+
+    def test_node_addaddr_exception(self, session):
+        # given
+        node = session.add_node()
+        index = node.newnetif()
+        node.netif(index)
+        addr = "256.168.0.1/24"
+
+        # when
+        with pytest.raises(CoreError):
+            node.addaddr(index, addr)
+
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):
         # given

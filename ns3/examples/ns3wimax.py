@@ -14,10 +14,9 @@ import optparse
 import sys
 from builtins import range
 
+import netaddr
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WimaxNet
-
-from core.nodes import ipaddress
 
 
 def wimaxsession(opt):
@@ -28,7 +27,7 @@ def wimaxsession(opt):
     wimax = session.create_node(cls=Ns3WimaxNet, name="wlan1")
     # wimax.wimax.EnableLogComponents()
 
-    prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
+    prefix = netaddr.IPNetwork("10.0.0.0/16")
     # create one classifier for ICMP (protocol 1) traffic
     # src port low/high, dst port low/high, protocol, priority
     # classifier = (0, 65000, 0, 65000, 1, 1)
@@ -38,7 +37,7 @@ def wimaxsession(opt):
         node = session.addnode(name="n%d" % i)
         if i == 1:
             wimax.setbasestation(node)
-        node.newnetif(wimax, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
+        node.newnetif(wimax, ["%s/%s" % (prefix[i], prefix.prefixlen)])
         if i > 2:
             wimax.addflow(nodes[-1], node, classifier, classifier)
         nodes.append(node)

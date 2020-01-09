@@ -26,11 +26,10 @@ import logging
 import optparse
 import sys
 
+import netaddr
 import ns.core
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
-
-from core.nodes import ipaddress
 
 
 def add_to_server(session):
@@ -60,11 +59,11 @@ def wifisession(opt):
     wifi.setposition(30, 30, 0)
     wifi.phy.Set("RxGain", ns.core.DoubleValue(18.0))
 
-    prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
+    prefix = netaddr.IPNetwork("10.0.0.0/16")
     nodes = []
-    for i in xrange(1, opt.numnodes + 1):
+    for i in range(1, opt.numnodes + 1):
         node = session.addnode(name="n%d" % i)
-        node.newnetif(wifi, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
+        node.newnetif(wifi, ["%s/%s" % (prefix[i], prefix.prefixlen)])
         nodes.append(node)
     session.setupconstantmobility()
     wifi.usecorepositions()

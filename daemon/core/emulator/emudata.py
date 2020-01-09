@@ -1,6 +1,8 @@
+import netaddr
+
+from core import utils
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
-from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 from core.nodes.physical import PhysicalNode
 
 
@@ -164,10 +166,10 @@ class IpPrefixes:
 
         self.ip4 = None
         if ip4_prefix:
-            self.ip4 = Ipv4Prefix(ip4_prefix)
+            self.ip4 = netaddr.IPNetwork(ip4_prefix)
         self.ip6 = None
         if ip6_prefix:
-            self.ip6 = Ipv6Prefix(ip6_prefix)
+            self.ip6 = netaddr.IPNetwork(ip6_prefix)
 
     def ip4_address(self, node):
         """
@@ -179,7 +181,7 @@ class IpPrefixes:
         """
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
-        return str(self.ip4.addr(node.id))
+        return str(self.ip4[node.id])
 
     def ip6_address(self, node):
         """
@@ -191,7 +193,7 @@ class IpPrefixes:
         """
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
-        return str(self.ip6.addr(node.id))
+        return str(self.ip6[node.id])
 
     def create_interface(self, node, name=None, mac=None):
         """
@@ -212,19 +214,19 @@ class IpPrefixes:
         ip4 = None
         ip4_mask = None
         if self.ip4:
-            ip4 = str(self.ip4.addr(node.id))
+            ip4 = self.ip4_address(node)
             ip4_mask = self.ip4.prefixlen
 
         # generate ip6 data
         ip6 = None
         ip6_mask = None
         if self.ip6:
-            ip6 = str(self.ip6.addr(node.id))
+            ip6 = self.ip6_address(node)
             ip6_mask = self.ip6.prefixlen
 
         # random mac
         if not mac:
-            mac = MacAddress.random()
+            mac = utils.random_mac()
 
         return InterfaceData(
             _id=inteface_id,
@@ -248,7 +250,7 @@ class InterfaceData:
 
         :param int _id: interface id
         :param str name: name for interface
-        :param core.nodes.ipaddress.MacAddress mac: mac address
+        :param str mac: mac address
         :param str ip4: ipv4 address
         :param int ip4_mask: ipv4 bit mask
         :param str ip6: ipv6 address

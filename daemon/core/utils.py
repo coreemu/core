@@ -11,11 +11,14 @@ import json
 import logging
 import logging.config
 import os
+import random
 import shlex
 import sys
 from subprocess import PIPE, STDOUT, Popen
 
-from core.errors import CoreCommandError
+import netaddr
+
+from core.errors import CoreCommandError, CoreError
 
 DEVNULL = open(os.devnull, "wb")
 
@@ -408,3 +411,48 @@ def threadpool(funcs, workers=10):
             except Exception as e:
                 exceptions.append(e)
     return results, exceptions
+
+
+def random_mac():
+    """
+    Create a random mac address using Xen OID 00:16:3E.
+
+    :return: random mac address
+    :rtype: str
+    """
+    value = random.randint(0, 0xFFFFFF)
+    value |= 0x00163E << 24
+    mac = netaddr.EUI(value)
+    mac.dialect = netaddr.mac_unix
+    return str(mac)
+
+
+def validate_mac(value):
+    """
+    Validate mac and return unix formatted version.
+
+    :param str value: address to validate
+    :return: unix formatted mac
+    :rtype: str
+    """
+    try:
+        mac = netaddr.EUI(value)
+        mac.dialect = netaddr.mac_unix
+        return str(mac)
+    except netaddr.AddrFormatError as e:
+        raise CoreError(f"invalid mac address {value}: {e}")
+
+
+def validate_ip(value):
+    """
+    Validate ip address with prefix and return formatted version.
+
+    :param str value: address to validate
+    :return: formatted ip address
+    :rtype: str
+    """
+    try:
+        ip = netaddr.IPNetwork(value)
+        return str(ip)
+    except (ValueError, netaddr.AddrFormatError) as e:
+        raise CoreError(f"invalid ip address {value}: {e}")
