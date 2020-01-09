@@ -6,6 +6,7 @@ from tkinter import ttk
 import grpc
 
 from core.api.grpc import core_pb2
+from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
@@ -340,9 +341,7 @@ class ServiceConfigDialog(Dialog):
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
-        button = ttk.Button(
-            frame, text="Copy...", command=self.click_copy, state="disabled"
-        )
+        button = ttk.Button(frame, text="Copy...", command=self.click_copy)
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
@@ -432,7 +431,8 @@ class ServiceConfigDialog(Dialog):
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
-            current_listbox.itemconfig(current_listbox.curselection()[0], bg="green")
+            all_current = current_listbox.get(0, tk.END)
+            current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
             show_grpc_error(e)
         self.destroy()
@@ -484,3 +484,5 @@ class ServiceConfigDialog(Dialog):
 
     def click_copy(self):
         logging.info("not implemented")
+        dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
+        dialog.show()
