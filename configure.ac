@@ -262,8 +262,7 @@ AC_CONFIG_FILES([Makefile
 		daemon/doc/conf.py
 		daemon/proto/Makefile
 		netns/Makefile
-		netns/version.h
-		ns3/Makefile],)
+		netns/version.h],)
 AC_OUTPUT
 
 # Summary text

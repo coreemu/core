@@ -690,7 +690,7 @@ class WayPointMobility(WirelessModel):
             self.setnodeposition(node, x2, y2, z2)
             del self.points[node.id]
             return True
-        # speed can be a velocity vector (ns3 mobility) or speed value
+        # speed can be a velocity vector or speed value
         if isinstance(speed, (float, int)):
             # linear speed value
             alpha = math.atan2(y2 - y1, x2 - x1)

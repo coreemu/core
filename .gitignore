@@ -54,7 +54,6 @@ coverage.xml
 # ignore built input files
 netns/setup.py
 daemon/setup.py
-ns3/setup.py
 
 # ignore corefx build
 corefx/target
