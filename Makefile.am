@@ -15,7 +15,7 @@ if WANT_DAEMON
 endif
 
 if WANT_NETNS
-  NETNS = netns ns3
+  NETNS = netns
 endif
 
 # keep docs last due to dependencies on binaries
@@ -185,7 +185,6 @@ change-files:
 	$(call change-files,scripts/core-daemon.service)
 	$(call change-files,scripts/core-daemon)
 	$(call change-files,daemon/core/constants.py)
-	$(call change-files,ns3/setup.py)
 	$(call change-files,netns/setup.py)
 	$(call change-files,daemon/setup.py)
 
