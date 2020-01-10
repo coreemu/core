@@ -149,7 +149,7 @@ class Menubar(tk.Menu):
         view_menu.add_command(label="Zoom out", accelerator="-", state=tk.DISABLED)
         self.add_cascade(label="View", menu=view_menu)
 
-    def create_show_menu(self, view_menu):
+    def create_show_menu(self, view_menu: tk.Menu):
         """
         Create the menu items in View/Show
 
@@ -169,7 +169,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="API Messages", state=tk.DISABLED)
         view_menu.add_cascade(label="Show", menu=menu)
 
-    def create_experimental_menu(self, tools_menu):
+    def create_experimental_menu(self, tools_menu: tk.Menu):
         """
         Create experimental menu item and the sub menu items inside
 
@@ -182,7 +182,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="Topology partitioning...", state=tk.DISABLED)
         tools_menu.add_cascade(label="Experimental", menu=menu)
 
-    def create_random_menu(self, topology_generator_menu):
+    def create_random_menu(self, topology_generator_menu: tk.Menu):
         """
         Create random menu item and the sub menu items inside
 
@@ -197,7 +197,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Random", menu=menu)
 
-    def create_grid_menu(self, topology_generator_menu):
+    def create_grid_menu(self, topology_generator_menu: tk.Menu):
         """
         Create grid menu item and the sub menu items inside
 
@@ -212,7 +212,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Grid", menu=menu)
 
-    def create_connected_grid_menu(self, topology_generator_menu):
+    def create_connected_grid_menu(self, topology_generator_menu: tk.Menu):
         """
         Create connected grid menu items and the sub menu items inside
 
@@ -229,7 +229,7 @@ class Menubar(tk.Menu):
             menu.add_cascade(label=label, menu=submenu)
         topology_generator_menu.add_cascade(label="Connected Grid", menu=menu)
 
-    def create_chain_menu(self, topology_generator_menu):
+    def create_chain_menu(self, topology_generator_menu: tk.Menu):
         """
         Create chain menu item and the sub menu items inside
 
@@ -244,7 +244,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Chain", menu=menu)
 
-    def create_star_menu(self, topology_generator_menu):
+    def create_star_menu(self, topology_generator_menu: tk.Menu):
         """
         Create star menu item and the sub menu items inside
 
@@ -257,7 +257,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Star", menu=menu)
 
-    def create_cycle_menu(self, topology_generator_menu):
+    def create_cycle_menu(self, topology_generator_menu: tk.Menu):
         """
         Create cycle menu item and the sub items inside
 
@@ -270,7 +270,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Cycle", menu=menu)
 
-    def create_wheel_menu(self, topology_generator_menu):
+    def create_wheel_menu(self, topology_generator_menu: tk.Menu):
         """
         Create wheel menu item and the sub menu items inside
 
@@ -283,7 +283,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Wheel", menu=menu)
 
-    def create_cube_menu(self, topology_generator_menu):
+    def create_cube_menu(self, topology_generator_menu: tk.Menu):
         """
         Create cube menu item and the sub menu items inside
 
@@ -296,7 +296,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Cube", menu=menu)
 
-    def create_clique_menu(self, topology_generator_menu):
+    def create_clique_menu(self, topology_generator_menu: tk.Menu):
         """
         Create clique menu item and the sub menu items inside
 
@@ -309,7 +309,7 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Clique", menu=menu)
 
-    def create_bipartite_menu(self, topology_generator_menu):
+    def create_bipartite_menu(self, topology_generator_menu: tk.Menu):
         """
         Create bipartite menu item and the sub menu items inside
 
@@ -328,7 +328,7 @@ class Menubar(tk.Menu):
             temp = temp - 1
         topology_generator_menu.add_cascade(label="Bipartite", menu=menu)
 
-    def create_topology_generator_menu(self, tools_menu):
+    def create_topology_generator_menu(self, tools_menu: tk.Menu):
         """
         Create topology menu item and its sub menu items
 
@@ -371,7 +371,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="Debugger...", state=tk.DISABLED)
         self.add_cascade(label="Tools", menu=menu)
 
-    def create_observer_widgets_menu(self, widget_menu):
+    def create_observer_widgets_menu(self, widget_menu: tk.Menu):
         """
         Create observer widget menu item and create the sub menu items inside
 
@@ -409,7 +409,7 @@ class Menubar(tk.Menu):
             )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 
-    def create_adjacency_menu(self, widget_menu):
+    def create_adjacency_menu(self, widget_menu: tk.Menu):
         """
         Create adjacency menu item and the sub menu items inside
 

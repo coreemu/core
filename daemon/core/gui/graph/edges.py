@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter.font import Font
+from typing import Tuple
 
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
@@ -13,7 +14,7 @@ EDGE_COLOR = "#ff0000"
 
 
 class CanvasWirelessEdge:
-    def __init__(self, token, position, src, dst, canvas):
+    def __init__(self, token: Tuple[int, int], position, src: int, dst: int, canvas):
         self.token = token
         self.src = src
         self.dst = dst
@@ -31,7 +32,7 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    def __init__(self, x1, y1, x2, y2, src, canvas):
+    def __init__(self, x1: int, y1: int, x2: int, y2: int, src: int, canvas):
         """
         Create an instance of canvas edge object
         :param int x1: source x-coord

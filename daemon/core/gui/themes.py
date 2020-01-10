@@ -33,7 +33,7 @@ class Colors:
     listboxbg = "#f2f1f0"
 
 
-def load(style):
+def load(style: ttk.Style):
     style.theme_create(
         THEME_DARK,
         "clam",
@@ -141,13 +141,13 @@ def load(style):
     )
 
 
-def theme_change_menu(event):
+def theme_change_menu(event: tk.Event):
     if not isinstance(event.widget, tk.Menu):
         return
     style_menu(event.widget)
 
 
-def style_menu(widget):
+def style_menu(widget: ttk.Widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
@@ -159,7 +159,7 @@ def style_menu(widget):
     )
 
 
-def style_listbox(widget):
+def style_listbox(widget: ttk.Widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
@@ -176,7 +176,7 @@ def style_listbox(widget):
     )
 
 
-def theme_change(event):
+def theme_change(event: tk.Event):
     style = ttk.Style()
     style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))
     style.configure(

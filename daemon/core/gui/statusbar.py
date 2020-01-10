@@ -68,9 +68,5 @@ class StatusBar(ttk.Frame):
         dialog = AlertsDialog(self.app, self.app)
         dialog.show()
 
-    def set_status(self, message):
+    def set_status(self, message: str):
         self.statusvar.set(message)
-
-    def stop_session_callback(self, cleanup_time):
-        self.progress_bar.stop()
-        self.statusvar.set(f"Stopped in {cleanup_time:.3f} seconds")
