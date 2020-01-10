@@ -15,7 +15,6 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 |gui|Tcl/Tk GUI|
 |man|Template files for creating man pages for various CORE command line utilities|
 |netns|Python C extension modules for creating CORE containers|
-|ns3|Experimental python ns3 script support for running CORE|
 |scripts|Template files used for running CORE as a service|
 
 ## Getting started
