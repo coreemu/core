@@ -948,6 +948,29 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
+    def linknet(self, net):
+        """
+        Link network to another.
+
+        :param core.nodes.base.CoreNetworkBase net: network to link with
+        :return: created interface
+        :rtype: core.nodes.interface.Veth
+        """
+        pass
+
+    def getlinknetif(self, net):
+        """
+        Return the interface of that links this net with another net.
+
+        :param core.nodes.base.CoreNetworkBase net: interface to get link for
+        :return: interface the provided network is linked to
+        :rtype: core.nodes.interface.CoreInterface
+        """
+        for netif in self.netifs():
+            if hasattr(netif, "othernet") and netif.othernet == net:
+                return netif
+        return None
+
     def attach(self, netif):
         """
         Attach network interface.

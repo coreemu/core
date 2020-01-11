@@ -525,9 +525,9 @@ class CoreNetwork(CoreNetworkBase):
         Link this bridge with another by creating a veth pair and installing
         each device into each bridge.
 
-        :param core.netns.vnet.LxBrNet net: network to link with
+        :param core.nodes.base.CoreNetworkBase net: network to link with
         :return: created interface
-        :rtype: Veth
+        :rtype: core.nodes.interface.Veth
         """
         sessionid = self.session.short_session_id()
         try:
