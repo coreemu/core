@@ -1035,7 +1035,9 @@ class CoreGrpcClient:
 
         :return: nothing
         """
-        self.channel = grpc.insecure_channel(self.address)
+        self.channel = grpc.insecure_channel(
+            self.address, options=[("grpc.enable_http_proxy", 0)]
+        )
         self.stub = core_pb2_grpc.CoreApiStub(self.channel)
 
     def close(self):
