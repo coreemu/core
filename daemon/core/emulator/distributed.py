@@ -7,6 +7,7 @@ import os
 import threading
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING, Callable, Dict, Tuple
 
 import netaddr
 from fabric import Connection
@@ -17,6 +18,10 @@ from core.errors import CoreCommandError
 from core.nodes.interface import GreTap
 from core.nodes.network import CoreNetwork, CtrlNet
 
+if TYPE_CHECKING:
+    from core.emulator.session import Session
+
+
 LOCK = threading.Lock()
 CMD_HIDE = True
 
@@ -26,7 +31,7 @@ class DistributedServer:
     Provides distributed server interactions.
     """
 
-    def __init__(self, name, host):
+    def __init__(self, name: str, host: str) -> None:
         """
         Create a DistributedServer instance.
 
@@ -38,7 +43,9 @@ class DistributedServer:
         self.conn = Connection(host, user="root")
         self.lock = threading.Lock()
 
-    def remote_cmd(self, cmd, env=None, cwd=None, wait=True):
+    def remote_cmd(
+        self, cmd: str, env: Dict[str, str] = None, cwd: str = None, wait: bool = True
+    ) -> str:
         """
         Run command remotely using server connection.
 
@@ -73,7 +80,7 @@ class DistributedServer:
             stdout, stderr = e.streams_for_display()
             raise CoreCommandError(e.result.exited, cmd, stdout, stderr)
 
-    def remote_put(self, source, destination):
+    def remote_put(self, source: str, destination: str) -> None:
         """
         Push file to remote server.
 
@@ -84,7 +91,7 @@ class DistributedServer:
         with self.lock:
             self.conn.put(source, destination)
 
-    def remote_put_temp(self, destination, data):
+    def remote_put_temp(self, destination: str, data: str) -> None:
         """
         Remote push file contents to a remote server, using a temp file as an
         intermediate step.
@@ -106,11 +113,11 @@ class DistributedController:
     Provides logic for dealing with remote tunnels and distributed servers.
     """
 
-    def __init__(self, session):
+    def __init__(self, session: "Session") -> None:
         """
         Create
 
-        :param session:
+        :param session: session
         """
         self.session = session
         self.servers = OrderedDict()
@@ -119,7 +126,7 @@ class DistributedController:
             "distributed_address", default=None
         )
 
-    def add_server(self, name, host):
+    def add_server(self, name: str, host: str) -> None:
         """
         Add distributed server configuration.
 
@@ -132,7 +139,7 @@ class DistributedController:
         cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)
 
-    def execute(self, func):
+    def execute(self, func: Callable) -> None:
         """
         Convenience for executing logic against all distributed servers.
 
@@ -143,7 +150,7 @@ class DistributedController:
             server = self.servers[name]
             func(server)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown logic for dealing with distributed tunnels and server session
         directories.
@@ -165,7 +172,7 @@ class DistributedController:
         # clear tunnels
         self.tunnels.clear()
 
-    def start(self):
+    def start(self) -> None:
         """
         Start distributed network tunnels.
 
@@ -184,7 +191,9 @@ class DistributedController:
                 server = self.servers[name]
                 self.create_gre_tunnel(node, server)
 
-    def create_gre_tunnel(self, node, server):
+    def create_gre_tunnel(
+        self, node: CoreNetwork, server: DistributedServer
+    ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
 
@@ -222,7 +231,7 @@ class DistributedController:
         self.tunnels[key] = tunnel
         return tunnel
 
-    def tunnel_key(self, n1_id, n2_id):
+    def tunnel_key(self, n1_id: int, n2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
         The hash(n1num), hash(n2num) values are used, so node numbers may be
@@ -239,7 +248,7 @@ class DistributedController:
         )
         return key & 0xFFFFFFFF
 
-    def get_tunnel(self, n1_id, n2_id):
+    def get_tunnel(self, n1_id: int, n2_id: int) -> Tuple[GreTap, GreTap]:
         """
         Return the GreTap between two nodes if it exists.
 

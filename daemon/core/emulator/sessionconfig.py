@@ -1,3 +1,5 @@
+from typing import Any
+
 from core.config import ConfigurableManager, ConfigurableOptions, Configuration
 from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
 from core.plugins.sdt import Sdt
@@ -60,29 +62,53 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     ]
     config_type = RegisterTlvs.UTILITY.value
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.set_configs(self.default_values())
 
     def get_config(
         self,
-        _id,
-        node_id=ConfigurableManager._default_node,
-        config_type=ConfigurableManager._default_type,
-        default=None,
-    ):
+        _id: str,
+        node_id: int = ConfigurableManager._default_node,
+        config_type: str = ConfigurableManager._default_type,
+        default: Any = None,
+    ) -> str:
+        """
+        Retrieves a specific configuration for a node and configuration type.
+
+        :param str _id: specific configuration to retrieve
+        :param int node_id: node id to store configuration for
+        :param str config_type: configuration type to store configuration for
+        :param default: default value to return when value is not found
+        :return: configuration value
+        :rtype str
+        """
         value = super().get_config(_id, node_id, config_type, default)
         if value == "":
             value = default
         return value
 
-    def get_config_bool(self, name, default=None):
+    def get_config_bool(self, name: str, default: Any = None) -> bool:
+        """
+        Get configuration value as a boolean.
+
+        :param name: configuration name
+        :param default: default value if not found
+        :return: boolean for configuration value
+        """
         value = self.get_config(name)
         if value is None:
             return default
         return value.lower() == "true"
 
-    def get_config_int(self, name, default=None):
+    def get_config_int(self, name: str, default: Any = None) -> int:
+        """
+        Get configuration value as int.
+
+        :param name: configuration name
+        :param default: default value if not found
+        :return: int for configuration value
+        """
         value = self.get_config(name, default=default)
         if value is not None:
             value = int(value)
