@@ -123,7 +123,7 @@ class Shape:
                 font=font,
             )
 
-    def shape_motion(self, x1, y1):
+    def shape_motion(self, x1: int, y1: int):
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
     def shape_complete(self, x, y):
@@ -135,7 +135,7 @@ class Shape:
     def disappear(self):
         self.canvas.delete(self.id)
 
-    def motion(self, x_offset, y_offset):
+    def motion(self, x_offset: int, y_offset: int):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         coords = self.canvas.coords(self.id)

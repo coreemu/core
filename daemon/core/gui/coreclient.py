@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import grpc
 
@@ -14,6 +15,8 @@ from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
+from core.gui.graph.edges import CanvasEdge
+from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import AnnotationData, Shape
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.interface import InterfaceManager
@@ -132,7 +135,7 @@ class CoreClient:
             observer = Observer(config["name"], config["cmd"])
             self.custom_observers[observer.name] = observer
 
-    def handle_events(self, event):
+    def handle_events(self, event: core_pb2.Event):
         if event.session_id != self.session_id:
             logging.warn(
                 "ignoring event session(%s) current(%s)",
@@ -170,7 +173,7 @@ class CoreClient:
         else:
             logging.info("unhandled event: %s", event)
 
-    def handle_link_event(self, event):
+    def handle_link_event(self, event: core_pb2.LinkEvent):
         node_one_id = event.link.node_one_id
         node_two_id = event.link.node_two_id
         canvas_node_one = self.canvas_nodes[node_one_id]
@@ -183,7 +186,7 @@ class CoreClient:
         else:
             logging.warning("unknown link event: %s", event.message_type)
 
-    def handle_node_event(self, event):
+    def handle_node_event(self, event: core_pb2.NodeEvent):
         if event.source == GUI_SOURCE:
             return
         node_id = event.node.id
@@ -212,11 +215,11 @@ class CoreClient:
         logging.info("handling throughputs event: %s", event)
         self.app.canvas.set_throughputs(event)
 
-    def handle_exception_event(self, event):
+    def handle_exception_event(self, event: core_pb2.ExceptionEvent):
         logging.info("exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
-    def join_session(self, session_id, query_location=True):
+    def join_session(self, session_id: int, query_location: bool = True):
         # update session and title
         self.session_id = session_id
         self.master.title(f"CORE Session({self.session_id})")
@@ -297,7 +300,7 @@ class CoreClient:
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
 
-    def is_runtime(self):
+    def is_runtime(self) -> bool:
         return self.state == core_pb2.SessionState.RUNTIME
 
     def parse_metadata(self, config):
@@ -384,7 +387,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def delete_session(self, session_id=None):
+    def delete_session(self, session_id: Optional[int] = None):
         if session_id is None:
             session_id = self.session_id
         try:
@@ -426,7 +429,7 @@ class CoreClient:
             self.app.after(0, show_grpc_error, e)
             self.app.close()
 
-    def edit_node(self, core_node):
+    def edit_node(self, core_node: core_pb2.Node):
         try:
             self.client.edit_node(
                 self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
@@ -434,7 +437,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def start_session(self):
+    def start_session(self) -> core_pb2.StartSessionResponse:
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = [x.link for x in self.links.values()]
         wlan_configs = self.get_wlan_configs_proto()
@@ -477,7 +480,7 @@ class CoreClient:
             self.app.after(0, show_grpc_error, e)
         return response
 
-    def stop_session(self, session_id=None):
+    def stop_session(self, session_id: Optional[int] = None):
         if not session_id:
             session_id = self.session_id
         response = core_pb2.StopSessionResponse(result=False)
@@ -519,7 +522,7 @@ class CoreClient:
         response = self.client.set_session_metadata(self.session_id, metadata)
         logging.info("set session metadata: %s", response)
 
-    def launch_terminal(self, node_id):
+    def launch_terminal(self, node_id: int):
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
             response = self.client.get_node_terminal(self.session_id, node_id)
@@ -528,7 +531,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def save_xml(self, file_path):
+    def save_xml(self, file_path: str):
         """
         Save core session as to an xml file
 
@@ -546,7 +549,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def open_xml(self, file_path):
+    def open_xml(self, file_path: str):
         """
         Open core xml
 
@@ -560,12 +563,21 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def get_node_service(self, node_id, service_name):
+    def get_node_service(
+        self, node_id: int, service_name: str
+    ) -> core_pb2.NodeServiceData:
         response = self.client.get_node_service(self.session_id, node_id, service_name)
         logging.debug("get node service %s", response)
         return response.service
 
-    def set_node_service(self, node_id, service_name, startups, validations, shutdowns):
+    def set_node_service(
+        self,
+        node_id: int,
+        service_name: str,
+        startups: List[str],
+        validations: List[str],
+        shutdowns: List[str],
+    ) -> core_pb2.NodeServiceData:
         response = self.client.set_node_service(
             self.session_id, node_id, service_name, startups, validations, shutdowns
         )
@@ -574,14 +586,18 @@ class CoreClient:
         logging.debug("get node service : %s", response)
         return response.service
 
-    def get_node_service_file(self, node_id, service_name, file_name):
+    def get_node_service_file(
+        self, node_id: int, service_name: str, file_name: str
+    ) -> str:
         response = self.client.get_node_service_file(
             self.session_id, node_id, service_name, file_name
         )
         logging.debug("get service file %s", response)
         return response.data
 
-    def set_node_service_file(self, node_id, service_name, file_name, data):
+    def set_node_service_file(
+        self, node_id: int, service_name: str, file_name: str, data: str
+    ):
         response = self.client.set_node_service_file(
             self.session_id, node_id, service_name, file_name, data
         )
@@ -684,15 +700,11 @@ class CoreClient:
             i += 1
         return i
 
-    def create_node(self, x, y, node_type, model):
+    def create_node(
+        self, x: int, y: int, node_type: core_pb2.NodeType, model: str
+    ) -> core_pb2.Node:
         """
         Add node, with information filled in, to grpc manager
-
-        :param int x: x coord
-        :param int y: y coord
-        :param core_pb2.NodeType node_type: node type
-        :param str model: node model
-        :return: nothing
         """
         node_id = self.next_node_id()
         position = core_pb2.Position(x=x, y=y)
@@ -727,7 +739,7 @@ class CoreClient:
         )
         return node
 
-    def delete_graph_nodes(self, canvas_nodes):
+    def delete_graph_nodes(self, canvas_nodes: List[core_pb2.Node]):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
@@ -760,7 +772,7 @@ class CoreClient:
                 #     logging.error("unknown edge: %s", edge.token)
                 self.links.pop(edge.token, None)
 
-    def create_interface(self, canvas_node):
+    def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
         node = canvas_node.core_node
         ip4, ip6, prefix = self.interfaces_manager.get_ips(node.id)
         interface_id = len(canvas_node.interfaces)
@@ -777,7 +789,9 @@ class CoreClient:
         )
         return interface
 
-    def create_link(self, edge, canvas_src_node, canvas_dst_node):
+    def create_link(
+        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
+    ):
         """
         Create core link for a pair of canvas nodes, with token referencing
         the canvas edge.
@@ -816,7 +830,7 @@ class CoreClient:
         edge.set_link(link)
         self.links[edge.token] = edge
 
-    def get_wlan_configs_proto(self):
+    def get_wlan_configs_proto(self) -> List[core_pb2.WlanConfig]:
         configs = []
         for node_id, config in self.wlan_configs.items():
             config = {x: config[x].value for x in config}
@@ -824,7 +838,7 @@ class CoreClient:
             configs.append(wlan_config)
         return configs
 
-    def get_mobility_configs_proto(self):
+    def get_mobility_configs_proto(self) -> List[core_pb2.MobilityConfig]:
         configs = []
         for node_id, config in self.mobility_configs.items():
             config = {x: config[x].value for x in config}
@@ -832,7 +846,7 @@ class CoreClient:
             configs.append(mobility_config)
         return configs
 
-    def get_emane_model_configs_proto(self):
+    def get_emane_model_configs_proto(self) -> List[core_pb2.EmaneModelConfig]:
         configs = []
         for key, config in self.emane_model_configs.items():
             node_id, model, interface = key
@@ -845,7 +859,7 @@ class CoreClient:
             configs.append(config_proto)
         return configs
 
-    def get_service_configs_proto(self):
+    def get_service_configs_proto(self) -> List[core_pb2.ServiceConfig]:
         configs = []
         for node_id, services in self.service_configs.items():
             for name, config in services.items():
@@ -859,7 +873,7 @@ class CoreClient:
                 configs.append(config_proto)
         return configs
 
-    def get_service_file_configs_proto(self):
+    def get_service_file_configs_proto(self) -> List[core_pb2.ServiceFileConfig]:
         configs = []
         for (node_id, file_configs) in self.file_configs.items():
             for service, file_config in file_configs.items():
@@ -870,25 +884,27 @@ class CoreClient:
                     configs.append(config_proto)
         return configs
 
-    def run(self, node_id):
+    def run(self, node_id: int) -> str:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
         return self.client.node_command(self.session_id, node_id, self.observer).output
 
-    def get_wlan_config(self, node_id):
+    def get_wlan_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
         config = self.wlan_configs.get(node_id)
         if not config:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
         return config
 
-    def get_mobility_config(self, node_id):
+    def get_mobility_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
         config = self.mobility_configs.get(node_id)
         if not config:
             response = self.client.get_mobility_config(self.session_id, node_id)
             config = response.config
         return config
 
-    def get_emane_model_config(self, node_id, model, interface=None):
+    def get_emane_model_config(
+        self, node_id: int, model: str, interface: Optional[int] = None
+    ) -> Dict[str, core_pb2.ConfigOption]:
         logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
         if not config:
@@ -900,15 +916,21 @@ class CoreClient:
             config = response.config
         return config
 
-    def set_emane_model_config(self, node_id, model, config, interface=None):
+    def set_emane_model_config(
+        self,
+        node_id: int,
+        model: str,
+        config: Dict[str, core_pb2.ConfigOption],
+        interface: Optional[int] = None,
+    ):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)
         self.emane_model_configs[(node_id, model, interface)] = config
 
-    def copy_node_service(self, _from, _to):
+    def copy_node_service(self, _from: int, _to: int):
         services = self.canvas_nodes[_from].core_node.services
         self.canvas_nodes[_to].core_node.services[:] = services
 
-    def copy_node_config(self, _from, _to):
+    def copy_node_config(self, _from: int, _to: int):
         node_type = self.canvas_nodes[_from].core_node.type
         if node_type == core_pb2.NodeType.DEFAULT:
             services = self.canvas_nodes[_from].core_node.services

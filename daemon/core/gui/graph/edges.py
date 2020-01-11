@@ -129,7 +129,7 @@ class CanvasEdge:
             x, y = self.get_midpoint()
             self.canvas.coords(self.text_middle, x, y)
 
-    def set_throughput(self, throughput):
+    def set_throughput(self, throughput: float):
         throughput = 0.001 * throughput
         value = f"{throughput:.3f} kbps"
         if self.text_middle is None:
@@ -148,7 +148,7 @@ class CanvasEdge:
             width = EDGE_WIDTH
         self.canvas.itemconfig(self.id, fill=color, width=width)
 
-    def complete(self, dst):
+    def complete(self, dst: int):
         self.dst = dst
         self.token = tuple(sorted((self.src, self.dst)))
         x, y = self.canvas.coords(self.dst)
@@ -200,7 +200,7 @@ class CanvasEdge:
         self.text_middle = None
         self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
 
-    def create_context(self, event):
+    def create_context(self, event: tk.Event):
         logging.debug("create link context")
         context = tk.Menu(self.canvas)
         themes.style_menu(context)

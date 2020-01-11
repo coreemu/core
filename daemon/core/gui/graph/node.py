@@ -20,7 +20,7 @@ NODE_TEXT_OFFSET = 5
 
 
 class CanvasNode:
-    def __init__(self, app, x, y, core_node, image):
+    def __init__(self, app, x: int, y: int, core_node: core_pb2.Node, image):
         self.app = app
         self.canvas = app.canvas
         self.image = image
@@ -95,14 +95,14 @@ class CanvasNode:
         image_box = self.canvas.bbox(self.id)
         return image_box[3] + NODE_TEXT_OFFSET
 
-    def move(self, x, y):
+    def move(self, x: int, y: int):
         x, y = self.canvas.get_scaled_coords(x, y)
         current_x, current_y = self.canvas.coords(self.id)
         x_offset = x - current_x
         y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
-    def motion(self, x_offset, y_offset, update=True):
+    def motion(self, x_offset: int, y_offset: int, update: bool = True):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         x, y = self.canvas.coords(self.id)
@@ -144,7 +144,7 @@ class CanvasNode:
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 
-    def on_enter(self, event):
+    def on_enter(self, event: tk.Event):
         if self.app.core.is_runtime() and self.app.core.observer:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
@@ -154,16 +154,16 @@ class CanvasNode:
             except grpc.RpcError as e:
                 show_grpc_error(e)
 
-    def on_leave(self, event):
+    def on_leave(self, event: tk.Event):
         self.tooltip.on_leave(event)
 
-    def double_click(self, event):
+    def double_click(self, event: tk.Event):
         if self.app.core.is_runtime():
             self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
 
-    def create_context(self):
+    def create_context(self) -> tk.Menu:
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
         context = tk.Menu(self.canvas)
@@ -245,7 +245,7 @@ class CanvasNode:
         dialog = NodeServiceDialog(self.app.master, self.app, self)
         dialog.show()
 
-    def has_emane_link(self, interface_id):
+    def has_emane_link(self, interface_id: int) -> bool:
         result = None
         for edge in self.edges:
             if self.id == edge.src:
