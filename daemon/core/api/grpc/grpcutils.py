@@ -1,16 +1,21 @@
 import logging
 import time
+from typing import Any, Dict, List, Tuple, Type
 
 from core import utils
 from core.api.grpc import core_pb2
+from core.config import ConfigurableOptions
+from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes.base import CoreNetworkBase
+from core.emulator.session import Session
+from core.nodes.base import CoreNetworkBase, NodeBase
+from core.services.coreservices import CoreService
 
 WORKERS = 10
 
 
-def add_node_data(node_proto):
+def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOptions]:
     """
     Convert node protobuf message to data for creating a node.
 
@@ -40,7 +45,7 @@ def add_node_data(node_proto):
     return _type, _id, options
 
 
-def link_interface(interface_proto):
+def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     """
     Create interface data from interface proto.
 
@@ -68,7 +73,9 @@ def link_interface(interface_proto):
     return interface
 
 
-def add_link_data(link_proto):
+def add_link_data(
+    link_proto: core_pb2.Link
+) -> Tuple[InterfaceData, InterfaceData, LinkOptions]:
     """
     Convert link proto to link interfaces and options data.
 
@@ -102,7 +109,9 @@ def add_link_data(link_proto):
     return interface_one, interface_two, options
 
 
-def create_nodes(session, node_protos):
+def create_nodes(
+    session: Session, node_protos: List[core_pb2.Node]
+) -> Tuple[List[NodeBase], List[Exception]]:
     """
     Create nodes using a thread pool and wait for completion.
 
@@ -123,7 +132,9 @@ def create_nodes(session, node_protos):
     return results, exceptions
 
 
-def create_links(session, link_protos):
+def create_links(
+    session: Session, link_protos: List[core_pb2.Link]
+) -> Tuple[List[NodeBase], List[Type[Exception]]]:
     """
     Create links using a thread pool and wait for completion.
 
@@ -146,7 +157,9 @@ def create_links(session, link_protos):
     return results, exceptions
 
 
-def edit_links(session, link_protos):
+def edit_links(
+    session: Session, link_protos: List[core_pb2.Link]
+) -> Tuple[List[None], List[Exception]]:
     """
     Edit links using a thread pool and wait for completion.
 
@@ -169,7 +182,7 @@ def edit_links(session, link_protos):
     return results, exceptions
 
 
-def convert_value(value):
+def convert_value(value: Any) -> str:
     """
     Convert value into string.
 
@@ -182,7 +195,9 @@ def convert_value(value):
     return value
 
 
-def get_config_options(config, configurable_options):
+def get_config_options(
+    config: Dict[str, str], configurable_options: ConfigurableOptions
+) -> Dict[str, core_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
 
@@ -211,12 +226,12 @@ def get_config_options(config, configurable_options):
     return results
 
 
-def get_links(session, node):
+def get_links(session: Session, node: NodeBase):
     """
     Retrieve a list of links for grpc to use
 
     :param core.emulator.Session session: node's section
-    :param core.nodes.base.CoreNode node: node to get links from
+    :param core.nodes.base.NodeBase node: node to get links from
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
@@ -226,7 +241,7 @@ def get_links(session, node):
     return links
 
 
-def get_emane_model_id(node_id, interface_id):
+def get_emane_model_id(node_id: int, interface_id: int) -> int:
     """
     Get EMANE model id
 
@@ -241,7 +256,7 @@ def get_emane_model_id(node_id, interface_id):
         return node_id
 
 
-def parse_emane_model_id(_id):
+def parse_emane_model_id(_id: int) -> Tuple[int, int]:
     """
     Parses EMANE model id to get true node id and interface id.
 
@@ -257,7 +272,7 @@ def parse_emane_model_id(_id):
     return node_id, interface
 
 
-def convert_link(session, link_data):
+def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf Link
 
@@ -324,7 +339,7 @@ def convert_link(session, link_data):
     )
 
 
-def get_net_stats():
+def get_net_stats() -> Dict[str, Dict]:
     """
     Retrieve status about the current interfaces in the system
 
@@ -346,7 +361,7 @@ def get_net_stats():
     return stats
 
 
-def session_location(session, location):
+def session_location(session: Session, location: core_pb2.SessionLocation) -> None:
     """
     Set session location based on location proto.
 
@@ -359,7 +374,7 @@ def session_location(session, location):
     session.location.refscale = location.scale
 
 
-def service_configuration(session, config):
+def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> None:
     """
     Convenience method for setting a node service configuration.
 
@@ -374,7 +389,7 @@ def service_configuration(session, config):
     service.shutdown = tuple(config.shutdown)
 
 
-def get_service_configuration(service):
+def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServiceData:
     """
     Convenience for converting a service to service data proto.
 

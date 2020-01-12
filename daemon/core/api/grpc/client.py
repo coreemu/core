@@ -5,6 +5,7 @@ gRpc client for interfacing with CORE, when gRPC mode is enabled.
 import logging
 import threading
 from contextlib import contextmanager
+from typing import Any, Callable, Dict, List
 
 import grpc
 import netaddr
@@ -18,7 +19,7 @@ class InterfaceHelper:
     Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
     """
 
-    def __init__(self, ip4_prefix=None, ip6_prefix=None):
+    def __init__(self, ip4_prefix: str = None, ip6_prefix: str = None) -> None:
         """
         Creates an InterfaceHelper object.
 
@@ -36,7 +37,7 @@ class InterfaceHelper:
         if ip6_prefix:
             self.ip6 = netaddr.IPNetwork(ip6_prefix)
 
-    def ip4_address(self, node_id):
+    def ip4_address(self, node_id: int) -> str:
         """
         Convenience method to return the IP4 address for a node.
 
@@ -48,7 +49,7 @@ class InterfaceHelper:
             raise ValueError("ip4 prefixes have not been set")
         return str(self.ip4[node_id])
 
-    def ip6_address(self, node_id):
+    def ip6_address(self, node_id: int) -> str:
         """
         Convenience method to return the IP6 address for a node.
 
@@ -60,15 +61,18 @@ class InterfaceHelper:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node_id])
 
-    def create_interface(self, node_id, interface_id, name=None, mac=None):
+    def create_interface(
+        self, node_id: int, interface_id: int, name: str = None, mac: str = None
+    ) -> core_pb2.Interface:
         """
-        Creates interface data for linking nodes, using the nodes unique id for generation, along with a random
-        mac address, unless provided.
+        Creates interface data for linking nodes, using the nodes unique id for
+        generation, along with a random mac address, unless provided.
 
         :param int node_id: node id to create interface for
         :param int interface_id: interface id for interface
         :param str name: name to set for interface, default is eth{id}
-        :param str mac: mac address to use for this interface, default is random generation
+        :param str mac: mac address to use for this interface, default is random
+            generation
         :return: new interface data for the provided node
         :rtype: core_pb2.Interface
         """
@@ -101,7 +105,7 @@ class InterfaceHelper:
         )
 
 
-def stream_listener(stream, handler):
+def stream_listener(stream: Any, handler: Callable) -> None:
     """
     Listen for stream events and provide them to the handler.
 
@@ -119,7 +123,7 @@ def stream_listener(stream, handler):
             logging.exception("stream error")
 
 
-def start_streamer(stream, handler):
+def start_streamer(stream: Any, handler: Callable) -> None:
     """
     Convenience method for starting a grpc stream thread for handling streamed events.
 
@@ -137,7 +141,7 @@ class CoreGrpcClient:
     Provides convenience methods for interfacing with the CORE grpc server.
     """
 
-    def __init__(self, address="localhost:50051"):
+    def __init__(self, address: str = "localhost:50051") -> None:
         """
         Creates a CoreGrpcClient instance.
 
@@ -149,19 +153,19 @@ class CoreGrpcClient:
 
     def start_session(
         self,
-        session_id,
-        nodes,
-        links,
-        location=None,
-        hooks=None,
-        emane_config=None,
-        emane_model_configs=None,
-        wlan_configs=None,
-        mobility_configs=None,
-        service_configs=None,
-        service_file_configs=None,
-        asymmetric_links=None,
-    ):
+        session_id: int,
+        nodes: List[core_pb2.Node],
+        links: List[core_pb2.Link],
+        location: core_pb2.SessionLocation = None,
+        hooks: List[core_pb2.Hook] = None,
+        emane_config: Dict[str, str] = None,
+        emane_model_configs: List[core_pb2.EmaneModelConfig] = None,
+        wlan_configs: List[core_pb2.WlanConfig] = None,
+        mobility_configs: List[core_pb2.MobilityConfig] = None,
+        service_configs: List[core_pb2.ServiceConfig] = None,
+        service_file_configs: List[core_pb2.ServiceFileConfig] = None,
+        asymmetric_links: List[core_pb2.Link] = None,
+    ) -> core_pb2.StartSessionResponse:
         """
         Start a session.
 
@@ -196,7 +200,7 @@ class CoreGrpcClient:
         )
         return self.stub.StartSession(request)
 
-    def stop_session(self, session_id):
+    def stop_session(self, session_id: int) -> core_pb2.StopSessionResponse:
         """
         Stop a running session.
 
@@ -207,18 +211,19 @@ class CoreGrpcClient:
         request = core_pb2.StopSessionRequest(session_id=session_id)
         return self.stub.StopSession(request)
 
-    def create_session(self, session_id=None):
+    def create_session(self, session_id: int = None) -> core_pb2.CreateSessionResponse:
         """
         Create a session.
 
-        :param int session_id: id for session, default is None and one will be created for you
+        :param int session_id: id for session, default is None and one will be created
+            for you
         :return: response with created session id
         :rtype: core_pb2.CreateSessionResponse
         """
         request = core_pb2.CreateSessionRequest(session_id=session_id)
         return self.stub.CreateSession(request)
 
-    def delete_session(self, session_id):
+    def delete_session(self, session_id: int) -> core_pb2.DeleteSessionResponse:
         """
         Delete a session.
 
@@ -230,16 +235,17 @@ class CoreGrpcClient:
         request = core_pb2.DeleteSessionRequest(session_id=session_id)
         return self.stub.DeleteSession(request)
 
-    def get_sessions(self):
+    def get_sessions(self) -> core_pb2.GetSessionsResponse:
         """
         Retrieves all currently known sessions.
 
-        :return: response with a list of currently known session, their state and number of nodes
+        :return: response with a list of currently known session, their state and
+            number of nodes
         :rtype: core_pb2.GetSessionsResponse
         """
         return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
-    def get_session(self, session_id):
+    def get_session(self, session_id: int) -> core_pb2.GetSessionResponse:
         """
         Retrieve a session.
 
@@ -251,7 +257,9 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionRequest(session_id=session_id)
         return self.stub.GetSession(request)
 
-    def get_session_options(self, session_id):
+    def get_session_options(
+        self, session_id: int
+    ) -> core_pb2.GetSessionOptionsResponse:
         """
         Retrieve session options as a dict with id mapping.
 
@@ -263,7 +271,9 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
         return self.stub.GetSessionOptions(request)
 
-    def set_session_options(self, session_id, config):
+    def set_session_options(
+        self, session_id: int, config: Dict[str, str]
+    ) -> core_pb2.SetSessionOptionsResponse:
         """
         Set options for a session.
 
@@ -278,7 +288,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetSessionOptions(request)
 
-    def get_session_metadata(self, session_id):
+    def get_session_metadata(
+        self, session_id: int
+    ) -> core_pb2.GetSessionMetadataResponse:
         """
         Retrieve session metadata as a dict with id mapping.
 
@@ -290,7 +302,9 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionMetadataRequest(session_id=session_id)
         return self.stub.GetSessionMetadata(request)
 
-    def set_session_metadata(self, session_id, config):
+    def set_session_metadata(
+        self, session_id: int, config: Dict[str, str]
+    ) -> core_pb2.SetSessionMetadataResponse:
         """
         Set metadata for a session.
 
@@ -305,7 +319,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetSessionMetadata(request)
 
-    def get_session_location(self, session_id):
+    def get_session_location(
+        self, session_id: int
+    ) -> core_pb2.GetSessionLocationResponse:
         """
         Get session location.
 
@@ -319,15 +335,15 @@ class CoreGrpcClient:
 
     def set_session_location(
         self,
-        session_id,
-        x=None,
-        y=None,
-        z=None,
-        lat=None,
-        lon=None,
-        alt=None,
-        scale=None,
-    ):
+        session_id: int,
+        x: float = None,
+        y: float = None,
+        z: float = None,
+        lat: float = None,
+        lon: float = None,
+        alt: float = None,
+        scale: float = None,
+    ) -> core_pb2.SetSessionLocationResponse:
         """
         Set session location.
 
@@ -351,7 +367,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetSessionLocation(request)
 
-    def set_session_state(self, session_id, state):
+    def set_session_state(
+        self, session_id: int, state: core_pb2.SessionState
+    ) -> core_pb2.SetSessionStateResponse:
         """
         Set session state.
 
@@ -364,7 +382,9 @@ class CoreGrpcClient:
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
         return self.stub.SetSessionState(request)
 
-    def add_session_server(self, session_id, name, host):
+    def add_session_server(
+        self, session_id: int, name: str, host: str
+    ) -> core_pb2.AddSessionServerResponse:
         """
         Add distributed session server.
 
@@ -380,7 +400,9 @@ class CoreGrpcClient:
         )
         return self.stub.AddSessionServer(request)
 
-    def events(self, session_id, handler, events=None):
+    def events(
+        self, session_id: int, handler: Callable, events: List[core_pb2.Event] = None
+    ) -> Any:
         """
         Listen for session events.
 
@@ -392,10 +414,11 @@ class CoreGrpcClient:
         """
         request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
+        logging.info("STREAM TYPE: %s", type(stream))
         start_streamer(stream, handler)
         return stream
 
-    def throughputs(self, session_id, handler):
+    def throughputs(self, session_id: int, handler: Callable) -> Any:
         """
         Listen for throughput events with information for interfaces and bridges.
 
@@ -409,7 +432,9 @@ class CoreGrpcClient:
         start_streamer(stream, handler)
         return stream
 
-    def add_node(self, session_id, node):
+    def add_node(
+        self, session_id: int, node: core_pb2.Node
+    ) -> core_pb2.AddNodeResponse:
         """
         Add node to session.
 
@@ -422,7 +447,7 @@ class CoreGrpcClient:
         request = core_pb2.AddNodeRequest(session_id=session_id, node=node)
         return self.stub.AddNode(request)
 
-    def get_node(self, session_id, node_id):
+    def get_node(self, session_id: int, node_id: int) -> core_pb2.GetNodeResponse:
         """
         Get node details.
 
@@ -435,7 +460,14 @@ class CoreGrpcClient:
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session_id, node_id, position, icon=None, source=None):
+    def edit_node(
+        self,
+        session_id: int,
+        node_id: int,
+        position: core_pb2.Position,
+        icon: str = None,
+        source: str = None,
+    ) -> core_pb2.EditNodeResponse:
         """
         Edit a node, currently only changes position.
 
@@ -457,7 +489,7 @@ class CoreGrpcClient:
         )
         return self.stub.EditNode(request)
 
-    def delete_node(self, session_id, node_id):
+    def delete_node(self, session_id: int, node_id: int) -> core_pb2.DeleteNodeResponse:
         """
         Delete node from session.
 
@@ -470,12 +502,15 @@ class CoreGrpcClient:
         request = core_pb2.DeleteNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.DeleteNode(request)
 
-    def node_command(self, session_id, node_id, command):
+    def node_command(
+        self, session_id: int, node_id: int, command: str
+    ) -> core_pb2.NodeCommandResponse:
         """
         Send command to a node and get the output.
 
         :param int session_id: session id
         :param int node_id: node id
+        :param str command: command to run on node
         :return: response with command combined stdout/stderr
         :rtype: core_pb2.NodeCommandResponse
         :raises grpc.RpcError: when session or node doesn't exist
@@ -485,7 +520,9 @@ class CoreGrpcClient:
         )
         return self.stub.NodeCommand(request)
 
-    def get_node_terminal(self, session_id, node_id):
+    def get_node_terminal(
+        self, session_id: int, node_id: int
+    ) -> core_pb2.GetNodeTerminalResponse:
         """
         Retrieve terminal command string for launching a local terminal.
 
@@ -500,7 +537,9 @@ class CoreGrpcClient:
         )
         return self.stub.GetNodeTerminal(request)
 
-    def get_node_links(self, session_id, node_id):
+    def get_node_links(
+        self, session_id: int, node_id: int
+    ) -> core_pb2.GetNodeLinksResponse:
         """
         Get current links for a node.
 
@@ -515,13 +554,13 @@ class CoreGrpcClient:
 
     def add_link(
         self,
-        session_id,
-        node_one_id,
-        node_two_id,
-        interface_one=None,
-        interface_two=None,
-        options=None,
-    ):
+        session_id: int,
+        node_one_id: int,
+        node_two_id: int,
+        interface_one: core_pb2.Interface = None,
+        interface_two: core_pb2.Interface = None,
+        options: core_pb2.LinkOptions = None,
+    ) -> core_pb2.AddLinkResponse:
         """
         Add a link between nodes.
 
@@ -548,13 +587,13 @@ class CoreGrpcClient:
 
     def edit_link(
         self,
-        session_id,
-        node_one_id,
-        node_two_id,
-        options,
-        interface_one_id=None,
-        interface_two_id=None,
-    ):
+        session_id: int,
+        node_one_id: int,
+        node_two_id: int,
+        options: core_pb2.LinkOptions,
+        interface_one_id: int = None,
+        interface_two_id: int = None,
+    ) -> core_pb2.EditLinkResponse:
         """
         Edit a link between nodes.
 
@@ -580,12 +619,12 @@ class CoreGrpcClient:
 
     def delete_link(
         self,
-        session_id,
-        node_one_id,
-        node_two_id,
-        interface_one_id=None,
-        interface_two_id=None,
-    ):
+        session_id: int,
+        node_one_id: int,
+        node_two_id: int,
+        interface_one_id: int = None,
+        interface_two_id: int = None,
+    ) -> core_pb2.DeleteLinkResponse:
         """
         Delete a link between nodes.
 
@@ -607,7 +646,7 @@ class CoreGrpcClient:
         )
         return self.stub.DeleteLink(request)
 
-    def get_hooks(self, session_id):
+    def get_hooks(self, session_id: int) -> core_pb2.GetHooksResponse:
         """
         Get all hook scripts.
 
@@ -619,7 +658,13 @@ class CoreGrpcClient:
         request = core_pb2.GetHooksRequest(session_id=session_id)
         return self.stub.GetHooks(request)
 
-    def add_hook(self, session_id, state, file_name, file_data):
+    def add_hook(
+        self,
+        session_id: int,
+        state: core_pb2.SessionState,
+        file_name: str,
+        file_data: bytes,
+    ) -> core_pb2.AddHookResponse:
         """
         Add hook scripts.
 
@@ -635,7 +680,9 @@ class CoreGrpcClient:
         request = core_pb2.AddHookRequest(session_id=session_id, hook=hook)
         return self.stub.AddHook(request)
 
-    def get_mobility_configs(self, session_id):
+    def get_mobility_configs(
+        self, session_id: int
+    ) -> core_pb2.GetMobilityConfigsResponse:
         """
         Get all mobility configurations.
 
@@ -647,7 +694,9 @@ class CoreGrpcClient:
         request = core_pb2.GetMobilityConfigsRequest(session_id=session_id)
         return self.stub.GetMobilityConfigs(request)
 
-    def get_mobility_config(self, session_id, node_id):
+    def get_mobility_config(
+        self, session_id: int, node_id: int
+    ) -> core_pb2.GetMobilityConfigResponse:
         """
         Get mobility configuration for a node.
 
@@ -662,7 +711,9 @@ class CoreGrpcClient:
         )
         return self.stub.GetMobilityConfig(request)
 
-    def set_mobility_config(self, session_id, node_id, config):
+    def set_mobility_config(
+        self, session_id: int, node_id: int, config: Dict[str, str]
+    ) -> core_pb2.SetMobilityConfigResponse:
         """
         Set mobility configuration for a node.
 
@@ -679,7 +730,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetMobilityConfig(request)
 
-    def mobility_action(self, session_id, node_id, action):
+    def mobility_action(
+        self, session_id: int, node_id: int, action: core_pb2.ServiceAction
+    ) -> core_pb2.MobilityActionResponse:
         """
         Send a mobility action for a node.
 
@@ -695,7 +748,7 @@ class CoreGrpcClient:
         )
         return self.stub.MobilityAction(request)
 
-    def get_services(self):
+    def get_services(self) -> core_pb2.GetServicesResponse:
         """
         Get all currently loaded services.
 
@@ -705,7 +758,9 @@ class CoreGrpcClient:
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)
 
-    def get_service_defaults(self, session_id):
+    def get_service_defaults(
+        self, session_id: int
+    ) -> core_pb2.GetServiceDefaultsResponse:
         """
         Get default services for different default node models.
 
@@ -717,7 +772,9 @@ class CoreGrpcClient:
         request = core_pb2.GetServiceDefaultsRequest(session_id=session_id)
         return self.stub.GetServiceDefaults(request)
 
-    def set_service_defaults(self, session_id, service_defaults):
+    def set_service_defaults(
+        self, session_id: int, service_defaults: Dict[str, List[str]]
+    ) -> core_pb2.SetServiceDefaultsResponse:
         """
         Set default services for node models.
 
@@ -737,7 +794,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetServiceDefaults(request)
 
-    def get_node_service_configs(self, session_id):
+    def get_node_service_configs(
+        self, session_id: int
+    ) -> core_pb2.GetNodeServiceConfigsResponse:
         """
         Get service data for a node.
 
@@ -749,7 +808,9 @@ class CoreGrpcClient:
         request = core_pb2.GetNodeServiceConfigsRequest(session_id=session_id)
         return self.stub.GetNodeServiceConfigs(request)
 
-    def get_node_service(self, session_id, node_id, service):
+    def get_node_service(
+        self, session_id: int, node_id: int, service: str
+    ) -> core_pb2.GetNodeServiceResponse:
         """
         Get service data for a node.
 
@@ -765,7 +826,9 @@ class CoreGrpcClient:
         )
         return self.stub.GetNodeService(request)
 
-    def get_node_service_file(self, session_id, node_id, service, file_name):
+    def get_node_service_file(
+        self, session_id: int, node_id: int, service: str, file_name: str
+    ) -> core_pb2.GetNodeServiceFileResponse:
         """
         Get a service file for a node.
 
@@ -783,8 +846,14 @@ class CoreGrpcClient:
         return self.stub.GetNodeServiceFile(request)
 
     def set_node_service(
-        self, session_id, node_id, service, startup, validate, shutdown
-    ):
+        self,
+        session_id: int,
+        node_id: int,
+        service: str,
+        startup: List[str],
+        validate: List[str],
+        shutdown: List[str],
+    ) -> core_pb2.SetNodeServiceResponse:
         """
         Set service data for a node.
 
@@ -808,7 +877,9 @@ class CoreGrpcClient:
         request = core_pb2.SetNodeServiceRequest(session_id=session_id, config=config)
         return self.stub.SetNodeService(request)
 
-    def set_node_service_file(self, session_id, node_id, service, file_name, data):
+    def set_node_service_file(
+        self, session_id: int, node_id: int, service: str, file_name: str, data: bytes
+    ) -> core_pb2.SetNodeServiceFileResponse:
         """
         Set a service file for a node.
 
@@ -829,14 +900,21 @@ class CoreGrpcClient:
         )
         return self.stub.SetNodeServiceFile(request)
 
-    def service_action(self, session_id, node_id, service, action):
+    def service_action(
+        self,
+        session_id: int,
+        node_id: int,
+        service: str,
+        action: core_pb2.ServiceAction,
+    ) -> core_pb2.ServiceActionResponse:
         """
         Send an action to a service for a node.
 
         :param int session_id: session id
         :param int node_id: node id
         :param str service: service name
-        :param core_pb2.ServiceAction action: action for service (start, stop, restart, validate)
+        :param core_pb2.ServiceAction action: action for service (start, stop, restart,
+            validate)
         :return: response with result of success or failure
         :rtype: core_pb2.ServiceActionResponse
         :raises grpc.RpcError: when session or node doesn't exist
@@ -846,7 +924,7 @@ class CoreGrpcClient:
         )
         return self.stub.ServiceAction(request)
 
-    def get_wlan_configs(self, session_id):
+    def get_wlan_configs(self, session_id: int) -> core_pb2.GetWlanConfigsResponse:
         """
         Get all wlan configurations.
 
@@ -858,7 +936,9 @@ class CoreGrpcClient:
         request = core_pb2.GetWlanConfigsRequest(session_id=session_id)
         return self.stub.GetWlanConfigs(request)
 
-    def get_wlan_config(self, session_id, node_id):
+    def get_wlan_config(
+        self, session_id: int, node_id: int
+    ) -> core_pb2.GetWlanConfigResponse:
         """
         Get wlan configuration for a node.
 
@@ -871,7 +951,9 @@ class CoreGrpcClient:
         request = core_pb2.GetWlanConfigRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetWlanConfig(request)
 
-    def set_wlan_config(self, session_id, node_id, config):
+    def set_wlan_config(
+        self, session_id: int, node_id: int, config: Dict[str, str]
+    ) -> core_pb2.SetWlanConfigResponse:
         """
         Set wlan configuration for a node.
 
@@ -888,7 +970,7 @@ class CoreGrpcClient:
         )
         return self.stub.SetWlanConfig(request)
 
-    def get_emane_config(self, session_id):
+    def get_emane_config(self, session_id: int) -> core_pb2.GetEmaneConfigResponse:
         """
         Get session emane configuration.
 
@@ -900,7 +982,9 @@ class CoreGrpcClient:
         request = core_pb2.GetEmaneConfigRequest(session_id=session_id)
         return self.stub.GetEmaneConfig(request)
 
-    def set_emane_config(self, session_id, config):
+    def set_emane_config(
+        self, session_id: int, config: Dict[str, str]
+    ) -> core_pb2.SetEmaneConfigResponse:
         """
         Set session emane configuration.
 
@@ -913,7 +997,7 @@ class CoreGrpcClient:
         request = core_pb2.SetEmaneConfigRequest(session_id=session_id, config=config)
         return self.stub.SetEmaneConfig(request)
 
-    def get_emane_models(self, session_id):
+    def get_emane_models(self, session_id: int) -> core_pb2.GetEmaneModelsResponse:
         """
         Get session emane models.
 
@@ -925,7 +1009,9 @@ class CoreGrpcClient:
         request = core_pb2.GetEmaneModelsRequest(session_id=session_id)
         return self.stub.GetEmaneModels(request)
 
-    def get_emane_model_config(self, session_id, node_id, model, interface_id=-1):
+    def get_emane_model_config(
+        self, session_id: int, node_id: int, model: str, interface_id: int = -1
+    ) -> core_pb2.GetEmaneModelConfigResponse:
         """
         Get emane model configuration for a node or a node's interface.
 
@@ -943,8 +1029,13 @@ class CoreGrpcClient:
         return self.stub.GetEmaneModelConfig(request)
 
     def set_emane_model_config(
-        self, session_id, node_id, model, config, interface_id=-1
-    ):
+        self,
+        session_id: int,
+        node_id: int,
+        model: str,
+        config: Dict[str, str],
+        interface_id: int = -1,
+    ) -> core_pb2.SetEmaneModelConfigResponse:
         """
         Set emane model configuration for a node or a node's interface.
 
@@ -965,7 +1056,9 @@ class CoreGrpcClient:
         )
         return self.stub.SetEmaneModelConfig(request)
 
-    def get_emane_model_configs(self, session_id):
+    def get_emane_model_configs(
+        self, session_id: int
+    ) -> core_pb2.GetEmaneModelConfigsResponse:
         """
         Get all emane model configurations for a session.
 
@@ -977,7 +1070,7 @@ class CoreGrpcClient:
         request = core_pb2.GetEmaneModelConfigsRequest(session_id=session_id)
         return self.stub.GetEmaneModelConfigs(request)
 
-    def save_xml(self, session_id, file_path):
+    def save_xml(self, session_id: int, file_path: str) -> core_pb2.SaveXmlResponse:
         """
         Save the current scenario to an XML file.
 
@@ -990,7 +1083,7 @@ class CoreGrpcClient:
         with open(file_path, "w") as xml_file:
             xml_file.write(response.data)
 
-    def open_xml(self, file_path, start=False):
+    def open_xml(self, file_path: str, start: bool = False) -> core_pb2.OpenXmlResponse:
         """
         Load a local scenario XML file to open as a new session.
 
@@ -1004,7 +1097,9 @@ class CoreGrpcClient:
         request = core_pb2.OpenXmlRequest(data=data, start=start, file=file_path)
         return self.stub.OpenXml(request)
 
-    def emane_link(self, session_id, nem_one, nem_two, linked):
+    def emane_link(
+        self, session_id: int, nem_one: int, nem_two: int, linked: bool
+    ) -> core_pb2.EmaneLinkResponse:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 
@@ -1019,7 +1114,7 @@ class CoreGrpcClient:
         )
         return self.stub.EmaneLink(request)
 
-    def get_interfaces(self):
+    def get_interfaces(self) -> core_pb2.GetInterfacesResponse:
         """
         Retrieves a list of interfaces available on the host machine that are not
         a part of a CORE session.
@@ -1029,7 +1124,7 @@ class CoreGrpcClient:
         request = core_pb2.GetInterfacesRequest()
         return self.stub.GetInterfaces(request)
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Open connection to server, must be closed manually.
 
@@ -1038,7 +1133,7 @@ class CoreGrpcClient:
         self.channel = grpc.insecure_channel(self.address)
         self.stub = core_pb2_grpc.CoreApiStub(self.channel)
 
-    def close(self):
+    def close(self) -> None:
         """
         Close currently opened server channel connection.
 
@@ -1049,7 +1144,7 @@ class CoreGrpcClient:
             self.channel = None
 
     @contextmanager
-    def context_connect(self):
+    def context_connect(self) -> None:
         """
         Makes a context manager based connection to the server, will close after context ends.
 
