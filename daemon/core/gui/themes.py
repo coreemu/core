@@ -147,7 +147,7 @@ def theme_change_menu(event: tk.Event):
     style_menu(event.widget)
 
 
-def style_menu(widget: ttk.Widget):
+def style_menu(widget: tk.Widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")

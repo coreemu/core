@@ -4,6 +4,7 @@ set wallpaper
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import BACKGROUNDS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -11,9 +12,12 @@ from core.gui.images import Images
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import image_chooser
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class CanvasWallpaperDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: tk.Widget, app: "Application"):
         """
         create an instance of CanvasWallpaper object
 

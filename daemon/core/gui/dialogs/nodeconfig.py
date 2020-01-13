@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -11,6 +12,10 @@ from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
 
 
 def mac_auto(is_auto, entry: ttk.Entry):
@@ -33,7 +38,7 @@ class InterfaceData:
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+    def __init__(self, master, app: "Application", canvas_node: "CanvasNode"):
         """
         create an instance of node configuration
 

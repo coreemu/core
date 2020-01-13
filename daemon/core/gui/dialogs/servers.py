@@ -1,10 +1,14 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.coreclient import CoreServer
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 DEFAULT_NAME = "example"
 DEFAULT_ADDRESS = "127.0.0.1"
@@ -12,7 +16,7 @@ DEFAULT_PORT = 50051
 
 
 class ServersDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "CORE Servers", modal=True)
         self.name = tk.StringVar(value=DEFAULT_NAME)
         self.address = tk.StringVar(value=DEFAULT_ADDRESS)

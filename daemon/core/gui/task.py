@@ -1,9 +1,12 @@
 import logging
 import threading
+from typing import Callable, Optional
 
 
 class BackgroundTask:
-    def __init__(self, master, task, callback=None, args=()):
+    def __init__(
+        self, master, task: Callable, callback: Optional[Callable] = None, args=()
+    ):
         self.master = master
         self.args = args
         self.task = task

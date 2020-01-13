@@ -4,12 +4,16 @@ link configuration
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import Union
+from typing import TYPE_CHECKING, Union
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.edges import CanvasEdge
 
 
 def get_int(var: tk.StringVar) -> Union[int, None]:
@@ -20,7 +24,7 @@ def get_int(var: tk.StringVar) -> Union[int, None]:
         return None
 
 
-def get_float(var: tk.StringVar) -> Union[int, None]:
+def get_float(var: tk.StringVar) -> Union[float, None]:
     value = var.get()
     if value != "":
         return float(value)
@@ -29,7 +33,7 @@ def get_float(var: tk.StringVar) -> Union[int, None]:
 
 
 class LinkConfigurationDialog(Dialog):
-    def __init__(self, master, app, edge):
+    def __init__(self, master, app: "Application", edge: "CanvasEdge"):
         super().__init__(master, app, "Link Configuration", modal=True)
         self.app = app
         self.edge = edge

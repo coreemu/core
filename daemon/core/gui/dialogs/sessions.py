@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
 import grpc
 
@@ -12,9 +12,12 @@ from core.gui.images import ImageEnum, Images
 from core.gui.task import BackgroundTask
 from core.gui.themes import PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class SessionsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "Sessions", modal=True)
         self.selected = False
         self.selected_id = None

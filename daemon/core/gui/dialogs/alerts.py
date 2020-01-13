@@ -3,15 +3,19 @@ check engine light
 """
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.api.grpc.core_pb2 import ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class AlertsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: tk.Widget, app: "Application"):
         super().__init__(master, app, "Alerts", modal=True)
         self.app = app
         self.tree = None

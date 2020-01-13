@@ -3,15 +3,22 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 
 class NodeServiceDialog(Dialog):
-    def __init__(self, master, app, canvas_node, services=None):
+    def __init__(
+        self, master, app: "Application", canvas_node: "CanvasNode", services=None
+    ):
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(master, app, title, modal=True)
         self.app = app

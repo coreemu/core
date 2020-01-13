@@ -1,13 +1,22 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import DIALOG_PAD
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class Dialog(tk.Toplevel):
-    def __init__(self, master, app, title, modal=False):
+    def __init__(
+        self,
+        master: tk.Widget,
+        app: "Application",
+        title: str,
+        modal: Optional[bool] = False,
+    ):
         super().__init__(master)
         self.withdraw()
         self.app = app

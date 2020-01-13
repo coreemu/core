@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional
 
 from core.gui import appconfig, themes
 from core.gui.coreclient import CoreClient
@@ -17,7 +18,7 @@ HEIGHT = 800
 
 
 class Application(tk.Frame):
-    def __init__(self, master=None):
+    def __init__(self, master: Optional[tk.Widget] = None):
         super().__init__(master)
         # load node icons
         NodeUtils.setup()

@@ -429,7 +429,7 @@ class Toolbar(ttk.Frame):
         if not response.result:
             messagebox.showerror("Stop Error", "Errors stopping session")
 
-    def update_annotation(self, image, shape_type: str):
+    def update_annotation(self, image: ImageTk.PhotoImage, shape_type: str):
         logging.info("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)

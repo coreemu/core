@@ -5,15 +5,19 @@ copy service config dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import Tuple
+from typing import TYPE_CHECKING, Tuple
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
 from core.gui.widgets import CodeText
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.dialogs.serviceconfig import ServiceConfigDialog
+
 
 class CopyServiceConfigDialog(Dialog):
-    def __init__(self, master, app, node_id):
+    def __init__(self, master: "ServiceConfigDialog", app: "Application", node_id: int):
         super().__init__(master, app, f"Copy services to node {node_id}", modal=True)
         self.parent = master
         self.app = app

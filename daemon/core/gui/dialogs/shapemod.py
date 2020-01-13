@@ -3,6 +3,7 @@ shape input dialog
 """
 import tkinter as tk
 from tkinter import font, ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
@@ -10,12 +11,16 @@ from core.gui.graph import tags
 from core.gui.graph.shapeutils import is_draw_shape, is_shape_text
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.shape import Shape
+
 FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
 BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 class ShapeDialog(Dialog):
-    def __init__(self, master, app, shape):
+    def __init__(self, master, app: "Application", shape: "Shape"):
         if is_draw_shape(shape.shape_type):
             title = "Add Shape"
         else:
@@ -180,8 +185,6 @@ class ShapeDialog(Dialog):
     def save_text(self):
         """
         save info related to text or shape label
-
-        :return: nothing
         """
         data = self.shape.shape_data
         data.text = self.shape_text.get()
@@ -195,8 +198,6 @@ class ShapeDialog(Dialog):
     def save_shape(self):
         """
         save info related to shape
-
-        :return: nothing
         """
         data = self.shape.shape_data
         data.fill_color = self.fill_color
@@ -206,8 +207,6 @@ class ShapeDialog(Dialog):
     def add_text(self):
         """
         add text to canvas
-
-        :return: nothing
         """
         text = self.shape_text.get()
         text_font = self.make_font()

@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import font
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -16,11 +17,22 @@ from core.gui.graph import tags
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.nodeutils import NodeUtils
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from PIL.ImageTk import PhotoImage
+
 NODE_TEXT_OFFSET = 5
 
 
 class CanvasNode:
-    def __init__(self, app, x: float, y: float, core_node: core_pb2.Node, image):
+    def __init__(
+        self,
+        app: "Application",
+        x: float,
+        y: float,
+        core_node: core_pb2.Node,
+        image: "PhotoImage",
+    ):
         self.app = app
         self.canvas = app.canvas
         self.image = image

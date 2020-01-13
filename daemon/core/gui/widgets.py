@@ -195,7 +195,7 @@ class CheckboxList(FrameScroll):
         self.clicked = clicked
         self.frame.columnconfigure(0, weight=1)
 
-    def add(self, name, checked):
+    def add(self, name: str, checked: bool):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)

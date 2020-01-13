@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
+from typing import TYPE_CHECKING, Set
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -11,9 +12,12 @@ from core.gui.nodeutils import NodeDraw
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll, image_chooser
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ServicesSelectDialog(Dialog):
-    def __init__(self, master, app, current_services):
+    def __init__(self, master, app: "Application", current_services: Set[str]):
         super().__init__(master, app, "Node Services", modal=True)
         self.groups = None
         self.services = None
@@ -96,7 +100,7 @@ class ServicesSelectDialog(Dialog):
 
 
 class CustomNodesDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "Custom Nodes", modal=True)
         self.edit_button = None
         self.delete_button = None

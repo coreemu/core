@@ -1,14 +1,18 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class HookDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "Hook", modal=True)
         self.name = tk.StringVar()
         self.codetext = None
@@ -84,7 +88,7 @@ class HookDialog(Dialog):
 
 
 class HooksDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "Hooks", modal=True)
         self.listbox = None
         self.edit_button = None

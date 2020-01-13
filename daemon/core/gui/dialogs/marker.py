@@ -4,15 +4,21 @@ marker dialog
 
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 MARKER_THICKNESS = [3, 5, 8, 10]
 
 
 class MarkerDialog(Dialog):
-    def __init__(self, master, app, initcolor="#000000"):
+    def __init__(
+        self, master, app: "Application", initcolor: Optional[str] = "#000000"
+    ):
         super().__init__(master, app, "marker tool", modal=False)
         self.app = app
         self.color = initcolor

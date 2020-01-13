@@ -9,7 +9,7 @@ from core.gui.themes import Styles
 
 
 class StatusBar(ttk.Frame):
-    def __init__(self, master, app, **kwargs):
+    def __init__(self, master: tk.Widget, app, **kwargs):
         super().__init__(master, **kwargs)
         self.app = app
         self.status = None

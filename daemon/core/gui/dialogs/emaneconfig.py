@@ -5,18 +5,24 @@ import logging
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
+from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 
 class GlobalEmaneDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app: "Application"):
         super().__init__(master, app, "EMANE Configuration", modal=True)
         self.config_frame = None
         self.draw()
@@ -47,7 +53,14 @@ class GlobalEmaneDialog(Dialog):
 
 
 class EmaneModelDialog(Dialog):
-    def __init__(self, master, app, node, model, interface=None):
+    def __init__(
+        self,
+        master,
+        app: "Application",
+        node: core_pb2.Node,
+        model: str,
+        interface: Optional[int] = None,
+    ):
         super().__init__(master, app, f"{node.name} {model} Configuration", modal=True)
         self.node = node
         self.model = f"emane_{model}"
@@ -91,7 +104,7 @@ class EmaneModelDialog(Dialog):
 
 
 class EmaneConfigDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+    def __init__(self, master, app: "Application", canvas_node: "CanvasNode"):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} EMANE Configuration", modal=True
         )

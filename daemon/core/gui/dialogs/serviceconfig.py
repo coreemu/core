@@ -1,7 +1,7 @@
 "Service configuration dialog"
 import tkinter as tk
 from tkinter import ttk
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import grpc
 
@@ -13,9 +13,12 @@ from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ServiceConfigDialog(Dialog):
-    def __init__(self, master, app, service_name, node_id):
+    def __init__(self, master, app: "Application", service_name: str, node_id: int):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)
         self.master = master

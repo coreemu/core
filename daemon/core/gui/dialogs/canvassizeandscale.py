@@ -3,15 +3,19 @@ size and scale
 """
 import tkinter as tk
 from tkinter import font, ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 PIXEL_SCALE = 100
 
 
 class SizeAndScaleDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         """
         create an instance for size and scale object
         """
