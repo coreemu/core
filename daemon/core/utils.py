@@ -15,15 +15,33 @@ import random
 import shlex
 import sys
 from subprocess import PIPE, STDOUT, Popen
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import netaddr
 
 from core.errors import CoreCommandError, CoreError
 
+if TYPE_CHECKING:
+    from core.emulator.session import Session
+    from core.nodes.base import CoreNode
+
 DEVNULL = open(os.devnull, "wb")
 
 
-def execute_file(path, exec_globals=None, exec_locals=None):
+def execute_file(
+    path: str, exec_globals: Dict[str, str] = None, exec_locals: Dict[str, str] = None
+) -> None:
     """
     Provides an alternative way to run execfile to be compatible for
     both python2/3.
@@ -41,7 +59,7 @@ def execute_file(path, exec_globals=None, exec_locals=None):
         exec(data, exec_globals, exec_locals)
 
 
-def hashkey(value):
+def hashkey(value: Union[str, int]) -> int:
     """
     Provide a consistent hash that can be used in place
     of the builtin hash, that no longer behaves consistently
@@ -57,7 +75,7 @@ def hashkey(value):
     return int(hashlib.sha256(value).hexdigest(), 16)
 
 
-def _detach_init():
+def _detach_init() -> None:
     """
     Fork a child process and exit.
 
@@ -69,7 +87,7 @@ def _detach_init():
     os.setsid()
 
 
-def _valid_module(path, file_name):
+def _valid_module(path: str, file_name: str) -> bool:
     """
     Check if file is a valid python module.
 
@@ -91,7 +109,7 @@ def _valid_module(path, file_name):
     return True
 
 
-def _is_class(module, member, clazz):
+def _is_class(module: Any, member: Type, clazz: Type) -> bool:
     """
     Validates if a module member is a class and an instance of a CoreService.
 
@@ -113,7 +131,7 @@ def _is_class(module, member, clazz):
     return True
 
 
-def close_onexec(fd):
+def close_onexec(fd: int) -> None:
     """
     Close on execution of a shell process.
 
@@ -124,7 +142,7 @@ def close_onexec(fd):
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def which(command, required):
+def which(command: str, required: bool) -> str:
     """
     Find location of desired executable within current PATH.
 
@@ -146,7 +164,7 @@ def which(command, required):
     return found_path
 
 
-def make_tuple(obj):
+def make_tuple(obj: Any) -> Tuple[Any]:
     """
     Create a tuple from an object, or return the object itself.
 
@@ -160,7 +178,7 @@ def make_tuple(obj):
         return (obj,)
 
 
-def make_tuple_fromstr(s, value_type):
+def make_tuple_fromstr(s: str, value_type: Callable) -> Tuple[Any]:
     """
     Create a tuple from a string.
 
@@ -179,7 +197,7 @@ def make_tuple_fromstr(s, value_type):
     return tuple(value_type(i) for i in values)
 
 
-def mute_detach(args, **kwargs):
+def mute_detach(args: List[str], **kwargs: Dict[str, Any]) -> int:
     """
     Run a muted detached process by forking it.
 
@@ -195,7 +213,13 @@ def mute_detach(args, **kwargs):
     return Popen(args, **kwargs).pid
 
 
-def cmd(args, env=None, cwd=None, wait=True, shell=False):
+def cmd(
+    args: str,
+    env: Dict[str, str] = None,
+    cwd: str = None,
+    wait: bool = True,
+    shell: bool = False,
+) -> str:
     """
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
@@ -227,7 +251,7 @@ def cmd(args, env=None, cwd=None, wait=True, shell=False):
         raise CoreCommandError(-1, args)
 
 
-def file_munge(pathname, header, text):
+def file_munge(pathname: str, header: str, text: str) -> None:
     """
     Insert text at the end of a file, surrounded by header comments.
 
@@ -245,7 +269,7 @@ def file_munge(pathname, header, text):
         append_file.write(f"# END {header}\n")
 
 
-def file_demunge(pathname, header):
+def file_demunge(pathname: str, header: str) -> None:
     """
     Remove text that was inserted in a file surrounded by header comments.
 
@@ -273,7 +297,9 @@ def file_demunge(pathname, header):
         write_file.write("".join(lines))
 
 
-def expand_corepath(pathname, session=None, node=None):
+def expand_corepath(
+    pathname: str, session: "Session" = None, node: "CoreNode" = None
+) -> str:
     """
     Expand a file path given session information.
 
@@ -296,7 +322,7 @@ def expand_corepath(pathname, session=None, node=None):
     return pathname
 
 
-def sysctl_devname(devname):
+def sysctl_devname(devname: str) -> Optional[str]:
     """
     Translate a device name to the name used with sysctl.
 
@@ -309,7 +335,7 @@ def sysctl_devname(devname):
     return devname.replace(".", "/")
 
 
-def load_config(filename, d):
+def load_config(filename: str, d: Dict[str, str]) -> None:
     """
     Read key=value pairs from a file, into a dict. Skip comments; strip newline
     characters and spacing.
@@ -332,7 +358,7 @@ def load_config(filename, d):
             logging.exception("error reading file to dict: %s", filename)
 
 
-def load_classes(path, clazz):
+def load_classes(path: str, clazz: Type) -> List[Type]:
     """
     Dynamically load classes for use within CORE.
 
@@ -375,7 +401,7 @@ def load_classes(path, clazz):
     return classes
 
 
-def load_logging_config(config_path):
+def load_logging_config(config_path: str) -> None:
     """
     Load CORE logging configuration file.
 
@@ -387,7 +413,9 @@ def load_logging_config(config_path):
         logging.config.dictConfig(log_config)
 
 
-def threadpool(funcs, workers=10):
+def threadpool(
+    funcs: List[Tuple[Callable, Iterable[Any], Dict[Any, Any]]], workers: int = 10
+) -> Tuple[List[Any], List[Exception]]:
     """
     Run provided functions, arguments, and keywords within a threadpool
     collecting results and exceptions.
@@ -413,7 +441,7 @@ def threadpool(funcs, workers=10):
     return results, exceptions
 
 
-def random_mac():
+def random_mac() -> str:
     """
     Create a random mac address using Xen OID 00:16:3E.
 
@@ -427,7 +455,7 @@ def random_mac():
     return str(mac)
 
 
-def validate_mac(value):
+def validate_mac(value: str) -> str:
     """
     Validate mac and return unix formatted version.
 
@@ -443,7 +471,7 @@ def validate_mac(value):
         raise CoreError(f"invalid mac address {value}: {e}")
 
 
-def validate_ip(value):
+def validate_ip(value: str) -> str:
     """
     Validate ip address with prefix and return formatted version.
 

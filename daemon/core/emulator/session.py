@@ -1611,14 +1611,14 @@ class Session:
         self.add_remove_control_interface(node=node, remove=False)
         self.services.boot_services(node)
 
-    def boot_nodes(self) -> List[ServiceBootError]:
+    def boot_nodes(self) -> List[Exception]:
         """
         Invoke the boot() procedure for all nodes and send back node
         messages to the GUI for node messages that had the status
         request flag.
 
         :return: service boot exceptions
-        :rtype: list[core.services.coreservices.ServiceBootError]
+        :rtype: list[Exception]
         """
         with self._nodes_lock:
             funcs = []

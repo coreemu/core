@@ -134,7 +134,7 @@ def create_nodes(
 
 def create_links(
     session: Session, link_protos: List[core_pb2.Link]
-) -> Tuple[List[NodeBase], List[Type[Exception]]]:
+) -> Tuple[List[NodeBase], List[Exception]]:
     """
     Create links using a thread pool and wait for completion.
 
