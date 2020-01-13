@@ -1095,7 +1095,7 @@ class WlanNode(CoreNetwork):
             # invokes any netif.poshook
             netif.setposition(x, y, z)
 
-    def setmodel(self, model: WirelessModelType, config: Dict[str, str]):
+    def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
         """
         Sets the mobility and wireless model.
 
