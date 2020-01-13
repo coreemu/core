@@ -5,6 +5,7 @@ copy service config dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import Tuple
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
@@ -147,7 +148,7 @@ class CopyServiceConfigDialog(Dialog):
                 dialog = ViewConfigDialog(self, self.app, self.node_id, data)
                 dialog.show()
 
-    def get_node_service(self, selected):
+    def get_node_service(self, selected: Tuple[str]) -> [int, str]:
         service_tree_id = self.tree.parent(selected[0])
         service_name = self.tree.item(service_tree_id)["text"]
         node_tree_id = self.tree.parent(service_tree_id)

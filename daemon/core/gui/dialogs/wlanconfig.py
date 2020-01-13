@@ -38,8 +38,6 @@ class WlanConfigDialog(Dialog):
     def draw_apply_buttons(self):
         """
         create node configuration options
-
-        :return: nothing
         """
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -55,8 +53,6 @@ class WlanConfigDialog(Dialog):
     def click_apply(self):
         """
         retrieve user's wlan configuration and store the new configuration values
-
-        :return: nothing
         """
         config = self.config_frame.parse_config()
         self.app.core.wlan_configs[self.node.id] = self.config

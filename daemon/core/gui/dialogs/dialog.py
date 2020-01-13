@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional
 
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import DIALOG_PAD
@@ -30,7 +31,7 @@ class Dialog(tk.Toplevel):
             self.grab_set()
             self.wait_window()
 
-    def draw_spacer(self, row=None):
+    def draw_spacer(self, row: Optional[int] = None):
         frame = ttk.Frame(self.top)
         frame.grid(row=row, sticky="nsew")
         frame.rowconfigure(0, weight=1)

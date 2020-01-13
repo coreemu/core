@@ -1,4 +1,5 @@
 import logging
+from typing import List, Optional, Union
 
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
@@ -8,16 +9,16 @@ from core.gui.graph.shapeutils import ShapeType
 class AnnotationData:
     def __init__(
         self,
-        text="",
-        font="Arial",
-        font_size=12,
-        text_color="#000000",
-        fill_color="",
-        border_color="#000000",
-        border_width=1,
-        bold=False,
-        italic=False,
-        underline=False,
+        text: Optional[str] = "",
+        font: Optional[str] = "Arial",
+        font_size: Optional[int] = 12,
+        text_color: Optional[str] = "#000000",
+        fill_color: Optional[str] = "",
+        border_color: Optional[str] = "#000000",
+        border_width: Optional[int] = 1,
+        bold: Optional[bool] = False,
+        italic: Optional[bool] = False,
+        underline: Optional[bool] = False,
     ):
         self.text = text
         self.font = font
@@ -99,7 +100,7 @@ class Shape:
             logging.error("unknown shape type: %s", self.shape_type)
         self.created = True
 
-    def get_font(self):
+    def get_font(self) -> List[Union[int, str]]:
         font = [self.shape_data.font, self.shape_data.font_size]
         if self.shape_data.bold:
             font.append("bold")
@@ -123,10 +124,10 @@ class Shape:
                 font=font,
             )
 
-    def shape_motion(self, x1: int, y1: int):
+    def shape_motion(self, x1: float, y1: float):
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
-    def shape_complete(self, x, y):
+    def shape_complete(self, x: float, y: float):
         for component in tags.ABOVE_SHAPE:
             self.canvas.tag_raise(component)
         s = ShapeDialog(self.app, self.app, self)
@@ -135,7 +136,7 @@ class Shape:
     def disappear(self):
         self.canvas.delete(self.id)
 
-    def motion(self, x_offset: int, y_offset: int):
+    def motion(self, x_offset: float, y_offset: float):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         coords = self.canvas.coords(self.id)

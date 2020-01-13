@@ -13,7 +13,7 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
 
 
-def mac_auto(is_auto, entry):
+def mac_auto(is_auto, entry: ttk.Entry):
     logging.info("mac auto clicked")
     if is_auto.get():
         logging.info("disabling mac")
@@ -217,7 +217,7 @@ class NodeConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_emane_config(self, emane_model, interface_id):
+    def click_emane_config(self, emane_model: str, interface_id: int):
         dialog = EmaneModelDialog(self, self.app, self.node, emane_model, interface_id)
         dialog.show()
 
@@ -248,7 +248,7 @@ class NodeConfigDialog(Dialog):
         self.canvas_node.redraw()
         self.destroy()
 
-    def interface_select(self, event):
+    def interface_select(self, event: tk.Event):
         listbox = event.widget
         cur = listbox.curselection()
         if cur:

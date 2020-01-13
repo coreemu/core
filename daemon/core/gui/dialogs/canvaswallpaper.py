@@ -140,8 +140,6 @@ class CanvasWallpaperDialog(Dialog):
     def click_clear(self):
         """
         delete like shown in image link entry if there is any
-
-        :return: nothing
         """
         # delete entry
         self.filename.set("")

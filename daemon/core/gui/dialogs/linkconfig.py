@@ -4,6 +4,7 @@ link configuration
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import Union
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.colorpicker import ColorPickerDialog
@@ -11,7 +12,7 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 
 
-def get_int(var):
+def get_int(var: tk.StringVar) -> Union[int, None]:
     value = var.get()
     if value != "":
         return int(value)
@@ -19,7 +20,7 @@ def get_int(var):
         return None
 
 
-def get_float(var):
+def get_float(var: tk.StringVar) -> Union[int, None]:
     value = var.get()
     if value != "":
         return float(value)
@@ -103,7 +104,7 @@ class LinkConfigurationDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def get_frame(self):
+    def get_frame(self) -> ttk.Frame:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(1, weight=1)
         if self.is_symmetric:
@@ -339,8 +340,6 @@ class LinkConfigurationDialog(Dialog):
     def load_link_config(self):
         """
         populate link config to the table
-
-        :return: nothing
         """
         width = self.app.canvas.itemcget(self.edge.id, "width")
         self.width.set(width)

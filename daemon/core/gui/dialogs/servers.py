@@ -155,7 +155,7 @@ class ServersDialog(Dialog):
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
 
-    def handle_server_change(self, event):
+    def handle_server_change(self, event: tk.Event):
         selection = self.servers.curselection()
         if selection:
             self.selected_index = selection[0]

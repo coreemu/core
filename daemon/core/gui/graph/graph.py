@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from typing import List, Optional
 
 from PIL import Image, ImageTk
 
@@ -84,13 +85,11 @@ class CanvasGraph(tk.Canvas):
         )
         self.configure(scrollregion=self.bbox(tk.ALL))
 
-    def reset_and_redraw(self, session):
+    def reset_and_redraw(self, session: core_pb2.Session):
         """
         Reset the private variables CanvasGraph object, redraw nodes given the new grpc
         client.
-
         :param core.api.grpc.core_pb2.Session session: session to draw
-        :return: nothing
         """
         # hide context
         self.hide_context()
@@ -114,8 +113,6 @@ class CanvasGraph(tk.Canvas):
     def setup_bindings(self):
         """
         Bind any mouse events or hot keys to the matching action
-
-        :return: nothing
         """
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
@@ -135,28 +132,28 @@ class CanvasGraph(tk.Canvas):
             self.context.unpost()
             self.context = None
 
-    def get_actual_coords(self, x, y):
+    def get_actual_coords(self, x: float, y: float) -> [float, float]:
         actual_x = (x - self.offset[0]) / self.ratio
         actual_y = (y - self.offset[1]) / self.ratio
         return actual_x, actual_y
 
-    def get_scaled_coords(self, x, y):
+    def get_scaled_coords(self, x: float, y: float) -> [float, float]:
         scaled_x = (x * self.ratio) + self.offset[0]
         scaled_y = (y * self.ratio) + self.offset[1]
         return scaled_x, scaled_y
 
-    def inside_canvas(self, x, y):
+    def inside_canvas(self, x: float, y: float) -> [bool, bool]:
         x1, y1, x2, y2 = self.bbox(self.grid)
         valid_x = x1 <= x <= x2
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
 
-    def valid_position(self, x1, y1, x2, y2):
+    def valid_position(self, x1: int, y1: int, x2: int, y2: int) -> [bool, bool]:
         valid_topleft = self.inside_canvas(x1, y1)
         valid_bottomright = self.inside_canvas(x2, y2)
         return valid_topleft and valid_bottomright
 
-    def set_throughputs(self, throughputs_event):
+    def set_throughputs(self, throughputs_event: core_pb2.ThroughputsEvent):
         for interface_throughput in throughputs_event.interface_throughputs:
             node_id = interface_throughput.node_id
             interface_id = interface_throughput.interface_id
@@ -174,8 +171,6 @@ class CanvasGraph(tk.Canvas):
     def draw_grid(self):
         """
         Create grid.
-
-        :return: nothing
         """
         width, height = self.width_and_height()
         width = int(width)
@@ -187,13 +182,12 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.grid)
 
-    def add_wireless_edge(self, src, dst):
+    def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
         """
         add a wireless edge between 2 canvas nodes
 
         :param CanvasNode src: source node
         :param CanvasNode dst: destination node
-        :return: nothing
         """
         token = tuple(sorted((src.id, dst.id)))
         x1, y1 = self.coords(src.id)
@@ -206,18 +200,16 @@ class CanvasGraph(tk.Canvas):
         self.tag_raise(src.id)
         self.tag_raise(dst.id)
 
-    def delete_wireless_edge(self, src, dst):
+    def delete_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
         token = tuple(sorted((src.id, dst.id)))
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
         dst.wireless_edges.remove(edge)
 
-    def draw_session(self, session):
+    def draw_session(self, session: core_pb2.Session):
         """
         Draw existing session.
-
-        :return: nothing
         """
         # draw existing nodes
         for core_node in session.nodes:
@@ -296,25 +288,17 @@ class CanvasGraph(tk.Canvas):
         for edge in self.edges.values():
             edge.reset()
 
-    def canvas_xy(self, event):
+    def canvas_xy(self, event: tk.Event) -> [float, float]:
         """
         Convert window coordinate to canvas coordinate
-
-        :param event:
-        :rtype: (int, int)
-        :return: x, y canvas coordinate
         """
         x = self.canvasx(event.x)
         y = self.canvasy(event.y)
         return x, y
 
-    def get_selected(self, event):
+    def get_selected(self, event: tk.Event) -> int:
         """
         Retrieve the item id that is on the mouse position
-
-        :param event: mouse event
-        :rtype: int
-        :return: the item that the mouse point to
         """
         x, y = self.canvas_xy(event)
         overlapping = self.find_overlapping(x, y, x, y)
@@ -332,7 +316,7 @@ class CanvasGraph(tk.Canvas):
 
         return selected
 
-    def click_release(self, event):
+    def click_release(self, event: tk.Event):
         """
         Draw a node or finish drawing an edge according to the current graph mode
 
@@ -380,7 +364,7 @@ class CanvasGraph(tk.Canvas):
                     self.mode = GraphMode.NODE
         self.selected = None
 
-    def handle_edge_release(self, event):
+    def handle_edge_release(self, event: tk.Event):
         edge = self.drawing_edge
         self.drawing_edge = None
 
@@ -417,7 +401,7 @@ class CanvasGraph(tk.Canvas):
         node_dst.edges.add(edge)
         self.core.create_link(edge, node_src, node_dst)
 
-    def select_object(self, object_id, choose_multiple=False):
+    def select_object(self, object_id: int, choose_multiple: Optional[bool] = False):
         """
         create a bounding box when a node is selected
         """
@@ -441,19 +425,17 @@ class CanvasGraph(tk.Canvas):
     def clear_selection(self):
         """
         Clear current selection boxes.
-
-        :return: nothing
         """
         for _id in self.selection.values():
             self.delete(_id)
         self.selection.clear()
 
-    def move_selection(self, object_id, x_offset, y_offset):
+    def move_selection(self, object_id: int, x_offset: float, y_offset: float):
         select_id = self.selection.get(object_id)
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selection_objects(self):
+    def delete_selection_objects(self) -> List[CanvasNode]:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -499,7 +481,7 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         return nodes
 
-    def zoom(self, event, factor=None):
+    def zoom(self, event: tk.Event, factor: Optional[float] = None):
         if not factor:
             factor = ZOOM_IN if event.delta > 0 else ZOOM_OUT
         event.x, event.y = self.canvasx(event.x), self.canvasy(event.y)
@@ -517,12 +499,9 @@ class CanvasGraph(tk.Canvas):
         if self.wallpaper:
             self.redraw_wallpaper()
 
-    def click_press(self, event):
+    def click_press(self, event: tk.Event):
         """
         Start drawing an edge if mouse click is on a node
-
-        :param event: mouse event
-        :return: nothing
         """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
@@ -581,7 +560,7 @@ class CanvasGraph(tk.Canvas):
                 self.select_box = shape
             self.clear_selection()
 
-    def ctrl_click(self, event):
+    def ctrl_click(self, event: tk.Event):
         # update cursor location
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
@@ -599,12 +578,9 @@ class CanvasGraph(tk.Canvas):
         ):
             self.select_object(selected, choose_multiple=True)
 
-    def click_motion(self, event):
+    def click_motion(self, event: tk.Event):
         """
         Redraw drawing edge according to the current position of the mouse
-
-        :param event: mouse event
-        :return: nothing
         """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
@@ -658,7 +634,7 @@ class CanvasGraph(tk.Canvas):
             if self.select_box and self.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
 
-    def click_context(self, event):
+    def click_context(self, event: tk.Event):
         logging.info("context event: %s", self.context)
         if not self.context:
             selected = self.get_selected(event)
@@ -670,24 +646,22 @@ class CanvasGraph(tk.Canvas):
         else:
             self.hide_context()
 
-    def press_delete(self, event):
+    def press_delete(self, event: tk.Event):
         """
         delete selected nodes and any data that relates to it
-        :param event:
-        :return:
         """
         logging.debug("press delete key")
         nodes = self.delete_selection_objects()
         self.core.delete_graph_nodes(nodes)
 
-    def double_click(self, event):
+    def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
         if selected is not None and selected in self.shapes:
             shape = self.shapes[selected]
             dialog = ShapeDialog(self.app, self.app, shape)
             dialog.show()
 
-    def add_node(self, x, y):
+    def add_node(self, x: float, y: float) -> CanvasNode:
         if self.selected is None or self.selected in self.shapes:
             actual_x, actual_y = self.get_actual_coords(x, y)
             core_node = self.core.create_node(
@@ -701,26 +675,28 @@ class CanvasGraph(tk.Canvas):
     def width_and_height(self):
         """
         retrieve canvas width and height in pixels
-
-        :return: nothing
         """
         x0, y0, x1, y1 = self.coords(self.grid)
         canvas_w = abs(x0 - x1)
         canvas_h = abs(y0 - y1)
         return canvas_w, canvas_h
 
-    def get_wallpaper_image(self):
+    def get_wallpaper_image(self) -> Image.Image:
         width = int(self.wallpaper.width * self.ratio)
         height = int(self.wallpaper.height * self.ratio)
         image = self.wallpaper.resize((width, height), Image.ANTIALIAS)
         return image
 
-    def draw_wallpaper(self, image, x=None, y=None):
+    def draw_wallpaper(
+        self,
+        image: ImageTk.PhotoImage,
+        x: Optional[float] = None,
+        y: Optional[float] = None,
+    ):
         if x is None and y is None:
             x1, y1, x2, y2 = self.bbox(self.grid)
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
-
         self.wallpaper_id = self.create_image((x, y), image=image, tags=tags.WALLPAPER)
         self.wallpaper_drawn = image
 
@@ -748,8 +724,6 @@ class CanvasGraph(tk.Canvas):
     def wallpaper_center(self):
         """
         place the image at the center of canvas
-
-        :return: nothing
         """
         self.delete(self.wallpaper_id)
 
@@ -773,8 +747,6 @@ class CanvasGraph(tk.Canvas):
     def wallpaper_scaled(self):
         """
         scale image based on canvas dimension
-
-        :return: nothing
         """
         self.delete(self.wallpaper_id)
         canvas_w, canvas_h = self.width_and_height()
@@ -788,7 +760,7 @@ class CanvasGraph(tk.Canvas):
         self.redraw_canvas((image.width(), image.height()))
         self.draw_wallpaper(image)
 
-    def redraw_canvas(self, dimensions=None):
+    def redraw_canvas(self, dimensions: Optional[List[int]] = None):
         logging.info("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
@@ -836,7 +808,7 @@ class CanvasGraph(tk.Canvas):
         else:
             self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
-    def set_wallpaper(self, filename):
+    def set_wallpaper(self, filename: str):
         logging.info("setting wallpaper: %s", filename)
         if filename:
             img = Image.open(filename)
@@ -849,16 +821,12 @@ class CanvasGraph(tk.Canvas):
             self.wallpaper = None
             self.wallpaper_file = None
 
-    def is_selection_mode(self):
+    def is_selection_mode(self) -> bool:
         return self.mode == GraphMode.SELECT
 
-    def create_edge(self, source, dest):
+    def create_edge(self, source: CanvasNode, dest: CanvasNode):
         """
         create an edge between source node and destination node
-
-        :param CanvasNode source: source node
-        :param CanvasNode dest: destination node
-        :return: nothing
         """
         if (source.id, dest.id) not in self.edges:
             pos0 = source.core_node.position

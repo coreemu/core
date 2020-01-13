@@ -1,6 +1,7 @@
 "Service configuration dialog"
 import tkinter as tk
 from tkinter import ttk
+from typing import List
 
 import grpc
 
@@ -345,7 +346,7 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def add_filename(self, event):
+    def add_filename(self, event: tk.Event):
         # not worry about it for now
         return
         frame_contains_button = event.widget.master
@@ -354,7 +355,7 @@ class ServiceConfigDialog(Dialog):
         if filename not in combobox["values"]:
             combobox["values"] += (filename,)
 
-    def delete_filename(self, event):
+    def delete_filename(self, event: tk.Event):
         # not worry about it for now
         return
         frame_comntains_button = event.widget.master
@@ -364,7 +365,7 @@ class ServiceConfigDialog(Dialog):
             combobox["values"] = tuple([x for x in combobox["values"] if x != filename])
             combobox.set("")
 
-    def add_command(self, event):
+    def add_command(self, event: tk.Event):
         frame_contains_button = event.widget.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
         command_to_add = frame_contains_button.grid_slaves(row=0, column=0)[0].get()
@@ -375,7 +376,7 @@ class ServiceConfigDialog(Dialog):
                 return
         listbox.insert(tk.END, command_to_add)
 
-    def update_entry(self, event):
+    def update_entry(self, event: tk.Event):
         listbox = event.widget
         current_selection = listbox.curselection()
         if len(current_selection) > 0:
@@ -386,7 +387,7 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, "end")
             entry.insert(0, cmd)
 
-    def delete_command(self, event):
+    def delete_command(self, event: tk.Event):
         button = event.widget
         frame_contains_button = button.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
@@ -439,13 +440,13 @@ class ServiceConfigDialog(Dialog):
             show_grpc_error(e)
         self.destroy()
 
-    def display_service_file_data(self, event):
+    def display_service_file_data(self, event: tk.Event):
         combobox = event.widget
         filename = combobox.get()
         self.service_file_data.text.delete(1.0, "end")
         self.service_file_data.text.insert("end", self.temp_service_files[filename])
 
-    def update_temp_service_file_data(self, event):
+    def update_temp_service_file_data(self, event: tk.Event):
         scrolledtext = event.widget
         filename = self.filename_combobox.get()
         self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
@@ -490,7 +491,9 @@ class ServiceConfigDialog(Dialog):
         dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
         dialog.show()
 
-    def append_commands(self, commands, listbox, to_add):
+    def append_commands(
+        self, commands: List[str], listbox: tk.Listbox, to_add: List[str]
+    ):
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)

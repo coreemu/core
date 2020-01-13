@@ -110,7 +110,7 @@ class AlertsDialog(Dialog):
         dialog = DaemonLog(self, self.app)
         dialog.show()
 
-    def click_select(self, event):
+    def click_select(self, event: tk.Event):
         current = self.tree.selection()[0]
         alarm = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)

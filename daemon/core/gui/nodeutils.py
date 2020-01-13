@@ -53,31 +53,31 @@ class NodeUtils:
     ANTENNA_ICON = None
 
     @classmethod
-    def is_ignore_node(cls, node_type):
+    def is_ignore_node(cls, node_type) -> bool:
         return node_type in cls.IGNORE_NODES
 
     @classmethod
-    def is_container_node(cls, node_type):
+    def is_container_node(cls, node_type) -> bool:
         return node_type in cls.CONTAINER_NODES
 
     @classmethod
-    def is_model_node(cls, node_type):
+    def is_model_node(cls, node_type) -> bool:
         return node_type == NodeType.DEFAULT
 
     @classmethod
-    def is_image_node(cls, node_type):
+    def is_image_node(cls, node_type) -> bool:
         return node_type in cls.IMAGE_NODES
 
     @classmethod
-    def is_wireless_node(cls, node_type):
+    def is_wireless_node(cls, node_type) -> bool:
         return node_type in cls.WIRELESS_NODES
 
     @classmethod
-    def is_rj45_node(cls, node_type):
+    def is_rj45_node(cls, node_type) -> bool:
         return node_type in cls.RJ45_NODES
 
     @classmethod
-    def node_icon(cls, node_type, model):
+    def node_icon(cls, node_type, model: str) -> bool:
         if model == "":
             model = None
         return cls.NODE_ICONS[(node_type, model)]

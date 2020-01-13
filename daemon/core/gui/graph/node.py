@@ -20,7 +20,7 @@ NODE_TEXT_OFFSET = 5
 
 
 class CanvasNode:
-    def __init__(self, app, x: int, y: int, core_node: core_pb2.Node, image):
+    def __init__(self, app, x: float, y: float, core_node: core_pb2.Node, image):
         self.app = app
         self.canvas = app.canvas
         self.image = image
@@ -70,8 +70,6 @@ class CanvasNode:
     def delete_antenna(self):
         """
         delete one antenna
-
-        :return: nothing
         """
         if self.antennae:
             antenna_id = self.antennae.pop()
@@ -80,8 +78,6 @@ class CanvasNode:
     def delete_antennae(self):
         """
         delete all antennas
-
-        :return: nothing
         """
         for antenna_id in self.antennae:
             self.canvas.delete(antenna_id)

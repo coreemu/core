@@ -71,7 +71,7 @@ class ServicesSelectDialog(Dialog):
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event):
+    def handle_group_change(self, event: tk.Event):
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -81,7 +81,7 @@ class ServicesSelectDialog(Dialog):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
-    def service_clicked(self, name, var):
+    def service_clicked(self, name: str, var: tk.BooleanVar):
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:

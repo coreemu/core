@@ -72,7 +72,7 @@ class PreferencesDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def theme_change(self, event):
+    def theme_change(self, event: tk.Event):
         theme = self.theme.get()
         logging.info("changing theme: %s", theme)
         self.app.style.theme_use(theme)

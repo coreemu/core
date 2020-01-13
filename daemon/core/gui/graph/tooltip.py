@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional
 
 from core.gui.themes import Styles
 
@@ -30,10 +31,10 @@ class CanvasTooltip:
         self.id = None
         self.tw = None
 
-    def on_enter(self, event=None):
+    def on_enter(self, event: Optional[tk.Event] = None):
         self.schedule()
 
-    def on_leave(self, event=None):
+    def on_leave(self, event: Optional[tk.Event] = None):
         self.unschedule()
         self.hide()
 
@@ -47,7 +48,7 @@ class CanvasTooltip:
         if id_:
             self.canvas.after_cancel(id_)
 
-    def show(self, event=None):
+    def show(self, event: Optional[tk.Event] = None):
         def tip_pos_calculator(canvas, label, *, tip_delta=(10, 5), pad=(5, 3, 5, 3)):
             c = canvas
             s_width, s_height = c.winfo_screenwidth(), c.winfo_screenheight()

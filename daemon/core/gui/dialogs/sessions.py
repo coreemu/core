@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import Iterable
 
 import grpc
 
@@ -21,7 +22,7 @@ class SessionsDialog(Dialog):
         self.sessions = self.get_sessions()
         self.draw()
 
-    def get_sessions(self):
+    def get_sessions(self) -> Iterable[core_pb2.SessionSummary]:
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
@@ -40,7 +41,6 @@ class SessionsDialog(Dialog):
     def draw_description(self):
         """
         write a short description
-        :return: nothing
         """
         label = ttk.Label(
             self.top,
@@ -129,7 +129,7 @@ class SessionsDialog(Dialog):
         self.app.core.create_new_session()
         self.destroy()
 
-    def click_select(self, event):
+    def click_select(self, event: tk.Event):
         item = self.tree.selection()
         session_id = int(self.tree.item(item, "text"))
         self.selected = True
@@ -138,8 +138,6 @@ class SessionsDialog(Dialog):
     def click_connect(self):
         """
         if no session is selected yet, create a new one else join that session
-
-        :return: nothing
         """
         if self.selected and self.selected_id is not None:
             self.join_session(self.selected_id)
@@ -152,8 +150,6 @@ class SessionsDialog(Dialog):
         """
         if no session is currently selected create a new session else shut the selected
         session down.
-
-        :return: nothing
         """
         if self.selected and self.selected_id is not None:
             self.shutdown_session(self.selected_id)
@@ -162,18 +158,18 @@ class SessionsDialog(Dialog):
         else:
             logging.error("querysessiondrawing.py invalid state")
 
-    def join_session(self, session_id):
+    def join_session(self, session_id: int):
         self.app.statusbar.progress_bar.start(5)
         task = BackgroundTask(self.app, self.app.core.join_session, args=(session_id,))
         task.start()
         self.destroy()
 
-    def on_selected(self, event):
+    def on_selected(self, event: tk.Event):
         item = self.tree.selection()
         sid = int(self.tree.item(item, "text"))
         self.join_session(sid)
 
-    def shutdown_session(self, sid):
+    def shutdown_session(self, sid: int):
         self.app.core.stop_session(sid)
         self.click_new()
         self.destroy()

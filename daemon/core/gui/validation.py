@@ -40,7 +40,7 @@ class InputValidation:
         if value == "":
             event.widget.insert(tk.END, default)
 
-    def check_positive_int(self, s: str):
+    def check_positive_int(self, s: str) -> bool:
         if len(s) == 0:
             return True
         try:
@@ -51,7 +51,7 @@ class InputValidation:
         except ValueError:
             return False
 
-    def check_positive_float(self, s: str):
+    def check_positive_float(self, s: str) -> bool:
         if len(s) == 0:
             return True
         try:
@@ -62,7 +62,7 @@ class InputValidation:
         except ValueError:
             return False
 
-    def check_node_name(self, s: str):
+    def check_node_name(self, s: str) -> bool:
         if len(s) < 0:
             return False
         if len(s) == 0:
@@ -72,7 +72,7 @@ class InputValidation:
                 return False
         return True
 
-    def check_canvas_int(self, s: str):
+    def check_canvas_int(self, s: str) -> bool:
         if len(s) == 0:
             return True
         try:
@@ -83,7 +83,7 @@ class InputValidation:
         except ValueError:
             return False
 
-    def check_canvas_float(self, s: str):
+    def check_canvas_float(self, s: str) -> bool:
         if not s:
             return True
         try:
@@ -94,7 +94,7 @@ class InputValidation:
         except ValueError:
             return False
 
-    def check_ip4(self, s: str):
+    def check_ip4(self, s: str) -> bool:
         if not s:
             return True
         pat = re.compile("^([0-9]+[.])*[0-9]*$")
@@ -113,7 +113,7 @@ class InputValidation:
         else:
             return False
 
-    def check_rbg(self, s: str):
+    def check_rbg(self, s: str) -> bool:
         if not s:
             return True
         if s.startswith("0") and len(s) >= 2:
@@ -127,7 +127,7 @@ class InputValidation:
         except ValueError:
             return False
 
-    def check_hex(self, s: str):
+    def check_hex(self, s: str) -> bool:
         if not s:
             return True
         pat = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")

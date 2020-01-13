@@ -204,7 +204,7 @@ class CoreClient:
         self.handling_throughputs.cancel()
         self.handling_throughputs = None
 
-    def handle_throughputs(self, event):
+    def handle_throughputs(self, event: core_pb2.ThroughputsEvent):
         if event.session_id != self.session_id:
             logging.warning(
                 "ignoring throughput event session(%s) current(%s)",
@@ -303,7 +303,7 @@ class CoreClient:
     def is_runtime(self) -> bool:
         return self.state == core_pb2.SessionState.RUNTIME
 
-    def parse_metadata(self, config):
+    def parse_metadata(self, config: Dict[str, str]):
         # canvas setting
         canvas_config = config.get("canvas")
         logging.info("canvas metadata: %s", canvas_config)
@@ -367,8 +367,6 @@ class CoreClient:
     def create_new_session(self):
         """
         Create a new session
-
-        :return: nothing
         """
         try:
             response = self.client.create_session()
@@ -399,8 +397,6 @@ class CoreClient:
     def set_up(self):
         """
         Query sessions, if there exist any, prompt whether to join one
-
-        :return: existing sessions
         """
         try:
             self.client.connect()
@@ -534,9 +530,6 @@ class CoreClient:
     def save_xml(self, file_path: str):
         """
         Save core session as to an xml file
-
-        :param str file_path: file path that user pick
-        :return: nothing
         """
         try:
             if self.state != core_pb2.SessionState.RUNTIME:
@@ -552,9 +545,6 @@ class CoreClient:
     def open_xml(self, file_path: str):
         """
         Open core xml
-
-        :param str file_path: file to open
-        :return: session id
         """
         try:
             response = self.client.open_xml(file_path)
@@ -596,7 +586,7 @@ class CoreClient:
         return response.data
 
     def set_node_service_file(
-        self, node_id: int, service_name: str, file_name: str, data: str
+        self, node_id: int, service_name: str, file_name: str, data: bytes
     ):
         response = self.client.set_node_service_file(
             self.session_id, node_id, service_name, file_name, data
@@ -606,8 +596,6 @@ class CoreClient:
     def create_nodes_and_links(self):
         """
         create nodes and links that have not been created yet
-
-        :return: nothing
         """
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = [x.link for x in self.links.values()]
@@ -634,8 +622,6 @@ class CoreClient:
     def send_data(self):
         """
         send to daemon all session info, but don't start the session
-
-        :return: nothing
         """
         self.create_nodes_and_links()
         for config_proto in self.get_wlan_configs_proto():
@@ -680,18 +666,13 @@ class CoreClient:
     def close(self):
         """
         Clean ups when done using grpc
-
-        :return: nothing
         """
         logging.debug("close grpc")
         self.client.close()
 
-    def next_node_id(self):
+    def next_node_id(self) -> int:
         """
         Get the next usable node id.
-
-        :return: the next id to be used
-        :rtype: int
         """
         i = 1
         while True:
@@ -743,9 +724,6 @@ class CoreClient:
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
-
-        :param list canvas_nodes: list of nodes to delete
-        :return: nothing
         """
         edges = set()
         for canvas_node in canvas_nodes:
@@ -767,9 +745,6 @@ class CoreClient:
                 if edge in edges:
                     continue
                 edges.add(edge)
-                #
-                # if edge.token not in self.links:
-                #     logging.error("unknown edge: %s", edge.token)
                 self.links.pop(edge.token, None)
 
     def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
@@ -795,12 +770,6 @@ class CoreClient:
         """
         Create core link for a pair of canvas nodes, with token referencing
         the canvas edge.
-
-        :param edge: edge for link
-        :param canvas_src_node: canvas node one
-        :param canvas_dst_node: canvas node two
-
-        :return: nothing
         """
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node

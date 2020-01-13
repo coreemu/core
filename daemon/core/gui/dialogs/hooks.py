@@ -62,11 +62,11 @@ class HookDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=1, sticky="ew")
 
-    def state_change(self, event):
+    def state_change(self, event: tk.Event):
         state_name = self.state.get()
         self.name.set(f"{state_name.lower()}_hook.sh")
 
-    def set(self, hook):
+    def set(self, hook: core_pb2.Hook):
         self.hook = hook
         self.name.set(hook.file)
         self.codetext.text.delete(1.0, tk.END)
@@ -140,7 +140,7 @@ class HooksDialog(Dialog):
         self.edit_button.config(state=tk.DISABLED)
         self.delete_button.config(state=tk.DISABLED)
 
-    def select(self, event):
+    def select(self, event: tk.Event):
         if self.listbox.curselection():
             index = self.listbox.curselection()[0]
             self.selected = self.listbox.get(index)

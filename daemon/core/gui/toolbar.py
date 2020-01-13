@@ -4,6 +4,9 @@ import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
 from tkinter.font import Font
+from typing import Callable
+
+from PIL import ImageTk
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
@@ -196,7 +199,9 @@ class Toolbar(ttk.Frame):
         self.wait_window(picker)
         self.app.unbind_all("<ButtonRelease-1>")
 
-    def create_picker_button(self, image, func, frame: ttk.Frame, label: str):
+    def create_picker_button(
+        self, image: ImageTk.PhotoImage, func: Callable, frame: ttk.Frame, label: str
+    ):
         """
         Create button and put it on the frame
 
@@ -204,7 +209,6 @@ class Toolbar(ttk.Frame):
         :param func: the command that is executed when button is clicked
         :param tkinter.Frame frame: frame that contains the button
         :param str label: button label
-        :return: nothing
         """
         button = ttk.Button(
             frame, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
@@ -213,7 +217,9 @@ class Toolbar(ttk.Frame):
         button.bind("<ButtonRelease-1>", lambda e: func())
         button.grid(pady=1)
 
-    def create_button(self, frame: ttk.Frame, image, func, tooltip: str):
+    def create_button(
+        self, frame: ttk.Frame, image: ImageTk.PhotoImage, func: Callable, tooltip: str
+    ):
         button = ttk.Button(frame, image=image, command=func)
         button.image = image
         button.grid(sticky="ew")
@@ -234,8 +240,6 @@ class Toolbar(ttk.Frame):
         """
         Start session handler redraw buttons, send node and link messages to grpc
         server.
-
-        :return: nothing
         """
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
@@ -299,8 +303,6 @@ class Toolbar(ttk.Frame):
     def create_node_button(self):
         """
         Create network layer button
-
-        :return: nothing
         """
         image = icon(ImageEnum.ROUTER)
         self.node_button = ttk.Button(
@@ -313,8 +315,6 @@ class Toolbar(ttk.Frame):
     def draw_network_picker(self):
         """
         Draw the options for link-layer button.
-
-        :return: nothing
         """
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
@@ -338,8 +338,6 @@ class Toolbar(ttk.Frame):
         """
         Create link-layer node button and the options that represent different
         link-layer node types.
-
-        :return: nothing
         """
         image = icon(ImageEnum.HUB)
         self.network_button = ttk.Button(
@@ -352,8 +350,6 @@ class Toolbar(ttk.Frame):
     def draw_annotation_picker(self):
         """
         Draw the options for marker button.
-
-        :return: nothing
         """
         self.hide_pickers()
         self.annotation_picker = ttk.Frame(self.master)
@@ -380,8 +376,6 @@ class Toolbar(ttk.Frame):
     def create_annotation_button(self):
         """
         Create marker button and options that represent different marker types
-
-        :return: nothing
         """
         image = icon(ImageEnum.MARKER)
         self.annotation_button = ttk.Button(
@@ -418,8 +412,6 @@ class Toolbar(ttk.Frame):
     def click_stop(self):
         """
         redraw buttons on the toolbar, send node and link messages to grpc server
-
-        :return: nothing
         """
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)

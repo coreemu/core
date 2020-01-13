@@ -32,14 +32,14 @@ class MenuAction:
         self.app = app
         self.canvas = app.canvas
 
-    def cleanup_old_session(self, quitapp: bool = False):
+    def cleanup_old_session(self, quitapp: Optional[bool] = False):
         logging.info("cleaning up old session")
         self.app.core.stop_session()
         self.app.core.delete_session()
         # if quitapp:
         #     self.app.quit()
 
-    def prompt_save_running_session(self, quitapp: bool = False):
+    def prompt_save_running_session(self, quitapp: Optional[bool] = False):
         """
         Prompt use to stop running session before application is closed
 

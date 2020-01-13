@@ -1,8 +1,10 @@
 import logging
 import random
+from typing import Optional, Set
 
 from netaddr import IPNetwork
 
+from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
 
 
@@ -11,7 +13,9 @@ def random_mac():
 
 
 class InterfaceManager:
-    def __init__(self, app, address="10.0.0.0", mask=24):
+    def __init__(
+        self, app, address: Optional[str] = "10.0.0.0", mask: Optional[int] = 24
+    ):
         self.app = app
         self.mask = mask
         self.base_prefix = max(self.mask - 8, 0)
@@ -38,7 +42,7 @@ class InterfaceManager:
     def reset(self):
         self.current_subnet = None
 
-    def get_ips(self, node_id):
+    def get_ips(self, node_id: int):
         ip4 = self.current_subnet[node_id]
         ip6 = ip4.ipv6()
         prefix = self.current_subnet.prefixlen
@@ -48,7 +52,9 @@ class InterfaceManager:
     def get_subnet(cls, interface):
         return IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
 
-    def determine_subnet(self, canvas_src_node, canvas_dst_node):
+    def determine_subnet(
+        self, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
+    ):
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
         is_src_container = NodeUtils.is_container_node(src_node.type)
@@ -70,7 +76,7 @@ class InterfaceManager:
         else:
             logging.info("ignoring subnet change for link between network nodes")
 
-    def find_subnet(self, canvas_node, visited=None):
+    def find_subnet(self, canvas_node: CanvasNode, visited: Optional[Set[int]] = None):
         logging.info("finding subnet for node: %s", canvas_node.core_node.name)
         canvas = self.app.canvas
         cidr = None

@@ -116,8 +116,6 @@ class EmaneConfigDialog(Dialog):
     def draw_emane_configuration(self):
         """
         draw the main frame for emane configuration
-
-        :return: nothing
         """
         label = ttk.Label(
             self.top,
@@ -143,8 +141,6 @@ class EmaneConfigDialog(Dialog):
     def draw_emane_models(self):
         """
         create a combobox that has all the known emane models
-
-        :return: nothing
         """
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PADY)
@@ -210,8 +206,6 @@ class EmaneConfigDialog(Dialog):
     def click_model_config(self):
         """
         draw emane model configuration
-
-        :return: nothing
         """
         model_name = self.emane_model.get()
         logging.info("configuring emane model: %s", model_name)
@@ -220,12 +214,9 @@ class EmaneConfigDialog(Dialog):
         )
         dialog.show()
 
-    def emane_model_change(self, event):
+    def emane_model_change(self, event: tk.Event):
         """
         update emane model options button
-
-        :param event:
-        :return: nothing
         """
         model_name = self.emane_model.get()
         self.emane_model_button.config(text=f"{model_name} options")

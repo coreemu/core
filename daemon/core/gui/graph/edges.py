@@ -14,7 +14,14 @@ EDGE_COLOR = "#ff0000"
 
 
 class CanvasWirelessEdge:
-    def __init__(self, token: Tuple[int, int], position, src: int, dst: int, canvas):
+    def __init__(
+        self,
+        token: Tuple[int, int],
+        position: Tuple[int, int, int, int],
+        src: int,
+        dst: int,
+        canvas,
+    ):
         self.token = token
         self.src = src
         self.dst = dst
@@ -35,11 +42,6 @@ class CanvasEdge:
     def __init__(self, x1: int, y1: int, x2: int, y2: int, src: int, canvas):
         """
         Create an instance of canvas edge object
-        :param int x1: source x-coord
-        :param int y1: source y-coord
-        :param int x2: destination x-coord
-        :param int y2: destination y-coord
-        :param int src: source id
         :param coretk.graph.graph.GraphCanvas canvas: canvas object
         """
         self.src = src
@@ -67,7 +69,7 @@ class CanvasEdge:
         self.link = link
         self.draw_labels()
 
-    def get_coordinates(self):
+    def get_coordinates(self) -> [int, int, int, int]:
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         v1 = x2 - x1
         v2 = y2 - y1
@@ -79,7 +81,7 @@ class CanvasEdge:
         y2 = y2 - uy
         return x1, y1, x2, y2
 
-    def get_midpoint(self):
+    def get_midpoint(self) -> [float, float]:
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         x = (x1 + x2) / 2
         y = (y1 + y2) / 2
@@ -119,8 +121,6 @@ class CanvasEdge:
     def update_labels(self):
         """
         Move edge labels based on current position.
-
-        :return: nothing
         """
         x1, y1, x2, y2 = self.get_coordinates()
         self.canvas.coords(self.text_src, x1, y1)
@@ -158,7 +158,7 @@ class CanvasEdge:
         self.canvas.tag_raise(self.src)
         self.canvas.tag_raise(self.dst)
 
-    def is_wireless(self):
+    def is_wireless(self) -> [bool, bool]:
         src_node = self.canvas.nodes[self.src]
         dst_node = self.canvas.nodes[self.dst]
         src_node_type = src_node.core_node.type
@@ -184,7 +184,6 @@ class CanvasEdge:
                 dst_node.add_antenna()
             elif not is_src_wireless and is_dst_wireless:
                 src_node.add_antenna()
-            # TODO: remove this? dont allow linking wireless nodes?
             else:
                 src_node.add_antenna()
 

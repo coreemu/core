@@ -87,7 +87,7 @@ class NodeServiceDialog(Dialog):
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event=None):
+    def handle_group_change(self, event: tk.Event = None):
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -97,7 +97,7 @@ class NodeServiceDialog(Dialog):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
-    def service_clicked(self, name, var):
+    def service_clicked(self, name: str, var: tk.IntVar):
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
@@ -150,7 +150,7 @@ class NodeServiceDialog(Dialog):
                     checkbutton.invoke()
                     return
 
-    def is_custom_service(self, service):
+    def is_custom_service(self, service: str) -> bool:
         service_configs = self.app.core.service_configs
         file_configs = self.app.core.file_configs
         if self.node_id in service_configs and service in service_configs[self.node_id]:

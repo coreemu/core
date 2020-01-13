@@ -14,8 +14,6 @@ class SizeAndScaleDialog(Dialog):
     def __init__(self, master, app):
         """
         create an instance for size and scale object
-
-        :param app: main application
         """
         super().__init__(master, app, "Canvas Size and Scale", modal=True)
         self.canvas = self.app.canvas

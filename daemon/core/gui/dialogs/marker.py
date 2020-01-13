@@ -53,13 +53,13 @@ class MarkerDialog(Dialog):
         for i in canvas.find_withtag("marker"):
             canvas.delete(i)
 
-    def change_color(self, event):
+    def change_color(self, event: tk.Event):
         color_picker = ColorPickerDialog(self, self.app, self.color)
         color = color_picker.askcolor()
         event.widget.configure(background=color)
         self.color = color
 
-    def change_thickness(self, event):
+    def change_thickness(self, event: tk.Event):
         self.radius = self.marker_thickness.get()
 
     def show(self):
