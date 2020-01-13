@@ -1,6 +1,6 @@
 import logging
 from queue import Empty, Queue
-from typing import List
+from typing import Iterable
 
 from core.api.grpc import core_pb2
 from core.api.grpc.grpcutils import convert_value
@@ -181,7 +181,9 @@ class EventStreamer:
     Processes session events to generate grpc events.
     """
 
-    def __init__(self, session: Session, event_types: List[core_pb2.EventType]) -> None:
+    def __init__(
+        self, session: Session, event_types: Iterable[core_pb2.EventType]
+    ) -> None:
         """
         Create a EventStreamer instance.
 

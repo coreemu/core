@@ -13,7 +13,7 @@ class VnodeClient:
     Provides client functionality for interacting with a virtual node.
     """
 
-    def __init__(self, name, ctrlchnlname):
+    def __init__(self, name: str, ctrlchnlname: str) -> None:
         """
         Create a VnodeClient instance.
 
@@ -23,7 +23,7 @@ class VnodeClient:
         self.name = name
         self.ctrlchnlname = ctrlchnlname
 
-    def _verify_connection(self):
+    def _verify_connection(self) -> None:
         """
         Checks that the vcmd client is properly connected.
 
@@ -33,7 +33,7 @@ class VnodeClient:
         if not self.connected():
             raise IOError("vcmd not connected")
 
-    def connected(self):
+    def connected(self) -> bool:
         """
         Check if node is connected or not.
 
@@ -42,7 +42,7 @@ class VnodeClient:
         """
         return True
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the client connection.
 
@@ -50,10 +50,10 @@ class VnodeClient:
         """
         pass
 
-    def create_cmd(self, args):
+    def create_cmd(self, args: str) -> str:
         return f"{VCMD_BIN} -c {self.ctrlchnlname} -- {args}"
 
-    def check_cmd(self, args, wait=True, shell=False):
+    def check_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
         Run command and return exit status and combined stdout and stderr.
 

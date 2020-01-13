@@ -5,7 +5,7 @@ gRpc client for interfacing with CORE, when gRPC mode is enabled.
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Generator, List
 
 import grpc
 import netaddr
@@ -1144,7 +1144,7 @@ class CoreGrpcClient:
             self.channel = None
 
     @contextmanager
-    def context_connect(self) -> None:
+    def context_connect(self) -> Generator:
         """
         Makes a context manager based connection to the server, will close after context ends.
 
