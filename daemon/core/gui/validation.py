@@ -3,13 +3,17 @@ input validation
 """
 import re
 import tkinter as tk
+from typing import TYPE_CHECKING
 
 import netaddr
 from netaddr import IPNetwork
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class InputValidation:
-    def __init__(self, app):
+    def __init__(self, app: "Application"):
         self.master = app.master
         self.positive_int = None
         self.positive_float = None

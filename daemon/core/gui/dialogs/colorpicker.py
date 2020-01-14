@@ -4,7 +4,7 @@ custom color picker
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from core.gui.dialogs.dialog import Dialog
 
@@ -14,10 +14,7 @@ if TYPE_CHECKING:
 
 class ColorPickerDialog(Dialog):
     def __init__(
-        self,
-        master: tk.Widget,
-        app: "Application",
-        initcolor: Optional[str] = "#000000",
+        self, master: Any, app: "Application", initcolor: Optional[str] = "#000000"
     ):
         super().__init__(master, app, "color picker", modal=True)
         self.red_entry = None

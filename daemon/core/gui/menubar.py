@@ -1,8 +1,12 @@
 import tkinter as tk
 from functools import partial
+from typing import TYPE_CHECKING
 
 import core.gui.menuaction as action
 from core.gui.coreclient import OBSERVERS
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 
 class Menubar(tk.Menu):
@@ -10,7 +14,7 @@ class Menubar(tk.Menu):
     Core menubar
     """
 
-    def __init__(self, master, app, cnf={}, **kwargs):
+    def __init__(self, master: tk.Tk, app: "Application", cnf={}, **kwargs):
         """
         Create a CoreMenubar instance
         """

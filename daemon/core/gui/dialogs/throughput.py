@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class ThroughputDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Throughput Config", modal=False)
         self.app = app
         self.canvas = app.canvas

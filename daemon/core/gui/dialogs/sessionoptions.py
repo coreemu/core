@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class SessionOptionsDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Session Options", modal=True)
         self.config_frame = None
         self.config = self.get_config()

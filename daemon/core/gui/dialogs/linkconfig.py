@@ -13,7 +13,7 @@ from core.gui.themes import PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.edges import CanvasEdge
+    from core.gui.graph.graph import CanvasGraph, CanvasEdge
 
 
 def get_int(var: tk.StringVar) -> Union[int, None]:
@@ -33,7 +33,7 @@ def get_float(var: tk.StringVar) -> Union[float, None]:
 
 
 class LinkConfigurationDialog(Dialog):
-    def __init__(self, master, app: "Application", edge: "CanvasEdge"):
+    def __init__(self, master: "CanvasGraph", app: "Application", edge: "CanvasEdge"):
         super().__init__(master, app, "Link Configuration", modal=True)
         self.app = app
         self.edge = edge

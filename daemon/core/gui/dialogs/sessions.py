@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class SessionsDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Sessions", modal=True)
         self.selected = False
         self.selected_id = None

@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 
-def mac_auto(is_auto, entry: ttk.Entry):
+def mac_auto(is_auto, entry):
     logging.info("mac auto clicked")
     if is_auto.get():
         logging.info("disabling mac")
@@ -38,13 +38,11 @@ class InterfaceData:
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(self, master, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         """
         create an instance of node configuration
-
-        :param master: dialog master
-        :param coretk.app.Application: main app
-        :param coretk.graph.CanvasNode canvas_node: canvas node object
         """
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Configuration", modal=True

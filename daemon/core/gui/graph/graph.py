@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PIL import Image, ImageTk
 
@@ -16,12 +16,15 @@ from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 
+if TYPE_CHECKING:
+    from core.gui.coreclient import CoreClient
+
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, master, core, width, height):
+    def __init__(self, master, core: "CoreClient", width: int, height: int):
         super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app = master
         self.core = core
@@ -68,7 +71,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_canvas()
         self.draw_grid()
 
-    def draw_canvas(self, dimensions=None):
+    def draw_canvas(self, dimensions: Optional[Tuple[int, int]] = None):
         if self.grid is not None:
             self.delete(self.grid)
         if not dimensions:
@@ -185,9 +188,6 @@ class CanvasGraph(tk.Canvas):
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
         """
         add a wireless edge between 2 canvas nodes
-
-        :param CanvasNode src: source node
-        :param CanvasNode dst: destination node
         """
         token = tuple(sorted((src.id, dst.id)))
         x1, y1 = self.coords(src.id)
@@ -319,9 +319,6 @@ class CanvasGraph(tk.Canvas):
     def click_release(self, event: tk.Event):
         """
         Draw a node or finish drawing an edge according to the current graph mode
-
-        :param event: mouse event
-        :return: nothing
         """
         logging.debug("click release")
         x, y = self.canvas_xy(event)
@@ -760,7 +757,7 @@ class CanvasGraph(tk.Canvas):
         self.redraw_canvas((image.width(), image.height()))
         self.draw_wallpaper(image)
 
-    def redraw_canvas(self, dimensions: Optional[List[int]] = None):
+    def redraw_canvas(self, dimensions: Tuple[int, int] = None):
         logging.info("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position

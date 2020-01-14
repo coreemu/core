@@ -3,10 +3,15 @@ import tkinter as tk
 from functools import partial
 from pathlib import PosixPath
 from tkinter import filedialog, font, ttk
+from typing import TYPE_CHECKING, Dict, Optional
 
 from core.api.grpc import core_pb2
 from core.gui import themes
 from core.gui.themes import FRAME_PAD, PADX, PADY
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.dialogs.dialog import Dialog
 
 INT_TYPES = {
     core_pb2.ConfigOptionType.UINT8,
@@ -27,7 +32,7 @@ def file_button_click(value: tk.StringVar, parent: tk.Widget):
 
 
 class FrameScroll(ttk.Frame):
-    def __init__(self, master, app, _cls=ttk.Frame, **kw):
+    def __init__(self, master: ttk.Widget, app: "Application", _cls=ttk.Frame, **kw):
         super().__init__(master, **kw)
         self.app = app
         self.rowconfigure(0, weight=1)
@@ -65,7 +70,13 @@ class FrameScroll(ttk.Frame):
 
 
 class ConfigFrame(ttk.Notebook):
-    def __init__(self, master, app, config, **kw):
+    def __init__(
+        self,
+        master: ttk.Widget,
+        app: "Application",
+        config: Dict[str, core_pb2.ConfigOption],
+        **kw
+    ):
         super().__init__(master, **kw)
         self.app = app
         self.config = config
@@ -175,7 +186,7 @@ class ConfigFrame(ttk.Notebook):
 
 
 class ListboxScroll(ttk.Frame):
-    def __init__(self, master=None, **kw):
+    def __init__(self, master: Optional[ttk.Widget] = None, **kw):
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -190,7 +201,7 @@ class ListboxScroll(ttk.Frame):
 
 
 class CheckboxList(FrameScroll):
-    def __init__(self, master, app, clicked=None, **kw):
+    def __init__(self, master: ttk.Widget, app: "Application", clicked=None, **kw):
         super().__init__(master, app, **kw)
         self.clicked = clicked
         self.frame.columnconfigure(0, weight=1)
@@ -208,7 +219,7 @@ class CodeFont(font.Font):
 
 
 class CodeText(ttk.Frame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master: ttk.Widget, **kwargs):
         super().__init__(master, **kwargs)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -232,14 +243,14 @@ class CodeText(ttk.Frame):
 
 
 class Spinbox(ttk.Entry):
-    def __init__(self, master=None, **kwargs):
+    def __init__(self, master: Optional[ttk.Widget] = None, **kwargs):
         super().__init__(master, "ttk::spinbox", **kwargs)
 
     def set(self, value):
         self.tk.call(self._w, "set", value)
 
 
-def image_chooser(parent: tk.Widget, path: PosixPath):
+def image_chooser(parent: "Dialog", path: PosixPath):
     return filedialog.askopenfilename(
         parent=parent,
         initialdir=str(path),

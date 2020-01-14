@@ -4,9 +4,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
 from tkinter.font import Font
-from typing import Callable
-
-from PIL import ImageTk
+from typing import TYPE_CHECKING, Callable
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
@@ -14,10 +12,14 @@ from core.gui.dialogs.marker import MarkerDialog
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import NodeDraw, NodeUtils
 from core.gui.task import BackgroundTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from PIL import ImageTk
 
 TOOLBAR_SIZE = 32
 PICKER_SIZE = 24
@@ -32,11 +34,9 @@ class Toolbar(ttk.Frame):
     Core toolbar class
     """
 
-    def __init__(self, master, app, **kwargs):
+    def __init__(self, master: "Application", app: "Application", **kwargs):
         """
         Create a CoreToolbar instance
-
-        :param tkinter.Frame edit_frame: edit frame
         """
         super().__init__(master, **kwargs)
         self.app = app
@@ -200,7 +200,7 @@ class Toolbar(ttk.Frame):
         self.app.unbind_all("<ButtonRelease-1>")
 
     def create_picker_button(
-        self, image: ImageTk.PhotoImage, func: Callable, frame: ttk.Frame, label: str
+        self, image: "ImageTk.PhotoImage", func: Callable, frame: ttk.Frame, label: str
     ):
         """
         Create button and put it on the frame
@@ -218,7 +218,11 @@ class Toolbar(ttk.Frame):
         button.grid(pady=1)
 
     def create_button(
-        self, frame: ttk.Frame, image: ImageTk.PhotoImage, func: Callable, tooltip: str
+        self,
+        frame: ttk.Frame,
+        image: "ImageTk.PhotoImage",
+        func: Callable,
+        tooltip: str,
     ):
         button = ttk.Button(frame, image=image, command=func)
         button.image = image
@@ -280,7 +284,7 @@ class Toolbar(ttk.Frame):
         dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()
 
-    def update_button(self, button: ttk.Button, image, node_draw):
+    def update_button(self, button: ttk.Button, image: "ImageTk", node_draw: NodeDraw):
         logging.info("update button(%s): %s", button, node_draw)
         self.hide_pickers()
         button.configure(image=image)
@@ -429,7 +433,7 @@ class Toolbar(ttk.Frame):
         if not response.result:
             messagebox.showerror("Stop Error", "Errors stopping session")
 
-    def update_annotation(self, image: ImageTk.PhotoImage, shape_type: str):
+    def update_annotation(self, image: "ImageTk.PhotoImage", shape_type: ShapeType):
         logging.info("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)
@@ -439,7 +443,7 @@ class Toolbar(ttk.Frame):
         if is_marker(shape_type):
             if self.marker_tool:
                 self.marker_tool.destroy()
-            self.marker_tool = MarkerDialog(self.master, self.app)
+            self.marker_tool = MarkerDialog(self.app, self.app)
             self.marker_tool.show()
 
     def click_run_button(self):
@@ -455,7 +459,7 @@ class Toolbar(ttk.Frame):
         self.app.canvas.annotation_type = ShapeType.MARKER
         if self.marker_tool:
             self.marker_tool.destroy()
-        self.marker_tool = MarkerDialog(self.master, self.app)
+        self.marker_tool = MarkerDialog(self.app, self.app)
         self.marker_tool.show()
 
     def click_two_node_button(self):

@@ -20,7 +20,7 @@ BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 class ShapeDialog(Dialog):
-    def __init__(self, master, app: "Application", shape: "Shape"):
+    def __init__(self, master: "Application", app: "Application", shape: "Shape"):
         if is_draw_shape(shape.shape_type):
             title = "Add Shape"
         else:

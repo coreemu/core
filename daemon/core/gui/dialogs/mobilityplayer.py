@@ -18,7 +18,13 @@ ICON_SIZE = 16
 
 
 class MobilityPlayer:
-    def __init__(self, master, app: "Application", canvas_node: "CanvasNode", config):
+    def __init__(
+        self,
+        master: "Application",
+        app: "Application",
+        canvas_node: "CanvasNode",
+        config,
+    ):
         self.master = master
         self.app = app
         self.canvas_node = canvas_node
@@ -62,7 +68,9 @@ class MobilityPlayer:
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(self, master, app, canvas_node, config):
+    def __init__(
+        self, master: Dialog, app: "Application", canvas_node: "CanvasNode", config
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )

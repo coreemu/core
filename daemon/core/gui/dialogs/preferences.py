@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class PreferencesDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Preferences", modal=True)
         preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])

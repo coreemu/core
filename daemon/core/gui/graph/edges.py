@@ -1,12 +1,15 @@
 import logging
 import tkinter as tk
 from tkinter.font import Font
-from typing import Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
+
+if TYPE_CHECKING:
+    from core.gui.graph.graph import CanvasGraph
 
 TEXT_DISTANCE = 0.30
 EDGE_WIDTH = 3
@@ -16,11 +19,11 @@ EDGE_COLOR = "#ff0000"
 class CanvasWirelessEdge:
     def __init__(
         self,
-        token: Tuple[int, int],
-        position: Tuple[int, int, int, int],
+        token: Tuple[Any, ...],
+        position: Tuple[float, float, float, float],
         src: int,
         dst: int,
-        canvas,
+        canvas: "CanvasGraph",
     ):
         self.token = token
         self.src = src
@@ -39,10 +42,17 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    def __init__(self, x1: int, y1: int, x2: int, y2: int, src: int, canvas):
+    def __init__(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        src: int,
+        canvas: "CanvasGraph",
+    ):
         """
         Create an instance of canvas edge object
-        :param coretk.graph.graph.GraphCanvas canvas: canvas object
         """
         self.src = src
         self.dst = None
@@ -69,7 +79,7 @@ class CanvasEdge:
         self.link = link
         self.draw_labels()
 
-    def get_coordinates(self) -> [int, int, int, int]:
+    def get_coordinates(self) -> [float, float, float, float]:
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         v1 = x2 - x1
         v2 = y2 - y1

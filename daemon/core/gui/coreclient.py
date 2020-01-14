@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 import grpc
 
@@ -21,6 +21,9 @@ from core.gui.graph.shape import AnnotationData, Shape
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 GUI_SOURCE = "gui"
 OBSERVERS = {
@@ -50,7 +53,7 @@ class Observer:
 
 
 class CoreClient:
-    def __init__(self, app):
+    def __init__(self, app: "Application"):
         """
         Create a CoreGrpc instance
         """
@@ -137,7 +140,7 @@ class CoreClient:
 
     def handle_events(self, event: core_pb2.Event):
         if event.session_id != self.session_id:
-            logging.warn(
+            logging.warning(
                 "ignoring event session(%s) current(%s)",
                 event.session_id,
                 self.session_id,

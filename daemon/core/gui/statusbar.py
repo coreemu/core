@@ -3,13 +3,17 @@ status bar
 """
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class StatusBar(ttk.Frame):
-    def __init__(self, master: tk.Widget, app, **kwargs):
+    def __init__(self, master: tk.Widget, app: "Application", **kwargs):
         super().__init__(master, **kwargs)
         self.app = app
         self.status = None

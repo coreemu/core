@@ -1,7 +1,9 @@
-"Service configuration dialog"
+"""
+Service configuration dialog
+"""
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Any, List
 
 import grpc
 
@@ -18,7 +20,9 @@ if TYPE_CHECKING:
 
 
 class ServiceConfigDialog(Dialog):
-    def __init__(self, master, app: "Application", service_name: str, node_id: int):
+    def __init__(
+        self, master: Any, app: "Application", service_name: str, node_id: int
+    ):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)
         self.master = master
@@ -229,7 +233,7 @@ class ServiceConfigDialog(Dialog):
         for i in range(3):
             tab.rowconfigure(i, weight=1)
         self.notebook.add(tab, text="Startup/Shutdown")
-
+        commands = []
         # tab 3
         for i in range(3):
             label_frame = None

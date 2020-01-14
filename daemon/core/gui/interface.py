@@ -1,11 +1,15 @@
 import logging
 import random
-from typing import Optional, Set
+from typing import TYPE_CHECKING, Set, Union
 
 from netaddr import IPNetwork
 
-from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.api.grpc import core_pb2
+    from core.gui.graph.node import CanvasNode
 
 
 def random_mac():
@@ -13,9 +17,7 @@ def random_mac():
 
 
 class InterfaceManager:
-    def __init__(
-        self, app, address: Optional[str] = "10.0.0.0", mask: Optional[int] = 24
-    ):
+    def __init__(self, app: "Application", address: str = "10.0.0.0", mask: int = 24):
         self.app = app
         self.mask = mask
         self.base_prefix = max(self.mask - 8, 0)
@@ -49,11 +51,11 @@ class InterfaceManager:
         return str(ip4), str(ip6), prefix
 
     @classmethod
-    def get_subnet(cls, interface):
+    def get_subnet(cls, interface: "core_pb2.Interface") -> IPNetwork:
         return IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
 
     def determine_subnet(
-        self, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
+        self, canvas_src_node: "CanvasNode", canvas_dst_node: "CanvasNode"
     ):
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
@@ -76,7 +78,9 @@ class InterfaceManager:
         else:
             logging.info("ignoring subnet change for link between network nodes")
 
-    def find_subnet(self, canvas_node: CanvasNode, visited: Optional[Set[int]] = None):
+    def find_subnet(
+        self, canvas_node: "CanvasNode", visited: Set[int] = None
+    ) -> Union[IPNetwork, None]:
         logging.info("finding subnet for node: %s", canvas_node.core_node.name)
         canvas = self.app.canvas
         cidr = None

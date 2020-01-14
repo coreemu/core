@@ -35,7 +35,7 @@ THE POSSIBILITY OF SUCH DAMAGE.\
 
 
 class AboutDialog(Dialog):
-    def __init__(self, master: tk.Widget, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "About CORE", modal=True)
         self.draw()
 

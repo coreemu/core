@@ -17,11 +17,9 @@ if TYPE_CHECKING:
 
 
 class CanvasWallpaperDialog(Dialog):
-    def __init__(self, master: tk.Widget, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         """
         create an instance of CanvasWallpaper object
-
-        :param coretk.app.Application app: root application
         """
         super().__init__(master, app, "Canvas Background", modal=True)
         self.canvas = self.app.canvas

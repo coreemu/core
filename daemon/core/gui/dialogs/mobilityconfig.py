@@ -17,7 +17,9 @@ if TYPE_CHECKING:
 
 
 class MobilityConfigDialog(Dialog):
-    def __init__(self, master, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         super().__init__(
             master,
             app,

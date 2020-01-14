@@ -1,8 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from core.gui.themes import Styles
+
+if TYPE_CHECKING:
+    from core.gui.graph.graph import CanvasGraph
 
 
 class CanvasTooltip:
@@ -20,7 +23,14 @@ class CanvasTooltip:
     Alberto Vassena on 2016.12.10.
     """
 
-    def __init__(self, canvas, *, pad=(5, 3, 5, 3), waittime=400, wraplength=600):
+    def __init__(
+        self,
+        canvas: "CanvasGraph",
+        *,
+        pad=(5, 3, 5, 3),
+        waittime: int = 400,
+        wraplength: int = 600
+    ):
         # in miliseconds, originally 500
         self.waittime = waittime
         # in pixels, originally 180
@@ -31,10 +41,10 @@ class CanvasTooltip:
         self.id = None
         self.tw = None
 
-    def on_enter(self, event: Optional[tk.Event] = None):
+    def on_enter(self, event: tk.Event = None):
         self.schedule()
 
-    def on_leave(self, event: Optional[tk.Event] = None):
+    def on_leave(self, event: tk.Event = None):
         self.unschedule()
         self.hide()
 
@@ -48,7 +58,7 @@ class CanvasTooltip:
         if id_:
             self.canvas.after_cancel(id_)
 
-    def show(self, event: Optional[tk.Event] = None):
+    def show(self, event: tk.Event = None):
         def tip_pos_calculator(canvas, label, *, tip_delta=(10, 5), pad=(5, 3, 5, 3)):
             c = canvas
             s_width, s_height = c.winfo_screenwidth(), c.winfo_screenheight()

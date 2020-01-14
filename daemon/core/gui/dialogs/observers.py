@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class ObserverDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Observer Widgets", modal=True)
         self.observers = None
         self.save_button = None

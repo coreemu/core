@@ -5,7 +5,7 @@ import logging
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import grpc
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class GlobalEmaneDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: Any, app: "Application"):
         super().__init__(master, app, "EMANE Configuration", modal=True)
         self.config_frame = None
         self.draw()
@@ -55,7 +55,7 @@ class GlobalEmaneDialog(Dialog):
 class EmaneModelDialog(Dialog):
     def __init__(
         self,
-        master,
+        master: Any,
         app: "Application",
         node: core_pb2.Node,
         model: str,
@@ -104,7 +104,9 @@ class EmaneModelDialog(Dialog):
 
 
 class EmaneConfigDialog(Dialog):
-    def __init__(self, master, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} EMANE Configuration", modal=True
         )

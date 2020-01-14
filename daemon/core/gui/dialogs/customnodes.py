@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING, Any, Set
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 class ServicesSelectDialog(Dialog):
-    def __init__(self, master, app: "Application", current_services: Set[str]):
+    def __init__(self, master: Any, app: "Application", current_services: Set[str]):
         super().__init__(master, app, "Node Services", modal=True)
         self.groups = None
         self.services = None
@@ -100,7 +100,7 @@ class ServicesSelectDialog(Dialog):
 
 
 class CustomNodesDialog(Dialog):
-    def __init__(self, master, app: "Application"):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Custom Nodes", modal=True)
         self.edit_button = None
         self.delete_button = None
@@ -245,7 +245,7 @@ class CustomNodesDialog(Dialog):
             self.nodes_list.listbox.selection_clear(0, tk.END)
             self.nodes_list.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_node_select(self, event):
+    def handle_node_select(self, event: tk.Event):
         selection = self.nodes_list.listbox.curselection()
         if selection:
             self.selected_index = selection[0]

@@ -253,7 +253,7 @@ class CanvasNode:
         dialog = NodeServiceDialog(self.app.master, self.app, self)
         dialog.show()
 
-    def has_emane_link(self, interface_id: int) -> bool:
+    def has_emane_link(self, interface_id: int) -> core_pb2.Node:
         result = None
         for edge in self.edges:
             if self.id == edge.src:

@@ -6,7 +6,7 @@ import logging
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
@@ -21,13 +21,16 @@ from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.task import BackgroundTask
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class MenuAction:
     """
     Actions performed when choosing menu items
     """
 
-    def __init__(self, app, master):
+    def __init__(self, app: "Application", master: tk.Tk):
         self.master = master
         self.app = app
         self.canvas = app.canvas
@@ -39,11 +42,9 @@ class MenuAction:
         # if quitapp:
         #     self.app.quit()
 
-    def prompt_save_running_session(self, quitapp: Optional[bool] = False):
+    def prompt_save_running_session(self, quitapp: bool = False):
         """
         Prompt use to stop running session before application is closed
-
-        :return: nothing
         """
         result = True
         if self.app.core.is_runtime():
@@ -58,15 +59,13 @@ class MenuAction:
         elif quitapp:
             self.app.quit()
 
-    def on_quit(self, event: Optional[tk.Event] = None):
+    def on_quit(self, event: tk.Event = None):
         """
         Prompt user whether so save running session, and then close the application
-
-        :return: nothing
         """
         self.prompt_save_running_session(quitapp=True)
 
-    def file_save_as_xml(self, event: Optional[tk.Event] = None):
+    def file_save_as_xml(self, event: tk.Event = None):
         logging.info("menuaction.py file_save_as_xml()")
         file_path = filedialog.asksaveasfilename(
             initialdir=str(XMLS_PATH),

@@ -1,24 +1,28 @@
 import logging
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.shapeutils import ShapeType
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.graph import CanvasGraph
+
 
 class AnnotationData:
     def __init__(
         self,
-        text: Optional[str] = "",
-        font: Optional[str] = "Arial",
-        font_size: Optional[int] = 12,
-        text_color: Optional[str] = "#000000",
-        fill_color: Optional[str] = "",
-        border_color: Optional[str] = "#000000",
-        border_width: Optional[int] = 1,
-        bold: Optional[bool] = False,
-        italic: Optional[bool] = False,
-        underline: Optional[bool] = False,
+        text: str = "",
+        font: str = "Arial",
+        font_size: int = 12,
+        text_color: str = "#000000",
+        fill_color: str = "",
+        border_color: str = "#000000",
+        border_width: int = 1,
+        bold: bool = False,
+        italic: bool = False,
+        underline: bool = False,
     ):
         self.text = text
         self.font = font
@@ -33,7 +37,17 @@ class AnnotationData:
 
 
 class Shape:
-    def __init__(self, app, canvas, shape_type, x1, y1, x2=None, y2=None, data=None):
+    def __init__(
+        self,
+        app: "Application",
+        canvas: "CanvasGraph",
+        shape_type: ShapeType,
+        x1: float,
+        y1: float,
+        x2: float = None,
+        y2: float = None,
+        data: AnnotationData = None,
+    ):
         self.app = app
         self.canvas = canvas
         self.shape_type = shape_type
@@ -152,7 +166,7 @@ class Shape:
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 
-    def metadata(self):
+    def metadata(self) -> Dict[str, Union[str, int, bool]]:
         coords = self.canvas.coords(self.id)
         # update coords to actual positions
         if len(coords) == 4:

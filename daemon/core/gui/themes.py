@@ -159,7 +159,7 @@ def style_menu(widget: tk.Widget):
     )
 
 
-def style_listbox(widget: ttk.Widget):
+def style_listbox(widget: tk.Widget):
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
