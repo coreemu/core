@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
@@ -1342,9 +1342,7 @@ class Session:
                     break
         return node_id
 
-    def create_node(
-        self, cls: Type[NodeBase], *args: Iterable, **kwargs: Dict
-    ) -> NodeBase:
+    def create_node(self, cls: Type[NodeBase], *args: Any, **kwargs: Any) -> NodeBase:
         """
         Create an emulation node.
 
