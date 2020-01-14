@@ -22,7 +22,7 @@ class Images:
             cls.images[image.stem] = str(image)
 
     @classmethod
-    def get(cls, image_enum, width: int, height: int = None):
+    def get(cls, image_enum: Enum, width: int, height: int = None):
         file_path = cls.images[image_enum.value]
         return cls.create(file_path, width, height)
 

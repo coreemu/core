@@ -1,7 +1,10 @@
-from typing import Set
+from typing import TYPE_CHECKING, Set
 
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
+
+if TYPE_CHECKING:
+    from core.api.grpc import core_pb2
 
 ICON_SIZE = 48
 ANTENNA_SIZE = 32
@@ -11,14 +14,21 @@ class NodeDraw:
     def __init__(self):
         self.custom: bool = False
         self.image = None
-        self.image_enum = None
+        self.image_enum: ImageEnum = None
         self.image_file = None
-        self.node_type = None
-        self.model = None
+        self.node_type: core_pb2.NodeType = None
+        self.model: str = None
         self.services: Set[str] = set()
 
     @classmethod
-    def from_setup(cls, image_enum, node_type, label, model=None, tooltip=None):
+    def from_setup(
+        cls,
+        image_enum: ImageEnum,
+        node_type: "core_pb2.NodeType",
+        label: str,
+        model: str = None,
+        tooltip=None,
+    ):
         node_draw = NodeDraw()
         node_draw.image_enum = image_enum
         node_draw.image = Images.get(image_enum, ICON_SIZE)
@@ -29,7 +39,7 @@ class NodeDraw:
         return node_draw
 
     @classmethod
-    def from_custom(cls, name, image_file, services):
+    def from_custom(cls, name: str, image_file: str, services: str):
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = image_file
@@ -55,31 +65,31 @@ class NodeUtils:
     ANTENNA_ICON = None
 
     @classmethod
-    def is_ignore_node(cls, node_type) -> bool:
+    def is_ignore_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.IGNORE_NODES
 
     @classmethod
-    def is_container_node(cls, node_type) -> bool:
+    def is_container_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.CONTAINER_NODES
 
     @classmethod
-    def is_model_node(cls, node_type) -> bool:
+    def is_model_node(cls, node_type: NodeType) -> bool:
         return node_type == NodeType.DEFAULT
 
     @classmethod
-    def is_image_node(cls, node_type) -> bool:
+    def is_image_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.IMAGE_NODES
 
     @classmethod
-    def is_wireless_node(cls, node_type) -> bool:
+    def is_wireless_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.WIRELESS_NODES
 
     @classmethod
-    def is_rj45_node(cls, node_type) -> bool:
+    def is_rj45_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.RJ45_NODES
 
     @classmethod
-    def node_icon(cls, node_type, model: str) -> bool:
+    def node_icon(cls, node_type: NodeType, model: str) -> bool:
         if model == "":
             model = None
         return cls.NODE_ICONS[(node_type, model)]

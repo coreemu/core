@@ -1,11 +1,14 @@
 import logging
 import threading
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 
 class BackgroundTask:
     def __init__(
-        self, master, task: Callable, callback: Optional[Callable] = None, args=()
+        self, master: "Application", task: Callable, callback: Callable = None, args=()
     ):
         self.master = master
         self.args = args
