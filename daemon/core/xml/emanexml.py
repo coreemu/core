@@ -1,16 +1,26 @@
 import logging
 import os
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from lxml import etree
 
 from core import utils
+from core.config import Configuration
+from core.emane.nodes import EmaneNet
+from core.emulator.distributed import DistributedServer
+from core.nodes.interface import CoreInterface
+from core.nodes.network import CtrlNet
 from core.xml import corexml
+
+if TYPE_CHECKING:
+    from core.emane.emanemanager import EmaneManager
+    from core.emane.emanemodel import EmaneModel
 
 _hwaddr_prefix = "02:02"
 
 
-def is_external(config):
+def is_external(config: Dict[str, str]) -> bool:
     """
     Checks if the configuration is for an external transport.
 
@@ -21,7 +31,7 @@ def is_external(config):
     return config.get("external") == "1"
 
 
-def _value_to_params(value):
+def _value_to_params(value: str) -> Optional[Tuple[str]]:
     """
     Helper to convert a parameter to a parameter tuple.
 
@@ -44,7 +54,12 @@ def _value_to_params(value):
     return None
 
 
-def create_file(xml_element, doc_name, file_path, server=None):
+def create_file(
+    xml_element: etree.Element,
+    doc_name: str,
+    file_path: str,
+    server: DistributedServer = None,
+) -> None:
     """
     Create xml file.
 
@@ -68,7 +83,7 @@ def create_file(xml_element, doc_name, file_path, server=None):
         corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
 
-def add_param(xml_element, name, value):
+def add_param(xml_element: etree.Element, name: str, value: str) -> None:
     """
     Add emane configuration parameter to xml element.
 
@@ -80,7 +95,12 @@ def add_param(xml_element, name, value):
     etree.SubElement(xml_element, "param", name=name, value=value)
 
 
-def add_configurations(xml_element, configurations, config, config_ignore):
+def add_configurations(
+    xml_element: etree.Element,
+    configurations: List[Configuration],
+    config: Dict[str, str],
+    config_ignore: Set,
+) -> None:
     """
     Add emane model configurations to xml element.
 
@@ -107,7 +127,13 @@ def add_configurations(xml_element, configurations, config, config_ignore):
             add_param(xml_element, name, value)
 
 
-def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_xmls):
+def build_node_platform_xml(
+    emane_manager: "EmaneManager",
+    control_net: CtrlNet,
+    node: EmaneNet,
+    nem_id: int,
+    platform_xmls: Dict[str, etree.Element],
+) -> int:
     """
     Create platform xml for a specific node.
 
@@ -131,7 +157,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
 
     if node.model is None:
         logging.warning("warning: EMANE network %s has no associated model", node.name)
-        return nem_entries
+        return nem_id
 
     for netif in node.netifs():
         logging.debug(
@@ -228,7 +254,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     return nem_id
 
 
-def build_xml_files(emane_manager, node):
+def build_xml_files(emane_manager: "EmaneManager", node: EmaneNet) -> None:
     """
     Generate emane xml files required for node.
 
@@ -276,7 +302,9 @@ def build_xml_files(emane_manager, node):
         build_transport_xml(emane_manager, node, rtype)
 
 
-def build_transport_xml(emane_manager, node, transport_type):
+def build_transport_xml(
+    emane_manager: "EmaneManager", node: EmaneNet, transport_type: str
+) -> None:
     """
     Build transport xml file for node and transport type.
 
@@ -317,7 +345,12 @@ def build_transport_xml(emane_manager, node, transport_type):
     )
 
 
-def create_phy_xml(emane_model, config, file_path, server):
+def create_phy_xml(
+    emane_model: "EmaneModel",
+    config: Dict[str, str],
+    file_path: str,
+    server: DistributedServer,
+) -> None:
     """
     Create the phy xml document.
 
@@ -345,7 +378,12 @@ def create_phy_xml(emane_model, config, file_path, server):
         )
 
 
-def create_mac_xml(emane_model, config, file_path, server):
+def create_mac_xml(
+    emane_model: "EmaneModel",
+    config: Dict[str, str],
+    file_path: str,
+    server: DistributedServer,
+) -> None:
     """
     Create the mac xml document.
 
@@ -376,14 +414,14 @@ def create_mac_xml(emane_model, config, file_path, server):
 
 
 def create_nem_xml(
-    emane_model,
-    config,
-    nem_file,
-    transport_definition,
-    mac_definition,
-    phy_definition,
-    server,
-):
+    emane_model: "EmaneModel",
+    config: Dict[str, str],
+    nem_file: str,
+    transport_definition: str,
+    mac_definition: str,
+    phy_definition: str,
+    server: DistributedServer,
+) -> None:
     """
     Create the nem xml document.
 
@@ -413,7 +451,13 @@ def create_nem_xml(
         )
 
 
-def create_event_service_xml(group, port, device, file_directory, server=None):
+def create_event_service_xml(
+    group: str,
+    port: str,
+    device: str,
+    file_directory: str,
+    server: DistributedServer = None,
+) -> None:
     """
     Create a emane event service xml file.
 
@@ -440,7 +484,7 @@ def create_event_service_xml(group, port, device, file_directory, server=None):
     create_file(event_element, "emaneeventmsgsvc", file_path, server)
 
 
-def transport_file_name(node_id, transport_type):
+def transport_file_name(node_id: int, transport_type: str) -> str:
     """
     Create name for a transport xml file.
 
@@ -451,10 +495,11 @@ def transport_file_name(node_id, transport_type):
     return f"n{node_id}trans{transport_type}.xml"
 
 
-def _basename(emane_model, interface=None):
+def _basename(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
     """
     Create name that is leveraged for configuration file creation.
 
+    :param emane_model: emane model to create name for
     :param interface: interface for this model
     :return: basename used for file creation
     :rtype: str
@@ -469,7 +514,7 @@ def _basename(emane_model, interface=None):
     return f"{name}{emane_model.name}"
 
 
-def nem_file_name(emane_model, interface=None):
+def nem_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
     """
     Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
 
@@ -485,7 +530,7 @@ def nem_file_name(emane_model, interface=None):
     return f"{basename}nem{append}.xml"
 
 
-def shim_file_name(emane_model, interface=None):
+def shim_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
     """
     Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
 
@@ -498,7 +543,7 @@ def shim_file_name(emane_model, interface=None):
     return f"{name}shim.xml"
 
 
-def mac_file_name(emane_model, interface=None):
+def mac_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
     """
     Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
 
@@ -511,7 +556,7 @@ def mac_file_name(emane_model, interface=None):
     return f"{name}mac.xml"
 
 
-def phy_file_name(emane_model, interface=None):
+def phy_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
     """
     Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
 
