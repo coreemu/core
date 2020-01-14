@@ -8,7 +8,7 @@ function install_python_depencencies() {
 }
 
 function install_python_dev_dependencies() {
-  sudp pip install pipenv grpcio-tools
+  sudo pip install pipenv grpcio-tools
 }
 
 function install_ospf_mdr() {
