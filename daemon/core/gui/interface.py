@@ -24,7 +24,7 @@ class InterfaceManager:
         self.subnets = IPNetwork(f"{address}/{self.base_prefix}")
         self.current_subnet = None
 
-    def next_subnet(self):
+    def next_subnet(self) -> IPNetwork:
         # define currently used subnets
         used_subnets = set()
         for edge in self.app.core.links.values():
@@ -44,7 +44,7 @@ class InterfaceManager:
     def reset(self):
         self.current_subnet = None
 
-    def get_ips(self, node_id: int):
+    def get_ips(self, node_id: int) -> [str, str, int]:
         ip4 = self.current_subnet[node_id]
         ip6 = ip4.ipv6()
         prefix = self.current_subnet.prefixlen

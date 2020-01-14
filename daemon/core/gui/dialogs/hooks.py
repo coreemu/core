@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class HookDialog(Dialog):
-    def __init__(self, master: Union[tk.Widget, Dialog], app: "Application"):
+    def __init__(self, master: Any, app: "Application"):
         super().__init__(master, app, "Hook", modal=True)
         self.name = tk.StringVar()
         self.codetext = None

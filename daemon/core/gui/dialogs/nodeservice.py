@@ -3,7 +3,7 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Set
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
@@ -17,7 +17,11 @@ if TYPE_CHECKING:
 
 class NodeServiceDialog(Dialog):
     def __init__(
-        self, master: Any, app: "Application", canvas_node: "CanvasNode", services=None
+        self,
+        master: Any,
+        app: "Application",
+        canvas_node: "CanvasNode",
+        services: Set[str] = None,
     ):
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(master, app, title, modal=True)

@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List
 
 import grpc
 
@@ -40,14 +40,14 @@ OBSERVERS = {
 
 
 class CoreServer:
-    def __init__(self, name, address, port):
+    def __init__(self, name: str, address: str, port: int):
         self.name = name
         self.address = address
         self.port = port
 
 
 class Observer:
-    def __init__(self, name, cmd):
+    def __init__(self, name: str, cmd: str):
         self.name = name
         self.cmd = cmd
 
@@ -116,7 +116,7 @@ class CoreClient:
             self.handling_events.cancel()
             self.handling_events = None
 
-    def set_observer(self, value):
+    def set_observer(self, value: str):
         self.observer = value
 
     def read_config(self):
@@ -388,7 +388,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
-    def delete_session(self, session_id: Optional[int] = None):
+    def delete_session(self, session_id: int = None):
         if session_id is None:
             session_id = self.session_id
         try:
@@ -479,7 +479,7 @@ class CoreClient:
             self.app.after(0, show_grpc_error, e)
         return response
 
-    def stop_session(self, session_id: Optional[int] = None):
+    def stop_session(self, session_id: int = None) -> core_pb2.StartSessionResponse:
         if not session_id:
             session_id = self.session_id
         response = core_pb2.StopSessionResponse(result=False)
@@ -875,7 +875,7 @@ class CoreClient:
         return config
 
     def get_emane_model_config(
-        self, node_id: int, model: str, interface: Optional[int] = None
+        self, node_id: int, model: str, interface: int = None
     ) -> Dict[str, core_pb2.ConfigOption]:
         logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
@@ -893,7 +893,7 @@ class CoreClient:
         node_id: int,
         model: str,
         config: Dict[str, core_pb2.ConfigOption],
-        interface: Optional[int] = None,
+        interface: int = None,
     ):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)
         self.emane_model_configs[(node_id, model, interface)] = config

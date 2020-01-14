@@ -3,7 +3,7 @@ shape input dialog
 """
 import tkinter as tk
 from tkinter import font, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Union
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
@@ -167,10 +167,9 @@ class ShapeDialog(Dialog):
             self.add_text()
         self.destroy()
 
-    def make_font(self):
+    def make_font(self) -> List[Union[int, str]]:
         """
         create font for text or shape label
-        :return: list(font specifications)
         """
         size = int(self.font_size.get())
         text_font = [self.font.get(), size]

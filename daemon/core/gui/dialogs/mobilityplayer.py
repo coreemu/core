@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import grpc
 
@@ -69,7 +69,7 @@ class MobilityPlayer:
 
 class MobilityPlayerDialog(Dialog):
     def __init__(
-        self, master: Dialog, app: "Application", canvas_node: "CanvasNode", config
+        self, master: Any, app: "Application", canvas_node: "CanvasNode", config
     ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False

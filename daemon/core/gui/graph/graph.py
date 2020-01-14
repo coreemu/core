@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from PIL import Image, ImageTk
 
@@ -17,6 +17,7 @@ from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
+    from core.gui.app import Application
     from core.gui.coreclient import CoreClient
 
 ZOOM_IN = 1.1
@@ -24,7 +25,9 @@ ZOOM_OUT = 0.9
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, master, core: "CoreClient", width: int, height: int):
+    def __init__(
+        self, master: "Application", core: "CoreClient", width: int, height: int
+    ):
         super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app = master
         self.core = core
@@ -71,7 +74,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_canvas()
         self.draw_grid()
 
-    def draw_canvas(self, dimensions: Optional[Tuple[int, int]] = None):
+    def draw_canvas(self, dimensions: Tuple[int, int] = None):
         if self.grid is not None:
             self.delete(self.grid)
         if not dimensions:
@@ -398,7 +401,7 @@ class CanvasGraph(tk.Canvas):
         node_dst.edges.add(edge)
         self.core.create_link(edge, node_src, node_dst)
 
-    def select_object(self, object_id: int, choose_multiple: Optional[bool] = False):
+    def select_object(self, object_id: int, choose_multiple: bool = False):
         """
         create a bounding box when a node is selected
         """
@@ -478,7 +481,7 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         return nodes
 
-    def zoom(self, event: tk.Event, factor: Optional[float] = None):
+    def zoom(self, event: tk.Event, factor: float = None):
         if not factor:
             factor = ZOOM_IN if event.delta > 0 else ZOOM_OUT
         event.x, event.y = self.canvasx(event.x), self.canvasy(event.y)
@@ -685,10 +688,7 @@ class CanvasGraph(tk.Canvas):
         return image
 
     def draw_wallpaper(
-        self,
-        image: ImageTk.PhotoImage,
-        x: Optional[float] = None,
-        y: Optional[float] = None,
+        self, image: ImageTk.PhotoImage, x: float = None, y: float = None
     ):
         if x is None and y is None:
             x1, y1, x2, y2 = self.bbox(self.grid)

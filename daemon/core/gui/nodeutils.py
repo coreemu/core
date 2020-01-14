@@ -1,3 +1,5 @@
+from typing import Set
+
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
 
@@ -7,13 +9,13 @@ ANTENNA_SIZE = 32
 
 class NodeDraw:
     def __init__(self):
-        self.custom = False
+        self.custom: bool = False
         self.image = None
         self.image_enum = None
         self.image_file = None
         self.node_type = None
         self.model = None
-        self.services = set()
+        self.services: Set[str] = set()
 
     @classmethod
     def from_setup(cls, image_enum, node_type, label, model=None, tooltip=None):

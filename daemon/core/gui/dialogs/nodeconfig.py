@@ -18,19 +18,27 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 
-def mac_auto(is_auto, entry):
+def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry):
     logging.info("mac auto clicked")
     if is_auto.get():
         logging.info("disabling mac")
-        entry.var.set("")
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "")
         entry.config(state=tk.DISABLED)
     else:
-        entry.var.set("00:00:00:00:00:00")
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "00:00:00:00:00:00")
         entry.config(state=tk.NORMAL)
 
 
 class InterfaceData:
-    def __init__(self, is_auto, mac, ip4, ip6):
+    def __init__(
+        self,
+        is_auto: tk.BooleanVar,
+        mac: tk.StringVar,
+        ip4: tk.StringVar,
+        ip6: tk.StringVar,
+    ):
         self.is_auto = is_auto
         self.mac = mac
         self.ip4 = ip4

@@ -6,7 +6,7 @@ import logging
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
@@ -26,21 +26,15 @@ if TYPE_CHECKING:
 
 
 class MenuAction:
-    """
-    Actions performed when choosing menu items
-    """
-
     def __init__(self, app: "Application", master: tk.Tk):
         self.master = master
         self.app = app
         self.canvas = app.canvas
 
-    def cleanup_old_session(self, quitapp: Optional[bool] = False):
+    def cleanup_old_session(self):
         logging.info("cleaning up old session")
         self.app.core.stop_session()
         self.app.core.delete_session()
-        # if quitapp:
-        #     self.app.quit()
 
     def prompt_save_running_session(self, quitapp: bool = False):
         """
@@ -76,7 +70,7 @@ class MenuAction:
         if file_path:
             self.app.core.save_xml(file_path)
 
-    def file_open_xml(self, event: Optional[tk.Event] = None):
+    def file_open_xml(self, event: tk.Event = None):
         logging.info("menuaction.py file_open_xml()")
         file_path = filedialog.askopenfilename(
             initialdir=str(XMLS_PATH),
@@ -142,11 +136,11 @@ class MenuAction:
         else:
             self.app.core.cancel_throughputs()
 
-    def copy(self, event: Optional[tk.Event] = None):
+    def copy(self, event: tk.Event = None):
         logging.debug("copy")
         self.app.canvas.copy()
 
-    def paste(self, event: Optional[tk.Event] = None):
+    def paste(self, event: tk.Event = None):
         logging.debug("paste")
         self.app.canvas.paste()
 

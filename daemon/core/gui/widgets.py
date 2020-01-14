@@ -3,7 +3,7 @@ import tkinter as tk
 from functools import partial
 from pathlib import PosixPath
 from tkinter import filedialog, font, ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from core.api.grpc import core_pb2
 from core.gui import themes
@@ -32,7 +32,7 @@ def file_button_click(value: tk.StringVar, parent: tk.Widget):
 
 
 class FrameScroll(ttk.Frame):
-    def __init__(self, master: ttk.Widget, app: "Application", _cls=ttk.Frame, **kw):
+    def __init__(self, master: tk.Widget, app: "Application", _cls=ttk.Frame, **kw):
         super().__init__(master, **kw)
         self.app = app
         self.rowconfigure(0, weight=1)
@@ -72,7 +72,7 @@ class FrameScroll(ttk.Frame):
 class ConfigFrame(ttk.Notebook):
     def __init__(
         self,
-        master: ttk.Widget,
+        master: tk.Widget,
         app: "Application",
         config: Dict[str, core_pb2.ConfigOption],
         **kw
@@ -186,7 +186,7 @@ class ConfigFrame(ttk.Notebook):
 
 
 class ListboxScroll(ttk.Frame):
-    def __init__(self, master: Optional[ttk.Widget] = None, **kw):
+    def __init__(self, master: tk.Widget = None, **kw):
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -219,7 +219,7 @@ class CodeFont(font.Font):
 
 
 class CodeText(ttk.Frame):
-    def __init__(self, master: ttk.Widget, **kwargs):
+    def __init__(self, master: tk.Widget, **kwargs):
         super().__init__(master, **kwargs)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -243,7 +243,7 @@ class CodeText(ttk.Frame):
 
 
 class Spinbox(ttk.Entry):
-    def __init__(self, master: Optional[ttk.Widget] = None, **kwargs):
+    def __init__(self, master: tk.Widget = None, **kwargs):
         super().__init__(master, "ttk::spinbox", **kwargs)
 
     def set(self, value):

@@ -190,7 +190,7 @@ class ColorPickerDialog(Dialog):
         green = self.green_entry.get()
         return "#%02x%02x%02x" % (int(red), int(green), int(blue))
 
-    def current_focus(self, focus):
+    def current_focus(self, focus: str):
         self.focus = focus
 
     def update_color(self, arg1=None, arg2=None, arg3=None):
