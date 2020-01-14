@@ -20,11 +20,13 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generic,
     Iterable,
     List,
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 
@@ -35,6 +37,7 @@ from core.errors import CoreCommandError, CoreError
 if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.nodes.base import CoreNode
+T = TypeVar("T")
 
 DEVNULL = open(os.devnull, "wb")
 
@@ -358,7 +361,7 @@ def load_config(filename: str, d: Dict[str, str]) -> None:
             logging.exception("error reading file to dict: %s", filename)
 
 
-def load_classes(path: str, clazz: Type) -> List[Type]:
+def load_classes(path: str, clazz: Generic[T]) -> T:
     """
     Dynamically load classes for use within CORE.
 
