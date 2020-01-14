@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING, Optional, Set
 
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
@@ -14,10 +14,10 @@ class NodeDraw:
     def __init__(self):
         self.custom: bool = False
         self.image = None
-        self.image_enum: ImageEnum = None
+        self.image_enum: Optional[ImageEnum] = None
         self.image_file = None
         self.node_type: core_pb2.NodeType = None
-        self.model: str = None
+        self.model: Optional[str] = None
         self.services: Set[str] = set()
 
     @classmethod
@@ -39,7 +39,7 @@ class NodeDraw:
         return node_draw
 
     @classmethod
-    def from_custom(cls, name: str, image_file: str, services: str):
+    def from_custom(cls, name: str, image_file: str, services: Set[str]):
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = image_file

@@ -176,7 +176,7 @@ class ViewConfigDialog(Dialog):
         master: Any,
         app: "Application",
         node_id: int,
-        data: bytes,
+        data: str,
         filename: str = None,
     ):
         super().__init__(master, app, f"n{node_id} config data", modal=True)
