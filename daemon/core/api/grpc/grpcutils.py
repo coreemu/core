@@ -196,7 +196,7 @@ def convert_value(value: Any) -> str:
 
 
 def get_config_options(
-    config: Dict[str, str], configurable_options: ConfigurableOptions
+    config: Dict[str, str], configurable_options: Type[ConfigurableOptions]
 ) -> Dict[str, core_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
