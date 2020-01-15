@@ -525,8 +525,9 @@ class CoreClient:
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
             response = self.client.get_node_terminal(self.session_id, node_id)
-            logging.info("get terminal %s", response.terminal)
-            os.system(f"{terminal} {response.terminal} &")
+            cmd = f'{terminal} "{response.terminal}" &'
+            logging.info("launching terminal %s", cmd)
+            os.system(cmd)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
