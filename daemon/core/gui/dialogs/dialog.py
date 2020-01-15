@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import DIALOG_PAD
@@ -11,11 +11,7 @@ if TYPE_CHECKING:
 
 class Dialog(tk.Toplevel):
     def __init__(
-        self,
-        master: tk.Widget,
-        app: "Application",
-        title: str,
-        modal: Optional[bool] = False,
+        self, master: tk.Widget, app: "Application", title: str, modal: bool = False
     ):
         super().__init__(master)
         self.withdraw()
@@ -40,7 +36,7 @@ class Dialog(tk.Toplevel):
             self.grab_set()
             self.wait_window()
 
-    def draw_spacer(self, row: Optional[int] = None):
+    def draw_spacer(self, row: int = None):
         frame = ttk.Frame(self.top)
         frame.grid(row=row, sticky="nsew")
         frame.rowconfigure(0, weight=1)

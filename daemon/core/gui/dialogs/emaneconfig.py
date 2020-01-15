@@ -5,7 +5,7 @@ import logging
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import grpc
 
@@ -59,7 +59,7 @@ class EmaneModelDialog(Dialog):
         app: "Application",
         node: core_pb2.Node,
         model: str,
-        interface: Optional[int] = None,
+        interface: int = None,
     ):
         super().__init__(master, app, f"{node.name} {model} Configuration", modal=True)
         self.node = node

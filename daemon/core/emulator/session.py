@@ -772,6 +772,7 @@ class Session:
         Broadcast node location to all listeners.
 
         :param core.nodes.base.NodeBase node: node to broadcast location for
+        :return: nothing
         """
         node_data = NodeData(
             message_type=0,
