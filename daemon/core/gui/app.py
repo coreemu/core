@@ -17,8 +17,8 @@ HEIGHT = 800
 
 
 class Application(tk.Frame):
-    def __init__(self, master=None):
-        super().__init__(master)
+    def __init__(self, proxy):
+        super().__init__(master=None)
         # load node icons
         NodeUtils.setup()
 
@@ -33,7 +33,7 @@ class Application(tk.Frame):
         self.guiconfig = appconfig.read()
         self.style = ttk.Style()
         self.setup_theme()
-        self.core = CoreClient(self)
+        self.core = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
         self.core.set_up()
