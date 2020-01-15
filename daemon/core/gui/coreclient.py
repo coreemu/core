@@ -415,9 +415,8 @@ class CoreClient:
             if len(sessions) == 0:
                 self.create_new_session()
             else:
-                dialog = SessionsDialog(self.app, self.app)
+                dialog = SessionsDialog(self.app, self.app, True)
                 dialog.show()
-
             response = self.client.get_service_defaults(self.session_id)
             self.default_services = {
                 x.node_type: set(x.services) for x in response.defaults
