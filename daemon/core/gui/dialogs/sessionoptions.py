@@ -1,5 +1,6 @@
 import logging
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -8,9 +9,12 @@ from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class SessionOptionsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Session Options", modal=True)
         self.config_frame = None
         self.config = self.get_config()

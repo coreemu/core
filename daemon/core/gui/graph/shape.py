@@ -1,23 +1,28 @@
 import logging
+from typing import TYPE_CHECKING, Dict, List, Union
 
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.shapeutils import ShapeType
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.graph import CanvasGraph
+
 
 class AnnotationData:
     def __init__(
         self,
-        text="",
-        font="Arial",
-        font_size=12,
-        text_color="#000000",
-        fill_color="",
-        border_color="#000000",
-        border_width=1,
-        bold=False,
-        italic=False,
-        underline=False,
+        text: str = "",
+        font: str = "Arial",
+        font_size: int = 12,
+        text_color: str = "#000000",
+        fill_color: str = "",
+        border_color: str = "#000000",
+        border_width: int = 1,
+        bold: bool = False,
+        italic: bool = False,
+        underline: bool = False,
     ):
         self.text = text
         self.font = font
@@ -32,7 +37,17 @@ class AnnotationData:
 
 
 class Shape:
-    def __init__(self, app, canvas, shape_type, x1, y1, x2=None, y2=None, data=None):
+    def __init__(
+        self,
+        app: "Application",
+        canvas: "CanvasGraph",
+        shape_type: ShapeType,
+        x1: float,
+        y1: float,
+        x2: float = None,
+        y2: float = None,
+        data: AnnotationData = None,
+    ):
         self.app = app
         self.canvas = canvas
         self.shape_type = shape_type
@@ -99,7 +114,7 @@ class Shape:
             logging.error("unknown shape type: %s", self.shape_type)
         self.created = True
 
-    def get_font(self):
+    def get_font(self) -> List[Union[int, str]]:
         font = [self.shape_data.font, self.shape_data.font_size]
         if self.shape_data.bold:
             font.append("bold")
@@ -123,10 +138,10 @@ class Shape:
                 font=font,
             )
 
-    def shape_motion(self, x1, y1):
+    def shape_motion(self, x1: float, y1: float):
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
-    def shape_complete(self, x, y):
+    def shape_complete(self, x: float, y: float):
         for component in tags.ABOVE_SHAPE:
             self.canvas.tag_raise(component)
         s = ShapeDialog(self.app, self.app, self)
@@ -135,7 +150,7 @@ class Shape:
     def disappear(self):
         self.canvas.delete(self.id)
 
-    def motion(self, x_offset, y_offset):
+    def motion(self, x_offset: float, y_offset: float):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         coords = self.canvas.coords(self.id)
@@ -151,7 +166,7 @@ class Shape:
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 
-    def metadata(self):
+    def metadata(self) -> Dict[str, Union[str, int, bool]]:
         coords = self.canvas.coords(self.id)
         # update coords to actual positions
         if len(coords) == 4:

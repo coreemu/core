@@ -1,13 +1,19 @@
-"status bar"
+"""
+status bar
+"""
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class StatusBar(ttk.Frame):
-    def __init__(self, master, app, **kwargs):
+    def __init__(self, master: "Application", app: "Application", **kwargs):
         super().__init__(master, **kwargs)
         self.app = app
         self.status = None
@@ -68,9 +74,5 @@ class StatusBar(ttk.Frame):
         dialog = AlertsDialog(self.app, self.app)
         dialog.show()
 
-    def set_status(self, message):
+    def set_status(self, message: str):
         self.statusvar.set(message)
-
-    def stop_session_callback(self, cleanup_time):
-        self.progress_bar.stop()
-        self.statusvar.set(f"Stopped in {cleanup_time:.3f} seconds")

@@ -5,14 +5,18 @@ copy service config dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any, Tuple
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
 from core.gui.widgets import CodeText
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class CopyServiceConfigDialog(Dialog):
-    def __init__(self, master, app, node_id):
+    def __init__(self, master: Any, app: "Application", node_id: int):
         super().__init__(master, app, f"Copy services to node {node_id}", modal=True)
         self.parent = master
         self.app = app
@@ -128,6 +132,7 @@ class CopyServiceConfigDialog(Dialog):
 
     def click_view(self):
         selected = self.tree.selection()
+        data = ""
         if selected:
             item = self.tree.item(selected[0])
             if "file" in item["tags"]:
@@ -157,7 +162,7 @@ class CopyServiceConfigDialog(Dialog):
                     )
                 dialog.show()
 
-    def get_node_service(self, selected):
+    def get_node_service(self, selected: Tuple[str]) -> [int, str]:
         service_tree_id = self.tree.parent(selected[0])
         service_name = self.tree.item(service_tree_id)["text"]
         node_tree_id = self.tree.parent(service_tree_id)
@@ -166,7 +171,14 @@ class CopyServiceConfigDialog(Dialog):
 
 
 class ViewConfigDialog(Dialog):
-    def __init__(self, master, app, node_id, data, filename=None):
+    def __init__(
+        self,
+        master: Any,
+        app: "Application",
+        node_id: int,
+        data: str,
+        filename: str = None,
+    ):
         super().__init__(master, app, f"n{node_id} config data", modal=True)
         self.data = data
         self.service_data = None

@@ -11,13 +11,13 @@ class ShapeType(enum.Enum):
 SHAPES = {ShapeType.OVAL, ShapeType.RECTANGLE}
 
 
-def is_draw_shape(shape_type):
+def is_draw_shape(shape_type: ShapeType) -> bool:
     return shape_type in SHAPES
 
 
-def is_shape_text(shape_type):
+def is_shape_text(shape_type: ShapeType) -> bool:
     return shape_type == ShapeType.TEXT
 
 
-def is_marker(shape_type):
+def is_marker(shape_type: ShapeType) -> bool:
     return shape_type == ShapeType.MARKER

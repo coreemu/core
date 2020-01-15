@@ -9,7 +9,7 @@ class Tooltip(object):
     Create tool tip for a given widget
     """
 
-    def __init__(self, widget, text="widget info"):
+    def __init__(self, widget: tk.Widget, text: str = "widget info"):
         self.widget = widget
         self.text = text
         self.widget.bind("<Enter>", self.on_enter)
@@ -18,10 +18,10 @@ class Tooltip(object):
         self.id = None
         self.tw = None
 
-    def on_enter(self, event=None):
+    def on_enter(self, event: tk.Event = None):
         self.schedule()
 
-    def on_leave(self, event=None):
+    def on_leave(self, event: tk.Event = None):
         self.unschedule()
         self.close(event)
 
@@ -35,7 +35,7 @@ class Tooltip(object):
         if id_:
             self.widget.after_cancel(id_)
 
-    def enter(self, event=None):
+    def enter(self, event: tk.Event = None):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx()
         y += self.widget.winfo_rooty() + 32
@@ -50,6 +50,6 @@ class Tooltip(object):
         label = ttk.Label(frame, text=self.text, style=Styles.tooltip)
         label.grid()
 
-    def close(self, event=None):
+    def close(self, event: tk.Event = None):
         if self.tw:
             self.tw.destroy()
