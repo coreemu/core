@@ -153,7 +153,8 @@ class CoreInterface:
         :param str addr: hardware address to set to.
         :return: nothing
         """
-        addr = utils.validate_mac(addr)
+        if addr is not None:
+            addr = utils.validate_mac(addr)
         self.hwaddr = addr
 
     def getparam(self, key: str) -> float:

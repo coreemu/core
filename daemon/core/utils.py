@@ -440,6 +440,7 @@ def threadpool(
                 result = future.result()
                 results.append(result)
             except Exception as e:
+                logging.exception("thread pool exception")
                 exceptions.append(e)
     return results, exceptions
 
