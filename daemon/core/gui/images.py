@@ -9,7 +9,7 @@ class Images:
     images = {}
 
     @classmethod
-    def create(cls, file_path, width, height=None):
+    def create(cls, file_path: str, width: int, height: int = None):
         if height is None:
             height = width
         image = Image.open(file_path)
@@ -22,12 +22,12 @@ class Images:
             cls.images[image.stem] = str(image)
 
     @classmethod
-    def get(cls, image_enum, width, height=None):
+    def get(cls, image_enum: Enum, width: int, height: int = None):
         file_path = cls.images[image_enum.value]
         return cls.create(file_path, width, height)
 
     @classmethod
-    def get_custom(cls, name, width, height=None):
+    def get_custom(cls, name: str, width: int, height: int = None):
         file_path = cls.images[name]
         return cls.create(file_path, width, height)
 

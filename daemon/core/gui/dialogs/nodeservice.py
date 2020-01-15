@@ -3,15 +3,26 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
+from typing import TYPE_CHECKING, Any, Set
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 
 class NodeServiceDialog(Dialog):
-    def __init__(self, master, app, canvas_node, services=None):
+    def __init__(
+        self,
+        master: Any,
+        app: "Application",
+        canvas_node: "CanvasNode",
+        services: Set[str] = None,
+    ):
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(master, app, title, modal=True)
         self.app = app
@@ -87,7 +98,7 @@ class NodeServiceDialog(Dialog):
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event=None):
+    def handle_group_change(self, event: tk.Event = None):
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -97,7 +108,7 @@ class NodeServiceDialog(Dialog):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
-    def service_clicked(self, name, var):
+    def service_clicked(self, name: str, var: tk.IntVar):
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
@@ -150,7 +161,7 @@ class NodeServiceDialog(Dialog):
                     checkbutton.invoke()
                     return
 
-    def is_custom_service(self, service):
+    def is_custom_service(self, service: str) -> bool:
         service_configs = self.app.core.service_configs
         file_configs = self.app.core.file_configs
         if self.node_id in service_configs and service in service_configs[self.node_id]:

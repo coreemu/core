@@ -1,8 +1,12 @@
 import tkinter as tk
 from functools import partial
+from typing import TYPE_CHECKING
 
 import core.gui.menuaction as action
 from core.gui.coreclient import OBSERVERS
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 
 class Menubar(tk.Menu):
@@ -10,13 +14,9 @@ class Menubar(tk.Menu):
     Core menubar
     """
 
-    def __init__(self, master, app, cnf={}, **kwargs):
+    def __init__(self, master: tk.Tk, app: "Application", cnf={}, **kwargs):
         """
         Create a CoreMenubar instance
-
-        :param master:
-        :param tkinter.Menu menubar: menubar object
-        :param coretk.app.Application app: application object
         """
         super().__init__(master, cnf, **kwargs)
         self.master.config(menu=self)
@@ -27,8 +27,6 @@ class Menubar(tk.Menu):
     def draw(self):
         """
         Create core menubar and bind the hot keys to their matching command
-
-        :return: nothing
         """
         self.draw_file_menu()
         self.draw_edit_menu()
@@ -42,8 +40,6 @@ class Menubar(tk.Menu):
     def draw_file_menu(self):
         """
         Create file menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(
@@ -81,8 +77,6 @@ class Menubar(tk.Menu):
     def draw_edit_menu(self):
         """
         Create edit menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(label="Preferences", command=self.menuaction.gui_preferences)
@@ -112,8 +106,6 @@ class Menubar(tk.Menu):
     def draw_canvas_menu(self):
         """
         Create canvas menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(
@@ -136,8 +128,6 @@ class Menubar(tk.Menu):
     def draw_view_menu(self):
         """
         Create view menu
-
-        :return: nothing
         """
         view_menu = tk.Menu(self)
         self.create_show_menu(view_menu)
@@ -149,12 +139,9 @@ class Menubar(tk.Menu):
         view_menu.add_command(label="Zoom out", accelerator="-", state=tk.DISABLED)
         self.add_cascade(label="View", menu=view_menu)
 
-    def create_show_menu(self, view_menu):
+    def create_show_menu(self, view_menu: tk.Menu):
         """
         Create the menu items in View/Show
-
-        :param tkinter.Menu view_menu: the view menu
-        :return: nothing
         """
         menu = tk.Menu(view_menu)
         menu.add_command(label="All", state=tk.DISABLED)
@@ -169,12 +156,9 @@ class Menubar(tk.Menu):
         menu.add_command(label="API Messages", state=tk.DISABLED)
         view_menu.add_cascade(label="Show", menu=menu)
 
-    def create_experimental_menu(self, tools_menu):
+    def create_experimental_menu(self, tools_menu: tk.Menu):
         """
         Create experimental menu item and the sub menu items inside
-
-        :param tkinter.Menu tools_menu: tools menu
-        :return: nothing
         """
         menu = tk.Menu(tools_menu)
         menu.add_command(label="Plugins...", state=tk.DISABLED)
@@ -182,12 +166,9 @@ class Menubar(tk.Menu):
         menu.add_command(label="Topology partitioning...", state=tk.DISABLED)
         tools_menu.add_cascade(label="Experimental", menu=menu)
 
-    def create_random_menu(self, topology_generator_menu):
+    def create_random_menu(self, topology_generator_menu: tk.Menu):
         """
         Create random menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         # list of number of random nodes to create
@@ -197,12 +178,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Random", menu=menu)
 
-    def create_grid_menu(self, topology_generator_menu):
+    def create_grid_menu(self, topology_generator_menu: tk.Menu):
         """
         Create grid menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology_generator_menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         # list of number of nodes to create
@@ -212,12 +190,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Grid", menu=menu)
 
-    def create_connected_grid_menu(self, topology_generator_menu):
+    def create_connected_grid_menu(self, topology_generator_menu: tk.Menu):
         """
         Create connected grid menu items and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(1, 11, 1):
@@ -229,12 +204,9 @@ class Menubar(tk.Menu):
             menu.add_cascade(label=label, menu=submenu)
         topology_generator_menu.add_cascade(label="Connected Grid", menu=menu)
 
-    def create_chain_menu(self, topology_generator_menu):
+    def create_chain_menu(self, topology_generator_menu: tk.Menu):
         """
         Create chain menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         # number of nodes to create
@@ -244,12 +216,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Chain", menu=menu)
 
-    def create_star_menu(self, topology_generator_menu):
+    def create_star_menu(self, topology_generator_menu: tk.Menu):
         """
         Create star menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(3, 26, 1):
@@ -257,12 +226,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Star", menu=menu)
 
-    def create_cycle_menu(self, topology_generator_menu):
+    def create_cycle_menu(self, topology_generator_menu: tk.Menu):
         """
         Create cycle menu item and the sub items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(3, 25, 1):
@@ -270,12 +236,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Cycle", menu=menu)
 
-    def create_wheel_menu(self, topology_generator_menu):
+    def create_wheel_menu(self, topology_generator_menu: tk.Menu):
         """
         Create wheel menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(4, 26, 1):
@@ -283,12 +246,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Wheel", menu=menu)
 
-    def create_cube_menu(self, topology_generator_menu):
+    def create_cube_menu(self, topology_generator_menu: tk.Menu):
         """
         Create cube menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(2, 7, 1):
@@ -296,12 +256,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Cube", menu=menu)
 
-    def create_clique_menu(self, topology_generator_menu):
+    def create_clique_menu(self, topology_generator_menu: tk.Menu):
         """
         Create clique menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology generator menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         for i in range(3, 25, 1):
@@ -309,12 +266,9 @@ class Menubar(tk.Menu):
             menu.add_command(label=label, state=tk.DISABLED)
         topology_generator_menu.add_cascade(label="Clique", menu=menu)
 
-    def create_bipartite_menu(self, topology_generator_menu):
+    def create_bipartite_menu(self, topology_generator_menu: tk.Menu):
         """
         Create bipartite menu item and the sub menu items inside
-
-        :param tkinter.Menu topology_generator_menu: topology_generator_menu
-        :return: nothing
         """
         menu = tk.Menu(topology_generator_menu)
         temp = 24
@@ -328,13 +282,9 @@ class Menubar(tk.Menu):
             temp = temp - 1
         topology_generator_menu.add_cascade(label="Bipartite", menu=menu)
 
-    def create_topology_generator_menu(self, tools_menu):
+    def create_topology_generator_menu(self, tools_menu: tk.Menu):
         """
         Create topology menu item and its sub menu items
-
-        :param tkinter.Menu tools_menu: tools menu
-
-        :return: nothing
         """
         menu = tk.Menu(tools_menu)
         self.create_random_menu(menu)
@@ -352,8 +302,6 @@ class Menubar(tk.Menu):
     def draw_tools_menu(self):
         """
         Create tools menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(label="Auto rearrange all", state=tk.DISABLED)
@@ -371,12 +319,9 @@ class Menubar(tk.Menu):
         menu.add_command(label="Debugger...", state=tk.DISABLED)
         self.add_cascade(label="Tools", menu=menu)
 
-    def create_observer_widgets_menu(self, widget_menu):
+    def create_observer_widgets_menu(self, widget_menu: tk.Menu):
         """
         Create observer widget menu item and create the sub menu items inside
-
-        :param tkinter.Menu widget_menu: widget_menu
-        :return: nothing
         """
         var = tk.StringVar(value="none")
         menu = tk.Menu(widget_menu)
@@ -409,12 +354,9 @@ class Menubar(tk.Menu):
             )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 
-    def create_adjacency_menu(self, widget_menu):
+    def create_adjacency_menu(self, widget_menu: tk.Menu):
         """
         Create adjacency menu item and the sub menu items inside
-
-        :param tkinter.Menu widget_menu: widget menu
-        :return: nothing
         """
         menu = tk.Menu(widget_menu)
         menu.add_command(label="OSPFv2", state=tk.DISABLED)
@@ -426,8 +368,6 @@ class Menubar(tk.Menu):
     def draw_widgets_menu(self):
         """
         Create widget menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         self.create_observer_widgets_menu(menu)
@@ -443,8 +383,6 @@ class Menubar(tk.Menu):
     def draw_session_menu(self):
         """
         Create session menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(
@@ -461,8 +399,6 @@ class Menubar(tk.Menu):
     def draw_help_menu(self):
         """
         Create help menu
-
-        :return: nothing
         """
         menu = tk.Menu(self)
         menu.add_command(

@@ -6,6 +6,7 @@ import heapq
 import threading
 import time
 from functools import total_ordering
+from typing import Any, Callable
 
 
 class Timer(threading.Thread):
@@ -14,7 +15,9 @@ class Timer(threading.Thread):
     already running.
     """
 
-    def __init__(self, interval, function, args=None, kwargs=None):
+    def __init__(
+        self, interval: float, function: Callable, args: Any = None, kwargs: Any = None
+    ) -> None:
         """
         Create a Timer instance.
 
@@ -42,7 +45,7 @@ class Timer(threading.Thread):
         else:
             self.kwargs = {}
 
-    def cancel(self):
+    def cancel(self) -> bool:
         """
         Stop the timer if it hasn't finished yet.  Return False if
         the timer was already running.
@@ -56,7 +59,7 @@ class Timer(threading.Thread):
             self._running.release()
         return locked
 
-    def run(self):
+    def run(self) -> None:
         """
         Run the timer.
 
@@ -75,7 +78,9 @@ class Event:
     Provides event objects that can be used within the EventLoop class.
     """
 
-    def __init__(self, eventnum, event_time, func, *args, **kwds):
+    def __init__(
+        self, eventnum: int, event_time: float, func: Callable, *args: Any, **kwds: Any
+    ) -> None:
         """
         Create an Event instance.
 
@@ -92,13 +97,13 @@ class Event:
         self.kwds = kwds
         self.canceled = False
 
-    def __lt__(self, other):
+    def __lt__(self, other: "Event") -> bool:
         result = self.time < other.time
         if result:
             result = self.eventnum < other.eventnum
         return result
 
-    def run(self):
+    def run(self) -> None:
         """
         Run an event.
 
@@ -108,7 +113,7 @@ class Event:
             return
         self.func(*self.args, **self.kwds)
 
-    def cancel(self):
+    def cancel(self) -> None:
         """
         Cancel event.
 
@@ -123,7 +128,7 @@ class EventLoop:
     Provides an event loop for running events.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Creates a EventLoop instance.
         """
@@ -134,7 +139,7 @@ class EventLoop:
         self.running = False
         self.start = None
 
-    def __run_events(self):
+    def __run_events(self) -> None:
         """
         Run events.
 
@@ -159,7 +164,7 @@ class EventLoop:
             if schedule:
                 self.__schedule_event()
 
-    def __schedule_event(self):
+    def __schedule_event(self) -> None:
         """
         Schedule event.
 
@@ -177,7 +182,7 @@ class EventLoop:
             self.timer.daemon = True
             self.timer.start()
 
-    def run(self):
+    def run(self) -> None:
         """
         Start event loop.
 
@@ -192,7 +197,7 @@ class EventLoop:
                 event.time += self.start
             self.__schedule_event()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop event loop.
 
@@ -209,7 +214,7 @@ class EventLoop:
             self.running = False
             self.start = None
 
-    def add_event(self, delaysec, func, *args, **kwds):
+    def add_event(self, delaysec: float, func: Callable, *args: Any, **kwds: Any):
         """
         Add an event to the event loop.
 

@@ -3,13 +3,14 @@ import logging
 import os
 import signal
 import sys
+from typing import Mapping, Type
 
 import core.services
 from core.emulator.session import Session
 from core.services.coreservices import ServiceManager
 
 
-def signal_handler(signal_number, _):
+def signal_handler(signal_number: int, _) -> None:
     """
     Handle signals and force an exit with cleanup.
 
@@ -33,7 +34,7 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config: Mapping[str, str] = None) -> None:
         """
         Create a CoreEmu object.
 
@@ -57,7 +58,7 @@ class CoreEmu:
         # catch exit event
         atexit.register(self.shutdown)
 
-    def load_services(self):
+    def load_services(self) -> None:
         # load default services
         self.service_errors = core.services.load()
 
@@ -70,7 +71,7 @@ class CoreEmu:
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown all CORE session.
 
@@ -83,7 +84,7 @@ class CoreEmu:
             session = sessions[_id]
             session.shutdown()
 
-    def create_session(self, _id=None, _cls=Session):
+    def create_session(self, _id: int = None, _cls: Type[Session] = Session) -> Session:
         """
         Create a new CORE session.
 
@@ -101,7 +102,7 @@ class CoreEmu:
         self.sessions[_id] = session
         return session
 
-    def delete_session(self, _id):
+    def delete_session(self, _id: int) -> bool:
         """
         Shutdown and delete a CORE session.
 

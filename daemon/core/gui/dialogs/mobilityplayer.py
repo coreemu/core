@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any
 
 import grpc
 
@@ -9,11 +10,21 @@ from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 ICON_SIZE = 16
 
 
 class MobilityPlayer:
-    def __init__(self, master, app, canvas_node, config):
+    def __init__(
+        self,
+        master: "Application",
+        app: "Application",
+        canvas_node: "CanvasNode",
+        config,
+    ):
         self.master = master
         self.app = app
         self.canvas_node = canvas_node
@@ -57,7 +68,9 @@ class MobilityPlayer:
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(self, master, app, canvas_node, config):
+    def __init__(
+        self, master: Any, app: "Application", canvas_node: "CanvasNode", config
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )

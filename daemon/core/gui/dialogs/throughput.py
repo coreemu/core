@@ -3,14 +3,18 @@ throughput dialog
 """
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ThroughputDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Throughput Config", modal=False)
         self.app = app
         self.canvas = app.canvas

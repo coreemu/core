@@ -4,23 +4,28 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
+from typing import TYPE_CHECKING, Any, Optional
 from urllib.parse import urlparse
 
 from core import constants
+from core.api.tlv.coreapi import CoreLinkMessage, CoreMessage, CoreNodeMessage
 from core.constants import CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
+from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import (
     EventTypes,
     LinkTlvs,
     LinkTypes,
     MessageFlags,
-    MessageTypes,
     NodeTlvs,
     NodeTypes,
 )
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
 from core.nodes.network import WlanNode
+
+if TYPE_CHECKING:
+    from core.emulator.session import Session
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this
@@ -29,7 +34,7 @@ class Bunch:
     Helper class for recording a collection of attributes.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         """
         Create a Bunch instance.
 
@@ -62,7 +67,7 @@ class Sdt:
         ("tunnel", "tunnel.gif"),
     ]
 
-    def __init__(self, session):
+    def __init__(self, session: "Session") -> None:
         """
         Creates a Sdt instance.
 
@@ -83,7 +88,7 @@ class Sdt:
         # add handler for link updates
         self.session.link_handlers.append(self.handle_link_update)
 
-    def handle_node_update(self, node_data):
+    def handle_node_update(self, node_data: NodeData) -> None:
         """
         Handler for node updates, specifically for updating their location.
 
@@ -108,7 +113,7 @@ class Sdt:
             # TODO: z is not currently supported by node messages
             self.updatenode(node_data.id, 0, x, y, 0)
 
-    def handle_link_update(self, link_data):
+    def handle_link_update(self, link_data: LinkData) -> None:
         """
         Handler for link updates, checking for wireless link/unlink messages.
 
@@ -123,7 +128,7 @@ class Sdt:
                 wireless=True,
             )
 
-    def is_enabled(self):
+    def is_enabled(self) -> bool:
         """
         Check for "enablesdt" session option. Return False by default if
         the option is missing.
@@ -133,7 +138,7 @@ class Sdt:
         """
         return self.session.options.get_config("enablesdt") == "1"
 
-    def seturl(self):
+    def seturl(self) -> None:
         """
         Read "sdturl" from session options, or use the default value.
         Set self.url, self.address, self.protocol
@@ -147,7 +152,7 @@ class Sdt:
         self.address = (self.url.hostname, self.url.port)
         self.protocol = self.url.scheme
 
-    def connect(self, flags=0):
+    def connect(self, flags: int = 0) -> bool:
         """
         Connect to the SDT address/port if enabled.
 
@@ -185,7 +190,7 @@ class Sdt:
 
         return True
 
-    def initialize(self):
+    def initialize(self) -> bool:
         """
         Load icon sprites, and fly to the reference point location on
         the virtual globe.
@@ -202,7 +207,7 @@ class Sdt:
         lat, long = self.session.location.refgeo[:2]
         return self.cmd(f"flyto {long:.6f},{lat:.6f},{self.DEFAULT_ALT}")
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """
         Disconnect from SDT.
 
@@ -218,7 +223,7 @@ class Sdt:
 
         self.connected = False
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Invoked from Session.shutdown() and Session.checkshutdown().
 
@@ -228,7 +233,7 @@ class Sdt:
         self.disconnect()
         self.showerror = True
 
-    def cmd(self, cmdstr):
+    def cmd(self, cmdstr: str) -> bool:
         """
         Send an SDT command over a UDP socket. socket.sendall() is used
         as opposed to socket.sendto() because an exception is raised when
@@ -250,7 +255,17 @@ class Sdt:
             self.connected = False
             return False
 
-    def updatenode(self, nodenum, flags, x, y, z, name=None, node_type=None, icon=None):
+    def updatenode(
+        self,
+        nodenum: int,
+        flags: int,
+        x: Optional[float],
+        y: Optional[float],
+        z: Optional[float],
+        name: str = None,
+        node_type: str = None,
+        icon: str = None,
+    ) -> None:
         """
         Node is updated from a Node Message or mobility script.
 
@@ -283,13 +298,13 @@ class Sdt:
         else:
             self.cmd(f"node {nodenum} {pos}")
 
-    def updatenodegeo(self, nodenum, lat, long, alt):
+    def updatenodegeo(self, nodenum: int, lat: float, lon: float, alt: float) -> None:
         """
         Node is updated upon receiving an EMANE Location Event.
 
         :param int nodenum: node id to update geospatial for
         :param lat: latitude
-        :param long: longitude
+        :param lon: longitude
         :param alt: altitude
         :return: nothing
         """
@@ -297,10 +312,12 @@ class Sdt:
         # TODO: received Node Message with lat/long/alt.
         if not self.connect():
             return
-        pos = f"pos {long:.6f},{lat:.6f},{alt:.6f}"
+        pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
         self.cmd(f"node {nodenum} {pos}")
 
-    def updatelink(self, node1num, node2num, flags, wireless=False):
+    def updatelink(
+        self, node1num: int, node2num: int, flags: int, wireless: bool = False
+    ) -> None:
         """
         Link is updated from a Link Message or by a wireless model.
 
@@ -323,7 +340,7 @@ class Sdt:
                 attr = " line red,2"
             self.cmd(f"link {node1num},{node2num}{attr}")
 
-    def sendobjs(self):
+    def sendobjs(self) -> None:
         """
         Session has already started, and the SDT3D GUI later connects.
         Send all node and link objects for display. Otherwise, nodes and
@@ -379,21 +396,21 @@ class Sdt:
                 for n2num, wireless_link in r.links:
                     self.updatelink(n1num, n2num, MessageFlags.ADD.value, wireless_link)
 
-    def handle_distributed(self, message):
+    def handle_distributed(self, message: CoreMessage) -> None:
         """
         Broker handler for processing CORE API messages as they are
         received. This is used to snoop the Node messages and update
         node positions.
 
         :param message: message to handle
-        :return: replies
+        :return: nothing
         """
-        if message.message_type == MessageTypes.LINK.value:
-            return self.handlelinkmsg(message)
-        elif message.message_type == MessageTypes.NODE.value:
-            return self.handlenodemsg(message)
+        if isinstance(message, CoreLinkMessage):
+            self.handlelinkmsg(message)
+        elif isinstance(message, CoreNodeMessage):
+            self.handlenodemsg(message)
 
-    def handlenodemsg(self, msg):
+    def handlenodemsg(self, msg: CoreNodeMessage) -> None:
         """
         Process a Node Message to add/delete or move a node on
         the SDT display. Node properties are found in a session or
@@ -405,7 +422,7 @@ class Sdt:
         # for distributed sessions to work properly, the SDT option should be
         # enabled prior to starting the session
         if not self.is_enabled():
-            return False
+            return
         # node.(_id, type, icon, name) are used.
         nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
         if not nodenum:
@@ -461,7 +478,7 @@ class Sdt:
             remote.pos = (x, y, z)
             self.updatenode(nodenum, msg.flags, x, y, z, name, nodetype, icon)
 
-    def handlelinkmsg(self, msg):
+    def handlelinkmsg(self, msg: CoreLinkMessage) -> None:
         """
         Process a Link Message to add/remove links on the SDT display.
         Links are recorded in the remotes[nodenum1].links set for updating
@@ -471,7 +488,7 @@ class Sdt:
         :return: nothing
         """
         if not self.is_enabled():
-            return False
+            return
         nodenum1 = msg.get_tlv(LinkTlvs.N1_NUMBER.value)
         nodenum2 = msg.get_tlv(LinkTlvs.N2_NUMBER.value)
         link_msg_type = msg.get_tlv(LinkTlvs.TYPE.value)
@@ -488,7 +505,7 @@ class Sdt:
                 r.links.add((nodenum2, wl))
         self.updatelink(nodenum1, nodenum2, msg.flags, wireless=wl)
 
-    def wlancheck(self, nodenum):
+    def wlancheck(self, nodenum: int) -> bool:
         """
         Helper returns True if a node number corresponds to a WLAN or EMANE node.
 

@@ -1,11 +1,17 @@
 import logging
 import tkinter as tk
 from functools import partial
+from pathlib import PosixPath
 from tkinter import filedialog, font, ttk
+from typing import TYPE_CHECKING, Dict
 
 from core.api.grpc import core_pb2
 from core.gui import themes
 from core.gui.themes import FRAME_PAD, PADX, PADY
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.dialogs.dialog import Dialog
 
 INT_TYPES = {
     core_pb2.ConfigOptionType.UINT8,
@@ -19,14 +25,14 @@ INT_TYPES = {
 }
 
 
-def file_button_click(value, parent):
+def file_button_click(value: tk.StringVar, parent: tk.Widget):
     file_path = filedialog.askopenfilename(title="Select File", parent=parent)
     if file_path:
         value.set(file_path)
 
 
 class FrameScroll(ttk.Frame):
-    def __init__(self, master, app, _cls=ttk.Frame, **kw):
+    def __init__(self, master: tk.Widget, app: "Application", _cls=ttk.Frame, **kw):
         super().__init__(master, **kw)
         self.app = app
         self.rowconfigure(0, weight=1)
@@ -49,13 +55,13 @@ class FrameScroll(ttk.Frame):
         self.frame.bind("<Configure>", self._configure_frame)
         self.canvas.bind("<Configure>", self._configure_canvas)
 
-    def _configure_frame(self, event):
+    def _configure_frame(self, event: tk.Event):
         req_width = self.frame.winfo_reqwidth()
         if req_width != self.canvas.winfo_reqwidth():
             self.canvas.configure(width=req_width)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    def _configure_canvas(self, event):
+    def _configure_canvas(self, event: tk.Event):
         self.canvas.itemconfig(self.frame_id, width=event.width)
 
     def clear(self):
@@ -64,7 +70,13 @@ class FrameScroll(ttk.Frame):
 
 
 class ConfigFrame(ttk.Notebook):
-    def __init__(self, master, app, config, **kw):
+    def __init__(
+        self,
+        master: tk.Widget,
+        app: "Application",
+        config: Dict[str, core_pb2.ConfigOption],
+        **kw
+    ):
         super().__init__(master, **kw)
         self.app = app
         self.config = config
@@ -174,7 +186,7 @@ class ConfigFrame(ttk.Notebook):
 
 
 class ListboxScroll(ttk.Frame):
-    def __init__(self, master=None, **kw):
+    def __init__(self, master: tk.Widget = None, **kw):
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -189,12 +201,12 @@ class ListboxScroll(ttk.Frame):
 
 
 class CheckboxList(FrameScroll):
-    def __init__(self, master, app, clicked=None, **kw):
+    def __init__(self, master: ttk.Widget, app: "Application", clicked=None, **kw):
         super().__init__(master, app, **kw)
         self.clicked = clicked
         self.frame.columnconfigure(0, weight=1)
 
-    def add(self, name, checked):
+    def add(self, name: str, checked: bool):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
@@ -207,7 +219,7 @@ class CodeFont(font.Font):
 
 
 class CodeText(ttk.Frame):
-    def __init__(self, master, **kwargs):
+    def __init__(self, master: tk.Widget, **kwargs):
         super().__init__(master, **kwargs)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -231,14 +243,14 @@ class CodeText(ttk.Frame):
 
 
 class Spinbox(ttk.Entry):
-    def __init__(self, master=None, **kwargs):
+    def __init__(self, master: tk.Widget = None, **kwargs):
         super().__init__(master, "ttk::spinbox", **kwargs)
 
     def set(self, value):
         self.tk.call(self._w, "set", value)
 
 
-def image_chooser(parent, path):
+def image_chooser(parent: "Dialog", path: PosixPath):
     return filedialog.askopenfilename(
         parent=parent,
         initialdir=str(path),

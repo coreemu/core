@@ -3,6 +3,7 @@ wlan configuration
 """
 
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -11,9 +12,15 @@ from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 
 class WlanConfigDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Wlan Configuration", modal=True
         )
@@ -38,8 +45,6 @@ class WlanConfigDialog(Dialog):
     def draw_apply_buttons(self):
         """
         create node configuration options
-
-        :return: nothing
         """
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -55,8 +60,6 @@ class WlanConfigDialog(Dialog):
     def click_apply(self):
         """
         retrieve user's wlan configuration and store the new configuration values
-
-        :return: nothing
         """
         config = self.config_frame.parse_config()
         self.app.core.wlan_configs[self.node.id] = self.config

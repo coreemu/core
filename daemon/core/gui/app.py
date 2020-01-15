@@ -17,7 +17,7 @@ HEIGHT = 800
 
 
 class Application(tk.Frame):
-    def __init__(self, proxy):
+    def __init__(self, proxy: bool):
         super().__init__(master=None)
         # load node icons
         NodeUtils.setup()

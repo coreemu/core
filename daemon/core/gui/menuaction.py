@@ -3,8 +3,10 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
+import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
@@ -19,29 +21,24 @@ from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.task import BackgroundTask
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class MenuAction:
-    """
-    Actions performed when choosing menu items
-    """
-
-    def __init__(self, app, master):
+    def __init__(self, app: "Application", master: tk.Tk):
         self.master = master
         self.app = app
         self.canvas = app.canvas
 
-    def cleanup_old_session(self, quitapp=False):
+    def cleanup_old_session(self):
         logging.info("cleaning up old session")
         self.app.core.stop_session()
         self.app.core.delete_session()
-        # if quitapp:
-        #     self.app.quit()
 
-    def prompt_save_running_session(self, quitapp=False):
+    def prompt_save_running_session(self, quitapp: bool = False):
         """
         Prompt use to stop running session before application is closed
-
-        :return: nothing
         """
         result = True
         if self.app.core.is_runtime():
@@ -56,15 +53,13 @@ class MenuAction:
         elif quitapp:
             self.app.quit()
 
-    def on_quit(self, event=None):
+    def on_quit(self, event: tk.Event = None):
         """
         Prompt user whether so save running session, and then close the application
-
-        :return: nothing
         """
         self.prompt_save_running_session(quitapp=True)
 
-    def file_save_as_xml(self, event=None):
+    def file_save_as_xml(self, event: tk.Event = None):
         logging.info("menuaction.py file_save_as_xml()")
         file_path = filedialog.asksaveasfilename(
             initialdir=str(XMLS_PATH),
@@ -75,7 +70,7 @@ class MenuAction:
         if file_path:
             self.app.core.save_xml(file_path)
 
-    def file_open_xml(self, event=None):
+    def file_open_xml(self, event: tk.Event = None):
         logging.info("menuaction.py file_open_xml()")
         file_path = filedialog.askopenfilename(
             initialdir=str(XMLS_PATH),
@@ -141,11 +136,11 @@ class MenuAction:
         else:
             self.app.core.cancel_throughputs()
 
-    def copy(self, event=None):
+    def copy(self, event: tk.Event = None):
         logging.debug("copy")
         self.app.canvas.copy()
 
-    def paste(self, event=None):
+    def paste(self, event: tk.Event = None):
         logging.debug("paste")
         self.app.canvas.paste()
 

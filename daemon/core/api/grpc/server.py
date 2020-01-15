@@ -7,6 +7,7 @@ import time
 from concurrent import futures
 
 import grpc
+from grpc import ServicerContext
 
 from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
 from core.api.grpc.events import EventStreamer
@@ -17,11 +18,14 @@ from core.api.grpc.grpcutils import (
     get_net_stats,
 )
 from core.emane.nodes import EmaneNet
+from core.emulator.coreemu import CoreEmu
 from core.emulator.data import LinkData
 from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
+from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
@@ -37,24 +41,24 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     :param core.emulator.coreemu.CoreEmu coreemu: coreemu object
     """
 
-    def __init__(self, coreemu):
+    def __init__(self, coreemu: CoreEmu) -> None:
         super().__init__()
         self.coreemu = coreemu
         self.running = True
         self.server = None
         atexit.register(self._exit_handler)
 
-    def _exit_handler(self):
+    def _exit_handler(self) -> None:
         logging.debug("catching exit, stop running")
         self.running = False
 
-    def _is_running(self, context):
+    def _is_running(self, context) -> bool:
         return self.running and context.is_active()
 
-    def _cancel_stream(self, context):
+    def _cancel_stream(self, context) -> None:
         context.abort(grpc.StatusCode.CANCELLED, "server stopping")
 
-    def listen(self, address):
+    def listen(self, address: str) -> None:
         logging.info("CORE gRPC API listening on: %s", address)
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         core_pb2_grpc.add_CoreApiServicer_to_server(self, self.server)
@@ -67,7 +71,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         except KeyboardInterrupt:
             self.server.stop(None)
 
-    def get_session(self, session_id, context):
+    def get_session(self, session_id: int, context: ServicerContext) -> Session:
         """
         Retrieve session given the session id
 
@@ -82,7 +86,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             context.abort(grpc.StatusCode.NOT_FOUND, f"session {session_id} not found")
         return session
 
-    def get_node(self, session, node_id, context):
+    def get_node(
+        self, session: Session, node_id: int, context: ServicerContext
+    ) -> NodeBase:
         """
         Retrieve node given session and node id
 
@@ -97,7 +103,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
 
-    def StartSession(self, request, context):
+    def StartSession(
+        self, request: core_pb2.StartSessionRequest, context: ServicerContext
+    ) -> core_pb2.StartSessionResponse:
         """
         Start a session.
 
@@ -184,7 +192,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.StartSessionResponse(result=True)
 
-    def StopSession(self, request, context):
+    def StopSession(
+        self, request: core_pb2.StopSessionRequest, context: ServicerContext
+    ) -> core_pb2.StopSessionResponse:
         """
         Stop a running session.
 
@@ -201,7 +211,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         return core_pb2.StopSessionResponse(result=True)
 
-    def CreateSession(self, request, context):
+    def CreateSession(
+        self, request: core_pb2.CreateSessionRequest, context: ServicerContext
+    ) -> core_pb2.CreateSessionResponse:
         """
         Create a session
 
@@ -219,7 +231,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session_id=session.id, state=session.state
         )
 
-    def DeleteSession(self, request, context):
+    def DeleteSession(
+        self, request: core_pb2.DeleteSessionRequest, context: ServicerContext
+    ) -> core_pb2.DeleteSessionResponse:
         """
         Delete the session
 
@@ -232,7 +246,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         result = self.coreemu.delete_session(request.session_id)
         return core_pb2.DeleteSessionResponse(result=result)
 
-    def GetSessions(self, request, context):
+    def GetSessions(
+        self, request: core_pb2.GetSessionsRequest, context: ServicerContext
+    ) -> core_pb2.GetSessionsResponse:
         """
         Delete the session
 
@@ -254,7 +270,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
 
-    def GetSessionLocation(self, request, context):
+    def GetSessionLocation(
+        self, request: core_pb2.GetSessionLocationRequest, context: ServicerContext
+    ) -> core_pb2.GetSessionLocationResponse:
         """
         Retrieve a requested session location
 
@@ -273,7 +291,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.GetSessionLocationResponse(location=location)
 
-    def SetSessionLocation(self, request, context):
+    def SetSessionLocation(
+        self, request: core_pb2.SetSessionLocationRequest, context: ServicerContext
+    ) -> core_pb2.SetSessionLocationResponse:
         """
         Set session location
 
@@ -287,7 +307,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         grpcutils.session_location(session, request.location)
         return core_pb2.SetSessionLocationResponse(result=True)
 
-    def SetSessionState(self, request, context):
+    def SetSessionState(
+        self, request: core_pb2.SetSessionStateRequest, context: ServicerContext
+    ) -> core_pb2.SetSessionStateResponse:
         """
         Set session state
 
@@ -320,7 +342,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.SetSessionStateResponse(result=result)
 
-    def GetSessionOptions(self, request, context):
+    def GetSessionOptions(
+        self, request: core_pb2.GetSessionOptionsRequest, context: ServicerContext
+    ) -> core_pb2.GetSessionOptionsResponse:
         """
         Retrieve session options.
 
@@ -338,7 +362,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = get_config_options(default_config, session.options)
         return core_pb2.GetSessionOptionsResponse(config=config)
 
-    def SetSessionOptions(self, request, context):
+    def SetSessionOptions(
+        self, request: core_pb2.SetSessionOptionsRequest, context: ServicerContext
+    ) -> core_pb2.SetSessionOptionsResponse:
         """
         Update a session's configuration
 
@@ -353,7 +379,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config.update(request.config)
         return core_pb2.SetSessionOptionsResponse(result=True)
 
-    def GetSessionMetadata(self, request, context):
+    def GetSessionMetadata(
+        self, request: core_pb2.GetSessionMetadataRequest, context: ServicerContext
+    ) -> core_pb2.GetSessionMetadataResponse:
         """
         Retrieve session metadata.
 
@@ -367,7 +395,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         return core_pb2.GetSessionMetadataResponse(config=session.metadata)
 
-    def SetSessionMetadata(self, request, context):
+    def SetSessionMetadata(
+        self, request: core_pb2.SetSessionMetadataRequest, context: ServicerContext
+    ) -> core_pb2.SetSessionMetadataResponse:
         """
         Update a session's metadata.
 
@@ -381,7 +411,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.metadata = dict(request.config)
         return core_pb2.SetSessionMetadataResponse(result=True)
 
-    def GetSession(self, request, context):
+    def GetSession(
+        self, request: core_pb2.GetSessionRequest, context: ServicerContext
+    ) -> core_pb2.GetSessionResponse:
         """
         Retrieve requested session
 
@@ -435,7 +467,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
 
-    def AddSessionServer(self, request, context):
+    def AddSessionServer(
+        self, request: core_pb2.AddSessionServerRequest, context: ServicerContext
+    ) -> core_pb2.AddSessionServerResponse:
         """
         Add distributed server to a session.
 
@@ -449,7 +483,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.distributed.add_server(request.name, request.host)
         return core_pb2.AddSessionServerResponse(result=True)
 
-    def Events(self, request, context):
+    def Events(self, request: core_pb2.EventsRequest, context: ServicerContext) -> None:
         session = self.get_session(request.session_id, context)
         event_types = set(request.events)
         if not event_types:
@@ -464,7 +498,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         streamer.remove_handlers()
         self._cancel_stream(context)
 
-    def Throughputs(self, request, context):
+    def Throughputs(
+        self, request: core_pb2.ThroughputsRequest, context: ServicerContext
+    ) -> None:
         """
         Calculate average throughput after every certain amount of delay time
 
@@ -532,7 +568,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             last_stats = stats
             time.sleep(delay)
 
-    def AddNode(self, request, context):
+    def AddNode(
+        self, request: core_pb2.AddNodeRequest, context: ServicerContext
+    ) -> core_pb2.AddNodeResponse:
         """
         Add node to requested session
 
@@ -547,7 +585,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = session.add_node(_type=_type, _id=_id, options=options)
         return core_pb2.AddNodeResponse(node_id=node.id)
 
-    def GetNode(self, request, context):
+    def GetNode(
+        self, request: core_pb2.GetNodeRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeResponse:
         """
         Retrieve node
 
@@ -602,7 +642,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
 
-    def EditNode(self, request, context):
+    def EditNode(
+        self, request: core_pb2.EditNodeRequest, context: ServicerContext
+    ) -> core_pb2.EditNodeResponse:
         """
         Edit node
 
@@ -635,7 +677,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = False
         return core_pb2.EditNodeResponse(result=result)
 
-    def DeleteNode(self, request, context):
+    def DeleteNode(
+        self, request: core_pb2.DeleteNodeRequest, context: ServicerContext
+    ) -> core_pb2.DeleteNodeResponse:
         """
         Delete node
 
@@ -648,7 +692,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         result = session.delete_node(request.node_id)
         return core_pb2.DeleteNodeResponse(result=result)
 
-    def NodeCommand(self, request, context):
+    def NodeCommand(
+        self, request: core_pb2.NodeCommandRequest, context: ServicerContext
+    ) -> core_pb2.NodeCommandResponse:
         """
         Run command on a node
 
@@ -665,7 +711,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             output = e.stderr
         return core_pb2.NodeCommandResponse(output=output)
 
-    def GetNodeTerminal(self, request, context):
+    def GetNodeTerminal(
+        self, request: core_pb2.GetNodeTerminalRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeTerminalResponse:
         """
         Retrieve terminal command string of a node
 
@@ -680,7 +728,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         terminal = node.termcmdstring("/bin/bash")
         return core_pb2.GetNodeTerminalResponse(terminal=terminal)
 
-    def GetNodeLinks(self, request, context):
+    def GetNodeLinks(
+        self, request: core_pb2.GetNodeLinksRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeLinksResponse:
         """
         Retrieve all links form a requested node
 
@@ -695,7 +745,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         links = get_links(session, node)
         return core_pb2.GetNodeLinksResponse(links=links)
 
-    def AddLink(self, request, context):
+    def AddLink(
+        self, request: core_pb2.AddLinkRequest, context: ServicerContext
+    ) -> core_pb2.AddLinkResponse:
         """
         Add link to a session
 
@@ -718,7 +770,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.AddLinkResponse(result=True)
 
-    def EditLink(self, request, context):
+    def EditLink(
+        self, request: core_pb2.EditLinkRequest, context: ServicerContext
+    ) -> core_pb2.EditLinkResponse:
         """
         Edit a link
 
@@ -751,7 +805,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.EditLinkResponse(result=True)
 
-    def DeleteLink(self, request, context):
+    def DeleteLink(
+        self, request: core_pb2.DeleteLinkRequest, context: ServicerContext
+    ) -> core_pb2.DeleteLinkResponse:
         """
         Delete a link
 
@@ -771,7 +827,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.DeleteLinkResponse(result=True)
 
-    def GetHooks(self, request, context):
+    def GetHooks(
+        self, request: core_pb2.GetHooksRequest, context: ServicerContext
+    ) -> core_pb2.GetHooksResponse:
         """
         Retrieve all hooks from a session
 
@@ -790,7 +848,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 hooks.append(hook)
         return core_pb2.GetHooksResponse(hooks=hooks)
 
-    def AddHook(self, request, context):
+    def AddHook(
+        self, request: core_pb2.AddHookRequest, context: ServicerContext
+    ) -> core_pb2.AddHookResponse:
         """
         Add hook to a session
 
@@ -805,7 +865,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.add_hook(hook.state, hook.file, None, hook.data)
         return core_pb2.AddHookResponse(result=True)
 
-    def GetMobilityConfigs(self, request, context):
+    def GetMobilityConfigs(
+        self, request: core_pb2.GetMobilityConfigsRequest, context: ServicerContext
+    ) -> core_pb2.GetMobilityConfigsResponse:
         """
         Retrieve all mobility configurations from a session
 
@@ -831,7 +893,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 response.configs[node_id].CopyFrom(mapped_config)
         return response
 
-    def GetMobilityConfig(self, request, context):
+    def GetMobilityConfig(
+        self, request: core_pb2.GetMobilityConfigRequest, context: ServicerContext
+    ) -> core_pb2.GetMobilityConfigResponse:
         """
         Retrieve mobility configuration of a node
 
@@ -849,7 +913,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = get_config_options(current_config, Ns2ScriptedMobility)
         return core_pb2.GetMobilityConfigResponse(config=config)
 
-    def SetMobilityConfig(self, request, context):
+    def SetMobilityConfig(
+        self, request: core_pb2.SetMobilityConfigRequest, context: ServicerContext
+    ) -> core_pb2.SetMobilityConfigResponse:
         """
         Set mobility configuration of a node
 
@@ -867,7 +933,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.SetMobilityConfigResponse(result=True)
 
-    def MobilityAction(self, request, context):
+    def MobilityAction(
+        self, request: core_pb2.MobilityActionRequest, context: ServicerContext
+    ) -> core_pb2.MobilityActionResponse:
         """
         Take mobility action whether to start, pause, stop or none of those
 
@@ -891,7 +959,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = False
         return core_pb2.MobilityActionResponse(result=result)
 
-    def GetServices(self, request, context):
+    def GetServices(
+        self, request: core_pb2.GetServicesRequest, context: ServicerContext
+    ) -> core_pb2.GetServicesResponse:
         """
         Retrieve all the services that are running
 
@@ -908,7 +978,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services.append(service_proto)
         return core_pb2.GetServicesResponse(services=services)
 
-    def GetServiceDefaults(self, request, context):
+    def GetServiceDefaults(
+        self, request: core_pb2.GetServiceDefaultsRequest, context: ServicerContext
+    ) -> core_pb2.GetServiceDefaultsResponse:
         """
         Retrieve all the default services of all node types in a session
 
@@ -929,7 +1001,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             all_service_defaults.append(service_defaults)
         return core_pb2.GetServiceDefaultsResponse(defaults=all_service_defaults)
 
-    def SetServiceDefaults(self, request, context):
+    def SetServiceDefaults(
+        self, request: core_pb2.SetServiceDefaultsRequest, context: ServicerContext
+    ) -> core_pb2.SetServiceDefaultsResponse:
         """
         Set new default services to the session after whipping out the old ones
         :param core.api.grpc.core_pb2.SetServiceDefaults request: set-service-defaults
@@ -947,7 +1021,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             ] = service_defaults.services
         return core_pb2.SetServiceDefaultsResponse(result=True)
 
-    def GetNodeServiceConfigs(self, request, context):
+    def GetNodeServiceConfigs(
+        self, request: core_pb2.GetNodeServiceConfigsRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeServiceConfigsResponse:
         """
         Retrieve all node service configurations.
 
@@ -973,7 +1049,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 configs.append(config)
         return core_pb2.GetNodeServiceConfigsResponse(configs=configs)
 
-    def GetNodeService(self, request, context):
+    def GetNodeService(
+        self, request: core_pb2.GetNodeServiceRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeServiceResponse:
         """
         Retrieve a requested service from a node
 
@@ -991,7 +1069,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         service_proto = grpcutils.get_service_configuration(service)
         return core_pb2.GetNodeServiceResponse(service=service_proto)
 
-    def GetNodeServiceFile(self, request, context):
+    def GetNodeServiceFile(
+        self, request: core_pb2.GetNodeServiceFileRequest, context: ServicerContext
+    ) -> core_pb2.GetNodeServiceFileResponse:
         """
         Retrieve a requested service file from a node
 
@@ -1009,7 +1089,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.GetNodeServiceFileResponse(data=file_data.data)
 
-    def SetNodeService(self, request, context):
+    def SetNodeService(
+        self, request: core_pb2.SetNodeServiceRequest, context: ServicerContext
+    ) -> core_pb2.SetNodeServiceResponse:
         """
         Set a node service for a node
 
@@ -1025,7 +1107,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         grpcutils.service_configuration(session, config)
         return core_pb2.SetNodeServiceResponse(result=True)
 
-    def SetNodeServiceFile(self, request, context):
+    def SetNodeServiceFile(
+        self, request: core_pb2.SetNodeServiceFileRequest, context: ServicerContext
+    ) -> core_pb2.SetNodeServiceFileResponse:
         """
         Store the customized service file in the service config
 
@@ -1043,9 +1127,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.SetNodeServiceFileResponse(result=True)
 
-    def ServiceAction(self, request, context):
+    def ServiceAction(
+        self, request: core_pb2.ServiceActionRequest, context: ServicerContext
+    ) -> core_pb2.ServiceActionResponse:
         """
-        Take action whether to start, stop, restart, validate the service or none of the above
+        Take action whether to start, stop, restart, validate the service or none of
+        the above.
 
         :param core.api.grpc.core_pb2.ServiceActionRequest  request: service-action request
         :param grpcServicerContext context: context object
@@ -1082,7 +1169,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.ServiceActionResponse(result=result)
 
-    def GetWlanConfigs(self, request, context):
+    def GetWlanConfigs(
+        self, request: core_pb2.GetWlanConfigsRequest, context: ServicerContext
+    ) -> core_pb2.GetWlanConfigsResponse:
         """
         Retrieve all wireless-lan configurations.
 
@@ -1107,7 +1196,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 response.configs[node_id].CopyFrom(mapped_config)
         return response
 
-    def GetWlanConfig(self, request, context):
+    def GetWlanConfig(
+        self, request: core_pb2.GetWlanConfigRequest, context: ServicerContext
+    ) -> core_pb2.GetWlanConfigResponse:
         """
         Retrieve wireless-lan configuration of a node
 
@@ -1124,7 +1215,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = get_config_options(current_config, BasicRangeModel)
         return core_pb2.GetWlanConfigResponse(config=config)
 
-    def SetWlanConfig(self, request, context):
+    def SetWlanConfig(
+        self, request: core_pb2.SetWlanConfigRequest, context: ServicerContext
+    ) -> core_pb2.SetWlanConfigResponse:
         """
         Set configuration data for a model
 
@@ -1144,7 +1237,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node.updatemodel(wlan_config.config)
         return core_pb2.SetWlanConfigResponse(result=True)
 
-    def GetEmaneConfig(self, request, context):
+    def GetEmaneConfig(
+        self, request: core_pb2.GetEmaneConfigRequest, context: ServicerContext
+    ) -> core_pb2.GetEmaneConfigResponse:
         """
         Retrieve EMANE configuration of a session
 
@@ -1159,7 +1254,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = get_config_options(current_config, session.emane.emane_config)
         return core_pb2.GetEmaneConfigResponse(config=config)
 
-    def SetEmaneConfig(self, request, context):
+    def SetEmaneConfig(
+        self, request: core_pb2.SetEmaneConfigRequest, context: ServicerContext
+    ) -> core_pb2.SetEmaneConfigResponse:
         """
         Set EMANE configuration of a session
 
@@ -1174,7 +1271,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config.update(request.config)
         return core_pb2.SetEmaneConfigResponse(result=True)
 
-    def GetEmaneModels(self, request, context):
+    def GetEmaneModels(
+        self, request: core_pb2.GetEmaneModelsRequest, context: ServicerContext
+    ) -> core_pb2.GetEmaneModelsResponse:
         """
         Retrieve all the EMANE models in the session
 
@@ -1192,7 +1291,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             models.append(model)
         return core_pb2.GetEmaneModelsResponse(models=models)
 
-    def GetEmaneModelConfig(self, request, context):
+    def GetEmaneModelConfig(
+        self, request: core_pb2.GetEmaneModelConfigRequest, context: ServicerContext
+    ) -> core_pb2.GetEmaneModelConfigResponse:
         """
         Retrieve EMANE model configuration of a node
 
@@ -1210,7 +1311,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = get_config_options(current_config, model)
         return core_pb2.GetEmaneModelConfigResponse(config=config)
 
-    def SetEmaneModelConfig(self, request, context):
+    def SetEmaneModelConfig(
+        self, request: core_pb2.SetEmaneModelConfigRequest, context: ServicerContext
+    ) -> core_pb2.SetEmaneModelConfigResponse:
         """
         Set EMANE model configuration of a node
 
@@ -1227,7 +1330,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.emane.set_model_config(_id, model_config.model, model_config.config)
         return core_pb2.SetEmaneModelConfigResponse(result=True)
 
-    def GetEmaneModelConfigs(self, request, context):
+    def GetEmaneModelConfigs(
+        self, request: core_pb2.GetEmaneModelConfigsRequest, context: ServicerContext
+    ) -> core_pb2.GetEmaneModelConfigsResponse:
         """
         Retrieve all EMANE model configurations of a session
 
@@ -1261,7 +1366,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 configs.append(model_config)
         return core_pb2.GetEmaneModelConfigsResponse(configs=configs)
 
-    def SaveXml(self, request, context):
+    def SaveXml(
+        self, request: core_pb2.SaveXmlRequest, context: ServicerContext
+    ) -> core_pb2.SaveXmlResponse:
         """
         Export the session nto the EmulationScript XML format
 
@@ -1281,7 +1388,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.SaveXmlResponse(data=data)
 
-    def OpenXml(self, request, context):
+    def OpenXml(
+        self, request: core_pb2.OpenXmlRequest, context: ServicerContext
+    ) -> core_pb2.OpenXmlResponse:
         """
         Import a session from the EmulationScript XML format
 
@@ -1309,7 +1418,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         finally:
             os.unlink(temp.name)
 
-    def GetInterfaces(self, request, context):
+    def GetInterfaces(
+        self, request: core_pb2.GetInterfacesRequest, context: ServicerContext
+    ) -> core_pb2.GetInterfacesResponse:
         """
         Retrieve all the interfaces of the system including bridges, virtual ethernet, and loopback
 
@@ -1329,7 +1440,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interfaces.append(interface)
         return core_pb2.GetInterfacesResponse(interfaces=interfaces)
 
-    def EmaneLink(self, request, context):
+    def EmaneLink(
+        self, request: core_pb2.EmaneLinkRequest, context: ServicerContext
+    ) -> core_pb2.EmaneLinkResponse:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 

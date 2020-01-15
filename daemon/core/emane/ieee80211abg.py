@@ -15,7 +15,7 @@ class EmaneIeee80211abgModel(emanemodel.EmaneModel):
     mac_xml = "ieee80211abgmaclayer.xml"
 
     @classmethod
-    def load(cls, emane_prefix):
+    def load(cls, emane_prefix: str) -> None:
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix, "share/emane/xml/models/mac/ieee80211abg/ieee80211pcr.xml"
         )

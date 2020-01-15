@@ -4,16 +4,22 @@ import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
 from tkinter.font import Font
+from typing import TYPE_CHECKING, Callable
 
+from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import NodeDraw, NodeUtils
 from core.gui.task import BackgroundTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from PIL import ImageTk
 
 TOOLBAR_SIZE = 32
 PICKER_SIZE = 24
@@ -28,11 +34,9 @@ class Toolbar(ttk.Frame):
     Core toolbar class
     """
 
-    def __init__(self, master, app, **kwargs):
+    def __init__(self, master: "Application", app: "Application", **kwargs):
         """
         Create a CoreToolbar instance
-
-        :param tkinter.Frame edit_frame: edit frame
         """
         super().__init__(master, **kwargs)
         self.app = app
@@ -100,7 +104,7 @@ class Toolbar(ttk.Frame):
         self.create_network_button()
         self.create_annotation_button()
 
-    def design_select(self, button):
+    def design_select(self, button: ttk.Button):
         logging.info("selecting design button: %s", button)
         self.select_button.state(["!pressed"])
         self.link_button.state(["!pressed"])
@@ -109,7 +113,7 @@ class Toolbar(ttk.Frame):
         self.annotation_button.state(["!pressed"])
         button.state(["pressed"])
 
-    def runtime_select(self, button):
+    def runtime_select(self, button: ttk.Button):
         logging.info("selecting runtime button: %s", button)
         self.runtime_select_button.state(["!pressed"])
         self.stop_button.state(["!pressed"])
@@ -185,7 +189,7 @@ class Toolbar(ttk.Frame):
             0, lambda: self.show_picker(self.node_button, self.node_picker)
         )
 
-    def show_picker(self, button, picker):
+    def show_picker(self, button: ttk.Button, picker: ttk.Frame):
         x = self.winfo_width() + 1
         y = button.winfo_rooty() - picker.master.winfo_rooty() - 1
         picker.place(x=x, y=y)
@@ -195,7 +199,9 @@ class Toolbar(ttk.Frame):
         self.wait_window(picker)
         self.app.unbind_all("<ButtonRelease-1>")
 
-    def create_picker_button(self, image, func, frame, label):
+    def create_picker_button(
+        self, image: "ImageTk.PhotoImage", func: Callable, frame: ttk.Frame, label: str
+    ):
         """
         Create button and put it on the frame
 
@@ -203,7 +209,6 @@ class Toolbar(ttk.Frame):
         :param func: the command that is executed when button is clicked
         :param tkinter.Frame frame: frame that contains the button
         :param str label: button label
-        :return: nothing
         """
         button = ttk.Button(
             frame, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
@@ -212,7 +217,13 @@ class Toolbar(ttk.Frame):
         button.bind("<ButtonRelease-1>", lambda e: func())
         button.grid(pady=1)
 
-    def create_button(self, frame, image, func, tooltip):
+    def create_button(
+        self,
+        frame: ttk.Frame,
+        image: "ImageTk.PhotoImage",
+        func: Callable,
+        tooltip: str,
+    ):
         button = ttk.Button(frame, image=image, command=func)
         button.image = image
         button.grid(sticky="ew")
@@ -233,8 +244,6 @@ class Toolbar(ttk.Frame):
         """
         Start session handler redraw buttons, send node and link messages to grpc
         server.
-
-        :return: nothing
         """
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
@@ -243,7 +252,7 @@ class Toolbar(ttk.Frame):
         task = BackgroundTask(self, self.app.core.start_session, self.start_callback)
         task.start()
 
-    def start_callback(self, response):
+    def start_callback(self, response: core_pb2.StartSessionResponse):
         self.app.statusbar.progress_bar.stop()
         total = time.perf_counter() - self.time
         message = f"Start ran for {total:.3f} seconds"
@@ -275,7 +284,7 @@ class Toolbar(ttk.Frame):
         dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()
 
-    def update_button(self, button, image, node_draw):
+    def update_button(self, button: ttk.Button, image: "ImageTk", node_draw: NodeDraw):
         logging.info("update button(%s): %s", button, node_draw)
         self.hide_pickers()
         button.configure(image=image)
@@ -298,8 +307,6 @@ class Toolbar(ttk.Frame):
     def create_node_button(self):
         """
         Create network layer button
-
-        :return: nothing
         """
         image = icon(ImageEnum.ROUTER)
         self.node_button = ttk.Button(
@@ -312,8 +319,6 @@ class Toolbar(ttk.Frame):
     def draw_network_picker(self):
         """
         Draw the options for link-layer button.
-
-        :return: nothing
         """
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
@@ -337,8 +342,6 @@ class Toolbar(ttk.Frame):
         """
         Create link-layer node button and the options that represent different
         link-layer node types.
-
-        :return: nothing
         """
         image = icon(ImageEnum.HUB)
         self.network_button = ttk.Button(
@@ -351,8 +354,6 @@ class Toolbar(ttk.Frame):
     def draw_annotation_picker(self):
         """
         Draw the options for marker button.
-
-        :return: nothing
         """
         self.hide_pickers()
         self.annotation_picker = ttk.Frame(self.master)
@@ -379,8 +380,6 @@ class Toolbar(ttk.Frame):
     def create_annotation_button(self):
         """
         Create marker button and options that represent different marker types
-
-        :return: nothing
         """
         image = icon(ImageEnum.MARKER)
         self.annotation_button = ttk.Button(
@@ -417,8 +416,6 @@ class Toolbar(ttk.Frame):
     def click_stop(self):
         """
         redraw buttons on the toolbar, send node and link messages to grpc server
-
-        :return: nothing
         """
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
@@ -426,7 +423,7 @@ class Toolbar(ttk.Frame):
         task = BackgroundTask(self, self.app.core.stop_session, self.stop_callback)
         task.start()
 
-    def stop_callback(self, response):
+    def stop_callback(self, response: core_pb2.StopSessionResponse):
         self.app.statusbar.progress_bar.stop()
         self.set_design()
         total = time.perf_counter() - self.time
@@ -436,7 +433,7 @@ class Toolbar(ttk.Frame):
         if not response.result:
             messagebox.showerror("Stop Error", "Errors stopping session")
 
-    def update_annotation(self, image, shape_type):
+    def update_annotation(self, image: "ImageTk.PhotoImage", shape_type: ShapeType):
         logging.info("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)
@@ -446,7 +443,7 @@ class Toolbar(ttk.Frame):
         if is_marker(shape_type):
             if self.marker_tool:
                 self.marker_tool.destroy()
-            self.marker_tool = MarkerDialog(self.master, self.app)
+            self.marker_tool = MarkerDialog(self.app, self.app)
             self.marker_tool.show()
 
     def click_run_button(self):
@@ -462,7 +459,7 @@ class Toolbar(ttk.Frame):
         self.app.canvas.annotation_type = ShapeType.MARKER
         if self.marker_tool:
             self.marker_tool.destroy()
-        self.marker_tool = MarkerDialog(self.master, self.app)
+        self.marker_tool = MarkerDialog(self.app, self.app)
         self.marker_tool.show()
 
     def click_two_node_button(self):
