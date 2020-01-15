@@ -137,7 +137,7 @@ class CoreGrpcClient:
     Provides convenience methods for interfacing with the CORE grpc server.
     """
 
-    def __init__(self, address="localhost:50051"):
+    def __init__(self, address="localhost:50051", proxy=False):
         """
         Creates a CoreGrpcClient instance.
 
@@ -146,6 +146,7 @@ class CoreGrpcClient:
         self.address = address
         self.stub = None
         self.channel = None
+        self.proxy = proxy
 
     def start_session(
         self,
@@ -1035,7 +1036,9 @@ class CoreGrpcClient:
 
         :return: nothing
         """
-        self.channel = grpc.insecure_channel(self.address)
+        self.channel = grpc.insecure_channel(
+            self.address, options=[("grpc.enable_http_proxy", self.proxy)]
+        )
         self.stub = core_pb2_grpc.CoreApiStub(self.channel)
 
     def close(self):
