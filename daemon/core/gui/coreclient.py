@@ -47,11 +47,11 @@ class Observer:
 
 
 class CoreClient:
-    def __init__(self, app):
+    def __init__(self, app, proxy):
         """
         Create a CoreGrpc instance
         """
-        self.client = client.CoreGrpcClient()
+        self.client = client.CoreGrpcClient(proxy=proxy)
         self.session_id = None
         self.node_ids = []
         self.app = app
