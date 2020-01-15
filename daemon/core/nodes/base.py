@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import threading
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
 import netaddr
 
@@ -15,8 +16,12 @@ from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
 from core.nodes import client
-from core.nodes.interface import TunTap, Veth
-from core.nodes.netclient import get_net_client
+from core.nodes.interface import CoreInterface, TunTap, Veth
+from core.nodes.netclient import LinuxNetClient, get_net_client
+
+if TYPE_CHECKING:
+    from core.emulator.distributed import DistributedServer
+    from core.emulator.session import Session
 
 _DEFAULT_MTU = 1500
 
@@ -29,9 +34,16 @@ class NodeBase:
     apitype = None
 
     # TODO: appears start has no usage, verify and remove
-    def __init__(self, session, _id=None, name=None, start=True, server=None):
+    def __init__(
+        self,
+        session: "Session",
+        _id: int = None,
+        name: str = None,
+        start: bool = True,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
-        Creates a PyCoreObj instance.
+        Creates a NodeBase instance.
 
         :param core.emulator.session.Session session: CORE session object
         :param int _id: id
@@ -63,7 +75,7 @@ class NodeBase:
         use_ovs = session.options.get_config("ovs") == "True"
         self.net_client = get_net_client(use_ovs, self.host_cmd)
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Each object implements its own startup method.
 
@@ -71,7 +83,7 @@ class NodeBase:
         """
         raise NotImplementedError
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Each object implements its own shutdown method.
 
@@ -79,7 +91,14 @@ class NodeBase:
         """
         raise NotImplementedError
 
-    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
+    def host_cmd(
+        self,
+        args: str,
+        env: Dict[str, str] = None,
+        cwd: str = None,
+        wait: bool = True,
+        shell: bool = False,
+    ) -> str:
         """
         Runs a command on the host system or distributed server.
 
@@ -97,7 +116,7 @@ class NodeBase:
         else:
             return self.server.remote_cmd(args, env, cwd, wait)
 
-    def setposition(self, x=None, y=None, z=None):
+    def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
         Set the (x,y,z) position of the object.
 
@@ -109,7 +128,7 @@ class NodeBase:
         """
         return self.position.set(x=x, y=y, z=z)
 
-    def getposition(self):
+    def getposition(self) -> Tuple[float, float, float]:
         """
         Return an (x,y,z) tuple representing this object's position.
 
@@ -118,7 +137,7 @@ class NodeBase:
         """
         return self.position.get()
 
-    def ifname(self, ifindex):
+    def ifname(self, ifindex: int) -> str:
         """
         Retrieve interface name for index.
 
@@ -128,7 +147,7 @@ class NodeBase:
         """
         return self._netif[ifindex].name
 
-    def netifs(self, sort=False):
+    def netifs(self, sort: bool = False) -> List[CoreInterface]:
         """
         Retrieve network interfaces, sorted if desired.
 
@@ -141,7 +160,7 @@ class NodeBase:
         else:
             return list(self._netif.values())
 
-    def numnetif(self):
+    def numnetif(self) -> int:
         """
         Return the attached interface count.
 
@@ -150,7 +169,7 @@ class NodeBase:
         """
         return len(self._netif)
 
-    def getifindex(self, netif):
+    def getifindex(self, netif: CoreInterface) -> int:
         """
         Retrieve index for an interface.
 
@@ -163,7 +182,7 @@ class NodeBase:
                 return ifindex
         return -1
 
-    def newifindex(self):
+    def newifindex(self) -> int:
         """
         Create a new interface index.
 
@@ -176,7 +195,14 @@ class NodeBase:
         self.ifindex += 1
         return ifindex
 
-    def data(self, message_type, lat=None, lon=None, alt=None, source=None):
+    def data(
+        self,
+        message_type: int,
+        lat: float = None,
+        lon: float = None,
+        alt: float = None,
+        source: str = None,
+    ) -> NodeData:
         """
         Build a data object for this node.
 
@@ -223,7 +249,7 @@ class NodeBase:
 
         return node_data
 
-    def all_link_data(self, flags):
+    def all_link_data(self, flags: int) -> List:
         """
         Build CORE Link data for this object. There is no default
         method for PyCoreObjs as PyCoreNodes do not implement this but
@@ -241,7 +267,14 @@ class CoreNodeBase(NodeBase):
     Base class for CORE nodes.
     """
 
-    def __init__(self, session, _id=None, name=None, start=True, server=None):
+    def __init__(
+        self,
+        session: "Session",
+        _id: int = None,
+        name: str = None,
+        start: bool = True,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
         Create a CoreNodeBase instance.
 
@@ -257,7 +290,7 @@ class CoreNodeBase(NodeBase):
         self.nodedir = None
         self.tmpnodedir = False
 
-    def makenodedir(self):
+    def makenodedir(self) -> None:
         """
         Create the node directory.
 
@@ -270,7 +303,7 @@ class CoreNodeBase(NodeBase):
         else:
             self.tmpnodedir = False
 
-    def rmnodedir(self):
+    def rmnodedir(self) -> None:
         """
         Remove the node directory, unless preserve directory has been set.
 
@@ -283,7 +316,7 @@ class CoreNodeBase(NodeBase):
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.nodedir}")
 
-    def addnetif(self, netif, ifindex):
+    def addnetif(self, netif: CoreInterface, ifindex: int) -> None:
         """
         Add network interface to node and set the network interface index if successful.
 
@@ -296,7 +329,7 @@ class CoreNodeBase(NodeBase):
         self._netif[ifindex] = netif
         netif.netindex = ifindex
 
-    def delnetif(self, ifindex):
+    def delnetif(self, ifindex: int) -> None:
         """
         Delete a network interface
 
@@ -309,7 +342,7 @@ class CoreNodeBase(NodeBase):
         netif.shutdown()
         del netif
 
-    def netif(self, ifindex):
+    def netif(self, ifindex: int) -> Optional[CoreInterface]:
         """
         Retrieve network interface.
 
@@ -322,7 +355,7 @@ class CoreNodeBase(NodeBase):
         else:
             return None
 
-    def attachnet(self, ifindex, net):
+    def attachnet(self, ifindex: int, net: "CoreNetworkBase") -> None:
         """
         Attach a network.
 
@@ -334,7 +367,7 @@ class CoreNodeBase(NodeBase):
             raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].attachnet(net)
 
-    def detachnet(self, ifindex):
+    def detachnet(self, ifindex: int) -> None:
         """
         Detach network interface.
 
@@ -345,7 +378,7 @@ class CoreNodeBase(NodeBase):
             raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].detachnet()
 
-    def setposition(self, x=None, y=None, z=None):
+    def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
         """
         Set position.
 
@@ -359,7 +392,9 @@ class CoreNodeBase(NodeBase):
             for netif in self.netifs(sort=True):
                 netif.setposition(x, y, z)
 
-    def commonnets(self, obj, want_ctrl=False):
+    def commonnets(
+        self, obj: "CoreNodeBase", want_ctrl: bool = False
+    ) -> List[Tuple[NodeBase, CoreInterface, CoreInterface]]:
         """
         Given another node or net object, return common networks between
         this node and that object. A list of tuples is returned, with each tuple
@@ -377,10 +412,9 @@ class CoreNodeBase(NodeBase):
             for netif2 in obj.netifs():
                 if netif1.net == netif2.net:
                     common.append((netif1.net, netif1, netif2))
-
         return common
 
-    def cmd(self, args, wait=True, shell=False):
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
         Runs a command within a node container.
 
@@ -393,7 +427,7 @@ class CoreNodeBase(NodeBase):
         """
         raise NotImplementedError
 
-    def termcmdstring(self, sh):
+    def termcmdstring(self, sh: str) -> str:
         """
         Create a terminal command string.
 
@@ -413,14 +447,14 @@ class CoreNode(CoreNodeBase):
 
     def __init__(
         self,
-        session,
-        _id=None,
-        name=None,
-        nodedir=None,
-        bootsh="boot.sh",
-        start=True,
-        server=None,
-    ):
+        session: "Session",
+        _id: int = None,
+        name: str = None,
+        nodedir: str = None,
+        bootsh: str = "boot.sh",
+        start: bool = True,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
         Create a CoreNode instance.
 
@@ -451,17 +485,17 @@ class CoreNode(CoreNodeBase):
         if start:
             self.startup()
 
-    def create_node_net_client(self, use_ovs):
+    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
         Create node network client for running network commands within the nodes
         container.
 
         :param bool use_ovs: True for OVS bridges, False for Linux bridges
-        :return:node network client
+        :return: node network client
         """
         return get_net_client(use_ovs, self.cmd)
 
-    def alive(self):
+    def alive(self) -> bool:
         """
         Check if the node is alive.
 
@@ -475,7 +509,7 @@ class CoreNode(CoreNodeBase):
 
         return True
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Start a new namespace node by invoking the vnoded process that
         allocates a new namespace. Bring up the loopback device and set
@@ -521,7 +555,7 @@ class CoreNode(CoreNodeBase):
             self.privatedir("/var/run")
             self.privatedir("/var/log")
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown logic for simple lxc nodes.
 
@@ -562,7 +596,7 @@ class CoreNode(CoreNodeBase):
             finally:
                 self.rmnodedir()
 
-    def cmd(self, args, wait=True, shell=False):
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
         Runs a command that is used to configure and setup the network within a
         node.
@@ -580,7 +614,7 @@ class CoreNode(CoreNodeBase):
             args = self.client.create_cmd(args)
             return self.server.remote_cmd(args, wait=wait)
 
-    def termcmdstring(self, sh="/bin/sh"):
+    def termcmdstring(self, sh: str = "/bin/sh") -> str:
         """
         Create a terminal command string.
 
@@ -593,7 +627,7 @@ class CoreNode(CoreNodeBase):
         else:
             return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
-    def privatedir(self, path):
+    def privatedir(self, path: str) -> None:
         """
         Create a private directory.
 
@@ -608,7 +642,7 @@ class CoreNode(CoreNodeBase):
         self.host_cmd(f"mkdir -p {hostpath}")
         self.mount(hostpath, path)
 
-    def mount(self, source, target):
+    def mount(self, source: str, target: str) -> None:
         """
         Create and mount a directory.
 
@@ -623,7 +657,7 @@ class CoreNode(CoreNodeBase):
         self.cmd(f"{MOUNT_BIN} -n --bind {source} {target}")
         self._mounts.append((source, target))
 
-    def newifindex(self):
+    def newifindex(self) -> int:
         """
         Retrieve a new interface index.
 
@@ -633,7 +667,7 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             return super().newifindex()
 
-    def newveth(self, ifindex=None, ifname=None):
+    def newveth(self, ifindex: int = None, ifname: str = None) -> int:
         """
         Create a new interface.
 
@@ -690,7 +724,7 @@ class CoreNode(CoreNodeBase):
 
             return ifindex
 
-    def newtuntap(self, ifindex=None, ifname=None):
+    def newtuntap(self, ifindex: int = None, ifname: str = None) -> int:
         """
         Create a new tunnel tap.
 
@@ -720,7 +754,7 @@ class CoreNode(CoreNodeBase):
 
             return ifindex
 
-    def sethwaddr(self, ifindex, addr):
+    def sethwaddr(self, ifindex: int, addr: str) -> None:
         """
         Set hardware addres for an interface.
 
@@ -735,7 +769,7 @@ class CoreNode(CoreNodeBase):
         if self.up:
             self.node_net_client.device_mac(interface.name, addr)
 
-    def addaddr(self, ifindex, addr):
+    def addaddr(self, ifindex: int, addr: str) -> None:
         """
         Add interface address.
 
@@ -753,7 +787,7 @@ class CoreNode(CoreNodeBase):
                 broadcast = "+"
             self.node_net_client.create_address(interface.name, addr, broadcast)
 
-    def deladdr(self, ifindex, addr):
+    def deladdr(self, ifindex: int, addr: str) -> None:
         """
         Delete address from an interface.
 
@@ -772,7 +806,7 @@ class CoreNode(CoreNodeBase):
         if self.up:
             self.node_net_client.delete_address(interface.name, addr)
 
-    def ifup(self, ifindex):
+    def ifup(self, ifindex: int) -> None:
         """
         Bring an interface up.
 
@@ -783,7 +817,14 @@ class CoreNode(CoreNodeBase):
             interface_name = self.ifname(ifindex)
             self.node_net_client.device_up(interface_name)
 
-    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
+    def newnetif(
+        self,
+        net: "CoreNetworkBase" = None,
+        addrlist: List[str] = None,
+        hwaddr: str = None,
+        ifindex: int = None,
+        ifname: str = None,
+    ) -> int:
         """
         Create a new network interface.
 
@@ -827,7 +868,7 @@ class CoreNode(CoreNodeBase):
             self.ifup(ifindex)
             return ifindex
 
-    def addfile(self, srcname, filename):
+    def addfile(self, srcname: str, filename: str) -> None:
         """
         Add a file.
 
@@ -846,7 +887,7 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"mkdir -p {directory}")
             self.server.remote_put(srcname, filename)
 
-    def hostfilename(self, filename):
+    def hostfilename(self, filename: str) -> str:
         """
         Return the name of a node"s file on the host filesystem.
 
@@ -862,7 +903,7 @@ class CoreNode(CoreNodeBase):
         dirname = os.path.join(self.nodedir, dirname)
         return os.path.join(dirname, basename)
 
-    def nodefile(self, filename, contents, mode=0o644):
+    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
         """
         Create a node file with a given mode.
 
@@ -887,7 +928,7 @@ class CoreNode(CoreNodeBase):
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
         )
 
-    def nodefilecopy(self, filename, srcfilename, mode=None):
+    def nodefilecopy(self, filename: str, srcfilename: str, mode: int = None) -> None:
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
@@ -917,7 +958,14 @@ class CoreNetworkBase(NodeBase):
     linktype = LinkTypes.WIRED.value
     is_emane = False
 
-    def __init__(self, session, _id, name, start=True, server=None):
+    def __init__(
+        self,
+        session: "Session",
+        _id: int,
+        name: str,
+        start: bool = True,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
         Create a CoreNetworkBase instance.
 
@@ -932,7 +980,7 @@ class CoreNetworkBase(NodeBase):
         self._linked = {}
         self._linked_lock = threading.Lock()
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Each object implements its own startup method.
 
@@ -940,7 +988,7 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Each object implements its own shutdown method.
 
@@ -948,7 +996,30 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
-    def attach(self, netif):
+    def linknet(self, net: "CoreNetworkBase") -> CoreInterface:
+        """
+        Link network to another.
+
+        :param core.nodes.base.CoreNetworkBase net: network to link with
+        :return: created interface
+        :rtype: core.nodes.interface.Veth
+        """
+        pass
+
+    def getlinknetif(self, net: "CoreNetworkBase") -> CoreInterface:
+        """
+        Return the interface of that links this net with another net.
+
+        :param core.nodes.base.CoreNetworkBase net: interface to get link for
+        :return: interface the provided network is linked to
+        :rtype: core.nodes.interface.CoreInterface
+        """
+        for netif in self.netifs():
+            if hasattr(netif, "othernet") and netif.othernet == net:
+                return netif
+        return None
+
+    def attach(self, netif: CoreInterface) -> None:
         """
         Attach network interface.
 
@@ -961,7 +1032,7 @@ class CoreNetworkBase(NodeBase):
         with self._linked_lock:
             self._linked[netif] = {}
 
-    def detach(self, netif):
+    def detach(self, netif: CoreInterface) -> None:
         """
         Detach network interface.
 
@@ -973,7 +1044,7 @@ class CoreNetworkBase(NodeBase):
         with self._linked_lock:
             del self._linked[netif]
 
-    def all_link_data(self, flags):
+    def all_link_data(self, flags: int) -> List[LinkData]:
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.
@@ -981,7 +1052,6 @@ class CoreNetworkBase(NodeBase):
         :param int flags: message type
         :return: list of link data
         :rtype: list[core.data.LinkData]
-
         """
         all_links = []
 
@@ -1072,7 +1142,7 @@ class Position:
     Helper class for Cartesian coordinate position
     """
 
-    def __init__(self, x=None, y=None, z=None):
+    def __init__(self, x: float = None, y: float = None, z: float = None) -> None:
         """
         Creates a Position instance.
 
@@ -1085,7 +1155,7 @@ class Position:
         self.y = y
         self.z = z
 
-    def set(self, x=None, y=None, z=None):
+    def set(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
         Returns True if the position has actually changed.
 
@@ -1102,7 +1172,7 @@ class Position:
         self.z = z
         return True
 
-    def get(self):
+    def get(self) -> Tuple[float, float, float]:
         """
         Retrieve x,y,z position.
 

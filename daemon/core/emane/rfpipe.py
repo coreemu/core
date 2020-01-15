@@ -15,7 +15,7 @@ class EmaneRfPipeModel(emanemodel.EmaneModel):
     mac_xml = "rfpipemaclayer.xml"
 
     @classmethod
-    def load(cls, emane_prefix):
+    def load(cls, emane_prefix: str) -> None:
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix, "share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
         )

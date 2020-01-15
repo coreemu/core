@@ -1,40 +1,32 @@
+from typing import List, Optional
+
 import netaddr
 
 from core import utils
+from core.api.grpc.core_pb2 import LinkOptions
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
+from core.nodes.base import CoreNetworkBase, CoreNode
+from core.nodes.interface import CoreInterface
 from core.nodes.physical import PhysicalNode
 
 
 class IdGen:
-    def __init__(self, _id=0):
+    def __init__(self, _id: int = 0) -> None:
         self.id = _id
 
-    def next(self):
+    def next(self) -> int:
         self.id += 1
         return self.id
 
 
-def create_interface(node, network, interface_data):
-    """
-    Create an interface for a node on a network using provided interface data.
-
-    :param node: node to create interface for
-    :param core.nodes.base.CoreNetworkBase network: network to associate interface with
-    :param core.emulator.emudata.InterfaceData interface_data: interface data
-    :return: created interface
-    """
-    node.newnetif(
-        network,
-        addrlist=interface_data.get_addresses(),
-        hwaddr=interface_data.mac,
-        ifindex=interface_data.id,
-        ifname=interface_data.name,
-    )
-    return node.netif(interface_data.id)
-
-
-def link_config(network, interface, link_options, devname=None, interface_two=None):
+def link_config(
+    network: CoreNetworkBase,
+    interface: CoreInterface,
+    link_options: LinkOptions,
+    devname: str = None,
+    interface_two: CoreInterface = None,
+) -> None:
     """
     Convenience method for configuring a link,
 
@@ -68,7 +60,7 @@ class NodeOptions:
     Options for creating and updating nodes within core.
     """
 
-    def __init__(self, name=None, model="PC", image=None):
+    def __init__(self, name: str = None, model: str = "PC", image: str = None) -> None:
         """
         Create a NodeOptions object.
 
@@ -93,7 +85,7 @@ class NodeOptions:
         self.image = image
         self.emane = None
 
-    def set_position(self, x, y):
+    def set_position(self, x: float, y: float) -> None:
         """
         Convenience method for setting position.
 
@@ -104,7 +96,7 @@ class NodeOptions:
         self.x = x
         self.y = y
 
-    def set_location(self, lat, lon, alt):
+    def set_location(self, lat: float, lon: float, alt: float) -> None:
         """
         Convenience method for setting location.
 
@@ -123,7 +115,7 @@ class LinkOptions:
     Options for creating and updating links within core.
     """
 
-    def __init__(self, _type=LinkTypes.WIRED):
+    def __init__(self, _type: LinkTypes = LinkTypes.WIRED) -> None:
         """
         Create a LinkOptions object.
 
@@ -148,12 +140,96 @@ class LinkOptions:
         self.opaque = None
 
 
+class InterfaceData:
+    """
+    Convenience class for storing interface data.
+    """
+
+    def __init__(
+        self,
+        _id: int,
+        name: str,
+        mac: str,
+        ip4: str,
+        ip4_mask: int,
+        ip6: str,
+        ip6_mask: int,
+    ) -> None:
+        """
+        Creates an InterfaceData object.
+
+        :param int _id: interface id
+        :param str name: name for interface
+        :param str mac: mac address
+        :param str ip4: ipv4 address
+        :param int ip4_mask: ipv4 bit mask
+        :param str ip6: ipv6 address
+        :param int ip6_mask: ipv6 bit mask
+        """
+        self.id = _id
+        self.name = name
+        self.mac = mac
+        self.ip4 = ip4
+        self.ip4_mask = ip4_mask
+        self.ip6 = ip6
+        self.ip6_mask = ip6_mask
+
+    def has_ip4(self) -> bool:
+        """
+        Determines if interface has an ip4 address.
+
+        :return: True if has ip4, False otherwise
+        """
+        return all([self.ip4, self.ip4_mask])
+
+    def has_ip6(self) -> bool:
+        """
+        Determines if interface has an ip6 address.
+
+        :return: True if has ip6, False otherwise
+        """
+        return all([self.ip6, self.ip6_mask])
+
+    def ip4_address(self) -> Optional[str]:
+        """
+        Retrieve a string representation of the ip4 address and netmask.
+
+        :return: ip4 string or None
+        """
+        if self.has_ip4():
+            return f"{self.ip4}/{self.ip4_mask}"
+        else:
+            return None
+
+    def ip6_address(self) -> Optional[str]:
+        """
+        Retrieve a string representation of the ip6 address and netmask.
+
+        :return: ip4 string or None
+        """
+        if self.has_ip6():
+            return f"{self.ip6}/{self.ip6_mask}"
+        else:
+            return None
+
+    def get_addresses(self) -> List[str]:
+        """
+        Returns a list of ip4 and ip6 address when present.
+
+        :return: list of addresses
+        :rtype: list
+        """
+        ip4 = self.ip4_address()
+        ip6 = self.ip6_address()
+        return [i for i in [ip4, ip6] if i]
+
+
 class IpPrefixes:
     """
     Convenience class to help generate IP4 and IP6 addresses for nodes within CORE.
     """
 
-    def __init__(self, ip4_prefix=None, ip6_prefix=None):
+    def __init__(self, ip4_prefix: str = None, ip6_prefix: str = None) -> None:
         """
         Creates an IpPrefixes object.
 
@@ -171,7 +247,7 @@ class IpPrefixes:
         if ip6_prefix:
             self.ip6 = netaddr.IPNetwork(ip6_prefix)
 
-    def ip4_address(self, node):
+    def ip4_address(self, node: CoreNode) -> str:
         """
         Convenience method to return the IP4 address for a node.
 
@@ -183,7 +259,7 @@ class IpPrefixes:
             raise ValueError("ip4 prefixes have not been set")
         return str(self.ip4[node.id])
 
-    def ip6_address(self, node):
+    def ip6_address(self, node: CoreNode) -> str:
         """
         Convenience method to return the IP6 address for a node.
 
@@ -195,7 +271,9 @@ class IpPrefixes:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node.id])
 
-    def create_interface(self, node, name=None, mac=None):
+    def create_interface(
+        self, node: CoreNode, name: str = None, mac: str = None
+    ) -> InterfaceData:
         """
         Creates interface data for linking nodes, using the nodes unique id for
         generation, along with a random mac address, unless provided.
@@ -239,76 +317,22 @@ class IpPrefixes:
         )
 
 
-class InterfaceData:
+def create_interface(
+    node: CoreNode, network: CoreNetworkBase, interface_data: InterfaceData
+):
     """
-    Convenience class for storing interface data.
+    Create an interface for a node on a network using provided interface data.
+
+    :param node: node to create interface for
+    :param core.nodes.base.CoreNetworkBase network: network to associate interface with
+    :param core.emulator.emudata.InterfaceData interface_data: interface data
+    :return: created interface
     """
-
-    def __init__(self, _id, name, mac, ip4, ip4_mask, ip6, ip6_mask):
-        """
-        Creates an InterfaceData object.
-
-        :param int _id: interface id
-        :param str name: name for interface
-        :param str mac: mac address
-        :param str ip4: ipv4 address
-        :param int ip4_mask: ipv4 bit mask
-        :param str ip6: ipv6 address
-        :param int ip6_mask: ipv6 bit mask
-        """
-        self.id = _id
-        self.name = name
-        self.mac = mac
-        self.ip4 = ip4
-        self.ip4_mask = ip4_mask
-        self.ip6 = ip6
-        self.ip6_mask = ip6_mask
-
-    def has_ip4(self):
-        """
-        Determines if interface has an ip4 address.
-
-        :return: True if has ip4, False otherwise
-        """
-        return all([self.ip4, self.ip4_mask])
-
-    def has_ip6(self):
-        """
-        Determines if interface has an ip6 address.
-
-        :return: True if has ip6, False otherwise
-        """
-        return all([self.ip6, self.ip6_mask])
-
-    def ip4_address(self):
-        """
-        Retrieve a string representation of the ip4 address and netmask.
-
-        :return: ip4 string or None
-        """
-        if self.has_ip4():
-            return f"{self.ip4}/{self.ip4_mask}"
-        else:
-            return None
-
-    def ip6_address(self):
-        """
-        Retrieve a string representation of the ip6 address and netmask.
-
-        :return: ip4 string or None
-        """
-        if self.has_ip6():
-            return f"{self.ip6}/{self.ip6_mask}"
-        else:
-            return None
-
-    def get_addresses(self):
-        """
-        Returns a list of ip4 and ip6 address when present.
-
-        :return: list of addresses
-        :rtype: list
-        """
-        ip4 = self.ip4_address()
-        ip6 = self.ip6_address()
-        return [i for i in [ip4, ip6] if i]
+    node.newnetif(
+        network,
+        addrlist=interface_data.get_addresses(),
+        hwaddr=interface_data.mac,
+        ifindex=interface_data.id,
+        ifname=interface_data.name,
+    )
+    return node.netif(interface_data.id)

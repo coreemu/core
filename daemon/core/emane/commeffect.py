@@ -4,11 +4,13 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
+from typing import Dict, List
 
 from lxml import etree
 
-from core.config import ConfigGroup
+from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
+from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
 try:
@@ -20,7 +22,7 @@ except ImportError:
         logging.debug("compatible emane python bindings not installed")
 
 
-def convert_none(x):
+def convert_none(x: float) -> int:
     """
     Helper to use 0 for None values.
     """
@@ -45,19 +47,21 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     external_config = []
 
     @classmethod
-    def load(cls, emane_prefix):
+    def load(cls, emane_prefix: str) -> None:
         shim_xml_path = os.path.join(emane_prefix, "share/emane/manifest", cls.shim_xml)
         cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod
-    def configurations(cls):
+    def configurations(cls) -> List[Configuration]:
         return cls.config_shim
 
     @classmethod
-    def config_groups(cls):
+    def config_groups(cls) -> List[ConfigGroup]:
         return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
 
-    def build_xml_files(self, config, interface=None):
+    def build_xml_files(
+        self, config: Dict[str, str], interface: CoreInterface = None
+    ) -> None:
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
@@ -109,14 +113,14 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
     def linkconfig(
         self,
-        netif,
-        bw=None,
-        delay=None,
-        loss=None,
-        duplicate=None,
-        jitter=None,
-        netif2=None,
-    ):
+        netif: CoreInterface,
+        bw: float = None,
+        delay: float = None,
+        loss: float = None,
+        duplicate: float = None,
+        jitter: float = None,
+        netif2: CoreInterface = None,
+    ) -> None:
         """
         Generate CommEffect events when a Link Message is received having
         link parameters.
