@@ -366,7 +366,7 @@ class TunTap(CoreInterface):
         self.up = False
 
     def waitfor(
-        self, func: Callable, attempts: int = 10, maxretrydelay: float = 0.25
+        self, func: Callable[[], int], attempts: int = 10, maxretrydelay: float = 0.25
     ) -> bool:
         """
         Wait for func() to return zero with exponential backoff.

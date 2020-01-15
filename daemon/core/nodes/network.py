@@ -239,7 +239,7 @@ class EbtablesQueue:
 ebq = EbtablesQueue()
 
 
-def ebtablescmds(call: Callable, cmds: List[str]) -> None:
+def ebtablescmds(call: Callable[..., str], cmds: List[str]) -> None:
     """
     Run ebtable commands.
 

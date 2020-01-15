@@ -12,7 +12,7 @@ class LinuxNetClient:
     Client for creating Linux bridges and ip interfaces for nodes.
     """
 
-    def __init__(self, run: Callable) -> None:
+    def __init__(self, run: Callable[..., str]) -> None:
         """
         Create LinuxNetClient instance.
 
@@ -360,7 +360,7 @@ class OvsNetClient(LinuxNetClient):
         self.run(f"{OVS_BIN} set bridge {name} other_config:mac-aging-time=0")
 
 
-def get_net_client(use_ovs: bool, run: Callable) -> LinuxNetClient:
+def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:
     """
     Retrieve desired net client for running network commands.
 

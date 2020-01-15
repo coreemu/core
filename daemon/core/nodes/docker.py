@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class DockerClient:
-    def __init__(self, name: str, image: str, run: Callable) -> None:
+    def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
         self.name = name
         self.image = image
         self.run = run

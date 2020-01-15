@@ -167,7 +167,7 @@ def which(command: str, required: bool) -> str:
     return found_path
 
 
-def make_tuple(obj: Any) -> Tuple[Any]:
+def make_tuple(obj: Generic[T]) -> Tuple[T]:
     """
     Create a tuple from an object, or return the object itself.
 
@@ -181,7 +181,7 @@ def make_tuple(obj: Any) -> Tuple[Any]:
         return (obj,)
 
 
-def make_tuple_fromstr(s: str, value_type: Callable) -> Tuple[Any]:
+def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> Tuple[T]:
     """
     Create a tuple from a string.
 
@@ -200,11 +200,11 @@ def make_tuple_fromstr(s: str, value_type: Callable) -> Tuple[Any]:
     return tuple(value_type(i) for i in values)
 
 
-def mute_detach(args: List[str], **kwargs: Dict[str, Any]) -> int:
+def mute_detach(args: str, **kwargs: Dict[str, Any]) -> int:
     """
     Run a muted detached process by forking it.
 
-    :param list[str]|str args: arguments for the command
+    :param str args: arguments for the command
     :param dict kwargs: keyword arguments for the command
     :return: process id of the command
     :rtype: int

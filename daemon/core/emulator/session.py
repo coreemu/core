@@ -1206,7 +1206,7 @@ class Session:
                     ExceptionLevels.ERROR, "Session.run_state_hooks", None, message
                 )
 
-    def add_state_hook(self, state: int, hook: Callable) -> None:
+    def add_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
         """
         Add a state hook.
 
@@ -1222,7 +1222,7 @@ class Session:
         if self.state == state:
             hook(state)
 
-    def del_state_hook(self, state: int, hook: Callable) -> None:
+    def del_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
         """
         Delete a state hook.
 

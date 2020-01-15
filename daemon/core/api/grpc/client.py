@@ -105,7 +105,7 @@ class InterfaceHelper:
         )
 
 
-def stream_listener(stream: Any, handler: Callable) -> None:
+def stream_listener(stream: Any, handler: Callable[[core_pb2.Event], None]) -> None:
     """
     Listen for stream events and provide them to the handler.
 
@@ -123,7 +123,7 @@ def stream_listener(stream: Any, handler: Callable) -> None:
             logging.exception("stream error")
 
 
-def start_streamer(stream: Any, handler: Callable) -> None:
+def start_streamer(stream: Any, handler: Callable[[core_pb2.Event], None]) -> None:
     """
     Convenience method for starting a grpc stream thread for handling streamed events.
 
@@ -402,7 +402,10 @@ class CoreGrpcClient:
         return self.stub.AddSessionServer(request)
 
     def events(
-        self, session_id: int, handler: Callable, events: List[core_pb2.Event] = None
+        self,
+        session_id: int,
+        handler: Callable[[core_pb2.Event], None],
+        events: List[core_pb2.Event] = None,
     ) -> Any:
         """
         Listen for session events.
@@ -419,7 +422,9 @@ class CoreGrpcClient:
         start_streamer(stream, handler)
         return stream
 
-    def throughputs(self, session_id: int, handler: Callable) -> Any:
+    def throughputs(
+        self, session_id: int, handler: Callable[[core_pb2.ThroughputsEvent], None]
+    ) -> Any:
         """
         Listen for throughput events with information for interfaces and bridges.
 

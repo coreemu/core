@@ -21,7 +21,6 @@ from core.nodes.network import CoreNetwork, CtrlNet
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
-
 LOCK = threading.Lock()
 CMD_HIDE = True
 
@@ -139,7 +138,7 @@ class DistributedController:
         cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)
 
-    def execute(self, func: Callable) -> None:
+    def execute(self, func: Callable[[DistributedServer], None]) -> None:
         """
         Convenience for executing logic against all distributed servers.
 
