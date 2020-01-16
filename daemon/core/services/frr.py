@@ -5,8 +5,8 @@ Assumes installation of FRR via https://deb.frrouting.org/
 import netaddr
 
 from core import constants
-from core.emulator.enumerations import LinkTypes
-from core.nodes.network import PtpNet
+from core.emane.nodes import EmaneNet
+from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
 
@@ -606,7 +606,7 @@ class FRRBabel(FrrService):
 
     @classmethod
     def generatefrrifcconfig(cls, node, ifc):
-        if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS.value:
+        if ifc.net and isinstance(ifc.net, (EmaneNet, WlanNode)):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"
