@@ -268,7 +268,9 @@ class LinuxNetClient:
         output = self.run(f"{IP_BIN} -j link show type bridge")
         bridges = json.loads(output)
         for bridge in bridges:
-            name = bridge["ifname"]
+            name = bridge.get("ifname")
+            if not name:
+                continue
             fields = name.split(".")
             if len(fields) != 3:
                 continue
