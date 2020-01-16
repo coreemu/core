@@ -69,7 +69,7 @@ class EmaneManager(ModelManager):
         """
         Creates a Emane instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param session: session this manager is tied to
         :return: nothing
         """
         super().__init__()
@@ -100,12 +100,11 @@ class EmaneManager(ModelManager):
         """
         Retrieve interface configuration or node configuration if not provided.
 
-        :param int node_id: node id
+        :param node_id: node id
         :param interface: node interface
-        :param str model_name: model to get configuration for
+        :param model_name: model to get configuration for
         :return: node/interface model configuration
-        :rtype: dict
-        """
+"""
         # use the network-wide config values or interface(NEM)-specific values?
         if interface is None:
             return self.get_configs(node_id=node_id, config_type=model_name)
@@ -231,7 +230,7 @@ class EmaneManager(ModelManager):
         """
         Add EMANE network object to this manager.
 
-        :param core.emane.nodes.EmaneNet emane_net: emane node to add
+        :param emane_net: emane node to add
         :return: nothing
         """
         with self._emane_node_lock:
@@ -259,8 +258,7 @@ class EmaneManager(ModelManager):
 
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
-        :rtype: int
-        """
+"""
         logging.debug("emane setup")
 
         # TODO: drive this from the session object
@@ -318,8 +316,7 @@ class EmaneManager(ModelManager):
 
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
-        :rtype: int
-        """
+"""
         self.reset()
         r = self.setup()
 

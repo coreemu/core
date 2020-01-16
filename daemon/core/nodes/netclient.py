@@ -24,7 +24,7 @@ class LinuxNetClient:
         """
         Set network hostname.
 
-        :param str name: name for hostname
+        :param name: name for hostname
         :return: nothing
         """
         self.run(f"hostname {name}")
@@ -33,8 +33,8 @@ class LinuxNetClient:
         """
         Create a new route for a device.
 
-        :param str route: route to create
-        :param str device: device to add route to
+        :param route: route to create
+        :param device: device to add route to
         :return: nothing
         """
         self.run(f"{IP_BIN} route add {route} dev {device}")
@@ -43,7 +43,7 @@ class LinuxNetClient:
         """
         Bring a device up.
 
-        :param str device: device to bring up
+        :param device: device to bring up
         :return: nothing
         """
         self.run(f"{IP_BIN} link set {device} up")
@@ -52,7 +52,7 @@ class LinuxNetClient:
         """
         Bring a device down.
 
-        :param str device: device to bring down
+        :param device: device to bring down
         :return: nothing
         """
         self.run(f"{IP_BIN} link set {device} down")
@@ -61,8 +61,8 @@ class LinuxNetClient:
         """
         Set a device name.
 
-        :param str device: device to set name for
-        :param str name: name to set
+        :param device: device to set name for
+        :param name: name to set
         :return: nothing
         """
         self.run(f"{IP_BIN} link set {device} name {name}")
@@ -71,38 +71,35 @@ class LinuxNetClient:
         """
         Show information for a device.
 
-        :param str device: device to get information for
+        :param device: device to get information for
         :return: device information
-        :rtype: str
-        """
+"""
         return self.run(f"{IP_BIN} link show {device}")
 
     def get_mac(self, device: str) -> str:
         """
         Retrieve MAC address for a given device.
 
-        :param str device: device to get mac for
+        :param device: device to get mac for
         :return: MAC address
-        :rtype: str
-        """
+"""
         return self.run(f"cat /sys/class/net/{device}/address")
 
     def get_ifindex(self, device: str) -> str:
         """
         Retrieve ifindex for a given device.
 
-        :param str device: device to get ifindex for
+        :param device: device to get ifindex for
         :return: ifindex
-        :rtype: str
-        """
+"""
         return self.run(f"cat /sys/class/net/{device}/ifindex")
 
     def device_ns(self, device: str, namespace: str) -> None:
         """
         Set netns for a device.
 
-        :param str device: device to setns for
-        :param str namespace: namespace to set device to
+        :param device: device to setns for
+        :param namespace: namespace to set device to
         :return: nothing
         """
         self.run(f"{IP_BIN} link set {device} netns {namespace}")
@@ -111,7 +108,7 @@ class LinuxNetClient:
         """
         Flush device addresses.
 
-        :param str device: device to flush
+        :param device: device to flush
         :return: nothing
         """
         self.run(
@@ -123,8 +120,8 @@ class LinuxNetClient:
         """
         Set MAC address for a device.
 
-        :param str device: device to set mac for
-        :param str mac: mac to set
+        :param device: device to set mac for
+        :param mac: mac to set
         :return: nothing
         """
         self.run(f"{IP_BIN} link set dev {device} address {mac}")
@@ -133,7 +130,7 @@ class LinuxNetClient:
         """
         Delete device.
 
-        :param str device: device to delete
+        :param device: device to delete
         :return: nothing
         """
         self.run(f"{IP_BIN} link delete {device}")
@@ -142,7 +139,7 @@ class LinuxNetClient:
         """
         Remove traffic control settings for a device.
 
-        :param str device: device to remove tc
+        :param device: device to remove tc
         :return: nothing
         """
         self.run(f"{TC_BIN} qdisc delete dev {device} root")
@@ -151,7 +148,7 @@ class LinuxNetClient:
         """
         Turns interface checksums off.
 
-        :param str interface_name: interface to update
+        :param interface_name: interface to update
         :return: nothing
         """
         self.run(f"{ETHTOOL_BIN} -K {interface_name} rx off tx off")
@@ -160,9 +157,9 @@ class LinuxNetClient:
         """
         Create address for a device.
 
-        :param str device: device to add address to
-        :param str address: address to add
-        :param str broadcast: broadcast address to use, default is None
+        :param device: device to add address to
+        :param address: address to add
+        :param broadcast: broadcast address to use, default is None
         :return: nothing
         """
         if broadcast is not None:
@@ -176,8 +173,8 @@ class LinuxNetClient:
         """
         Delete an address from a device.
 
-        :param str device: targeted device
-        :param str address: address to remove
+        :param device: targeted device
+        :param address: address to remove
         :return: nothing
         """
         self.run(f"{IP_BIN} address delete {address} dev {device}")
@@ -186,8 +183,8 @@ class LinuxNetClient:
         """
         Create a veth pair.
 
-        :param str name: veth name
-        :param str peer: peer name
+        :param name: veth name
+        :param peer: peer name
         :return: nothing
         """
         self.run(f"{IP_BIN} link add name {name} type veth peer name {peer}")
@@ -198,11 +195,11 @@ class LinuxNetClient:
         """
         Create a GRE tap on a device.
 
-        :param str device: device to add tap to
-        :param str address: address to add tap for
-        :param str local: local address to tie to
-        :param int ttl: time to live value
-        :param int key: key for tap
+        :param device: device to add tap to
+        :param address: address to add tap for
+        :param local: local address to tie to
+        :param ttl: time to live value
+        :param key: key for tap
         :return: nothing
         """
         cmd = f"{IP_BIN} link add {device} type gretap remote {address}"
@@ -218,7 +215,7 @@ class LinuxNetClient:
         """
         Create a Linux bridge and bring it up.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.run(f"{IP_BIN} link add name {name} type bridge")
@@ -231,7 +228,7 @@ class LinuxNetClient:
         """
         Bring down and delete a Linux bridge.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.device_down(name)
@@ -241,8 +238,8 @@ class LinuxNetClient:
         """
         Create an interface associated with a Linux bridge.
 
-        :param str bridge_name: bridge name
-        :param str interface_name: interface name
+        :param bridge_name: bridge name
+        :param interface_name: interface name
         :return: nothing
         """
         self.run(f"{IP_BIN} link set dev {interface_name} master {bridge_name}")
@@ -252,8 +249,8 @@ class LinuxNetClient:
         """
         Delete an interface associated with a Linux bridge.
 
-        :param str bridge_name: bridge name
-        :param str interface_name: interface name
+        :param bridge_name: bridge name
+        :param interface_name: interface name
         :return: nothing
         """
         self.run(f"{IP_BIN} link set dev {interface_name} nomaster")
@@ -282,7 +279,7 @@ class LinuxNetClient:
         """
         Disable mac learning for a Linux bridge.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.run(f"{IP_BIN} link set {name} type bridge ageing_time 0")
@@ -297,7 +294,7 @@ class OvsNetClient(LinuxNetClient):
         """
         Create a OVS bridge and bring it up.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.run(f"{OVS_BIN} add-br {name}")
@@ -310,7 +307,7 @@ class OvsNetClient(LinuxNetClient):
         """
         Bring down and delete a OVS bridge.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.device_down(name)
@@ -320,8 +317,8 @@ class OvsNetClient(LinuxNetClient):
         """
         Create an interface associated with a network bridge.
 
-        :param str bridge_name: bridge name
-        :param str interface_name: interface name
+        :param bridge_name: bridge name
+        :param interface_name: interface name
         :return: nothing
         """
         self.run(f"{OVS_BIN} add-port {bridge_name} {interface_name}")
@@ -331,8 +328,8 @@ class OvsNetClient(LinuxNetClient):
         """
         Delete an interface associated with a OVS bridge.
 
-        :param str bridge_name: bridge name
-        :param str interface_name: interface name
+        :param bridge_name: bridge name
+        :param interface_name: interface name
         :return: nothing
         """
         self.run(f"{OVS_BIN} del-port {bridge_name} {interface_name}")
@@ -356,7 +353,7 @@ class OvsNetClient(LinuxNetClient):
         """
         Disable mac learning for a OVS bridge.
 
-        :param str name: bridge name
+        :param name: bridge name
         :return: nothing
         """
         self.run(f"{OVS_BIN} set bridge {name} other_config:mac-aging-time=0")
@@ -366,8 +363,8 @@ def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:
     """
     Retrieve desired net client for running network commands.
 
-    :param bool use_ovs: True for OVS bridges, False for Linux bridges
-    :param func run: function used to run net client commands
+    :param use_ovs: True for OVS bridges, False for Linux bridges
+    :param run: function used to run net client commands
     :return: net client class
     """
     if use_ovs:

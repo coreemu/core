@@ -52,7 +52,7 @@ class EmaneModel(WirelessModel):
         Called after being loaded within the EmaneManager. Provides configured emane_prefix for
         parsing xml files.
 
-        :param str emane_prefix: configured emane prefix path
+        :param emane_prefix: configured emane prefix path
         :return: nothing
         """
         manifest_path = "share/emane/manifest"
@@ -70,8 +70,7 @@ class EmaneModel(WirelessModel):
         Returns the combination all all configurations (mac, phy, and external).
 
         :return: all configurations
-        :rtype: list[Configuration]
-        """
+"""
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
@@ -80,8 +79,7 @@ class EmaneModel(WirelessModel):
         Returns the defined configuration groups.
 
         :return: list of configuration groups.
-        :rtype: list[ConfigGroup]
-        """
+"""
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
@@ -98,7 +96,7 @@ class EmaneModel(WirelessModel):
         Builds xml files for this emane model. Creates a nem.xml file that points to
         both mac.xml and phy.xml definitions.
 
-        :param dict config: emane model configuration for the node and interface
+        :param config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
@@ -145,8 +143,8 @@ class EmaneModel(WirelessModel):
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
-        :param bool moved: were nodes moved
-        :param list moved_netifs: interfaces that were moved
+        :param moved: were nodes moved
+        :param moved_netifs: interfaces that were moved
         :return: nothing
         """
         try:
@@ -168,13 +166,13 @@ class EmaneModel(WirelessModel):
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param core.nodes.interface.Veth netif: interface one
+        :param netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
-        :param core.netns.vif.Veth netif2: interface two
+        :param netif2: interface two
         :return: nothing
         """
         logging.warning(

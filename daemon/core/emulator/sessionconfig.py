@@ -76,12 +76,11 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         """
         Retrieves a specific configuration for a node and configuration type.
 
-        :param str _id: specific configuration to retrieve
-        :param int node_id: node id to store configuration for
-        :param str config_type: configuration type to store configuration for
+        :param _id: specific configuration to retrieve
+        :param node_id: node id to store configuration for
+        :param config_type: configuration type to store configuration for
         :param default: default value to return when value is not found
         :return: configuration value
-        :rtype str
         """
         value = super().get_config(_id, node_id, config_type, default)
         if value == "":

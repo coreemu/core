@@ -62,7 +62,7 @@ class PhysicalNode(CoreNodeBase):
         """
         Create a terminal command string.
 
-        :param str sh: shell to execute command in
+        :param sh: shell to execute command in
         :return: str
         """
         return sh
@@ -71,8 +71,8 @@ class PhysicalNode(CoreNodeBase):
         """
         Set hardware address for an interface.
 
-        :param int ifindex: index of interface to set hardware address for
-        :param str addr: hardware address to set
+        :param ifindex: index of interface to set hardware address for
+        :param addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -86,8 +86,8 @@ class PhysicalNode(CoreNodeBase):
         """
         Add an address to an interface.
 
-        :param int ifindex: index of interface to add address to
-        :param str addr: address to add
+        :param ifindex: index of interface to add address to
+        :param addr: address to add
         :return: nothing
         """
         addr = utils.validate_ip(addr)
@@ -100,8 +100,8 @@ class PhysicalNode(CoreNodeBase):
         """
         Delete an address from an interface.
 
-        :param int ifindex: index of interface to delete
-        :param str addr: address to delete
+        :param ifindex: index of interface to delete
+        :param addr: address to delete
         :return: nothing
         """
         interface = self._netif[ifindex]
@@ -279,12 +279,12 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Create an RJ45Node instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param int _id: node id
-        :param str name: node name
+        :param session: core session instance
+        :param _id: node id
+        :param name: node name
         :param mtu: rj45 mtu
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
@@ -339,7 +339,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Attach a network.
 
-        :param core.nodes.base.CoreNetworkBase net: network to attach
+        :param net: network to attach
         :return: nothing
         """
         CoreInterface.attachnet(self, net)
@@ -367,14 +367,13 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         represents an interface, we do not create another object here,
         but attach ourselves to the given network.
 
-        :param core.nodes.base.CoreNetworkBase net: new network instance
-        :param list[str] addrlist: address list
-        :param str hwaddr: hardware address
-        :param int ifindex: interface index
-        :param str ifname: interface name
+        :param net: new network instance
+        :param addrlist: address list
+        :param hwaddr: hardware address
+        :param ifindex: interface index
+        :param ifname: interface name
         :return: interface index
-        :rtype: int
-        :raises ValueError: when an interface has already been created, one max
+:raises ValueError: when an interface has already been created, one max
         """
         with self.lock:
             if ifindex is None:
@@ -401,7 +400,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Delete a network interface.
 
-        :param int ifindex: interface index to delete
+        :param ifindex: interface index to delete
         :return: nothing
         """
         if ifindex is None:
@@ -422,11 +421,10 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         return self here. This keeps the RJ45Node compatible with
         real nodes.
 
-        :param int ifindex: interface index to retrieve
+        :param ifindex: interface index to retrieve
         :param net: network to retrieve
         :return: a network interface
-        :rtype: core.nodes.interface,CoreInterface
-        """
+"""
         if net is not None and net == self.net:
             return self
 
@@ -442,11 +440,10 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Retrieve network interface index.
 
-        :param core.nodes.interface.CoreInterface netif: network interface to retrieve
+        :param netif: network interface to retrieve
             index for
         :return: interface index, None otherwise
-        :rtype: int
-        """
+"""
         if netif != self:
             return None
         return self.ifindex
@@ -455,7 +452,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Add address to to network interface.
 
-        :param str addr: address to add
+        :param addr: address to add
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
@@ -468,7 +465,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Delete address from network interface.
 
-        :param str addr: address to delete
+        :param addr: address to delete
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
@@ -525,12 +522,11 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Uses setposition from both parent classes.
 
-        :param float x: x position
-        :param float y: y position
-        :param float z: z position
+        :param x: x position
+        :param y: y position
+        :param z: z position
         :return: True if position changed, False otherwise
-        :rtype: bool
-        """
+"""
         result = CoreNodeBase.setposition(self, x, y, z)
         CoreInterface.setposition(self, x, y, z)
         return result
@@ -539,7 +535,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Create a terminal command string.
 
-        :param str sh: shell to execute command in
+        :param sh: shell to execute command in
         :return: str
         """
         raise NotImplementedError

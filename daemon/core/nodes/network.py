@@ -100,10 +100,9 @@ class EbtablesQueue:
         """
         Helper for building ebtables atomic file command list.
 
-        :param str cmd: ebtable command
+        :param cmd: ebtable command
         :return: ebtable atomic command
-        :rtype: str
-        """
+"""
         return f"{EBTABLES_BIN} --atomic-file {self.atomic_file} {cmd}"
 
     def lastupdate(self, wlan: "CoreNetwork") -> float:
@@ -112,8 +111,7 @@ class EbtablesQueue:
 
         :param wlan: wlan entity
         :return: elpased time
-        :rtype: float
-        """
+"""
         try:
             elapsed = time.monotonic() - self.last_update_time[wlan]
         except KeyError:
@@ -243,8 +241,8 @@ def ebtablescmds(call: Callable[..., str], cmds: List[str]) -> None:
     """
     Run ebtable commands.
 
-    :param func call: function to call commands
-    :param list cmds: commands to call
+    :param call: function to call commands
+    :param cmds: commands to call
     :return: nothing
     """
     with ebtables_lock:
@@ -271,11 +269,11 @@ class CoreNetwork(CoreNetworkBase):
         """
         Creates a LxBrNet instance.
 
-        :param core.session.Session session: core session instance
-        :param int _id: object id
-        :param str name: object name
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param _id: object id
+        :param name: object name
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         :param policy: network policy
         """
@@ -305,14 +303,13 @@ class CoreNetwork(CoreNetworkBase):
         Runs a command that is used to configure and setup the network on the host
         system and all configured distributed servers.
 
-        :param str args: command to run
-        :param dict env: environment to run command with
-        :param str cwd: directory to run command in
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param env: environment to run command with
+        :param cwd: directory to run command in
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.debug("network node(%s) cmd", self.name)
         output = utils.cmd(args, env, cwd, wait, shell)
@@ -365,7 +362,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         Attach a network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface to attach
+        :param netif: network interface to attach
         :return: nothing
         """
         if self.up:
@@ -376,7 +373,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         Detach a network interface.
 
-        :param core.nodes.interface.Veth netif: network interface to detach
+        :param netif: network interface to detach
         :return: nothing
         """
         if self.up:
@@ -387,11 +384,10 @@ class CoreNetwork(CoreNetworkBase):
         """
         Determine if the provided network interfaces are linked.
 
-        :param core.nodes.interface.CoreInterface netif1: interface one
-        :param core.nodes.interface.CoreInterface netif2: interface two
+        :param netif1: interface one
+        :param netif2: interface two
         :return: True if interfaces are linked, False otherwise
-        :rtype: bool
-        """
+"""
         # check if the network interfaces are attached to this network
         if self._netif[netif1.netifi] != netif1:
             raise ValueError(f"inconsistency for netif {netif1.name}")
@@ -417,8 +413,8 @@ class CoreNetwork(CoreNetworkBase):
         Unlink two interfaces, resulting in adding or removing ebtables
         filtering rules.
 
-        :param core.nodes.interface.CoreInterface netif1: interface one
-        :param core.nodes.interface.CoreInterface netif2: interface two
+        :param netif1: interface one
+        :param netif2: interface two
         :return: nothing
         """
         with self._linked_lock:
@@ -433,8 +429,8 @@ class CoreNetwork(CoreNetworkBase):
         Link two interfaces together, resulting in adding or removing
         ebtables filtering rules.
 
-        :param core.nodes.interface.CoreInterface netif1: interface one
-        :param core.nodes.interface.CoreInterface netif2: interface two
+        :param netif1: interface one
+        :param netif2: interface two
         :return: nothing
         """
         with self._linked_lock:
@@ -458,13 +454,13 @@ class CoreNetwork(CoreNetworkBase):
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
-        :param core.nodes.interface.CoreInterface netif: interface one
+        :param netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
-        :param core.netns.vif.Veth netif2: interface two
+        :param netif2: interface two
         :param devname: device name
         :return: nothing
         """
@@ -546,10 +542,9 @@ class CoreNetwork(CoreNetworkBase):
         Link this bridge with another by creating a veth pair and installing
         each device into each bridge.
 
-        :param core.nodes.base.CoreNetworkBase net: network to link with
+        :param net: network to link with
         :return: created interface
-        :rtype: core.nodes.interface.CoreInterface
-        """
+"""
         sessionid = self.session.short_session_id()
         try:
             _id = f"{self.id:x}"
@@ -587,10 +582,9 @@ class CoreNetwork(CoreNetworkBase):
         Return the interface of that links this net with another net
         (that were linked using linknet()).
 
-        :param core.nodes.base.CoreNetworkBase net: interface to get link for
+        :param net: interface to get link for
         :return: interface the provided network is linked to
-        :rtype: core.nodes.interface.CoreInterface
-        """
+"""
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
@@ -600,7 +594,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         Set addresses on the bridge.
 
-        :param list[str] addrlist: address list
+        :param addrlist: address list
         :return: nothing
         """
         if not self.up:
@@ -632,16 +626,16 @@ class GreTapBridge(CoreNetwork):
         """
         Create a GreTapBridge instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param str remoteip: remote address
-        :param int _id: object id
-        :param str name: object name
+        :param session: core session instance
+        :param remoteip: remote address
+        :param _id: object id
+        :param name: object name
         :param policy: network policy
-        :param str localip: local address
+        :param localip: local address
         :param ttl: ttl value
         :param key: gre tap key
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
@@ -696,7 +690,7 @@ class GreTapBridge(CoreNetwork):
         The 1st address in the provided list is remoteip, 2nd optionally
         specifies localip.
 
-        :param list addrlist: address list
+        :param addrlist: address list
         :return: nothing
         """
         if self.gretap:
@@ -756,16 +750,16 @@ class CtrlNet(CoreNetwork):
         """
         Creates a CtrlNet instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param int _id: node id
-        :param str name: node namee
+        :param session: core session instance
+        :param _id: node id
+        :param name: node namee
         :param prefix: control network ipv4 prefix
         :param hostid: host id
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
-        :param str assign_address: assigned address
-        :param str updown_script: updown script
+        :param assign_address: assigned address
+        :param updown_script: updown script
         :param serverintf: server interface
         :return:
         """
@@ -780,7 +774,7 @@ class CtrlNet(CoreNetwork):
         """
         Add addresses used for created control networks,
 
-        :param int index: starting address index
+        :param index: starting address index
         :return: nothing
         """
         use_ovs = self.session.options.get_config("ovs") == "True"
@@ -861,8 +855,7 @@ class CtrlNet(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.data.LinkData]
-        """
+"""
         return []
 
 
@@ -877,7 +870,7 @@ class PtpNet(CoreNetwork):
         """
         Attach a network interface, but limit attachment to two interfaces.
 
-        :param core.nodes.interface.CoreInterface netif: network interface
+        :param netif: network interface
         :return: nothing
         """
         if len(self._netif) >= 2:
@@ -899,13 +892,12 @@ class PtpNet(CoreNetwork):
         built using a link message instead.
 
         :param message_type: purpose for the data object we are creating
-        :param float lat: latitude
-        :param float lon: longitude
-        :param float alt: altitude
-        :param str source: source of node data
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :param source: source of node data
         :return: node data object
-        :rtype: core.emulator.data.NodeData
-        """
+"""
         return None
 
     def all_link_data(self, flags: int) -> List[LinkData]:
@@ -915,8 +907,7 @@ class PtpNet(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.emulator.data.LinkData]
-        """
+"""
 
         all_links = []
 
@@ -1057,11 +1048,11 @@ class WlanNode(CoreNetwork):
         """
         Create a WlanNode instance.
 
-        :param core.session.Session session: core session instance
-        :param int _id: node id
-        :param str name: node name
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param _id: node id
+        :param name: node name
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         :param policy: wlan policy
         """
@@ -1083,7 +1074,7 @@ class WlanNode(CoreNetwork):
         """
         Attach a network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface
+        :param netif: network interface
         :return: nothing
         """
         super().attach(netif)
@@ -1099,8 +1090,8 @@ class WlanNode(CoreNetwork):
         """
         Sets the mobility and wireless model.
 
-        :param core.location.mobility.WirelessModel.cls model: wireless model to set to
-        :param dict config: configuration for model being set
+        :param model: wireless model to set to
+        :param config: configuration for model being set
         :return: nothing
         """
         logging.debug("node(%s) setting model: %s", self.name, model.name)
@@ -1139,8 +1130,7 @@ class WlanNode(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.emulator.data.LinkData]
-        """
+"""
         all_links = super().all_link_data(flags)
         if self.model:
             all_links.extend(self.model.all_link_data(flags))

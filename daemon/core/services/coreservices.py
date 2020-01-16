@@ -60,8 +60,7 @@ class ServiceDependencies:
         Generates the boot paths for the services provided to the class.
 
         :return: list of services to boot, in order
-        :rtype: list[core.coreservices.CoreService]
-        """
+"""
         paths = []
         for name in self.node_services:
             service = self.node_services[name]
@@ -149,11 +148,10 @@ class ServiceShim:
         Convert service properties into a string list of key=value pairs,
         separated by "|".
 
-        :param core.nodes.base.CoreNode node: node to get value list for
-        :param CoreService service: service to get value list for
+        :param node: node to get value list for
+        :param service: service to get value list for
         :return: value list string
-        :rtype: str
-        """
+"""
         start_time = 0
         start_index = 0
         valmap = [
@@ -178,8 +176,8 @@ class ServiceShim:
         Convert list of values into properties for this instantiated
         (customized) service.
 
-        :param CoreService service: service to get value list for
-        :param dict values: value list to set properties from
+        :param service: service to get value list for
+        :param values: value list to set properties from
         :return: nothing
         """
         # TODO: support empty value? e.g. override default meta with ''
@@ -195,8 +193,8 @@ class ServiceShim:
         """
         Set values for this service.
 
-        :param CoreService service: service to get value list for
-        :param str key: key to set value for
+        :param service: service to get value list for
+        :param key: key to set value for
         :param value: value of key to set
         :return: nothing
         """
@@ -229,10 +227,9 @@ class ServiceShim:
         """
         Build a list of services from an opaque data string.
 
-        :param str opaque: opaque data string
+        :param opaque: opaque data string
         :return: services
-        :rtype: list
-        """
+"""
         servicesstring = opaque.split(":")
         if servicesstring[0] != "service":
             return []
@@ -251,7 +248,7 @@ class ServiceManager:
         """
         Add a service to manager.
 
-        :param CoreService service: service to add
+        :param service: service to add
         :return: nothing
         :raises ValueError: when service cannot be loaded
         """
@@ -281,10 +278,9 @@ class ServiceManager:
         """
         Retrieve a service from the manager.
 
-        :param str name: name of the service to retrieve
+        :param name: name of the service to retrieve
         :return: service if it exists, None otherwise
-        :rtype: CoreService.class
-        """
+"""
         return cls.services.get(name)
 
     @classmethod
@@ -292,10 +288,9 @@ class ServiceManager:
         """
         Method for retrieving all CoreServices from a given path.
 
-        :param str path: path to retrieve services from
+        :param path: path to retrieve services from
         :return: list of core services that failed to load
-        :rtype: list[str]
-        """
+"""
         service_errors = []
         services = utils.load_classes(path, CoreService)
         for service in services:
@@ -326,7 +321,7 @@ class CoreServices:
         """
         Creates a CoreServices instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param session: session this manager is tied to
         """
         self.session = session
         # dict of default services tuples, key is node type
@@ -347,8 +342,7 @@ class CoreServices:
 
         :param node_type: node type to get default services for
         :return: default services
-        :rtype: list[CoreService]
-        """
+"""
         logging.debug("getting default services for type: %s", node_type)
         results = []
         defaults = self.default_services.get(node_type, [])
@@ -368,9 +362,9 @@ class CoreServices:
         Get any custom service configured for the given node that matches the specified
         service name. If no custom service is found, return the specified service.
 
-        :param int node_id: object id to get service from
-        :param str service_name: name of service to retrieve
-        :param bool default_service: True to return default service when custom does
+        :param node_id: object id to get service from
+        :param service_name: name of service to retrieve
+        :param default_service: True to return default service when custom does
             not exist, False returns None
         :return: custom service from the node
         """
@@ -385,8 +379,8 @@ class CoreServices:
         Store service customizations in an instantiated service object
         using a list of values that came from a config message.
 
-        :param int node_id: object id to set custom service for
-        :param str service_name: name of service to set
+        :param node_id: object id to set custom service for
+        :param service_name: name of service to set
         :return: nothing
         """
         logging.debug("setting custom service(%s) for node: %s", service_name, node_id)
@@ -405,9 +399,9 @@ class CoreServices:
         """
         Add services to a node.
 
-        :param core.nodes.base.CoreNode node: node to add services to
-        :param str node_type: node type to add services to
-        :param list[str] services: names of services to add to node
+        :param node: node to add services to
+        :param node_type: node type to add services to
+        :param services: names of services to add to node
         :return: nothing
         """
         if not services:
@@ -432,8 +426,7 @@ class CoreServices:
         to a session or opening XML.
 
         :return: list of tuples of node ids and services
-        :rtype: list[tuple]
-        """
+"""
         configs = []
         for node_id in self.custom_services:
             custom_services = self.custom_services[node_id]
@@ -447,10 +440,9 @@ class CoreServices:
         Return all customized files stored with a service.
         Used when reconnecting to a session or opening XML.
 
-        :param CoreService service: service to get files for
+        :param service: service to get files for
         :return: list of all custom service files
-        :rtype: list[tuple]
-        """
+"""
         files = []
         if not service.custom:
             return files
@@ -467,7 +459,7 @@ class CoreServices:
         """
         Start all services on a node.
 
-        :param core.nodes.base.CoreNode node: node to start services on
+        :param node: node to start services on
         :return: nothing
         """
         boot_paths = ServiceDependencies(node.services).boot_paths()
@@ -483,8 +475,8 @@ class CoreServices:
         """
         Start all service boot paths found, based on dependencies.
 
-        :param core.nodes.base.CoreNode node: node to start services on
-        :param list[CoreService] boot_path: service to start in dependent order
+        :param node: node to start services on
+        :param boot_path: service to start in dependent order
         :return: nothing
         """
         logging.info(
@@ -505,8 +497,8 @@ class CoreServices:
         Start a service on a node. Create private dirs, generate config
         files, and execute startup commands.
 
-        :param core.nodes.base.CoreNode node: node to boot services on
-        :param CoreService service: service to start
+        :param node: node to boot services on
+        :param service: service to start
         :return: nothing
         """
         logging.info(
@@ -570,12 +562,11 @@ class CoreServices:
         config references an existing file that should be copied.
         Returns True for local files, False for generated.
 
-        :param core.nodes.base.CoreNode node: node to copy service for
-        :param str filename: file name for a configured service
-        :param str cfg: configuration string
+        :param node: node to copy service for
+        :param filename: file name for a configured service
+        :param cfg: configuration string
         :return: True if successful, False otherwise
-        :rtype: bool
-        """
+"""
         if cfg[:7] == "file://":
             src = cfg[7:]
             src = src.split("\n")[0]
@@ -589,11 +580,10 @@ class CoreServices:
         """
         Run the validation command(s) for a service.
 
-        :param core.nodes.base.CoreNode node: node to validate service for
-        :param CoreService service: service to validate
+        :param node: node to validate service for
+        :param service: service to validate
         :return: service validation status
-        :rtype: int
-        """
+"""
         logging.debug("validating node(%s) service(%s)", node.name, service.name)
         cmds = service.validate
         if not service.custom:
@@ -618,7 +608,7 @@ class CoreServices:
         """
         Stop all services on a node.
 
-        :param core.netns.vnode.CoreNode node: node to stop services on
+        :param node: node to stop services on
         :return: nothing
         """
         for service in node.services:
@@ -628,8 +618,8 @@ class CoreServices:
         """
         Stop a service on a node.
 
-        :param core.nodes.base.CoreNode node: node to stop a service on
-        :param CoreService service: service to stop
+        :param node: node to stop a service on
+        :param service: service to stop
         :return: status for stopping the services
         """
         status = 0
@@ -652,9 +642,9 @@ class CoreServices:
         Send a File Message when the GUI has requested a service file.
         The file data is either auto-generated or comes from an existing config.
 
-        :param core.nodes.base.CoreNode node: node to get service file from
-        :param str service_name: service to get file from
-        :param str filename: file name to retrieve
+        :param node: node to get service file from
+        :param service_name: service to get file from
+        :param filename: file name to retrieve
         :return: file message for node
         """
         # get service to get file from
@@ -697,9 +687,9 @@ class CoreServices:
         in the service config. The filename must match one from the list of
         config files in the service.
 
-        :param int node_id: node id to set service file
-        :param str service_name: service name to set file for
-        :param str file_name: file name to set
+        :param node_id: node id to set service file
+        :param service_name: service name to set file for
+        :param file_name: file name to set
         :param data: data for file to set
         :return: nothing
         """
@@ -729,12 +719,11 @@ class CoreServices:
         """
         Startup a node service.
 
-        :param core.nodes.base.CoreNode node: node to reconfigure service for
-        :param CoreService service: service to reconfigure
-        :param bool wait: determines if we should wait to validate startup
+        :param node: node to reconfigure service for
+        :param service: service to reconfigure
+        :param wait: determines if we should wait to validate startup
         :return: status of startup
-        :rtype: int
-        """
+"""
 
         cmds = service.startup
         if not service.custom:
@@ -753,8 +742,8 @@ class CoreServices:
         """
         Creates node service files.
 
-        :param core.nodes.base.CoreNode node: node to reconfigure service for
-        :param CoreService service: service to reconfigure
+        :param node: node to reconfigure service for
+        :param service: service to reconfigure
         :return: nothing
         """
         # get values depending on if custom or not
@@ -787,8 +776,8 @@ class CoreServices:
         """
         Reconfigure a node service.
 
-        :param core.nodes.base.CoreNode node: node to reconfigure service for
-        :param CoreService service: service to reconfigure
+        :param node: node to reconfigure service for
+        :param service: service to reconfigure
         :return: nothing
         """
         config_files = service.configs
@@ -878,10 +867,9 @@ class CoreService:
         returns the cls._configs tuple, but this method may be overriden to
         provide node-specific filenames that may be based on other services.
 
-        :param core.nodes.base.CoreNode node: node to generate config for
+        :param node: node to generate config for
         :return: configuration files
-        :rtype: tuple
-        """
+"""
         return cls.configs
 
     @classmethod
@@ -892,8 +880,8 @@ class CoreService:
         Return the configuration string to be written to a file or sent
         to the GUI for customization.
 
-        :param core.nodes.base.CoreNode node: node to generate config for
-        :param str filename: file name to generate config for
+        :param node: node to generate config for
+        :param filename: file name to generate config for
         :return: nothing
         """
         raise NotImplementedError
@@ -906,10 +894,9 @@ class CoreService:
         overridden to provide node-specific commands that may be
         based on other services.
 
-        :param core.nodes.base.CoreNode node: node to get startup for
+        :param node: node to get startup for
         :return: startup commands
-        :rtype: tuple
-        """
+"""
         return cls.startup
 
     @classmethod
@@ -920,8 +907,7 @@ class CoreService:
         overridden to provide node-specific commands that may be
         based on other services.
 
-        :param core.nodes.base.CoreNode node: node to validate
+        :param node: node to validate
         :return: validation commands
-        :rtype: tuple
-        """
+"""
         return cls.validate

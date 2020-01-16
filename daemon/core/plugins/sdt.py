@@ -38,7 +38,7 @@ class Bunch:
         """
         Create a Bunch instance.
 
-        :param dict kwargs: keyword arguments
+        :param kwargs: keyword arguments
         """
         self.__dict__.update(kwargs)
 
@@ -71,7 +71,7 @@ class Sdt:
         """
         Creates a Sdt instance.
 
-        :param core.emulator.session.Session session: session this manager is tied to
+        :param session: session this manager is tied to
         """
         self.session = session
         self.sock = None
@@ -92,7 +92,7 @@ class Sdt:
         """
         Handler for node updates, specifically for updating their location.
 
-        :param core.emulator.data.NodeData node_data: node data being updated
+        :param node_data: node data being updated
         :return: nothing
         """
         x = node_data.x_position
@@ -117,7 +117,7 @@ class Sdt:
         """
         Handler for link updates, checking for wireless link/unlink messages.
 
-        :param core.emulator.data.LinkData link_data: link data being updated
+        :param link_data: link data being updated
         :return: nothing
         """
         if link_data.link_type == LinkTypes.WIRELESS.value:
@@ -134,8 +134,7 @@ class Sdt:
         the option is missing.
 
         :return: True if enabled, False otherwise
-        :rtype: bool
-        """
+"""
         return self.session.options.get_config("enablesdt") == "1"
 
     def seturl(self) -> None:
@@ -157,8 +156,7 @@ class Sdt:
         Connect to the SDT address/port if enabled.
 
         :return: True if connected, False otherwise
-        :rtype: bool
-        """
+"""
         if not self.is_enabled():
             return False
         if self.connected:
@@ -196,8 +194,7 @@ class Sdt:
         the virtual globe.
 
         :return: initialize command status
-        :rtype: bool
-        """
+"""
         if not self.cmd(f'path "{CORE_DATA_DIR}/icons/normal"'):
             return False
         # send node type to icon mappings
@@ -239,10 +236,9 @@ class Sdt:
         as opposed to socket.sendto() because an exception is raised when
         there is no socket listener.
 
-        :param str cmdstr: command to send
+        :param cmdstr: command to send
         :return: True if command was successful, False otherwise
-        :rtype: bool
-        """
+"""
         if self.sock is None:
             return False
         try:
@@ -269,12 +265,12 @@ class Sdt:
         """
         Node is updated from a Node Message or mobility script.
 
-        :param int nodenum: node id to update
+        :param nodenum: node id to update
         :param flags: update flags
         :param x: x position
         :param y: y position
         :param z: z position
-        :param str name: node name
+        :param name: node name
         :param node_type: node type
         :param icon: node icon
         :return: nothing
@@ -302,7 +298,7 @@ class Sdt:
         """
         Node is updated upon receiving an EMANE Location Event.
 
-        :param int nodenum: node id to update geospatial for
+        :param nodenum: node id to update geospatial for
         :param lat: latitude
         :param lon: longitude
         :param alt: altitude
@@ -321,10 +317,10 @@ class Sdt:
         """
         Link is updated from a Link Message or by a wireless model.
 
-        :param int node1num: node one id
-        :param int node2num: node two id
+        :param node1num: node one id
+        :param node2num: node two id
         :param flags: link flags
-        :param bool wireless: flag to check if wireless or not
+        :param wireless: flag to check if wireless or not
         :return: nothing
         """
         if node1num is None or node2num is None:
@@ -509,10 +505,9 @@ class Sdt:
         """
         Helper returns True if a node number corresponds to a WLAN or EMANE node.
 
-        :param int nodenum: node id to check
+        :param nodenum: node id to check
         :return: True if node is wlan or emane, False otherwise
-        :rtype: bool
-        """
+"""
         if nodenum in self.remotes:
             node_type = self.remotes[nodenum].type
             if node_type in ("wlan", "emane"):

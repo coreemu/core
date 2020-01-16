@@ -19,9 +19,8 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     """
     Convert node protobuf message to data for creating a node.
 
-    :param core_pb2.Node node_proto: node proto message
+    :param node_proto: node proto message
     :return: node type, id, and options
-    :rtype: tuple
     """
     _id = node_proto.id
     _type = node_proto.type
@@ -49,9 +48,8 @@ def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     """
     Create interface data from interface proto.
 
-    :param core_pb2.Interface interface_proto: interface proto
+    :param interface_proto: interface proto
     :return: interface data
-    :rtype: InterfaceData
     """
     interface = None
     if interface_proto:
@@ -79,9 +77,8 @@ def add_link_data(
     """
     Convert link proto to link interfaces and options data.
 
-    :param core_pb2.Link link_proto: link  proto
+    :param link_proto: link  proto
     :return: link interfaces and options
-    :rtype: tuple
     """
     interface_one = link_interface(link_proto.interface_one)
     interface_two = link_interface(link_proto.interface_two)
@@ -115,10 +112,9 @@ def create_nodes(
     """
     Create nodes using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Node] node_protos: node proto messages
+    :param session: session to create nodes in
+    :param node_protos: node proto messages
     :return: results and exceptions for created nodes
-    :rtype: tuple
     """
     funcs = []
     for node_proto in node_protos:
@@ -138,10 +134,9 @@ def create_links(
     """
     Create links using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Link] link_protos: link proto messages
+    :param session: session to create nodes in
+    :param link_protos: link proto messages
     :return: results and exceptions for created links
-    :rtype: tuple
     """
     funcs = []
     for link_proto in link_protos:
@@ -163,10 +158,9 @@ def edit_links(
     """
     Edit links using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Link] link_protos: link proto messages
+    :param session: session to create nodes in
+    :param link_protos: link proto messages
     :return: results and exceptions for created links
-    :rtype: tuple
     """
     funcs = []
     for link_proto in link_protos:
@@ -188,7 +182,6 @@ def convert_value(value: Any) -> str:
 
     :param value: value
     :return: string conversion of the value
-    :rtype: str
     """
     if value is not None:
         value = str(value)
@@ -201,10 +194,9 @@ def get_config_options(
     """
     Retrieve configuration options in a form that is used by the grpc server.
 
-    :param dict config: configuration
-    :param core.config.ConfigurableOptions configurable_options: configurable options
+    :param config: configuration
+    :param configurable_options: configurable options
     :return: mapping of configuration ids to configuration options
-    :rtype: dict[str,core.api.grpc.core_pb2.ConfigOption]
     """
     results = {}
     for configuration in configurable_options.configurations():
@@ -230,8 +222,8 @@ def get_links(session: Session, node: NodeBase):
     """
     Retrieve a list of links for grpc to use
 
-    :param core.emulator.Session session: node's section
-    :param core.nodes.base.NodeBase node: node to get links from
+    :param session: node's section
+    :param node: node to get links from
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
@@ -245,10 +237,9 @@ def get_emane_model_id(node_id: int, interface_id: int) -> int:
     """
     Get EMANE model id
 
-    :param int node_id: node id
-    :param int interface_id: interface id
+    :param node_id: node id
+    :param interface_id: interface id
     :return: EMANE model id
-    :rtype: int
     """
     if interface_id >= 0:
         return node_id * 1000 + interface_id
@@ -262,7 +253,6 @@ def parse_emane_model_id(_id: int) -> Tuple[int, int]:
 
     :param _id: id to parse
     :return: node id and interface id
-    :rtype: tuple
     """
     interface = -1
     node_id = _id
@@ -276,10 +266,9 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf Link
 
-    :param core.emulator.session.Session session:
-    :param core.emulator.data.LinkData link_data:
+    :param session:
+    :param link_data:
     :return: core protobuf Link
-    :rtype: core.api.grpc.core_pb2.Link
     """
     interface_one = None
     if link_data.interface1_id is not None:
@@ -344,7 +333,6 @@ def get_net_stats() -> Dict[str, Dict]:
     Retrieve status about the current interfaces in the system
 
     :return: send and receive status of the interfaces in the system
-    :rtype: dict
     """
     with open("/proc/net/dev", "r") as f:
         data = f.readlines()[2:]
@@ -365,8 +353,8 @@ def session_location(session: Session, location: core_pb2.SessionLocation) -> No
     """
     Set session location based on location proto.
 
-    :param core.emulator.session.Session session: session for location
-    :param core_pb2.SessionLocation location: location to set
+    :param session: session for location
+    :param location: location to set
     :return: nothing
     """
     session.location.refxyz = (location.x, location.y, location.z)
@@ -378,8 +366,8 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
     """
     Convenience method for setting a node service configuration.
 
-    :param core.emulator.session.Session session: session for service configuration
-    :param core_pb2.ServiceConfig config: service configuration
+    :param session: session for service configuration
+    :param config: service configuration
     :return:
     """
     session.services.set_service(config.node_id, config.service)
@@ -395,7 +383,6 @@ def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServic
 
     :param service: service to get proto data for
     :return: service proto data
-    :rtype: core.api.grpc.core_pb2.NodeServiceData
     """
     return core_pb2.NodeServiceData(
         executables=service.executables,

@@ -32,11 +32,11 @@ class CoreInterface:
         """
         Creates a CoreInterface instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: node for interface
-        :param str name: interface name
-        :param int mtu: mtu value
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: node for interface
+        :param name: interface name
+        :param mtu: mtu value
+        :param server: remote server node
             will run on, default is None for localhost
         """
         self.session = session
@@ -74,14 +74,13 @@ class CoreInterface:
         """
         Runs a command on the host system or distributed server.
 
-        :param str args: command to run
-        :param dict env: environment to run command with
-        :param str cwd: directory to run command in
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param env: environment to run command with
+        :param cwd: directory to run command in
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
             return utils.cmd(args, env, cwd, wait, shell)
@@ -108,7 +107,7 @@ class CoreInterface:
         """
         Attach network.
 
-        :param core.nodes.base.CoreNetworkBase net: network to attach
+        :param net: network to attach
         :return: nothing
         """
         if self.net:
@@ -131,7 +130,7 @@ class CoreInterface:
         """
         Add address.
 
-        :param str addr: address to add
+        :param addr: address to add
         :return: nothing
         """
         addr = utils.validate_ip(addr)
@@ -141,7 +140,7 @@ class CoreInterface:
         """
         Delete address.
 
-        :param str addr: address to delete
+        :param addr: address to delete
         :return: nothing
         """
         self.addrlist.remove(addr)
@@ -150,7 +149,7 @@ class CoreInterface:
         """
         Set hardware address.
 
-        :param str addr: hardware address to set to.
+        :param addr: hardware address to set to.
         :return: nothing
         """
         if addr is not None:
@@ -201,7 +200,7 @@ class CoreInterface:
         intialize it. This is for supporting separate upstream/downstream
         parameters when two layer-2 nodes are linked together.
 
-        :param str name: name of parameter to swap
+        :param name: name of parameter to swap
         :return: nothing
         """
         tmp = self._params
@@ -227,8 +226,7 @@ class CoreInterface:
 
         :param other: other interface
         :return: true if less than, false otherwise
-        :rtype: bool
-        """
+"""
         return id(self) < id(other)
 
 
@@ -250,14 +248,14 @@ class Veth(CoreInterface):
         """
         Creates a VEth instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param str localname: interface local name
-        :param int mtu: interface mtu
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: related core node
+        :param name: interface name
+        :param localname: interface local name
+        :param mtu: interface mtu
+        :param server: remote server node
             will run on, default is None for localhost
-        :param bool start: start flag
+        :param start: start flag
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
@@ -320,14 +318,14 @@ class TunTap(CoreInterface):
         """
         Create a TunTap instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param str localname: local interface name
-        :param int mtu: interface mtu
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: related core node
+        :param name: interface name
+        :param localname: local interface name
+        :param mtu: interface mtu
+        :param server: remote server node
             will run on, default is None for localhost
-        :param bool start: start flag
+        :param start: start flag
         """
         super().__init__(session, node, name, mtu, server)
         self.localname = localname
@@ -373,11 +371,10 @@ class TunTap(CoreInterface):
         Wait for func() to return zero with exponential backoff.
 
         :param func: function to wait for a result of zero
-        :param int attempts: number of attempts to wait for a zero result
-        :param float maxretrydelay: maximum retry delay
+        :param attempts: number of attempts to wait for a zero result
+        :param maxretrydelay: maximum retry delay
         :return: True if wait succeeded, False otherwise
-        :rtype: bool
-        """
+"""
         delay = 0.01
         result = False
         for i in range(1, attempts + 1):
@@ -405,8 +402,7 @@ class TunTap(CoreInterface):
         appear right away waits
 
         :return: wait for device local response
-        :rtype: int
-        """
+"""
         logging.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
@@ -500,17 +496,17 @@ class GreTap(CoreInterface):
         """
         Creates a GreTap instance.
 
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param core.emulator.session.Session session: core session instance
-        :param int mtu: interface mtu
-        :param str remoteip: remote address
-        :param int _id: object id
-        :param str localip: local address
-        :param int ttl: ttl value
-        :param int key: gre tap key
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param node: related core node
+        :param name: interface name
+        :param session: core session instance
+        :param mtu: interface mtu
+        :param remoteip: remote address
+        :param _id: object id
+        :param localip: local address
+        :param ttl: ttl value
+        :param key: gre tap key
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
@@ -564,6 +560,5 @@ class GreTap(CoreInterface):
 
         :param flags: link flags
         :return: link data
-        :rtype: list[core.emulator.data.LinkData]
-        """
+"""
         return []

@@ -19,9 +19,8 @@ def handle_node_event(event: NodeData) -> core_pb2.NodeEvent:
     """
     Handle node event when there is a node event
 
-    :param core.emulator.data.NodeData event: node data
+    :param event: node data
     :return: node event that contains node id, name, model, position, and services
-    :rtype: core.api.grpc.core_pb2.NodeEvent
     """
     position = core_pb2.Position(x=event.x_position, y=event.y_position)
     services = event.services or ""
@@ -40,9 +39,8 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
     """
     Handle link event when there is a link event
 
-    :param core.emulator.data.LinkData event: link data
+    :param event: link data
     :return: link event that has message type and link information
-    :rtype: core.api.grpc.core_pb2.LinkEvent
     """
     interface_one = None
     if event.interface1_id is not None:
@@ -96,9 +94,8 @@ def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
     """
     Handle session event when there is a session event
 
-    :param core.emulator.data.EventData event: event data
+    :param event: event data
     :return: session event
-    :rtype: core.api.grpc.core_pb2.SessionEvent
     """
     event_time = event.time
     if event_time is not None:
@@ -116,9 +113,8 @@ def handle_config_event(event: ConfigData) -> core_pb2.ConfigEvent:
     """
     Handle configuration event when there is configuration event
 
-    :param core.emulator.data.ConfigData event: configuration data
+    :param event: configuration data
     :return: configuration event
-    :rtype: core.api.grpc.core_pb2.ConfigEvent
     """
     return core_pb2.ConfigEvent(
         message_type=event.message_type,
@@ -141,9 +137,8 @@ def handle_exception_event(event: ExceptionData) -> core_pb2.ExceptionEvent:
     """
     Handle exception event when there is exception event
 
-    :param core.emulator.data.ExceptionData event: exception data
+    :param event: exception data
     :return: exception event
-    :rtype: core.api.grpc.core_pb2.ExceptionEvent
     """
     return core_pb2.ExceptionEvent(
         node_id=event.node,
@@ -159,9 +154,8 @@ def handle_file_event(event: FileData) -> core_pb2.FileEvent:
     """
     Handle file event
 
-    :param core.emulator.data.FileData event: file data
+    :param event: file data
     :return: file event
-    :rtype: core.api.grpc.core_pb2.FileEvent
     """
     return core_pb2.FileEvent(
         message_type=event.message_type,
@@ -187,8 +181,8 @@ class EventStreamer:
         """
         Create a EventStreamer instance.
 
-        :param core.emulator.session.Session session: session to process events for
-        :param set event_types: types of events to process
+        :param session: session to process events for
+        :param event_types: types of events to process
         """
         self.session = session
         self.event_types = event_types
@@ -219,7 +213,6 @@ class EventStreamer:
         Process the next event in the queue.
 
         :return: grpc event, or None when invalid event or queue timeout
-        :rtype: core.api.grpc.core_pb2.Event
         """
         event = core_pb2.Event(session_id=self.session.id)
         try:

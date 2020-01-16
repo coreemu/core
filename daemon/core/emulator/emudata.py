@@ -32,8 +32,8 @@ def link_config(
 
     :param network: network to configure link for
     :param interface: interface to configure
-    :param core.emulator.emudata.LinkOptions link_options: data to configure link with
-    :param str devname: device name, default is None
+    :param link_options: data to configure link with
+    :param devname: device name, default is None
     :param interface_two: other interface associated, default is None
     :return: nothing
     """
@@ -64,10 +64,10 @@ class NodeOptions:
         """
         Create a NodeOptions object.
 
-        :param str name: name of node, defaults to node class name postfix with its id
-        :param str model: defines services for default and physical nodes, defaults to
+        :param name: name of node, defaults to node class name postfix with its id
+        :param model: defines services for default and physical nodes, defaults to
             "router"
-        :param str image: image to use for docker nodes
+        :param image: image to use for docker nodes
         """
         self.name = name
         self.model = model
@@ -89,8 +89,8 @@ class NodeOptions:
         """
         Convenience method for setting position.
 
-        :param float x: x position
-        :param float y: y position
+        :param x: x position
+        :param y: y position
         :return: nothing
         """
         self.x = x
@@ -100,9 +100,9 @@ class NodeOptions:
         """
         Convenience method for setting location.
 
-        :param float lat: latitude
-        :param float lon: longitude
-        :param float alt: altitude
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
         :return: nothing
         """
         self.lat = lat
@@ -119,7 +119,7 @@ class LinkOptions:
         """
         Create a LinkOptions object.
 
-        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to
+        :param _type: type of link, defaults to
             wired
         """
         self.type = _type
@@ -158,13 +158,13 @@ class InterfaceData:
         """
         Creates an InterfaceData object.
 
-        :param int _id: interface id
-        :param str name: name for interface
-        :param str mac: mac address
-        :param str ip4: ipv4 address
-        :param int ip4_mask: ipv4 bit mask
-        :param str ip6: ipv6 address
-        :param int ip6_mask: ipv6 bit mask
+        :param _id: interface id
+        :param name: name for interface
+        :param mac: mac address
+        :param ip4: ipv4 address
+        :param ip4_mask: ipv4 bit mask
+        :param ip6: ipv6 address
+        :param ip6_mask: ipv6 bit mask
         """
         self.id = _id
         self.name = name
@@ -217,8 +217,7 @@ class InterfaceData:
         Returns a list of ip4 and ip6 address when present.
 
         :return: list of addresses
-        :rtype: list
-        """
+"""
         ip4 = self.ip4_address()
         ip6 = self.ip6_address()
         return [i for i in [ip4, ip6] if i]
@@ -233,8 +232,8 @@ class IpPrefixes:
         """
         Creates an IpPrefixes object.
 
-        :param str ip4_prefix: ip4 prefix to use for generation
-        :param str ip6_prefix: ip6 prefix to use for generation
+        :param ip4_prefix: ip4 prefix to use for generation
+        :param ip6_prefix: ip6 prefix to use for generation
         :raises ValueError: when both ip4 and ip6 prefixes have not been provided
         """
         if not ip4_prefix and not ip6_prefix:
@@ -253,8 +252,7 @@ class IpPrefixes:
 
         :param node: node to get IP4 address for
         :return: IP4 address or None
-        :rtype: str
-        """
+"""
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
         return str(self.ip4[node.id])
@@ -265,8 +263,7 @@ class IpPrefixes:
 
         :param node: node to get IP6 address for
         :return: IP4 address or None
-        :rtype: str
-        """
+"""
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node.id])
@@ -278,13 +275,12 @@ class IpPrefixes:
         Creates interface data for linking nodes, using the nodes unique id for
         generation, along with a random mac address, unless provided.
 
-        :param core.nodes.base.CoreNode node: node to create interface for
-        :param str name: name to set for interface, default is eth{id}
-        :param str mac: mac address to use for this interface, default is random
+        :param node: node to create interface for
+        :param name: name to set for interface, default is eth{id}
+        :param mac: mac address to use for this interface, default is random
             generation
         :return: new interface data for the provided node
-        :rtype: InterfaceData
-        """
+"""
         # interface id
         inteface_id = node.newifindex()
 
@@ -324,8 +320,8 @@ def create_interface(
     Create an interface for a node on a network using provided interface data.
 
     :param node: node to create interface for
-    :param core.nodes.base.CoreNetworkBase network: network to associate interface with
-    :param core.emulator.emudata.InterfaceData interface_data: interface data
+    :param network: network to associate interface with
+    :param interface_data: interface data
     :return: created interface
     """
     node.newnetif(
