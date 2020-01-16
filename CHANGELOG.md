@@ -1,3 +1,105 @@
+## 2020-01-01 CORE 6.0.0
+* New
+    * beta release of the python based tk GUI, use **coretk-gui** to try it out, plan will be to eventually sunset the old GUI once this is good enough
+        * this GUI will allow us to provide enhancements and a consistent python dev environment for developers
+* Major Changes
+    * python3.6+ support only, due  to python2 EOL https://pyfound.blogspot.com/2019/12/python-2-sunset.html
+    * distributed sessions now leverages the fabric library for sending remote SSH commands
+* Enhancements
+    * changed usage of bridge-utils to using ip based bridge commands due to deprecation
+    * installation.sh script to help automate a standard make install or dev install
+    * when sessions are created without an id they will now always start from 1 and return the next unused id
+    * gRPC is now running by default
+* Session API
+    * removed **create_emane_network** and **create_wlan_network** to help force using **add_node** for all cases
+    * removed **session.master** as it was only used for previous distributed sessions
+    * updated **add_node** to allow providing a custom class for node creation
+* gRPC API
+    * added get all services configurations
+    * added get all wlan configurations
+    * added start/stop session calls, provides more freedom for startup and shutdown logic
+    * session events now have a session id to help differentiate which session they are coming from
+    * throughput events now require a session id and responses include session id for differentiating data
+    * session events can now be subscribed to with a subset of events or all
+    * emane model config data now include interface ids properly
+    * sessions returned from get sessions call may include file names when created from xml
+    * when opening an xml the session can now be started or not
+    * edit node will now broadcast the edit for others to listen to
+    * all config responses will now be in the form of a mapped value of key to ConfigOption, or a list of these when retrieving all, sometimes the config response may be wrapped in a different message to include other metadata
+* Bugfixes
+    * \#311 - initialize ebtables chains for wlan networks only
+    * \#312 - removed sudo from init script
+    * \#313 - check if interface exists before flushing, previously would log an exception that didn't matter
+    * \#314 - node locations stored as floats instead of ints to avoid mobility calculations due to loss of precision
+    * \#321 - python installation path will be based on distr ibution/python building it
+    * emane options xml parsing didn't properly take into account the **emane_prefix** configuration
+    * updates services that checked for ipv4/ipv6 addresses to not fail for valid ipv6 addresses with a decimal
+* Documentation
+    * updated NRL links to new GitHub locations
+    * updates for distributed session
+    * updates to dev guide
+    * updates to examples LXD/Docker setup
+    * updates to FRR service documentation
+    * gRPC get node service file will not throw an exception when node doesn't exist
+
+## 2019-10-12 CORE 5.5.2
+* gRPC
+    * Added emane_link API for linking/unlinking EMANE nodes within the GUI
+* Bugfixes
+    * Fixed python3 issues when configuring WLAN nodes
+    * Fixed issue due to refactoring when running distributed
+    * Fixed issue when running python script from GUI
+
+## 2019-10-09 CORE 5.5.1
+* Bugfix
+    * Fixed issue with 5.5.0 refactoring causing issues in python2.
+    * Fixed python3 issues with NRL services
+
+## 2019-10-03 CORE 5.5.0
+* Documentation
+    * updated dependencies for building OSPF MDR on installation page
+    * added python/pip instruction on installation page
+    * added ethtool dependency for CORE
+* GUI
+    * removed experimental OVS node to avoid confusion and issues related to using it
+* Daemon
+    * fixed core-daemon --ovs flag back to working order for running CORE using OVS bridges instead of Linux bridges
+    * updated requirements.txt to refer to configparser 4.0.2, due to 4.0.1 removal by developers
+    * update to fail fast for dependent executables that are not found within PATH
+    * update to not load services that fail during service.on_load and move on
+* Build
+    * fixed issue with configure script when using option flags
+    * python install path will use the native install path for AM_PATH_PYTHON, instead of coercing to python3
+* Issues
+    * \#271 - OVS node error in GUI
+    * \#291 - configparser 4.0.1 issue
+    * \#290 - python3 path issue when building
+
+## 2019-09-23 CORE 5.4.0
+* Documentation
+    * Updates to documentation dev guide
+* Improvements
+    * Added support for Pipenv for development
+    * Added configuration to leverage pre-commit during development
+    * Added configuration to leverage isort, black, and flake8 during development
+    * Added Github Actions to help verify pull requests in the same way as pre-commit
+* Issues
+    * \#279 - WLAN configuration does not get set by default
+    * \#272 - error installing python package futures==3.2.0
+* Pull Requests
+    * \#275 - Disable MAC learning on WLAN
+    * \#281 - Bumped jackson version on corefx
+
+## 2019-07-05 CORE 5.3.1
+* Documentation
+    * Updates to provide more information regarding several of the included services
+* Issues
+    * \#252 - fixed changing wlan configurations during runtime
+    * \#256 - fixed mobility waypoint comparison for python3
+    * \#174 - turn tx/rx checksums off by default as they will never be valid for virtual interfaces
+    * \#259 - fixes for distributed EMANE
+    * \#260 - fixed issue with how execfile was being used due to it not existing within python3
+
 ## 2019-06-10 CORE 5.3.0
 * Enhancements
     * python 2 / 3 support
