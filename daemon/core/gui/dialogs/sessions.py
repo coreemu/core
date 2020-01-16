@@ -17,8 +17,11 @@ if TYPE_CHECKING:
 
 
 class SessionsDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
+    def __init__(
+        self, master: "Application", app: "Application", is_start_app: bool = False
+    ):
         super().__init__(master, app, "Sessions", modal=True)
+        self.is_start_app = is_start_app
         self.selected = False
         self.selected_id = None
         self.tree = None
@@ -92,7 +95,7 @@ class SessionsDialog(Dialog):
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
-        for i in range(4):
+        for i in range(5):
             frame.columnconfigure(i, weight=1)
         frame.grid(sticky="ew")
 
@@ -114,7 +117,7 @@ class SessionsDialog(Dialog):
         b.image = image
         b.grid(row=0, column=1, padx=PADX, sticky="ew")
 
-        image = Images.get(ImageEnum.EDITDELETE, 16)
+        image = Images.get(ImageEnum.SHUTDOWN, 16)
         b = ttk.Button(
             frame,
             image=image,
@@ -125,8 +128,32 @@ class SessionsDialog(Dialog):
         b.image = image
         b.grid(row=0, column=2, padx=PADX, sticky="ew")
 
-        b = ttk.Button(frame, text="Cancel", command=self.click_new)
-        b.grid(row=0, column=3, sticky="ew")
+        image = Images.get(ImageEnum.DELETE, 16)
+        b = ttk.Button(
+            frame,
+            image=image,
+            text="Delete",
+            compound=tk.LEFT,
+            command=self.click_delete,
+        )
+        b.image = image
+        b.grid(row=0, column=3, padx=PADX, sticky="ew")
+
+        image = Images.get(ImageEnum.CANCEL, 16)
+        if self.is_start_app:
+            b = ttk.Button(
+                frame, image=image, text="Exit", compound=tk.LEFT, command=self.destroy
+            )
+        else:
+            b = ttk.Button(
+                frame,
+                image=image,
+                text="Cancel",
+                compound=tk.LEFT,
+                command=self.destroy,
+            )
+        b.image = image
+        b.grid(row=0, column=4, sticky="ew")
 
     def click_new(self):
         self.app.core.create_new_session()
@@ -176,3 +203,13 @@ class SessionsDialog(Dialog):
         self.app.core.stop_session(sid)
         self.click_new()
         self.destroy()
+
+    def click_delete(self):
+        logging.debug("Click delete")
+        item = self.tree.selection()
+        if item:
+            sid = int(self.tree.item(item, "text"))
+            self.app.core.delete_session(sid)
+            self.tree.delete(item[0])
+            if sid == self.app.core.session_id:
+                self.click_new()

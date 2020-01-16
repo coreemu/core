@@ -73,9 +73,7 @@ def load(style: ttk.Style):
                     "shiftrelief": [("pressed", 1)],
                 },
             },
-            "TMenubutton": {
-                "configure": {"width": 11, "padding": (5, 1), "relief": tk.RAISED}
-            },
+            "TMenubutton": {"configure": {"padding": (5, 1), "relief": tk.RAISED}},
             "TCheckbutton": {
                 "configure": {
                     "indicatorbackground": Colors.white,

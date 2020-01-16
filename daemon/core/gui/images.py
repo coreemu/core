@@ -68,3 +68,6 @@ class ImageEnum(Enum):
     DOCKER = "docker"
     LXC = "lxc"
     ALERT = "alert"
+    DELETE = "delete"
+    SHUTDOWN = "shutdown"
+    CANCEL = "cancel"
