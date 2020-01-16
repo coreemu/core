@@ -47,7 +47,7 @@ class TestUtils:
         "data,expected",
         [
             ("AA-AA-AA-FF-FF-FF", "aa:aa:aa:ff:ff:ff"),
-            ("AA:AA:AA:FF:FF:FF", "aa:aa:aa:ff:ff:ff"),
+            ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
         ],
     )
     def test_validate_mac(self, data, expected):

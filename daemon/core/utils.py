@@ -469,7 +469,7 @@ def validate_mac(value: str) -> str:
     """
     try:
         mac = netaddr.EUI(value)
-        mac.dialect = netaddr.mac_unix
+        mac.dialect = netaddr.mac_unix_expanded
         return str(mac)
     except netaddr.AddrFormatError as e:
         raise CoreError(f"invalid mac address {value}: {e}")
