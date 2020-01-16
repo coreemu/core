@@ -14,6 +14,8 @@ from core.nodes.network import WlanNode
 if TYPE_CHECKING:
     from core.location.mobility import WirelessModel
 
+    WirelessModelType = Type[WirelessModel]
+
 
 class ConfigGroup:
     """
@@ -396,7 +398,7 @@ class ModelManager(ConfigurableManager):
     def set_model(
         self,
         node: Union[WlanNode, EmaneNet],
-        model_class: "WirelessModel",
+        model_class: "WirelessModelType",
         config: Dict[str, str] = None,
     ) -> None:
         """
