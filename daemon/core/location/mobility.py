@@ -42,7 +42,7 @@ class MobilityManager(ModelManager):
         """
         Creates a MobilityManager instance.
 
-        :param core.emulator.session.Session session: session this manager is tied to
+        :param session: session this manager is tied to
         """
         super().__init__()
         self.session = session
@@ -62,7 +62,7 @@ class MobilityManager(ModelManager):
         Session is transitioning from instantiation to runtime state.
         Instantiate any mobility models that have been configured for a WLAN.
 
-        :param list node_ids: node ids to startup
+        :param node_ids: node ids to startup
         :return: nothing
         """
         if node_ids is None:
@@ -97,7 +97,7 @@ class MobilityManager(ModelManager):
         Handle an Event Message used to start, stop, or pause
         mobility scripts for a given WlanNode.
 
-        :param EventData event_data: event data to handle
+        :param event_data: event data to handle
         :return: nothing
         """
         event_type = event_data.event_type
@@ -160,7 +160,7 @@ class MobilityManager(ModelManager):
         Send an event message on behalf of a mobility model.
         This communicates the current and end (max) times to the GUI.
 
-        :param WayPointMobility model: mobility model to send event for
+        :param model: mobility model to send event for
         :return: nothing
         """
         event_type = EventTypes.NONE.value
@@ -193,8 +193,8 @@ class MobilityManager(ModelManager):
         Update every WlanNode. This saves range calculations if the model
         were to recalculate for each individual node movement.
 
-        :param list moved: moved nodes
-        :param list moved_netifs: moved network interfaces
+        :param moved: moved nodes
+        :param moved_netifs: moved network interfaces
         :return: nothing
         """
         for node_id in self.nodes():
@@ -220,8 +220,8 @@ class WirelessModel(ConfigurableOptions):
         """
         Create a WirelessModel instance.
 
-        :param core.session.Session session: core session we are tied to
-        :param int _id: object id
+        :param session: core session we are tied to
+        :param _id: object id
         """
         self.session = session
         self.id = _id
@@ -233,16 +233,15 @@ class WirelessModel(ConfigurableOptions):
 
         :param flags: link data flags
         :return: link data
-        :rtype: list
-        """
+"""
         return []
 
     def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
         """
         Update this wireless model.
 
-        :param bool moved: flag is it was moved
-        :param list moved_netifs: moved network interfaces
+        :param moved: flag is it was moved
+        :param moved_netifs: moved network interfaces
         :return: nothing
         """
         raise NotImplementedError
@@ -252,7 +251,7 @@ class WirelessModel(ConfigurableOptions):
         For run-time updates of model config. Returns True when position callback and
         set link parameters should be invoked.
 
-        :param dict config: configuration values to update
+        :param config: configuration values to update
         :return: nothing
         """
         pass
@@ -307,8 +306,8 @@ class BasicRangeModel(WirelessModel):
         """
         Create a BasicRangeModel instance.
 
-        :param core.session.Session session: related core session
-        :param int _id: object id
+        :param session: related core session
+        :param _id: object id
         """
         super().__init__(session, _id)
         self.session = session
@@ -326,7 +325,7 @@ class BasicRangeModel(WirelessModel):
         """
         Values to convert to link parameters.
 
-        :param dict config: values to convert
+        :param config: values to convert
         :return: nothing
         """
         self.range = int(float(config["range"]))
@@ -406,8 +405,8 @@ class BasicRangeModel(WirelessModel):
         Assumes bidirectional links, with one calculation per node pair, where
         one of the nodes has moved.
 
-        :param bool moved: flag is it was moved
-        :param list moved_netifs: moved network interfaces
+        :param moved: flag is it was moved
+        :param moved_netifs: moved network interfaces
         :return: nothing
         """
         with self._netifslock:
@@ -471,11 +470,10 @@ class BasicRangeModel(WirelessModel):
         """
         Calculate the distance between two three-dimensional points.
 
-        :param tuple p1: point one
-        :param tuple p2: point two
+        :param p1: point one
+        :param p2: point two
         :return: distance petween the points
-        :rtype: float
-        """
+"""
         a = p1[0] - p2[0]
         b = p1[1] - p2[1]
         c = 0
@@ -487,7 +485,7 @@ class BasicRangeModel(WirelessModel):
         """
         Configuration has changed during runtime.
 
-        :param dict config: values to update configuration
+        :param config: values to update configuration
         :return: nothing
         """
         self.values_from_config(config)
@@ -500,12 +498,11 @@ class BasicRangeModel(WirelessModel):
         """
         Create a wireless link/unlink data message.
 
-        :param core.nodes.interface.CoreInterface interface1: interface one
-        :param core.nodes.interface.CoreInterface interface2: interface two
+        :param interface1: interface one
+        :param interface2: interface two
         :param message_type: link message type
         :return: link data
-        :rtype: LinkData
-        """
+"""
         return LinkData(
             message_type=message_type,
             node1_id=interface1.node.id,
@@ -520,9 +517,9 @@ class BasicRangeModel(WirelessModel):
         """
         Send a wireless link/unlink API message to the GUI.
 
-        :param core.nodes.interface.CoreInterface netif: interface one
-        :param core.nodes.interface.CoreInterface netif2: interface two
-        :param bool unlink: unlink or not
+        :param netif: interface one
+        :param netif2: interface two
+        :param unlink: unlink or not
         :return: nothing
         """
         if unlink:
@@ -539,8 +536,7 @@ class BasicRangeModel(WirelessModel):
 
         :param flags: link flags
         :return: all link data
-        :rtype: list
-        """
+"""
         all_links = []
         with self.wlan._linked_lock:
             for a in self.wlan._linked:
@@ -561,7 +557,7 @@ class WayPoint:
         Creates a WayPoint instance.
 
         :param time: waypoint time
-        :param int nodenum: node id
+        :param nodenum: node id
         :param coords: waypoint coordinates
         :param speed: waypoint speed
         """
@@ -599,8 +595,8 @@ class WayPointMobility(WirelessModel):
         """
         Create a WayPointMobility instance.
 
-        :param core.emulator.session.Session session: CORE session instance
-        :param int _id: object id
+        :param session: CORE session instance
+        :param _id: object id
         :return:
         """
         super().__init__(session=session, _id=_id)
@@ -691,11 +687,10 @@ class WayPointMobility(WirelessModel):
         Calculate next node location and update its coordinates.
         Returns True if the node's position has changed.
 
-        :param core.nodes.base.CoreNode node: node to move
+        :param node: node to move
         :param dt: move factor
         :return: True if node was moved, False otherwise
-        :rtype: bool
-        """
+"""
         if node.id not in self.points:
             return False
         x1, y1, z1 = node.getposition()
@@ -764,7 +759,7 @@ class WayPointMobility(WirelessModel):
         Waypoints are pushed to a heapq, sorted by time.
 
         :param _time: waypoint time
-        :param int nodenum: node id
+        :param nodenum: node id
         :param x: x position
         :param y: y position
         :param z: z position
@@ -778,7 +773,7 @@ class WayPointMobility(WirelessModel):
         """
         Record initial position in a dict.
 
-        :param int nodenum: node id
+        :param nodenum: node id
         :param x: x position
         :param y: y position
         :param z: z position
@@ -791,7 +786,7 @@ class WayPointMobility(WirelessModel):
         """
         Move items from self.queue to self.points when their time has come.
 
-        :param float now: current timestamp
+        :param now: current timestamp
         :return: nothing
         """
         while len(self.queue):
@@ -823,7 +818,7 @@ class WayPointMobility(WirelessModel):
         without invoking the interface poshook callback that may perform
         range calculation.
 
-        :param core.nodes.base.CoreNode node: node to set position for
+        :param node: node to set position for
         :param x: x position
         :param y: y position
         :param z: z position
@@ -871,7 +866,7 @@ class WayPointMobility(WirelessModel):
         """
         Stop the script and move nodes to initial positions.
 
-        :param bool move_initial: flag to check if we should move nodes to initial
+        :param move_initial: flag to check if we should move nodes to initial
             position
         :return: nothing
         """
@@ -954,8 +949,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Creates a Ns2ScriptedMobility instance.
 
-        :param core.emulator.session.Session session: CORE session instance
-        :param int _id: object id
+        :param session: CORE session instance
+        :param _id: object id
         """
         super().__init__(session, _id)
         self._netifs = {}
@@ -1061,10 +1056,9 @@ class Ns2ScriptedMobility(WayPointMobility):
         configs directory (~/.core/configs). This allows for sample files without
         absolute path names.
 
-        :param str file_name: file name to find
+        :param file_name: file name to find
         :return: absolute path to the file
-        :rtype: str
-        """
+"""
         if os.path.exists(file_name):
             return file_name
 
@@ -1087,7 +1081,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Parse a node mapping string, given as a configuration parameter.
 
-        :param str mapstr: mapping string to parse
+        :param mapstr: mapping string to parse
         :return: nothing
         """
         self.nodemap = {}
@@ -1107,10 +1101,9 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Map one node number (from a script file) to another.
 
-        :param int nodenum: node id to map
+        :param nodenum: node id to map
         :return: mapped value or the node id itself
-        :rtype: int
-        """
+"""
         nodenum = int(nodenum)
         return self.nodemap.get(nodenum, nodenum)
 
@@ -1174,7 +1167,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Stop the mobility script.
 
-        :param bool move_initial: flag to check if we should move node to initial
+        :param move_initial: flag to check if we should move node to initial
             position
         :return: nothing
         """
@@ -1185,7 +1178,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         State of the mobility script.
 
-        :param str typestr: state type string
+        :param typestr: state type string
         :return: nothing
         """
         filename = None

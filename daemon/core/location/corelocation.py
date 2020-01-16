@@ -100,8 +100,7 @@ class CoreLocation:
         :param y: y value
         :param z: z value
         :return: lat, lon, alt values for provided coordinates
-        :rtype: tuple
-        """
+"""
         # shift (x,y,z) over to reference point (x,y,z)
         x -= self.refxyz[0]
         y = -(y - self.refxyz[1])
@@ -143,8 +142,7 @@ class CoreLocation:
         :param lon: longitude
         :param alt: altitude
         :return: converted x, y, z coordinates
-        :rtype: tuple
-        """
+"""
         # convert lat/lon to UTM coordinates in meters
         e, n, zonen, zonel = utm.from_latlon(lat, lon)
         _rlat, _rlon, ralt = self.refgeo
@@ -251,8 +249,7 @@ class CoreLocation:
         :param e: easting value
         :param n: northing value
         :return: modified easting, northing, and zone values
-        :rtype: tuple
-        """
+"""
         zone = self.refutm[0]
         rlat, rlon, _ralt = self.refgeo
         if e > 834000 or e < 166000:

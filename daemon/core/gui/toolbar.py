@@ -205,10 +205,10 @@ class Toolbar(ttk.Frame):
         """
         Create button and put it on the frame
 
-        :param PIL.Image image: button image
+        :param image: button image
         :param func: the command that is executed when button is clicked
-        :param tkinter.Frame frame: frame that contains the button
-        :param str label: button label
+        :param frame: frame that contains the button
+        :param label: button label
         """
         button = ttk.Button(
             frame, image=image, text=label, compound=tk.TOP, style=Styles.picker_button

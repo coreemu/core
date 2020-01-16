@@ -95,7 +95,7 @@ class CanvasGraph(tk.Canvas):
         """
         Reset the private variables CanvasGraph object, redraw nodes given the new grpc
         client.
-        :param core.api.grpc.core_pb2.Session session: session to draw
+        :param session: session to draw
         """
         # hide context
         self.hide_context()

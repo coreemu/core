@@ -14,7 +14,7 @@ def signal_handler(signal_number: int, _) -> None:
     """
     Handle signals and force an exit with cleanup.
 
-    :param int signal_number: signal number
+    :param signal_number: signal number
     :param _: ignored
     :return: nothing
     """
@@ -38,7 +38,7 @@ class CoreEmu:
         """
         Create a CoreEmu object.
 
-        :param dict config: configuration options
+        :param config: configuration options
         """
         # set umask 0
         os.umask(0)
@@ -88,11 +88,10 @@ class CoreEmu:
         """
         Create a new CORE session.
 
-        :param int _id: session id for new session
-        :param class _cls: Session class to use
+        :param _id: session id for new session
+        :param _cls: Session class to use
         :return: created session
-        :rtype: EmuSession
-        """
+"""
         if not _id:
             _id = 1
             while _id in self.sessions:
@@ -106,10 +105,9 @@ class CoreEmu:
         """
         Shutdown and delete a CORE session.
 
-        :param int _id: session id to delete
+        :param _id: session id to delete
         :return: True if deleted, False otherwise
-        :rtype: bool
-        """
+"""
         logging.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)
         result = False

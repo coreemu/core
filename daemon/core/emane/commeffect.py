@@ -68,7 +68,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         that file also. Otherwise the WLAN-wide
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
 
-        :param dict config: emane model configuration for the node and interface
+        :param config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """

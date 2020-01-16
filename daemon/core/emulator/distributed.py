@@ -34,8 +34,8 @@ class DistributedServer:
         """
         Create a DistributedServer instance.
 
-        :param str name: convenience name to associate with host
-        :param str host: host to connect to
+        :param name: convenience name to associate with host
+        :param host: host to connect to
         """
         self.name = name
         self.host = host
@@ -48,14 +48,13 @@ class DistributedServer:
         """
         Run command remotely using server connection.
 
-        :param str cmd: command to run
-        :param dict env: environment for remote command, default is None
-        :param str cwd: directory to run command in, defaults to None, which is the
+        :param cmd: command to run
+        :param env: environment for remote command, default is None
+        :param cwd: directory to run command in, defaults to None, which is the
             user's home directory
-        :param bool wait: True to wait for status, False to background process
+        :param wait: True to wait for status, False to background process
         :return: stdout when success
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
 
         replace_env = env is not None
@@ -83,8 +82,8 @@ class DistributedServer:
         """
         Push file to remote server.
 
-        :param str source: source file to push
-        :param str destination: destination file location
+        :param source: source file to push
+        :param destination: destination file location
         :return: nothing
         """
         with self.lock:
@@ -95,8 +94,8 @@ class DistributedServer:
         Remote push file contents to a remote server, using a temp file as an
         intermediate step.
 
-        :param str destination: file destination for data
-        :param str data: data to store in remote file
+        :param destination: file destination for data
+        :param data: data to store in remote file
         :return: nothing
         """
         with self.lock:
@@ -129,8 +128,8 @@ class DistributedController:
         """
         Add distributed server configuration.
 
-        :param str name: distributed server name
-        :param str host: distributed server host address
+        :param name: distributed server name
+        :param host: distributed server host address
         :return: nothing
         """
         server = DistributedServer(name, host)
@@ -197,12 +196,11 @@ class DistributedController:
         Create gre tunnel using a pair of gre taps between the local and remote server.
 
 
-        :param core.nodes.network.CoreNetwork node: node to create gre tunnel for
-        :param core.emulator.distributed.DistributedServer server: server to create
+        :param node: node to create gre tunnel for
+        :param server: server to create
             tunnel for
         :return: local and remote gre taps created for tunnel
-        :rtype: tuple
-        """
+"""
         host = server.host
         key = self.tunnel_key(node.id, netaddr.IPAddress(host).value)
         tunnel = self.tunnels.get(key)
@@ -236,11 +234,10 @@ class DistributedController:
         The hash(n1num), hash(n2num) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
-        :param int n1_id: node one id
-        :param int n2_id: node two id
+        :param n1_id: node one id
+        :param n2_id: node two id
         :return: tunnel key for the node pair
-        :rtype: int
-        """
+"""
         logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
         key = (
             (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
@@ -251,8 +248,8 @@ class DistributedController:
         """
         Return the GreTap between two nodes if it exists.
 
-        :param int n1_id: node one id
-        :param int n2_id: node two id
+        :param n1_id: node one id
+        :param n2_id: node two id
         :return: gre tap between nodes or None
         """
         key = self.tunnel_key(n1_id, n2_id)

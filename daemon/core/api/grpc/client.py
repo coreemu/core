@@ -23,8 +23,8 @@ class InterfaceHelper:
         """
         Creates an InterfaceHelper object.
 
-        :param str ip4_prefix: ip4 prefix to use for generation
-        :param str ip6_prefix: ip6 prefix to use for generation
+        :param ip4_prefix: ip4 prefix to use for generation
+        :param ip6_prefix: ip6 prefix to use for generation
         :raises ValueError: when both ip4 and ip6 prefixes have not been provided
         """
         if not ip4_prefix and not ip6_prefix:
@@ -41,9 +41,8 @@ class InterfaceHelper:
         """
         Convenience method to return the IP4 address for a node.
 
-        :param int node_id: node id to get IP4 address for
+        :param node_id: node id to get IP4 address for
         :return: IP4 address or None
-        :rtype: str
         """
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
@@ -53,9 +52,8 @@ class InterfaceHelper:
         """
         Convenience method to return the IP6 address for a node.
 
-        :param int node_id: node id to get IP6 address for
+        :param node_id: node id to get IP6 address for
         :return: IP4 address or None
-        :rtype: str
         """
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
@@ -68,13 +66,12 @@ class InterfaceHelper:
         Creates interface data for linking nodes, using the nodes unique id for
         generation, along with a random mac address, unless provided.
 
-        :param int node_id: node id to create interface for
-        :param int interface_id: interface id for interface
-        :param str name: name to set for interface, default is eth{id}
-        :param str mac: mac address to use for this interface, default is random
+        :param node_id: node id to create interface for
+        :param interface_id: interface id for interface
+        :param name: name to set for interface, default is eth{id}
+        :param mac: mac address to use for this interface, default is random
             generation
         :return: new interface data for the provided node
-        :rtype: core_pb2.Interface
         """
         # generate ip4 data
         ip4 = None
@@ -145,7 +142,7 @@ class CoreGrpcClient:
         """
         Creates a CoreGrpcClient instance.
 
-        :param str address: grpc server address to connect to
+        :param address: grpc server address to connect to
         """
         self.address = address
         self.stub = None
@@ -170,20 +167,19 @@ class CoreGrpcClient:
         """
         Start a session.
 
-        :param int session_id: id of session
-        :param list nodes: list of nodes to create
-        :param list links: list of links to create
-        :param core_pb2.SessionLocation location: location to set
-        :param list[core_pb2.Hook] hooks: session hooks to set
-        :param dict emane_config: emane configuration to set
-        :param list emane_model_configs: node emane model configurations
-        :param list wlan_configs: node wlan configurations
-        :param list mobility_configs: node mobility configurations
-        :param list service_configs: node service configurations
-        :param list service_file_configs: node service file configurations
-        :param list asymmetric_links: asymmetric links to edit
+        :param session_id: id of session
+        :param nodes: list of nodes to create
+        :param links: list of links to create
+        :param location: location to set
+        :param hooks: session hooks to set
+        :param emane_config: emane configuration to set
+        :param emane_model_configs: node emane model configurations
+        :param wlan_configs: node wlan configurations
+        :param mobility_configs: node mobility configurations
+        :param service_configs: node service configurations
+        :param service_file_configs: node service file configurations
+        :param asymmetric_links: asymmetric links to edit
         :return: start session response
-        :rtype: core_pb2.StartSessionResponse
         """
         request = core_pb2.StartSessionRequest(
             session_id=session_id,
@@ -205,9 +201,8 @@ class CoreGrpcClient:
         """
         Stop a running session.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: stop session response
-        :rtype: core_pb2.StopSessionResponse
         """
         request = core_pb2.StopSessionRequest(session_id=session_id)
         return self.stub.StopSession(request)
@@ -216,10 +211,9 @@ class CoreGrpcClient:
         """
         Create a session.
 
-        :param int session_id: id for session, default is None and one will be created
+        :param session_id: id for session, default is None and one will be created
             for you
         :return: response with created session id
-        :rtype: core_pb2.CreateSessionResponse
         """
         request = core_pb2.CreateSessionRequest(session_id=session_id)
         return self.stub.CreateSession(request)
@@ -228,9 +222,8 @@ class CoreGrpcClient:
         """
         Delete a session.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: response with result of deletion success or failure
-        :rtype: core_pb2.DeleteSessionResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.DeleteSessionRequest(session_id=session_id)
@@ -242,7 +235,6 @@ class CoreGrpcClient:
 
         :return: response with a list of currently known session, their state and
             number of nodes
-        :rtype: core_pb2.GetSessionsResponse
         """
         return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
@@ -250,9 +242,8 @@ class CoreGrpcClient:
         """
         Retrieve a session.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: response with sessions state, nodes, and links
-        :rtype: core_pb2.GetSessionResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetSessionRequest(session_id=session_id)
@@ -264,9 +255,8 @@ class CoreGrpcClient:
         """
         Retrieve session options as a dict with id mapping.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: response with a list of configuration groups
-        :rtype: core_pb2.GetSessionOptionsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
@@ -278,10 +268,9 @@ class CoreGrpcClient:
         """
         Set options for a session.
 
-        :param int session_id: id of session
-        :param dict[str, str] config: configuration values to set
+        :param session_id: id of session
+        :param config: configuration values to set
         :return: response with result of success or failure
-        :rtype: core_pb2.SetSessionOptionsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SetSessionOptionsRequest(
@@ -295,9 +284,8 @@ class CoreGrpcClient:
         """
         Retrieve session metadata as a dict with id mapping.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: response with metadata dict
-        :rtype: core_pb2.GetSessionMetadataResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetSessionMetadataRequest(session_id=session_id)
@@ -309,10 +297,9 @@ class CoreGrpcClient:
         """
         Set metadata for a session.
 
-        :param int session_id: id of session
-        :param dict[str, str] config: configuration values to set
+        :param session_id: id of session
+        :param config: configuration values to set
         :return: response with result of success or failure
-        :rtype: core_pb2.SetSessionMetadataResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SetSessionMetadataRequest(
@@ -326,9 +313,8 @@ class CoreGrpcClient:
         """
         Get session location.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :return: response with session position reference and scale
-        :rtype: core_pb2.GetSessionLocationResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetSessionLocationRequest(session_id=session_id)
@@ -348,16 +334,15 @@ class CoreGrpcClient:
         """
         Set session location.
 
-        :param int session_id: id of session
-        :param float x: x position
-        :param float y: y position
-        :param float z: z position
-        :param float lat: latitude position
-        :param float lon: longitude  position
-        :param float alt: altitude position
-        :param float scale: geo scale
+        :param session_id: id of session
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :param lat: latitude position
+        :param lon: longitude  position
+        :param alt: altitude position
+        :param scale: geo scale
         :return: response with result of success or failure
-        :rtype: core_pb2.SetSessionLocationResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         location = core_pb2.SessionLocation(
@@ -374,10 +359,9 @@ class CoreGrpcClient:
         """
         Set session state.
 
-        :param int session_id: id of session
-        :param core_pb2.SessionState state: session state to transition to
+        :param session_id: id of session
+        :param state: session state to transition to
         :return: response with result of success or failure
-        :rtype: core_pb2.SetSessionStateResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
@@ -389,11 +373,10 @@ class CoreGrpcClient:
         """
         Add distributed session server.
 
-        :param int session_id: id of session
-        :param str name: name of server to add
-        :param str host: host address to connect to
+        :param session_id: id of session
+        :param name: name of server to add
+        :param host: host address to connect to
         :return: response with result of success or failure
-        :rtype: core_pb2.AddSessionServerResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.AddSessionServerRequest(
@@ -410,9 +393,9 @@ class CoreGrpcClient:
         """
         Listen for session events.
 
-        :param int session_id: id of session
+        :param session_id: id of session
         :param handler: handler for received events
-        :param list events: events to listen to, defaults to all
+        :param events: events to listen to, defaults to all
         :return: stream processing events, can be used to cancel stream
         :raises grpc.RpcError: when session doesn't exist
         """
@@ -428,7 +411,7 @@ class CoreGrpcClient:
         """
         Listen for throughput events with information for interfaces and bridges.
 
-        :param int session_id: session id
+        :param session_id: session id
         :param handler: handler for every event
         :return: stream processing events, can be used to cancel stream
         :raises grpc.RpcError: when session doesn't exist
@@ -444,10 +427,9 @@ class CoreGrpcClient:
         """
         Add node to session.
 
-        :param int session_id: session id
-        :param core_pb2.Node node: node to add
+        :param session_id: session id
+        :param node: node to add
         :return: response with node id
-        :rtype: core_pb2.AddNodeResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.AddNodeRequest(session_id=session_id, node=node)
@@ -457,10 +439,9 @@ class CoreGrpcClient:
         """
         Get node details.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with node details
-        :rtype: core_pb2.GetNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
@@ -477,13 +458,12 @@ class CoreGrpcClient:
         """
         Edit a node, currently only changes position.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param core_pb2.Position position: position to set node to
-        :param str icon: path to icon for gui to use for node
-        :param str source: application source editing node
+        :param session_id: session id
+        :param node_id: node id
+        :param position: position to set node to
+        :param icon: path to icon for gui to use for node
+        :param source: application source editing node
         :return: response with result of success or failure
-        :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.EditNodeRequest(
@@ -499,10 +479,9 @@ class CoreGrpcClient:
         """
         Delete node from session.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with result of success or failure
-        :rtype: core_pb2.DeleteNodeResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.DeleteNodeRequest(session_id=session_id, node_id=node_id)
@@ -514,11 +493,10 @@ class CoreGrpcClient:
         """
         Send command to a node and get the output.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str command: command to run on node
+        :param session_id: session id
+        :param node_id: node id
+        :param command: command to run on node
         :return: response with command combined stdout/stderr
-        :rtype: core_pb2.NodeCommandResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.NodeCommandRequest(
@@ -532,10 +510,9 @@ class CoreGrpcClient:
         """
         Retrieve terminal command string for launching a local terminal.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with a node terminal command
-        :rtype: core_pb2.GetNodeTerminalResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetNodeTerminalRequest(
@@ -549,10 +526,9 @@ class CoreGrpcClient:
         """
         Get current links for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with a list of links
-        :rtype: core_pb2.GetNodeLinksResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetNodeLinksRequest(session_id=session_id, node_id=node_id)
@@ -570,14 +546,13 @@ class CoreGrpcClient:
         """
         Add a link between nodes.
 
-        :param int session_id: session id
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param core_pb2.Interface interface_one: node one interface data
-        :param core_pb2.Interface interface_two: node two interface data
-        :param core_pb2.LinkOptions options: options for link (jitter, bandwidth, etc)
+        :param session_id: session id
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param interface_one: node one interface data
+        :param interface_two: node two interface data
+        :param options: options for link (jitter, bandwidth, etc)
         :return: response with result of success or failure
-        :rtype: core_pb2.AddLinkResponse
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
         link = core_pb2.Link(
@@ -603,14 +578,13 @@ class CoreGrpcClient:
         """
         Edit a link between nodes.
 
-        :param int session_id: session id
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param core_pb2.LinkOptions options: options for link (jitter, bandwidth, etc)
-        :param int interface_one_id: node one interface id
-        :param int interface_two_id: node two interface id
+        :param session_id: session id
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param options: options for link (jitter, bandwidth, etc)
+        :param interface_one_id: node one interface id
+        :param interface_two_id: node two interface id
         :return: response with result of success or failure
-        :rtype: core_pb2.EditLinkResponse
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
         request = core_pb2.EditLinkRequest(
@@ -634,13 +608,12 @@ class CoreGrpcClient:
         """
         Delete a link between nodes.
 
-        :param int session_id: session id
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param int interface_one_id: node one interface id
-        :param int interface_two_id: node two interface id
+        :param session_id: session id
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param interface_one_id: node one interface id
+        :param interface_two_id: node two interface id
         :return: response with result of success or failure
-        :rtype: core_pb2.DeleteLinkResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.DeleteLinkRequest(
@@ -656,9 +629,8 @@ class CoreGrpcClient:
         """
         Get all hook scripts.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a list of hooks
-        :rtype: core_pb2.GetHooksResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetHooksRequest(session_id=session_id)
@@ -674,12 +646,11 @@ class CoreGrpcClient:
         """
         Add hook scripts.
 
-        :param int session_id: session id
-        :param core_pb2.SessionState state: state to trigger hook
-        :param str file_name: name of file for hook script
-        :param bytes file_data: hook script contents
+        :param session_id: session id
+        :param state: state to trigger hook
+        :param file_name: name of file for hook script
+        :param file_data: hook script contents
         :return: response with result of success or failure
-        :rtype: core_pb2.AddHookResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
@@ -692,9 +663,8 @@ class CoreGrpcClient:
         """
         Get all mobility configurations.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a dict of node ids to mobility configurations
-        :rtype: core_pb2.GetMobilityConfigsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetMobilityConfigsRequest(session_id=session_id)
@@ -706,10 +676,9 @@ class CoreGrpcClient:
         """
         Get mobility configuration for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with a list of configuration groups
-        :rtype: core_pb2.GetMobilityConfigResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetMobilityConfigRequest(
@@ -723,11 +692,10 @@ class CoreGrpcClient:
         """
         Set mobility configuration for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param dict[str, str] config: mobility configuration
+        :param session_id: session id
+        :param node_id: node id
+        :param config: mobility configuration
         :return: response with result of success or failure
-        :rtype: core_pb2.SetMobilityConfigResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         mobility_config = core_pb2.MobilityConfig(node_id=node_id, config=config)
@@ -742,11 +710,10 @@ class CoreGrpcClient:
         """
         Send a mobility action for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param core_pb2.ServiceAction action: action to take
+        :param session_id: session id
+        :param node_id: node id
+        :param action: action to take
         :return: response with result of success or failure
-        :rtype: core_pb2.MobilityActionResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.MobilityActionRequest(
@@ -759,7 +726,6 @@ class CoreGrpcClient:
         Get all currently loaded services.
 
         :return: response with a list of services
-        :rtype: core_pb2.GetServicesResponse
         """
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)
@@ -770,9 +736,8 @@ class CoreGrpcClient:
         """
         Get default services for different default node models.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a dict of node model to a list of services
-        :rtype: core_pb2.GetServiceDefaultsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetServiceDefaultsRequest(session_id=session_id)
@@ -784,10 +749,9 @@ class CoreGrpcClient:
         """
         Set default services for node models.
 
-        :param int session_id: session id
-        :param dict service_defaults: node models to lists of services
+        :param session_id: session id
+        :param service_defaults: node models to lists of services
         :return: response with result of success or failure
-        :rtype: core_pb2.SetServiceDefaultsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         defaults = []
@@ -806,9 +770,8 @@ class CoreGrpcClient:
         """
         Get service data for a node.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with all node service configs
-        :rtype: core_pb2.GetNodeServiceConfigsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetNodeServiceConfigsRequest(session_id=session_id)
@@ -820,11 +783,10 @@ class CoreGrpcClient:
         """
         Get service data for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str service: service name
+        :param session_id: session id
+        :param node_id: node id
+        :param service: service name
         :return: response with node service data
-        :rtype: core_pb2.GetNodeServiceResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetNodeServiceRequest(
@@ -838,12 +800,11 @@ class CoreGrpcClient:
         """
         Get a service file for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str service: service name
-        :param str file_name: file name to get data for
+        :param session_id: session id
+        :param node_id: node id
+        :param service: service name
+        :param file_name: file name to get data for
         :return: response with file data
-        :rtype: core_pb2.GetNodeServiceFileResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.GetNodeServiceFileRequest(
@@ -863,14 +824,13 @@ class CoreGrpcClient:
         """
         Set service data for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str service: service name
-        :param list startup: startup commands
-        :param list validate: validation commands
-        :param list shutdown: shutdown commands
+        :param session_id: session id
+        :param node_id: node id
+        :param service: service name
+        :param startup: startup commands
+        :param validate: validation commands
+        :param shutdown: shutdown commands
         :return: response with result of success or failure
-        :rtype: core_pb2.SetNodeServiceResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         config = core_pb2.ServiceConfig(
@@ -889,13 +849,12 @@ class CoreGrpcClient:
         """
         Set a service file for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str service: service name
-        :param str file_name: file name to save
-        :param bytes data: data to save for file
+        :param session_id: session id
+        :param node_id: node id
+        :param service: service name
+        :param file_name: file name to save
+        :param data: data to save for file
         :return: response with result of success or failure
-        :rtype: core_pb2.SetNodeServiceFileResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         config = core_pb2.ServiceFileConfig(
@@ -916,13 +875,12 @@ class CoreGrpcClient:
         """
         Send an action to a service for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str service: service name
-        :param core_pb2.ServiceAction action: action for service (start, stop, restart,
+        :param session_id: session id
+        :param node_id: node id
+        :param service: service name
+        :param action: action for service (start, stop, restart,
             validate)
         :return: response with result of success or failure
-        :rtype: core_pb2.ServiceActionResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.ServiceActionRequest(
@@ -934,9 +892,8 @@ class CoreGrpcClient:
         """
         Get all wlan configurations.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a dict of node ids to wlan configurations
-        :rtype: core_pb2.GetWlanConfigsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetWlanConfigsRequest(session_id=session_id)
@@ -948,10 +905,9 @@ class CoreGrpcClient:
         """
         Get wlan configuration for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
+        :param session_id: session id
+        :param node_id: node id
         :return: response with a list of configuration groups
-        :rtype: core_pb2.GetWlanConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetWlanConfigRequest(session_id=session_id, node_id=node_id)
@@ -963,11 +919,10 @@ class CoreGrpcClient:
         """
         Set wlan configuration for a node.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param dict[str, str] config: wlan configuration
+        :param session_id: session id
+        :param node_id: node id
+        :param config: wlan configuration
         :return: response with result of success or failure
-        :rtype: core_pb2.SetWlanConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         wlan_config = core_pb2.WlanConfig(node_id=node_id, config=config)
@@ -980,9 +935,8 @@ class CoreGrpcClient:
         """
         Get session emane configuration.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a list of configuration groups
-        :rtype: core_pb2.GetEmaneConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetEmaneConfigRequest(session_id=session_id)
@@ -994,10 +948,9 @@ class CoreGrpcClient:
         """
         Set session emane configuration.
 
-        :param int session_id: session id
-        :param dict[str, str] config: emane configuration
+        :param session_id: session id
+        :param config: emane configuration
         :return: response with result of success or failure
-        :rtype: core_pb2.SetEmaneConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SetEmaneConfigRequest(session_id=session_id, config=config)
@@ -1007,9 +960,8 @@ class CoreGrpcClient:
         """
         Get session emane models.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a list of emane models
-        :rtype: core_pb2.GetEmaneModelsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetEmaneModelsRequest(session_id=session_id)
@@ -1021,12 +973,11 @@ class CoreGrpcClient:
         """
         Get emane model configuration for a node or a node's interface.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str model: emane model name
-        :param int interface_id: node interface id
+        :param session_id: session id
+        :param node_id: node id
+        :param model: emane model name
+        :param interface_id: node interface id
         :return: response with a list of configuration groups
-        :rtype: core_pb2.GetEmaneModelConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetEmaneModelConfigRequest(
@@ -1045,13 +996,12 @@ class CoreGrpcClient:
         """
         Set emane model configuration for a node or a node's interface.
 
-        :param int session_id: session id
-        :param int node_id: node id
-        :param str model: emane model name
-        :param dict[str, str] config: emane model configuration
-        :param int interface_id: node interface id
+        :param session_id: session id
+        :param node_id: node id
+        :param model: emane model name
+        :param config: emane model configuration
+        :param interface_id: node interface id
         :return: response with result of success or failure
-        :rtype: core_pb2.SetEmaneModelConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         model_config = core_pb2.EmaneModelConfig(
@@ -1068,9 +1018,8 @@ class CoreGrpcClient:
         """
         Get all emane model configurations for a session.
 
-        :param int session_id: session id
+        :param session_id: session id
         :return: response with a dictionary of node/interface ids to configurations
-        :rtype: core_pb2.GetEmaneModelConfigsResponse
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.GetEmaneModelConfigsRequest(session_id=session_id)
@@ -1080,8 +1029,8 @@ class CoreGrpcClient:
         """
         Save the current scenario to an XML file.
 
-        :param int session_id: session id
-        :param str file_path: local path to save scenario XML file to
+        :param session_id: session id
+        :param file_path: local path to save scenario XML file to
         :return: nothing
         """
         request = core_pb2.SaveXmlRequest(session_id=session_id)
@@ -1093,10 +1042,9 @@ class CoreGrpcClient:
         """
         Load a local scenario XML file to open as a new session.
 
-        :param str file_path: path of scenario XML file
-        :param bool start: True to start session, False otherwise
+        :param file_path: path of scenario XML file
+        :param start: True to start session, False otherwise
         :return: response with opened session id
-        :rtype: core_pb2.OpenXmlResponse
         """
         with open(file_path, "r") as xml_file:
             data = xml_file.read()
@@ -1109,10 +1057,10 @@ class CoreGrpcClient:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 
-        :param int session_id: session id
-        :param int nem_one:
-        :param int nem_two:
-        :param bool linked: True to link, False to unlink
+        :param session_id: session id
+        :param nem_one:
+        :param nem_two:
+        :param linked: True to link, False to unlink
         :return: core_pb2.EmaneLinkResponse
         """
         request = core_pb2.EmaneLinkRequest(

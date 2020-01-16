@@ -45,11 +45,11 @@ class NodeBase:
         """
         Creates a NodeBase instance.
 
-        :param core.emulator.session.Session session: CORE session object
-        :param int _id: id
-        :param str name: object name
-        :param bool start: start value
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: CORE session object
+        :param _id: id
+        :param name: object name
+        :param start: start value
+        :param server: remote server node
             will run on, default is None for localhost
         """
 
@@ -102,14 +102,13 @@ class NodeBase:
         """
         Runs a command on the host system or distributed server.
 
-        :param str args: command to run
-        :param dict env: environment to run command with
-        :param str cwd: directory to run command in
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param env: environment to run command with
+        :param cwd: directory to run command in
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
             return utils.cmd(args, env, cwd, wait, shell)
@@ -120,12 +119,11 @@ class NodeBase:
         """
         Set the (x,y,z) position of the object.
 
-        :param float x: x position
-        :param float y: y position
-        :param float z: z position
+        :param x: x position
+        :param y: y position
+        :param z: z position
         :return: True if position changed, False otherwise
-        :rtype: bool
-        """
+"""
         return self.position.set(x=x, y=y, z=z)
 
     def getposition(self) -> Tuple[float, float, float]:
@@ -133,28 +131,25 @@ class NodeBase:
         Return an (x,y,z) tuple representing this object's position.
 
         :return: x,y,z position tuple
-        :rtype: tuple
-        """
+"""
         return self.position.get()
 
     def ifname(self, ifindex: int) -> str:
         """
         Retrieve interface name for index.
 
-        :param int ifindex: interface index
+        :param ifindex: interface index
         :return: interface name
-        :rtype: str
-        """
+"""
         return self._netif[ifindex].name
 
     def netifs(self, sort: bool = False) -> List[CoreInterface]:
         """
         Retrieve network interfaces, sorted if desired.
 
-        :param bool sort: boolean used to determine if interfaces should be sorted
+        :param sort: boolean used to determine if interfaces should be sorted
         :return: network interfaces
-        :rtype: list[core.nodes.interfaces.CoreInterface]
-        """
+"""
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
         else:
@@ -165,18 +160,16 @@ class NodeBase:
         Return the attached interface count.
 
         :return: number of network interfaces
-        :rtype: int
-        """
+"""
         return len(self._netif)
 
     def getifindex(self, netif: CoreInterface) -> int:
         """
         Retrieve index for an interface.
 
-        :param core.nodes.interface.CoreInterface netif: interface to get index for
+        :param netif: interface to get index for
         :return: interface index if found, -1 otherwise
-        :rtype: int
-        """
+"""
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
@@ -187,8 +180,7 @@ class NodeBase:
         Create a new interface index.
 
         :return: interface index
-        :rtype: int
-        """
+"""
         while self.ifindex in self._netif:
             self.ifindex += 1
         ifindex = self.ifindex
@@ -207,13 +199,12 @@ class NodeBase:
         Build a data object for this node.
 
         :param message_type: purpose for the data object we are creating
-        :param str lat: latitude
-        :param str lon: longitude
-        :param str alt: altitude
-        :param str source: source of node data
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :param source: source of node data
         :return: node data object
-        :rtype: core.emulator.data.NodeData
-        """
+"""
         if self.apitype is None:
             return None
 
@@ -257,8 +248,7 @@ class NodeBase:
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.data.LinkData]
-        """
+"""
         return []
 
 
@@ -278,11 +268,11 @@ class CoreNodeBase(NodeBase):
         """
         Create a CoreNodeBase instance.
 
-        :param core.emulator.session.Session session: CORE session object
-        :param int _id: object id
-        :param str name: object name
-        :param bool start: boolean for starting
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: CORE session object
+        :param _id: object id
+        :param name: object name
+        :param start: boolean for starting
+        :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
@@ -320,8 +310,8 @@ class CoreNodeBase(NodeBase):
         """
         Add network interface to node and set the network interface index if successful.
 
-        :param core.nodes.interface.CoreInterface netif: network interface to add
-        :param int ifindex: interface index
+        :param netif: network interface to add
+        :param ifindex: interface index
         :return: nothing
         """
         if ifindex in self._netif:
@@ -333,7 +323,7 @@ class CoreNodeBase(NodeBase):
         """
         Delete a network interface
 
-        :param int ifindex: interface index to delete
+        :param ifindex: interface index to delete
         :return: nothing
         """
         if ifindex not in self._netif:
@@ -346,10 +336,9 @@ class CoreNodeBase(NodeBase):
         """
         Retrieve network interface.
 
-        :param int ifindex: index of interface to retrieve
+        :param ifindex: index of interface to retrieve
         :return: network interface, or None if not found
-        :rtype: core.nodes.interface.CoreInterface
-        """
+"""
         if ifindex in self._netif:
             return self._netif[ifindex]
         else:
@@ -359,8 +348,8 @@ class CoreNodeBase(NodeBase):
         """
         Attach a network.
 
-        :param int ifindex: interface of index to attach
-        :param core.nodes.base.CoreNetworkBase net: network to attach
+        :param ifindex: interface of index to attach
+        :param net: network to attach
         :return: nothing
         """
         if ifindex not in self._netif:
@@ -371,7 +360,7 @@ class CoreNodeBase(NodeBase):
         """
         Detach network interface.
 
-        :param int ifindex: interface index to detach
+        :param ifindex: interface index to detach
         :return: nothing
         """
         if ifindex not in self._netif:
@@ -403,8 +392,7 @@ class CoreNodeBase(NodeBase):
         :param obj: object to get common network with
         :param want_ctrl: flag set to determine if control network are wanted
         :return: tuples of common networks
-        :rtype: list
-        """
+"""
         common = []
         for netif1 in self.netifs():
             if not want_ctrl and hasattr(netif1, "control"):
@@ -418,12 +406,11 @@ class CoreNodeBase(NodeBase):
         """
         Runs a command within a node container.
 
-        :param str args: command to run
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
         raise NotImplementedError
 
@@ -431,7 +418,7 @@ class CoreNodeBase(NodeBase):
         """
         Create a terminal command string.
 
-        :param str sh: shell to execute command in
+        :param sh: shell to execute command in
         :return: str
         """
         raise NotImplementedError
@@ -458,13 +445,13 @@ class CoreNode(CoreNodeBase):
         """
         Create a CoreNode instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param int _id: object id
-        :param str name: object name
-        :param str nodedir: node directory
-        :param str bootsh: boot shell to use
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param _id: object id
+        :param name: object name
+        :param nodedir: node directory
+        :param bootsh: boot shell to use
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
@@ -490,7 +477,7 @@ class CoreNode(CoreNodeBase):
         Create node network client for running network commands within the nodes
         container.
 
-        :param bool use_ovs: True for OVS bridges, False for Linux bridges
+        :param use_ovs: True for OVS bridges, False for Linux bridges
         :return: node network client
         """
         return get_net_client(use_ovs, self.cmd)
@@ -500,8 +487,7 @@ class CoreNode(CoreNodeBase):
         Check if the node is alive.
 
         :return: True if node is alive, False otherwise
-        :rtype: bool
-        """
+"""
         try:
             self.host_cmd(f"kill -0 {self.pid}")
         except CoreCommandError:
@@ -601,12 +587,11 @@ class CoreNode(CoreNodeBase):
         Runs a command that is used to configure and setup the network within a
         node.
 
-        :param str args: command to run
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
+:raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
             return self.client.check_cmd(args, wait=wait, shell=shell)
@@ -618,7 +603,7 @@ class CoreNode(CoreNodeBase):
         """
         Create a terminal command string.
 
-        :param str sh: shell to execute command in
+        :param sh: shell to execute command in
         :return: str
         """
         terminal = self.client.create_cmd(sh)
@@ -631,7 +616,7 @@ class CoreNode(CoreNodeBase):
         """
         Create a private directory.
 
-        :param str path: path to create
+        :param path: path to create
         :return: nothing
         """
         if path[0] != "/":
@@ -646,8 +631,8 @@ class CoreNode(CoreNodeBase):
         """
         Create and mount a directory.
 
-        :param str source: source directory to mount
-        :param str target: target directory to create
+        :param source: source directory to mount
+        :param target: target directory to create
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -662,8 +647,7 @@ class CoreNode(CoreNodeBase):
         Retrieve a new interface index.
 
         :return: new interface index
-        :rtype: int
-        """
+"""
         with self.lock:
             return super().newifindex()
 
@@ -671,8 +655,8 @@ class CoreNode(CoreNodeBase):
         """
         Create a new interface.
 
-        :param int ifindex: index for the new interface
-        :param str ifname: name for the new interface
+        :param ifindex: index for the new interface
+        :param ifname: name for the new interface
         :return: nothing
         """
         with self.lock:
@@ -728,11 +712,10 @@ class CoreNode(CoreNodeBase):
         """
         Create a new tunnel tap.
 
-        :param int ifindex: interface index
-        :param str ifname: interface name
+        :param ifindex: interface index
+        :param ifname: interface name
         :return: interface index
-        :rtype: int
-        """
+"""
         with self.lock:
             if ifindex is None:
                 ifindex = self.newifindex()
@@ -758,8 +741,8 @@ class CoreNode(CoreNodeBase):
         """
         Set hardware addres for an interface.
 
-        :param int ifindex: index of interface to set hardware address for
-        :param str addr: hardware address to set
+        :param ifindex: index of interface to set hardware address for
+        :param addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -773,8 +756,8 @@ class CoreNode(CoreNodeBase):
         """
         Add interface address.
 
-        :param int ifindex: index of interface to add address to
-        :param str addr: address to add to interface
+        :param ifindex: index of interface to add address to
+        :param addr: address to add to interface
         :return: nothing
         """
         addr = utils.validate_ip(addr)
@@ -791,8 +774,8 @@ class CoreNode(CoreNodeBase):
         """
         Delete address from an interface.
 
-        :param int ifindex: index of interface to delete address from
-        :param str addr: address to delete from interface
+        :param ifindex: index of interface to delete address from
+        :param addr: address to delete from interface
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -810,7 +793,7 @@ class CoreNode(CoreNodeBase):
         """
         Bring an interface up.
 
-        :param int ifindex: index of interface to bring up
+        :param ifindex: index of interface to bring up
         :return: nothing
         """
         if self.up:
@@ -828,14 +811,13 @@ class CoreNode(CoreNodeBase):
         """
         Create a new network interface.
 
-        :param core.nodes.base.CoreNetworkBase net: network to associate with
-        :param list addrlist: addresses to add on the interface
-        :param str hwaddr: hardware address to set for interface
-        :param int ifindex: index of interface to create
-        :param str ifname: name for interface
+        :param net: network to associate with
+        :param addrlist: addresses to add on the interface
+        :param hwaddr: hardware address to set for interface
+        :param ifindex: index of interface to create
+        :param ifname: name for interface
         :return: interface index
-        :rtype: int
-        """
+"""
         if not addrlist:
             addrlist = []
 
@@ -872,8 +854,8 @@ class CoreNode(CoreNodeBase):
         """
         Add a file.
 
-        :param str srcname: source file name
-        :param str filename: file name to add
+        :param srcname: source file name
+        :param filename: file name to add
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -891,7 +873,7 @@ class CoreNode(CoreNodeBase):
         """
         Return the name of a node"s file on the host filesystem.
 
-        :param str filename: host file name
+        :param filename: host file name
         :return: path to file
         """
         dirname, basename = os.path.split(filename)
@@ -907,9 +889,9 @@ class CoreNode(CoreNodeBase):
         """
         Create a node file with a given mode.
 
-        :param str filename: name of file to create
-        :param str contents: contents of file
-        :param int mode: mode for file
+        :param filename: name of file to create
+        :param contents: contents of file
+        :param mode: mode for file
         :return: nothing
         """
         hostfilename = self.hostfilename(filename)
@@ -933,9 +915,9 @@ class CoreNode(CoreNodeBase):
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
 
-        :param str filename: file name to copy file to
-        :param str srcfilename: file to copy
-        :param int mode: mode to copy to
+        :param filename: file name to copy file to
+        :param srcfilename: file to copy
+        :param mode: mode to copy to
         :return: nothing
         """
         hostfilename = self.hostfilename(filename)
@@ -969,11 +951,11 @@ class CoreNetworkBase(NodeBase):
         """
         Create a CoreNetworkBase instance.
 
-        :param core.emulator.session.Session session: CORE session object
-        :param int _id: object id
-        :param str name: object name
-        :param bool start: should object start
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: CORE session object
+        :param _id: object id
+        :param name: object name
+        :param start: should object start
+        :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
@@ -1000,20 +982,18 @@ class CoreNetworkBase(NodeBase):
         """
         Link network to another.
 
-        :param core.nodes.base.CoreNetworkBase net: network to link with
+        :param net: network to link with
         :return: created interface
-        :rtype: core.nodes.interface.Veth
-        """
+"""
         pass
 
     def getlinknetif(self, net: "CoreNetworkBase") -> CoreInterface:
         """
         Return the interface of that links this net with another net.
 
-        :param core.nodes.base.CoreNetworkBase net: interface to get link for
+        :param net: interface to get link for
         :return: interface the provided network is linked to
-        :rtype: core.nodes.interface.CoreInterface
-        """
+"""
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
@@ -1023,7 +1003,7 @@ class CoreNetworkBase(NodeBase):
         """
         Attach network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface to attach
+        :param netif: network interface to attach
         :return: nothing
         """
         i = self.newifindex()
@@ -1036,7 +1016,7 @@ class CoreNetworkBase(NodeBase):
         """
         Detach network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface to detach
+        :param netif: network interface to detach
         :return: nothing
         """
         del self._netif[netif.netifi]
@@ -1049,10 +1029,9 @@ class CoreNetworkBase(NodeBase):
         Build link data objects for this network. Each link object describes a link
         between this network and a node.
 
-        :param int flags: message type
+        :param flags: message type
         :return: list of link data
-        :rtype: list[core.data.LinkData]
-        """
+"""
         all_links = []
 
         # build a link message from this network node to each node having a
@@ -1159,12 +1138,11 @@ class Position:
         """
         Returns True if the position has actually changed.
 
-        :param float x: x position
-        :param float y: y position
-        :param float z: z position
+        :param x: x position
+        :param y: y position
+        :param z: z position
         :return: True if position changed, False otherwise
-        :rtype: bool
-        """
+"""
         if self.x == x and self.y == y and self.z == z:
             return False
         self.x = x
@@ -1177,6 +1155,5 @@ class Position:
         Retrieve x,y,z position.
 
         :return: x,y,z position tuple
-        :rtype: tuple
-        """
+"""
         return self.x, self.y, self.z

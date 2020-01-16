@@ -18,7 +18,7 @@ def _type_value(config_type: str) -> ConfigDataTypes:
     """
     Convert emane configuration type to core configuration value.
 
-    :param str config_type: emane configuration type
+    :param config_type: emane configuration type
     :return: core config type
     """
     config_type = config_type.upper()
@@ -33,11 +33,10 @@ def _get_possible(config_type: str, config_regex: str) -> List[str]:
     """
     Retrieve possible config value options based on emane regexes.
 
-    :param str config_type: emane configuration type
-    :param str config_regex: emane configuration regex
+    :param config_type: emane configuration type
+    :param config_regex: emane configuration regex
     :return: a string listing comma delimited values, if needed, empty string otherwise
-    :rtype: list
-    """
+"""
     if config_type == "bool":
         return ["On", "Off"]
 
@@ -52,11 +51,10 @@ def _get_default(config_type_name: str, config_value: List[str]) -> str:
     """
     Convert default configuration values to one used by core.
 
-    :param str config_type_name: emane configuration type name
-    :param list config_value: emane configuration value list
+    :param config_type_name: emane configuration type name
+    :param config_value: emane configuration value list
     :return: default core config value
-    :rtype: str
-    """
+"""
 
     config_default = ""
 
@@ -77,11 +75,10 @@ def parse(manifest_path: str, defaults: Dict[str, str]) -> List[Configuration]:
     """
     Parses a valid emane manifest file and converts the provided configuration values into ones used by core.
 
-    :param str manifest_path: absolute manifest file path
-    :param dict defaults: used to override default values for configurations
+    :param manifest_path: absolute manifest file path
+    :param defaults: used to override default values for configurations
     :return: list of core configuration values
-    :rtype: list
-    """
+"""
 
     # no results when emane bindings are not present
     if not manifest:
