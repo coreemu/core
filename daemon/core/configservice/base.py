@@ -9,6 +9,8 @@ from typing import Any, Dict, List
 from mako import exceptions
 from mako.lookup import TemplateLookup
 
+from core import utils
+from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
@@ -19,6 +21,42 @@ class ConfigServiceMode(enum.Enum):
     BLOCKING = 0
     NON_BLOCKING = 1
     TIMER = 2
+
+
+class ConfigServiceManager:
+    def __init__(self):
+        self.services = {}
+
+    def add(self, service: "ConfigService") -> None:
+        name = service.name
+        logging.debug("loading service: class(%s) name(%s)", service.__class__, name)
+
+        # avoid duplicate services
+        if name in self.services:
+            raise CoreError(f"duplicate service being added: {name}")
+
+        # validate dependent executables are present
+        for executable in service.executables:
+            utils.which(executable, required=True)
+
+            # make service available
+        self.services[name] = service
+
+    def load(self, path: str) -> List[str]:
+        path = pathlib.Path(path)
+        subdirs = [x for x in path.iterdir() if x.is_dir()]
+        service_errors = []
+        for subdir in subdirs:
+            logging.info("loading config services from: %s", subdir)
+            services = utils.load_classes(str(subdir), ConfigService)
+            for service in services:
+                logging.info("found service: %s", service)
+                try:
+                    self.add(service)
+                except CoreError as e:
+                    service_errors.append(service.name)
+                    logging.debug("not loading service(%s): %s", service.name, e)
+        return service_errors
 
 
 class ConfigService(abc.ABC):
@@ -34,6 +72,9 @@ class ConfigService(abc.ABC):
         templates_path = pathlib.Path(class_file).parent.joinpath(TEMPLATES_DIR)
         logging.info(templates_path)
         self.templates = TemplateLookup(directories=templates_path)
+        self.config = {}
+        configs = self.default_configs[:]
+        self._define_config(configs)
 
     @property
     @abc.abstractmethod
@@ -48,6 +89,11 @@ class ConfigService(abc.ABC):
     @property
     @abc.abstractmethod
     def directories(self) -> List[str]:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def default_configs(self) -> List[Configuration]:
         raise NotImplementedError
 
     @property
@@ -127,7 +173,7 @@ class ConfigService(abc.ABC):
         wait = self.validation_mode == ConfigServiceMode.BLOCKING
         start = time.monotonic()
         index = 0
-        cmds = self.startup[:]
+        cmds = self.validate[:]
         while cmds:
             cmd = cmds[index]
             try:
@@ -152,7 +198,9 @@ class ConfigService(abc.ABC):
             data = {}
         try:
             template = self.templates.get_template(name)
-            rendered = template.render_unicode(node=self.node, **data)
+            rendered = template.render_unicode(
+                node=self.node, config=self.render_config(), **data
+            )
             logging.info(
                 "node(%s) service(%s) template(%s): \n%s",
                 self.node.name,
@@ -160,10 +208,24 @@ class ConfigService(abc.ABC):
                 name,
                 rendered,
             )
-            # self.node.nodefile(name, rendered)
+            self.node.nodefile(name, rendered)
         except Exception:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) "
                 f"error rendering template({name}): "
                 f"{exceptions.text_error_template().render()}"
             )
+
+    def _define_config(self, configs: List[Configuration]) -> None:
+        for config in configs:
+            self.config[config.id] = config
+
+    def render_config(self) -> Dict[str, str]:
+        return {k: v.default for k, v in self.config.items()}
+
+    def set_config(self, data: Dict[str, str]) -> None:
+        for key, value in data.items():
+            config = self.config.get(key)
+            if config is None:
+                raise CoreError(f"unknown config: {key}")
+            config.default = value
