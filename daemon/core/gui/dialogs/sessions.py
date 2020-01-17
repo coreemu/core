@@ -189,6 +189,8 @@ class SessionsDialog(Dialog):
             logging.error("querysessiondrawing.py invalid state")
 
     def join_session(self, session_id: int):
+        if self.app.core.xml_file:
+            self.app.core.xml_file = None
         self.app.statusbar.progress_bar.start(5)
         task = BackgroundTask(self.app, self.app.core.join_session, args=(session_id,))
         task.start()

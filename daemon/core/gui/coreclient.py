@@ -93,6 +93,9 @@ class CoreClient:
         self.handling_throughputs = None
         self.handling_events = None
 
+        self.xml_dir = None
+        self.xml_file = None
+
     def reset(self):
         # helpers
         self.interfaces_manager.reset()
