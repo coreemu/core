@@ -73,7 +73,7 @@ class LinuxNetClient:
 
         :param device: device to get information for
         :return: device information
-"""
+        """
         return self.run(f"{IP_BIN} link show {device}")
 
     def get_mac(self, device: str) -> str:
@@ -82,7 +82,7 @@ class LinuxNetClient:
 
         :param device: device to get mac for
         :return: MAC address
-"""
+        """
         return self.run(f"cat /sys/class/net/{device}/address")
 
     def get_ifindex(self, device: str) -> str:
@@ -91,7 +91,7 @@ class LinuxNetClient:
 
         :param device: device to get ifindex for
         :return: ifindex
-"""
+        """
         return self.run(f"cat /sys/class/net/{device}/ifindex")
 
     def device_ns(self, device: str, namespace: str) -> None:

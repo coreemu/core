@@ -12,7 +12,7 @@ class NrlService(CoreService):
     """
     Parent class for NRL services. Defines properties and methods
     common to NRL's routing daemons.
-    """ ""
+    """
 
     name = None
     group = "ProtoSvc"

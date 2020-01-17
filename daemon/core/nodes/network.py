@@ -102,7 +102,7 @@ class EbtablesQueue:
 
         :param cmd: ebtable command
         :return: ebtable atomic command
-"""
+        """
         return f"{EBTABLES_BIN} --atomic-file {self.atomic_file} {cmd}"
 
     def lastupdate(self, wlan: "CoreNetwork") -> float:
@@ -111,7 +111,7 @@ class EbtablesQueue:
 
         :param wlan: wlan entity
         :return: elpased time
-"""
+        """
         try:
             elapsed = time.monotonic() - self.last_update_time[wlan]
         except KeyError:
@@ -387,7 +387,7 @@ class CoreNetwork(CoreNetworkBase):
         :param netif1: interface one
         :param netif2: interface two
         :return: True if interfaces are linked, False otherwise
-"""
+        """
         # check if the network interfaces are attached to this network
         if self._netif[netif1.netifi] != netif1:
             raise ValueError(f"inconsistency for netif {netif1.name}")
@@ -544,7 +544,7 @@ class CoreNetwork(CoreNetworkBase):
 
         :param net: network to link with
         :return: created interface
-"""
+        """
         sessionid = self.session.short_session_id()
         try:
             _id = f"{self.id:x}"
@@ -584,7 +584,7 @@ class CoreNetwork(CoreNetworkBase):
 
         :param net: interface to get link for
         :return: interface the provided network is linked to
-"""
+        """
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
@@ -855,7 +855,7 @@ class CtrlNet(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-"""
+        """
         return []
 
 
@@ -897,7 +897,7 @@ class PtpNet(CoreNetwork):
         :param alt: altitude
         :param source: source of node data
         :return: node data object
-"""
+        """
         return None
 
     def all_link_data(self, flags: int) -> List[LinkData]:
@@ -907,8 +907,7 @@ class PtpNet(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-"""
-
+        """
         all_links = []
 
         if len(self._netif) != 2:
@@ -1130,7 +1129,7 @@ class WlanNode(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-"""
+        """
         all_links = super().all_link_data(flags)
         if self.model:
             all_links.extend(self.model.all_link_data(flags))

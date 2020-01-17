@@ -217,7 +217,7 @@ class InterfaceData:
         Returns a list of ip4 and ip6 address when present.
 
         :return: list of addresses
-"""
+        """
         ip4 = self.ip4_address()
         ip6 = self.ip6_address()
         return [i for i in [ip4, ip6] if i]
@@ -252,7 +252,7 @@ class IpPrefixes:
 
         :param node: node to get IP4 address for
         :return: IP4 address or None
-"""
+        """
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
         return str(self.ip4[node.id])
@@ -263,7 +263,7 @@ class IpPrefixes:
 
         :param node: node to get IP6 address for
         :return: IP4 address or None
-"""
+        """
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node.id])
@@ -280,7 +280,7 @@ class IpPrefixes:
         :param mac: mac address to use for this interface, default is random
             generation
         :return: new interface data for the provided node
-"""
+        """
         # interface id
         inteface_id = node.newifindex()
 

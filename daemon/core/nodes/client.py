@@ -38,7 +38,7 @@ class VnodeClient:
         Check if node is connected or not.
 
         :return: True if connected, False otherwise
-"""
+        """
         return True
 
     def close(self) -> None:

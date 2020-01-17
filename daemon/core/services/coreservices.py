@@ -60,7 +60,7 @@ class ServiceDependencies:
         Generates the boot paths for the services provided to the class.
 
         :return: list of services to boot, in order
-"""
+        """
         paths = []
         for name in self.node_services:
             service = self.node_services[name]
@@ -151,7 +151,7 @@ class ServiceShim:
         :param node: node to get value list for
         :param service: service to get value list for
         :return: value list string
-"""
+        """
         start_time = 0
         start_index = 0
         valmap = [
@@ -229,7 +229,7 @@ class ServiceShim:
 
         :param opaque: opaque data string
         :return: services
-"""
+        """
         servicesstring = opaque.split(":")
         if servicesstring[0] != "service":
             return []
@@ -280,7 +280,7 @@ class ServiceManager:
 
         :param name: name of the service to retrieve
         :return: service if it exists, None otherwise
-"""
+        """
         return cls.services.get(name)
 
     @classmethod
@@ -290,7 +290,7 @@ class ServiceManager:
 
         :param path: path to retrieve services from
         :return: list of core services that failed to load
-"""
+        """
         service_errors = []
         services = utils.load_classes(path, CoreService)
         for service in services:
@@ -342,7 +342,7 @@ class CoreServices:
 
         :param node_type: node type to get default services for
         :return: default services
-"""
+        """
         logging.debug("getting default services for type: %s", node_type)
         results = []
         defaults = self.default_services.get(node_type, [])
@@ -426,7 +426,7 @@ class CoreServices:
         to a session or opening XML.
 
         :return: list of tuples of node ids and services
-"""
+        """
         configs = []
         for node_id in self.custom_services:
             custom_services = self.custom_services[node_id]
@@ -442,7 +442,7 @@ class CoreServices:
 
         :param service: service to get files for
         :return: list of all custom service files
-"""
+        """
         files = []
         if not service.custom:
             return files
@@ -566,7 +566,7 @@ class CoreServices:
         :param filename: file name for a configured service
         :param cfg: configuration string
         :return: True if successful, False otherwise
-"""
+        """
         if cfg[:7] == "file://":
             src = cfg[7:]
             src = src.split("\n")[0]
@@ -583,7 +583,7 @@ class CoreServices:
         :param node: node to validate service for
         :param service: service to validate
         :return: service validation status
-"""
+        """
         logging.debug("validating node(%s) service(%s)", node.name, service.name)
         cmds = service.validate
         if not service.custom:
@@ -723,8 +723,7 @@ class CoreServices:
         :param service: service to reconfigure
         :param wait: determines if we should wait to validate startup
         :return: status of startup
-"""
-
+        """
         cmds = service.startup
         if not service.custom:
             cmds = service.get_startup(node)
@@ -869,7 +868,7 @@ class CoreService:
 
         :param node: node to generate config for
         :return: configuration files
-"""
+        """
         return cls.configs
 
     @classmethod
@@ -896,7 +895,7 @@ class CoreService:
 
         :param node: node to get startup for
         :return: startup commands
-"""
+        """
         return cls.startup
 
     @classmethod
@@ -909,5 +908,5 @@ class CoreService:
 
         :param node: node to validate
         :return: validation commands
-"""
+        """
         return cls.validate

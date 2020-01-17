@@ -134,7 +134,7 @@ class Sdt:
         the option is missing.
 
         :return: True if enabled, False otherwise
-"""
+        """
         return self.session.options.get_config("enablesdt") == "1"
 
     def seturl(self) -> None:
@@ -156,7 +156,7 @@ class Sdt:
         Connect to the SDT address/port if enabled.
 
         :return: True if connected, False otherwise
-"""
+        """
         if not self.is_enabled():
             return False
         if self.connected:
@@ -194,7 +194,7 @@ class Sdt:
         the virtual globe.
 
         :return: initialize command status
-"""
+        """
         if not self.cmd(f'path "{CORE_DATA_DIR}/icons/normal"'):
             return False
         # send node type to icon mappings
@@ -238,7 +238,7 @@ class Sdt:
 
         :param cmdstr: command to send
         :return: True if command was successful, False otherwise
-"""
+        """
         if self.sock is None:
             return False
         try:
@@ -507,7 +507,7 @@ class Sdt:
 
         :param nodenum: node id to check
         :return: True if node is wlan or emane, False otherwise
-"""
+        """
         if nodenum in self.remotes:
             node_type = self.remotes[nodenum].type
             if node_type in ("wlan", "emane"):

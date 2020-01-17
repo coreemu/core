@@ -226,7 +226,7 @@ class CoreInterface:
 
         :param other: other interface
         :return: true if less than, false otherwise
-"""
+        """
         return id(self) < id(other)
 
 
@@ -374,7 +374,7 @@ class TunTap(CoreInterface):
         :param attempts: number of attempts to wait for a zero result
         :param maxretrydelay: maximum retry delay
         :return: True if wait succeeded, False otherwise
-"""
+        """
         delay = 0.01
         result = False
         for i in range(1, attempts + 1):
@@ -402,7 +402,7 @@ class TunTap(CoreInterface):
         appear right away waits
 
         :return: wait for device local response
-"""
+        """
         logging.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
@@ -560,5 +560,5 @@ class GreTap(CoreInterface):
 
         :param flags: link flags
         :return: link data
-"""
+        """
         return []

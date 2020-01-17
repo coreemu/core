@@ -199,7 +199,7 @@ class Session:
         :param node_one_id: node one id
         :param node_two_id: node two id
         :return: nodes, network nodes if present, and tunnel if present
-"""
+        """
         logging.debug(
             "link message between node1(%s) and node2(%s)", node_one_id, node_two_id
         )
@@ -1254,7 +1254,7 @@ class Session:
 
         :param state: flag to determine if session state should be included
         :return: environment variables
-"""
+        """
         env = os.environ.copy()
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
@@ -1374,7 +1374,7 @@ class Session:
 
         :param _id: id of node to delete
         :return: True if node deleted, False otherwise
-"""
+        """
         # delete node and check for session shutdown if a node was removed
         logging.info("deleting node(%s)", _id)
         node = None
@@ -1610,7 +1610,7 @@ class Session:
         request flag.
 
         :return: service boot exceptions
-"""
+        """
         with self._nodes_lock:
             funcs = []
             start = time.monotonic()
@@ -1631,7 +1631,7 @@ class Session:
         Retrieve control net prefixes.
 
         :return: control net prefix list
-"""
+        """
         p = self.options.get_config("controlnet")
         p0 = self.options.get_config("controlnet0")
         p1 = self.options.get_config("controlnet1")
@@ -1646,7 +1646,7 @@ class Session:
         Retrieve control net server interfaces.
 
         :return: list of control net server interfaces
-"""
+        """
         d0 = self.options.get_config("controlnetif0")
         if d0:
             logging.error("controlnet0 cannot be assigned with a host interface")
@@ -1661,7 +1661,7 @@ class Session:
 
         :param dev: device to get control net index for
         :return: control net index, -1 otherwise
-"""
+        """
         if dev[0:4] == "ctrl" and int(dev[4]) in [0, 1, 2, 3]:
             index = int(dev[4])
             if index == 0:
@@ -1696,7 +1696,7 @@ class Session:
         :param remove: flag to check if it should be removed
         :param conf_required: flag to check if conf is required
         :return: control net node
-"""
+        """
         logging.debug(
             "add/remove control net: index(%s) remove(%s) conf_required(%s)",
             net_index,

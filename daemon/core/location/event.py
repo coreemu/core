@@ -51,7 +51,7 @@ class Timer(threading.Thread):
         the timer was already running.
 
         :return: True if canceled, False otherwise
-"""
+        """
         locked = self._running.acquire(False)
         if locked:
             self.finished.set()
@@ -222,7 +222,7 @@ class EventLoop:
         :param args: event arguments
         :param kwds: event keyword arguments
         :return: created event
-"""
+        """
         with self.lock:
             eventnum = self.eventnum
             self.eventnum += 1

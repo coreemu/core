@@ -70,7 +70,7 @@ class EmaneModel(WirelessModel):
         Returns the combination all all configurations (mac, phy, and external).
 
         :return: all configurations
-"""
+        """
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
@@ -79,7 +79,7 @@ class EmaneModel(WirelessModel):
         Returns the defined configuration groups.
 
         :return: list of configuration groups.
-"""
+        """
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
