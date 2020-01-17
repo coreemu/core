@@ -118,7 +118,7 @@ class DockerNode(CoreNode):
         Check if the node is alive.
 
         :return: True if node is alive, False otherwise
-"""
+        """
         return self.client.is_alive()
 
     def startup(self) -> None:

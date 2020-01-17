@@ -91,7 +91,7 @@ class CoreEmu:
         :param _id: session id for new session
         :param _cls: Session class to use
         :return: created session
-"""
+        """
         if not _id:
             _id = 1
             while _id in self.sessions:
@@ -107,7 +107,7 @@ class CoreEmu:
 
         :param _id: session id to delete
         :return: True if deleted, False otherwise
-"""
+        """
         logging.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)
         result = False

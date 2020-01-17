@@ -200,7 +200,7 @@ class DistributedController:
         :param server: server to create
             tunnel for
         :return: local and remote gre taps created for tunnel
-"""
+        """
         host = server.host
         key = self.tunnel_key(node.id, netaddr.IPAddress(host).value)
         tunnel = self.tunnels.get(key)
@@ -237,7 +237,7 @@ class DistributedController:
         :param n1_id: node one id
         :param n2_id: node two id
         :return: tunnel key for the node pair
-"""
+        """
         logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
         key = (
             (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)

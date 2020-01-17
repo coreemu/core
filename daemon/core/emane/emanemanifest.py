@@ -36,7 +36,7 @@ def _get_possible(config_type: str, config_regex: str) -> List[str]:
     :param config_type: emane configuration type
     :param config_regex: emane configuration regex
     :return: a string listing comma delimited values, if needed, empty string otherwise
-"""
+    """
     if config_type == "bool":
         return ["On", "Off"]
 
@@ -54,8 +54,7 @@ def _get_default(config_type_name: str, config_value: List[str]) -> str:
     :param config_type_name: emane configuration type name
     :param config_value: emane configuration value list
     :return: default core config value
-"""
-
+    """
     config_default = ""
 
     if config_type_name == "bool":
@@ -78,7 +77,7 @@ def parse(manifest_path: str, defaults: Dict[str, str]) -> List[Configuration]:
     :param manifest_path: absolute manifest file path
     :param defaults: used to override default values for configurations
     :return: list of core configuration values
-"""
+    """
 
     # no results when emane bindings are not present
     if not manifest:

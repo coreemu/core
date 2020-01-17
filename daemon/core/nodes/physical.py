@@ -424,7 +424,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param ifindex: interface index to retrieve
         :param net: network to retrieve
         :return: a network interface
-"""
+        """
         if net is not None and net == self.net:
             return self
 
@@ -443,7 +443,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param netif: network interface to retrieve
             index for
         :return: interface index, None otherwise
-"""
+        """
         if netif != self:
             return None
         return self.ifindex
@@ -526,7 +526,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param y: y position
         :param z: z position
         :return: True if position changed, False otherwise
-"""
+        """
         result = CoreNodeBase.setposition(self, x, y, z)
         CoreInterface.setposition(self, x, y, z)
         return result

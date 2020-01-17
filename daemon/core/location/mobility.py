@@ -233,7 +233,7 @@ class WirelessModel(ConfigurableOptions):
 
         :param flags: link data flags
         :return: link data
-"""
+        """
         return []
 
     def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
@@ -473,7 +473,7 @@ class BasicRangeModel(WirelessModel):
         :param p1: point one
         :param p2: point two
         :return: distance petween the points
-"""
+        """
         a = p1[0] - p2[0]
         b = p1[1] - p2[1]
         c = 0
@@ -502,7 +502,7 @@ class BasicRangeModel(WirelessModel):
         :param interface2: interface two
         :param message_type: link message type
         :return: link data
-"""
+        """
         return LinkData(
             message_type=message_type,
             node1_id=interface1.node.id,
@@ -536,7 +536,7 @@ class BasicRangeModel(WirelessModel):
 
         :param flags: link flags
         :return: all link data
-"""
+        """
         all_links = []
         with self.wlan._linked_lock:
             for a in self.wlan._linked:
@@ -690,7 +690,7 @@ class WayPointMobility(WirelessModel):
         :param node: node to move
         :param dt: move factor
         :return: True if node was moved, False otherwise
-"""
+        """
         if node.id not in self.points:
             return False
         x1, y1, z1 = node.getposition()
@@ -1058,7 +1058,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :param file_name: file name to find
         :return: absolute path to the file
-"""
+        """
         if os.path.exists(file_name):
             return file_name
 
@@ -1103,7 +1103,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :param nodenum: node id to map
         :return: mapped value or the node id itself
-"""
+        """
         nodenum = int(nodenum)
         return self.nodemap.get(nodenum, nodenum)
 

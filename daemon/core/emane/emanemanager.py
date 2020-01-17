@@ -104,7 +104,7 @@ class EmaneManager(ModelManager):
         :param interface: node interface
         :param model_name: model to get configuration for
         :return: node/interface model configuration
-"""
+        """
         # use the network-wide config values or interface(NEM)-specific values?
         if interface is None:
             return self.get_configs(node_id=node_id, config_type=model_name)
@@ -258,7 +258,7 @@ class EmaneManager(ModelManager):
 
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
-"""
+        """
         logging.debug("emane setup")
 
         # TODO: drive this from the session object
@@ -316,7 +316,7 @@ class EmaneManager(ModelManager):
 
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
-"""
+        """
         self.reset()
         r = self.setup()
 

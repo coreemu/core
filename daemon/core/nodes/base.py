@@ -123,7 +123,7 @@ class NodeBase:
         :param y: y position
         :param z: z position
         :return: True if position changed, False otherwise
-"""
+        """
         return self.position.set(x=x, y=y, z=z)
 
     def getposition(self) -> Tuple[float, float, float]:
@@ -131,7 +131,7 @@ class NodeBase:
         Return an (x,y,z) tuple representing this object's position.
 
         :return: x,y,z position tuple
-"""
+        """
         return self.position.get()
 
     def ifname(self, ifindex: int) -> str:
@@ -140,7 +140,7 @@ class NodeBase:
 
         :param ifindex: interface index
         :return: interface name
-"""
+        """
         return self._netif[ifindex].name
 
     def netifs(self, sort: bool = False) -> List[CoreInterface]:
@@ -149,7 +149,7 @@ class NodeBase:
 
         :param sort: boolean used to determine if interfaces should be sorted
         :return: network interfaces
-"""
+        """
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
         else:
@@ -160,7 +160,7 @@ class NodeBase:
         Return the attached interface count.
 
         :return: number of network interfaces
-"""
+        """
         return len(self._netif)
 
     def getifindex(self, netif: CoreInterface) -> int:
@@ -169,7 +169,7 @@ class NodeBase:
 
         :param netif: interface to get index for
         :return: interface index if found, -1 otherwise
-"""
+        """
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
@@ -180,7 +180,7 @@ class NodeBase:
         Create a new interface index.
 
         :return: interface index
-"""
+        """
         while self.ifindex in self._netif:
             self.ifindex += 1
         ifindex = self.ifindex
@@ -204,7 +204,7 @@ class NodeBase:
         :param alt: altitude
         :param source: source of node data
         :return: node data object
-"""
+        """
         if self.apitype is None:
             return None
 
@@ -248,7 +248,7 @@ class NodeBase:
 
         :param flags: message flags
         :return: list of link data
-"""
+        """
         return []
 
 
@@ -338,7 +338,7 @@ class CoreNodeBase(NodeBase):
 
         :param ifindex: index of interface to retrieve
         :return: network interface, or None if not found
-"""
+        """
         if ifindex in self._netif:
             return self._netif[ifindex]
         else:
@@ -392,7 +392,7 @@ class CoreNodeBase(NodeBase):
         :param obj: object to get common network with
         :param want_ctrl: flag set to determine if control network are wanted
         :return: tuples of common networks
-"""
+        """
         common = []
         for netif1 in self.netifs():
             if not want_ctrl and hasattr(netif1, "control"):
@@ -487,7 +487,7 @@ class CoreNode(CoreNodeBase):
         Check if the node is alive.
 
         :return: True if node is alive, False otherwise
-"""
+        """
         try:
             self.host_cmd(f"kill -0 {self.pid}")
         except CoreCommandError:
@@ -647,7 +647,7 @@ class CoreNode(CoreNodeBase):
         Retrieve a new interface index.
 
         :return: new interface index
-"""
+        """
         with self.lock:
             return super().newifindex()
 
@@ -715,7 +715,7 @@ class CoreNode(CoreNodeBase):
         :param ifindex: interface index
         :param ifname: interface name
         :return: interface index
-"""
+        """
         with self.lock:
             if ifindex is None:
                 ifindex = self.newifindex()
@@ -817,7 +817,7 @@ class CoreNode(CoreNodeBase):
         :param ifindex: index of interface to create
         :param ifname: name for interface
         :return: interface index
-"""
+        """
         if not addrlist:
             addrlist = []
 
@@ -984,7 +984,7 @@ class CoreNetworkBase(NodeBase):
 
         :param net: network to link with
         :return: created interface
-"""
+        """
         pass
 
     def getlinknetif(self, net: "CoreNetworkBase") -> CoreInterface:
@@ -993,7 +993,7 @@ class CoreNetworkBase(NodeBase):
 
         :param net: interface to get link for
         :return: interface the provided network is linked to
-"""
+        """
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
@@ -1031,7 +1031,7 @@ class CoreNetworkBase(NodeBase):
 
         :param flags: message type
         :return: list of link data
-"""
+        """
         all_links = []
 
         # build a link message from this network node to each node having a
@@ -1142,7 +1142,7 @@ class Position:
         :param y: y position
         :param z: z position
         :return: True if position changed, False otherwise
-"""
+        """
         if self.x == x and self.y == y and self.z == z:
             return False
         self.x = x
@@ -1155,5 +1155,5 @@ class Position:
         Retrieve x,y,z position.
 
         :return: x,y,z position tuple
-"""
+        """
         return self.x, self.y, self.z

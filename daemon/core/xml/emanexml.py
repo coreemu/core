@@ -26,7 +26,7 @@ def is_external(config: Dict[str, str]) -> bool:
 
     :param config: configuration to check
     :return: True if external, False otherwise
-"""
+    """
     return config.get("external") == "1"
 
 
@@ -144,7 +144,7 @@ def build_node_platform_xml(
     :param nem_id: nem id to use for interfaces for this node
     :param platform_xmls: stores platform xml elements to append nem entries to
     :return: the next nem id that can be used for creating platform xml files
-"""
+    """
     logging.debug(
         "building emane platform xml for node(%s) nem_id(%s): %s",
         node,
@@ -500,7 +500,7 @@ def _basename(emane_model: "EmaneModel", interface: CoreInterface = None) -> str
     :param emane_model: emane model to create name for
     :param interface: interface for this model
     :return: basename used for file creation
-"""
+    """
     name = f"n{emane_model.id}"
 
     if interface:
@@ -518,7 +518,7 @@ def nem_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) ->
     :param emane_model: emane model to create file
     :param interface: interface for this model
     :return: nem xml filename
-"""
+    """
     basename = _basename(emane_model, interface)
     append = ""
     if interface and interface.transport_type == "raw":
@@ -533,7 +533,7 @@ def shim_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -
     :param emane_model: emane model to create file
     :param interface: interface for this model
     :return: shim xml filename
-"""
+    """
     name = _basename(emane_model, interface)
     return f"{name}shim.xml"
 
@@ -545,7 +545,7 @@ def mac_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) ->
     :param emane_model: emane model to create file
     :param interface: interface for this model
     :return: mac xml filename
-"""
+    """
     name = _basename(emane_model, interface)
     return f"{name}mac.xml"
 
@@ -557,6 +557,6 @@ def phy_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) ->
     :param emane_model: emane model to create file
     :param interface: interface for this model
     :return: phy xml filename
-"""
+    """
     name = _basename(emane_model, interface)
     return f"{name}phy.xml"
