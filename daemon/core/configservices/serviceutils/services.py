@@ -1,18 +1,9 @@
-import logging
-import os
-
 import netaddr
 
 from core import utils
 from core.config import Configuration
-from core.configservice.base import (
-    ConfigService,
-    ConfigServiceManager,
-    ConfigServiceMode,
-)
-from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import ConfigDataTypes, EventTypes, NodeTypes
+from core.configservice.base import ConfigService, ConfigServiceMode
+from core.emulator.enumerations import ConfigDataTypes
 
 GROUP_NAME = "Utility"
 
@@ -21,7 +12,7 @@ class DefaultRoute(ConfigService):
     name = "DefaultRoute"
     group = GROUP_NAME
     directories = []
-    executables = []
+    executables = ["ip"]
     dependencies = []
     startup = ["sh defaultroute.sh"]
     validate = []
@@ -65,45 +56,3 @@ class IpForwardService(ConfigService):
             devnames.append(devname)
         data = dict(devnames=devnames)
         self.render("ipforward.sh", data)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
-    # setup basic network
-    prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-    options = NodeOptions(model="nothing")
-    # options.services = []
-    coreemu = CoreEmu()
-    session = coreemu.create_session()
-    session.set_state(EventTypes.CONFIGURATION_STATE)
-    switch = session.add_node(_type=NodeTypes.SWITCH)
-
-    # node one
-    node_one = session.add_node(options=options)
-    interface = prefixes.create_interface(node_one)
-    session.add_link(node_one.id, switch.id, interface_one=interface)
-
-    # node two
-    node_two = session.add_node(options=options)
-    interface = prefixes.create_interface(node_two)
-    session.add_link(node_two.id, switch.id, interface_one=interface)
-
-    session.instantiate()
-
-    # manager load config services
-    manager = ConfigServiceManager()
-    path = os.path.dirname(os.path.abspath(os.path.dirname(__file__)))
-    manager.load(path)
-
-    clazz = manager.services["DefaultRoute"]
-    dr_service = clazz(node_one)
-    dr_service.set_config({"value1": "custom"})
-    dr_service.start()
-
-    clazz = manager.services["IPForward"]
-    dr_service = clazz(node_one)
-    dr_service.start()
-
-    input("press enter to exit")
-    session.shutdown()

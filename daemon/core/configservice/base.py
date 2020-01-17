@@ -9,7 +9,6 @@ from typing import Any, Dict, List
 from mako import exceptions
 from mako.lookup import TemplateLookup
 
-from core import utils
 from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
@@ -21,42 +20,6 @@ class ConfigServiceMode(enum.Enum):
     BLOCKING = 0
     NON_BLOCKING = 1
     TIMER = 2
-
-
-class ConfigServiceManager:
-    def __init__(self):
-        self.services = {}
-
-    def add(self, service: "ConfigService") -> None:
-        name = service.name
-        logging.debug("loading service: class(%s) name(%s)", service.__class__, name)
-
-        # avoid duplicate services
-        if name in self.services:
-            raise CoreError(f"duplicate service being added: {name}")
-
-        # validate dependent executables are present
-        for executable in service.executables:
-            utils.which(executable, required=True)
-
-            # make service available
-        self.services[name] = service
-
-    def load(self, path: str) -> List[str]:
-        path = pathlib.Path(path)
-        subdirs = [x for x in path.iterdir() if x.is_dir()]
-        service_errors = []
-        for subdir in subdirs:
-            logging.info("loading config services from: %s", subdir)
-            services = utils.load_classes(str(subdir), ConfigService)
-            for service in services:
-                logging.info("found service: %s", service)
-                try:
-                    self.add(service)
-                except CoreError as e:
-                    service_errors.append(service.name)
-                    logging.debug("not loading service(%s): %s", service.name, e)
-        return service_errors
 
 
 class ConfigService(abc.ABC):
