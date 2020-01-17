@@ -11,6 +11,7 @@ from core.nodes.interface import Veth
 class DefaultRoute(ConfigService):
     name = "DefaultRoute"
     group = "Utility"
+    directories = []
     executables = []
     dependencies = []
     startup = []
@@ -42,6 +43,4 @@ if __name__ == "__main__":
     netif.addaddr("10.0.0.1/24")
     node.addnetif(netif, 0)
     service = DefaultRoute(node)
-    service.create_files()
-    # data = service.render(node, "defaultroute.sh", dict(addresses=[]))
-    # print(data)
+    service.start()

@@ -37,12 +37,17 @@ class ConfigService(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def name(self):
+    def name(self) -> str:
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
-    def group(self):
+    def group(self) -> str:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
+    def directories(self) -> List[str]:
         raise NotImplementedError
 
     @property
@@ -76,8 +81,49 @@ class ConfigService(abc.ABC):
         raise NotImplementedError
 
     def start(self) -> None:
-        if not self.startup:
-            return
+        self.create_dirs()
+        self.create_files()
+        self.run_startup()
+        self.run_validation()
+
+    def stop(self) -> None:
+        for cmd in self.shutdown:
+            try:
+                self.node.cmd(cmd)
+            except CoreCommandError:
+                logging.exception(
+                    f"node({self.node.name}) service({self.name}) "
+                    f"failed shutdown: {cmd}"
+                )
+
+    def restart(self) -> None:
+        self.stop()
+        self.start()
+
+    def create_dirs(self) -> None:
+        for directory in self.directories:
+            try:
+                self.node.privatedir(directory)
+            except (CoreCommandError, ValueError):
+                raise CoreError(
+                    f"node({self.node.name}) service({self.name}) "
+                    f"failure to create service directory: {directory}"
+                )
+
+    def create_files(self) -> None:
+        raise NotImplementedError
+
+    def run_startup(self) -> None:
+        for cmd in self.startup:
+            try:
+                self.node.cmd(cmd)
+            except CoreCommandError:
+                raise CoreError(
+                    f"node({self.node.name}) service({self.name}) "
+                    f"failed startup: {cmd}"
+                )
+
+    def run_validation(self) -> None:
         wait = self.validation_mode == ConfigServiceMode.BLOCKING
         start = time.monotonic()
         index = 0
@@ -89,29 +135,17 @@ class ConfigService(abc.ABC):
                 del cmds[index]
                 index += 1
             except CoreCommandError:
-                logging.exception("error starting command")
+                logging.debug(
+                    f"node({self.node.name}) service({self.name}) "
+                    f"validate command failed: {cmd}"
+                )
                 time.sleep(self.validation_period)
 
             if time.monotonic() - start > 0:
                 raise CoreError(
-                    f"node({self.node.name}) service({self.name()}) failed to start"
+                    f"node({self.node.name}) service({self.name}) "
+                    f"failed to validate"
                 )
-
-    def stop(self) -> None:
-        if not self.shutdown:
-            return
-        for cmd in self.shutdown:
-            self.node.cmd(cmd, wait=False)
-
-    def restart(self):
-        self.stop()
-        self.start()
-
-    def run(self, cmd: str, wait: bool = True):
-        self.node.cmd(cmd, wait)
-
-    def create_files(self) -> None:
-        raise NotImplementedError
 
     def render(self, name: str, data: Dict[str, Any] = None) -> None:
         if data is None:
@@ -119,10 +153,17 @@ class ConfigService(abc.ABC):
         try:
             template = self.templates.get_template(name)
             rendered = template.render_unicode(node=self.node, **data)
-            print(rendered)
+            logging.info(
+                "node(%s) service(%s) template(%s): \n%s",
+                self.node.name,
+                self.name,
+                name,
+                rendered,
+            )
             # self.node.nodefile(name, rendered)
         except Exception:
             raise CoreError(
-                f"error rendering template: {name}"
+                f"node({self.node.name}) service({self.name}) "
+                f"error rendering template({name}): "
                 f"{exceptions.text_error_template().render()}"
             )
