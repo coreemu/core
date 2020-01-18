@@ -34,7 +34,7 @@ class DefaultRoute(ConfigService):
                 if net[1] != net[-2]:
                     addresses.append(net[1])
         data = dict(addresses=addresses)
-        self.render("defaultroute.sh", data)
+        self.render_template("defaultroute.sh", data)
 
 
 class IpForwardService(ConfigService):
@@ -55,4 +55,4 @@ class IpForwardService(ConfigService):
             devname = utils.sysctl_devname(ifc.name)
             devnames.append(devname)
         data = dict(devnames=devnames)
-        self.render("ipforward.sh", data)
+        self.render_template("ipforward.sh", data)

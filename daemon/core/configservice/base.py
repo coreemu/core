@@ -8,6 +8,7 @@ from typing import Any, Dict, List
 
 from mako import exceptions
 from mako.lookup import TemplateLookup
+from mako.template import Template
 
 from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
@@ -38,6 +39,12 @@ class ConfigService(abc.ABC):
         self.config = {}
         configs = self.default_configs[:]
         self._define_config(configs)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other: "ConfigService") -> bool:
+        return self.name == other.name
 
     @property
     @abc.abstractmethod
@@ -156,27 +163,44 @@ class ConfigService(abc.ABC):
                     f"failed to validate"
                 )
 
-    def render(self, name: str, data: Dict[str, Any] = None) -> None:
+    def _render(
+        self, name: str, template: Template, data: Dict[str, Any] = None
+    ) -> None:
         if data is None:
             data = {}
+        rendered = template.render_unicode(
+            node=self.node, config=self.render_config(), **data
+        )
+        logging.info(
+            "node(%s) service(%s) template(%s): \n%s",
+            self.node.name,
+            self.name,
+            name,
+            rendered,
+        )
+        self.node.nodefile(name, rendered)
+
+    def render_text(self, name: str, text: str, data: Dict[str, Any] = None) -> None:
         try:
-            template = self.templates.get_template(name)
-            rendered = template.render_unicode(
-                node=self.node, config=self.render_config(), **data
-            )
-            logging.info(
-                "node(%s) service(%s) template(%s): \n%s",
-                self.node.name,
-                self.name,
-                name,
-                rendered,
-            )
-            self.node.nodefile(name, rendered)
+            text = inspect.cleandoc(text)
+            template = Template(text)
+            self._render(name, template, data)
         except Exception:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) "
                 f"error rendering template({name}): "
-                f"{exceptions.text_error_template().render()}"
+                f"{exceptions.text_error_template().render_unicode()}"
+            )
+
+    def render_template(self, name: str, data: Dict[str, Any] = None) -> None:
+        try:
+            template = self.templates.get_template(name)
+            self._render(name, template, data)
+        except Exception:
+            raise CoreError(
+                f"node({self.node.name}) service({self.name}) "
+                f"error rendering template({name}): "
+                f"{exceptions.text_error_template().render_template()}"
             )
 
     def _define_config(self, configs: List[Configuration]) -> None:

@@ -29,21 +29,16 @@ if __name__ == "__main__":
     interface = prefixes.create_interface(node_two)
     session.add_link(node_two.id, switch.id, interface_one=interface)
 
-    session.instantiate()
-
     # manager load config services
     manager = ConfigServiceManager()
     path = os.path.dirname(os.path.abspath(configservices.__file__))
     manager.load(path)
 
-    clazz = manager.services["DefaultRoute"]
-    dr_service = clazz(node_one)
-    dr_service.set_config({"value1": "custom"})
-    dr_service.start()
+    manager.set_service(node_one, "DefaultRoute")
+    manager.set_service(node_one, "IPForward")
 
-    clazz = manager.services["IPForward"]
-    dr_service = clazz(node_one)
-    dr_service.start()
+    # start session and run services
+    session.instantiate()
 
     input("press enter to exit")
     session.shutdown()

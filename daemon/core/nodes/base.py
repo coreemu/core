@@ -277,8 +277,18 @@ class CoreNodeBase(NodeBase):
         """
         super().__init__(session, _id, name, start, server)
         self.services = []
+        self.config_services = set()
         self.nodedir = None
         self.tmpnodedir = False
+
+    def start_config_services(self) -> None:
+        """
+        Start configuration services for this node.
+
+        :return: nothing
+        """
+        for service in self.config_services:
+            service.start()
 
     def makenodedir(self) -> None:
         """

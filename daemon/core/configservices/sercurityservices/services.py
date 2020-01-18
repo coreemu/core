@@ -16,4 +16,4 @@ class VpnClient(ConfigService):
     default_configs = []
 
     def create_files(self):
-        self.render("vpnclient.sh")
+        self.render_template("vpnclient.sh")

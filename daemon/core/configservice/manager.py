@@ -5,11 +5,19 @@ from typing import List
 from core import utils
 from core.configservice.base import ConfigService
 from core.errors import CoreError
+from core.nodes.base import CoreNode
 
 
 class ConfigServiceManager:
     def __init__(self):
         self.services = {}
+
+    def set_service(self, node: CoreNode, name: str) -> None:
+        service_class = self.services.get(name)
+        if service_class in node.config_services:
+            raise CoreError(f"node already has service {name}")
+        service = service_class(node)
+        node.config_services.add(service)
 
     def add(self, service: ConfigService) -> None:
         name = service.name
@@ -34,6 +42,7 @@ class ConfigServiceManager:
     def load(self, path: str) -> List[str]:
         path = pathlib.Path(path)
         subdirs = [x for x in path.iterdir() if x.is_dir()]
+        subdirs.append(path)
         service_errors = []
         for subdir in subdirs:
             logging.info("loading config services from: %s", subdir)
