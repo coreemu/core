@@ -10,6 +10,15 @@ import grpc
 from grpc import ServicerContext
 
 from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
+from core.api.grpc.configservices_pb2 import (
+    ConfigService,
+    GetConfigServiceRequest,
+    GetConfigServiceResponse,
+    GetConfigServicesRequest,
+    GetConfigServicesResponse,
+    SetConfigServiceRequest,
+    SetConfigServiceResponse,
+)
 from core.api.grpc.events import EventStreamer
 from core.api.grpc.grpcutils import (
     get_config_options,
@@ -100,6 +109,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return session.get_node(node_id)
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
+
+    def validate_service(self, name: str, context: ServicerContext) -> None:
+        if name not in self.coreemu.service_manager.services:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"unknown service {name}")
 
     def StartSession(
         self, request: core_pb2.StartSessionRequest, context: ServicerContext
@@ -1429,3 +1442,55 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return core_pb2.EmaneLinkResponse(result=True)
         else:
             return core_pb2.EmaneLinkResponse(result=False)
+
+    def GetConfigServices(
+        self, request: GetConfigServicesRequest, context: ServicerContext
+    ) -> GetConfigServicesResponse:
+        services = []
+        for service in self.coreemu.service_manager.services.values():
+            service_proto = ConfigService(
+                name=service.name,
+                group=service.group,
+                executables=service.executables,
+                dependencies=service.dependencies,
+                directories=service.directories,
+                startup=service.startup,
+                validate=service.validate,
+                shutdown=service.shutdown,
+                validation_mode=service.validation_mode.value,
+                validation_timer=service.validation_timer,
+                validation_period=service.validation_period,
+            )
+            services.append(service_proto)
+        return GetConfigServicesResponse(services=services)
+
+    def GetConfigService(
+        self, request: GetConfigServiceRequest, context: ServicerContext
+    ) -> GetConfigServiceResponse:
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        self.validate_service(request.name, context)
+        service = node.config_services.get(request.name)
+        if service:
+            config = service.get_config()
+
+        else:
+            service = self.coreemu.service_manager.get_service(request.name)
+            config = {x.id: x.default for x in service.default_configs}
+        return GetConfigServiceResponse(config=config)
+
+    def SetConfigService(
+        self, request: SetConfigServiceRequest, context: ServicerContext
+    ) -> SetConfigServiceResponse:
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        self.validate_service(request.name, context)
+        service = node.config_services.get(request.name)
+        if service:
+            service.set_config(request.config)
+            return SetConfigServiceResponse(result=True)
+        else:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                f"node {node.name} missing service {request.name}",
+            )

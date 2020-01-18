@@ -1,5 +1,5 @@
 all:
-	$(PYTHON) -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/core.proto
+	$(PYTHON) -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
 
 clean:
-	-rm -f ../core/api/grpc/core_pb2*
+	-rm -f ../core/api/grpc/*_pb2*

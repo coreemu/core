@@ -5,6 +5,8 @@ package core;
 option java_package = "com.core.client.grpc";
 option java_outer_classname = "CoreProto";
 
+import "core/api/grpc/configservices.proto";
+
 service CoreApi {
     // session rpc
     rpc StartSession (StartSessionRequest) returns (StartSessionResponse) {
@@ -100,6 +102,14 @@ service CoreApi {
     rpc SetNodeServiceFile (SetNodeServiceFileRequest) returns (SetNodeServiceFileResponse) {
     }
     rpc ServiceAction (ServiceActionRequest) returns (ServiceActionResponse) {
+    }
+
+    // config services
+    rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
+    }
+    rpc GetConfigService (configservices.GetConfigServiceRequest) returns (configservices.GetConfigServiceResponse) {
+    }
+    rpc SetConfigService (configservices.SetConfigServiceRequest) returns (configservices.SetConfigServiceResponse) {
     }
 
     // wlan rpc

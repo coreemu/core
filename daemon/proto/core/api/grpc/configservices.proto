@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package configservices;
+
+message ConfigServiceValidationMode {
+    enum Enum {
+        BLOCKING = 0;
+        NON_BLOCKING = 1;
+        TIMER = 2;
+    }
+}
+
+message ConfigService {
+    string group = 1;
+    string name = 2;
+    repeated string executables = 3;
+    repeated string dependencies = 4;
+    repeated string directories = 5;
+    repeated string startup = 6;
+    repeated string validate = 7;
+    repeated string shutdown = 8;
+    ConfigServiceValidationMode.Enum validation_mode = 9;
+    int32 validation_timer = 10;
+    float validation_period = 11;
+}
+
+message GetConfigServicesRequest {
+    int32 session_id = 1;
+}
+
+message GetConfigServicesResponse {
+    repeated ConfigService services = 1;
+}
+
+message GetConfigServiceRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    string name = 3;
+}
+
+message GetConfigServiceResponse {
+    map<string, string> config = 1;
+}
+
+message SetConfigServiceRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    string name = 3;
+    map<string, string> config = 4;
+}
+
+message SetConfigServiceResponse {
+    bool result = 1;
+}

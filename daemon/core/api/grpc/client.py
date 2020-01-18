@@ -12,6 +12,14 @@ import netaddr
 
 from core import utils
 from core.api.grpc import core_pb2, core_pb2_grpc
+from core.api.grpc.configservices_pb2 import (
+    GetConfigServiceRequest,
+    GetConfigServiceResponse,
+    GetConfigServicesRequest,
+    GetConfigServicesResponse,
+    SetConfigServiceRequest,
+    SetConfigServiceResponse,
+)
 
 
 class InterfaceHelper:
@@ -1077,6 +1085,26 @@ class CoreGrpcClient:
         """
         request = core_pb2.GetInterfacesRequest()
         return self.stub.GetInterfaces(request)
+
+    def get_config_services(self) -> GetConfigServicesResponse:
+        request = GetConfigServicesRequest()
+        return self.stub.GetConfigServices(request)
+
+    def get_config_service(
+        self, session_id: int, node_id: int, name: str
+    ) -> GetConfigServiceResponse:
+        request = GetConfigServiceRequest(
+            session_id=session_id, node_id=node_id, name=name
+        )
+        return self.stub.GetConfigService(request)
+
+    def set_config_service(
+        self, session_id: int, node_id: int, name: str, config: Dict[str, str]
+    ) -> SetConfigServiceResponse:
+        request = SetConfigServiceRequest(
+            session_id=session_id, node_id=node_id, name=name, config=config
+        )
+        return self.stub.SetConfigService(request)
 
     def connect(self) -> None:
         """
