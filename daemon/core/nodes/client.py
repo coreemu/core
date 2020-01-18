@@ -60,7 +60,7 @@ class VnodeClient:
         :param wait: True to wait for command status, False otherwise
         :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-:raises core.CoreCommandError: when there is a non-zero exit status
+        :raises core.CoreCommandError: when there is a non-zero exit status
         """
         self._verify_connection()
         args = self.create_cmd(args)

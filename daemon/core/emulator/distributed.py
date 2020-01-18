@@ -54,7 +54,7 @@ class DistributedServer:
             user's home directory
         :param wait: True to wait for status, False to background process
         :return: stdout when success
-:raises CoreCommandError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
 
         replace_env = env is not None

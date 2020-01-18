@@ -80,7 +80,7 @@ class CoreInterface:
         :param wait: True to wait for status, False otherwise
         :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-:raises CoreCommandError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
             return utils.cmd(args, env, cwd, wait, shell)

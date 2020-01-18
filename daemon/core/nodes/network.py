@@ -309,7 +309,7 @@ class CoreNetwork(CoreNetworkBase):
         :param wait: True to wait for status, False otherwise
         :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-:raises CoreCommandError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.debug("network node(%s) cmd", self.name)
         output = utils.cmd(args, env, cwd, wait, shell)
