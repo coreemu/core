@@ -3,6 +3,7 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
+import os
 import tkinter as tk
 import webbrowser
 from tkinter import filedialog, messagebox
@@ -61,8 +62,11 @@ class MenuAction:
 
     def file_save_as_xml(self, event: tk.Event = None):
         logging.info("menuaction.py file_save_as_xml()")
+        init_dir = self.app.core.xml_dir
+        if not init_dir:
+            init_dir = str(XMLS_PATH)
         file_path = filedialog.asksaveasfilename(
-            initialdir=str(XMLS_PATH),
+            initialdir=init_dir,
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
@@ -71,14 +75,19 @@ class MenuAction:
             self.app.core.save_xml(file_path)
 
     def file_open_xml(self, event: tk.Event = None):
+        init_dir = self.app.core.xml_dir
+        if not init_dir:
+            init_dir = str(XMLS_PATH)
         logging.info("menuaction.py file_open_xml()")
         file_path = filedialog.askopenfilename(
-            initialdir=str(XMLS_PATH),
+            initialdir=init_dir,
             title="Open",
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
         if file_path:
             logging.info("opening xml: %s", file_path)
+            self.app.core.xml_file = file_path
+            self.app.core.xml_dir = str(os.path.dirname(file_path))
             self.prompt_save_running_session()
             self.app.statusbar.progress_bar.start(5)
             task = BackgroundTask(self.app, self.app.core.open_xml, args=(file_path,))

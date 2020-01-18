@@ -184,7 +184,7 @@ class Session:
 
         :param _class: node class to get a node type for
         :return: node type
-:raises CoreError: when node type does not exist
+        :raises CoreError: when node type does not exist
         """
         node_type = NODES_TYPE.get(_class)
         if node_type is None:
@@ -757,7 +757,7 @@ class Session:
         :param node_id: id of node to update
         :param options: data to update node with
         :return: True if node updated, False otherwise
-:raises core.CoreError: when node to update does not exist
+        :raises core.CoreError: when node to update does not exist
         """
         # get node to update
         node = self.get_node(node_id)
@@ -1370,7 +1370,7 @@ class Session:
 
         :param _id: node id to retrieve
         :return: node for the given id
-:raises core.CoreError: when node does not exist
+        :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
             raise CoreError(f"unknown node id {_id}")

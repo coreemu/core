@@ -373,7 +373,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param ifindex: interface index
         :param ifname: interface name
         :return: interface index
-:raises ValueError: when an interface has already been created, one max
+        :raises ValueError: when an interface has already been created, one max
         """
         with self.lock:
             if ifindex is None:
