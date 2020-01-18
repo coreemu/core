@@ -133,7 +133,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
 
-    def hide_context(self):
+    def hide_context(self, event=None):
         if self.context:
             self.context.unpost()
             self.context = None
@@ -642,9 +642,10 @@ class CanvasGraph(tk.Canvas):
             if canvas_node:
                 logging.debug("node context: %s", selected)
                 self.context = canvas_node.create_context()
+                self.context.bind("<Leave>", self.hide_context)
                 self.context.post(event.x_root, event.y_root)
-        else:
-            self.hide_context()
+        # else:
+        #     self.hide_context()
 
     def press_delete(self, event: tk.Event):
         """
