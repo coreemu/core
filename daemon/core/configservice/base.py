@@ -40,12 +40,6 @@ class ConfigService(abc.ABC):
         configs = self.default_configs[:]
         self._define_config(configs)
 
-    def __hash__(self) -> int:
-        return hash(self.name)
-
-    def __eq__(self, other: "ConfigService") -> bool:
-        return self.name == other.name
-
     @property
     @abc.abstractmethod
     def name(self) -> str:

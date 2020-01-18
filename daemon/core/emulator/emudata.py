@@ -75,6 +75,7 @@ class NodeOptions:
         self.icon = None
         self.opaque = None
         self.services = []
+        self.config_services = []
         self.x = None
         self.y = None
         self.lat = None

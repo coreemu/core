@@ -1,23 +1,21 @@
 import logging
 import pathlib
-from typing import List
+from typing import List, Type
 
 from core import utils
 from core.configservice.base import ConfigService
 from core.errors import CoreError
-from core.nodes.base import CoreNode
 
 
 class ConfigServiceManager:
     def __init__(self):
         self.services = {}
 
-    def set_service(self, node: CoreNode, name: str) -> None:
+    def get_service(self, name: str) -> Type[ConfigService]:
         service_class = self.services.get(name)
-        if service_class in node.config_services:
-            raise CoreError(f"node already has service {name}")
-        service = service_class(node)
-        node.config_services.add(service)
+        if service_class is None:
+            raise CoreError(f"service does not exit {name}")
+        return service_class
 
     def add(self, service: ConfigService) -> None:
         name = service.name

@@ -161,6 +161,9 @@ class Session:
             "host": ("DefaultRoute", "SSH"),
         }
 
+        # config services
+        self.service_manager = None
+
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> Type[NodeBase]:
         """
@@ -725,6 +728,11 @@ class Session:
             node.type = options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
+
+            # add config services
+            for name in options.config_services:
+                service_class = self.service_manager.get_service(name)
+                node.add_config_service(service_class)
 
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
@@ -1602,7 +1610,8 @@ class Session:
         logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
         self.add_remove_control_interface(node=node, remove=False)
         self.services.boot_services(node)
-        node.start_config_services()
+        for service in node.config_services.values():
+            service.start()
 
     def boot_nodes(self) -> List[Exception]:
         """
