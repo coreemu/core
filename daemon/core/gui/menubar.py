@@ -410,11 +410,8 @@ class Menubar(tk.Menu):
         self.add_cascade(label="Help", menu=menu)
 
     def save(self):
-        print("save")
         xml_file = self.app.core.xml_file
-        print(xml_file is None)
         if xml_file:
-            print("go here")
             self.app.core.save_xml(xml_file)
         else:
             self.menuaction.file_save_as_xml()
