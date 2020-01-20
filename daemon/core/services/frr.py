@@ -225,8 +225,23 @@ if [ "$1" != "zebra" ]; then
     echo "WARNING: '$1': all FRR daemons are launched by the 'zebra' service!"
     exit 1
 fi
+
+resetinterfaces()
+{
+	for iface in $(ifconfig | cut -d ' ' -f1 | tr ':' '\\n' | awk NF)
+	do
+		if [ "$iface" != "lo" ]
+		then
+			ip link set dev $iface down
+			sleep 1
+			ip link set dev $iface up
+		fi
+	done
+}
+
 confcheck
 bootfrr
+resetinterfaces
 """ % (
             cls.configs[0],
             frr_sbin_search,
