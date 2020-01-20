@@ -90,6 +90,7 @@ class CoreClient:
         self.emane_model_configs = {}
         self.emane_config = None
         self.service_configs = {}
+        self.config_service_configs = {}
         self.file_configs = {}
         self.mobility_players = {}
         self.handling_throughputs = None

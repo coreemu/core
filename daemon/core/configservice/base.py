@@ -37,6 +37,7 @@ class ConfigService(abc.ABC):
         logging.info(templates_path)
         self.templates = TemplateLookup(directories=templates_path)
         self.config = {}
+        self.custom_templates = {}
         configs = self.default_configs[:]
         self._define_config(configs)
 
@@ -128,6 +129,9 @@ class ConfigService(abc.ABC):
     def data(self) -> Dict[str, Any]:
         return {}
 
+    def custom_template(self, name: str, template: str) -> None:
+        self.custom_templates[name] = template
+
     def get_text(self, name: str) -> str:
         raise CoreError(
             f"node({self.node.name} service({self.name}) unknown template({name})"
@@ -136,7 +140,10 @@ class ConfigService(abc.ABC):
     def get_templates(self) -> Dict[str, str]:
         templates = {}
         for name in self.files:
-            if self.templates.has_template(name):
+            if name in self.custom_templates:
+                template = self.custom_templates[name]
+                template = inspect.cleandoc(template)
+            elif self.templates.has_template(name):
                 template = self.templates.get_template(name).source
             else:
                 template = self.get_text(name)
@@ -147,7 +154,11 @@ class ConfigService(abc.ABC):
     def create_files(self) -> None:
         data = self.data()
         for name in self.files:
-            if self.templates.has_template(name):
+            if name in self.custom_templates:
+                text = self.custom_templates[name]
+                text = inspect.cleandoc(text)
+                self.render_text(name, text, data)
+            elif self.templates.has_template(name):
                 self.render_template(name, data)
             else:
                 text = self.get_text(name)

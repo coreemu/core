@@ -107,7 +107,7 @@ service CoreApi {
     // config services
     rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
     }
-    rpc GetConfigServiceTemplates (configservices.GetConfigServiceTemplatesRequest) returns (configservices.GetConfigServiceTemplatesResponse) {
+    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
     }
     rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
     }

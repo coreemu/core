@@ -33,12 +33,13 @@ message GetConfigServicesResponse {
     repeated ConfigService services = 1;
 }
 
-message GetConfigServiceTemplatesRequest {
+message GetConfigServiceDefaultsRequest {
     string name = 1;
 }
 
-message GetConfigServiceTemplatesResponse {
+message GetConfigServiceDefaultsResponse {
     map<string, string> templates = 1;
+    map<string, string> config = 2;
 }
 
 message GetNodeConfigServiceRequest {

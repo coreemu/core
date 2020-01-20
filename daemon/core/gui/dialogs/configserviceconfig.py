@@ -30,8 +30,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.core = app.core
         self.node_id = node_id
         self.service_name = service_name
-        self.service_configs = app.core.service_configs
-        self.file_configs = app.core.file_configs
+        self.service_configs = app.core.config_service_configs
 
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
@@ -68,41 +67,26 @@ class ConfigServiceConfigDialog(Dialog):
     def load(self):
         try:
             self.app.core.create_nodes_and_links()
-            # default_config = self.app.core.get_node_service(
-            #     self.node_id, self.service_name
-            # )
-            # self.default_startup = default_config.startup[:]
-            # self.default_validate = default_config.validate[:]
-            # self.default_shutdown = default_config.shutdown[:]
-            # custom_configs = self.service_configs
-            # if (
-            #     self.node_id in custom_configs
-            #     and self.service_name in custom_configs[self.node_id]
-            # ):
-            #     service_config = custom_configs[self.node_id][self.service_name]
-            # else:
-            #     service_config = default_config
+            service = self.core.config_services[self.service_name]
+            self.dependencies = service.dependencies[:]
+            self.executables = service.executables[:]
+            self.filenames = service.files[:]
+            self.startup_commands = service.startup[:]
+            self.validation_commands = service.validate[:]
+            self.shutdown_commands = service.shutdown[:]
+            self.validation_mode = service.validation_mode
+            self.validation_time = service.validation_timer
+            self.validation_period.set(service.validation_period)
 
-            service_config = self.core.config_services[self.service_name]
-            self.dependencies = service_config.dependencies[:]
-            self.executables = service_config.executables[:]
-            self.filenames = service_config.files[:]
-            self.startup_commands = service_config.startup[:]
-            self.validation_commands = service_config.validate[:]
-            self.shutdown_commands = service_config.shutdown[:]
-            self.validation_mode = service_config.validation_mode
-            self.validation_time = service_config.validation_timer
-            self.validation_period.set(service_config.validation_period)
-            response = self.core.client.get_config_service_templates(self.service_name)
+            response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
-            file_configs = self.file_configs
-            if (
-                self.node_id in file_configs
-                and self.service_name in file_configs[self.node_id]
-            ):
-                for file, data in file_configs[self.node_id][self.service_name].items():
-                    self.temp_service_files[file] = data
+
+            node_configs = self.service_configs.get(self.node_id, {})
+            service_config = node_configs.get(self.service_name, {})
+            custom_templates = service_config.get("templates", {})
+            for file, data in custom_templates.items():
+                self.temp_service_files[file] = data
         except grpc.RpcError as e:
             show_grpc_error(e)
 
@@ -270,7 +254,7 @@ class ConfigServiceConfigDialog(Dialog):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
-        self.notebook.add(tab, text="Configuration", sticky="nsew")
+        self.notebook.add(tab, text="Validation", sticky="nsew")
 
         frame = ttk.Frame(tab)
         frame.grid(sticky="ew", pady=PADY)

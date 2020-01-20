@@ -13,10 +13,10 @@ from grpc import ServicerContext
 from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
 from core.api.grpc.configservices_pb2 import (
     ConfigService,
+    GetConfigServiceDefaultsRequest,
+    GetConfigServiceDefaultsResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
-    GetConfigServiceTemplatesRequest,
-    GetConfigServiceTemplatesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -1482,20 +1482,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self.validate_service(request.name, context)
         service = node.config_services.get(request.name)
         if service:
-            config = service.get_config()
-
+            config = service.render_config()
         else:
             service = self.coreemu.service_manager.get_service(request.name)
             config = {x.id: x.default for x in service.default_configs}
         return GetNodeConfigServiceResponse(config=config)
 
-    def GetConfigServiceTemplates(
-        self, request: GetConfigServiceTemplatesRequest, context: ServicerContext
-    ) -> GetConfigServiceTemplatesResponse:
+    def GetConfigServiceDefaults(
+        self, request: GetConfigServiceDefaultsRequest, context: ServicerContext
+    ) -> GetConfigServiceDefaultsResponse:
         service_class = self.validate_service(request.name, context)
         service = service_class(None)
         templates = service.get_templates()
-        return GetConfigServiceTemplatesResponse(templates=templates)
+        config = service.render_config()
+        return GetConfigServiceDefaultsResponse(templates=templates, config=config)
 
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext
