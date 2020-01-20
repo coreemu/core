@@ -300,6 +300,7 @@ class CoreClient:
             # get metadata
             response = self.client.get_session_metadata(self.session_id)
             self.parse_metadata(response.config)
+
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -668,6 +669,8 @@ class CoreClient:
         if self.emane_config:
             config = {x: self.emane_config[x].value for x in self.emane_config}
             self.client.set_emane_config(self.session_id, config)
+
+        self.set_metadata()
 
     def close(self):
         """

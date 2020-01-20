@@ -214,6 +214,8 @@ class CanvasGraph(tk.Canvas):
         """
         Draw existing session.
         """
+        print("print session")
+        print(session)
         # draw existing nodes
         for core_node in session.nodes:
             # peer to peer node is not drawn on the GUI
