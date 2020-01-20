@@ -762,7 +762,9 @@ class CoreXmlReader:
         node_id = get_int(device_element, "id")
         name = device_element.get("name")
         model = device_element.get("type")
+        icon = device_element.get("icon")
         options = NodeOptions(name, model)
+        options.icon = icon
 
         service_elements = device_element.find("services")
         if service_elements is not None:
@@ -788,7 +790,9 @@ class CoreXmlReader:
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
+        icon = network_element.get("icon")
         options = NodeOptions(name)
+        options.icon = icon
 
         position_element = network_element.find("position")
         if position_element is not None:
