@@ -38,6 +38,17 @@ OBSERVERS = {
     "IPSec policies": "setkey -DP",
 }
 
+DEFAULT_TERMS = {
+    "xterm": "xterm -e",
+    "aterm": "aterm -e",
+    "eterm": "eterm -e",
+    "rxvt": "rxvt -e",
+    "konsole": "konsole -e",
+    "lxterminal": "lxterminal -e",
+    "xfce4-terminal": "xfce4-terminal -x",
+    "gnome-terminal": "gnome-terminal --window--",
+}
+
 
 class CoreServer:
     def __init__(self, name: str, address: str, port: int):
@@ -528,6 +539,9 @@ class CoreClient:
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
             response = self.client.get_node_terminal(self.session_id, node_id)
+            output = os.popen(f"echo {terminal}").read()[:-1]
+            if output in DEFAULT_TERMS:
+                terminal = DEFAULT_TERMS[output]
             cmd = f'{terminal} "{response.terminal}" &'
             logging.info("launching terminal %s", cmd)
             os.system(cmd)

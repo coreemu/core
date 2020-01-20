@@ -214,8 +214,6 @@ class CanvasGraph(tk.Canvas):
         """
         Draw existing session.
         """
-        print("print session")
-        print(session)
         # draw existing nodes
         for core_node in session.nodes:
             # peer to peer node is not drawn on the GUI
@@ -268,8 +266,10 @@ class CanvasGraph(tk.Canvas):
                     self.core.links[edge.token] = edge
                     if link.HasField("interface_one"):
                         canvas_node_one.interfaces.append(link.interface_one)
+                        edge.src_interface = link.interface_one
                     if link.HasField("interface_two"):
                         canvas_node_two.interfaces.append(link.interface_two)
+                        edge.dst_interface = link.interface_two
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
