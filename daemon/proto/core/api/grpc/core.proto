@@ -953,6 +953,7 @@ message Node {
     string opaque = 9;
     string image = 10;
     string server = 11;
+    repeated string config_services = 12;
 }
 
 message Link {
