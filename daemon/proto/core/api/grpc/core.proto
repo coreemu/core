@@ -107,9 +107,11 @@ service CoreApi {
     // config services
     rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
     }
-    rpc GetConfigService (configservices.GetConfigServiceRequest) returns (configservices.GetConfigServiceResponse) {
+    rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
     }
-    rpc SetConfigService (configservices.SetConfigServiceRequest) returns (configservices.SetConfigServiceResponse) {
+    rpc GetNodeConfigServices (configservices.GetNodeConfigServicesRequest) returns (configservices.GetNodeConfigServicesResponse) {
+    }
+    rpc SetNodeConfigService (configservices.SetNodeConfigServiceRequest) returns (configservices.SetNodeConfigServiceResponse) {
     }
 
     // wlan rpc

@@ -32,23 +32,32 @@ message GetConfigServicesResponse {
     repeated ConfigService services = 1;
 }
 
-message GetConfigServiceRequest {
+message GetNodeConfigServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     string name = 3;
 }
 
-message GetConfigServiceResponse {
+message GetNodeConfigServiceResponse {
     map<string, string> config = 1;
 }
 
-message SetConfigServiceRequest {
+message GetNodeConfigServicesRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetNodeConfigServicesResponse {
+    repeated string services = 1;
+}
+
+message SetNodeConfigServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     string name = 3;
     map<string, string> config = 4;
 }
 
-message SetConfigServiceResponse {
+message SetNodeConfigServiceResponse {
     bool result = 1;
 }

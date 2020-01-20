@@ -13,12 +13,14 @@ import netaddr
 from core import utils
 from core.api.grpc import core_pb2, core_pb2_grpc
 from core.api.grpc.configservices_pb2 import (
-    GetConfigServiceRequest,
-    GetConfigServiceResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
-    SetConfigServiceRequest,
-    SetConfigServiceResponse,
+    GetNodeConfigServiceRequest,
+    GetNodeConfigServiceResponse,
+    GetNodeConfigServicesRequest,
+    GetNodeConfigServicesResponse,
+    SetNodeConfigServiceRequest,
+    SetNodeConfigServiceResponse,
 )
 
 
@@ -1090,21 +1092,27 @@ class CoreGrpcClient:
         request = GetConfigServicesRequest()
         return self.stub.GetConfigServices(request)
 
-    def get_config_service(
+    def get_node_config_service(
         self, session_id: int, node_id: int, name: str
-    ) -> GetConfigServiceResponse:
-        request = GetConfigServiceRequest(
+    ) -> GetNodeConfigServiceResponse:
+        request = GetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name
         )
-        return self.stub.GetConfigService(request)
+        return self.stub.GetNodeConfigService(request)
 
-    def set_config_service(
+    def get_node_config_services(
+        self, session_id: int, node_id: int
+    ) -> GetNodeConfigServicesResponse:
+        request = GetNodeConfigServicesRequest(session_id=session_id, node_id=node_id)
+        return self.stub.GetNodeConfigServices(request)
+
+    def set_node_config_service(
         self, session_id: int, node_id: int, name: str, config: Dict[str, str]
-    ) -> SetConfigServiceResponse:
-        request = SetConfigServiceRequest(
+    ) -> SetNodeConfigServiceResponse:
+        request = SetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name, config=config
         )
-        return self.stub.SetConfigService(request)
+        return self.stub.SetNodeConfigService(request)
 
     def connect(self) -> None:
         """

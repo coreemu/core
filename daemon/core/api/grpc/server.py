@@ -12,12 +12,14 @@ from grpc import ServicerContext
 from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
 from core.api.grpc.configservices_pb2 import (
     ConfigService,
-    GetConfigServiceRequest,
-    GetConfigServiceResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
-    SetConfigServiceRequest,
-    SetConfigServiceResponse,
+    GetNodeConfigServiceRequest,
+    GetNodeConfigServiceResponse,
+    GetNodeConfigServicesRequest,
+    GetNodeConfigServicesResponse,
+    SetNodeConfigServiceRequest,
+    SetNodeConfigServiceResponse,
 )
 from core.api.grpc.events import EventStreamer
 from core.api.grpc.grpcutils import (
@@ -1464,9 +1466,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services.append(service_proto)
         return GetConfigServicesResponse(services=services)
 
-    def GetConfigService(
-        self, request: GetConfigServiceRequest, context: ServicerContext
-    ) -> GetConfigServiceResponse:
+    def GetNodeConfigService(
+        self, request: GetNodeConfigServiceRequest, context: ServicerContext
+    ) -> GetNodeConfigServiceResponse:
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         self.validate_service(request.name, context)
@@ -1477,18 +1479,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         else:
             service = self.coreemu.service_manager.get_service(request.name)
             config = {x.id: x.default for x in service.default_configs}
-        return GetConfigServiceResponse(config=config)
+        return GetNodeConfigServiceResponse(config=config)
 
-    def SetConfigService(
-        self, request: SetConfigServiceRequest, context: ServicerContext
-    ) -> SetConfigServiceResponse:
+    def GetNodeConfigServices(
+        self, request: GetNodeConfigServicesRequest, context: ServicerContext
+    ) -> GetNodeConfigServicesResponse:
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        services = node.config_services.keys()
+        return GetNodeConfigServicesResponse(services=services)
+
+    def SetNodeConfigService(
+        self, request: SetNodeConfigServiceRequest, context: ServicerContext
+    ) -> SetNodeConfigServiceResponse:
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         self.validate_service(request.name, context)
         service = node.config_services.get(request.name)
         if service:
             service.set_config(request.config)
-            return SetConfigServiceResponse(result=True)
+            return SetNodeConfigServiceResponse(result=True)
         else:
             context.abort(
                 grpc.StatusCode.NOT_FOUND,
