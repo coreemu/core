@@ -5,6 +5,7 @@ class SimpleService(ConfigService):
     name = "Simple"
     group = "SimpleGroup"
     directories = []
+    files = ["test1.sh"]
     executables = []
     dependencies = []
     startup = []
@@ -13,10 +14,10 @@ class SimpleService(ConfigService):
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
 
-    def create_files(self):
-        text = """
-        # sample script
-        # node id(${node.id}) name(${node.name})
-        echo hello
-        """
-        self.render_text("test1.sh", text)
+    def get_text(self, name: str) -> str:
+        if name == "test1.sh":
+            return """
+            # sample script
+            # node id(${node.id}) name(${node.name})
+            echo hello
+            """

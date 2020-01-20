@@ -57,6 +57,11 @@ class ConfigService(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def files(self) -> List[str]:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
     def default_configs(self) -> List[Configuration]:
         raise NotImplementedError
 
@@ -120,8 +125,34 @@ class ConfigService(abc.ABC):
                     f"failure to create service directory: {directory}"
                 )
 
+    def data(self) -> Dict[str, Any]:
+        return {}
+
+    def get_text(self, name: str) -> str:
+        raise CoreError(
+            f"node({self.node.name} service({self.name}) unknown template({name})"
+        )
+
+    def get_templates(self) -> Dict[str, str]:
+        templates = {}
+        for name in self.files:
+            if self.templates.has_template(name):
+                template = self.templates.get_template(name).source
+            else:
+                template = self.get_text(name)
+                template = inspect.cleandoc(template)
+            templates[name] = template
+        return templates
+
     def create_files(self) -> None:
-        raise NotImplementedError
+        data = self.data()
+        for name in self.files:
+            if self.templates.has_template(name):
+                self.render_template(name, data)
+            else:
+                text = self.get_text(name)
+                text = inspect.cleandoc(text)
+                self.render_text(name, text, data)
 
     def run_startup(self) -> None:
         for cmd in self.startup:
@@ -176,7 +207,6 @@ class ConfigService(abc.ABC):
 
     def render_text(self, name: str, text: str, data: Dict[str, Any] = None) -> None:
         try:
-            text = inspect.cleandoc(text)
             template = Template(text)
             self._render(name, template, data)
         except Exception:

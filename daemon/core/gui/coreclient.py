@@ -63,6 +63,7 @@ class CoreClient:
         self.app = app
         self.master = app.master
         self.services = {}
+        self.config_services_groups = {}
         self.config_services = {}
         self.default_services = {}
         self.emane_models = []
@@ -417,7 +418,10 @@ class CoreClient:
             # get config service informations
             response = self.client.get_config_services()
             for service in response.services:
-                group_services = self.config_services.setdefault(service.group, set())
+                self.config_services[service.name] = service
+                group_services = self.config_services_groups.setdefault(
+                    service.group, set()
+                )
                 group_services.add(service.name)
 
             # if there are no sessions, create a new session, else join a session

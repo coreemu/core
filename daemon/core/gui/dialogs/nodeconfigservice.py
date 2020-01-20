@@ -51,7 +51,7 @@ class NodeConfigServiceDialog(Dialog):
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
         self.groups.grid(sticky="nsew")
-        for group in sorted(self.app.core.config_services):
+        for group in sorted(self.app.core.config_services_groups):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
@@ -98,7 +98,7 @@ class NodeConfigServiceDialog(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for name in sorted(self.app.core.config_services[group]):
+            for name in sorted(self.app.core.config_services_groups[group]):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 

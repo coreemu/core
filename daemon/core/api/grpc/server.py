@@ -5,6 +5,7 @@ import re
 import tempfile
 import time
 from concurrent import futures
+from typing import Type
 
 import grpc
 from grpc import ServicerContext
@@ -14,6 +15,8 @@ from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
+    GetConfigServiceTemplatesRequest,
+    GetConfigServiceTemplatesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -112,9 +115,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
 
-    def validate_service(self, name: str, context: ServicerContext) -> None:
-        if name not in self.coreemu.service_manager.services:
+    def validate_service(
+        self, name: str, context: ServicerContext
+    ) -> Type[ConfigService]:
+        service = self.coreemu.service_manager.services.get(name)
+        if not service:
             context.abort(grpc.StatusCode.NOT_FOUND, f"unknown service {name}")
+        return service
 
     def StartSession(
         self, request: core_pb2.StartSessionRequest, context: ServicerContext
@@ -1456,6 +1463,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 executables=service.executables,
                 dependencies=service.dependencies,
                 directories=service.directories,
+                files=service.files,
                 startup=service.startup,
                 validate=service.validate,
                 shutdown=service.shutdown,
@@ -1480,6 +1488,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             service = self.coreemu.service_manager.get_service(request.name)
             config = {x.id: x.default for x in service.default_configs}
         return GetNodeConfigServiceResponse(config=config)
+
+    def GetConfigServiceTemplates(
+        self, request: GetConfigServiceTemplatesRequest, context: ServicerContext
+    ) -> GetConfigServiceTemplatesResponse:
+        service_class = self.validate_service(request.name, context)
+        service = service_class(None)
+        templates = service.get_templates()
+        return GetConfigServiceTemplatesResponse(templates=templates)
 
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext

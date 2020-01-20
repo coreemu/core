@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 import netaddr
 
 from core import utils
@@ -12,6 +14,7 @@ class DefaultRoute(ConfigService):
     name = "DefaultRoute"
     group = GROUP_NAME
     directories = []
+    files = ["defaultroute.sh"]
     executables = ["ip"]
     dependencies = []
     startup = ["sh defaultroute.sh"]
@@ -24,7 +27,7 @@ class DefaultRoute(ConfigService):
         Configuration(_id="value3", _type=ConfigDataTypes.STRING, label="Value 3"),
     ]
 
-    def create_files(self):
+    def data(self) -> Dict[str, Any]:
         addresses = []
         for netif in self.node.netifs():
             if getattr(netif, "control", False):
@@ -33,14 +36,14 @@ class DefaultRoute(ConfigService):
                 net = netaddr.IPNetwork(addr)
                 if net[1] != net[-2]:
                     addresses.append(net[1])
-        data = dict(addresses=addresses)
-        self.render_template("defaultroute.sh", data)
+        return dict(addresses=addresses)
 
 
 class IpForwardService(ConfigService):
     name = "IPForward"
     group = GROUP_NAME
     directories = []
+    files = ["ipforward.sh"]
     executables = ["sysctl"]
     dependencies = []
     startup = ["sh ipforward.sh"]
@@ -49,10 +52,9 @@ class IpForwardService(ConfigService):
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
 
-    def create_files(self) -> None:
+    def data(self) -> Dict[str, Any]:
         devnames = []
         for ifc in self.node.netifs():
             devname = utils.sysctl_devname(ifc.name)
             devnames.append(devname)
-        data = dict(devnames=devnames)
-        self.render_template("ipforward.sh", data)
+        return dict(devnames=devnames)

@@ -15,6 +15,8 @@ from core.api.grpc import core_pb2, core_pb2_grpc
 from core.api.grpc.configservices_pb2 import (
     GetConfigServicesRequest,
     GetConfigServicesResponse,
+    GetConfigServiceTemplatesRequest,
+    GetConfigServiceTemplatesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -1091,6 +1093,12 @@ class CoreGrpcClient:
     def get_config_services(self) -> GetConfigServicesResponse:
         request = GetConfigServicesRequest()
         return self.stub.GetConfigServices(request)
+
+    def get_config_service_templates(
+        self, name: str
+    ) -> GetConfigServiceTemplatesResponse:
+        request = GetConfigServiceTemplatesRequest(name=name)
+        return self.stub.GetConfigServiceTemplates(request)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str

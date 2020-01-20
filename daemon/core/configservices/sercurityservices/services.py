@@ -7,6 +7,7 @@ class VpnClient(ConfigService):
     name = "VPNClient"
     group = GROUP_NAME
     directories = []
+    files = ["vpnclient.sh"]
     executables = ["openvpn", "ip", "killall"]
     dependencies = []
     startup = ["sh vpnclient.sh"]
@@ -14,6 +15,3 @@ class VpnClient(ConfigService):
     shutdown = ["killall openvpn"]
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
-
-    def create_files(self):
-        self.render_template("vpnclient.sh")

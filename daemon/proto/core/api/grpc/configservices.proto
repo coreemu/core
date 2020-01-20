@@ -16,12 +16,13 @@ message ConfigService {
     repeated string executables = 3;
     repeated string dependencies = 4;
     repeated string directories = 5;
-    repeated string startup = 6;
-    repeated string validate = 7;
-    repeated string shutdown = 8;
-    ConfigServiceValidationMode.Enum validation_mode = 9;
-    int32 validation_timer = 10;
-    float validation_period = 11;
+    repeated string files = 6;
+    repeated string startup = 7;
+    repeated string validate = 8;
+    repeated string shutdown = 9;
+    ConfigServiceValidationMode.Enum validation_mode = 10;
+    int32 validation_timer = 11;
+    float validation_period = 12;
 }
 
 message GetConfigServicesRequest {
@@ -30,6 +31,14 @@ message GetConfigServicesRequest {
 
 message GetConfigServicesResponse {
     repeated ConfigService services = 1;
+}
+
+message GetConfigServiceTemplatesRequest {
+    string name = 1;
+}
+
+message GetConfigServiceTemplatesResponse {
+    map<string, string> templates = 1;
 }
 
 message GetNodeConfigServiceRequest {
