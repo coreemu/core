@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.graph import tags
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
@@ -160,7 +160,7 @@ class CanvasEdge:
 
     def complete(self, dst: int):
         self.dst = dst
-        self.token = tuple(sorted((self.src, self.dst)))
+        self.token = EdgeUtils.get_token(self.src, self.dst)
         x, y = self.canvas.coords(self.dst)
         x1, y1, _, _ = self.canvas.coords(self.id)
         self.canvas.coords(self.id, x1, y1, x, y)
