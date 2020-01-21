@@ -32,10 +32,10 @@ class MenuAction:
         self.app = app
         self.canvas = app.canvas
 
-    def cleanup_old_session(self):
+    def cleanup_old_session(self, session_id):
         logging.info("cleaning up old session")
         self.app.core.stop_session()
-        self.app.core.delete_session()
+        self.app.core.delete_session(session_id)
 
     def prompt_save_running_session(self, quitapp: bool = False):
         """
@@ -49,7 +49,12 @@ class MenuAction:
             callback = None
             if quitapp:
                 callback = self.app.quit
-            task = BackgroundTask(self.app, self.cleanup_old_session, callback)
+            task = BackgroundTask(
+                self.app,
+                self.cleanup_old_session,
+                callback,
+                (self.app.core.session_id,),
+            )
             task.start()
         elif quitapp:
             self.app.quit()

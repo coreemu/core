@@ -121,6 +121,8 @@ class CoreClient:
         self.emane_config = None
         self.service_configs.clear()
         self.file_configs.clear()
+        for mobility_player in self.mobility_players.values():
+            mobility_player.handle_close()
         self.mobility_players.clear()
         # clear streams
         if self.handling_throughputs:
@@ -408,7 +410,7 @@ class CoreClient:
             session_id = self.session_id
         try:
             response = self.client.delete_session(session_id)
-            logging.info("deleted session result: %s", response)
+            logging.info("deleted session(%s) result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
