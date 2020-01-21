@@ -297,8 +297,9 @@ class ConfigServiceConfigDialog(Dialog):
         try:
             node_config = self.service_configs.setdefault(self.node_id, {})
             service_config = node_config.setdefault(self.service_name, {})
-            self.config_frame.parse_config()
-            service_config["config"] = self.config
+            if self.config_frame:
+                self.config_frame.parse_config()
+                service_config["config"] = self.config
             templates_config = service_config.setdefault("templates", {})
             for file in self.modified_files:
                 templates_config[file] = self.temp_service_files[file]
@@ -343,7 +344,8 @@ class ConfigServiceConfigDialog(Dialog):
         filename = self.templates_combobox.get()
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[filename])
-        self.config_frame.set_values(self.default_config)
+        if self.config_frame:
+            self.config_frame.set_values(self.default_config)
         self.startup_commands_listbox.delete(0, tk.END)
         self.validate_commands_listbox.delete(0, tk.END)
         self.shutdown_commands_listbox.delete(0, tk.END)

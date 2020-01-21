@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 import grpc
 
-from core.api.grpc import client, common_pb2, core_pb2
+from core.api.grpc import client, common_pb2, configservices_pb2, core_pb2
 from core.gui import appconfig
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
@@ -462,6 +462,7 @@ class CoreClient:
         asymmetric_links = [
             x.asymmetric_link for x in self.links.values() if x.asymmetric_link
         ]
+        config_service_configs = self.get_config_service_configs_proto()
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -482,6 +483,7 @@ class CoreClient:
                 service_configs,
                 file_configs,
                 asymmetric_links,
+                config_service_configs,
             )
             logging.debug(
                 "start session(%s), result: %s", self.session_id, response.result
@@ -870,6 +872,21 @@ class CoreClient:
                     )
                     configs.append(config_proto)
         return configs
+
+    def get_config_service_configs_proto(
+        self
+    ) -> List[configservices_pb2.ConfigServiceConfig]:
+        config_service_protos = []
+        for node_id, node_config in self.config_service_configs.items():
+            for name, service_config in node_config.items():
+                config_proto = configservices_pb2.ConfigServiceConfig(
+                    node_id=node_id,
+                    name=name,
+                    templates=service_config["templates"],
+                    config=service_config.get("config"),
+                )
+                config_service_protos.append(config_proto)
+        return config_service_protos
 
     def run(self, node_id: int) -> str:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
