@@ -179,6 +179,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for config in request.service_configs:
             grpcutils.service_configuration(session, config)
 
+        # config service configs
+        for config in request.config_service_configs:
+            node = self.get_node(session, config.node_id, context)
+            service = node.config_services[request.name]
+            service.set_config(config.config)
+            for name, template in config.templates.values():
+                service.custom_template(name, template)
+
         # service file configs
         for config in request.service_file_configs:
             session.services.set_service_file(

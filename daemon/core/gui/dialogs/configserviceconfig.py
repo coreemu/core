@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, List
 import grpc
 
 from core.api.grpc import core_pb2
-from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
@@ -35,7 +34,8 @@ class ConfigServiceConfigDialog(Dialog):
 
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
-        self.filenames = []
+        self.directories = []
+        self.templates = []
         self.dependencies = []
         self.executables = []
         self.startup_commands = []
@@ -51,29 +51,31 @@ class ConfigServiceConfigDialog(Dialog):
         self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16)
 
         self.notebook = None
-        self.filename_combobox = None
+        self.templates_combobox = None
         self.startup_commands_listbox = None
         self.shutdown_commands_listbox = None
         self.validate_commands_listbox = None
         self.validation_time_entry = None
         self.validation_mode_entry = None
-        self.service_file_data = None
+        self.template_text = None
         self.validation_period_entry = None
         self.original_service_files = {}
         self.temp_service_files = {}
         self.modified_files = set()
         self.config_frame = None
+        self.default_config = None
         self.config = None
         self.load()
         self.draw()
 
     def load(self):
         try:
-            self.app.core.create_nodes_and_links()
+            self.core.create_nodes_and_links()
             service = self.core.config_services[self.service_name]
             self.dependencies = service.dependencies[:]
             self.executables = service.executables[:]
-            self.filenames = service.files[:]
+            self.directories = service.directories[:]
+            self.templates = service.files[:]
             self.startup_commands = service.startup[:]
             self.validation_commands = service.validate[:]
             self.shutdown_commands = service.shutdown[:]
@@ -84,10 +86,17 @@ class ConfigServiceConfigDialog(Dialog):
             response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
-            self.config = response.config
 
             node_configs = self.service_configs.get(self.node_id, {})
             service_config = node_configs.get(self.service_name, {})
+
+            self.default_config = response.config
+            custom_config = service_config.get("config")
+            if custom_config:
+                self.config = custom_config
+            else:
+                self.config = dict(self.default_config)
+
             custom_templates = service_config.get("templates", {})
             for file, data in custom_templates.items():
                 self.temp_service_files[file] = data
@@ -96,98 +105,61 @@ class ConfigServiceConfigDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
-        self.top.rowconfigure(1, weight=1)
+        self.top.rowconfigure(0, weight=1)
 
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
         self.notebook.grid(sticky="nsew", pady=PADY)
         self.draw_tab_files()
-        self.draw_tab_config()
-        self.draw_tab_directories()
+        if self.config:
+            self.draw_tab_config()
         self.draw_tab_startstop()
         self.draw_tab_validation()
-
         self.draw_buttons()
 
     def draw_tab_files(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
-        self.notebook.add(tab, text="Files")
+        self.notebook.add(tab, text="Directories/Files")
 
         label = ttk.Label(
-            tab, text="Config files and scripts that are generated for this service."
+            tab, text="Directories and templates that will be used for this service."
         )
-        label.grid()
+        label.grid(pady=PADY)
 
         frame = ttk.Frame(tab)
         frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
-        label = ttk.Label(frame, text="File Name")
-        label.grid(row=0, column=0, padx=PADX, sticky="w")
-        self.filename_combobox = ttk.Combobox(
-            frame, values=self.filenames, state="readonly"
+        label = ttk.Label(frame, text="Directories")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        directories_combobox = ttk.Combobox(
+            frame, values=self.directories, state="readonly"
         )
-        self.filename_combobox.bind(
-            "<<ComboboxSelected>>", self.display_service_file_data
-        )
-        self.filename_combobox.grid(row=0, column=1, sticky="ew", padx=PADX)
-        button = ttk.Button(frame, image=self.documentnew_img, state="disabled")
-        button.bind("<Button-1>", self.add_filename)
-        button.grid(row=0, column=2, padx=PADX)
-        button = ttk.Button(frame, image=self.editdelete_img, state="disabled")
-        button.bind("<Button-1>", self.delete_filename)
-        button.grid(row=0, column=3)
+        directories_combobox.grid(row=0, column=1, sticky="ew", pady=PADY)
+        if self.directories:
+            directories_combobox.current(0)
 
-        frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
-        frame.columnconfigure(1, weight=1)
-        button = ttk.Radiobutton(
-            frame,
-            variable=self.radiovar,
-            text="Copy Source File",
-            value=1,
-            state=tk.DISABLED,
+        label = ttk.Label(frame, text="Templates")
+        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        self.templates_combobox = ttk.Combobox(
+            frame, values=self.templates, state="readonly"
         )
-        button.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(frame, state=tk.DISABLED)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
-        image = Images.get(ImageEnum.FILEOPEN, 16)
-        button = ttk.Button(frame, image=image)
-        button.image = image
-        button.grid(row=0, column=2)
-
-        frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
-        frame.columnconfigure(0, weight=1)
-        button = ttk.Radiobutton(
-            frame,
-            variable=self.radiovar,
-            text="Use text below for file contents",
-            value=2,
+        self.templates_combobox.bind(
+            "<<ComboboxSelected>>", self.handle_template_changed
         )
-        button.grid(row=0, column=0, sticky="ew")
-        image = Images.get(ImageEnum.FILEOPEN, 16)
-        button = ttk.Button(frame, image=image)
-        button.image = image
-        button.grid(row=0, column=1)
-        image = Images.get(ImageEnum.DOCUMENTSAVE, 16)
-        button = ttk.Button(frame, image=image)
-        button.image = image
-        button.grid(row=0, column=2)
+        self.templates_combobox.grid(row=1, column=1, sticky="ew", pady=PADY)
 
-        self.service_file_data = CodeText(tab)
-        self.service_file_data.grid(sticky="nsew")
-        tab.rowconfigure(self.service_file_data.grid_info()["row"], weight=1)
-        if len(self.filenames) > 0:
-            self.filename_combobox.current(0)
-            self.service_file_data.text.delete(1.0, "end")
-            self.service_file_data.text.insert(
-                "end", self.temp_service_files[self.filenames[0]]
+        self.template_text = CodeText(tab)
+        self.template_text.grid(sticky="nsew")
+        tab.rowconfigure(self.template_text.grid_info()["row"], weight=1)
+        if self.templates:
+            self.templates_combobox.current(0)
+            self.template_text.text.delete(1.0, "end")
+            self.template_text.text.insert(
+                "end", self.temp_service_files[self.templates[0]]
             )
-        self.service_file_data.text.bind(
-            "<FocusOut>", self.update_temp_service_file_data
-        )
+        self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
 
     def draw_tab_config(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -198,18 +170,6 @@ class ConfigServiceConfigDialog(Dialog):
         self.config_frame = ConfigFrame(tab, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
-
-    def draw_tab_directories(self):
-        tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
-        tab.columnconfigure(0, weight=1)
-        self.notebook.add(tab, text="Directories")
-
-        label = ttk.Label(
-            tab,
-            text="Directories required by this service that are unique for each node.",
-        )
-        label.grid()
 
     def draw_tab_startstop(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -238,26 +198,13 @@ class ConfigServiceConfigDialog(Dialog):
                 )
                 commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
-            label_frame.rowconfigure(1, weight=1)
+            label_frame.rowconfigure(0, weight=1)
             label_frame.grid(row=i, column=0, sticky="nsew", pady=PADY)
-
-            frame = ttk.Frame(label_frame)
-            frame.grid(row=0, column=0, sticky="nsew", pady=PADY)
-            frame.columnconfigure(0, weight=1)
-            entry = ttk.Entry(frame, textvariable=tk.StringVar())
-            entry.grid(row=0, column=0, stick="ew", padx=PADX)
-            button = ttk.Button(frame, image=self.documentnew_img)
-            button.bind("<Button-1>", self.add_command)
-            button.grid(row=0, column=1, sticky="ew", padx=PADX)
-            button = ttk.Button(frame, image=self.editdelete_img)
-            button.grid(row=0, column=2, sticky="ew")
-            button.bind("<Button-1>", self.delete_command)
             listbox_scroll = ListboxScroll(label_frame)
-            listbox_scroll.listbox.bind("<<ListboxSelect>>", self.update_entry)
             for command in commands:
                 listbox_scroll.listbox.insert("end", command)
             listbox_scroll.listbox.config(height=4)
-            listbox_scroll.grid(row=1, column=0, sticky="nsew")
+            listbox_scroll.grid(sticky="nsew")
             if i == 0:
                 self.startup_commands_listbox = listbox_scroll.listbox
             elif i == 1:
@@ -267,7 +214,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def draw_tab_validation(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky="ew")
         tab.columnconfigure(0, weight=1)
         self.notebook.add(tab, text="Validation", sticky="nsew")
 
@@ -338,57 +285,6 @@ class ConfigServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def add_filename(self, event: tk.Event):
-        # not worry about it for now
-        return
-        frame_contains_button = event.widget.master
-        combobox = frame_contains_button.grid_slaves(row=0, column=1)[0]
-        filename = combobox.get()
-        if filename not in combobox["values"]:
-            combobox["values"] += (filename,)
-
-    def delete_filename(self, event: tk.Event):
-        # not worry about it for now
-        return
-        frame_comntains_button = event.widget.master
-        combobox = frame_comntains_button.grid_slaves(row=0, column=1)[0]
-        filename = combobox.get()
-        if filename in combobox["values"]:
-            combobox["values"] = tuple([x for x in combobox["values"] if x != filename])
-            combobox.set("")
-
-    def add_command(self, event: tk.Event):
-        frame_contains_button = event.widget.master
-        listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
-        command_to_add = frame_contains_button.grid_slaves(row=0, column=0)[0].get()
-        if command_to_add == "":
-            return
-        for cmd in listbox.get(0, tk.END):
-            if cmd == command_to_add:
-                return
-        listbox.insert(tk.END, command_to_add)
-
-    def update_entry(self, event: tk.Event):
-        listbox = event.widget
-        current_selection = listbox.curselection()
-        if len(current_selection) > 0:
-            cmd = listbox.get(current_selection[0])
-            entry = listbox.master.master.grid_slaves(row=0, column=0)[0].grid_slaves(
-                row=0, column=0
-            )[0]
-            entry.delete(0, "end")
-            entry.insert(0, cmd)
-
-    def delete_command(self, event: tk.Event):
-        button = event.widget
-        frame_contains_button = button.master
-        listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
-        current_selection = listbox.curselection()
-        if len(current_selection) > 0:
-            listbox.delete(current_selection[0])
-            entry = frame_contains_button.grid_slaves(row=0, column=0)[0]
-            entry.delete(0, tk.END)
-
     def click_apply(self):
         current_listbox = self.master.current.listbox
         if not self.is_custom_service_config() and not self.is_custom_service_file():
@@ -399,53 +295,32 @@ class ConfigServiceConfigDialog(Dialog):
             return
 
         try:
-            if self.is_custom_service_config():
-                startup_commands = self.startup_commands_listbox.get(0, "end")
-                shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-                validate_commands = self.validate_commands_listbox.get(0, "end")
-                config = self.core.set_node_service(
-                    self.node_id,
-                    self.service_name,
-                    startup_commands,
-                    validate_commands,
-                    shutdown_commands,
-                )
-                if self.node_id not in self.service_configs:
-                    self.service_configs[self.node_id] = {}
-                self.service_configs[self.node_id][self.service_name] = config
-
+            node_config = self.service_configs.setdefault(self.node_id, {})
+            service_config = node_config.setdefault(self.service_name, {})
+            self.config_frame.parse_config()
+            service_config["config"] = self.config
+            templates_config = service_config.setdefault("templates", {})
             for file in self.modified_files:
-                if self.node_id not in self.file_configs:
-                    self.file_configs[self.node_id] = {}
-                if self.service_name not in self.file_configs[self.node_id]:
-                    self.file_configs[self.node_id][self.service_name] = {}
-                self.file_configs[self.node_id][self.service_name][
-                    file
-                ] = self.temp_service_files[file]
-
-                self.app.core.set_node_service_file(
-                    self.node_id, self.service_name, file, self.temp_service_files[file]
-                )
+                templates_config[file] = self.temp_service_files[file]
             all_current = current_listbox.get(0, tk.END)
             current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
             show_grpc_error(e)
         self.destroy()
 
-    def display_service_file_data(self, event: tk.Event):
-        combobox = event.widget
-        filename = combobox.get()
-        self.service_file_data.text.delete(1.0, "end")
-        self.service_file_data.text.insert("end", self.temp_service_files[filename])
+    def handle_template_changed(self, event: tk.Event):
+        template = self.templates_combobox.get()
+        self.template_text.text.delete(1.0, "end")
+        self.template_text.text.insert("end", self.temp_service_files[template])
 
-    def update_temp_service_file_data(self, event: tk.Event):
+    def update_template_file_data(self, event: tk.Event):
         scrolledtext = event.widget
-        filename = self.filename_combobox.get()
-        self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
-        if self.temp_service_files[filename] != self.original_service_files[filename]:
-            self.modified_files.add(filename)
+        template = self.templates_combobox.get()
+        self.temp_service_files[template] = scrolledtext.get(1.0, "end")
+        if self.temp_service_files[template] != self.original_service_files[template]:
+            self.modified_files.add(template)
         else:
-            self.modified_files.discard(filename)
+            self.modified_files.discard(template)
 
     def is_custom_service_config(self):
         startup_commands = self.startup_commands_listbox.get(0, "end")
@@ -462,13 +337,13 @@ class ConfigServiceConfigDialog(Dialog):
 
     def click_defaults(self):
         if self.node_id in self.service_configs:
-            self.service_configs[self.node_id].pop(self.service_name, None)
-        if self.node_id in self.file_configs:
-            self.file_configs[self.node_id].pop(self.service_name, None)
+            node_config = self.service_configs.get(self.node_id, {})
+            node_config.pop(self.service_name, None)
         self.temp_service_files = dict(self.original_service_files)
-        filename = self.filename_combobox.get()
-        self.service_file_data.text.delete(1.0, "end")
-        self.service_file_data.text.insert("end", self.temp_service_files[filename])
+        filename = self.templates_combobox.get()
+        self.template_text.text.delete(1.0, "end")
+        self.template_text.text.insert("end", self.temp_service_files[filename])
+        self.config_frame.set_values(self.default_config)
         self.startup_commands_listbox.delete(0, tk.END)
         self.validate_commands_listbox.delete(0, tk.END)
         self.shutdown_commands_listbox.delete(0, tk.END)
@@ -480,8 +355,7 @@ class ConfigServiceConfigDialog(Dialog):
             self.shutdown_commands_listbox.insert(tk.END, cmd)
 
     def click_copy(self):
-        dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
-        dialog.show()
+        pass
 
     def append_commands(
         self, commands: List[str], listbox: tk.Listbox, to_add: List[str]

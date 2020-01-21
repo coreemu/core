@@ -1,6 +1,7 @@
 """
 core node services
 """
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any, Set
@@ -130,14 +131,10 @@ class NodeConfigServiceDialog(Dialog):
             )
 
     def click_save(self):
-        if (
-            self.current_services
-            != self.app.core.default_services[self.canvas_node.core_node.model]
-        ):
-            self.canvas_node.core_node.config_services[:] = self.current_services
-        else:
-            if len(self.canvas_node.core_node.config_services) > 0:
-                self.canvas_node.core_node.config_services[:] = []
+        self.canvas_node.core_node.config_services[:] = self.current_services
+        logging.info(
+            "saved node config services: %s", self.canvas_node.core_node.config_services
+        )
         self.destroy()
 
     def click_cancel(self):

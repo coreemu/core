@@ -166,6 +166,7 @@ message StartSessionRequest {
     repeated ServiceConfig service_configs = 10;
     repeated ServiceFileConfig service_file_configs = 11;
     repeated Link asymmetric_links = 12;
+    repeated configservices.ConfigServiceConfig config_service_configs = 13;
 }
 
 message StartSessionResponse {

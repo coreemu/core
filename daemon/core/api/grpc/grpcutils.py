@@ -33,6 +33,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     options.opaque = node_proto.opaque
     options.image = node_proto.image
     options.services = node_proto.services
+    options.config_services = node_proto.config_services
     if node_proto.emane:
         options.emane = node_proto.emane
     if node_proto.server:

@@ -11,7 +11,7 @@ import grpc
 import netaddr
 
 from core import utils
-from core.api.grpc import core_pb2, core_pb2_grpc
+from core.api.grpc import configservices_pb2, core_pb2, core_pb2_grpc
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetConfigServiceDefaultsResponse,
@@ -175,6 +175,7 @@ class CoreGrpcClient:
         service_configs: List[core_pb2.ServiceConfig] = None,
         service_file_configs: List[core_pb2.ServiceFileConfig] = None,
         asymmetric_links: List[core_pb2.Link] = None,
+        config_service_configs: List[configservices_pb2.ConfigServiceConfig] = None,
     ) -> core_pb2.StartSessionResponse:
         """
         Start a session.
@@ -191,6 +192,7 @@ class CoreGrpcClient:
         :param service_configs: node service configurations
         :param service_file_configs: node service file configurations
         :param asymmetric_links: asymmetric links to edit
+        :param config_service_configs: config service configurations
         :return: start session response
         """
         request = core_pb2.StartSessionRequest(
@@ -206,6 +208,7 @@ class CoreGrpcClient:
             service_configs=service_configs,
             service_file_configs=service_file_configs,
             asymmetric_links=asymmetric_links,
+            config_service_configs=config_service_configs,
         )
         return self.stub.StartSession(request)
 
