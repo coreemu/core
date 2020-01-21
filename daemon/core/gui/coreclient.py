@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 import grpc
 
-from core.api.grpc import client, core_pb2
+from core.api.grpc import client, common_pb2, core_pb2
 from core.gui import appconfig
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
@@ -875,14 +875,14 @@ class CoreClient:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
         return self.client.node_command(self.session_id, node_id, self.observer).output
 
-    def get_wlan_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
+    def get_wlan_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
         config = self.wlan_configs.get(node_id)
         if not config:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
         return config
 
-    def get_mobility_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
+    def get_mobility_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
         config = self.mobility_configs.get(node_id)
         if not config:
             response = self.client.get_mobility_config(self.session_id, node_id)
@@ -891,7 +891,7 @@ class CoreClient:
 
     def get_emane_model_config(
         self, node_id: int, model: str, interface: int = None
-    ) -> Dict[str, core_pb2.ConfigOption]:
+    ) -> Dict[str, common_pb2.ConfigOption]:
         logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
         if not config:
@@ -907,7 +907,7 @@ class CoreClient:
         self,
         node_id: int,
         model: str,
-        config: Dict[str, core_pb2.ConfigOption],
+        config: Dict[str, common_pb2.ConfigOption],
         interface: int = None,
     ):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)

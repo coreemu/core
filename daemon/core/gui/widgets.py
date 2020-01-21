@@ -5,7 +5,7 @@ from pathlib import PosixPath
 from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Dict
 
-from core.api.grpc import core_pb2
+from core.api.grpc import common_pb2, core_pb2
 from core.gui import themes
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
@@ -74,7 +74,7 @@ class ConfigFrame(ttk.Notebook):
         self,
         master: tk.Widget,
         app: "Application",
-        config: Dict[str, core_pb2.ConfigOption],
+        config: Dict[str, common_pb2.ConfigOption],
         **kw
     ):
         super().__init__(master, **kw)

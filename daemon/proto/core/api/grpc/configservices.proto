@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package configservices;
 
+import "core/api/grpc/common.proto";
+
 message ConfigServiceValidationMode {
     enum Enum {
         BLOCKING = 0;
@@ -39,7 +41,7 @@ message GetConfigServiceDefaultsRequest {
 
 message GetConfigServiceDefaultsResponse {
     map<string, string> templates = 1;
-    map<string, string> config = 2;
+    map<string, common.ConfigOption> config = 2;
 }
 
 message GetNodeConfigServiceRequest {

@@ -10,7 +10,7 @@ from typing import Type
 import grpc
 from grpc import ServicerContext
 
-from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
+from core.api.grpc import common_pb2, core_pb2, core_pb2_grpc, grpcutils
 from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServiceDefaultsRequest,
@@ -1494,7 +1494,17 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         service_class = self.validate_service(request.name, context)
         service = service_class(None)
         templates = service.get_templates()
-        config = service.render_config()
+        config = {}
+        for configuration in service.default_configs:
+            config_option = common_pb2.ConfigOption(
+                label=configuration.label,
+                name=configuration.id,
+                value=configuration.default,
+                type=configuration.type.value,
+                select=configuration.options,
+                group="Settings",
+            )
+            config[configuration.id] = config_option
         return GetConfigServiceDefaultsResponse(templates=templates, config=config)
 
     def GetNodeConfigServices(

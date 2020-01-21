@@ -1,6 +1,7 @@
 """
 Service configuration dialog
 """
+import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, List
@@ -13,7 +14,7 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
-from core.gui.widgets import CodeText, ListboxScroll
+from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -61,6 +62,8 @@ class ConfigServiceConfigDialog(Dialog):
         self.original_service_files = {}
         self.temp_service_files = {}
         self.modified_files = set()
+        self.config_frame = None
+        self.config = None
         self.load()
         self.draw()
 
@@ -81,6 +84,7 @@ class ConfigServiceConfigDialog(Dialog):
             response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
+            self.config = response.config
 
             node_configs = self.service_configs.get(self.node_id, {})
             service_config = node_configs.get(self.service_name, {})
@@ -98,9 +102,10 @@ class ConfigServiceConfigDialog(Dialog):
         self.notebook = ttk.Notebook(self.top)
         self.notebook.grid(sticky="nsew", pady=PADY)
         self.draw_tab_files()
+        self.draw_tab_config()
         self.draw_tab_directories()
         self.draw_tab_startstop()
-        self.draw_tab_configuration()
+        self.draw_tab_validation()
 
         self.draw_buttons()
 
@@ -184,6 +189,16 @@ class ConfigServiceConfigDialog(Dialog):
             "<FocusOut>", self.update_temp_service_file_data
         )
 
+    def draw_tab_config(self):
+        tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
+        tab.grid(sticky="nsew")
+        tab.columnconfigure(0, weight=1)
+        self.notebook.add(tab, text="Configuration")
+        logging.info("config service config: %s", self.config)
+        self.config_frame = ConfigFrame(tab, self.app, self.config)
+        self.config_frame.draw_config()
+        self.config_frame.grid(sticky="nsew", pady=PADY)
+
     def draw_tab_directories(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
@@ -250,7 +265,7 @@ class ConfigServiceConfigDialog(Dialog):
             elif i == 2:
                 self.validate_commands_listbox = listbox_scroll.listbox
 
-    def draw_tab_configuration(self):
+    def draw_tab_validation(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)

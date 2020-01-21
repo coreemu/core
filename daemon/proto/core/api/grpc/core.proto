@@ -6,6 +6,7 @@ option java_package = "com.core.client.grpc";
 option java_outer_classname = "CoreProto";
 
 import "core/api/grpc/configservices.proto";
+import "core/api/grpc/common.proto";
 
 service CoreApi {
     // session rpc
@@ -217,7 +218,7 @@ message GetSessionOptionsRequest {
 }
 
 message GetSessionOptionsResponse {
-    map<string, ConfigOption> config = 2;
+    map<string, common.ConfigOption> config = 2;
 }
 
 message SetSessionOptionsRequest {
@@ -508,7 +509,7 @@ message GetMobilityConfigRequest {
 }
 
 message GetMobilityConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetMobilityConfigRequest {
@@ -633,7 +634,7 @@ message GetWlanConfigRequest {
 }
 
 message GetWlanConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetWlanConfigRequest {
@@ -650,7 +651,7 @@ message GetEmaneConfigRequest {
 }
 
 message GetEmaneConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetEmaneConfigRequest {
@@ -678,7 +679,7 @@ message GetEmaneModelConfigRequest {
 }
 
 message GetEmaneModelConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetEmaneModelConfigRequest {
@@ -699,7 +700,7 @@ message GetEmaneModelConfigsResponse {
         int32 node_id = 1;
         string model = 2;
         int32 interface = 3;
-        map<string, ConfigOption> config = 4;
+        map<string, common.ConfigOption> config = 4;
     }
     repeated ModelConfig configs = 1;
 }
@@ -917,16 +918,7 @@ message NodeServiceData {
 }
 
 message MappedConfig {
-    map<string, ConfigOption> config = 1;
-}
-
-message ConfigOption {
-    string label = 1;
-    string name = 2;
-    string value = 3;
-    int32 type = 4;
-    repeated string select = 5;
-    string group = 6;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message Session {
