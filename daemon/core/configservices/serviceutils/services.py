@@ -20,6 +20,7 @@ class DefaultRoute(ConfigService):
     shutdown = []
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
+    modes = {}
 
     def data(self) -> Dict[str, Any]:
         addresses = []
@@ -45,6 +46,7 @@ class IpForwardService(ConfigService):
     shutdown = []
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
+    modes = {}
 
     def data(self) -> Dict[str, Any]:
         devnames = []

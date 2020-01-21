@@ -34,6 +34,11 @@ message ConfigService {
     float validation_period = 12;
 }
 
+message ConfigMode {
+    string name = 1;
+    map<string, string> config = 2;
+}
+
 message GetConfigServicesRequest {
     int32 session_id = 1;
 }
@@ -49,6 +54,7 @@ message GetConfigServiceDefaultsRequest {
 message GetConfigServiceDefaultsResponse {
     map<string, string> templates = 1;
     map<string, common.ConfigOption> config = 2;
+    repeated ConfigMode modes = 3;
 }
 
 message GetNodeConfigServiceRequest {

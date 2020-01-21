@@ -10,7 +10,13 @@ from typing import Type
 import grpc
 from grpc import ServicerContext
 
-from core.api.grpc import common_pb2, core_pb2, core_pb2_grpc, grpcutils
+from core.api.grpc import (
+    common_pb2,
+    configservices_pb2,
+    core_pb2,
+    core_pb2_grpc,
+    grpcutils,
+)
 from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServiceDefaultsRequest,
@@ -1514,7 +1520,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 group="Settings",
             )
             config[configuration.id] = config_option
-        return GetConfigServiceDefaultsResponse(templates=templates, config=config)
+        modes = []
+        for name, mode_config in service.modes.items():
+            mode = configservices_pb2.ConfigMode(name=name, config=mode_config)
+            modes.append(mode)
+        return GetConfigServiceDefaultsResponse(
+            templates=templates, config=config, modes=modes
+        )
 
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext

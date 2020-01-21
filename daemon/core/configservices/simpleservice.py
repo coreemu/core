@@ -19,6 +19,11 @@ class SimpleService(ConfigService):
         Configuration(_id="value2", _type=ConfigDataTypes.STRING, label="Value 2"),
         Configuration(_id="value3", _type=ConfigDataTypes.STRING, label="Value 3"),
     ]
+    modes = {
+        "mode1": {"value1": "m1", "value2": "m1", "value3": "m1"},
+        "mode2": {"value1": "m2", "value2": "m2", "value3": "m2"},
+        "mode3": {"value1": "m3", "value2": "m3", "value3": "m3"},
+    }
 
     def get_text(self, name: str) -> str:
         if name == "test1.sh":

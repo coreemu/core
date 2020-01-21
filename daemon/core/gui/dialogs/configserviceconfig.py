@@ -11,7 +11,6 @@ import grpc
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
-from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
@@ -47,11 +46,12 @@ class ConfigServiceConfigDialog(Dialog):
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = tk.StringVar()
-        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW, 16)
-        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16)
+        self.modes = []
+        self.mode_configs = {}
 
         self.notebook = None
         self.templates_combobox = None
+        self.modes_combobox = None
         self.startup_commands_listbox = None
         self.shutdown_commands_listbox = None
         self.validate_commands_listbox = None
@@ -86,6 +86,9 @@ class ConfigServiceConfigDialog(Dialog):
             response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
+
+            self.modes = sorted(x.name for x in response.modes)
+            self.mode_configs = {x.name: x.config for x in response.modes}
 
             node_configs = self.service_configs.get(self.node_id, {})
             service_config = node_configs.get(self.service_name, {})
@@ -166,10 +169,24 @@ class ConfigServiceConfigDialog(Dialog):
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
         self.notebook.add(tab, text="Configuration")
+
+        if self.modes:
+            frame = ttk.Frame(tab)
+            frame.grid(sticky="ew", pady=PADY)
+            frame.columnconfigure(1, weight=1)
+            label = ttk.Label(frame, text="Modes")
+            label.grid(row=0, column=0, padx=PADX)
+            self.modes_combobox = ttk.Combobox(
+                frame, values=self.modes, state="readonly"
+            )
+            self.modes_combobox.bind("<<ComboboxSelected>>", self.handle_mode_changed)
+            self.modes_combobox.grid(row=0, column=1, sticky="ew", pady=PADY)
+
         logging.info("config service config: %s", self.config)
         self.config_frame = ConfigFrame(tab, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
+        tab.rowconfigure(self.config_frame.grid_info()["row"], weight=1)
 
     def draw_tab_startstop(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -314,6 +331,12 @@ class ConfigServiceConfigDialog(Dialog):
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[template])
 
+    def handle_mode_changed(self, event: tk.Event):
+        mode = self.modes_combobox.get()
+        config = self.mode_configs[mode]
+        logging.info("mode config: %s", config)
+        self.config_frame.set_values(config)
+
     def update_template_file_data(self, event: tk.Event):
         scrolledtext = event.widget
         template = self.templates_combobox.get()
@@ -345,16 +368,8 @@ class ConfigServiceConfigDialog(Dialog):
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[filename])
         if self.config_frame:
-            self.config_frame.set_values(self.default_config)
-        self.startup_commands_listbox.delete(0, tk.END)
-        self.validate_commands_listbox.delete(0, tk.END)
-        self.shutdown_commands_listbox.delete(0, tk.END)
-        for cmd in self.default_startup:
-            self.startup_commands_listbox.insert(tk.END, cmd)
-        for cmd in self.default_validate:
-            self.validate_commands_listbox.insert(tk.END, cmd)
-        for cmd in self.default_shutdown:
-            self.shutdown_commands_listbox.insert(tk.END, cmd)
+            defaults = {x.id: x.value for x in self.default_config.values()}
+            self.config_frame.set_values(defaults)
 
     def click_copy(self):
         pass

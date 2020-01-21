@@ -184,10 +184,10 @@ class ConfigFrame(ttk.Notebook):
 
         return {x: self.config[x].value for x in self.config}
 
-    def set_values(self, config: Dict[str, common_pb2.ConfigOption]) -> None:
-        for name, option in config.items():
+    def set_values(self, config: Dict[str, str]) -> None:
+        for name, data in config.items():
             value = self.values[name]
-            value.set(option.value)
+            value.set(data)
 
 
 class ListboxScroll(ttk.Frame):

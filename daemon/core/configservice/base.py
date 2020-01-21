@@ -68,6 +68,11 @@ class ConfigService(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def modes(self) -> Dict[str, Dict[str, str]]:
+        raise NotImplementedError
+
+    @property
+    @abc.abstractmethod
     def executables(self) -> List[str]:
         raise NotImplementedError
 

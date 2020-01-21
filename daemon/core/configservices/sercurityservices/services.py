@@ -15,3 +15,4 @@ class VpnClient(ConfigService):
     shutdown = ["killall openvpn"]
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = []
+    modes = {}
