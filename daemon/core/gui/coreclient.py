@@ -879,11 +879,15 @@ class CoreClient:
         config_service_protos = []
         for node_id, node_config in self.config_service_configs.items():
             for name, service_config in node_config.items():
+                config = service_config.get("config", {})
+                config_values = {}
+                for key, option in config.items():
+                    config_values[key] = option.value
                 config_proto = configservices_pb2.ConfigServiceConfig(
                     node_id=node_id,
                     name=name,
                     templates=service_config["templates"],
-                    config=service_config.get("config"),
+                    config=config_values,
                 )
                 config_service_protos.append(config_proto)
         return config_service_protos

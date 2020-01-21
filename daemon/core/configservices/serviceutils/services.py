@@ -3,9 +3,7 @@ from typing import Any, Dict
 import netaddr
 
 from core import utils
-from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
-from core.emulator.enumerations import ConfigDataTypes
 
 GROUP_NAME = "Utility"
 
@@ -21,11 +19,7 @@ class DefaultRoute(ConfigService):
     validate = []
     shutdown = []
     validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = [
-        Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Value 1"),
-        Configuration(_id="value2", _type=ConfigDataTypes.STRING, label="Value 2"),
-        Configuration(_id="value3", _type=ConfigDataTypes.STRING, label="Value 3"),
-    ]
+    default_configs = []
 
     def data(self) -> Dict[str, Any]:
         addresses = []
