@@ -228,7 +228,7 @@ fi
 
 resetinterfaces()
 {
-	for iface in $(ifconfig | cut -d ' ' -f1 | tr ':' '\\n' | awk NF)
+	for iface in $(ip -o link show up | awk -F': ' '{print $2}')
 	do
 		if [ "$iface" != "lo" ]
 		then
