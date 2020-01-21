@@ -38,6 +38,17 @@ OBSERVERS = {
     "IPSec policies": "setkey -DP",
 }
 
+DEFAULT_TERMS = {
+    "xterm": "xterm -e",
+    "aterm": "aterm -e",
+    "eterm": "eterm -e",
+    "rxvt": "rxvt -e",
+    "konsole": "konsole -e",
+    "lxterminal": "lxterminal -e",
+    "xfce4-terminal": "xfce4-terminal -x",
+    "gnome-terminal": "gnome-terminal --window--",
+}
+
 
 class CoreServer:
     def __init__(self, name: str, address: str, port: int):
@@ -110,6 +121,8 @@ class CoreClient:
         self.emane_config = None
         self.service_configs.clear()
         self.file_configs.clear()
+        for mobility_player in self.mobility_players.values():
+            mobility_player.handle_close()
         self.mobility_players.clear()
         # clear streams
         if self.handling_throughputs:
@@ -300,6 +313,7 @@ class CoreClient:
             # get metadata
             response = self.client.get_session_metadata(self.session_id)
             self.parse_metadata(response.config)
+
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -396,7 +410,7 @@ class CoreClient:
             session_id = self.session_id
         try:
             response = self.client.delete_session(session_id)
-            logging.info("deleted session result: %s", response)
+            logging.info("deleted session(%s) result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -527,6 +541,9 @@ class CoreClient:
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
             response = self.client.get_node_terminal(self.session_id, node_id)
+            output = os.popen(f"echo {terminal}").read()[:-1]
+            if output in DEFAULT_TERMS:
+                terminal = DEFAULT_TERMS[output]
             cmd = f'{terminal} "{response.terminal}" &'
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
@@ -668,6 +685,8 @@ class CoreClient:
         if self.emane_config:
             config = {x: self.emane_config[x].value for x in self.emane_config}
             self.client.set_emane_config(self.session_id, config)
+
+        self.set_metadata()
 
     def close(self):
         """

@@ -1,10 +1,12 @@
-from typing import TYPE_CHECKING, Optional, Set
+import logging
+from typing import TYPE_CHECKING, Optional, Set, Tuple
 
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
 
 if TYPE_CHECKING:
     from core.api.grpc import core_pb2
+    from PIL import ImageTk
 
 ICON_SIZE = 48
 ANTENNA_SIZE = 32
@@ -89,10 +91,20 @@ class NodeUtils:
         return node_type in cls.RJ45_NODES
 
     @classmethod
-    def node_icon(cls, node_type: NodeType, model: str) -> bool:
+    def node_icon(cls, node_type: NodeType, model: str) -> "ImageTk.PhotoImage":
         if model == "":
             model = None
         return cls.NODE_ICONS[(node_type, model)]
+
+    @classmethod
+    def node_image(cls, core_node: "core_pb2.Node") -> "ImageTk.PhotoImage":
+        image = cls.node_icon(core_node.type, core_node.model)
+        if core_node.icon:
+            try:
+                image = Images.create(core_node.icon, ICON_SIZE)
+            except OSError:
+                logging.error("invalid icon: %s", core_node.icon)
+        return image
 
     @classmethod
     def setup(cls):
@@ -123,3 +135,9 @@ class NodeUtils:
             cls.NETWORK_NODES.append(node_draw)
             cls.NODE_ICONS[(node_type, None)] = node_draw.image
         cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
+
+
+class EdgeUtils:
+    @classmethod
+    def get_token(cls, src: int, dst: int) -> Tuple[int, ...]:
+        return tuple(sorted([src, dst]))

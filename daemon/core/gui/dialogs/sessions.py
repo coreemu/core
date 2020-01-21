@@ -215,3 +215,7 @@ class SessionsDialog(Dialog):
             self.tree.delete(item[0])
             if sid == self.app.core.session_id:
                 self.click_new()
+        selections = self.tree.get_children()
+        if selections:
+            self.tree.focus(selections[0])
+            self.tree.selection_set(selections[0])

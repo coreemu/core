@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, List, Tuple
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
-from core.gui import nodeutils
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
@@ -13,8 +12,7 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import Images
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -192,7 +190,7 @@ class CanvasGraph(tk.Canvas):
         """
         add a wireless edge between 2 canvas nodes
         """
-        token = tuple(sorted((src.id, dst.id)))
+        token = EdgeUtils.get_token(src.id, dst.id)
         x1, y1 = self.coords(src.id)
         x2, y2 = self.coords(dst.id)
         position = (x1, y1, x2, y2)
@@ -204,7 +202,7 @@ class CanvasGraph(tk.Canvas):
         self.tag_raise(dst.id)
 
     def delete_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
-        token = tuple(sorted((src.id, dst.id)))
+        token = EdgeUtils.get_token(src.id, dst.id)
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
@@ -219,16 +217,7 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-
-            # draw nodes on the canvas
-            logging.info("drawing core node: %s", core_node)
-            image = NodeUtils.node_icon(core_node.type, core_node.model)
-            if core_node.icon:
-                try:
-                    image = Images.create(core_node.icon, nodeutils.ICON_SIZE)
-                except OSError:
-                    logging.error("invalid icon: %s", core_node.icon)
-
+            image = NodeUtils.node_image(core_node)
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
@@ -242,7 +231,7 @@ class CanvasGraph(tk.Canvas):
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
-            token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
+            token = EdgeUtils.get_token(canvas_node_one.id, canvas_node_two.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node_one, canvas_node_two)
@@ -266,8 +255,10 @@ class CanvasGraph(tk.Canvas):
                     self.core.links[edge.token] = edge
                     if link.HasField("interface_one"):
                         canvas_node_one.interfaces.append(link.interface_one)
+                        edge.src_interface = link.interface_one
                     if link.HasField("interface_two"):
                         canvas_node_two.interfaces.append(link.interface_two)
+                        edge.dst_interface = link.interface_two
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
@@ -385,7 +376,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         # ignore repeated edges
-        token = tuple(sorted((edge.src, self.selected)))
+        token = EdgeUtils.get_token(edge.src, self.selected)
         if token in self.edges:
             edge.delete()
             return
@@ -883,7 +874,7 @@ class CanvasGraph(tk.Canvas):
             dest_node_copy = self.nodes[copy_map[edge.token[1]]]
             self.create_edge(source_node_copy, dest_node_copy)
             copy_edge = self.edges[
-                tuple(sorted([source_node_copy.id, dest_node_copy.id]))
+                EdgeUtils.get_token(source_node_copy.id, dest_node_copy.id)
             ]
             copy_link = copy_edge.link
             options = edge.link.options
