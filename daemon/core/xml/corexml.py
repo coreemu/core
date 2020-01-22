@@ -9,7 +9,7 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
-from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.network import CtrlNet
 from core.services.coreservices import CoreService
 
@@ -219,9 +219,14 @@ class DeviceElement(NodeElement):
         service_elements = etree.Element("services")
         for service in self.node.services:
             etree.SubElement(service_elements, "service", name=service.name)
-
         if service_elements.getchildren():
             self.element.append(service_elements)
+
+        config_service_elements = etree.Element("configservices")
+        for name, service in self.node.config_services.items():
+            etree.SubElement(config_service_elements, "service", name=name)
+        if config_service_elements.getchildren():
+            self.element.append(config_service_elements)
 
 
 class NetworkElement(NodeElement):
@@ -261,6 +266,7 @@ class CoreXmlWriter:
         self.write_mobility_configs()
         self.write_emane_configs()
         self.write_service_configs()
+        self.write_configservice_configs()
         self.write_session_origin()
         self.write_session_hooks()
         self.write_session_options()
@@ -396,6 +402,32 @@ class CoreXmlWriter:
             add_attribute(service_element.element, "node", node_id)
             service_configurations.append(service_element.element)
 
+        if service_configurations.getchildren():
+            self.scenario.append(service_configurations)
+
+    def write_configservice_configs(self) -> None:
+        service_configurations = etree.Element("configservice_configurations")
+        for node in self.session.nodes.values():
+            if not isinstance(node, CoreNodeBase):
+                continue
+            for name, service in node.config_services.items():
+                service_element = etree.SubElement(
+                    service_configurations, "service", name=name
+                )
+                add_attribute(service_element, "node", node.id)
+                if service.custom_config:
+                    configs_element = etree.SubElement(service_element, "configs")
+                    for key, value in service.custom_config.items():
+                        etree.SubElement(
+                            configs_element, "config", key=key, value=value
+                        )
+                if service.custom_templates:
+                    templates_element = etree.SubElement(service_element, "templates")
+                    for template_name, template in service.custom_templates.items():
+                        template_element = etree.SubElement(
+                            templates_element, "template", name=template_name
+                        )
+                        template_element.text = etree.CDATA(template)
         if service_configurations.getchildren():
             self.scenario.append(service_configurations)
 
@@ -568,6 +600,7 @@ class CoreXmlReader:
         self.read_mobility_configs()
         self.read_emane_configs()
         self.read_nodes()
+        self.read_configservice_configs()
         self.read_links()
 
     def read_default_services(self) -> None:
@@ -768,6 +801,12 @@ class CoreXmlReader:
         if service_elements is not None:
             options.services = [x.get("name") for x in service_elements.iterchildren()]
 
+        config_service_elements = device_element.find("configservices")
+        if config_service_elements is not None:
+            options.config_services = [
+                x.get("name") for x in config_service_elements.iterchildren()
+            ]
+
         position_element = device_element.find("position")
         if position_element is not None:
             x = get_float(position_element, "x")
@@ -807,6 +846,36 @@ class CoreXmlReader:
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
         self.session.add_node(_type=node_type, _id=node_id, options=options)
+
+    def read_configservice_configs(self) -> None:
+        configservice_configs = self.scenario.find("configservice_configurations")
+        if configservice_configs is None:
+            return
+
+        for configservice_element in configservice_configs.iterchildren():
+            name = configservice_element.get("name")
+            node_id = get_int(configservice_element, "node")
+            node = self.session.get_node(node_id)
+            service = node.config_services[name]
+
+            configs_element = configservice_element.find("configs")
+            if configs_element is not None:
+                config = {}
+                for config_element in configs_element.iterchildren():
+                    key = config_element.get("key")
+                    value = config_element.get("value")
+                    config[key] = value
+                service.set_config(config)
+
+            templates_element = configservice_element.find("templates")
+            if templates_element is not None:
+                for template_element in templates_element.iterchildren():
+                    name = template_element.get("name")
+                    template = template_element.text
+                    logging.info(
+                        "loading xml template(%s): %s", type(template), template
+                    )
+                    service.set_template(name, template)
 
     def read_links(self) -> None:
         link_elements = self.scenario.find("links")

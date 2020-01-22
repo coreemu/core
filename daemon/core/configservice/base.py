@@ -38,6 +38,7 @@ class ConfigService(abc.ABC):
         self.templates = TemplateLookup(directories=templates_path)
         self.config = {}
         self.custom_templates = {}
+        self.custom_config = {}
         configs = self.default_configs[:]
         self._define_config(configs)
 
@@ -134,7 +135,7 @@ class ConfigService(abc.ABC):
     def data(self) -> Dict[str, Any]:
         return {}
 
-    def custom_template(self, name: str, template: str) -> None:
+    def set_template(self, name: str, template: str) -> None:
         self.custom_templates[name] = template
 
     def get_text(self, name: str) -> str:
@@ -248,11 +249,13 @@ class ConfigService(abc.ABC):
             self.config[config.id] = config
 
     def render_config(self) -> Dict[str, str]:
-        return {k: v.default for k, v in self.config.items()}
+        if self.custom_config:
+            return self.custom_config
+        else:
+            return {k: v.default for k, v in self.config.items()}
 
     def set_config(self, data: Dict[str, str]) -> None:
         for key, value in data.items():
-            config = self.config.get(key)
-            if config is None:
+            if key not in self.config:
                 raise CoreError(f"unknown config: {key}")
-            config.default = value
+            self.custom_config[key] = value

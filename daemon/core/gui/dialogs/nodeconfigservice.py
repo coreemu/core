@@ -153,14 +153,9 @@ class NodeConfigServiceDialog(Dialog):
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        service_configs = self.app.core.service_configs
-        file_configs = self.app.core.file_configs
-        if self.node_id in service_configs and service in service_configs[self.node_id]:
+        node_configs = self.app.core.config_service_configs.get(self.node_id, {})
+        service_config = node_configs.get(service)
+        if node_configs and service_config:
             return True
-        if (
-            self.node_id in file_configs
-            and service in file_configs[self.node_id]
-            and file_configs[self.node_id][service]
-        ):
-            return True
-        return False
+        else:
+            return False

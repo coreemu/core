@@ -17,6 +17,8 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
+    GetNodeConfigServiceConfigsRequest,
+    GetNodeConfigServiceConfigsResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -1102,6 +1104,12 @@ class CoreGrpcClient:
     ) -> GetConfigServiceDefaultsResponse:
         request = GetConfigServiceDefaultsRequest(name=name)
         return self.stub.GetConfigServiceDefaults(request)
+
+    def get_node_config_service_configs(
+        self, session_id: int
+    ) -> GetNodeConfigServiceConfigsResponse:
+        request = GetNodeConfigServiceConfigsRequest(session_id=session_id)
+        return self.stub.GetNodeConfigServiceConfigs(request)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str

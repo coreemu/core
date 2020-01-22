@@ -93,15 +93,17 @@ class ConfigServiceConfigDialog(Dialog):
             node_configs = self.service_configs.get(self.node_id, {})
             service_config = node_configs.get(self.service_name, {})
 
-            self.default_config = response.config
+            self.config = response.config
+            self.default_config = {x.name: x.value for x in self.config.values()}
             custom_config = service_config.get("config")
             if custom_config:
-                self.config = custom_config
-            else:
-                self.config = dict(self.default_config)
+                for key, value in custom_config.items():
+                    self.config[key].value = value
+            logging.info("default config: %s", self.default_config)
 
             custom_templates = service_config.get("templates", {})
             for file, data in custom_templates.items():
+                self.modified_files.add(file)
                 self.temp_service_files[file] = data
         except grpc.RpcError as e:
             show_grpc_error(e)
@@ -304,7 +306,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def click_apply(self):
         current_listbox = self.master.current.listbox
-        if not self.is_custom_service_config() and not self.is_custom_service_file():
+        if not self.is_custom():
             if self.node_id in self.service_configs:
                 self.service_configs[self.node_id].pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
@@ -316,7 +318,9 @@ class ConfigServiceConfigDialog(Dialog):
             service_config = node_config.setdefault(self.service_name, {})
             if self.config_frame:
                 self.config_frame.parse_config()
-                service_config["config"] = self.config
+                service_config["config"] = {
+                    x.name: x.value for x in self.config.values()
+                }
             templates_config = service_config.setdefault("templates", {})
             for file in self.modified_files:
                 templates_config[file] = self.temp_service_files[file]
@@ -346,18 +350,13 @@ class ConfigServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(template)
 
-    def is_custom_service_config(self):
-        startup_commands = self.startup_commands_listbox.get(0, "end")
-        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-        validate_commands = self.validate_commands_listbox.get(0, "end")
-        return (
-            set(self.default_startup) != set(startup_commands)
-            or set(self.default_validate) != set(validate_commands)
-            or set(self.default_shutdown) != set(shutdown_commands)
-        )
-
-    def is_custom_service_file(self):
-        return len(self.modified_files) > 0
+    def is_custom(self):
+        has_custom_templates = len(self.modified_files) > 0
+        has_custom_config = False
+        if self.config_frame:
+            current = self.config_frame.parse_config()
+            has_custom_config = self.default_config != current
+        return has_custom_templates or has_custom_config
 
     def click_defaults(self):
         if self.node_id in self.service_configs:
@@ -368,8 +367,8 @@ class ConfigServiceConfigDialog(Dialog):
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[filename])
         if self.config_frame:
-            defaults = {x.id: x.value for x in self.default_config.values()}
-            self.config_frame.set_values(defaults)
+            logging.info("resetting defaults: %s", self.default_config)
+            self.config_frame.set_values(self.default_config)
 
     def click_copy(self):
         pass

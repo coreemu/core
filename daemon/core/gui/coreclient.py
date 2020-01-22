@@ -297,6 +297,18 @@ class CoreClient:
                     data = config.files[file_name]
                     files[file_name] = data
 
+            # get config service configurations
+            response = self.client.get_node_config_service_configs(self.session_id)
+            for config in response.configs:
+                node_configs = self.config_service_configs.setdefault(
+                    config.node_id, {}
+                )
+                service_config = node_configs.setdefault(config.name, {})
+                if config.templates:
+                    service_config["templates"] = config.templates
+                if config.config:
+                    service_config["config"] = config.config
+
             # draw session
             self.app.canvas.reset_and_redraw(session)
 
@@ -880,14 +892,11 @@ class CoreClient:
         for node_id, node_config in self.config_service_configs.items():
             for name, service_config in node_config.items():
                 config = service_config.get("config", {})
-                config_values = {}
-                for key, option in config.items():
-                    config_values[key] = option.value
                 config_proto = configservices_pb2.ConfigServiceConfig(
                     node_id=node_id,
                     name=name,
                     templates=service_config["templates"],
-                    config=config_values,
+                    config=config,
                 )
                 config_service_protos.append(config_proto)
         return config_service_protos

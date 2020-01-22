@@ -23,6 +23,8 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
+    GetNodeConfigServiceConfigsRequest,
+    GetNodeConfigServiceConfigsResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -45,7 +47,7 @@ from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import NodeBase
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
@@ -192,7 +194,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if config.config:
                 service.set_config(config.config)
             for name, template in config.templates.items():
-                service.custom_template(name, template)
+                service.set_template(name, template)
 
         # service file configs
         for config in request.service_file_configs:
@@ -463,6 +465,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if services is None:
                 services = []
             services = [x.name for x in services]
+            config_services = getattr(node, "config_services", {})
+            config_services = [x for x in config_services]
             emane_model = None
             if isinstance(node, EmaneNet):
                 emane_model = node.model.name
@@ -478,6 +482,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 services=services,
                 icon=node.icon,
                 image=image,
+                config_services=config_services,
             )
             if isinstance(node, (DockerNode, LxcNode)):
                 node_proto.image = node.image
@@ -1527,6 +1532,27 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return GetConfigServiceDefaultsResponse(
             templates=templates, config=config, modes=modes
         )
+
+    def GetNodeConfigServiceConfigs(
+        self, request: GetNodeConfigServiceConfigsRequest, context: ServicerContext
+    ) -> GetNodeConfigServiceConfigsResponse:
+        session = self.get_session(request.session_id, context)
+        configs = []
+        for node in session.nodes.values():
+            if not isinstance(node, CoreNodeBase):
+                continue
+
+            for name, service in node.config_services.items():
+                if not service.custom_templates and not service.custom_config:
+                    continue
+                config_proto = configservices_pb2.ConfigServiceConfig(
+                    node_id=node.id,
+                    name=name,
+                    templates=service.custom_templates,
+                    config=service.custom_config,
+                )
+                configs.append(config_proto)
+        return GetNodeConfigServiceConfigsResponse(configs=configs)
 
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext
