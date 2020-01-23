@@ -25,7 +25,7 @@ class SimpleService(ConfigService):
         "mode3": {"value1": "m3", "value2": "m3", "value3": "m3"},
     }
 
-    def get_text(self, name: str) -> str:
+    def get_text_template(self, name: str) -> str:
         if name == "test1.sh":
             return """
             # sample script 1

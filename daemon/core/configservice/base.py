@@ -142,7 +142,7 @@ class ConfigService(abc.ABC):
     def set_template(self, name: str, template: str) -> None:
         self.custom_templates[name] = template
 
-    def get_text(self, name: str) -> str:
+    def get_text_template(self, name: str) -> str:
         raise CoreError(f"service({self.name}) unknown template({name})")
 
     def get_templates(self) -> Dict[str, str]:
@@ -155,7 +155,7 @@ class ConfigService(abc.ABC):
             elif self.templates.has_template(basename):
                 template = self.templates.get_template(basename).source
             else:
-                template = self.get_text(name)
+                template = self.get_text_template(name)
                 template = self.clean_text(template)
             templates[name] = template
         return templates
@@ -171,7 +171,7 @@ class ConfigService(abc.ABC):
             elif self.templates.has_template(basename):
                 rendered = self.render_template(basename, data)
             else:
-                text = self.get_text(name)
+                text = self.get_text_template(name)
                 text = self.clean_text(text)
                 rendered = self.render_text(text, data)
             logging.info(
