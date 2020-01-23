@@ -154,3 +154,95 @@ class NrlOlsr(ConfigService):
             ifname = ifc.name
             break
         return dict(has_smf=has_smf, has_zebra=has_zebra, ifname=ifname)
+
+
+class NrlOlsrv2(ConfigService):
+    name = "OLSRv2"
+    group = GROUP
+    directories = []
+    files = ["nrlolsrv2.sh"]
+    executables = ["nrlolsrv2"]
+    dependencies = []
+    startup = ["sh nrlolsrv2.sh"]
+    validate = ["pidof nrlolsrv2"]
+    shutdown = ["killall nrlolsrv2"]
+    validation_mode = ConfigServiceMode.BLOCKING
+    default_configs = []
+    modes = {}
+
+    def data(self) -> Dict[str, Any]:
+        has_smf = "SMF" in self.node.config_services
+        ifnames = []
+        for ifc in self.node.netifs():
+            if hasattr(ifc, "control") and ifc.control is True:
+                continue
+            ifnames.append(ifc.name)
+        return dict(has_smf=has_smf, ifnames=ifnames)
+
+
+class OlsrOrg(ConfigService):
+    name = "OLSRORG"
+    group = GROUP
+    directories = ["/etc/olsrd"]
+    files = ["olsrd.sh", "/etc/olsrd/olsrd.conf"]
+    executables = ["olsrd"]
+    dependencies = []
+    startup = ["sh olsrd.sh"]
+    validate = ["pidof olsrd"]
+    shutdown = ["killall olsrd"]
+    validation_mode = ConfigServiceMode.BLOCKING
+    default_configs = []
+    modes = {}
+
+    def data(self) -> Dict[str, Any]:
+        has_smf = "SMF" in self.node.config_services
+        ifnames = []
+        for ifc in self.node.netifs():
+            if hasattr(ifc, "control") and ifc.control is True:
+                continue
+            ifnames.append(ifc.name)
+        return dict(has_smf=has_smf, ifnames=ifnames)
+
+
+class MgenActor(NrlService):
+    name = "MgenActor"
+    group = GROUP
+    directories = []
+    files = ["start_mgen_actor.sh"]
+    executables = ["mgen"]
+    dependencies = []
+    startup = ["sh start_mgen_actor.sh"]
+    validate = ["pidof mgen"]
+    shutdown = ["killall mgen"]
+    validation_mode = ConfigServiceMode.BLOCKING
+    default_configs = []
+    modes = {}
+
+
+class Arouted(ConfigService):
+    name = "arouted"
+    group = GROUP
+    directories = []
+    files = ["startarouted.sh"]
+    executables = ["arouted"]
+    dependencies = []
+    startup = ["sh startarouted.sh"]
+    validate = ["pidof arouted"]
+    shutdown = ["pkill arouted"]
+    validation_mode = ConfigServiceMode.BLOCKING
+    default_configs = []
+    modes = {}
+
+    def data(self) -> Dict[str, Any]:
+        ip4_prefix = None
+        for ifc in self.node.netifs():
+            if hasattr(ifc, "control") and ifc.control is True:
+                continue
+            if ip4_prefix:
+                continue
+            for a in ifc.addrlist:
+                a = a.split("/")[0]
+                if netaddr.valid_ipv4(a):
+                    ip4_prefix = f"{a}/{24}"
+                    break
+        return dict(ip4_prefix=ip4_prefix)
