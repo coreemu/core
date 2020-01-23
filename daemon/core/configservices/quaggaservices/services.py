@@ -32,7 +32,7 @@ def get_router_id(node: CoreNodeBase) -> str:
     Helper to return the first IPv4 address of a node as its router ID.
     """
     for ifc in node.netifs():
-        if hasattr(ifc, "control") and ifc.control is True:
+        if getattr(ifc, "control", False):
             continue
         for a in ifc.addrlist:
             a = a.split("/")[0]

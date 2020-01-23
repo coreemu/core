@@ -82,7 +82,7 @@ class Nat(ConfigService):
     def data(self) -> Dict[str, Any]:
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict(ifnames=ifnames)

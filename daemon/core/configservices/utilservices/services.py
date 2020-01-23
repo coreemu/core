@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict
 
 import netaddr
@@ -28,6 +29,7 @@ class DefaultRouteService(ConfigService):
             if getattr(netif, "control", False):
                 continue
             for addr in netif.addrlist:
+                logging.info("default route address: %s", addr)
                 net = netaddr.IPNetwork(addr)
                 if net[1] != net[-2]:
                     addresses.append(net[1])
@@ -51,7 +53,7 @@ class DefaultMulticastRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         ifname = None
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifname = ifc.name
             break
@@ -75,7 +77,7 @@ class StaticRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         routes = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             for x in ifc.addrlist:
                 addr = x.split("/")[0]
@@ -150,7 +152,7 @@ class DhcpService(ConfigService):
     def data(self) -> Dict[str, Any]:
         subnets = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             for x in ifc.addrlist:
                 addr = x.split("/")[0]
@@ -181,7 +183,7 @@ class DhcpClientService(ConfigService):
     def data(self) -> Dict[str, Any]:
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict(ifnames=ifnames)
@@ -219,7 +221,7 @@ class PcapService(ConfigService):
     def data(self) -> Dict[str, Any]:
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict()
@@ -242,7 +244,7 @@ class RadvdService(ConfigService):
     def data(self) -> Dict[str, Any]:
         interfaces = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             prefixes = []
             for x in ifc.addrlist:
@@ -294,7 +296,7 @@ class HttpService(ConfigService):
     def data(self) -> Dict[str, Any]:
         interfaces = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             interfaces.append(ifc)
         return dict(interfaces=interfaces)

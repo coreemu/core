@@ -48,7 +48,7 @@ class NrlNhdp(ConfigService):
         has_smf = "SMF" in self.node.config_services
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
@@ -75,7 +75,7 @@ class NrlSmf(ConfigService):
         ifnames = []
         ip4_prefix = None
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
             if ip4_prefix:
@@ -113,7 +113,7 @@ class NrlOlsr(ConfigService):
         has_zebra = "zebra" in self.node.config_services
         ifname = None
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifname = ifc.name
             break
@@ -138,7 +138,7 @@ class NrlOlsrv2(ConfigService):
         has_smf = "SMF" in self.node.config_services
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
@@ -162,7 +162,7 @@ class OlsrOrg(ConfigService):
         has_smf = "SMF" in self.node.config_services
         ifnames = []
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             ifnames.append(ifc.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
@@ -200,7 +200,7 @@ class Arouted(ConfigService):
     def data(self) -> Dict[str, Any]:
         ip4_prefix = None
         for ifc in self.node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
+            if getattr(ifc, "control", False):
                 continue
             if ip4_prefix:
                 continue
