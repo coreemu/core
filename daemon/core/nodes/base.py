@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 import netaddr
 
 from core import utils
+from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -295,6 +296,12 @@ class CoreNodeBase(NodeBase):
         if service is None:
             raise CoreError(f"node({self.name}) does not have service({name})")
         service.set_config(data)
+
+    def start_config_services(self) -> None:
+        boot_paths = ConfigServiceDependencies(self.config_services).boot_paths()
+        for boot_path in boot_paths:
+            for service in boot_path:
+                service.start()
 
     def makenodedir(self) -> None:
         """

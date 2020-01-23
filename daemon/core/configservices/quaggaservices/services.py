@@ -62,10 +62,10 @@ class Zebra(ConfigService):
     def data(self) -> Dict[str, Any]:
         quagga_bin_search = self.node.session.options.get_config(
             "quagga_bin_search", default="/usr/local/bin /usr/bin /usr/lib/quagga"
-        )
+        ).strip('"')
         quagga_sbin_search = self.node.session.options.get_config(
             "quagga_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/quagga"
-        )
+        ).strip('"')
         quagga_state_dir = constants.QUAGGA_STATE_DIR
         quagga_conf = self.files[0]
 
@@ -102,6 +102,7 @@ class Zebra(ConfigService):
             interfaces=interfaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,
+            services=services,
         )
 
 

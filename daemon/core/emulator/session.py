@@ -1611,8 +1611,7 @@ class Session:
         logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
         self.add_remove_control_interface(node=node, remove=False)
         self.services.boot_services(node)
-        for service in node.config_services.values():
-            service.start()
+        node.start_config_services()
 
     def boot_nodes(self) -> List[Exception]:
         """

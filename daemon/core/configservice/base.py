@@ -23,6 +23,10 @@ class ConfigServiceMode(enum.Enum):
     TIMER = 2
 
 
+class ConfigServiceBootError(Exception):
+    pass
+
+
 class ConfigService(abc.ABC):
     # validation period in seconds, how frequent validation is attempted
     validation_period = 0.5
@@ -107,10 +111,16 @@ class ConfigService(abc.ABC):
         raise NotImplementedError
 
     def start(self) -> None:
+        logging.info("node(%s) service(%s) starting...", self.node.name, self.name)
         self.create_dirs()
         self.create_files()
-        self.run_startup()
-        self.run_validation()
+        wait = self.validation_mode == ConfigServiceMode.BLOCKING
+        self.run_startup(wait)
+        if not wait:
+            if self.validation_mode == ConfigServiceMode.TIMER:
+                time.sleep(self.validation_timer)
+            else:
+                self.run_validation()
 
     def stop(self) -> None:
         for cmd in self.shutdown:
@@ -166,13 +176,11 @@ class ConfigService(abc.ABC):
             basename = pathlib.Path(name).name
             if name in self.custom_templates:
                 text = self.custom_templates[name]
-                text = self.clean_text(text)
                 rendered = self.render_text(text, data)
             elif self.templates.has_template(basename):
                 rendered = self.render_template(basename, data)
             else:
                 text = self.get_text_template(name)
-                text = self.clean_text(text)
                 rendered = self.render_text(text, data)
             logging.info(
                 "node(%s) service(%s) template(%s): \n%s",
@@ -183,25 +191,23 @@ class ConfigService(abc.ABC):
             )
             self.node.nodefile(name, rendered)
 
-    def run_startup(self) -> None:
+    def run_startup(self, wait: bool) -> None:
         for cmd in self.startup:
             try:
-                self.node.cmd(cmd)
-            except CoreCommandError:
-                raise CoreError(
-                    f"node({self.node.name}) service({self.name}) "
-                    f"failed startup: {cmd}"
+                self.node.cmd(cmd, wait=wait)
+            except CoreCommandError as e:
+                raise ConfigServiceBootError(
+                    f"node({self.node.name}) service({self.name}) failed startup: {e}"
                 )
 
     def run_validation(self) -> None:
-        wait = self.validation_mode == ConfigServiceMode.BLOCKING
         start = time.monotonic()
-        index = 0
         cmds = self.validate[:]
+        index = 0
         while cmds:
             cmd = cmds[index]
             try:
-                self.node.cmd(cmd, wait=wait)
+                self.node.cmd(cmd)
                 del cmds[index]
                 index += 1
             except CoreCommandError:
@@ -211,10 +217,9 @@ class ConfigService(abc.ABC):
                 )
                 time.sleep(self.validation_period)
 
-            if time.monotonic() - start > 0:
-                raise CoreError(
-                    f"node({self.node.name}) service({self.name}) "
-                    f"failed to validate"
+            if cmds and time.monotonic() - start > 0:
+                raise ConfigServiceBootError(
+                    f"node({self.node.name}) service({self.name}) failed to validate"
                 )
 
     def _render(self, template: Template, data: Dict[str, Any] = None) -> str:
@@ -225,6 +230,7 @@ class ConfigService(abc.ABC):
         )
 
     def render_text(self, text: str, data: Dict[str, Any] = None) -> str:
+        text = self.clean_text(text)
         try:
             template = Template(text)
             return self._render(template, data)
@@ -235,6 +241,13 @@ class ConfigService(abc.ABC):
             )
 
     def render_template(self, basename: str, data: Dict[str, Any] = None) -> str:
+        logging.info(
+            "node(%s) service(%s) rendering template(%s): %s",
+            self.node.name,
+            self.name,
+            basename,
+            data,
+        )
         try:
             template = self.templates.get_template(basename)
             return self._render(template, data)
