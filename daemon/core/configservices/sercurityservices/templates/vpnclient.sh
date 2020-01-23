@@ -34,7 +34,7 @@ if [ ! -e $keydir\/$keyname.key ] || [ ! -e $keydir\/$keyname.crt ] \
 fi
 
 # if necessary, add a static route for reaching the VPN server IP via the IF
-vpnservernet=${vpnserver%.*}.0/24
+vpnservernet=$${}{vpnserver%.*}.0/24
 if [ "$nexthop" != "" ]; then
     ip route add $vpnservernet via $nexthop
 fi

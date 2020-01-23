@@ -139,18 +139,17 @@ class ConfigService(abc.ABC):
         self.custom_templates[name] = template
 
     def get_text(self, name: str) -> str:
-        raise CoreError(
-            f"node({self.node.name} service({self.name}) unknown template({name})"
-        )
+        raise CoreError(f"service({self.name}) unknown template({name})")
 
     def get_templates(self) -> Dict[str, str]:
         templates = {}
         for name in self.files:
+            basename = pathlib.Path(name).name
             if name in self.custom_templates:
                 template = self.custom_templates[name]
                 template = inspect.cleandoc(template)
-            elif self.templates.has_template(name):
-                template = self.templates.get_template(name).source
+            elif self.templates.has_template(basename):
+                template = self.templates.get_template(basename).source
             else:
                 template = self.get_text(name)
                 template = inspect.cleandoc(template)
@@ -160,12 +159,13 @@ class ConfigService(abc.ABC):
     def create_files(self) -> None:
         data = self.data()
         for name in self.files:
+            basename = pathlib.Path(name).name
             if name in self.custom_templates:
                 text = self.custom_templates[name]
                 text = inspect.cleandoc(text)
                 self.render_text(name, text, data)
-            elif self.templates.has_template(name):
-                self.render_template(name, data)
+            elif self.templates.has_template(basename):
+                self.render_template(name, basename, data)
             else:
                 text = self.get_text(name)
                 text = inspect.cleandoc(text)
@@ -233,9 +233,11 @@ class ConfigService(abc.ABC):
                 f"{exceptions.text_error_template().render_unicode()}"
             )
 
-    def render_template(self, name: str, data: Dict[str, Any] = None) -> None:
+    def render_template(
+        self, name: str, basename: str, data: Dict[str, Any] = None
+    ) -> None:
         try:
-            template = self.templates.get_template(name)
+            template = self.templates.get_template(basename)
             self._render(name, template, data)
         except Exception:
             raise CoreError(
