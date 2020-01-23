@@ -8,42 +8,6 @@ from core.configservice.base import ConfigService, ConfigServiceMode
 GROUP = "ProtoSvc"
 
 
-class NrlService(ConfigService):
-    name = "NrlBase"
-    group = GROUP
-    directories = []
-    files = []
-    executables = []
-    dependencies = []
-    startup = []
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
-
-    @classmethod
-    def generate_config(cls, node, filename):
-        return ""
-
-    @staticmethod
-    def firstipv4prefix(node, prefixlen=24):
-        """
-        Similar to QuaggaService.routerid(). Helper to return the first IPv4
-        prefix of a node, using the supplied prefix length. This ignores the
-        interface's prefix length, so e.g. '/32' can turn into '/24'.
-        """
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            for a in ifc.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    return f"{a}/{prefixlen}"
-        # raise ValueError,  "no IPv4 address found"
-        return "0.0.0.0/%s" % prefixlen
-
-
 class MgenSinkService(ConfigService):
     name = "MGEN_Sink"
     group = GROUP
@@ -66,7 +30,7 @@ class MgenSinkService(ConfigService):
         return dict(ifnames=ifnames)
 
 
-class NrlNhdp(NrlService):
+class NrlNhdp(ConfigService):
     name = "NHDP"
     group = GROUP
     directories = []
@@ -204,7 +168,7 @@ class OlsrOrg(ConfigService):
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class MgenActor(NrlService):
+class MgenActor(ConfigService):
     name = "MgenActor"
     group = GROUP
     directories = []

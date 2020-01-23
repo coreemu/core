@@ -42,6 +42,10 @@ class ConfigService(abc.ABC):
         configs = self.default_configs[:]
         self._define_config(configs)
 
+    @staticmethod
+    def clean_text(text: str) -> str:
+        return inspect.cleandoc(text)
+
     @property
     @abc.abstractmethod
     def name(self) -> str:
@@ -147,12 +151,12 @@ class ConfigService(abc.ABC):
             basename = pathlib.Path(name).name
             if name in self.custom_templates:
                 template = self.custom_templates[name]
-                template = inspect.cleandoc(template)
+                template = self.clean_text(template)
             elif self.templates.has_template(basename):
                 template = self.templates.get_template(basename).source
             else:
                 template = self.get_text(name)
-                template = inspect.cleandoc(template)
+                template = self.clean_text(template)
             templates[name] = template
         return templates
 
@@ -162,14 +166,22 @@ class ConfigService(abc.ABC):
             basename = pathlib.Path(name).name
             if name in self.custom_templates:
                 text = self.custom_templates[name]
-                text = inspect.cleandoc(text)
-                self.render_text(name, text, data)
+                text = self.clean_text(text)
+                rendered = self.render_text(text, data)
             elif self.templates.has_template(basename):
-                self.render_template(name, basename, data)
+                rendered = self.render_template(basename, data)
             else:
                 text = self.get_text(name)
-                text = inspect.cleandoc(text)
-                self.render_text(name, text, data)
+                text = self.clean_text(text)
+                rendered = self.render_text(text, data)
+            logging.info(
+                "node(%s) service(%s) template(%s): \n%s",
+                self.node.name,
+                self.name,
+                name,
+                rendered,
+            )
+            self.node.nodefile(name, rendered)
 
     def run_startup(self) -> None:
         for cmd in self.startup:
@@ -205,44 +217,30 @@ class ConfigService(abc.ABC):
                     f"failed to validate"
                 )
 
-    def _render(
-        self, name: str, template: Template, data: Dict[str, Any] = None
-    ) -> None:
+    def _render(self, template: Template, data: Dict[str, Any] = None) -> str:
         if data is None:
             data = {}
-        rendered = template.render_unicode(
+        return template.render_unicode(
             node=self.node, config=self.render_config(), **data
         )
-        logging.info(
-            "node(%s) service(%s) template(%s): \n%s",
-            self.node.name,
-            self.name,
-            name,
-            rendered,
-        )
-        self.node.nodefile(name, rendered)
 
-    def render_text(self, name: str, text: str, data: Dict[str, Any] = None) -> None:
+    def render_text(self, text: str, data: Dict[str, Any] = None) -> str:
         try:
             template = Template(text)
-            self._render(name, template, data)
+            return self._render(template, data)
         except Exception:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) "
-                f"error rendering template({name}): "
                 f"{exceptions.text_error_template().render_unicode()}"
             )
 
-    def render_template(
-        self, name: str, basename: str, data: Dict[str, Any] = None
-    ) -> None:
+    def render_template(self, basename: str, data: Dict[str, Any] = None) -> str:
         try:
             template = self.templates.get_template(basename)
-            self._render(name, template, data)
+            return self._render(template, data)
         except Exception:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) "
-                f"error rendering template({name}): "
                 f"{exceptions.text_error_template().render_template()}"
             )
 
