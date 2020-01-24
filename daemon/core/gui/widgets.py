@@ -99,7 +99,7 @@ class ConfigFrame(ttk.Notebook):
                 label.grid(row=index, pady=PADY, padx=PADX, sticky="w")
                 value = tk.StringVar()
                 if option.type == core_pb2.ConfigOptionType.BOOL:
-                    select = tuple(option.select)
+                    select = ("On", "Off")
                     combobox = ttk.Combobox(
                         tab.frame, textvariable=value, values=select, state="readonly"
                     )
@@ -186,7 +186,13 @@ class ConfigFrame(ttk.Notebook):
 
     def set_values(self, config: Dict[str, str]) -> None:
         for name, data in config.items():
+            option = self.config[name]
             value = self.values[name]
+            if option.type == core_pb2.ConfigOptionType.BOOL:
+                if data == "1":
+                    data = "On"
+                else:
+                    data = "Off"
             value.set(data)
 
 
