@@ -1,5 +1,4 @@
 import abc
-import logging
 from typing import Any, Dict
 
 import netaddr
@@ -11,12 +10,12 @@ from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
-GROUP = "Quagga"
+GROUP = "FRR"
 
 
 def has_mtu_mismatch(ifc: CoreInterface) -> bool:
     """
-    Helper to detect MTU mismatch and add the appropriate OSPF
+    Helper to detect MTU mismatch and add the appropriate FRR
     mtu-ignore command. This is needed when e.g. a node is linked via a
     GreTap device.
     """
@@ -58,18 +57,19 @@ def get_router_id(node: CoreNodeBase) -> str:
     return "0.0.0.0"
 
 
-class Zebra(ConfigService):
-    name = "zebra"
+class FRRZebra(ConfigService):
+    name = "FRRzebra"
     group = GROUP
-    directories = ["/usr/local/etc/quagga", "/var/run/quagga"]
+    directories = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
     files = [
-        "/usr/local/etc/quagga/Quagga.conf",
-        "quaggaboot.sh",
-        "/usr/local/etc/quagga/vtysh.conf",
+        "/usr/local/etc/frr/frr.conf",
+        "frrboot.sh",
+        "/usr/local/etc/frr/vtysh.conf",
+        "/usr/local/etc/frr/daemons",
     ]
     executables = ["zebra"]
     dependencies = []
-    startup = ["sh quaggaboot.sh zebra"]
+    startup = ["sh frrboot.sh zebra"]
     validate = ["pidof zebra"]
     shutdown = ["killall zebra"]
     validation_mode = ConfigServiceMode.BLOCKING
@@ -77,14 +77,13 @@ class Zebra(ConfigService):
     modes = {}
 
     def data(self) -> Dict[str, Any]:
-        quagga_bin_search = self.node.session.options.get_config(
-            "quagga_bin_search", default="/usr/local/bin /usr/bin /usr/lib/quagga"
+        frr_conf = self.files[0]
+        frr_bin_search = self.node.session.options.get_config(
+            "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
-        quagga_sbin_search = self.node.session.options.get_config(
-            "quagga_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/quagga"
+        frr_sbin_search = self.node.session.options.get_config(
+            "frr_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/frr"
         ).strip('"')
-        quagga_state_dir = constants.QUAGGA_STATE_DIR
-        quagga_conf = self.files[0]
 
         services = []
         want_ip4 = False
@@ -112,10 +111,10 @@ class Zebra(ConfigService):
             interfaces.append((ifc, ip4s, ip6s, is_control))
 
         return dict(
-            quagga_bin_search=quagga_bin_search,
-            quagga_sbin_search=quagga_sbin_search,
-            quagga_state_dir=quagga_state_dir,
-            quagga_conf=quagga_conf,
+            frr_conf=frr_conf,
+            frr_sbin_search=frr_sbin_search,
+            frr_bin_search=frr_bin_search,
+            frr_state_dir=constants.FRR_STATE_DIR,
             interfaces=interfaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,
@@ -123,12 +122,12 @@ class Zebra(ConfigService):
         )
 
 
-class QuaggaService(abc.ABC):
+class FrrService(abc.ABC):
     group = GROUP
     directories = []
     files = []
     executables = []
-    dependencies = ["zebra"]
+    dependencies = ["FRRzebra"]
     startup = []
     validate = []
     shutdown = []
@@ -139,33 +138,28 @@ class QuaggaService(abc.ABC):
     ipv6_routing = False
 
     @abc.abstractmethod
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         raise NotImplementedError
 
 
-class Ospfv2(QuaggaService, ConfigService):
+class FRROspfv2(FrrService, ConfigService):
     """
     The OSPFv2 service provides IPv4 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
-    unified Quagga.conf file.
+    unified frr.conf file.
     """
 
-    name = "OSPFv2"
-    validate = ["pidof ospfd"]
+    name = "FRROSPFv2"
+    startup = ()
     shutdown = ["killall ospfd"]
+    validate = ["pidof ospfd"]
     ipv4_routing = True
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        if has_mtu_mismatch(ifc):
-            return "ip ospf mtu-ignore"
-        else:
-            return ""
-
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         addresses = []
         for ifc in self.node.netifs():
@@ -186,28 +180,27 @@ class Ospfv2(QuaggaService, ConfigService):
         """
         return self.render_text(text, data)
 
-
-class Ospfv3(QuaggaService, ConfigService):
-    """
-    The OSPFv3 service provides IPv6 routing for wired networks. It does
-    not build its own configuration file but has hooks for adding to the
-    unified Quagga.conf file.
-    """
-
-    name = "OSPFv3"
-    shutdown = ("killall ospf6d",)
-    validate = ("pidof ospf6d",)
-    ipv4_routing = True
-    ipv6_routing = True
-
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        mtu = get_min_mtu(ifc)
-        if mtu < ifc.mtu:
-            return f"ipv6 ospf6 ifmtu {mtu}"
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
+        if has_mtu_mismatch(ifc):
+            return "ip ospf mtu-ignore"
         else:
             return ""
 
-    def quagga_config(self) -> str:
+
+class FRROspfv3(FrrService, ConfigService):
+    """
+    The OSPFv3 service provides IPv6 routing for wired networks. It does
+    not build its own configuration file but has hooks for adding to the
+    unified frr.conf file.
+    """
+
+    name = "FRROSPFv3"
+    shutdown = ["killall ospf6d"]
+    validate = ["pidof ospf6d"]
+    ipv4_routing = True
+    ipv6_routing = True
+
+    def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         ifnames = []
         for ifc in self.node.netifs():
@@ -217,7 +210,6 @@ class Ospfv3(QuaggaService, ConfigService):
         data = dict(router_id=router_id, ifnames=ifnames)
         text = """
         router ospf6
-          instance-id 65
           router-id ${router_id}
           % for ifname in ifnames:
           interface ${ifname} area 0.0.0.0
@@ -226,58 +218,29 @@ class Ospfv3(QuaggaService, ConfigService):
         """
         return self.render_text(text, data)
 
-
-class Ospfv3mdr(Ospfv3):
-    """
-    The OSPFv3 MANET Designated Router (MDR) service provides IPv6
-    routing for wireless networks. It does not build its own
-    configuration file but has hooks for adding to the
-    unified Quagga.conf file.
-    """
-
-    name = "OSPFv3MDR"
-
-    def data(self) -> Dict[str, Any]:
-        for ifc in self.node.netifs():
-            is_wireless = isinstance(ifc.net, (WlanNode, EmaneNet))
-            logging.info("MDR wireless: %s", is_wireless)
-        return dict()
-
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        config = super().quagga_interface_config(ifc)
-        if isinstance(ifc.net, (WlanNode, EmaneNet)):
-            config = self.clean_text(
-                f"""
-                {config}
-                ipv6 ospf6 hello-interval 2
-                ipv6 ospf6 dead-interval 6
-                ipv6 ospf6 retransmit-interval 5
-                ipv6 ospf6 network manet-designated-router
-                ipv6 ospf6 twohoprefresh 3
-                ipv6 ospf6 adjacencyconnectivity uniconnected
-                ipv6 ospf6 lsafullness mincostlsa
-                """
-            )
-        return config
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
+        mtu = get_min_mtu(ifc)
+        if mtu < ifc.mtu:
+            return f"ipv6 ospf6 ifmtu {mtu}"
+        else:
+            return ""
 
 
-class Bgp(QuaggaService, ConfigService):
+class FRRBgp(FrrService, ConfigService):
     """
     The BGP service provides interdomain routing.
     Peers must be manually configured, with a full mesh for those
     having the same AS number.
     """
 
-    name = "BGP"
+    name = "FRRBGP"
     shutdown = ["killall bgpd"]
     validate = ["pidof bgpd"]
+    custom_needed = True
     ipv4_routing = True
     ipv6_routing = True
 
-    def quagga_config(self) -> str:
-        return ""
-
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         text = f"""
         ! BGP configuration
@@ -291,18 +254,21 @@ class Bgp(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
+        return ""
 
-class Rip(QuaggaService, ConfigService):
+
+class FRRRip(FrrService, ConfigService):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
 
-    name = "RIP"
+    name = "FRRRIP"
     shutdown = ["killall ripd"]
     validate = ["pidof ripd"]
     ipv4_routing = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         text = """
         router rip
           redistribute static
@@ -313,21 +279,21 @@ class Rip(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
         return ""
 
 
-class Ripng(QuaggaService, ConfigService):
+class FRRRipng(FrrService, ConfigService):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
 
-    name = "RIPNG"
+    name = "FRRRIPNG"
     shutdown = ["killall ripngd"]
     validate = ["pidof ripngd"]
     ipv6_routing = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         text = """
         router ripng
           redistribute static
@@ -338,22 +304,22 @@ class Ripng(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
         return ""
 
 
-class Babel(QuaggaService, ConfigService):
+class FRRBabel(FrrService, ConfigService):
     """
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
 
-    name = "Babel"
+    name = "FRRBabel"
     shutdown = ["killall babeld"]
     validate = ["pidof babeld"]
     ipv6_routing = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         ifnames = []
         for ifc in self.node.netifs():
             if getattr(ifc, "control", False):
@@ -365,13 +331,13 @@ class Babel(QuaggaService, ConfigService):
           network ${ifname}
           % endfor
           redistribute static
-          redistribute connected
+          redistribute ipv4 connected
         !
         """
         data = dict(ifnames=ifnames)
         return self.render_text(text, data)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
         if isinstance(ifc.net, (WlanNode, EmaneNet)):
             text = """
             babel wireless
@@ -385,17 +351,17 @@ class Babel(QuaggaService, ConfigService):
         return self.clean_text(text)
 
 
-class Xpimd(QuaggaService, ConfigService):
+class FRRpimd(FrrService, ConfigService):
     """
     PIM multicast routing based on XORP.
     """
 
-    name = "Xpimd"
-    shutdown = ["killall xpimd"]
-    validate = ["pidof xpimd"]
+    name = "FRRpimd"
+    shutdown = ["killall pimd"]
+    validate = ["pidof pimd"]
     ipv4_routing = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         ifname = "eth0"
         for ifc in self.node.netifs():
             if ifc.name != "lo":
@@ -416,9 +382,10 @@ class Xpimd(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_interface_config(self, ifc: CoreInterface) -> str:
         text = """
         ip mfea
+        ip igmp
         ip pim
         """
         return self.clean_text(text)
