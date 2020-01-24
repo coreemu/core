@@ -906,11 +906,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             label="refresh time (ms)",
         ),
         Configuration(
-            _id="loop",
-            _type=ConfigDataTypes.BOOL,
-            default="1",
-            options=["On", "Off"],
-            label="loop",
+            _id="loop", _type=ConfigDataTypes.BOOL, default="1", label="loop"
         ),
         Configuration(
             _id="autostart",

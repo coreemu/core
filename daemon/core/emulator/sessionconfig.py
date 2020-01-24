@@ -36,21 +36,18 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
             _id="enablerj45",
             _type=ConfigDataTypes.BOOL,
             default="1",
-            options=["On", "Off"],
             label="Enable RJ45s",
         ),
         Configuration(
             _id="preservedir",
             _type=ConfigDataTypes.BOOL,
             default="0",
-            options=["On", "Off"],
             label="Preserve session dir",
         ),
         Configuration(
             _id="enablesdt",
             _type=ConfigDataTypes.BOOL,
             default="0",
-            options=["On", "Off"],
             label="Enable SDT3D output",
         ),
         Configuration(
