@@ -15,14 +15,19 @@ class SimpleService(ConfigService):
     shutdown = []
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = [
-        Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Value 1"),
-        Configuration(_id="value2", _type=ConfigDataTypes.STRING, label="Value 2"),
-        Configuration(_id="value3", _type=ConfigDataTypes.STRING, label="Value 3"),
+        Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Text"),
+        Configuration(_id="value2", _type=ConfigDataTypes.BOOL, label="Boolean"),
+        Configuration(
+            _id="value3",
+            _type=ConfigDataTypes.STRING,
+            label="Multiple Choice",
+            options=["value1", "value2", "value3"],
+        ),
     ]
     modes = {
-        "mode1": {"value1": "m1", "value2": "m1", "value3": "m1"},
-        "mode2": {"value1": "m2", "value2": "m2", "value3": "m2"},
-        "mode3": {"value1": "m3", "value2": "m3", "value3": "m3"},
+        "mode1": {"value1": "value1", "value2": "0", "value3": "value2"},
+        "mode2": {"value1": "value2", "value2": "1", "value3": "value3"},
+        "mode3": {"value1": "value3", "value2": "0", "value3": "value1"},
     }
 
     def get_text_template(self, name: str) -> str:
