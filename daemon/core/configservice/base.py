@@ -38,7 +38,6 @@ class ConfigService(abc.ABC):
         self.node = node
         class_file = inspect.getfile(self.__class__)
         templates_path = pathlib.Path(class_file).parent.joinpath(TEMPLATES_DIR)
-        logging.info(templates_path)
         self.templates = TemplateLookup(directories=templates_path)
         self.config = {}
         self.custom_templates = {}
@@ -182,7 +181,7 @@ class ConfigService(abc.ABC):
             else:
                 text = self.get_text_template(name)
                 rendered = self.render_text(text, data)
-            logging.info(
+            logging.debug(
                 "node(%s) service(%s) template(%s): \n%s",
                 self.node.name,
                 self.name,
@@ -241,13 +240,6 @@ class ConfigService(abc.ABC):
             )
 
     def render_template(self, basename: str, data: Dict[str, Any] = None) -> str:
-        logging.info(
-            "node(%s) service(%s) rendering template(%s): %s",
-            self.node.name,
-            self.name,
-            basename,
-            data,
-        )
         try:
             template = self.templates.get_template(basename)
             return self._render(template, data)

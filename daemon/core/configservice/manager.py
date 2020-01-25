@@ -43,10 +43,10 @@ class ConfigServiceManager:
         subdirs.append(path)
         service_errors = []
         for subdir in subdirs:
-            logging.info("loading config services from: %s", subdir)
+            logging.debug("loading config services from: %s", subdir)
             services = utils.load_classes(str(subdir), ConfigService)
             for service in services:
-                logging.info("found service: %s", service)
+                logging.debug("found service: %s", service)
                 try:
                     self.add(service)
                 except CoreError as e:
