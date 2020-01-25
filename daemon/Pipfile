@@ -21,4 +21,3 @@ mock = "*"
 
 [packages]
 core = {editable = true,path = "."}
-mako = "*"
