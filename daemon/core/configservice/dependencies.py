@@ -7,11 +7,15 @@ if TYPE_CHECKING:
 
 class ConfigServiceDependencies:
     """
-    Can generate boot paths for services, based on their dependencies. Will validate
-    that all services will be booted and that all dependencies exist within the services provided.
+    Generates sets of services to start in order of their dependencies.
     """
 
     def __init__(self, services: Dict[str, "ConfigService"]) -> None:
+        """
+        Create a ConfigServiceDependencies instance.
+
+        :param services: services for determining dependency sets
+        """
         # helpers to check validity
         self.dependents = {}
         self.booted = set()
@@ -28,6 +32,11 @@ class ConfigServiceDependencies:
         self.visiting = set()
 
     def boot_paths(self) -> List[List["ConfigService"]]:
+        """
+        Find services sets based on dependencies.
+
+        :return: lists of lists of services that can be started in parallel
+        """
         paths = []
         for name in self.node_services:
             service = self.node_services[name]
@@ -50,16 +59,33 @@ class ConfigServiceDependencies:
         return paths
 
     def _reset(self) -> None:
+        """
+        Clear out metadata used for finding service dependency sets.
+
+        :return: nothing
+        """
         self.path = []
         self.visited.clear()
         self.visiting.clear()
 
     def _start(self, service: "ConfigService") -> List["ConfigService"]:
+        """
+        Starts a oath for checking dependencies for a given service.
+
+        :param service: service to check dependencies for
+        :return: list of config services to start in order
+        """
         logging.debug("starting service dependency check: %s", service.name)
         self._reset()
         return self._visit(service)
 
     def _visit(self, current_service: "ConfigService") -> List["ConfigService"]:
+        """
+        Visits a service when discovering dependency chains for service.
+
+        :param current_service: service being visited
+        :return: list of dependent services for a visited service
+        """
         logging.debug("visiting service(%s): %s", current_service.name, self.path)
         self.visited.add(current_service.name)
         self.visiting.add(current_service.name)

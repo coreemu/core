@@ -8,16 +8,37 @@ from core.errors import CoreError
 
 
 class ConfigServiceManager:
+    """
+    Manager for configurable services.
+    """
+
     def __init__(self):
+        """
+        Create a ConfigServiceManager instance.
+        """
         self.services = {}
 
     def get_service(self, name: str) -> Type[ConfigService]:
+        """
+        Retrieve a service by name.
+
+        :param name: name of service
+        :return: service class
+        :raises CoreError: when service is not found
+        """
         service_class = self.services.get(name)
         if service_class is None:
             raise CoreError(f"service does not exit {name}")
         return service_class
 
     def add(self, service: ConfigService) -> None:
+        """
+        Add service to manager, checking service requirements have been met.
+
+        :param service: service to add to manager
+        :return: nothing
+        :raises CoreError: when service is a duplicate or has unmet executables
+        """
         name = service.name
         logging.debug("loading service: class(%s) name(%s)", service.__class__, name)
 
@@ -38,6 +59,12 @@ class ConfigServiceManager:
         self.services[name] = service
 
     def load(self, path: str) -> List[str]:
+        """
+        Search path provided for configurable services and add them for being managed.
+
+        :param path: path to search configurable services
+        :return: list errors when loading and adding services
+        """
         path = pathlib.Path(path)
         subdirs = [x for x in path.iterdir() if x.is_dir()]
         subdirs.append(path)
