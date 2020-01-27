@@ -22,7 +22,7 @@ startupdir	= /etc/init.d
 startup_SCRIPTS	= core-daemon
 endif
 if WANT_SYSTEMD
-startupdir	= /etc/systemd/system
+startupdir	= /usr/lib/systemd/system
 startup_SCRIPTS	= core-daemon.service
 endif
 

@@ -41,7 +41,7 @@ Install Path | Description
 /usr/share/core/|Example scripts and scenarios
 /usr/share/man/man1/|Command man pages
 /etc/init.d/core-daemon|SysV startup script for daemon
-/etc/systemd/system/core-daemon.service|Systemd startup script for daemon
+/usr/lib/systemd/system/core-daemon.service|Systemd startup script for daemon
 
 # Pre-Req Installing Python
 
