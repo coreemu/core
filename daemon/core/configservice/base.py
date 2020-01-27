@@ -140,7 +140,7 @@ class ConfigService(abc.ABC):
         self.run_startup(wait)
         if not wait:
             if self.validation_mode == ConfigServiceMode.TIMER:
-                time.sleep(self.validation_timer)
+                self.wait_validation()
             else:
                 self.run_validation()
 
@@ -275,6 +275,14 @@ class ConfigService(abc.ABC):
                     f"node({self.node.name}) service({self.name}) failed startup: {e}"
                 )
 
+    def wait_validation(self) -> None:
+        """
+        Waits for a period of time to consider service started successfully.
+
+        :return: nothing
+        """
+        time.sleep(self.validation_timer)
+
     def run_validation(self) -> None:
         """
         Runs validation commands for service on node.
@@ -298,7 +306,7 @@ class ConfigService(abc.ABC):
                 )
                 time.sleep(self.validation_period)
 
-            if cmds and time.monotonic() - start > 0:
+            if cmds and time.monotonic() - start > self.validation_timer:
                 raise ConfigServiceBootError(
                     f"node({self.node.name}) service({self.name}) failed to validate"
                 )
