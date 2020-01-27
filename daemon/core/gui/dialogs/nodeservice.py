@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Set
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
+from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
@@ -35,10 +36,14 @@ class NodeServiceDialog(Dialog):
             services = canvas_node.core_node.services
             model = canvas_node.core_node.model
             if len(services) == 0:
-                services = set(self.app.core.default_services[model])
+                if not NodeUtils.is_custom(canvas_node.core_node.model):
+                    services = set(self.app.core.default_services[model])
+                else:
+                    services = set(
+                        NodeUtils.get_custom_node_services(self.app.guiconfig, model)
+                    )
             else:
                 services = set(services)
-
         self.current_services = services
         self.draw()
 
@@ -137,7 +142,8 @@ class NodeServiceDialog(Dialog):
 
     def click_save(self):
         if (
-            self.current_services
+            self.canvas_node.core_node.model not in self.app.core.default_services
+            or self.current_services
             != self.app.core.default_services[self.canvas_node.core_node.model]
         ):
             self.canvas_node.core_node.services[:] = self.current_services

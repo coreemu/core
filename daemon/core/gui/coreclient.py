@@ -736,6 +736,9 @@ class CoreClient:
             image=image,
             emane=emane,
         )
+        if NodeUtils.is_custom(model):
+            services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
+            node.services[:] = services
         logging.debug(
             "adding node to core session: %s, coords: (%s, %s), name: %s",
             self.session_id,

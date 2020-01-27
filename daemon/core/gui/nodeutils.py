@@ -107,6 +107,17 @@ class NodeUtils:
         return image
 
     @classmethod
+    def is_custom(cls, model):
+        return model not in cls.NODE_MODELS
+
+    @classmethod
+    def get_custom_node_services(cls, gui_config, name):
+        for m in gui_config["nodes"]:
+            if m["name"] == name:
+                return m["services"]
+        return []
+
+    @classmethod
     def setup(cls):
         nodes = [
             (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
