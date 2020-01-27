@@ -18,7 +18,7 @@ class ConfigServiceDependencies:
         """
         # helpers to check validity
         self.dependents = {}
-        self.booted = set()
+        self.started = set()
         self.node_services = {}
         for service in services.values():
             self.node_services[service.name] = service
@@ -31,18 +31,18 @@ class ConfigServiceDependencies:
         self.visited = set()
         self.visiting = set()
 
-    def boot_paths(self) -> List[List["ConfigService"]]:
+    def startup_paths(self) -> List[List["ConfigService"]]:
         """
-        Find services sets based on dependencies.
+        Find startup path sets based on service dependencies.
 
         :return: lists of lists of services that can be started in parallel
         """
         paths = []
         for name in self.node_services:
             service = self.node_services[name]
-            if service.name in self.booted:
+            if service.name in self.started:
                 logging.debug(
-                    "skipping service that will already be booted: %s", service.name
+                    "skipping service that will already be started: %s", service.name
                 )
                 continue
 
@@ -50,10 +50,10 @@ class ConfigServiceDependencies:
             if path:
                 paths.append(path)
 
-        if self.booted != set(self.node_services):
+        if self.started != set(self.node_services):
             raise ValueError(
-                "failure to boot all services: %s != %s"
-                % (self.booted, self.node_services.keys())
+                "failure to start all services: %s != %s"
+                % (self.started, self.node_services.keys())
             )
 
         return paths
@@ -109,8 +109,8 @@ class ConfigServiceDependencies:
                 self._visit(service)
 
         # add service when bottom is found
-        logging.debug("adding service to boot path: %s", current_service.name)
-        self.booted.add(current_service.name)
+        logging.debug("adding service to startup path: %s", current_service.name)
+        self.started.add(current_service.name)
         self.path.append(current_service)
         self.visiting.remove(current_service.name)
 

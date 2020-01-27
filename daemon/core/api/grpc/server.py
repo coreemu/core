@@ -101,6 +101,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param context:
         :return: session object that satisfies, if session not found then raise an
             exception
+        :raises Exception: raises grpc exception when session does not exist
         """
         session = self.coreemu.sessions.get(session_id)
         if not session:
@@ -117,6 +118,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param node_id: node id
         :param context:
         :return: node object that satisfies. If node not found then raise an exception.
+        :raises Exception: raises grpc exception when node does not exist
         """
         try:
             return session.get_node(node_id)
@@ -126,6 +128,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def validate_service(
         self, name: str, context: ServicerContext
     ) -> Type[ConfigService]:
+        """
+        Validates a configuration service is a valid known service.
+
+        :param name: name of service to validate
+        :param context: grpc context
+        :return: class for service to validate
+        :raises Exception: raises grpc exception when service does not exist
+        """
         service = self.coreemu.service_manager.services.get(name)
         if not service:
             context.abort(grpc.StatusCode.NOT_FOUND, f"unknown service {name}")
@@ -138,7 +148,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         Start a session.
 
         :param request: start session request
-        :param context: grcp context
+        :param context: grpc context
         :return: start session response
         """
         logging.debug("start session: %s", request)
@@ -235,7 +245,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         Stop a running session.
 
         :param request: stop session request
-        :param context: grcp context
+        :param context: grpc context
         :return: stop session response
         """
         logging.debug("stop session: %s", request)
@@ -1475,6 +1485,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetConfigServices(
         self, request: GetConfigServicesRequest, context: ServicerContext
     ) -> GetConfigServicesResponse:
+        """
+        Gets all currently known configuration services.
+
+        :param request: get config services request
+        :param context: grpc context
+        :return: get config services response
+        """
         services = []
         for service in self.coreemu.service_manager.services.values():
             service_proto = ConfigService(
@@ -1497,6 +1514,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetNodeConfigService(
         self, request: GetNodeConfigServiceRequest, context: ServicerContext
     ) -> GetNodeConfigServiceResponse:
+        """
+        Gets configuration, for a given configuration service, for a given node.
+
+        :param request: get node config service request
+        :param context: grpc context
+        :return: get node config service response
+        """
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         self.validate_service(request.name, context)
@@ -1511,6 +1535,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetConfigServiceDefaults(
         self, request: GetConfigServiceDefaultsRequest, context: ServicerContext
     ) -> GetConfigServiceDefaultsResponse:
+        """
+        Get default values for a given configuration service.
+
+        :param request: get config service defaults request
+        :param context: grpc context
+        :return: get config service defaults response
+        """
         service_class = self.validate_service(request.name, context)
         service = service_class(None)
         templates = service.get_templates()
@@ -1536,6 +1567,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetNodeConfigServiceConfigs(
         self, request: GetNodeConfigServiceConfigsRequest, context: ServicerContext
     ) -> GetNodeConfigServiceConfigsResponse:
+        """
+        Get current custom templates and config for configuration services for a given
+        node.
+
+        :param request: get node config service configs request
+        :param context: grpc context
+        :return: get node config service configs response
+        """
         session = self.get_session(request.session_id, context)
         configs = []
         for node in session.nodes.values():
@@ -1557,6 +1596,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext
     ) -> GetNodeConfigServicesResponse:
+        """
+        Get configuration services for a given node.
+
+        :param request: get node config services request
+        :param context: grpc context
+        :return: get node config services response
+        """
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         services = node.config_services.keys()
@@ -1565,6 +1611,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SetNodeConfigService(
         self, request: SetNodeConfigServiceRequest, context: ServicerContext
     ) -> SetNodeConfigServiceResponse:
+        """
+        Set custom config, for a given configuration service, for a given node.
+
+        :param request: set node config service request
+        :param context: grpc context
+        :return: set node config service response
+        """
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         self.validate_service(request.name, context)

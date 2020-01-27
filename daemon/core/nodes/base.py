@@ -285,22 +285,41 @@ class CoreNodeBase(NodeBase):
         self.nodedir = None
         self.tmpnodedir = False
 
-    def add_config_service(self, service_class: "ConfigServiceType"):
+    def add_config_service(self, service_class: "ConfigServiceType") -> None:
+        """
+        Adds a configuration service to the node.
+
+        :param service_class: configuration service class to assign to node
+        :return: nothing
+        """
         name = service_class.name
         if name in self.config_services:
             raise CoreError(f"node({self.name}) already has service({name})")
         self.config_services[name] = service_class(self)
 
     def set_service_config(self, name: str, data: Dict[str, str]) -> None:
+        """
+        Sets configuration service custom config data.
+
+        :param name: name of configuration service
+        :param data: custom config data to set
+        :return: nothing
+        """
         service = self.config_services.get(name)
         if service is None:
             raise CoreError(f"node({self.name}) does not have service({name})")
         service.set_config(data)
 
     def start_config_services(self) -> None:
-        boot_paths = ConfigServiceDependencies(self.config_services).boot_paths()
-        for boot_path in boot_paths:
-            for service in boot_path:
+        """
+        Determins startup paths and starts configuration services, based on their
+        dependency chains.
+
+        :return: nothing
+        """
+        startup_paths = ConfigServiceDependencies(self.config_services).startup_paths()
+        for startup_path in startup_paths:
+            for service in startup_path:
                 service.start()
 
     def makenodedir(self) -> None:
