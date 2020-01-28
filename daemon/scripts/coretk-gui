@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import argparse
 import logging
+from logging.handlers import TimedRotatingFileHandler
 
 from core.gui import appconfig
 from core.gui.app import Application
@@ -9,16 +10,23 @@ from core.gui.images import Images
 if __name__ == "__main__":
     # parse flags
     parser = argparse.ArgumentParser(description=f"CORE Python Tk GUI")
+    parser.add_argument("-l", "--level", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO",
+                        help="logging level")
     parser.add_argument("-p", "--proxy", action="store_true", help="enable proxy")
     args = parser.parse_args()
 
+    # check home directory exists and create if necessary
+    appconfig.check_directory()
+
     # setup logging
     log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=log_format)
+    stream_handler = logging.StreamHandler()
+    file_handler = TimedRotatingFileHandler(filename=appconfig.LOG_PATH, when="D", backupCount=5)
+    log_level = logging.getLevelName(args.level)
+    logging.basicConfig(level=log_level, format=log_format, handlers=[stream_handler, file_handler])
     logging.getLogger("PIL").setLevel(logging.ERROR)
 
     # start app
     Images.load_all()
-    appconfig.check_directory()
     app = Application(args.proxy)
     app.mainloop()

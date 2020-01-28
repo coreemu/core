@@ -1,4 +1,3 @@
-import logging
 import os
 import shutil
 from pathlib import Path
@@ -16,6 +15,7 @@ ICONS_PATH = HOME_PATH.joinpath("icons")
 MOBILITY_PATH = HOME_PATH.joinpath("mobility")
 XMLS_PATH = HOME_PATH.joinpath("xmls")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
+LOG_PATH = HOME_PATH.joinpath("gui.log")
 
 # local paths
 DATA_PATH = Path(__file__).parent.joinpath("data")
@@ -52,9 +52,7 @@ def copy_files(current_path, new_path):
 
 def check_directory():
     if HOME_PATH.exists():
-        logging.info("~/.coretk exists")
         return
-    logging.info("creating ~/.coretk")
     HOME_PATH.mkdir()
     BACKGROUNDS_PATH.mkdir()
     CUSTOM_EMANE_PATH.mkdir()
