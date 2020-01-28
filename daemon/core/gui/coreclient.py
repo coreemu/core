@@ -800,18 +800,26 @@ class CoreClient:
 
     def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
         node = canvas_node.core_node
-        ip4, ip6, prefix = self.interfaces_manager.get_ips(node.id)
+        ip4, ip6 = self.interfaces_manager.get_ips(node.id)
+        ip4_mask = self.interfaces_manager.ip4_mask
+        ip6_mask = self.interfaces_manager.ip6_mask
         interface_id = len(canvas_node.interfaces)
         name = f"eth{interface_id}"
         interface = core_pb2.Interface(
-            id=interface_id, name=name, ip4=ip4, ip4mask=prefix, ip6=ip6, ip6mask=prefix
+            id=interface_id,
+            name=name,
+            ip4=ip4,
+            ip4mask=ip4_mask,
+            ip6=ip6,
+            ip6mask=ip6_mask,
         )
         canvas_node.interfaces.append(interface)
         logging.debug(
-            "create node(%s) interface IPv4: %s, name: %s",
+            "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
-            interface.ip4,
             interface.name,
+            interface.ip4,
+            interface.ip6,
         )
         return interface
 
@@ -826,7 +834,7 @@ class CoreClient:
         dst_node = canvas_dst_node.core_node
 
         # determine subnet
-        self.interfaces_manager.determine_subnet(canvas_src_node, canvas_dst_node)
+        self.interfaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
 
         src_interface = None
         if NodeUtils.is_container_node(src_node.type):
