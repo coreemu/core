@@ -1,9 +1,8 @@
 """
 EMANE Bypass model for CORE
 """
-from typing import List
 
-from core.config import ConfigGroup, Configuration
+from core.config import Configuration
 from core.emane import emanemodel
 from core.emulator.enumerations import ConfigDataTypes
 
@@ -33,8 +32,3 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     def load(cls, emane_prefix: str) -> None:
         # ignore default logic
         pass
-
-    # override config groups
-    @classmethod
-    def config_groups(cls) -> List[ConfigGroup]:
-        return [ConfigGroup("Bypass Parameters", 1, 1)]
