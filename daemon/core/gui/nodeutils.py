@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
 
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
@@ -91,20 +91,54 @@ class NodeUtils:
         return node_type in cls.RJ45_NODES
 
     @classmethod
-    def node_icon(cls, node_type: NodeType, model: str) -> "ImageTk.PhotoImage":
+    def node_icon(
+        cls,
+        node_type: NodeType,
+        model: str,
+        gui_config: Dict[str, List[Dict[str, str]]],
+    ) -> "ImageTk.PhotoImage":
         if model == "":
             model = None
-        return cls.NODE_ICONS[(node_type, model)]
+        try:
+            image = cls.NODE_ICONS[(node_type, model)]
+            return image
+        except KeyError:
+            image_stem = cls.get_image_file(gui_config, model)
+            if image_stem:
+                return Images.get_with_image_file(image_stem, ICON_SIZE)
 
     @classmethod
-    def node_image(cls, core_node: "core_pb2.Node") -> "ImageTk.PhotoImage":
-        image = cls.node_icon(core_node.type, core_node.model)
+    def node_image(
+        cls, core_node: "core_pb2.Node", gui_config: Dict[str, List[Dict[str, str]]]
+    ) -> "ImageTk.PhotoImage":
+        image = cls.node_icon(core_node.type, core_node.model, gui_config)
         if core_node.icon:
             try:
                 image = Images.create(core_node.icon, ICON_SIZE)
             except OSError:
                 logging.error("invalid icon: %s", core_node.icon)
         return image
+
+    @classmethod
+    def is_custom(cls, model: str) -> bool:
+        return model not in cls.NODE_MODELS
+
+    @classmethod
+    def get_custom_node_services(
+        cls, gui_config: Dict[str, List[Dict[str, str]]], name: str
+    ) -> List[str]:
+        for m in gui_config["nodes"]:
+            if m["name"] == name:
+                return m["services"]
+        return []
+
+    @classmethod
+    def get_image_file(cls, gui_config, name: str) -> Union[str, None]:
+        if "nodes" in gui_config:
+            for m in gui_config["nodes"]:
+                if m["name"] == name:
+                    return m["image"]
+        return None
 
     @classmethod
     def setup(cls):

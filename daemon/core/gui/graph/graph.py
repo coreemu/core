@@ -12,6 +12,7 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
+from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
+ICON_SIZE = 48
 
 
 class CanvasGraph(tk.Canvas):
@@ -217,7 +219,10 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(core_node)
+            image = NodeUtils.node_image(core_node, self.app.guiconfig)
+            # if the gui can't find node's image, default to the "edit-node" image
+            if not image:
+                image = Images.get(ImageEnum.EDITNODE, ICON_SIZE)
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
