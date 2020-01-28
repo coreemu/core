@@ -21,7 +21,6 @@ class EmaneBypassModel(emanemodel.EmaneModel):
             _id="none",
             _type=ConfigDataTypes.BOOL,
             default="0",
-            options=["True", "False"],
             label="There are no parameters for the bypass model.",
         )
     ]

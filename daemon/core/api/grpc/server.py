@@ -5,11 +5,33 @@ import re
 import tempfile
 import time
 from concurrent import futures
+from typing import Type
 
 import grpc
 from grpc import ServicerContext
 
-from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
+from core.api.grpc import (
+    common_pb2,
+    configservices_pb2,
+    core_pb2,
+    core_pb2_grpc,
+    grpcutils,
+)
+from core.api.grpc.configservices_pb2 import (
+    ConfigService,
+    GetConfigServiceDefaultsRequest,
+    GetConfigServiceDefaultsResponse,
+    GetConfigServicesRequest,
+    GetConfigServicesResponse,
+    GetNodeConfigServiceConfigsRequest,
+    GetNodeConfigServiceConfigsResponse,
+    GetNodeConfigServiceRequest,
+    GetNodeConfigServiceResponse,
+    GetNodeConfigServicesRequest,
+    GetNodeConfigServicesResponse,
+    SetNodeConfigServiceRequest,
+    SetNodeConfigServiceResponse,
+)
 from core.api.grpc.events import EventStreamer
 from core.api.grpc.grpcutils import (
     get_config_options,
@@ -25,7 +47,7 @@ from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import NodeBase
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
@@ -79,6 +101,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param context:
         :return: session object that satisfies, if session not found then raise an
             exception
+        :raises Exception: raises grpc exception when session does not exist
         """
         session = self.coreemu.sessions.get(session_id)
         if not session:
@@ -95,11 +118,28 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param node_id: node id
         :param context:
         :return: node object that satisfies. If node not found then raise an exception.
+        :raises Exception: raises grpc exception when node does not exist
         """
         try:
             return session.get_node(node_id)
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
+
+    def validate_service(
+        self, name: str, context: ServicerContext
+    ) -> Type[ConfigService]:
+        """
+        Validates a configuration service is a valid known service.
+
+        :param name: name of service to validate
+        :param context: grpc context
+        :return: class for service to validate
+        :raises Exception: raises grpc exception when service does not exist
+        """
+        service = self.coreemu.service_manager.services.get(name)
+        if not service:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"unknown service {name}")
+        return service
 
     def StartSession(
         self, request: core_pb2.StartSessionRequest, context: ServicerContext
@@ -108,7 +148,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         Start a session.
 
         :param request: start session request
-        :param context: grcp context
+        :param context: grpc context
         :return: start session response
         """
         logging.debug("start session: %s", request)
@@ -157,6 +197,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for config in request.service_configs:
             grpcutils.service_configuration(session, config)
 
+        # config service configs
+        for config in request.config_service_configs:
+            node = self.get_node(session, config.node_id, context)
+            service = node.config_services[config.name]
+            if config.config:
+                service.set_config(config.config)
+            for name, template in config.templates.items():
+                service.set_template(name, template)
+
         # service file configs
         for config in request.service_file_configs:
             session.services.set_service_file(
@@ -196,7 +245,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         Stop a running session.
 
         :param request: stop session request
-        :param context: grcp context
+        :param context: grpc context
         :return: stop session response
         """
         logging.debug("stop session: %s", request)
@@ -426,6 +475,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if services is None:
                 services = []
             services = [x.name for x in services]
+            config_services = getattr(node, "config_services", {})
+            config_services = [x for x in config_services]
             emane_model = None
             if isinstance(node, EmaneNet):
                 emane_model = node.model.name
@@ -441,6 +492,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 services=services,
                 icon=node.icon,
                 image=image,
+                config_services=config_services,
             )
             if isinstance(node, (DockerNode, LxcNode)):
                 node_proto.image = node.image
@@ -1429,3 +1481,152 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return core_pb2.EmaneLinkResponse(result=True)
         else:
             return core_pb2.EmaneLinkResponse(result=False)
+
+    def GetConfigServices(
+        self, request: GetConfigServicesRequest, context: ServicerContext
+    ) -> GetConfigServicesResponse:
+        """
+        Gets all currently known configuration services.
+
+        :param request: get config services request
+        :param context: grpc context
+        :return: get config services response
+        """
+        services = []
+        for service in self.coreemu.service_manager.services.values():
+            service_proto = ConfigService(
+                name=service.name,
+                group=service.group,
+                executables=service.executables,
+                dependencies=service.dependencies,
+                directories=service.directories,
+                files=service.files,
+                startup=service.startup,
+                validate=service.validate,
+                shutdown=service.shutdown,
+                validation_mode=service.validation_mode.value,
+                validation_timer=service.validation_timer,
+                validation_period=service.validation_period,
+            )
+            services.append(service_proto)
+        return GetConfigServicesResponse(services=services)
+
+    def GetNodeConfigService(
+        self, request: GetNodeConfigServiceRequest, context: ServicerContext
+    ) -> GetNodeConfigServiceResponse:
+        """
+        Gets configuration, for a given configuration service, for a given node.
+
+        :param request: get node config service request
+        :param context: grpc context
+        :return: get node config service response
+        """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        self.validate_service(request.name, context)
+        service = node.config_services.get(request.name)
+        if service:
+            config = service.render_config()
+        else:
+            service = self.coreemu.service_manager.get_service(request.name)
+            config = {x.id: x.default for x in service.default_configs}
+        return GetNodeConfigServiceResponse(config=config)
+
+    def GetConfigServiceDefaults(
+        self, request: GetConfigServiceDefaultsRequest, context: ServicerContext
+    ) -> GetConfigServiceDefaultsResponse:
+        """
+        Get default values for a given configuration service.
+
+        :param request: get config service defaults request
+        :param context: grpc context
+        :return: get config service defaults response
+        """
+        service_class = self.validate_service(request.name, context)
+        service = service_class(None)
+        templates = service.get_templates()
+        config = {}
+        for configuration in service.default_configs:
+            config_option = common_pb2.ConfigOption(
+                label=configuration.label,
+                name=configuration.id,
+                value=configuration.default,
+                type=configuration.type.value,
+                select=configuration.options,
+                group="Settings",
+            )
+            config[configuration.id] = config_option
+        modes = []
+        for name, mode_config in service.modes.items():
+            mode = configservices_pb2.ConfigMode(name=name, config=mode_config)
+            modes.append(mode)
+        return GetConfigServiceDefaultsResponse(
+            templates=templates, config=config, modes=modes
+        )
+
+    def GetNodeConfigServiceConfigs(
+        self, request: GetNodeConfigServiceConfigsRequest, context: ServicerContext
+    ) -> GetNodeConfigServiceConfigsResponse:
+        """
+        Get current custom templates and config for configuration services for a given
+        node.
+
+        :param request: get node config service configs request
+        :param context: grpc context
+        :return: get node config service configs response
+        """
+        session = self.get_session(request.session_id, context)
+        configs = []
+        for node in session.nodes.values():
+            if not isinstance(node, CoreNodeBase):
+                continue
+
+            for name, service in node.config_services.items():
+                if not service.custom_templates and not service.custom_config:
+                    continue
+                config_proto = configservices_pb2.ConfigServiceConfig(
+                    node_id=node.id,
+                    name=name,
+                    templates=service.custom_templates,
+                    config=service.custom_config,
+                )
+                configs.append(config_proto)
+        return GetNodeConfigServiceConfigsResponse(configs=configs)
+
+    def GetNodeConfigServices(
+        self, request: GetNodeConfigServicesRequest, context: ServicerContext
+    ) -> GetNodeConfigServicesResponse:
+        """
+        Get configuration services for a given node.
+
+        :param request: get node config services request
+        :param context: grpc context
+        :return: get node config services response
+        """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        services = node.config_services.keys()
+        return GetNodeConfigServicesResponse(services=services)
+
+    def SetNodeConfigService(
+        self, request: SetNodeConfigServiceRequest, context: ServicerContext
+    ) -> SetNodeConfigServiceResponse:
+        """
+        Set custom config, for a given configuration service, for a given node.
+
+        :param request: set node config service request
+        :param context: grpc context
+        :return: set node config service response
+        """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        self.validate_service(request.name, context)
+        service = node.config_services.get(request.name)
+        if service:
+            service.set_config(request.config)
+            return SetNodeConfigServiceResponse(result=True)
+        else:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                f"node {node.name} missing service {request.name}",
+            )

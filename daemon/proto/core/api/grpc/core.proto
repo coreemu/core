@@ -5,6 +5,9 @@ package core;
 option java_package = "com.core.client.grpc";
 option java_outer_classname = "CoreProto";
 
+import "core/api/grpc/configservices.proto";
+import "core/api/grpc/common.proto";
+
 service CoreApi {
     // session rpc
     rpc StartSession (StartSessionRequest) returns (StartSessionResponse) {
@@ -102,6 +105,20 @@ service CoreApi {
     rpc ServiceAction (ServiceActionRequest) returns (ServiceActionResponse) {
     }
 
+    // config services
+    rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
+    }
+    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
+    }
+    rpc GetNodeConfigServiceConfigs (configservices.GetNodeConfigServiceConfigsRequest) returns (configservices.GetNodeConfigServiceConfigsResponse) {
+    }
+    rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
+    }
+    rpc GetNodeConfigServices (configservices.GetNodeConfigServicesRequest) returns (configservices.GetNodeConfigServicesResponse) {
+    }
+    rpc SetNodeConfigService (configservices.SetNodeConfigServiceRequest) returns (configservices.SetNodeConfigServiceResponse) {
+    }
+
     // wlan rpc
     rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
     }
@@ -151,6 +168,7 @@ message StartSessionRequest {
     repeated ServiceConfig service_configs = 10;
     repeated ServiceFileConfig service_file_configs = 11;
     repeated Link asymmetric_links = 12;
+    repeated configservices.ConfigServiceConfig config_service_configs = 13;
 }
 
 message StartSessionResponse {
@@ -203,7 +221,7 @@ message GetSessionOptionsRequest {
 }
 
 message GetSessionOptionsResponse {
-    map<string, ConfigOption> config = 2;
+    map<string, common.ConfigOption> config = 2;
 }
 
 message SetSessionOptionsRequest {
@@ -494,7 +512,7 @@ message GetMobilityConfigRequest {
 }
 
 message GetMobilityConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetMobilityConfigRequest {
@@ -619,7 +637,7 @@ message GetWlanConfigRequest {
 }
 
 message GetWlanConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetWlanConfigRequest {
@@ -636,7 +654,7 @@ message GetEmaneConfigRequest {
 }
 
 message GetEmaneConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetEmaneConfigRequest {
@@ -664,7 +682,7 @@ message GetEmaneModelConfigRequest {
 }
 
 message GetEmaneModelConfigResponse {
-    map<string, ConfigOption> config = 1;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message SetEmaneModelConfigRequest {
@@ -685,7 +703,7 @@ message GetEmaneModelConfigsResponse {
         int32 node_id = 1;
         string model = 2;
         int32 interface = 3;
-        map<string, ConfigOption> config = 4;
+        map<string, common.ConfigOption> config = 4;
     }
     repeated ModelConfig configs = 1;
 }
@@ -903,16 +921,7 @@ message NodeServiceData {
 }
 
 message MappedConfig {
-    map<string, ConfigOption> config = 1;
-}
-
-message ConfigOption {
-    string label = 1;
-    string name = 2;
-    string value = 3;
-    int32 type = 4;
-    repeated string select = 5;
-    string group = 6;
+    map<string, common.ConfigOption> config = 1;
 }
 
 message Session {
@@ -941,6 +950,7 @@ message Node {
     string opaque = 9;
     string image = 10;
     string server = 11;
+    repeated string config_services = 12;
 }
 
 message Link {

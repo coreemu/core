@@ -6,15 +6,16 @@ import logging
 import os
 import shutil
 import threading
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 import netaddr
 
 from core import utils
+from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
 from core.nodes import client
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
@@ -22,6 +23,9 @@ from core.nodes.netclient import LinuxNetClient, get_net_client
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
+    from core.configservice.base import ConfigService
+
+    ConfigServiceType = Type[ConfigService]
 
 _DEFAULT_MTU = 1500
 
@@ -277,8 +281,46 @@ class CoreNodeBase(NodeBase):
         """
         super().__init__(session, _id, name, start, server)
         self.services = []
+        self.config_services = {}
         self.nodedir = None
         self.tmpnodedir = False
+
+    def add_config_service(self, service_class: "ConfigServiceType") -> None:
+        """
+        Adds a configuration service to the node.
+
+        :param service_class: configuration service class to assign to node
+        :return: nothing
+        """
+        name = service_class.name
+        if name in self.config_services:
+            raise CoreError(f"node({self.name}) already has service({name})")
+        self.config_services[name] = service_class(self)
+
+    def set_service_config(self, name: str, data: Dict[str, str]) -> None:
+        """
+        Sets configuration service custom config data.
+
+        :param name: name of configuration service
+        :param data: custom config data to set
+        :return: nothing
+        """
+        service = self.config_services.get(name)
+        if service is None:
+            raise CoreError(f"node({self.name}) does not have service({name})")
+        service.set_config(data)
+
+    def start_config_services(self) -> None:
+        """
+        Determins startup paths and starts configuration services, based on their
+        dependency chains.
+
+        :return: nothing
+        """
+        startup_paths = ConfigServiceDependencies(self.config_services).startup_paths()
+        for startup_path in startup_paths:
+            for service in startup_path:
+                service.start()
 
     def makenodedir(self) -> None:
         """

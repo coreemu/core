@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, List, Tuple, Type
 
 from core import utils
-from core.api.grpc import core_pb2
+from core.api.grpc import common_pb2, core_pb2
 from core.config import ConfigurableOptions
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
@@ -33,6 +33,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     options.opaque = node_proto.opaque
     options.image = node_proto.image
     options.services = node_proto.services
+    options.config_services = node_proto.config_services
     if node_proto.emane:
         options.emane = node_proto.emane
     if node_proto.server:
@@ -190,7 +191,7 @@ def convert_value(value: Any) -> str:
 
 def get_config_options(
     config: Dict[str, str], configurable_options: Type[ConfigurableOptions]
-) -> Dict[str, core_pb2.ConfigOption]:
+) -> Dict[str, common_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
 
@@ -201,7 +202,7 @@ def get_config_options(
     results = {}
     for configuration in configurable_options.configurations():
         value = config[configuration.id]
-        config_option = core_pb2.ConfigOption(
+        config_option = common_pb2.ConfigOption(
             label=configuration.label,
             name=configuration.id,
             value=value,

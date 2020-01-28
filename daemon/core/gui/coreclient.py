@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List
 
 import grpc
 
-from core.api.grpc import client, core_pb2
+from core.api.grpc import client, common_pb2, configservices_pb2, core_pb2
 from core.gui import appconfig
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
@@ -74,6 +74,8 @@ class CoreClient:
         self.app = app
         self.master = app.master
         self.services = {}
+        self.config_services_groups = {}
+        self.config_services = {}
         self.default_services = {}
         self.emane_models = []
         self.observer = None
@@ -99,6 +101,7 @@ class CoreClient:
         self.emane_model_configs = {}
         self.emane_config = None
         self.service_configs = {}
+        self.config_service_configs = {}
         self.file_configs = {}
         self.mobility_players = {}
         self.handling_throughputs = None
@@ -307,6 +310,18 @@ class CoreClient:
                     data = config.files[file_name]
                     files[file_name] = data
 
+            # get config service configurations
+            response = self.client.get_node_config_service_configs(self.session_id)
+            for config in response.configs:
+                node_configs = self.config_service_configs.setdefault(
+                    config.node_id, {}
+                )
+                service_config = node_configs.setdefault(config.name, {})
+                if config.templates:
+                    service_config["templates"] = config.templates
+                if config.config:
+                    service_config["config"] = config.config
+
             # draw session
             self.app.canvas.reset_and_redraw(session)
 
@@ -427,6 +442,15 @@ class CoreClient:
                 group_services = self.services.setdefault(service.group, set())
                 group_services.add(service.name)
 
+            # get config service informations
+            response = self.client.get_config_services()
+            for service in response.services:
+                self.config_services[service.name] = service
+                group_services = self.config_services_groups.setdefault(
+                    service.group, set()
+                )
+                group_services.add(service.name)
+
             # if there are no sessions, create a new session, else join a session
             response = self.client.get_sessions()
             logging.info("current sessions: %s", response)
@@ -464,6 +488,7 @@ class CoreClient:
         asymmetric_links = [
             x.asymmetric_link for x in self.links.values() if x.asymmetric_link
         ]
+        config_service_configs = self.get_config_service_configs_proto()
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -484,6 +509,7 @@ class CoreClient:
                 service_configs,
                 file_configs,
                 asymmetric_links,
+                config_service_configs,
             )
             logging.debug(
                 "start session(%s), result: %s", self.session_id, response.result
@@ -878,18 +904,34 @@ class CoreClient:
                     configs.append(config_proto)
         return configs
 
+    def get_config_service_configs_proto(
+        self
+    ) -> List[configservices_pb2.ConfigServiceConfig]:
+        config_service_protos = []
+        for node_id, node_config in self.config_service_configs.items():
+            for name, service_config in node_config.items():
+                config = service_config.get("config", {})
+                config_proto = configservices_pb2.ConfigServiceConfig(
+                    node_id=node_id,
+                    name=name,
+                    templates=service_config["templates"],
+                    config=config,
+                )
+                config_service_protos.append(config_proto)
+        return config_service_protos
+
     def run(self, node_id: int) -> str:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
         return self.client.node_command(self.session_id, node_id, self.observer).output
 
-    def get_wlan_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
+    def get_wlan_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
         config = self.wlan_configs.get(node_id)
         if not config:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
         return config
 
-    def get_mobility_config(self, node_id: int) -> Dict[str, core_pb2.ConfigOption]:
+    def get_mobility_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
         config = self.mobility_configs.get(node_id)
         if not config:
             response = self.client.get_mobility_config(self.session_id, node_id)
@@ -898,7 +940,7 @@ class CoreClient:
 
     def get_emane_model_config(
         self, node_id: int, model: str, interface: int = None
-    ) -> Dict[str, core_pb2.ConfigOption]:
+    ) -> Dict[str, common_pb2.ConfigOption]:
         logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
         if not config:
@@ -914,7 +956,7 @@ class CoreClient:
         self,
         node_id: int,
         model: str,
-        config: Dict[str, core_pb2.ConfigOption],
+        config: Dict[str, common_pb2.ConfigOption],
         interface: int = None,
     ):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)

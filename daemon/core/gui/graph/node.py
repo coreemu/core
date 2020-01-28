@@ -10,6 +10,7 @@ from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
+from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
@@ -180,6 +181,7 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", state=tk.DISABLED)
+                context.add_command(label="Config Services", state=tk.DISABLED)
             if is_wlan:
                 context.add_command(label="WLAN Config", command=self.show_wlan_config)
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
@@ -198,6 +200,9 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", command=self.show_services)
+                context.add_command(
+                    label="Config Services", command=self.show_config_services
+                )
             if is_emane:
                 context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -251,6 +256,11 @@ class CanvasNode:
     def show_services(self):
         self.canvas.context = None
         dialog = NodeServiceDialog(self.app.master, self.app, self)
+        dialog.show()
+
+    def show_config_services(self):
+        self.canvas.context = None
+        dialog = NodeConfigServiceDialog(self.app.master, self.app, self)
         dialog.show()
 
     def has_emane_link(self, interface_id: int) -> core_pb2.Node:

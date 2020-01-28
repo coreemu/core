@@ -1,0 +1,4 @@
+0.0 LISTEN UDP 5000
+% for ifname in ifnames:
+0.0 Join 224.225.1.2 INTERFACE ${ifname}
+% endfor

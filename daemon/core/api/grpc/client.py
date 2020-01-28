@@ -11,7 +11,21 @@ import grpc
 import netaddr
 
 from core import utils
-from core.api.grpc import core_pb2, core_pb2_grpc
+from core.api.grpc import configservices_pb2, core_pb2, core_pb2_grpc
+from core.api.grpc.configservices_pb2 import (
+    GetConfigServiceDefaultsRequest,
+    GetConfigServiceDefaultsResponse,
+    GetConfigServicesRequest,
+    GetConfigServicesResponse,
+    GetNodeConfigServiceConfigsRequest,
+    GetNodeConfigServiceConfigsResponse,
+    GetNodeConfigServiceRequest,
+    GetNodeConfigServiceResponse,
+    GetNodeConfigServicesRequest,
+    GetNodeConfigServicesResponse,
+    SetNodeConfigServiceRequest,
+    SetNodeConfigServiceResponse,
+)
 
 
 class InterfaceHelper:
@@ -163,6 +177,7 @@ class CoreGrpcClient:
         service_configs: List[core_pb2.ServiceConfig] = None,
         service_file_configs: List[core_pb2.ServiceFileConfig] = None,
         asymmetric_links: List[core_pb2.Link] = None,
+        config_service_configs: List[configservices_pb2.ConfigServiceConfig] = None,
     ) -> core_pb2.StartSessionResponse:
         """
         Start a session.
@@ -179,6 +194,7 @@ class CoreGrpcClient:
         :param service_configs: node service configurations
         :param service_file_configs: node service file configurations
         :param asymmetric_links: asymmetric links to edit
+        :param config_service_configs: config service configurations
         :return: start session response
         """
         request = core_pb2.StartSessionRequest(
@@ -194,6 +210,7 @@ class CoreGrpcClient:
             service_configs=service_configs,
             service_file_configs=service_file_configs,
             asymmetric_links=asymmetric_links,
+            config_service_configs=config_service_configs,
         )
         return self.stub.StartSession(request)
 
@@ -1077,6 +1094,44 @@ class CoreGrpcClient:
         """
         request = core_pb2.GetInterfacesRequest()
         return self.stub.GetInterfaces(request)
+
+    def get_config_services(self) -> GetConfigServicesResponse:
+        request = GetConfigServicesRequest()
+        return self.stub.GetConfigServices(request)
+
+    def get_config_service_defaults(
+        self, name: str
+    ) -> GetConfigServiceDefaultsResponse:
+        request = GetConfigServiceDefaultsRequest(name=name)
+        return self.stub.GetConfigServiceDefaults(request)
+
+    def get_node_config_service_configs(
+        self, session_id: int
+    ) -> GetNodeConfigServiceConfigsResponse:
+        request = GetNodeConfigServiceConfigsRequest(session_id=session_id)
+        return self.stub.GetNodeConfigServiceConfigs(request)
+
+    def get_node_config_service(
+        self, session_id: int, node_id: int, name: str
+    ) -> GetNodeConfigServiceResponse:
+        request = GetNodeConfigServiceRequest(
+            session_id=session_id, node_id=node_id, name=name
+        )
+        return self.stub.GetNodeConfigService(request)
+
+    def get_node_config_services(
+        self, session_id: int, node_id: int
+    ) -> GetNodeConfigServicesResponse:
+        request = GetNodeConfigServicesRequest(session_id=session_id, node_id=node_id)
+        return self.stub.GetNodeConfigServices(request)
+
+    def set_node_config_service(
+        self, session_id: int, node_id: int, name: str, config: Dict[str, str]
+    ) -> SetNodeConfigServiceResponse:
+        request = SetNodeConfigServiceRequest(
+            session_id=session_id, node_id=node_id, name=name, config=config
+        )
+        return self.stub.SetNodeConfigService(request)
 
     def connect(self) -> None:
         """

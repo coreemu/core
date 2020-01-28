@@ -6,6 +6,8 @@ import sys
 from typing import Mapping, Type
 
 import core.services
+from core import configservices
+from core.configservice.manager import ConfigServiceManager
 from core.emulator.session import Session
 from core.services.coreservices import ServiceManager
 
@@ -55,6 +57,11 @@ class CoreEmu:
         self.service_errors = []
         self.load_services()
 
+        # config services
+        self.service_manager = ConfigServiceManager()
+        config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
+        self.service_manager.load(config_services_path)
+
         # catch exit event
         atexit.register(self.shutdown)
 
@@ -97,6 +104,7 @@ class CoreEmu:
             while _id in self.sessions:
                 _id += 1
         session = _cls(_id, config=self.config)
+        session.service_manager = self.service_manager
         logging.info("created session: %s", _id)
         self.sessions[_id] = session
         return session
