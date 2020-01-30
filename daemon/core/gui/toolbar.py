@@ -285,7 +285,7 @@ class Toolbar(ttk.Frame):
         dialog.show()
 
     def update_button(self, button: ttk.Button, image: "ImageTk", node_draw: NodeDraw):
-        logging.info("update button(%s): %s", button, node_draw)
+        logging.debug("update button(%s): %s", button, node_draw)
         self.hide_pickers()
         button.configure(image=image)
         button.image = image
@@ -293,7 +293,7 @@ class Toolbar(ttk.Frame):
         self.app.canvas.node_draw = node_draw
 
     def hide_pickers(self):
-        logging.info("hiding pickers")
+        logging.debug("hiding pickers")
         if self.node_picker:
             self.node_picker.destroy()
             self.node_picker = None
@@ -417,6 +417,7 @@ class Toolbar(ttk.Frame):
         """
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
+        logging.info("Click stop button")
         self.app.canvas.hide_context()
         self.app.statusbar.progress_bar.start(5)
         self.time = time.perf_counter()
@@ -434,7 +435,7 @@ class Toolbar(ttk.Frame):
             messagebox.showerror("Stop Error", "Errors stopping session")
 
     def update_annotation(self, image: "ImageTk.PhotoImage", shape_type: ShapeType):
-        logging.info("clicked annotation: ")
+        logging.debug("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image

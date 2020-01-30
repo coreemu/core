@@ -167,7 +167,6 @@ class CoreClient:
             return
 
         if event.HasField("link_event"):
-            logging.info("link event: %s", event)
             self.handle_link_event(event.link_event)
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
@@ -185,7 +184,7 @@ class CoreClient:
                     else:
                         dialog.set_pause()
             else:
-                logging.warning("unknown session event: %s", session_event)
+                logging.warning("Unknown session event: %s", session_event)
         elif event.HasField("node_event"):
             self.handle_node_event(event.node_event)
         elif event.HasField("config_event"):
@@ -193,9 +192,10 @@ class CoreClient:
         elif event.HasField("exception_event"):
             self.handle_exception_event(event)
         else:
-            logging.info("unhandled event: %s", event)
+            logging.info("Unhandled event: %s", event)
 
     def handle_link_event(self, event: core_pb2.LinkEvent):
+        logging.debug("Link event: %s", event)
         node_one_id = event.link.node_one_id
         node_two_id = event.link.node_two_id
         canvas_node_one = self.canvas_nodes[node_one_id]
@@ -209,6 +209,7 @@ class CoreClient:
             logging.warning("unknown link event: %s", event.message_type)
 
     def handle_node_event(self, event: core_pb2.NodeEvent):
+        logging.debug("Node event: %s", event)
         if event.source == GUI_SOURCE:
             return
         node_id = event.node.id
@@ -234,14 +235,15 @@ class CoreClient:
                 self.session_id,
             )
             return
-        logging.info("handling throughputs event: %s", event)
+        logging.debug("handling throughputs event: %s", event)
         self.app.canvas.set_throughputs(event)
 
     def handle_exception_event(self, event: core_pb2.ExceptionEvent):
-        logging.info("exception event: %s", event)
+        logging.info("Exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
     def join_session(self, session_id: int, query_location: bool = True):
+        logging.info("Join session(%s)", session_id)
         # update session and title
         self.session_id = session_id
         self.master.title(f"CORE Session({self.session_id})")
@@ -303,7 +305,7 @@ class CoreClient:
             for config in response.configs:
                 service_configs = self.service_configs.setdefault(config.node_id, {})
                 service_configs[config.service] = config.data
-                logging.info("service file configs: %s", config.files)
+                logging.debug("service file configs: %s", config.files)
                 for file_name in config.files:
                     file_configs = self.file_configs.setdefault(config.node_id, {})
                     files = file_configs.setdefault(config.service, {})
@@ -341,7 +343,7 @@ class CoreClient:
     def parse_metadata(self, config: Dict[str, str]):
         # canvas setting
         canvas_config = config.get("canvas")
-        logging.info("canvas metadata: %s", canvas_config)
+        logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
 
@@ -425,7 +427,7 @@ class CoreClient:
             session_id = self.session_id
         try:
             response = self.client.delete_session(session_id)
-            logging.info("deleted session(%s) result: %s", session_id, response)
+            logging.info("delete session(%s), Result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -435,7 +437,7 @@ class CoreClient:
         """
         try:
             self.client.connect()
-
+            logging.debug("Client connect to daemon")
             # get service information
             response = self.client.get_services()
             for service in response.services:
@@ -453,7 +455,6 @@ class CoreClient:
 
             # if there are no sessions, create a new session, else join a session
             response = self.client.get_sessions()
-            logging.info("current sessions: %s", response)
             sessions = response.sessions
             if len(sessions) == 0:
                 self.create_new_session()
@@ -511,8 +512,8 @@ class CoreClient:
                 asymmetric_links,
                 config_service_configs,
             )
-            logging.debug(
-                "start session(%s), result: %s", self.session_id, response.result
+            logging.info(
+                "Start session(%s), Result: %s", self.session_id, response.result
             )
 
             if response.result:
@@ -527,7 +528,7 @@ class CoreClient:
         response = core_pb2.StopSessionResponse(result=False)
         try:
             response = self.client.stop_session(session_id)
-            logging.debug("stopped session(%s), result: %s", session_id, response)
+            logging.info("Stop session(%s), Result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
         return response
@@ -561,7 +562,7 @@ class CoreClient:
 
         metadata = {"canvas": canvas_config, "shapes": shapes}
         response = self.client.set_session_metadata(self.session_id, metadata)
-        logging.info("set session metadata: %s", response)
+        logging.info("Set session metadata %s, Result: %s", metadata, response)
 
     def launch_terminal(self, node_id: int):
         try:
@@ -571,7 +572,7 @@ class CoreClient:
             if output in DEFAULT_TERMS:
                 terminal = DEFAULT_TERMS[output]
             cmd = f'{terminal} "{response.terminal}" &'
-            logging.info("launching terminal %s", cmd)
+            logging.info("Launch terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
@@ -582,12 +583,10 @@ class CoreClient:
         """
         try:
             if self.state != core_pb2.SessionState.RUNTIME:
-                logging.debug(
-                    "session state not runtime, send session data to the daemon..."
-                )
+                logging.debug("Send session data to the daemon")
                 self.send_data()
             response = self.client.save_xml(self.session_id, file_path)
-            logging.info("saved xml(%s): %s", file_path, response)
+            logging.info("Save XML file %s, Result: %s", file_path, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -597,7 +596,7 @@ class CoreClient:
         """
         try:
             response = self.client.open_xml(file_path)
-            logging.debug("open xml: %s", response)
+            logging.info("Open XML file %s, Response: %s", file_path, response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
@@ -606,7 +605,9 @@ class CoreClient:
         self, node_id: int, service_name: str
     ) -> core_pb2.NodeServiceData:
         response = self.client.get_node_service(self.session_id, node_id, service_name)
-        logging.debug("get node service %s", response)
+        logging.debug(
+            "Get node(%s) %s service, Response: %s", node_id, service_name, response
+        )
         return response.service
 
     def set_node_service(
@@ -620,9 +621,16 @@ class CoreClient:
         response = self.client.set_node_service(
             self.session_id, node_id, service_name, startups, validations, shutdowns
         )
-        logging.debug("set node service %s", response)
+        logging.info(
+            "Set %s service for node(%s), Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
+            service_name,
+            node_id,
+            startups,
+            validations,
+            shutdowns,
+            response,
+        )
         response = self.client.get_node_service(self.session_id, node_id, service_name)
-        logging.debug("get node service : %s", response)
         return response.service
 
     def get_node_service_file(
@@ -631,7 +639,13 @@ class CoreClient:
         response = self.client.get_node_service_file(
             self.session_id, node_id, service_name, file_name
         )
-        logging.debug("get service file %s", response)
+        logging.debug(
+            "Get service file for node(%s), Service: %s, File: %s, Result: %s",
+            node_id,
+            service_name,
+            file_name,
+            response,
+        )
         return response.data
 
     def set_node_service_file(
@@ -640,7 +654,14 @@ class CoreClient:
         response = self.client.set_node_service_file(
             self.session_id, node_id, service_name, file_name, data
         )
-        logging.debug("set node service file %s", response)
+        logging.info(
+            "Set node(%s) service file, Service: %s, File: %s, Data: %s, Result: %s",
+            node_id,
+            service_name,
+            file_name,
+            data,
+            response,
+        )
 
     def create_nodes_and_links(self):
         """
@@ -656,7 +677,7 @@ class CoreClient:
         self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
             response = self.client.add_node(self.session_id, node_proto)
-            logging.debug("create node: %s", response)
+            logging.debug("Create node: %s", response)
         for link_proto in link_protos:
             response = self.client.add_link(
                 self.session_id,
@@ -666,7 +687,7 @@ class CoreClient:
                 link_proto.interface_two,
                 link_proto.options,
             )
-            logging.debug("create link: %s", response)
+            logging.debug("Create link: %s", response)
 
     def send_data(self):
         """
@@ -733,7 +754,7 @@ class CoreClient:
         return i
 
     def create_node(
-        self, x: int, y: int, node_type: core_pb2.NodeType, model: str
+        self, x: float, y: float, node_type: core_pb2.NodeType, model: str
     ) -> core_pb2.Node:
         """
         Add node, with information filled in, to grpc manager
@@ -765,12 +786,12 @@ class CoreClient:
         if NodeUtils.is_custom(model):
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
-        logging.debug(
-            "adding node to core session: %s, coords: (%s, %s), name: %s",
+        logging.info(
+            "Add node(%s) to session(%s), coordinates(%s, %s)",
+            node.name,
             self.session_id,
             x,
             y,
-            node.name,
         )
         return node
 
@@ -860,6 +881,7 @@ class CoreClient:
         )
         edge.set_link(link)
         self.links[edge.token] = edge
+        logging.info("Add link between %s and %s", src_node.name, dst_node.name)
 
     def get_wlan_configs_proto(self) -> List[core_pb2.WlanConfig]:
         configs = []
@@ -940,6 +962,11 @@ class CoreClient:
         if not config:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
+        logging.debug(
+            "Get wlan configuration from node %s, Result configuration: %s",
+            node_id,
+            config,
+        )
         return config
 
     def get_mobility_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
@@ -947,12 +974,16 @@ class CoreClient:
         if not config:
             response = self.client.get_mobility_config(self.session_id, node_id)
             config = response.config
+        logging.debug(
+            "Get mobility config from node %s, Result configuration: %s",
+            node_id,
+            config,
+        )
         return config
 
     def get_emane_model_config(
         self, node_id: int, model: str, interface: int = None
     ) -> Dict[str, common_pb2.ConfigOption]:
-        logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
         if not config:
             if interface is None:
@@ -961,6 +992,13 @@ class CoreClient:
                 self.session_id, node_id, model, interface
             )
             config = response.config
+        logging.debug(
+            "Get emane model config: Node id: %s, EMANE model: %s, Interface: %s, Config: %s",
+            node_id,
+            model,
+            interface,
+            config,
+        )
         return config
 
     def set_emane_model_config(
@@ -970,12 +1008,19 @@ class CoreClient:
         config: Dict[str, common_pb2.ConfigOption],
         interface: int = None,
     ):
-        logging.info("setting emane model config: %s %s %s", node_id, model, interface)
+        logging.info(
+            "Set emane model config: Node id: %s, EMANE Model: %s, Interface: %s, Config: %s",
+            node_id,
+            model,
+            interface,
+            config,
+        )
         self.emane_model_configs[(node_id, model, interface)] = config
 
     def copy_node_service(self, _from: int, _to: int):
         services = self.canvas_nodes[_from].core_node.services
         self.canvas_nodes[_to].core_node.services[:] = services
+        logging.debug("Copy node %s service to node %s", _from, _to)
 
     def copy_node_config(self, _from: int, _to: int):
         node_type = self.canvas_nodes[_from].core_node.type

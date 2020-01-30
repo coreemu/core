@@ -107,6 +107,7 @@ class EmaneConfigDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", canvas_node: "CanvasNode"
     ):
+        logging.debug("EMANE configuration for %s", canvas_node.core_node.name)
         super().__init__(
             master, app, f"{canvas_node.core_node.name} EMANE Configuration", modal=True
         )

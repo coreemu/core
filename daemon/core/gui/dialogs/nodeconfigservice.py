@@ -24,6 +24,7 @@ class NodeConfigServiceDialog(Dialog):
         canvas_node: "CanvasNode",
         services: Set[str] = None,
     ):
+        logging.debug("Service configuration for %s", canvas_node.core_node.name)
         title = f"{canvas_node.core_node.name} Config Services"
         super().__init__(master, app, title, modal=True)
         self.app = app

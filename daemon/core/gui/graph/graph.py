@@ -216,6 +216,7 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
+            logging.debug("Draw node %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
@@ -231,7 +232,7 @@ class CanvasGraph(tk.Canvas):
 
         # draw existing links
         for link in session.links:
-            logging.info("drawing link: %s", link)
+            logging.debug("Draw link: %s", link)
             canvas_node_one = self.core.canvas_nodes[link.node_one_id]
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
@@ -388,7 +389,6 @@ class CanvasGraph(tk.Canvas):
 
         # set dst node and snap edge to center
         edge.complete(self.selected)
-        logging.debug("drawing edge token: %s", edge.token)
 
         self.edges[edge.token] = edge
         node_src = self.nodes[edge.src]
@@ -508,7 +508,7 @@ class CanvasGraph(tk.Canvas):
         logging.debug("click press(%s): %s", self.cursor, selected)
         x_check = self.cursor[0] - self.offset[0]
         y_check = self.cursor[1] - self.offset[1]
-        logging.debug("clock press ofset(%s, %s)", x_check, y_check)
+        logging.debug("click press offset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
@@ -545,7 +545,8 @@ class CanvasGraph(tk.Canvas):
                     self.select_object(node.id)
                     self.selected = selected
                     logging.info(
-                        "selected coords: (%s, %s)",
+                        "selected node(%s), coords: (%s, %s)",
+                        node.core_node.name,
                         node.core_node.position.x,
                         node.core_node.position.y,
                     )
@@ -631,7 +632,6 @@ class CanvasGraph(tk.Canvas):
                 self.select_box.shape_motion(x, y)
 
     def click_context(self, event: tk.Event):
-        logging.info("context event: %s", self.context)
         if not self.context:
             selected = self.get_selected(event)
             canvas_node = self.nodes.get(selected)
@@ -796,14 +796,14 @@ class CanvasGraph(tk.Canvas):
             self.tag_raise(component)
 
     def update_grid(self):
-        logging.info("updating grid show: %s", self.show_grid.get())
+        logging.debug("Show grid: %s", self.show_grid.get())
         if self.show_grid.get():
             self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
         else:
             self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
     def set_wallpaper(self, filename: str):
-        logging.info("setting wallpaper: %s", filename)
+        logging.debug("Set wallpaper: %s", filename)
         if filename:
             img = Image.open(filename)
             self.wallpaper = img
@@ -835,14 +835,11 @@ class CanvasGraph(tk.Canvas):
 
     def copy(self):
         if self.selection:
-            logging.debug(
-                "store current selection to to_copy, number of nodes: %s",
-                len(self.selection),
-            )
+            logging.debug("Copy %s nodes", len(self.selection))
             self.to_copy = self.selection.keys()
 
     def paste(self):
-        logging.debug("copy")
+        logging.debug("Paste")
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over

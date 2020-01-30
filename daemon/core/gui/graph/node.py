@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 from tkinter import font
 from typing import TYPE_CHECKING
@@ -41,6 +42,9 @@ class CanvasNode:
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
+        logging.debug(
+            "Draw canvas node for node(%s), canvas id: %s", core_node.name, self.id
+        )
         text_font = font.Font(family="TkIconFont", size=12)
         label_y = self._get_label_y()
         self.text_id = self.canvas.create_text(
@@ -64,9 +68,10 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
 
     def delete(self):
+        logging.debug("Delete canvas node for %s", self.core_node)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
-        self.delete_antennae()
+        self.delete_antennas()
 
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
@@ -84,14 +89,16 @@ class CanvasNode:
         """
         delete one antenna
         """
+        logging.debug("Delete an antenna on %s", self.core_node.name)
         if self.antennae:
             antenna_id = self.antennae.pop()
             self.canvas.delete(antenna_id)
 
-    def delete_antennae(self):
+    def delete_antennas(self):
         """
         delete all antennas
         """
+        logging.debug("Remove all antennas for %s", self.core_node.name)
         for antenna_id in self.antennae:
             self.canvas.delete(antenna_id)
         self.antennae.clear()
@@ -244,6 +251,7 @@ class CanvasNode:
         dialog.show()
 
     def show_mobility_player(self):
+        logging.debug("Mobility player for %s", self.core_node.name)
         self.canvas.context = None
         mobility_player = self.app.core.mobility_players[self.core_node.id]
         mobility_player.show()

@@ -1,6 +1,7 @@
 """
 core node services
 """
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Any, Set
@@ -24,6 +25,7 @@ class NodeServiceDialog(Dialog):
         canvas_node: "CanvasNode",
         services: Set[str] = None,
     ):
+        logging.debug("Node services for %s", canvas_node.core_node.name)
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(master, app, title, modal=True)
         self.app = app
