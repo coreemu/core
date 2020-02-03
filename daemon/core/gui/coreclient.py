@@ -184,7 +184,7 @@ class CoreClient:
                     else:
                         dialog.set_pause()
             else:
-                logging.warning("Unknown session event: %s", session_event)
+                logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
             self.handle_node_event(event.node_event)
         elif event.HasField("config_event"):
@@ -192,7 +192,7 @@ class CoreClient:
         elif event.HasField("exception_event"):
             self.handle_exception_event(event)
         else:
-            logging.info("Unhandled event: %s", event)
+            logging.info("unhandled event: %s", event)
 
     def handle_link_event(self, event: core_pb2.LinkEvent):
         logging.debug("Link event: %s", event)
@@ -209,7 +209,7 @@ class CoreClient:
             logging.warning("unknown link event: %s", event.message_type)
 
     def handle_node_event(self, event: core_pb2.NodeEvent):
-        logging.debug("Node event: %s", event)
+        logging.debug("node event: %s", event)
         if event.source == GUI_SOURCE:
             return
         node_id = event.node.id
@@ -239,11 +239,11 @@ class CoreClient:
         self.app.canvas.set_throughputs(event)
 
     def handle_exception_event(self, event: core_pb2.ExceptionEvent):
-        logging.info("Exception event: %s", event)
+        logging.info("exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
     def join_session(self, session_id: int, query_location: bool = True):
-        logging.info("Join session(%s)", session_id)
+        logging.info("join session(%s)", session_id)
         # update session and title
         self.session_id = session_id
         self.master.title(f"CORE Session({self.session_id})")
@@ -427,7 +427,7 @@ class CoreClient:
             session_id = self.session_id
         try:
             response = self.client.delete_session(session_id)
-            logging.info("delete session(%s), Result: %s", session_id, response)
+            logging.info("deleted session(%s), Result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -437,7 +437,6 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            logging.debug("Client connect to daemon")
             # get service information
             response = self.client.get_services()
             for service in response.services:
@@ -513,7 +512,7 @@ class CoreClient:
                 config_service_configs,
             )
             logging.info(
-                "Start session(%s), Result: %s", self.session_id, response.result
+                "start session(%s), result: %s", self.session_id, response.result
             )
 
             if response.result:
@@ -528,7 +527,7 @@ class CoreClient:
         response = core_pb2.StopSessionResponse(result=False)
         try:
             response = self.client.stop_session(session_id)
-            logging.info("Stop session(%s), Result: %s", session_id, response)
+            logging.info("stopped session(%s), result: %s", session_id, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
         return response
@@ -562,7 +561,7 @@ class CoreClient:
 
         metadata = {"canvas": canvas_config, "shapes": shapes}
         response = self.client.set_session_metadata(self.session_id, metadata)
-        logging.info("Set session metadata %s, Result: %s", metadata, response)
+        logging.info("set session metadata %s, result: %s", metadata, response)
 
     def launch_terminal(self, node_id: int):
         try:
@@ -572,7 +571,7 @@ class CoreClient:
             if output in DEFAULT_TERMS:
                 terminal = DEFAULT_TERMS[output]
             cmd = f'{terminal} "{response.terminal}" &'
-            logging.info("Launch terminal %s", cmd)
+            logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
@@ -586,7 +585,7 @@ class CoreClient:
                 logging.debug("Send session data to the daemon")
                 self.send_data()
             response = self.client.save_xml(self.session_id, file_path)
-            logging.info("Save XML file %s, Result: %s", file_path, response)
+            logging.info("saved xml file %s, result: %s", file_path, response)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
 
@@ -596,7 +595,7 @@ class CoreClient:
         """
         try:
             response = self.client.open_xml(file_path)
-            logging.info("Open XML file %s, Response: %s", file_path, response)
+            logging.info("open xml file %s, response: %s", file_path, response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e)
@@ -606,7 +605,7 @@ class CoreClient:
     ) -> core_pb2.NodeServiceData:
         response = self.client.get_node_service(self.session_id, node_id, service_name)
         logging.debug(
-            "Get node(%s) %s service, Response: %s", node_id, service_name, response
+            "get node(%s) %s service, response: %s", node_id, service_name, response
         )
         return response.service
 
@@ -640,7 +639,7 @@ class CoreClient:
             self.session_id, node_id, service_name, file_name
         )
         logging.debug(
-            "Get service file for node(%s), Service: %s, File: %s, Result: %s",
+            "get service file for node(%s), service: %s, file: %s, result: %s",
             node_id,
             service_name,
             file_name,
@@ -655,7 +654,7 @@ class CoreClient:
             self.session_id, node_id, service_name, file_name, data
         )
         logging.info(
-            "Set node(%s) service file, Service: %s, File: %s, Data: %s, Result: %s",
+            "set node(%s) service file, service: %s, file: %s, data: %s, result: %s",
             node_id,
             service_name,
             file_name,
@@ -677,7 +676,7 @@ class CoreClient:
         self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
             response = self.client.add_node(self.session_id, node_proto)
-            logging.debug("Create node: %s", response)
+            logging.debug("create node: %s", response)
         for link_proto in link_protos:
             response = self.client.add_link(
                 self.session_id,
@@ -687,7 +686,7 @@ class CoreClient:
                 link_proto.interface_two,
                 link_proto.options,
             )
-            logging.debug("Create link: %s", response)
+            logging.debug("create link: %s", response)
 
     def send_data(self):
         """
@@ -787,7 +786,7 @@ class CoreClient:
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
         logging.info(
-            "Add node(%s) to session(%s), coordinates(%s, %s)",
+            "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
             self.session_id,
             x,
@@ -963,7 +962,7 @@ class CoreClient:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
         logging.debug(
-            "Get wlan configuration from node %s, Result configuration: %s",
+            "get wlan configuration from node %s, result configuration: %s",
             node_id,
             config,
         )
@@ -975,7 +974,7 @@ class CoreClient:
             response = self.client.get_mobility_config(self.session_id, node_id)
             config = response.config
         logging.debug(
-            "Get mobility config from node %s, Result configuration: %s",
+            "get mobility config from node %s, result configuration: %s",
             node_id,
             config,
         )
@@ -993,7 +992,7 @@ class CoreClient:
             )
             config = response.config
         logging.debug(
-            "Get emane model config: Node id: %s, EMANE model: %s, Interface: %s, Config: %s",
+            "get emane model config: node id: %s, EMANE model: %s, interface: %s, config: %s",
             node_id,
             model,
             interface,
@@ -1009,7 +1008,7 @@ class CoreClient:
         interface: int = None,
     ):
         logging.info(
-            "Set emane model config: Node id: %s, EMANE Model: %s, Interface: %s, Config: %s",
+            "set emane model config: node id: %s, EMANE Model: %s, interface: %s, config: %s",
             node_id,
             model,
             interface,
@@ -1020,7 +1019,7 @@ class CoreClient:
     def copy_node_service(self, _from: int, _to: int):
         services = self.canvas_nodes[_from].core_node.services
         self.canvas_nodes[_to].core_node.services[:] = services
-        logging.debug("Copy node %s service to node %s", _from, _to)
+        logging.debug("copying node %s service to node %s", _from, _to)
 
     def copy_node_config(self, _from: int, _to: int):
         node_type = self.canvas_nodes[_from].core_node.type

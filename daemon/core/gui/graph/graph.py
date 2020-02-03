@@ -216,7 +216,7 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
-            logging.debug("Draw node %s", core_node)
+            logging.debug("drawing node %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
@@ -232,7 +232,7 @@ class CanvasGraph(tk.Canvas):
 
         # draw existing links
         for link in session.links:
-            logging.debug("Draw link: %s", link)
+            logging.debug("drawing link: %s", link)
             canvas_node_one = self.core.canvas_nodes[link.node_one_id]
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
@@ -795,14 +795,14 @@ class CanvasGraph(tk.Canvas):
             self.tag_raise(component)
 
     def update_grid(self):
-        logging.debug("Show grid: %s", self.show_grid.get())
+        logging.debug("updating grid show grid: %s", self.show_grid.get())
         if self.show_grid.get():
             self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
         else:
             self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
     def set_wallpaper(self, filename: str):
-        logging.debug("Set wallpaper: %s", filename)
+        logging.debug("setting wallpaper: %s", filename)
         if filename:
             img = Image.open(filename)
             self.wallpaper = img
@@ -834,7 +834,7 @@ class CanvasGraph(tk.Canvas):
 
     def copy(self):
         if self.selection:
-            logging.debug("Copy %s nodes", len(self.selection))
+            logging.debug("to copy %s nodes", len(self.selection))
             self.to_copy = self.selection.keys()
 
     def paste(self):

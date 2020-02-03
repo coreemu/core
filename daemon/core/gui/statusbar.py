@@ -1,7 +1,6 @@
 """
 status bar
 """
-import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
@@ -72,7 +71,6 @@ class StatusBar(ttk.Frame):
         self.alerts_button.grid(row=0, column=4, sticky="ew")
 
     def click_alerts(self):
-        logging.debug("Click alerts")
         dialog = AlertsDialog(self.app, self.app)
         dialog.show()
 

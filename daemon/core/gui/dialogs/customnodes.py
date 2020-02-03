@@ -219,7 +219,7 @@ class CustomNodesDialog(Dialog):
             image_file = Path(self.image_file).stem
             node_draw = NodeDraw.from_custom(name, image_file, set(self.services))
             logging.info(
-                "Created new custom node (%s), image file (%s), services: (%s)",
+                "created new custom node (%s), image file (%s), services: (%s)",
                 name,
                 image_file,
                 self.services,
@@ -239,7 +239,7 @@ class CustomNodesDialog(Dialog):
             node_draw.image = self.image
             node_draw.services = self.services
             logging.debug(
-                "Edit custom node (%s), image: (%s), services (%s)",
+                "edit custom node (%s), image: (%s), services (%s)",
                 name,
                 self.image_file,
                 self.services,

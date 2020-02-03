@@ -110,11 +110,9 @@ class MenuAction:
         dialog.show()
 
     def help_core_github(self):
-        logging.debug("Core github")
         webbrowser.open_new("https://github.com/coreemu/core")
 
     def help_core_documentation(self):
-        logging.debug("Core documentation")
         webbrowser.open_new("http://coreemu.github.io/core/")
 
     def session_options(self):
@@ -142,12 +140,10 @@ class MenuAction:
         dialog.show()
 
     def show_about(self):
-        logging.debug("Click about")
         dialog = AboutDialog(self.app, self.app)
         dialog.show()
 
     def throughput(self):
-        logging.debug("Click throughput")
         if not self.app.core.handling_throughputs:
             self.app.core.enable_throughputs()
         else:
