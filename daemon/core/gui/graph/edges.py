@@ -213,7 +213,6 @@ class CanvasEdge:
         self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
 
     def create_context(self, event: tk.Event):
-        logging.debug("create link context")
         context = tk.Menu(self.canvas)
         themes.style_menu(context)
         context.add_command(label="Configure", command=self.configure)
@@ -227,6 +226,5 @@ class CanvasEdge:
         context.post(event.x_root, event.y_root)
 
     def configure(self):
-        logging.debug("link configuration")
         dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
         dialog.show()

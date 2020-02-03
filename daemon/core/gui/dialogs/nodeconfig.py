@@ -52,7 +52,6 @@ class NodeConfigDialog(Dialog):
         """
         create an instance of node configuration
         """
-        logging.debug("Node configuration for %s", canvas_node.core_node.name)
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Configuration", modal=True
         )

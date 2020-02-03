@@ -1,7 +1,6 @@
 """
 mobility configuration
 """
-import logging
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
@@ -21,7 +20,6 @@ class MobilityConfigDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", canvas_node: "CanvasNode"
     ):
-        logging.debug("Mobility configuration for %s", canvas_node.core_node.name)
         super().__init__(
             master,
             app,

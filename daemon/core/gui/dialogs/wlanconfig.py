@@ -2,7 +2,6 @@
 wlan configuration
 """
 
-import logging
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
@@ -22,7 +21,6 @@ class WlanConfigDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", canvas_node: "CanvasNode"
     ):
-        logging.debug("Wlan Configuration for %s", canvas_node.core_node.name)
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Wlan Configuration", modal=True
         )

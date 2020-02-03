@@ -86,7 +86,6 @@ class Shape:
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
             )
-            logging.debug("Create oval, id(%s)", self.id)
             self.draw_shape_text()
         elif self.shape_type == ShapeType.RECTANGLE:
             self.id = self.canvas.create_rectangle(
@@ -100,7 +99,6 @@ class Shape:
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
             )
-            logging.debug("Create rectangle, id(%s)", self.id)
             self.draw_shape_text()
         elif self.shape_type == ShapeType.TEXT:
             font = self.get_font()
@@ -112,7 +110,6 @@ class Shape:
                 fill=self.shape_data.text_color,
                 font=font,
             )
-            logging.debug("Create text, id(%s)", self.id)
         else:
             logging.error("unknown shape type: %s", self.shape_type)
         self.created = True
@@ -147,7 +144,6 @@ class Shape:
     def shape_complete(self, x: float, y: float):
         for component in tags.ABOVE_SHAPE:
             self.canvas.tag_raise(component)
-        logging.debug("Complete shape, id(%s)", self.id)
         s = ShapeDialog(self.app, self.app, self)
         s.show()
 

@@ -42,9 +42,6 @@ class CanvasNode:
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
-        logging.debug(
-            "Draw canvas node for node(%s), canvas id: %s", core_node.name, self.id
-        )
         text_font = font.Font(family="TkIconFont", size=12)
         label_y = self._get_label_y()
         self.text_id = self.canvas.create_text(
