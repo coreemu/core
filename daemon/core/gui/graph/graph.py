@@ -856,6 +856,11 @@ class CanvasGraph(tk.Canvas):
             node = CanvasNode(
                 self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
             )
+
+            # add new node to modified_service_nodes set if that set contains the to_copy node
+            if self.app.core.service_been_modified(core_node.id):
+                self.app.core.modified_service_nodes.add(copy.id)
+
             copy_map[canvas_nid] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node

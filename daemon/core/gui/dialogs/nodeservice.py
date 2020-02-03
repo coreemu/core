@@ -36,8 +36,14 @@ class NodeServiceDialog(Dialog):
             services = canvas_node.core_node.services
             model = canvas_node.core_node.model
             if len(services) == 0:
-                if not NodeUtils.is_custom(canvas_node.core_node.model):
+                # not custom node type and node's services haven't been modified before
+                if not NodeUtils.is_custom(
+                    canvas_node.core_node.model
+                ) and not self.app.core.service_been_modified(self.node_id):
                     services = set(self.app.core.default_services[model])
+                # services of default type nodes were modified to be empty
+                elif canvas_node.core_node.id in self.app.core.modified_service_nodes:
+                    services = set()
                 else:
                     services = set(
                         NodeUtils.get_custom_node_services(self.app.guiconfig, model)
@@ -141,12 +147,14 @@ class NodeServiceDialog(Dialog):
             )
 
     def click_save(self):
+        # if node is custom type or current services are not the default services then set core node services and add node to modified services node set
         if (
             self.canvas_node.core_node.model not in self.app.core.default_services
             or self.current_services
             != self.app.core.default_services[self.canvas_node.core_node.model]
         ):
             self.canvas_node.core_node.services[:] = self.current_services
+            self.app.core.modified_service_nodes.add(self.canvas_node.core_node.id)
         else:
             if len(self.canvas_node.core_node.services) > 0:
                 self.canvas_node.core_node.services[:] = []
