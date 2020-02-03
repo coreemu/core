@@ -248,7 +248,6 @@ class CanvasNode:
         dialog.show()
 
     def show_mobility_player(self):
-        logging.debug("Mobility player for %s", self.core_node.name)
         self.canvas.context = None
         mobility_player = self.app.core.mobility_players[self.core_node.id]
         mobility_player.show()

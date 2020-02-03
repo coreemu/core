@@ -253,7 +253,6 @@ class CustomNodesDialog(Dialog):
         if self.selected and self.selected in self.app.core.custom_nodes:
             self.nodes_list.listbox.delete(self.selected_index)
             del self.app.core.custom_nodes[self.selected]
-            logging.debug("Delete custom node (%s)", self.selected)
             self.reset_values()
             self.nodes_list.listbox.selection_clear(0, tk.END)
             self.nodes_list.listbox.event_generate("<<ListboxSelect>>")

@@ -544,14 +544,13 @@ class CanvasGraph(tk.Canvas):
                     node = self.nodes[selected]
                     self.select_object(node.id)
                     self.selected = selected
-                    logging.info(
+                    logging.debug(
                         "selected node(%s), coords: (%s, %s)",
                         node.core_node.name,
                         node.core_node.position.x,
                         node.core_node.position.y,
                     )
         else:
-            logging.debug("create selection box")
             if self.mode == GraphMode.SELECT:
                 shape = Shape(self.app, self, ShapeType.RECTANGLE, x, y)
                 self.select_box = shape
@@ -839,7 +838,6 @@ class CanvasGraph(tk.Canvas):
             self.to_copy = self.selection.keys()
 
     def paste(self):
-        logging.debug("Paste")
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over

@@ -2,7 +2,6 @@
 copy service config dialog
 """
 
-import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, Tuple
@@ -91,7 +90,6 @@ class CopyServiceConfigDialog(Dialog):
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
 
     def click_copy(self):
-        logging.debug("click copy")
         selected = self.tree.selection()
         if selected:
             item = self.tree.item(selected[0])

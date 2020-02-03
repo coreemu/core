@@ -1,7 +1,6 @@
 """
 link configuration
 """
-import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Union
@@ -248,7 +247,6 @@ class LinkConfigurationDialog(Dialog):
         self.color_button.config(background=color)
 
     def click_apply(self):
-        logging.debug("click apply")
         self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
         self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
         link = self.edge.link
@@ -324,8 +322,6 @@ class LinkConfigurationDialog(Dialog):
         self.destroy()
 
     def change_symmetry(self):
-        logging.debug("change symmetry")
-
         if self.is_symmetric:
             self.is_symmetric = False
             self.symmetry_var.set("<<")
