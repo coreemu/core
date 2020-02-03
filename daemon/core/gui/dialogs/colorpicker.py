@@ -1,7 +1,6 @@
 """
 custom color picker
 """
-import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any
@@ -175,7 +174,6 @@ class ColorPickerDialog(Dialog):
         self.hex.trace_add("write", self.update_color)
 
     def button_ok(self):
-        logging.debug("not implemented")
         self.color = self.hex.get()
         self.destroy()
 

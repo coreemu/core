@@ -33,9 +33,11 @@ class MenuAction:
         self.canvas = app.canvas
 
     def cleanup_old_session(self, session_id):
-        logging.info("cleaning up old session")
-        self.app.core.stop_session()
+        response = self.app.core.stop_session()
         self.app.core.delete_session(session_id)
+        logging.info(
+            "Stop session(%s) and delete it, result: %s", session_id, response.result
+        )
 
     def prompt_save_running_session(self, quitapp: bool = False):
         """
@@ -66,7 +68,6 @@ class MenuAction:
         self.prompt_save_running_session(quitapp=True)
 
     def file_save_as_xml(self, event: tk.Event = None):
-        logging.info("menuaction.py file_save_as_xml()")
         init_dir = self.app.core.xml_dir
         if not init_dir:
             init_dir = str(XMLS_PATH)
@@ -83,14 +84,12 @@ class MenuAction:
         init_dir = self.app.core.xml_dir
         if not init_dir:
             init_dir = str(XMLS_PATH)
-        logging.info("menuaction.py file_open_xml()")
         file_path = filedialog.askopenfilename(
             initialdir=init_dir,
             title="Open",
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
         if file_path:
-            logging.info("opening xml: %s", file_path)
             self.app.core.xml_file = file_path
             self.app.core.xml_dir = str(os.path.dirname(file_path))
             self.prompt_save_running_session()
@@ -111,28 +110,30 @@ class MenuAction:
         dialog.show()
 
     def help_core_github(self):
+        logging.debug("Core github")
         webbrowser.open_new("https://github.com/coreemu/core")
 
     def help_core_documentation(self):
+        logging.debug("Core documentation")
         webbrowser.open_new("http://coreemu.github.io/core/")
 
     def session_options(self):
-        logging.debug("Click session options")
+        logging.debug("Click options")
         dialog = SessionOptionsDialog(self.app, self.app)
         dialog.show()
 
     def session_change_sessions(self):
-        logging.debug("Click session change sessions")
+        logging.debug("Click change sessions")
         dialog = SessionsDialog(self.app, self.app)
         dialog.show()
 
     def session_hooks(self):
-        logging.debug("Click session hooks")
+        logging.debug("Click hooks")
         dialog = HooksDialog(self.app, self.app)
         dialog.show()
 
     def session_servers(self):
-        logging.debug("Click session emulation servers")
+        logging.debug("Click emulation servers")
         dialog = ServersDialog(self.app, self.app)
         dialog.show()
 
@@ -141,24 +142,23 @@ class MenuAction:
         dialog.show()
 
     def show_about(self):
+        logging.debug("Click about")
         dialog = AboutDialog(self.app, self.app)
         dialog.show()
 
     def throughput(self):
+        logging.debug("Click throughput")
         if not self.app.core.handling_throughputs:
             self.app.core.enable_throughputs()
         else:
             self.app.core.cancel_throughputs()
 
     def copy(self, event: tk.Event = None):
-        logging.debug("copy")
         self.app.canvas.copy()
 
     def paste(self, event: tk.Event = None):
-        logging.debug("paste")
         self.app.canvas.paste()
 
     def config_throughput(self):
-        logging.debug("not implemented")
         dialog = ThroughputDialog(self.app, self.app)
         dialog.show()

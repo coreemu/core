@@ -163,6 +163,7 @@ class Shape:
             self.canvas.move(self.text_id, x_offset, y_offset)
 
     def delete(self):
+        logging.debug("Delete shape, id(%s)", self.id)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 
