@@ -61,6 +61,9 @@ class CoreEmu:
         self.service_manager = ConfigServiceManager()
         config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
         self.service_manager.load(config_services_path)
+        custom_dir = self.config.get("custom_config_services_dir")
+        if custom_dir:
+            self.service_manager.load(custom_dir)
 
         # catch exit event
         atexit.register(self.shutdown)
