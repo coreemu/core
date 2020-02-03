@@ -105,7 +105,7 @@ class Toolbar(ttk.Frame):
         self.create_annotation_button()
 
     def design_select(self, button: ttk.Button):
-        logging.info("selecting design button: %s", button)
+        logging.debug("selecting design button: %s", button)
         self.select_button.state(["!pressed"])
         self.link_button.state(["!pressed"])
         self.node_button.state(["!pressed"])
@@ -114,7 +114,7 @@ class Toolbar(ttk.Frame):
         button.state(["pressed"])
 
     def runtime_select(self, button: ttk.Button):
-        logging.info("selecting runtime button: %s", button)
+        logging.debug("selecting runtime button: %s", button)
         self.runtime_select_button.state(["!pressed"])
         self.stop_button.state(["!pressed"])
         self.plot_button.state(["!pressed"])
