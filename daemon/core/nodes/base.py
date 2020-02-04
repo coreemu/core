@@ -284,6 +284,7 @@ class CoreNodeBase(NodeBase):
         self.config_services = {}
         self.nodedir = None
         self.tmpnodedir = False
+        self.up = False
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
@@ -503,7 +504,6 @@ class CoreNode(CoreNodeBase):
         )
         self.client = None
         self.pid = None
-        self.up = False
         self.lock = threading.RLock()
         self._mounts = []
         self.bootsh = bootsh
