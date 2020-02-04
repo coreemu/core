@@ -24,6 +24,7 @@ class Menubar(tk.Menu):
         self.master.config(menu=self)
         self.app = app
         self.menuaction = action.MenuAction(app, master)
+        self.recent_menu = None
         self.draw()
 
     def draw(self):
@@ -58,9 +59,12 @@ class Menubar(tk.Menu):
         menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
         self.app.bind_all("<Control-s>", self.save)
 
-        # some hard code values for testing
-        recent = tk.Menu(menu)
-        menu.add_cascade(label="Recent files", menu=recent)
+        self.recent_menu = tk.Menu(menu)
+        for i in self.app.guiconfig["recentfiles"]:
+            self.recent_menu.add_command(
+                label=i, command=partial(self.open_recent_files, i)
+            )
+        menu.add_cascade(label="Recent files", menu=self.recent_menu)
         menu.add_separator()
         menu.add_command(label="Export Python script...", state=tk.DISABLED)
         menu.add_command(label="Execute XML or Python script...", state=tk.DISABLED)
@@ -421,6 +425,13 @@ class Menubar(tk.Menu):
             self.menuaction.open_xml_task(filename)
         else:
             logging.warning("File does not exist %s", filename)
+
+    def update_recent_files(self):
+        self.recent_menu.delete(0, tk.END)
+        for i in self.app.guiconfig["recentfiles"]:
+            self.recent_menu.add_command(
+                label=i, command=partial(self.open_recent_files, i)
+            )
 
     def save(self, event=None):
         xml_file = self.app.core.xml_file
