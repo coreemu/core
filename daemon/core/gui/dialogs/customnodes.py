@@ -218,6 +218,12 @@ class CustomNodesDialog(Dialog):
         if name not in self.app.core.custom_nodes:
             image_file = Path(self.image_file).stem
             node_draw = NodeDraw.from_custom(name, image_file, set(self.services))
+            logging.info(
+                "created new custom node (%s), image file (%s), services: (%s)",
+                name,
+                image_file,
+                self.services,
+            )
             self.app.core.custom_nodes[name] = node_draw
             self.nodes_list.listbox.insert(tk.END, name)
             self.reset_values()
@@ -232,6 +238,12 @@ class CustomNodesDialog(Dialog):
             node_draw.image_file = Path(self.image_file).stem
             node_draw.image = self.image
             node_draw.services = self.services
+            logging.debug(
+                "edit custom node (%s), image: (%s), services (%s)",
+                name,
+                self.image_file,
+                self.services,
+            )
             self.app.core.custom_nodes[name] = node_draw
             self.nodes_list.listbox.delete(self.selected_index)
             self.nodes_list.listbox.insert(self.selected_index, name)

@@ -1,7 +1,6 @@
 """
 emane configuration
 """
-import logging
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
@@ -223,7 +222,6 @@ class EmaneConfigDialog(Dialog):
         draw emane model configuration
         """
         model_name = self.emane_model.get()
-        logging.info("configuring emane model: %s", model_name)
         dialog = EmaneModelDialog(
             self, self.app, self.canvas_node.core_node, model_name
         )

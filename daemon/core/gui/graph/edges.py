@@ -25,6 +25,7 @@ class CanvasWirelessEdge:
         dst: int,
         canvas: "CanvasGraph",
     ):
+        logging.debug("Draw wireless link from node %s to node %s", src, dst)
         self.token = token
         self.src = src
         self.dst = dst
@@ -167,6 +168,7 @@ class CanvasEdge:
         self.check_wireless()
         self.canvas.tag_raise(self.src)
         self.canvas.tag_raise(self.dst)
+        logging.debug("Draw wired link from node %s to node %s", self.src, dst)
 
     def is_wireless(self) -> [bool, bool]:
         src_node = self.canvas.nodes[self.src]
@@ -198,6 +200,7 @@ class CanvasEdge:
                 src_node.add_antenna()
 
     def delete(self):
+        logging.debug("Delete canvas edge, id: %s", self.id)
         self.canvas.delete(self.id)
         if self.link:
             self.canvas.delete(self.text_src)
@@ -210,7 +213,6 @@ class CanvasEdge:
         self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
 
     def create_context(self, event: tk.Event):
-        logging.debug("create link context")
         context = tk.Menu(self.canvas)
         themes.style_menu(context)
         context.add_command(label="Configure", command=self.configure)
@@ -224,6 +226,5 @@ class CanvasEdge:
         context.post(event.x_root, event.y_root)
 
     def configure(self):
-        logging.debug("link configuration")
         dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
         dialog.show()
