@@ -409,7 +409,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="About", command=self.menuaction.show_about)
         self.add_cascade(label="Help", menu=menu)
 
-    def save(self):
+    def save(self, event=None):
         xml_file = self.app.core.xml_file
         if xml_file:
             self.app.core.save_xml(xml_file)

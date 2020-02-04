@@ -158,3 +158,20 @@ class MenuAction:
     def config_throughput(self):
         dialog = ThroughputDialog(self.app, self.app)
         dialog.show()
+
+    def add_recent_file_to_gui_config(self, file_path):
+        recent_files = self.app.guiconfig["recentfiles"]
+        num_files = len(recent_files)
+        if num_files == 0:
+            recent_files.insert(0, file_path)
+        elif 0 < num_files <= 3:
+            if file_path in recent_files:
+                recent_files.remove(file_path)
+                recent_files.insert(0, file_path)
+            else:
+                if num_files == 3:
+                    recent_files.pop()
+                recent_files.insert(0, file_path)
+        else:
+            logging.error("unexpected number of recent files")
+        self.app.save_config()
