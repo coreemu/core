@@ -15,18 +15,18 @@ def parse(name):
         help="number of nodes to create in this example",
     )
     parser.add_argument(
-        "-t",
-        "--time",
+        "-c",
+        "--count",
         type=int,
         default=DEFAULT_TIME,
-        help="example iperf run time in seconds",
+        help="number of time to ping node",
     )
 
     args = parser.parse_args()
 
     if args.nodes < 2:
         parser.error(f"invalid min number of nodes: {args.nodes}")
-    if args.time < 1:
-        parser.error(f"invalid test time: {args.time}")
+    if args.count < 1:
+        parser.error(f"invalid ping count({args.count}), count must be greater than 0")
 
     return args

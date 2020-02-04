@@ -289,7 +289,6 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
         CoreInterface.__init__(self, session, self, name, mtu, server)
-        self.up = False
         self.lock = threading.RLock()
         self.ifindex = None
         # the following are PyCoreNetIf attributes

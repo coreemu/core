@@ -89,12 +89,15 @@ class MenuAction:
             title="Open",
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
-        if file_path:
-            self.app.core.xml_file = file_path
-            self.app.core.xml_dir = str(os.path.dirname(file_path))
+        self.open_xml_task(file_path)
+
+    def open_xml_task(self, filename):
+        if filename:
+            self.app.core.xml_file = filename
+            self.app.core.xml_dir = str(os.path.dirname(filename))
             self.prompt_save_running_session()
             self.app.statusbar.progress_bar.start(5)
-            task = BackgroundTask(self.app, self.app.core.open_xml, args=(file_path,))
+            task = BackgroundTask(self.app, self.app.core.open_xml, args=(filename,))
             task.start()
 
     def gui_preferences(self):

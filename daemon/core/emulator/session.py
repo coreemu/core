@@ -1556,9 +1556,10 @@ class Session:
             funcs = []
             for node_id in self.nodes:
                 node = self.nodes[node_id]
-                if isinstance(node, CoreNodeBase):
-                    args = (node,)
-                    funcs.append((self.services.stop_services, args, {}))
+                if not isinstance(node, CoreNodeBase) or not node.up:
+                    continue
+                args = (node,)
+                funcs.append((self.services.stop_services, args, {}))
             utils.threadpool(funcs)
 
         # shutdown emane
