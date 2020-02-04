@@ -222,6 +222,7 @@ class LinuxNetClient:
         self.run(f"{IP_BIN} link set {name} type bridge stp_state 0")
         self.run(f"{IP_BIN} link set {name} type bridge forward_delay 0")
         self.run(f"{IP_BIN} link set {name} type bridge mcast_snooping 0")
+        self.run(f"{IP_BIN} link set {name} type bridge group_fwd_mask 65528")
         self.device_up(name)
 
     def delete_bridge(self, name: str) -> None:
