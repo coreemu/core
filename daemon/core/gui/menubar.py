@@ -59,14 +59,7 @@ class Menubar(tk.Menu):
         self.app.bind_all("<Control-s>", self.save)
 
         # some hard code values for testing
-        sample_xmls = [
-            "sample1.xml",
-            "/home/ncs/.coretk/xmls/sample1.xml",
-            "sample1.xml",
-        ]
         recent = tk.Menu(menu)
-        for i in sample_xmls:
-            recent.add_command(label=i, command=partial(self.open_recent_files, i))
         menu.add_cascade(label="Recent files", menu=recent)
         menu.add_separator()
         menu.add_command(label="Export Python script...", state=tk.DISABLED)
