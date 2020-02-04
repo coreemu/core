@@ -110,6 +110,8 @@ class CoreClient:
         self.xml_dir = None
         self.xml_file = None
 
+        self.modified_service_nodes = set()
+
     def reset(self):
         # helpers
         self.interfaces_manager.reset()
@@ -124,6 +126,7 @@ class CoreClient:
         self.emane_config = None
         self.service_configs.clear()
         self.file_configs.clear()
+        self.modified_service_nodes.clear()
         for mobility_player in self.mobility_players.values():
             mobility_player.handle_close()
         self.mobility_players.clear()
@@ -806,6 +809,9 @@ class CoreClient:
                 logging.error("unknown node: %s", node_id)
                 continue
             del self.canvas_nodes[node_id]
+
+            self.modified_service_nodes.discard(node_id)
+
             if node_id in self.mobility_configs:
                 del self.mobility_configs[node_id]
             if node_id in self.wlan_configs:
@@ -1046,3 +1052,6 @@ class CoreClient:
             config = self.emane_model_configs.get(_from)
             if config:
                 self.emane_model_configs[_to] = config
+
+    def service_been_modified(self, node_id: int) -> bool:
+        return node_id in self.modified_service_nodes
