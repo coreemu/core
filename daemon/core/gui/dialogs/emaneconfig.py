@@ -65,14 +65,17 @@ class EmaneModelDialog(Dialog):
         self.model = f"emane_{model}"
         self.interface = interface
         self.config_frame = None
+        self.error = False
         try:
             self.config = self.app.core.get_emane_model_config(
                 self.node.id, self.model, self.interface
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.app, self.app)
+            self.error = True
             self.destroy()
-        self.draw()
+        if not self.error:
+            self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -225,7 +228,8 @@ class EmaneConfigDialog(Dialog):
         dialog = EmaneModelDialog(
             self, self.app, self.canvas_node.core_node, model_name
         )
-        dialog.show()
+        if not dialog.error:
+            dialog.show()
 
     def emane_model_change(self, event: tk.Event):
         """

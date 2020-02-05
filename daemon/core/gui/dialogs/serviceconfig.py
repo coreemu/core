@@ -64,10 +64,16 @@ class ServiceConfigDialog(Dialog):
         self.original_service_files = {}
         self.temp_service_files = {}
         self.modified_files = set()
-        self.load()
-        self.draw()
 
-    def load(self):
+        self.error = True
+
+        load_result = self.load()
+        if load_result:
+            self.draw()
+            self.error = False
+
+    def load(self) -> bool:
+        result = False
         try:
             self.app.core.create_nodes_and_links()
             default_config = self.app.core.get_node_service(
@@ -108,8 +114,10 @@ class ServiceConfigDialog(Dialog):
             ):
                 for file, data in file_configs[self.node_id][self.service_name].items():
                     self.temp_service_files[file] = data
+            result = True
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.master, self.app)
+        return result
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -444,7 +452,7 @@ class ServiceConfigDialog(Dialog):
             all_current = current_listbox.get(0, tk.END)
             current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
         self.destroy()
 
     def display_service_file_data(self, event: tk.Event):

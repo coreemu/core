@@ -2,7 +2,7 @@ import logging
 import time
 import tkinter as tk
 from functools import partial
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from tkinter.font import Font
 from typing import TYPE_CHECKING, Callable
 
@@ -262,9 +262,13 @@ class Toolbar(ttk.Frame):
             self.set_runtime()
             self.app.core.set_metadata()
             self.app.core.show_mobility_players()
-        else:
-            message = "\n".join(response.exceptions)
-            messagebox.showerror("Start Error", message)
+        # else:
+        #     message = "\n".join(response.exceptions)
+        #     print("start error")
+        #     print(response)
+        #     dialog = ErrorDialog(self.app, self.app, "Start ERROR", message)
+        #     dialog.show()
+        # messagebox.showerror("Start Error", message)
 
     def set_runtime(self):
         self.runtime_frame.tkraise()
@@ -431,8 +435,10 @@ class Toolbar(ttk.Frame):
         message = f"Stopped in {total:.3f} seconds"
         self.app.statusbar.set_status(message)
         self.app.canvas.stopped_session()
-        if not response.result:
-            messagebox.showerror("Stop Error", "Errors stopping session")
+        # if not response.result:
+        #     dialog = ErrorDialog(self.app, self.app, "Stop ERROR", "Error stopping session")
+        #     dialog.show()
+        #     # messagebox.showerror("Stop Error", "Errors stopping session")
 
     def update_annotation(self, image: "ImageTk.PhotoImage", shape_type: ShapeType):
         logging.debug("clicked annotation: ")
