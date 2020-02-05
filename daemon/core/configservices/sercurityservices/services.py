@@ -1,6 +1,10 @@
 from typing import Any, Dict
 
+import netaddr
+
+from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
+from core.emulator.enumerations import ConfigDataTypes
 
 GROUP_NAME = "Security"
 
@@ -16,11 +20,30 @@ class VpnClient(ConfigService):
     validate = ["pidof openvpn"]
     shutdown = ["killall openvpn"]
     validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
+    default_configs = [
+        Configuration(
+            _id="keydir",
+            _type=ConfigDataTypes.STRING,
+            label="Key Dir",
+            default="/etc/core/keys",
+        ),
+        Configuration(
+            _id="keyname",
+            _type=ConfigDataTypes.STRING,
+            label="Key Name",
+            default="client1",
+        ),
+        Configuration(
+            _id="server",
+            _type=ConfigDataTypes.STRING,
+            label="Server",
+            default="10.0.2.10",
+        ),
+    ]
     modes = {}
 
 
-class VPNServer(ConfigService):
+class VpnServer(ConfigService):
     name = "VPNServer"
     group = GROUP_NAME
     directories = []
@@ -31,8 +54,38 @@ class VPNServer(ConfigService):
     validate = ["pidof openvpn"]
     shutdown = ["killall openvpn"]
     validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
+    default_configs = [
+        Configuration(
+            _id="keydir",
+            _type=ConfigDataTypes.STRING,
+            label="Key Dir",
+            default="/etc/core/keys",
+        ),
+        Configuration(
+            _id="keyname",
+            _type=ConfigDataTypes.STRING,
+            label="Key Name",
+            default="server",
+        ),
+        Configuration(
+            _id="subnet",
+            _type=ConfigDataTypes.STRING,
+            label="Subnet",
+            default="10.0.200.0",
+        ),
+    ]
     modes = {}
+
+    def data(self) -> Dict[str, Any]:
+        address = None
+        for ifc in self.node.netifs():
+            if getattr(ifc, "control", False):
+                continue
+            for x in ifc.addrlist:
+                addr = x.split("/")[0]
+                if netaddr.valid_ipv4(addr):
+                    address = addr
+        return dict(address=address)
 
 
 class IPsec(ConfigService):
