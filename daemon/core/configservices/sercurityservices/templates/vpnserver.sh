@@ -73,7 +73,7 @@ cat << EOF
 # openvpn server config
 local $vpnserver
 server $vpnsubnet 255.255.255.0
-push redirect-gateway def1
+push "redirect-gateway def1"
 EOF
 )> $PWD/server.conf
 
