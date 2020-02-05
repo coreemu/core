@@ -21,68 +21,18 @@ shutdown commands, and meta-data associated with a node.
 
 ## Available Services
 
-* [BIRD](services/bird.md)
-  * BGP
-  * OSPF
-  * RADV
-  * RIP
-  * Static
-* [Docker](services/docker.md)
-* [EMANE](services/emane.md)
-  * Transport Service
-* [FRR](services/frr.md)
-* [NRL](services/nrl.md)
-  * arouted
-  * MGEN_Sink
-  * MgenActor
-  * NHDP
-  * OLSR
-  * OLSRORG
-  * OLSRv2
-  * SMF
-* [Quagga](services/quagga.md)
-  * BABEL
-  * BGP
-  * OSPFv2
-  * OSPFv3
-  * OSPFv3 MDR
-  * RIP
-  * RIPNG
-  * XPIMD
-  * Zebra
-* [SDN](services/sdn.md)
-  * OVS
-  * RYU
-* [Security](services/security.md)
-  * Firewall
-  * IPsec
-  * NAT
-  * VPNClient
-  * VPNServer
-* [Utility](services/utility.md)
-  * ATD
-  * Default Routing
-  * Default Muticast Routing
-  * DHCP
-  * DHCP Client
-  * FTP
-  * HTTP
-  * IP Forward
-  * PCAP
-  * RADVD
-  * SSH
-  * Static Routing
-  * UCARP
-* [XORP](services/xorp.md)
-  * BGP
-  * OLSR
-  * OSPFv2
-  * OPSFv3
-  * PIMSM4
-  * PIMSM6
-  * RIP
-  * RIPNG
-  * Router Manager
+| Service Group | Services |
+|---|---|
+|[BIRD](services/bird.md)|BGP, OSPF, RADV, RIP, Static|
+|[Docker](services/docker.md)|Docker|
+|[EMANE](services/emane.md)|Transport Service|
+|[FRR](services/frr.md)|BABEL, BGP, OSPFv2, OSPFv3, PIMD, RIP, RIPNG, Zebra|
+|[NRL](services/nrl.md)|arouted, MGEN Sink, MGEN Actor, NHDP, OLSR, OLSRORG, OLSRv2, SMF|
+|[Quagga](services/quagga.md)|BABEL, BGP, OSPFv2, OSPFv3, OSPFv3 MDR, RIP, RIPNG, XPIMD, Zebra|
+|[SDN](services/sdn.md)|OVS, RYU|
+|[Security](services/security.md)|Firewall, IPsec, NAT, VPN Client, VPN Server|
+|[Utility](services/utility.md)|ATD, Routing Utils, DHCP, FTP, IP Forward, PCAP, RADVD, SSF, UCARP|
+|[XORP](services/xorp.md)|BGP, OLSR, OSPFv2, OSPFv3, PIMSM4, PIMSM6, RIP, RIPNG, Router Manager|
 
 ## Node Types and Default Services
 
