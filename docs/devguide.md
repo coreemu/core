@@ -25,7 +25,7 @@ the core-daemon for development based on Ubuntu 18.04.
 ### Install Dependencies
 
 ```shell
-sudo apt install  -y automake pkg-config gcc libev-dev ebtables gawk \
+sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk \
         python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
 ```
 
@@ -82,10 +82,10 @@ To leverage the dev environment you need python 3.6+.
 cd $REPO/daemon
 
 # install pipenv
-sudo pip3 install pipenv
+sudo python3 -m pip install pipenv
 
 # setup a virtual environment and install all required development dependencies
-pipenv install --dev
+python3 -m pipenv install --dev
 ```
 
 ### Setup pre-commit
@@ -95,7 +95,7 @@ python utilities will be ran to check validity of code, potentially failing and 
 one to review changes being made by tools ro the fix the issue noted. Then add the changes and commit again.
 
 ```shell
-pipenv run pre-commit install
+python3 -m pipenv run pre-commit install
 ```
 
 ### Adding EMANE to Pipenv
@@ -118,7 +118,7 @@ make -j8
 
 # install emane binding in pipenv
 # NOTE: this will mody pipenv Pipfiles and we do not want that, use git checkout -- Pipfile*, to remove changes
-pipenv install $EMANEREPO/src/python
+python3 -m pipenv pip install $EMANEREPO/src/python
 ```
 
 ### Running CORE
@@ -127,13 +127,13 @@ This will run the core-daemon server using the configuration files within the re
 
 ```shell
 # runs for daemon
-sudo pipenv run core
+sudo python3 -m pipenv run core
 
 # runs coretk gui
-pipenv run coretk
+python3 -m pipenv run coretk
 
 # runs mocked unit tests
-pipenv run test-mock
+python3 -m pipenv run test-mock
 ```
 
 ## Linux Network Namespace Commands
