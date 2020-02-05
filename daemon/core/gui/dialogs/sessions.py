@@ -25,9 +25,9 @@ class SessionsDialog(Dialog):
         self.selected = False
         self.selected_id = None
         self.tree = None
-        self.error = False
+        self.has_error = False
         self.sessions = self.get_sessions()
-        if not self.error:
+        if not self.has_error:
             self.draw()
 
     def get_sessions(self) -> Iterable[core_pb2.SessionSummary]:
@@ -37,7 +37,7 @@ class SessionsDialog(Dialog):
             return response.sessions
         except grpc.RpcError as e:
             show_grpc_error(e, self.app, self.app)
-            self.error = True
+            self.has_error = True
             self.destroy()
 
     def draw(self):

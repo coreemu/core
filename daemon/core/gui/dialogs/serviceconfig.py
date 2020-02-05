@@ -65,15 +65,13 @@ class ServiceConfigDialog(Dialog):
         self.temp_service_files = {}
         self.modified_files = set()
 
-        self.error = True
+        self.has_error = False
 
-        load_result = self.load()
-        if load_result:
+        self.load()
+        if not self.has_error:
             self.draw()
-            self.error = False
 
     def load(self) -> bool:
-        result = False
         try:
             self.app.core.create_nodes_and_links()
             default_config = self.app.core.get_node_service(
@@ -114,10 +112,9 @@ class ServiceConfigDialog(Dialog):
             ):
                 for file, data in file_configs[self.node_id][self.service_name].items():
                     self.temp_service_files[file] = data
-            result = True
         except grpc.RpcError as e:
+            self.has_error = True
             show_grpc_error(e, self.master, self.app)
-        return result
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)

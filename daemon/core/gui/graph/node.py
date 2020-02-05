@@ -240,7 +240,7 @@ class CanvasNode:
     def show_wlan_config(self):
         self.canvas.context = None
         dialog = WlanConfigDialog(self.app, self.app, self)
-        if not dialog.error:
+        if not dialog.has_error:
             dialog.show()
 
     def show_mobility_config(self):

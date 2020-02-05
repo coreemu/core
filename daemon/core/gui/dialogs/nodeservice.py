@@ -142,7 +142,7 @@ class NodeServiceDialog(Dialog):
             )
 
             # if error occurred when creating ServiceConfigDialog, don't show the dialog
-            if not dialog.error:
+            if not dialog.has_error:
                 dialog.show()
             else:
                 dialog.destroy()
