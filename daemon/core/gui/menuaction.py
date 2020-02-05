@@ -22,6 +22,8 @@ from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.task import BackgroundTask
 
+MAX_FILES = 3
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -78,6 +80,7 @@ class MenuAction:
             defaultextension=".xml",
         )
         if file_path:
+            self.add_recent_file_to_gui_config(file_path)
             self.app.core.save_xml(file_path)
 
     def file_open_xml(self, event: tk.Event = None):
@@ -93,6 +96,7 @@ class MenuAction:
 
     def open_xml_task(self, filename):
         if filename:
+            self.add_recent_file_to_gui_config(filename)
             self.app.core.xml_file = filename
             self.app.core.xml_dir = str(os.path.dirname(filename))
             self.prompt_save_running_session()
@@ -161,3 +165,21 @@ class MenuAction:
     def config_throughput(self):
         dialog = ThroughputDialog(self.app, self.app)
         dialog.show()
+
+    def add_recent_file_to_gui_config(self, file_path):
+        recent_files = self.app.guiconfig["recentfiles"]
+        num_files = len(recent_files)
+        if num_files == 0:
+            recent_files.insert(0, file_path)
+        elif 0 < num_files <= MAX_FILES:
+            if file_path in recent_files:
+                recent_files.remove(file_path)
+                recent_files.insert(0, file_path)
+            else:
+                if num_files == MAX_FILES:
+                    recent_files.pop()
+                recent_files.insert(0, file_path)
+        else:
+            logging.error("unexpected number of recent files")
+        self.app.save_config()
+        self.app.menubar.update_recent_files()
