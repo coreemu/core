@@ -94,6 +94,7 @@ def check_directory():
         },
         "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
         "nodes": [],
+        "recentfiles": [],
         "observers": [{"name": "hello", "cmd": "echo hello"}],
     }
     save(config)

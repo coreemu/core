@@ -242,8 +242,8 @@ class Sdt:
         if self.sock is None:
             return False
         try:
-            logging.info("sdt: %s", cmdstr)
-            self.sock.sendall(f"{cmdstr}\n")
+            cmd = f"{cmdstr}\n".encode()
+            self.sock.sendall(cmd)
             return True
         except IOError:
             logging.exception("SDT connection error")

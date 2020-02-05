@@ -4,16 +4,16 @@
 # OpenVPN software and a virtual TUN/TAP device.
 
 # directory containing the certificate and key described below
-keydir=/etc/core/keys
+keydir=${config["keydir"]}
 
 # the name used for a "$keyname.crt" certificate and "$keyname.key" private key.
-keyname=client1
+keyname=${config["keyname"]}
 
 # the public IP address of the VPN server this client should connect with
-vpnserver="10.0.2.10"
+vpnserver=${config["server"]}
 
 # optional next hop for adding a static route to reach the VPN server
-nexthop="10.0.1.1"
+#nexthop="10.0.1.1"
 
 # --------- END CUSTOMIZATION --------
 

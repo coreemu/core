@@ -7,29 +7,29 @@
 
 # directory containing the certificate and key described below, in addition to
 # a CA certificate and DH key
-keydir=/etc/core/keys
+keydir=${config["keydir"]}
 
 # the name used for a "$keyname.crt" certificate and "$keyname.key" private key.
-keyname=server2
+keyname=${config["keyname"]}
 
 # the VPN subnet address from which the client VPN IP (for the TUN/TAP)
 # will be allocated
-vpnsubnet=10.0.200.0
+vpnsubnet=${config["subnet"]}
 
 # public IP address of this vpn server (same as VPNClient vpnserver= setting)
-vpnserver=10.0.2.10
+vpnserver=${address}
 
 # optional list of private subnets reachable behind this VPN server
 # each subnet and next hop is separated by a space
 # "<subnet1>,<nexthop1> <subnet2>,<nexthop2> ..."
-privatenets="10.0.11.0,10.0.10.1 10.0.12.0,10.0.10.1"
+#privatenets="10.0.11.0,10.0.10.1 10.0.12.0,10.0.10.1"
 
 # optional list of VPN clients, for statically assigning IP addresses to
 # clients; also, an optional client subnet can be specified for adding static
 # routes via the client
 # Note: VPN addresses x.x.x.0-3 are reserved
 # "<keyname>,<vpnIP>,<subnetIP> <keyname>,<vpnIP>,<subnetIP> ..."
-vpnclients="client1KeyFilename,10.0.200.5,10.0.0.0 client2KeyFilename,,"
+#vpnclients="client1KeyFilename,10.0.200.5,10.0.0.0 client2KeyFilename,,"
 
 # NOTE: you may need to enable the StaticRoutes service on nodes within the
 # private subnet, in order to have routes back to the client.
@@ -73,7 +73,7 @@ cat << EOF
 # openvpn server config
 local $vpnserver
 server $vpnsubnet 255.255.255.0
-push redirect-gateway def1
+push "redirect-gateway def1"
 EOF
 )> $PWD/server.conf
 
