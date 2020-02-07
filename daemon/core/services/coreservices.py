@@ -171,7 +171,7 @@ class ServiceShim:
         return "|".join(vals)
 
     @classmethod
-    def fromvaluelist(cls, service: "CoreService", values: None):
+    def fromvaluelist(cls, service: "CoreService", values: List[str]) -> None:
         """
         Convert list of values into properties for this instantiated
         (customized) service.
