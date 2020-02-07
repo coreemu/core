@@ -1,4 +1,5 @@
 import tkinter as tk
+import webbrowser
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
@@ -41,3 +42,7 @@ class Dialog(tk.Toplevel):
         frame.grid(row=row, sticky="nsew")
         frame.rowconfigure(0, weight=1)
         self.top.rowconfigure(frame.grid_info()["row"], weight=1)
+
+    @classmethod
+    def navigate_link(cls, link: str):
+        webbrowser.open_new(link)

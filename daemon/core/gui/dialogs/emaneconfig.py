@@ -3,6 +3,7 @@ emane configuration
 """
 import tkinter as tk
 import webbrowser
+from enum import Enum
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +19,18 @@ from core.gui.widgets import ConfigFrame
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
+
+
+class EmaneModelEnum(Enum):
+    RFPIPE = "emane_rfpipe"
+    IEEE80211ABG = "emane_ieee80211abg"
+    COMMEFFECT = "emane_commeffect"
+    BYPASS = "emane_bypass"
+    TDMA = "emane_tdma"
+
+
+def get_model(enum_class: EmaneModelEnum):
+    return enum_class.value
 
 
 class GlobalEmaneDialog(Dialog):
@@ -38,13 +51,22 @@ class GlobalEmaneDialog(Dialog):
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
-        for i in range(2):
+        for i in range(3):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
+
+        button = ttk.Button(
+            frame,
+            text="Info Link",
+            command=lambda: self.navigate_link(
+                "https://github.com/adjacentlink/emane/wiki/Configuring-the-Emulator"
+            ),
+        )
+        button.grid(row=0, column=2, sticky="ew")
 
     def click_apply(self):
         self.config_frame.parse_config()
@@ -86,7 +108,7 @@ class EmaneModelDialog(Dialog):
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
-        for i in range(2):
+        for i in range(3):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
@@ -94,12 +116,33 @@ class EmaneModelDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
+        button = ttk.Button(frame, text="Info Link ", command=self.wiki_link)
+        button.grid(row=0, column=2, sticky="ew")
+
     def click_apply(self):
         self.config_frame.parse_config()
         self.app.core.set_emane_model_config(
             self.node.id, self.model, self.config, self.interface
         )
         self.destroy()
+
+    def wiki_link(self):
+        if self.model == get_model(EmaneModelEnum.RFPIPE):
+            self.navigate_link(
+                "https://github.com/adjacentlink/emane/wiki/RF-Pipe-Model"
+            )
+        elif self.model == get_model(EmaneModelEnum.COMMEFFECT):
+            self.navigate_link(
+                "https://github.com/adjacentlink/emane/wiki/Comm-Effect-Model"
+            )
+        elif self.model == get_model(EmaneModelEnum.TDMA):
+            self.navigate_link("https://github.com/adjacentlink/emane/wiki/TDMA-Model")
+        elif self.model == get_model(EmaneModelEnum.IEEE80211ABG):
+            self.navigate_link(
+                "https://github.com/adjacentlink/emane/wiki/IEEE-802.11abg-Model"
+            )
+        else:
+            return
 
 
 class EmaneConfigDialog(Dialog):

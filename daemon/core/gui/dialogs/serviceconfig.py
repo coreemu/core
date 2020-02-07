@@ -65,7 +65,7 @@ class ServiceConfigDialog(Dialog):
         self.temp_service_files = {}
         self.modified_files = set()
         self.load()
-        self.draw()
+        # self.draw()
 
     def load(self):
         try:
@@ -108,8 +108,12 @@ class ServiceConfigDialog(Dialog):
             ):
                 for file, data in file_configs[self.node_id][self.service_name].items():
                     self.temp_service_files[file] = data
+            self.draw()
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            if not self.is_ipsec():
+                show_grpc_error(e)
+            else:
+                self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -127,12 +131,138 @@ class ServiceConfigDialog(Dialog):
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
         self.notebook.grid(sticky="nsew", pady=PADY)
-        self.draw_tab_files()
+        if not self.is_ipsec():
+            self.draw_tab_files()
+        else:
+            self.draw_ipsec_tab()
         self.draw_tab_directories()
         self.draw_tab_startstop()
         self.draw_tab_configuration()
 
         self.draw_buttons()
+
+    def draw_ipsec_tab(self):
+        tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
+        tab.grid(sticky="nsew")
+        tab.columnconfigure(0, weight=1)
+        self.notebook.add(tab, text="IPsec")
+
+        text = (
+            "This IPsec service helper will assist with building an ipsec.sh file (located on the Files tab).\nThe IPsec service builds ESP tunnels between"
+            "the specified peers using the racoon IKEv2\nkeying daemon. You need to provide keys and the addresses of peers, along with the\nsubnet to tunnel."
+        )
+        label = ttk.Label(tab, text=text)
+        label.grid(row=0, column=0, sticky="nsew")
+
+        label_frame = ttk.LabelFrame(tab, text="Keys", padding=FRAME_PAD)
+        label_frame.grid(row=1, column=0, sticky="nsew")
+        label_frame.columnconfigure(0, weight=1)
+        for i in range(3):
+            label_frame.rowconfigure(i, weight=1)
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=0, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=2)
+        frame.columnconfigure(2, weight=1)
+
+        label = ttk.Label(frame, text="Key directory: ")
+        label.grid(row=0, column=0, sticky="ew")
+        entry = ttk.Entry(frame)
+        entry.grid(row=0, column=1, stick="ew")
+        button = ttk.Button(frame, text="...")
+        button.grid(row=0, column=2, sticky="ew")
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=1, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=3)
+        label = ttk.Label(frame, text="Key base name: ")
+        label.grid(row=0, column=0, sticky="ew")
+        entry = ttk.Entry(frame)
+        entry.grid(row=0, column=1, sticky="ew")
+
+        text = (
+            "The (name).pem x509 certificate and (name).key RSA private key need to exist in the\n"
+            "specified directory. These can be generated using the openssl tool. Also, a ca-cert.pem\n"
+            "file should exist in the key directory for the CA that issue the certs."
+        )
+        label = ttk.Label(label_frame, text=text, padding=FRAME_PAD)
+        label.grid(row=2, column=0, sticky="ew")
+
+        label_frame = ttk.LabelFrame(
+            tab, text="IPsec Tunnel Endpoints", padding=FRAME_PAD
+        )
+        label_frame.grid(row=2, column=0, sticky="nsew")
+
+        i = 0
+        text = (
+            "(1) Define tunnel endpoints (select peer node using the button, then select"
+            "address from the list)"
+        )
+        label = ttk.Label(label_frame, text=text, padding=FRAME_PAD)
+        label.grid(row=i, column=0, sticky="nsew")
+        i = i + 1
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=i, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=3)
+        i = i + 1
+        label = ttk.Label(frame, text="Local: ")
+        label.grid(row=0, column=0, sticky="ew")
+        combobox = ttk.Combobox(frame)
+        combobox.grid(row=0, column=1, sticky="ew")
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=i, column=0, sticky="nsew")
+        i = i + 1
+        label = ttk.Label(frame, text="Peer node: (none)")
+        label.grid(row=0, column=0)
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=i, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=3)
+        i = i + 1
+        label = ttk.Label(frame, text="Peer: ")
+        label.grid(row=0, column=0, sticky="ew")
+        combobox = ttk.Combobox(frame)
+        combobox.grid(row=0, column=1, sticky="ew")
+
+        text = "(2) Select endpoints below and add the subnets to be encrypted"
+        label = ttk.Label(label_frame, text=text, padding=FRAME_PAD)
+        label.grid(row=i, column=0, sticky="ew")
+        i = i + i
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=i, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=3)
+        i = i + 1
+        label = ttk.Label(frame, text="Local subnet: ")
+        label.grid(row=0, column=0, sticky="ew")
+        combobox = ttk.Combobox(frame)
+        combobox.grid(row=0, column=1, sticky="ew")
+
+        frame = ttk.Frame(label_frame, padding=FRAME_PAD)
+        frame.grid(row=i, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=3)
+        i = i + 1
+        label = ttk.Label(frame, text="Remote subnet: ")
+        label.grid(row=0, column=0, sticky="ew")
+        combobox = ttk.Combobox(frame)
+        combobox.grid(row=0, column=1, sticky="ew")
+
+        frame = ttk.Frame(tab, padding=FRAME_PAD)
+        frame.grid(row=3, column=0, sticky="nsew")
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        button = ttk.Button(frame, text="Trash")
+        button.grid(row=0, column=0, sticky="ew")
+        button = ttk.Button(frame, text="Generate ipsec.sh")
+        button.grid(row=0, column=1, sticky="ew")
 
     def draw_tab_files(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -342,7 +472,7 @@ class ServiceConfigDialog(Dialog):
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
-        for i in range(4):
+        for i in range(5):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
@@ -352,6 +482,14 @@ class ServiceConfigDialog(Dialog):
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
+        button = ttk.Button(
+            frame,
+            text="Info Link",
+            command=lambda: self.navigate_link(
+                "http://coreemu.github.io/core/services.html"
+            ),
+        )
+        button.grid(row=0, column=4, sticky="ew")
 
     def add_filename(self, event: tk.Event):
         # not worry about it for now
@@ -504,3 +642,6 @@ class ServiceConfigDialog(Dialog):
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)
+
+    def is_ipsec(self):
+        return self.service_name == "IPsec"

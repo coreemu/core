@@ -133,11 +133,12 @@ class NodeServiceDialog(Dialog):
 
     def click_configure(self):
         current_selection = self.current.listbox.curselection()
+        service_name = self.current.listbox.get(current_selection[0])
         if len(current_selection):
             dialog = ServiceConfigDialog(
                 master=self,
                 app=self.app,
-                service_name=self.current.listbox.get(current_selection[0]),
+                service_name=service_name,
                 node_id=self.node_id,
             )
             dialog.show()
