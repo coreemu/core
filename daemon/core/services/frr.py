@@ -208,6 +208,9 @@ bootfrr()
     fi
 
     bootdaemon "zebra"
+    if grep -q "^ip route " $FRR_CONF; then
+        bootdaemon "staticd"
+    fi
     for r in rip ripng ospf6 ospf bgp babel; do
         if grep -q "^router \\<${r}\\>" $FRR_CONF; then
             bootdaemon "${r}d"
