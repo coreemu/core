@@ -53,6 +53,9 @@ class CanvasGraph(tk.Canvas):
         self.marker_tool = None
         self.to_copy = []
 
+        # app's scale, different scale values to support higher resolution display
+        self.app_scale = 1.0
+
         # background related
         self.wallpaper_id = None
         self.wallpaper = None
