@@ -436,7 +436,6 @@ class CoreClient:
             master = self.app
             if parent_frame:
                 master = parent_frame
-            print("stop session error")
             self.app.after(0, show_grpc_error, e, master, self.app)
 
     def set_up(self):
