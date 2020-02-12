@@ -89,3 +89,4 @@ class ImageEnum(Enum):
     DELETE = "delete"
     SHUTDOWN = "shutdown"
     CANCEL = "cancel"
+    ERROR = "error"

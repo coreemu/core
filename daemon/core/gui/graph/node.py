@@ -165,7 +165,7 @@ class CanvasNode:
                 output = self.app.core.run(self.core_node.id)
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
-                show_grpc_error(e)
+                show_grpc_error(e, self.app, self.app)
 
     def on_leave(self, event: tk.Event):
         self.tooltip.on_leave(event)
@@ -240,12 +240,14 @@ class CanvasNode:
     def show_wlan_config(self):
         self.canvas.context = None
         dialog = WlanConfigDialog(self.app, self.app, self)
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
     def show_mobility_config(self):
         self.canvas.context = None
         dialog = MobilityConfigDialog(self.app, self.app, self)
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
     def show_mobility_player(self):
         self.canvas.context = None

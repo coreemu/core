@@ -153,7 +153,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.START
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
 
     def click_pause(self):
         self.set_pause()
@@ -163,7 +163,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.PAUSE
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
 
     def click_stop(self):
         self.set_stop()
@@ -173,4 +173,4 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.STOP
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)

@@ -25,8 +25,10 @@ class SessionsDialog(Dialog):
         self.selected = False
         self.selected_id = None
         self.tree = None
+        self.has_error = False
         self.sessions = self.get_sessions()
-        self.draw()
+        if not self.has_error:
+            self.draw()
 
     def get_sessions(self) -> Iterable[core_pb2.SessionSummary]:
         try:
@@ -34,7 +36,8 @@ class SessionsDialog(Dialog):
             logging.info("sessions: %s", response)
             return response.sessions
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.app, self.app)
+            self.has_error = True
             self.destroy()
 
     def draw(self):
@@ -211,7 +214,7 @@ class SessionsDialog(Dialog):
         item = self.tree.selection()
         if item:
             sid = int(self.tree.item(item, "text"))
-            self.app.core.delete_session(sid)
+            self.app.core.delete_session(sid, self.top)
             self.tree.delete(item[0])
             if sid == self.app.core.session_id:
                 self.click_new()

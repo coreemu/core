@@ -27,12 +27,14 @@ class WlanConfigDialog(Dialog):
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None
+        self.has_error = False
         try:
             self.config = self.app.core.get_wlan_config(self.node.id)
+            self.draw()
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.app, self.app)
+            self.has_error = True
             self.destroy()
-        self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
