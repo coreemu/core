@@ -65,8 +65,13 @@ class ConfigServiceConfigDialog(Dialog):
         self.config_frame = None
         self.default_config = None
         self.config = None
+
+        self.has_error = False
+
         self.load()
-        self.draw()
+
+        if not self.has_error:
+            self.draw()
 
     def load(self):
         try:
@@ -106,7 +111,8 @@ class ConfigServiceConfigDialog(Dialog):
                 self.modified_files.add(file)
                 self.temp_service_files[file] = data
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.has_error = True
+            show_grpc_error(e, self.app, self.app)
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -327,7 +333,7 @@ class ConfigServiceConfigDialog(Dialog):
             all_current = current_listbox.get(0, tk.END)
             current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
         self.destroy()
 
     def handle_template_changed(self, event: tk.Event):

@@ -9,6 +9,8 @@ import webbrowser
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING
 
+import grpc
+
 from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
@@ -34,12 +36,18 @@ class MenuAction:
         self.app = app
         self.canvas = app.canvas
 
-    def cleanup_old_session(self, session_id):
-        response = self.app.core.stop_session()
-        self.app.core.delete_session(session_id)
-        logging.info(
-            "Stop session(%s) and delete it, result: %s", session_id, response.result
-        )
+    def cleanup_old_session(self, session_id: int):
+        try:
+            res = self.app.core.client.get_session(session_id)
+            logging.debug("retrieve session(%s), %s", session_id, res)
+            stop_response = self.app.core.stop_session()
+            logging.debug("stop session(%s), result: %s", session_id, stop_response)
+            delete_response = self.app.core.delete_session(session_id)
+            logging.debug(
+                "deleted session(%s), result: %s", session_id, delete_response
+            )
+        except grpc.RpcError:
+            logging.debug("session is not alive")
 
     def prompt_save_running_session(self, quitapp: bool = False):
         """
@@ -125,7 +133,8 @@ class MenuAction:
     def session_options(self):
         logging.debug("Click options")
         dialog = SessionOptionsDialog(self.app, self.app)
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
     def session_change_sessions(self):
         logging.debug("Click change sessions")

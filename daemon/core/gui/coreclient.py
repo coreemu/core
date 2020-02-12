@@ -335,7 +335,7 @@ class CoreClient:
             self.parse_metadata(response.config)
 
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
@@ -423,16 +423,20 @@ class CoreClient:
             )
             self.join_session(response.session_id, query_location=False)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
-    def delete_session(self, session_id: int = None):
+    def delete_session(self, session_id: int = None, parent_frame=None):
         if session_id is None:
             session_id = self.session_id
         try:
             response = self.client.delete_session(session_id)
             logging.info("deleted session(%s), Result: %s", session_id, response)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            # use the right master widget so the error dialog displays right on top of it
+            master = self.app
+            if parent_frame:
+                master = parent_frame
+            self.app.after(0, show_grpc_error, e, master, self.app)
 
     def set_up(self):
         """
@@ -468,7 +472,7 @@ class CoreClient:
                 x.node_type: set(x.services) for x in response.defaults
             }
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
             self.app.close()
 
     def edit_node(self, core_node: core_pb2.Node):
@@ -477,7 +481,7 @@ class CoreClient:
                 self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
     def start_session(self) -> core_pb2.StartSessionResponse:
         nodes = [x.core_node for x in self.canvas_nodes.values()]
@@ -521,7 +525,7 @@ class CoreClient:
             if response.result:
                 self.set_metadata()
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
         return response
 
     def stop_session(self, session_id: int = None) -> core_pb2.StartSessionResponse:
@@ -532,7 +536,7 @@ class CoreClient:
             response = self.client.stop_session(session_id)
             logging.info("stopped session(%s), result: %s", session_id, response)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
         return response
 
     def show_mobility_players(self):
@@ -577,7 +581,7 @@ class CoreClient:
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
     def save_xml(self, file_path: str):
         """
@@ -590,7 +594,7 @@ class CoreClient:
             response = self.client.save_xml(self.session_id, file_path)
             logging.info("saved xml file %s, result: %s", file_path, response)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
     def open_xml(self, file_path: str):
         """
@@ -601,7 +605,7 @@ class CoreClient:
             logging.info("open xml file %s, response: %s", file_path, response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e)
+            self.app.after(0, show_grpc_error, e, self.app, self.app)
 
     def get_node_service(
         self, node_id: int, service_name: str

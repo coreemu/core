@@ -140,7 +140,12 @@ class NodeServiceDialog(Dialog):
                 service_name=self.current.listbox.get(current_selection[0]),
                 node_id=self.node_id,
             )
-            dialog.show()
+
+            # if error occurred when creating ServiceConfigDialog, don't show the dialog
+            if not dialog.has_error:
+                dialog.show()
+            else:
+                dialog.destroy()
         else:
             messagebox.showinfo(
                 "Node service configuration", "Select a service to configure"

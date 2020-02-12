@@ -3,7 +3,7 @@ import time
 import tkinter as tk
 from enum import Enum
 from functools import partial
-from tkinter import messagebox, ttk
+from tkinter import ttk
 from typing import TYPE_CHECKING, Callable
 
 from core.api.grpc import core_pb2
@@ -302,9 +302,6 @@ class Toolbar(ttk.Frame):
             self.set_runtime()
             self.app.core.set_metadata()
             self.app.core.show_mobility_players()
-        else:
-            message = "\n".join(response.exceptions)
-            messagebox.showerror("Start Error", message)
 
     def set_runtime(self):
         self.runtime_frame.tkraise()
@@ -490,8 +487,6 @@ class Toolbar(ttk.Frame):
         message = f"Stopped in {total:.3f} seconds"
         self.app.statusbar.set_status(message)
         self.app.canvas.stopped_session()
-        if not response.result:
-            messagebox.showerror("Stop Error", "Errors stopping session")
 
     def update_annotation(
         self, image: "ImageTk.PhotoImage", shape_type: ShapeType, image_enum
