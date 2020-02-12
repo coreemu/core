@@ -23,6 +23,7 @@ class Application(tk.Frame):
         NodeUtils.setup()
 
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
+        self.icon_text_font = font.Font(family="TkIconFont", size=12)
 
         # widgets
         self.menubar = None

@@ -81,7 +81,6 @@ class PreferencesDialog(Dialog):
             value=1,
             orient=tk.HORIZONTAL,
             variable=self.gui_scale,
-            command=self.scale_adjust,
         )
         scale.grid(row=0, column=0, sticky="ew")
         entry = ttk.Entry(
@@ -113,19 +112,28 @@ class PreferencesDialog(Dialog):
         preferences["gui3d"] = self.gui3d.get()
         preferences["theme"] = self.theme.get()
         self.app.save_config()
+        self.scale_adjust()
         self.destroy()
 
-    def scale_adjust(self, scale: str):
+    def scale_adjust(self):
         self.gui_scale.set(round(self.gui_scale.get(), 2))
         app_scale = self.gui_scale.get()
         self.app.canvas.app_scale = app_scale
+
+        self.app.master.tk.call("tk", "scaling", app_scale)
+
+        # scale fonts
         scale_fonts(self.app.fonts_size, app_scale)
-        # screen_width = self.app.master.winfo_screenwidth()
-        # screen_height = self.app.master.winfo_screenheight()
-        # scaled_width = WIDTH * app_scale
-        # scaled_height = HEIGHT * app_scale
-        # x = int(screen_width / 2 - scaled_width / 2)
-        # y = int(screen_height / 2 - scaled_height / 2)
-        # self.app.master.geometry(f"{int(scaled_width)}x{int(scaled_height)}+{x}+{y}")
-        #
-        # self.app.toolbar.scale(app_scale)
+        self.app.icon_text_font.config(size=int(12 * app_scale))
+
+        # scale application widow size
+        screen_width = self.app.master.winfo_screenwidth()
+        screen_height = self.app.master.winfo_screenheight()
+        scaled_width = WIDTH * app_scale
+        scaled_height = HEIGHT * app_scale
+        x = int(screen_width / 2 - scaled_width / 2)
+        y = int(screen_height / 2 - scaled_height / 2)
+        self.app.master.geometry(f"{int(scaled_width)}x{int(scaled_height)}+{x}+{y}")
+
+        # scale toolbar icons and picker icons
+        self.app.toolbar.scale()

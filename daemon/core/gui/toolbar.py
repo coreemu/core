@@ -4,7 +4,6 @@ import tkinter as tk
 from enum import Enum
 from functools import partial
 from tkinter import messagebox, ttk
-from tkinter.font import Font
 from typing import TYPE_CHECKING, Callable
 
 from core.api.grpc import core_pb2
@@ -49,9 +48,6 @@ class Toolbar(ttk.Frame):
         self.app = app
         self.master = app.master
         self.time = None
-
-        # picker data
-        self.picker_font = Font(size=8)
 
         # design buttons
         self.play_button = None
@@ -198,9 +194,7 @@ class Toolbar(ttk.Frame):
         for node_draw in NodeUtils.NODES:
             toolbar_image = icon(node_draw.image_enum)
             # image = icon(node_draw.image_enum, PICKER_SIZE)
-            image = self.get_icon(
-                node_draw.image_enum, PICKER_SIZE * self.app.canvas.app_scale
-            )
+            image = self.get_icon(node_draw.image_enum, PICKER_SIZE)
             func = partial(
                 self.update_button,
                 self.node_button,
@@ -214,9 +208,7 @@ class Toolbar(ttk.Frame):
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
             toolbar_image = Images.get_custom(node_draw.image_file, TOOLBAR_SIZE)
-            image = Images.get_custom(
-                node_draw.image_file, int(PICKER_SIZE * self.app.canvas.app_scale)
-            )
+            image = Images.get_custom(node_draw.image_file, PICKER_SIZE)
             func = partial(
                 self.update_button,
                 self.node_button,
@@ -228,9 +220,7 @@ class Toolbar(ttk.Frame):
             self.create_picker_button(image, func, self.node_picker, name)
         # draw edit node
         # image = icon(ImageEnum.EDITNODE, PICKER_SIZE)
-        image = self.get_icon(
-            ImageEnum.EDITNODE, PICKER_SIZE * self.app.canvas.app_scale
-        )
+        image = self.get_icon(ImageEnum.EDITNODE, PICKER_SIZE)
         self.create_picker_button(
             image, self.click_edit_node, self.node_picker, "Custom"
         )
@@ -386,7 +376,7 @@ class Toolbar(ttk.Frame):
         self.network_picker = ttk.Frame(self.master)
         for node_draw in NodeUtils.NETWORK_NODES:
             toolbar_image = icon(node_draw.image_enum)
-            image = icon(node_draw.image_enum, PICKER_SIZE)
+            image = self.get_icon(node_draw.image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
                 partial(
@@ -433,7 +423,7 @@ class Toolbar(ttk.Frame):
         ]
         for image_enum, shape_type in nodes:
             toolbar_image = icon(image_enum)
-            image = icon(image_enum, PICKER_SIZE)
+            image = self.get_icon(image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
                 partial(self.update_annotation, toolbar_image, shape_type, image_enum),
@@ -538,29 +528,23 @@ class Toolbar(ttk.Frame):
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")
 
-    @classmethod
-    def scale_button(cls, button, image_enum, scale):
-        image = icon(image_enum, int(TOOLBAR_SIZE * scale))
+    # def scale_button(cls, button, image_enum, scale):
+    def scale_button(self, button, image_enum):
+        image = icon(image_enum, int(TOOLBAR_SIZE * self.app.canvas.app_scale))
         button.config(image=image)
         button.image = image
 
-    def scale(self, scale):
-        self.scale_button(self.play_button, ImageEnum.START, scale)
-        self.scale_button(self.select_button, ImageEnum.SELECT, scale)
-        self.scale_button(self.link_button, ImageEnum.LINK, scale)
-        self.scale_button(self.node_button, self.node_enum, scale)
-        self.scale_button(self.network_button, self.network_enum, scale)
-        self.scale_button(self.annotation_button, self.annotation_enum, scale)
+    def scale(self):
+        self.scale_button(self.play_button, ImageEnum.START)
+        self.scale_button(self.select_button, ImageEnum.SELECT)
+        self.scale_button(self.link_button, ImageEnum.LINK)
+        self.scale_button(self.node_button, self.node_enum)
+        self.scale_button(self.network_button, self.network_enum)
+        self.scale_button(self.annotation_button, self.annotation_enum)
 
-        self.scale_button(self.runtime_select_button, ImageEnum.SELECT, scale)
-        self.scale_button(self.stop_button, ImageEnum.STOP, scale)
-        self.scale_button(self.plot_button, ImageEnum.PLOT, scale)
-        self.scale_button(self.runtime_marker_button, ImageEnum.MARKER, scale)
-        self.scale_button(self.node_command_button, ImageEnum.TWONODE, scale)
-        self.scale_button(self.run_command_button, ImageEnum.RUN, scale)
-
-        # self.stop_button = None
-        # self.plot_button = None
-        # self.runtime_marker_button = None
-        # self.node_command_button = None
-        # self.run_command_button = None
+        self.scale_button(self.runtime_select_button, ImageEnum.SELECT)
+        self.scale_button(self.stop_button, ImageEnum.STOP)
+        self.scale_button(self.plot_button, ImageEnum.PLOT)
+        self.scale_button(self.runtime_marker_button, ImageEnum.MARKER)
+        self.scale_button(self.node_command_button, ImageEnum.TWONODE)
+        self.scale_button(self.run_command_button, ImageEnum.RUN)

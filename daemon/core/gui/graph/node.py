@@ -1,6 +1,5 @@
 import logging
 import tkinter as tk
-from tkinter import font
 from typing import TYPE_CHECKING
 
 import grpc
@@ -42,14 +41,13 @@ class CanvasNode:
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
-        text_font = font.Font(family="TkIconFont", size=12)
         label_y = self._get_label_y()
         self.text_id = self.canvas.create_text(
             x,
             label_y,
             text=self.core_node.name,
             tags=tags.NODE_NAME,
-            font=text_font,
+            font=self.app.icon_text_font,
             fill="#0000CD",
         )
         self.tooltip = CanvasTooltip(self.canvas)
