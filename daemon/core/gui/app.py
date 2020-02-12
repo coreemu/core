@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 
 from core.gui import appconfig, themes
 from core.gui.coreclient import CoreClient
@@ -21,6 +21,8 @@ class Application(tk.Frame):
         super().__init__(master=None)
         # load node icons
         NodeUtils.setup()
+
+        self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
 
         # widgets
         self.menubar = None

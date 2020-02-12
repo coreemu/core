@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
-from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -119,12 +119,13 @@ class PreferencesDialog(Dialog):
         self.gui_scale.set(round(self.gui_scale.get(), 2))
         app_scale = self.gui_scale.get()
         self.app.canvas.app_scale = app_scale
-        screen_width = self.app.master.winfo_screenwidth()
-        screen_height = self.app.master.winfo_screenheight()
-        scaled_width = WIDTH * app_scale
-        scaled_height = HEIGHT * app_scale
-        x = int(screen_width / 2 - scaled_width / 2)
-        y = int(screen_height / 2 - scaled_height / 2)
-        self.app.master.geometry(f"{int(scaled_width)}x{int(scaled_height)}+{x}+{y}")
-
-        self.app.toolbar.scale(app_scale)
+        scale_fonts(self.app.fonts_size, app_scale)
+        # screen_width = self.app.master.winfo_screenwidth()
+        # screen_height = self.app.master.winfo_screenheight()
+        # scaled_width = WIDTH * app_scale
+        # scaled_height = HEIGHT * app_scale
+        # x = int(screen_width / 2 - scaled_width / 2)
+        # y = int(screen_height / 2 - scaled_height / 2)
+        # self.app.master.geometry(f"{int(scaled_width)}x{int(scaled_height)}+{x}+{y}")
+        #
+        # self.app.toolbar.scale(app_scale)

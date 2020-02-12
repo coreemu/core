@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 
 THEME_DARK = "black"
 PADX = (0, 5)
@@ -198,3 +198,10 @@ def theme_change(event: tk.Event):
         relief=tk.NONE,
         font=("TkDefaultFont", 8, "normal"),
     )
+
+
+def scale_fonts(fonts_size, scale):
+    for name in font.names():
+        f = font.nametofont(name)
+        if name in fonts_size:
+            f.config(size=int(fonts_size[name] * scale))
