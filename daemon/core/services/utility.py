@@ -669,7 +669,7 @@ class RadvdService(UtilService):
         for ifc in node.netifs():
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
-            prefixes = map(cls.subnetentry, ifc.addrlist)
+            prefixes = list(map(cls.subnetentry, ifc.addrlist))
             if len(prefixes) < 1:
                 continue
             cfg += (
