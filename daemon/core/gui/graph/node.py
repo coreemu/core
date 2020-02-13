@@ -106,6 +106,12 @@ class CanvasNode:
         image_box = self.canvas.bbox(self.id)
         return image_box[3] + NODE_TEXT_OFFSET
 
+    def scale_text(self):
+        text_bound = self.canvas.bbox(self.text_id)
+        prev_y = (text_bound[3] + text_bound[1]) / 2
+        new_y = self._get_label_y()
+        self.canvas.move(self.text_id, 0, new_y - prev_y)
+
     def move(self, x: int, y: int):
         x, y = self.canvas.get_scaled_coords(x, y)
         current_x, current_y = self.canvas.coords(self.id)

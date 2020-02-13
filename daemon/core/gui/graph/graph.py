@@ -12,7 +12,7 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum, Images, TypeToImage
 from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
@@ -914,3 +914,14 @@ class CanvasGraph(tk.Canvas):
                 width=self.itemcget(edge.id, "width"),
                 fill=self.itemcget(edge.id, "fill"),
             )
+
+    def scale_graph(self):
+        for nid, canvas_node in self.nodes.items():
+            image_enum = TypeToImage.get(
+                canvas_node.core_node.type, canvas_node.core_node.model
+            )
+            img = Images.get(image_enum, int(ICON_SIZE * self.app_scale))
+            self.itemconfig(nid, image=img)
+            canvas_node.image = img
+
+            canvas_node.scale_text()

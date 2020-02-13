@@ -103,21 +103,18 @@ class Toolbar(ttk.Frame):
         self.design_frame.columnconfigure(0, weight=1)
         self.play_button = self.create_button(
             self.design_frame,
-            # icon(ImageEnum.START),
             self.get_icon(ImageEnum.START),
             self.click_start,
             "start the session",
         )
         self.select_button = self.create_button(
             self.design_frame,
-            # icon(ImageEnum.SELECT),
             self.get_icon(ImageEnum.SELECT),
             self.click_selection,
             "selection tool",
         )
         self.link_button = self.create_button(
             self.design_frame,
-            # icon(ImageEnum.LINK),
             self.get_icon(ImageEnum.LINK),
             self.click_link,
             "link tool",
@@ -152,21 +149,18 @@ class Toolbar(ttk.Frame):
 
         self.stop_button = self.create_button(
             self.runtime_frame,
-            # icon(ImageEnum.STOP),
             self.get_icon(ImageEnum.STOP),
             self.click_stop,
             "stop the session",
         )
         self.runtime_select_button = self.create_button(
             self.runtime_frame,
-            # icon(ImageEnum.SELECT),
             self.get_icon(ImageEnum.SELECT),
             self.click_runtime_selection,
             "selection tool",
         )
         self.plot_button = self.create_button(
             self.runtime_frame,
-            # icon(ImageEnum.PLOT),
             self.get_icon(ImageEnum.PLOT),
             self.click_plot_button,
             "plot",
@@ -192,8 +186,7 @@ class Toolbar(ttk.Frame):
         self.node_picker = ttk.Frame(self.master)
         # draw default nodes
         for node_draw in NodeUtils.NODES:
-            toolbar_image = icon(node_draw.image_enum)
-            # image = icon(node_draw.image_enum, PICKER_SIZE)
+            toolbar_image = self.get_icon(node_draw.image_enum, TOOLBAR_SIZE)
             image = self.get_icon(node_draw.image_enum, PICKER_SIZE)
             func = partial(
                 self.update_button,
@@ -372,7 +365,7 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
         for node_draw in NodeUtils.NETWORK_NODES:
-            toolbar_image = icon(node_draw.image_enum)
+            toolbar_image = self.get_icon(node_draw.image_enum, TOOLBAR_SIZE)
             image = self.get_icon(node_draw.image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,
@@ -419,7 +412,7 @@ class Toolbar(ttk.Frame):
             (ImageEnum.TEXT, ShapeType.TEXT),
         ]
         for image_enum, shape_type in nodes:
-            toolbar_image = icon(image_enum)
+            toolbar_image = self.get_icon(image_enum, TOOLBAR_SIZE)
             image = self.get_icon(image_enum, PICKER_SIZE)
             self.create_picker_button(
                 image,

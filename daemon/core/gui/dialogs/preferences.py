@@ -137,3 +137,5 @@ class PreferencesDialog(Dialog):
 
         # scale toolbar icons and picker icons
         self.app.toolbar.scale()
+
+        self.app.canvas.scale_graph()
