@@ -935,7 +935,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.set_node_service(
-                session.id, node.id, service_name, [], validate, []
+                session.id, node.id, service_name, validate=validate
             )
 
         # then

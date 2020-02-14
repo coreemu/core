@@ -376,9 +376,16 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
     """
     session.services.set_service(config.node_id, config.service)
     service = session.services.get_service(config.node_id, config.service)
-    service.startup = tuple(config.startup)
-    service.validate = tuple(config.validate)
-    service.shutdown = tuple(config.shutdown)
+    if config.files:
+        service.files = tuple(config.files)
+    if config.directories:
+        service.directories = tuple(config.directories)
+    if config.startup:
+        service.startup = tuple(config.startup)
+    if config.validate:
+        service.validate = tuple(config.validate)
+    if config.shutdown:
+        service.shutdown = tuple(config.shutdown)
 
 
 def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServiceData:

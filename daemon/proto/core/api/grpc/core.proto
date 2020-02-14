@@ -771,6 +771,8 @@ message ServiceConfig {
     repeated string startup = 3;
     repeated string validate = 4;
     repeated string shutdown = 5;
+    repeated string files = 6;
+    repeated string directories = 7;
 }
 
 message ServiceFileConfig {

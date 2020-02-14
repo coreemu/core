@@ -834,9 +834,11 @@ class CoreGrpcClient:
         session_id: int,
         node_id: int,
         service: str,
-        startup: List[str],
-        validate: List[str],
-        shutdown: List[str],
+        files: List[str] = None,
+        directories: List[str] = None,
+        startup: List[str] = None,
+        validate: List[str] = None,
+        shutdown: List[str] = None,
     ) -> core_pb2.SetNodeServiceResponse:
         """
         Set service data for a node.
@@ -844,6 +846,8 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node_id: node id
         :param service: service name
+        :param files: service files
+        :param directories: service directories
         :param startup: startup commands
         :param validate: validation commands
         :param shutdown: shutdown commands
@@ -853,6 +857,8 @@ class CoreGrpcClient:
         config = core_pb2.ServiceConfig(
             node_id=node_id,
             service=service,
+            files=files,
+            directories=directories,
             startup=startup,
             validate=validate,
             shutdown=shutdown,
