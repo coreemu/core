@@ -454,6 +454,8 @@ message AddLinkRequest {
 
 message AddLinkResponse {
     bool result = 1;
+    Interface interface_one = 2;
+    Interface interface_two = 3;
 }
 
 message EditLinkRequest {

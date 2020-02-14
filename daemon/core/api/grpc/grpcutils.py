@@ -2,6 +2,8 @@ import logging
 import time
 from typing import Any, Dict, List, Tuple, Type
 
+import netaddr
+
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
 from core.config import ConfigurableOptions
@@ -10,6 +12,7 @@ from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
 WORKERS = 10
@@ -396,4 +399,41 @@ def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServic
         validation_timer=service.validation_timer,
         shutdown=service.shutdown,
         meta=service.meta,
+    )
+
+
+def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
+    """
+    Convenience for converting a core interface to the protobuf representation.
+    :param interface: interface to convert
+    :return: interface proto
+    """
+    net_id = None
+    if interface.net:
+        net_id = interface.net.id
+    ip4 = None
+    ip4mask = None
+    ip6 = None
+    ip6mask = None
+    for addr in interface.addrlist:
+        network = netaddr.IPNetwork(addr)
+        mask = network.prefixlen
+        ip = str(network.ip)
+        if netaddr.valid_ipv4(ip) and not ip4:
+            ip4 = ip
+            ip4mask = mask
+        elif netaddr.valid_ipv6(ip) and not ip6:
+            ip6 = ip
+            ip6mask = mask
+    return core_pb2.Interface(
+        id=interface.netindex,
+        netid=net_id,
+        name=interface.name,
+        mac=str(interface.hwaddr),
+        mtu=interface.mtu,
+        flowid=interface.flow_id,
+        ip4=ip4,
+        ip4mask=ip4mask,
+        ip6=ip6,
+        ip6mask=ip6mask,
     )
