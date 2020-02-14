@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
 
 from core.api.grpc.core_pb2 import NodeType
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum, Images, TypeToImage
 
 if TYPE_CHECKING:
     from core.api.grpc import core_pb2
@@ -96,25 +96,28 @@ class NodeUtils:
         node_type: NodeType,
         model: str,
         gui_config: Dict[str, List[Dict[str, str]]],
+        scale=1.0,
     ) -> "ImageTk.PhotoImage":
-        if model == "":
-            model = None
-        try:
-            image = cls.NODE_ICONS[(node_type, model)]
-            return image
-        except KeyError:
+
+        image_enum = TypeToImage.get(node_type, model)
+        if image_enum:
+            return Images.get(image_enum, int(ICON_SIZE * scale))
+        else:
             image_stem = cls.get_image_file(gui_config, model)
             if image_stem:
-                return Images.get_with_image_file(image_stem, ICON_SIZE)
+                return Images.get_with_image_file(image_stem, int(ICON_SIZE * scale))
 
     @classmethod
     def node_image(
-        cls, core_node: "core_pb2.Node", gui_config: Dict[str, List[Dict[str, str]]]
+        cls,
+        core_node: "core_pb2.Node",
+        gui_config: Dict[str, List[Dict[str, str]]],
+        scale=1.0,
     ) -> "ImageTk.PhotoImage":
-        image = cls.node_icon(core_node.type, core_node.model, gui_config)
+        image = cls.node_icon(core_node.type, core_node.model, gui_config, scale)
         if core_node.icon:
             try:
-                image = Images.create(core_node.icon, ICON_SIZE)
+                image = Images.create(core_node.icon, int(ICON_SIZE * scale))
             except OSError:
                 logging.error("invalid icon: %s", core_node.icon)
         return image

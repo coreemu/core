@@ -125,6 +125,7 @@ class PreferencesDialog(Dialog):
         # scale fonts
         scale_fonts(self.app.fonts_size, app_scale)
         self.app.icon_text_font.config(size=int(12 * app_scale))
+        self.app.edge_font.config(size=int(8 * app_scale))
 
         # scale application widow size
         screen_width = self.app.master.winfo_screenwidth()

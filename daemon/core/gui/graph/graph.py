@@ -7,7 +7,7 @@ from PIL import Image, ImageTk
 from core.api.grpc import core_pb2
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
-from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
+from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
@@ -223,10 +223,10 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(core_node, self.app.guiconfig)
+            image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app_scale)
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(ImageEnum.EDITNODE, ICON_SIZE)
+                image = Images.get(ImageEnum.EDITNODE, int(ICON_SIZE * self.app_scale))
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
@@ -666,6 +666,9 @@ class CanvasGraph(tk.Canvas):
             core_node = self.core.create_node(
                 actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
+            self.node_draw.image = Images.get(
+                self.node_draw.image_enum, int(ICON_SIZE * self.app_scale)
+            )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
@@ -925,3 +928,6 @@ class CanvasGraph(tk.Canvas):
             canvas_node.image = img
 
             canvas_node.scale_text()
+
+            for edge_id in self.find_withtag(tags.EDGE):
+                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app_scale))

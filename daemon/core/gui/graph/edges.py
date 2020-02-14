@@ -1,6 +1,5 @@
 import logging
 import tkinter as tk
-from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Tuple
 
 from core.gui import themes
@@ -31,7 +30,10 @@ class CanvasWirelessEdge:
         self.dst = dst
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            *position, tags=tags.WIRELESS_EDGE, width=1.5, fill="#009933"
+            *position,
+            tags=tags.WIRELESS_EDGE,
+            width=1.5 * self.canvas.app_scale,
+            fill="#009933",
         )
 
     def delete(self):
@@ -61,13 +63,18 @@ class CanvasEdge:
         self.dst_interface = None
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            x1, y1, x2, y2, tags=tags.EDGE, width=EDGE_WIDTH, fill=EDGE_COLOR
+            x1,
+            y1,
+            x2,
+            y2,
+            tags=tags.EDGE,
+            width=EDGE_WIDTH * self.canvas.app_scale,
+            fill=EDGE_COLOR,
         )
         self.text_src = None
         self.text_dst = None
         self.text_middle = None
         self.token = None
-        self.font = Font(size=8)
         self.link = None
         self.asymmetric_link = None
         self.throughput = None
@@ -117,7 +124,7 @@ class CanvasEdge:
             y1,
             text=label_one,
             justify=tk.CENTER,
-            font=self.font,
+            font=self.canvas.app.edge_font,
             tags=tags.LINK_INFO,
         )
         self.text_dst = self.canvas.create_text(
@@ -125,7 +132,7 @@ class CanvasEdge:
             y2,
             text=label_two,
             justify=tk.CENTER,
-            font=self.font,
+            font=self.canvas.app.edge_font,
             tags=tags.LINK_INFO,
         )
 
@@ -146,7 +153,7 @@ class CanvasEdge:
         if self.text_middle is None:
             x, y = self.get_midpoint()
             self.text_middle = self.canvas.create_text(
-                x, y, tags=tags.THROUGHPUT, font=self.font, text=value
+                x, y, tags=tags.THROUGHPUT, font=self.canvas.app.edge_font, text=value
             )
         else:
             self.canvas.itemconfig(self.text_middle, text=value)

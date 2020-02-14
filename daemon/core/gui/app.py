@@ -24,6 +24,7 @@ class Application(tk.Frame):
 
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
         self.icon_text_font = font.Font(family="TkIconFont", size=12)
+        self.edge_font = font.Font(family="TkDefaultFont", size=8)
 
         # widgets
         self.menubar = None
