@@ -55,7 +55,7 @@ from core.nodes.network import (
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
 from core.plugins.sdt import Sdt
-from core.services.coreservices import CoreServices, ServiceBootError
+from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
@@ -1467,7 +1467,7 @@ class Session:
         )
         self.broadcast_exception(exception_data)
 
-    def instantiate(self) -> List[ServiceBootError]:
+    def instantiate(self) -> List[Exception]:
         """
         We have entered the instantiation state, invoke startup methods
         of various managers and boot the nodes. Validate nodes and check
