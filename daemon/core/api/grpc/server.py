@@ -32,6 +32,10 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceRequest,
     SetNodeConfigServiceResponse,
 )
+from core.api.grpc.core_pb2 import (
+    GetEmaneEventChannelRequest,
+    GetEmaneEventChannelResponse,
+)
 from core.api.grpc.events import EventStreamer
 from core.api.grpc.grpcutils import (
     get_config_options,
@@ -1630,3 +1634,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 grpc.StatusCode.NOT_FOUND,
                 f"node {node.name} missing service {request.name}",
             )
+
+    def GetEmaneEventChannel(
+        self, request: GetEmaneEventChannelRequest, context: ServicerContext
+    ) -> GetEmaneEventChannelResponse:
+        session = self.get_session(request.session_id, context)
+        group = None
+        port = None
+        device = None
+        if session.emane.eventchannel:
+            group, port, device = session.emane.eventchannel
+        return GetEmaneEventChannelResponse(group=group, port=port, device=device)

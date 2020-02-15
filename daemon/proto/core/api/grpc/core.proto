@@ -140,6 +140,8 @@ service CoreApi {
     }
     rpc GetEmaneModelConfigs (GetEmaneModelConfigsRequest) returns (GetEmaneModelConfigsResponse) {
     }
+    rpc GetEmaneEventChannel (GetEmaneEventChannelRequest) returns (GetEmaneEventChannelResponse) {
+    }
 
     // xml rpc
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {
@@ -708,6 +710,16 @@ message GetEmaneModelConfigsResponse {
         map<string, common.ConfigOption> config = 4;
     }
     repeated ModelConfig configs = 1;
+}
+
+message GetEmaneEventChannelRequest {
+    int32 session_id = 1;
+}
+
+message GetEmaneEventChannelResponse {
+    string group = 1;
+    int32 port = 2;
+    string device = 3;
 }
 
 message SaveXmlRequest {

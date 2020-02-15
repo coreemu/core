@@ -26,6 +26,10 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceRequest,
     SetNodeConfigServiceResponse,
 )
+from core.api.grpc.core_pb2 import (
+    GetEmaneEventChannelRequest,
+    GetEmaneEventChannelResponse,
+)
 
 
 class InterfaceHelper:
@@ -1138,6 +1142,10 @@ class CoreGrpcClient:
             session_id=session_id, node_id=node_id, name=name, config=config
         )
         return self.stub.SetNodeConfigService(request)
+
+    def get_emane_event_channel(self, session_id: int) -> GetEmaneEventChannelResponse:
+        request = GetEmaneEventChannelRequest(session_id=session_id)
+        return self.stub.GetEmaneEventChannel(request)
 
     def connect(self) -> None:
         """

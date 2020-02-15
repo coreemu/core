@@ -91,6 +91,7 @@ class EmaneManager(ModelManager):
         self.set_configs(self.emane_config.default_values())
 
         self.service = None
+        self.eventchannel = None
         self.event_device = None
         self.emane_check()
 
@@ -204,13 +205,13 @@ class EmaneManager(ModelManager):
         if eventnet is not None:
             # direct EMANE events towards control net bridge
             self.event_device = eventnet.brname
-        eventchannel = (group, int(port), self.event_device)
+        self.eventchannel = (group, int(port), self.event_device)
 
         # disabled otachannel for event service
         # only needed for e.g. antennaprofile events xmit by models
         logging.info("using %s for event service traffic", self.event_device)
         try:
-            self.service = EventService(eventchannel=eventchannel, otachannel=None)
+            self.service = EventService(eventchannel=self.eventchannel, otachannel=None)
         except EventServiceException:
             logging.exception("error instantiating emane EventService")
 
