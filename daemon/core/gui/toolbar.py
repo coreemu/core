@@ -197,8 +197,12 @@ class Toolbar(ttk.Frame):
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
-            toolbar_image = Images.get_custom(node_draw.image_file, TOOLBAR_SIZE)
-            image = Images.get_custom(node_draw.image_file, PICKER_SIZE)
+            toolbar_image = Images.get_custom(
+                node_draw.image_file, int(TOOLBAR_SIZE * self.app.app_scale)
+            )
+            image = Images.get_custom(
+                node_draw.image_file, int(PICKER_SIZE * self.app.app_scale)
+            )
             func = partial(
                 self.update_button,
                 self.node_button,

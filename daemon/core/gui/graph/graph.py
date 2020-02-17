@@ -667,9 +667,14 @@ class CanvasGraph(tk.Canvas):
             core_node = self.core.create_node(
                 actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
-            self.node_draw.image = Images.get(
-                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
-            )
+            try:
+                self.node_draw.image = Images.get(
+                    self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
+                )
+            except AttributeError:
+                self.node_draw.image = Images.get_custom(
+                    self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
+                )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
@@ -921,13 +926,21 @@ class CanvasGraph(tk.Canvas):
 
     def scale_graph(self):
         for nid, canvas_node in self.nodes.items():
-            image_enum = TypeToImage.get(
-                canvas_node.core_node.type, canvas_node.core_node.model
-            )
-            img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+            img = None
+            if NodeUtils.is_custom(canvas_node.core_node.model):
+                for custom_node in self.app.guiconfig["nodes"]:
+                    if custom_node["name"] == canvas_node.core_node.model:
+                        img = Images.get_custom(
+                            custom_node["image"], int(ICON_SIZE * self.app.app_scale)
+                        )
+            else:
+                image_enum = TypeToImage.get(
+                    canvas_node.core_node.type, canvas_node.core_node.model
+                )
+                img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+
             self.itemconfig(nid, image=img)
             canvas_node.image = img
-
             canvas_node.scale_text()
 
             for edge_id in self.find_withtag(tags.EDGE):
