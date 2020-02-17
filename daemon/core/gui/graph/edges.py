@@ -32,7 +32,7 @@ class CanvasWirelessEdge:
         self.id = self.canvas.create_line(
             *position,
             tags=tags.WIRELESS_EDGE,
-            width=1.5 * self.canvas.app_scale,
+            width=1.5 * self.canvas.app.app_scale,
             fill="#009933",
         )
 
@@ -68,7 +68,7 @@ class CanvasEdge:
             x2,
             y2,
             tags=tags.EDGE,
-            width=EDGE_WIDTH * self.canvas.app_scale,
+            width=EDGE_WIDTH * self.canvas.app.app_scale,
             fill=EDGE_COLOR,
         )
         self.text_src = None

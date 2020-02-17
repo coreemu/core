@@ -85,10 +85,7 @@ class Toolbar(ttk.Frame):
         self.draw()
 
     def get_icon(self, image_enum, width=TOOLBAR_SIZE):
-        if not self.app.canvas:
-            return Images.get(image_enum, width)
-        else:
-            return Images.get(image_enum, int(width * self.app.canvas.app_scale))
+        return Images.get(image_enum, int(width * self.app.app_scale))
 
     def draw(self):
         self.columnconfigure(0, weight=1)
@@ -349,7 +346,7 @@ class Toolbar(ttk.Frame):
         """
         Create network layer button
         """
-        image = icon(ImageEnum.ROUTER, TOOLBAR_SIZE)
+        image = self.get_icon(ImageEnum.ROUTER, TOOLBAR_SIZE)
         self.node_button = ttk.Button(
             self.design_frame, image=image, command=self.draw_node_picker
         )
@@ -390,7 +387,7 @@ class Toolbar(ttk.Frame):
         Create link-layer node button and the options that represent different
         link-layer node types.
         """
-        image = icon(ImageEnum.HUB)
+        image = self.get_icon(ImageEnum.HUB, TOOLBAR_SIZE)
         self.network_button = ttk.Button(
             self.design_frame, image=image, command=self.draw_network_picker
         )
@@ -429,7 +426,7 @@ class Toolbar(ttk.Frame):
         """
         Create marker button and options that represent different marker types
         """
-        image = icon(ImageEnum.MARKER)
+        image = self.get_icon(ImageEnum.MARKER, TOOLBAR_SIZE)
         self.annotation_button = ttk.Button(
             self.design_frame, image=image, command=self.draw_annotation_picker
         )
@@ -518,7 +515,7 @@ class Toolbar(ttk.Frame):
 
     # def scale_button(cls, button, image_enum, scale):
     def scale_button(self, button, image_enum):
-        image = icon(image_enum, int(TOOLBAR_SIZE * self.app.canvas.app_scale))
+        image = icon(image_enum, int(TOOLBAR_SIZE * self.app.app_scale))
         button.config(image=image)
         button.image = image
 

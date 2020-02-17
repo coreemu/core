@@ -96,6 +96,7 @@ def check_directory():
         "nodes": [],
         "recentfiles": [],
         "observers": [{"name": "hello", "cmd": "echo hello"}],
+        "scale": 1.0,
     }
     save(config)
 

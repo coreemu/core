@@ -17,7 +17,7 @@ HEIGHT = 800
 class PreferencesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Preferences", modal=True)
-        self.gui_scale = tk.DoubleVar(value=self.app.canvas.app_scale)
+        self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
         preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])
         self.theme = tk.StringVar(value=preferences["theme"])
@@ -111,15 +111,17 @@ class PreferencesDialog(Dialog):
         preferences["editor"] = self.editor.get()
         preferences["gui3d"] = self.gui3d.get()
         preferences["theme"] = self.theme.get()
+        self.gui_scale.set(round(self.gui_scale.get(), 2))
+        app_scale = self.gui_scale.get()
+        self.app.guiconfig["scale"] = app_scale
+
         self.app.save_config()
         self.scale_adjust()
         self.destroy()
 
     def scale_adjust(self):
-        self.gui_scale.set(round(self.gui_scale.get(), 2))
         app_scale = self.gui_scale.get()
-        self.app.canvas.app_scale = app_scale
-
+        self.app.app_scale = app_scale
         self.app.master.tk.call("tk", "scaling", app_scale)
 
         # scale fonts

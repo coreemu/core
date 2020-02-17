@@ -53,9 +53,6 @@ class CanvasGraph(tk.Canvas):
         self.marker_tool = None
         self.to_copy = []
 
-        # app's scale, different scale values to support higher resolution display
-        self.app_scale = 1.0
-
         # background related
         self.wallpaper_id = None
         self.wallpaper = None
@@ -223,10 +220,14 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app_scale)
+            image = NodeUtils.node_image(
+                core_node, self.app.guiconfig, self.app.app_scale
+            )
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(ImageEnum.EDITNODE, int(ICON_SIZE * self.app_scale))
+                image = Images.get(
+                    ImageEnum.EDITNODE, int(ICON_SIZE * self.app.app_scale)
+                )
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
@@ -667,7 +668,7 @@ class CanvasGraph(tk.Canvas):
                 actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
             self.node_draw.image = Images.get(
-                self.node_draw.image_enum, int(ICON_SIZE * self.app_scale)
+                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
             )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
@@ -923,11 +924,11 @@ class CanvasGraph(tk.Canvas):
             image_enum = TypeToImage.get(
                 canvas_node.core_node.type, canvas_node.core_node.model
             )
-            img = Images.get(image_enum, int(ICON_SIZE * self.app_scale))
+            img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
             self.itemconfig(nid, image=img)
             canvas_node.image = img
 
             canvas_node.scale_text()
 
             for edge_id in self.find_withtag(tags.EDGE):
-                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app_scale))
+                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))

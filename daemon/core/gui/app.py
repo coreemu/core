@@ -22,10 +22,6 @@ class Application(tk.Frame):
         # load node icons
         NodeUtils.setup()
 
-        self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
-        self.icon_text_font = font.Font(family="TkIconFont", size=12)
-        self.edge_font = font.Font(family="TkDefaultFont", size=8)
-
         # widgets
         self.menubar = None
         self.toolbar = None
@@ -33,14 +29,35 @@ class Application(tk.Frame):
         self.statusbar = None
         self.validation = None
 
+        # fonts
+        self.fonts_size = None
+        self.icon_text_font = None
+        self.edge_font = None
+
         # setup
         self.guiconfig = appconfig.read()
+        self.app_scale = self.guiconfig["scale"]
+        self.setup_scaling()
         self.style = ttk.Style()
         self.setup_theme()
         self.core = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
         self.core.set_up()
+
+    def setup_scaling(self):
+        self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
+        for name in font.names():
+            f = font.nametofont(name)
+            if name in self.fonts_size:
+                if name == "TkSmallCaptionFont":
+                    f.config(size=int(self.fonts_size[name] * self.app_scale * 8 / 9))
+                else:
+                    f.config(size=int(self.fonts_size[name] * self.app_scale))
+        self.icon_text_font = font.Font(
+            family="TkIconFont", size=int(12 * self.app_scale)
+        )
+        self.edge_font = font.Font(family="TkDefaultFont", size=int(8 * self.app_scale))
 
     def setup_theme(self):
         themes.load(self.style)
@@ -62,7 +79,9 @@ class Application(tk.Frame):
         screen_height = self.master.winfo_screenheight()
         x = int((screen_width / 2) - (WIDTH / 2))
         y = int((screen_height / 2) - (HEIGHT / 2))
-        self.master.geometry(f"{WIDTH}x{HEIGHT}+{x}+{y}")
+        self.master.geometry(
+            f"{int(WIDTH * self.app_scale)}x{int(HEIGHT * self.app_scale)}+{x}+{y}"
+        )
 
     def draw(self):
         self.master.option_add("*tearOff", tk.FALSE)
