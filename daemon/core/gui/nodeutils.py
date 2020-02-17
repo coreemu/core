@@ -123,8 +123,8 @@ class NodeUtils:
         return image
 
     @classmethod
-    def is_custom(cls, model: str) -> bool:
-        return model not in cls.NODE_MODELS
+    def is_custom(cls, node_type: NodeType, model: str) -> bool:
+        return node_type == NodeType.DEFAULT and model not in cls.NODE_MODELS
 
     @classmethod
     def get_custom_node_services(

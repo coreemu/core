@@ -47,13 +47,7 @@ class Application(tk.Frame):
 
     def setup_scaling(self):
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
-        for name in font.names():
-            f = font.nametofont(name)
-            if name in self.fonts_size:
-                if name == "TkSmallCaptionFont":
-                    f.config(size=int(self.fonts_size[name] * self.app_scale * 8 / 9))
-                else:
-                    f.config(size=int(self.fonts_size[name] * self.app_scale))
+        themes.scale_fonts(self.fonts_size, self.app_scale)
         self.icon_text_font = font.Font(
             family="TkIconFont", size=int(12 * self.app_scale)
         )
@@ -77,8 +71,8 @@ class Application(tk.Frame):
     def center(self):
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        x = int((screen_width / 2) - (WIDTH / 2))
-        y = int((screen_height / 2) - (HEIGHT / 2))
+        x = int((screen_width / 2) - (WIDTH * self.app_scale / 2))
+        y = int((screen_height / 2) - (HEIGHT * self.app_scale / 2))
         self.master.geometry(
             f"{int(WIDTH * self.app_scale)}x{int(HEIGHT * self.app_scale)}+{x}+{y}"
         )

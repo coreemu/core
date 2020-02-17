@@ -13,6 +13,8 @@ if TYPE_CHECKING:
 TEXT_DISTANCE = 0.30
 EDGE_WIDTH = 3
 EDGE_COLOR = "#ff0000"
+WIRELESS_WIDTH = 1.5
+WIRELESS_COLOR = "#009933"
 
 
 class CanvasWirelessEdge:
@@ -32,8 +34,8 @@ class CanvasWirelessEdge:
         self.id = self.canvas.create_line(
             *position,
             tags=tags.WIRELESS_EDGE,
-            width=1.5 * self.canvas.app.app_scale,
-            fill="#009933",
+            width=WIRELESS_WIDTH * self.canvas.app.app_scale,
+            fill=WIRELESS_COLOR,
         )
 
     def delete(self):

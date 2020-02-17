@@ -794,7 +794,7 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-        if NodeUtils.is_custom(model):
+        if NodeUtils.is_custom(node_type, model):
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
         logging.info(

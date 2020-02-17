@@ -927,7 +927,9 @@ class CanvasGraph(tk.Canvas):
     def scale_graph(self):
         for nid, canvas_node in self.nodes.items():
             img = None
-            if NodeUtils.is_custom(canvas_node.core_node.model):
+            if NodeUtils.is_custom(
+                canvas_node.core_node.type, canvas_node.core_node.model
+            ):
                 for custom_node in self.app.guiconfig["nodes"]:
                     if custom_node["name"] == canvas_node.core_node.model:
                         img = Images.get_custom(
@@ -942,6 +944,7 @@ class CanvasGraph(tk.Canvas):
             self.itemconfig(nid, image=img)
             canvas_node.image = img
             canvas_node.scale_text()
+            canvas_node.scale_antennas()
 
             for edge_id in self.find_withtag(tags.EDGE):
                 self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))

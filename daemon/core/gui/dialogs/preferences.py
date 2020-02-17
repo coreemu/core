@@ -129,16 +129,9 @@ class PreferencesDialog(Dialog):
         self.app.icon_text_font.config(size=int(12 * app_scale))
         self.app.edge_font.config(size=int(8 * app_scale))
 
-        # scale application widow size
-        screen_width = self.app.master.winfo_screenwidth()
-        screen_height = self.app.master.winfo_screenheight()
-        scaled_width = WIDTH * app_scale
-        scaled_height = HEIGHT * app_scale
-        x = int(screen_width / 2 - scaled_width / 2)
-        y = int(screen_height / 2 - scaled_height / 2)
-        self.app.master.geometry(f"{int(scaled_width)}x{int(scaled_height)}+{x}+{y}")
+        # scale application window
+        self.app.center()
 
-        # scale toolbar icons and picker icons
+        # scale toolbar and canvas items
         self.app.toolbar.scale()
-
         self.app.canvas.scale_graph()
