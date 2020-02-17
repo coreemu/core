@@ -13,6 +13,7 @@ class TestDistributed:
         options = NodeOptions()
         options.server = server_name
         node = session.add_node(options=options)
+        session.instantiate()
 
         # then
         assert node.server is not None

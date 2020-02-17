@@ -625,7 +625,12 @@ class CoreClient:
         shutdowns: List[str],
     ) -> core_pb2.NodeServiceData:
         response = self.client.set_node_service(
-            self.session_id, node_id, service_name, startups, validations, shutdowns
+            self.session_id,
+            node_id,
+            service_name,
+            startup=startups,
+            validate=validations,
+            shutdown=shutdowns,
         )
         logging.info(
             "Set %s service for node(%s), Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
@@ -713,9 +718,9 @@ class CoreClient:
                 self.session_id,
                 config_proto.node_id,
                 config_proto.service,
-                config_proto.startup,
-                config_proto.validate,
-                config_proto.shutdown,
+                startup=config_proto.startup,
+                validate=config_proto.validate,
+                shutdown=config_proto.shutdown,
             )
         for config_proto in self.get_service_file_configs_proto():
             self.client.set_node_service_file(

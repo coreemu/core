@@ -42,7 +42,7 @@ from core.location.event import EventLoop
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import GreTap
+from core.nodes.interface import CoreInterface, GreTap
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -55,7 +55,7 @@ from core.nodes.network import (
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
 from core.plugins.sdt import Sdt
-from core.services.coreservices import CoreServices, ServiceBootError
+from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
@@ -301,7 +301,7 @@ class Session:
         interface_one: InterfaceData = None,
         interface_two: InterfaceData = None,
         link_options: LinkOptions = None,
-    ) -> None:
+    ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
 
@@ -313,7 +313,7 @@ class Session:
             data, defaults to none
         :param link_options: data for creating link,
             defaults to no options
-        :return: nothing
+        :return: tuple of created core interfaces, depending on link
         """
         if not link_options:
             link_options = LinkOptions()
@@ -327,6 +327,9 @@ class Session:
             node_one.lock.acquire()
         if node_two:
             node_two.lock.acquire()
+
+        node_one_interface = None
+        node_two_interface = None
 
         try:
             # wireless link
@@ -353,6 +356,7 @@ class Session:
                         net_one.name,
                     )
                     interface = create_interface(node_one, net_one, interface_one)
+                    node_one_interface = interface
                     link_config(net_one, interface, link_options)
 
                 # network to node
@@ -363,6 +367,7 @@ class Session:
                         net_one.name,
                     )
                     interface = create_interface(node_two, net_one, interface_two)
+                    node_two_interface = interface
                     if not link_options.unidirectional:
                         link_config(net_one, interface, link_options)
 
@@ -374,6 +379,7 @@ class Session:
                         net_two.name,
                     )
                     interface = net_one.linknet(net_two)
+                    node_one_interface = interface
                     link_config(net_one, interface, link_options)
 
                     if not link_options.unidirectional:
@@ -425,6 +431,8 @@ class Session:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
+
+        return node_one_interface, node_two_interface
 
     def delete_link(
         self,
@@ -1459,7 +1467,7 @@ class Session:
         )
         self.broadcast_exception(exception_data)
 
-    def instantiate(self) -> List[ServiceBootError]:
+    def instantiate(self) -> List[Exception]:
         """
         We have entered the instantiation state, invoke startup methods
         of various managers and boot the nodes. Validate nodes and check

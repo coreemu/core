@@ -32,6 +32,10 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceRequest,
     SetNodeConfigServiceResponse,
 )
+from core.api.grpc.core_pb2 import (
+    GetEmaneEventChannelRequest,
+    GetEmaneEventChannelResponse,
+)
 from core.api.grpc.events import EventStreamer
 from core.api.grpc.grpcutils import (
     get_config_options,
@@ -637,17 +641,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         interfaces = []
         for interface_id in node._netif:
             interface = node._netif[interface_id]
-            net_id = None
-            if interface.net:
-                net_id = interface.net.id
-            interface_proto = core_pb2.Interface(
-                id=interface_id,
-                netid=net_id,
-                name=interface.name,
-                mac=str(interface.hwaddr),
-                mtu=interface.mtu,
-                flowid=interface.flow_id,
-            )
+            interface_proto = grpcutils.interface_to_proto(interface)
             interfaces.append(interface_proto)
 
         emane_model = None
@@ -795,10 +789,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_one_id = request.link.node_one_id
         node_two_id = request.link.node_two_id
         interface_one, interface_two, options = grpcutils.add_link_data(request.link)
-        session.add_link(
+        node_one_interface, node_two_interface = session.add_link(
             node_one_id, node_two_id, interface_one, interface_two, link_options=options
         )
-        return core_pb2.AddLinkResponse(result=True)
+        interface_one_proto = None
+        interface_two_proto = None
+        if node_one_interface:
+            interface_one_proto = grpcutils.interface_to_proto(node_one_interface)
+        if node_two_interface:
+            interface_two_proto = grpcutils.interface_to_proto(node_two_interface)
+        return core_pb2.AddLinkResponse(
+            result=True,
+            interface_one=interface_one_proto,
+            interface_two=interface_two_proto,
+        )
 
     def EditLink(
         self, request: core_pb2.EditLinkRequest, context: ServicerContext
@@ -1630,3 +1634,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 grpc.StatusCode.NOT_FOUND,
                 f"node {node.name} missing service {request.name}",
             )
+
+    def GetEmaneEventChannel(
+        self, request: GetEmaneEventChannelRequest, context: ServicerContext
+    ) -> GetEmaneEventChannelResponse:
+        session = self.get_session(request.session_id, context)
+        group = None
+        port = None
+        device = None
+        if session.emane.eventchannel:
+            group, port, device = session.emane.eventchannel
+        return GetEmaneEventChannelResponse(group=group, port=port, device=device)

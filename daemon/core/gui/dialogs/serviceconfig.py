@@ -426,9 +426,9 @@ class ServiceConfigDialog(Dialog):
                 config = self.core.set_node_service(
                     self.node_id,
                     self.service_name,
-                    startup_commands,
-                    validate_commands,
-                    shutdown_commands,
+                    startups=startup_commands,
+                    validations=validate_commands,
+                    shutdowns=shutdown_commands,
                 )
                 if self.node_id not in self.service_configs:
                     self.service_configs[self.node_id] = {}
