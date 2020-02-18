@@ -17,7 +17,7 @@ from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -66,21 +66,43 @@ class CanvasNode:
 
     def delete(self):
         logging.debug("Delete canvas node for %s", self.core_node)
-        # print(self.app.core.client.get_session(self.app.core.session_id))
-        # response = self.app.core.client.delete_node(self.app.core.session_id, self.core_node.id)
-        # for wireless_edge in self.wireless_edges:
-        #     token = wireless_edge.token
-        #     other = token[0]
-        #     if other == self.id:
-        #         other = token[1]
-        #     self.canvas.nodes[other].wireless_edges.discard(wireless_edge)
-        #     wlan_edge = self.canvas.wireless_edges.pop(token, None)
-        #     self.canvas.delete(wlan_edge.id)
 
-        self.wireless_edges.clear()
+        # if node is wlan, EMANE type, remove any existing wireless links between nodes connetect to this node
+        if NodeUtils.is_wireless_node(self.core_node.type):
+            nodes = []
+            for edge in self.edges:
+                token = edge.token
+                if self.id == token[0]:
+                    nodes.append(token[1])
+                else:
+                    nodes.append(token[0])
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    token = EdgeUtils.get_token(nodes[i], nodes[j])
+                    wireless_edge = self.canvas.wireless_edges.pop(token, None)
+                    if wireless_edge:
+
+                        self.canvas.nodes[nodes[i]].wireless_edges.remove(wireless_edge)
+                        self.canvas.nodes[nodes[j]].wireless_edges.remove(wireless_edge)
+                        self.canvas.delete(wireless_edge.id)
+                    else:
+                        logging.debug("%s is not a wireless edge", token)
+        # if node is MDR, remove wireless links to other MDRs
+        elif NodeUtils.is_mdr_node(self.core_node.type, self.core_node.model):
+            for wireless_edge in self.wireless_edges:
+                token = wireless_edge.token
+                other = token[0]
+                if other == self.id:
+                    other = token[1]
+                self.canvas.nodes[other].wireless_edges.discard(wireless_edge)
+                wlan_edge = self.canvas.wireless_edges.pop(token, None)
+                self.canvas.delete(wlan_edge.id)
+                self.delete_antennas()
+
+            self.wireless_edges.clear()
+
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
-        self.delete_antennas()
 
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
@@ -307,3 +329,29 @@ class CanvasNode:
             if core_node.type == core_pb2.NodeType.DEFAULT and core_node.model == "mdr":
                 self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
         self.canvas.clear_selection()
+
+    def remove_wireless_links(self):
+        """
+        remove the wireless links between the nodes that are connected to this node,
+        if this node is a wireless network node (wlan or EMANE)
+        :return:
+        """
+        if NodeUtils.is_wireless_node(self.core_node.type):
+            nodes = []
+            for edge in self.edges:
+                token = edge.token
+                if self.id == token[0]:
+                    nodes.append(token[1])
+                else:
+                    nodes.append(token[0])
+            for i in range(len(nodes)):
+                for j in range(i + 1, len(nodes)):
+                    token = EdgeUtils.get_token(nodes[i], nodes[j])
+                    wireless_edge = self.canvas.wireless_edges.pop(token, None)
+                    if wireless_edge:
+
+                        self.canvas.nodes[nodes[i]].wireless_edges.remove(wireless_edge)
+                        self.canvas.nodes[nodes[j]].wireless_edges.remove(wireless_edge)
+                        self.canvas.delete(wireless_edge.id)
+                    else:
+                        logging.debug("%s is not a wireless edge", token)
