@@ -291,10 +291,7 @@ class BasicRangeModel(WirelessModel):
             label="transmission delay (usec)",
         ),
         Configuration(
-            _id="error",
-            _type=ConfigDataTypes.STRING,
-            default="0",
-            label="error rate (%)",
+            _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
     ]
 

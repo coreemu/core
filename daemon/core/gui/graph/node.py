@@ -66,6 +66,18 @@ class CanvasNode:
 
     def delete(self):
         logging.debug("Delete canvas node for %s", self.core_node)
+        # print(self.app.core.client.get_session(self.app.core.session_id))
+        # response = self.app.core.client.delete_node(self.app.core.session_id, self.core_node.id)
+        # for wireless_edge in self.wireless_edges:
+        #     token = wireless_edge.token
+        #     other = token[0]
+        #     if other == self.id:
+        #         other = token[1]
+        #     self.canvas.nodes[other].wireless_edges.discard(wireless_edge)
+        #     wlan_edge = self.canvas.wireless_edges.pop(token, None)
+        #     self.canvas.delete(wlan_edge.id)
+
+        self.wireless_edges.clear()
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
         self.delete_antennas()
