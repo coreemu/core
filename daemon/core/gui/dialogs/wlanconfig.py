@@ -27,6 +27,7 @@ class WlanConfigDialog(Dialog):
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None
+        self.range_entry = None
         self.has_error = False
         try:
             self.config = self.app.core.get_wlan_config(self.node.id)
@@ -53,6 +54,11 @@ class WlanConfigDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
+        self.range_entry = self.config_frame.winfo_children()[0].frame.winfo_children()[
+            -1
+        ]
+        self.range_entry.bind("<Key>", self.update_range)
+
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, padx=PADX, sticky="ew")
 
@@ -69,3 +75,7 @@ class WlanConfigDialog(Dialog):
             session_id = self.app.core.session_id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)
         self.destroy()
+
+    def update_range(self, event):
+        if event.char.isdigit():
+            print(self.range_entry.get() + event.char)

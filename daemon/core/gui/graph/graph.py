@@ -42,6 +42,10 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.shapes = {}
         self.wireless_edges = {}
+
+        # map wireless/EMANE node to the set of MDRs connected to that node
+        self.wireless_network = {}
+
         self.drawing_edge = None
         self.grid = None
         self.shape_drawing = False
