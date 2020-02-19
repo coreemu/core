@@ -97,7 +97,7 @@ class CanvasNode:
                 self.canvas.nodes[other].wireless_edges.discard(wireless_edge)
                 wlan_edge = self.canvas.wireless_edges.pop(token, None)
                 self.canvas.delete(wlan_edge.id)
-                self.delete_antennas()
+            self.delete_antennas()
 
             self.wireless_edges.clear()
 
