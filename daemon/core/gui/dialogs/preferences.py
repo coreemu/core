@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
-from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
 class PreferencesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Preferences", modal=True)
+        self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
         preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])
         self.theme = tk.StringVar(value=preferences["theme"])
@@ -64,6 +65,26 @@ class PreferencesDialog(Dialog):
         entry = ttk.Entry(frame, textvariable=self.gui3d)
         entry.grid(row=3, column=1, sticky="ew")
 
+        label = ttk.Label(frame, text="Scaling")
+        label.grid(row=4, column=0, pady=PADY, padx=PADX, sticky="w")
+
+        scale_frame = ttk.Frame(frame)
+        scale_frame.grid(row=4, column=1, sticky="ew")
+        scale_frame.columnconfigure(0, weight=1)
+        scale = ttk.Scale(
+            scale_frame,
+            from_=0.5,
+            to=5,
+            value=1,
+            orient=tk.HORIZONTAL,
+            variable=self.gui_scale,
+        )
+        scale.grid(row=0, column=0, sticky="ew")
+        entry = ttk.Entry(
+            scale_frame, textvariable=self.gui_scale, width=4, state="disabled"
+        )
+        entry.grid(row=0, column=1)
+
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -87,5 +108,27 @@ class PreferencesDialog(Dialog):
         preferences["editor"] = self.editor.get()
         preferences["gui3d"] = self.gui3d.get()
         preferences["theme"] = self.theme.get()
+        self.gui_scale.set(round(self.gui_scale.get(), 2))
+        app_scale = self.gui_scale.get()
+        self.app.guiconfig["scale"] = app_scale
+
         self.app.save_config()
+        self.scale_adjust()
         self.destroy()
+
+    def scale_adjust(self):
+        app_scale = self.gui_scale.get()
+        self.app.app_scale = app_scale
+        self.app.master.tk.call("tk", "scaling", app_scale)
+
+        # scale fonts
+        scale_fonts(self.app.fonts_size, app_scale)
+        self.app.icon_text_font.config(size=int(12 * app_scale))
+        self.app.edge_font.config(size=int(8 * app_scale))
+
+        # scale application window
+        self.app.center()
+
+        # scale toolbar and canvas items
+        self.app.toolbar.scale()
+        self.app.canvas.scale_graph()

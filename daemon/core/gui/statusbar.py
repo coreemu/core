@@ -29,7 +29,7 @@ class StatusBar(ttk.Frame):
 
     def draw(self):
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=7)
+        self.columnconfigure(1, weight=5)
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
         self.columnconfigure(4, weight=1)

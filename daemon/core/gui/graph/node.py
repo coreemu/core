@@ -1,6 +1,5 @@
 import logging
 import tkinter as tk
-from tkinter import font
 from typing import TYPE_CHECKING
 
 import grpc
@@ -17,7 +16,8 @@ from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.nodeutils import NodeUtils
+from core.gui.images import ImageEnum, Images
+from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -42,21 +42,21 @@ class CanvasNode:
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
-        text_font = font.Font(family="TkIconFont", size=12)
         label_y = self._get_label_y()
         self.text_id = self.canvas.create_text(
             x,
             label_y,
             text=self.core_node.name,
             tags=tags.NODE_NAME,
-            font=text_font,
+            font=self.app.icon_text_font,
             fill="#0000CD",
         )
         self.tooltip = CanvasTooltip(self.canvas)
         self.edges = set()
         self.interfaces = []
         self.wireless_edges = set()
-        self.antennae = []
+        self.antennas = []
+        self.antenna_images = {}
         self.setup_bindings()
 
     def setup_bindings(self):
@@ -72,33 +72,37 @@ class CanvasNode:
 
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
-        offset = len(self.antennae) * 8
+        offset = len(self.antennas) * 8 * self.app.app_scale
+        img = Images.get(ImageEnum.ANTENNA, int(ANTENNA_SIZE * self.app.app_scale))
         antenna_id = self.canvas.create_image(
             x - 16 + offset,
-            y - 23,
+            y - int(23 * self.app.app_scale),
             anchor=tk.CENTER,
-            image=NodeUtils.ANTENNA_ICON,
+            image=img,
             tags=tags.ANTENNA,
         )
-        self.antennae.append(antenna_id)
+        self.antennas.append(antenna_id)
+        self.antenna_images[antenna_id] = img
 
     def delete_antenna(self):
         """
         delete one antenna
         """
         logging.debug("Delete an antenna on %s", self.core_node.name)
-        if self.antennae:
-            antenna_id = self.antennae.pop()
+        if self.antennas:
+            antenna_id = self.antennas.pop()
             self.canvas.delete(antenna_id)
+            self.antenna_images.pop(antenna_id, None)
 
     def delete_antennas(self):
         """
         delete all antennas
         """
         logging.debug("Remove all antennas for %s", self.core_node.name)
-        for antenna_id in self.antennae:
+        for antenna_id in self.antennas:
             self.canvas.delete(antenna_id)
-        self.antennae.clear()
+        self.antennas.clear()
+        self.antenna_images.clear()
 
     def redraw(self):
         self.canvas.itemconfig(self.id, image=self.image)
@@ -107,6 +111,12 @@ class CanvasNode:
     def _get_label_y(self):
         image_box = self.canvas.bbox(self.id)
         return image_box[3] + NODE_TEXT_OFFSET
+
+    def scale_text(self):
+        text_bound = self.canvas.bbox(self.text_id)
+        prev_y = (text_bound[3] + text_bound[1]) / 2
+        new_y = self._get_label_y()
+        self.canvas.move(self.text_id, 0, new_y - prev_y)
 
     def move(self, x: int, y: int):
         x, y = self.canvas.get_scaled_coords(x, y)
@@ -131,7 +141,7 @@ class CanvasNode:
         self.canvas.move_selection(self.id, x_offset, y_offset)
 
         # move antennae
-        for antenna_id in self.antennae:
+        for antenna_id in self.antennas:
             self.canvas.move(antenna_id, x_offset, y_offset)
 
         # move edges
@@ -295,3 +305,17 @@ class CanvasNode:
             if core_node.type == core_pb2.NodeType.DEFAULT and core_node.model == "mdr":
                 self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
         self.canvas.clear_selection()
+
+    def scale_antennas(self):
+        for i in range(len(self.antennas)):
+            antenna_id = self.antennas[i]
+            image = Images.get(
+                ImageEnum.ANTENNA, int(ANTENNA_SIZE * self.app.app_scale)
+            )
+            self.canvas.itemconfig(antenna_id, image=image)
+            self.antenna_images[antenna_id] = image
+            node_x, node_y = self.canvas.coords(self.id)
+            x, y = self.canvas.coords(antenna_id)
+            dx = node_x - 16 + (i * 8 * self.app.app_scale) - x
+            dy = node_y - int(23 * self.app.app_scale) - y
+            self.canvas.move(antenna_id, dx, dy)
