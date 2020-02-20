@@ -2,6 +2,8 @@ import logging
 import threading
 from typing import Any, Callable
 
+from core.gui.errors import show_grpc_response_exceptions
+
 
 class BackgroundTask:
     def __init__(self, master: Any, task: Callable, callback: Callable = None, args=()):
@@ -19,6 +21,19 @@ class BackgroundTask:
     def run(self):
         result = self.task(*self.args)
         logging.info("task completed")
+        # if start session fails, a response with Result: False and a list of exceptions is returned
+        if hasattr(result, "result") and not result.result:
+            if hasattr(result, "exceptions") and len(result.exceptions) > 0:
+                self.master.after(
+                    0,
+                    show_grpc_response_exceptions,
+                    *(
+                        result.__class__.__name__,
+                        result.exceptions,
+                        self.master,
+                        self.master,
+                    )
+                )
         if self.callback:
             if result is None:
                 args = ()
