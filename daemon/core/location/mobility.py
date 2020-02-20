@@ -291,10 +291,7 @@ class BasicRangeModel(WirelessModel):
             label="transmission delay (usec)",
         ),
         Configuration(
-            _id="error",
-            _type=ConfigDataTypes.STRING,
-            default="0",
-            label="error rate (%)",
+            _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
     ]
 
@@ -573,10 +570,10 @@ class WayPoint:
         return not self == other
 
     def __lt__(self, other: "WayPoint") -> bool:
-        result = self.time < other.time
-        if result:
-            result = self.nodenum < other.nodenum
-        return result
+        if self.time == other.time:
+            return self.nodenum < other.nodenum
+        else:
+            return self.time < other.time
 
 
 class WayPointMobility(WirelessModel):
