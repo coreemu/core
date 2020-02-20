@@ -345,32 +345,6 @@ class CanvasNode:
                 self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
         self.canvas.clear_selection()
 
-    def remove_wireless_links(self):
-        """
-        remove the wireless links between the nodes that are connected to this node,
-        if this node is a wireless network node (wlan or EMANE)
-        :return:
-        """
-        if NodeUtils.is_wireless_node(self.core_node.type):
-            nodes = []
-            for edge in self.edges:
-                token = edge.token
-                if self.id == token[0]:
-                    nodes.append(token[1])
-                else:
-                    nodes.append(token[0])
-            for i in range(len(nodes)):
-                for j in range(i + 1, len(nodes)):
-                    token = EdgeUtils.get_token(nodes[i], nodes[j])
-                    wireless_edge = self.canvas.wireless_edges.pop(token, None)
-                    if wireless_edge:
-
-                        self.canvas.nodes[nodes[i]].wireless_edges.remove(wireless_edge)
-                        self.canvas.nodes[nodes[j]].wireless_edges.remove(wireless_edge)
-                        self.canvas.delete(wireless_edge.id)
-                    else:
-                        logging.debug("%s is not a wireless edge", token)
-
     def scale_antennas(self):
         for i in range(len(self.antennas)):
             antenna_id = self.antennas[i]
