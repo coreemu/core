@@ -10,9 +10,6 @@ from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-WIDTH = 1000
-HEIGHT = 800
-
 
 class PreferencesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
