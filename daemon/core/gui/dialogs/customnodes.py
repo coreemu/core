@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any, Set
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -11,9 +12,12 @@ from core.gui.nodeutils import NodeDraw
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll, image_chooser
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ServicesSelectDialog(Dialog):
-    def __init__(self, master, app, current_services):
+    def __init__(self, master: Any, app: "Application", current_services: Set[str]):
         super().__init__(master, app, "Node Services", modal=True)
         self.groups = None
         self.services = None
@@ -71,7 +75,7 @@ class ServicesSelectDialog(Dialog):
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event):
+    def handle_group_change(self, event: tk.Event):
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -81,7 +85,7 @@ class ServicesSelectDialog(Dialog):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
-    def service_clicked(self, name, var):
+    def service_clicked(self, name: str, var: tk.BooleanVar):
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
@@ -96,7 +100,7 @@ class ServicesSelectDialog(Dialog):
 
 
 class CustomNodesDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Custom Nodes", modal=True)
         self.edit_button = None
         self.delete_button = None
@@ -214,6 +218,12 @@ class CustomNodesDialog(Dialog):
         if name not in self.app.core.custom_nodes:
             image_file = Path(self.image_file).stem
             node_draw = NodeDraw.from_custom(name, image_file, set(self.services))
+            logging.info(
+                "created new custom node (%s), image file (%s), services: (%s)",
+                name,
+                image_file,
+                self.services,
+            )
             self.app.core.custom_nodes[name] = node_draw
             self.nodes_list.listbox.insert(tk.END, name)
             self.reset_values()
@@ -228,6 +238,12 @@ class CustomNodesDialog(Dialog):
             node_draw.image_file = Path(self.image_file).stem
             node_draw.image = self.image
             node_draw.services = self.services
+            logging.debug(
+                "edit custom node (%s), image: (%s), services (%s)",
+                name,
+                self.image_file,
+                self.services,
+            )
             self.app.core.custom_nodes[name] = node_draw
             self.nodes_list.listbox.delete(self.selected_index)
             self.nodes_list.listbox.insert(self.selected_index, name)
@@ -241,7 +257,7 @@ class CustomNodesDialog(Dialog):
             self.nodes_list.listbox.selection_clear(0, tk.END)
             self.nodes_list.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_node_select(self, event):
+    def handle_node_select(self, event: tk.Event):
         selection = self.nodes_list.listbox.curselection()
         if selection:
             self.selected_index = selection[0]

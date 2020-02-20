@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -10,22 +11,34 @@ from core.gui.dialogs.emaneconfig import EmaneModelDialog
 from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
-from core.gui.widgets import image_chooser
+from core.gui.widgets import ListboxScroll, image_chooser
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
 
 
-def mac_auto(is_auto, entry):
+def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry):
     logging.info("mac auto clicked")
     if is_auto.get():
         logging.info("disabling mac")
-        entry.var.set("")
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "")
         entry.config(state=tk.DISABLED)
     else:
-        entry.var.set("00:00:00:00:00:00")
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "00:00:00:00:00:00")
         entry.config(state=tk.NORMAL)
 
 
 class InterfaceData:
-    def __init__(self, is_auto, mac, ip4, ip6):
+    def __init__(
+        self,
+        is_auto: tk.BooleanVar,
+        mac: tk.StringVar,
+        ip4: tk.StringVar,
+        ip6: tk.StringVar,
+    ):
         self.is_auto = is_auto
         self.mac = mac
         self.ip4 = ip4
@@ -33,13 +46,11 @@ class InterfaceData:
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         """
         create an instance of node configuration
-
-        :param master: dialog master
-        :param coretk.app.Application: main app
-        :param coretk.graph.CanvasNode canvas_node: canvas node object
         """
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Configuration", modal=True
@@ -131,6 +142,18 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
 
+        if NodeUtils.is_rj45_node(self.node.type):
+            response = self.app.core.client.get_interfaces()
+            logging.debug("host machine available interfaces: %s", response)
+            interfaces = ListboxScroll(frame)
+            interfaces.grid(
+                row=row, column=0, columnspan=2, sticky="ew", padx=PADX, pady=PADY
+            )
+            for inf in sorted(response.interfaces[:]):
+                interfaces.listbox.insert(tk.END, inf)
+            row += 1
+            interfaces.listbox.bind("<<ListboxSelect>>", self.interface_select)
+
         # interfaces
         if self.canvas_node.interfaces:
             self.draw_interfaces()
@@ -205,7 +228,7 @@ class NodeConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_emane_config(self, emane_model, interface_id):
+    def click_emane_config(self, emane_model: str, interface_id: int):
         dialog = EmaneModelDialog(self, self.app, self.node, emane_model, interface_id)
         dialog.show()
 
@@ -235,3 +258,10 @@ class NodeConfigDialog(Dialog):
         # redraw
         self.canvas_node.redraw()
         self.destroy()
+
+    def interface_select(self, event: tk.Event):
+        listbox = event.widget
+        cur = listbox.curselection()
+        if cur:
+            interface = listbox.get(cur[0])
+            self.name.set(interface)

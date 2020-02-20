@@ -27,7 +27,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     config_ignore = {schedule_name}
 
     @classmethod
-    def load(cls, emane_prefix):
+    def load(cls, emane_prefix: str) -> None:
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix,
             "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
@@ -43,7 +43,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             ),
         )
 
-    def post_startup(self):
+    def post_startup(self) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 

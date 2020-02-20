@@ -15,7 +15,7 @@ if WANT_DAEMON
 endif
 
 if WANT_NETNS
-  NETNS = netns ns3
+  NETNS = netns
 endif
 
 # keep docs last due to dependencies on binaries
@@ -96,11 +96,59 @@ fpm -s dir -t deb -n core \
 	-C $(DESTDIR)
 endef
 
+define fpm-distributed-deb =
+fpm -s dir -t deb -n core-distributed \
+	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator Distributed Package" \
+	--url https://github.com/coreemu/core \
+	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_distributed_VERSION_ARCH.deb \
+	-v $(PACKAGE_VERSION) \
+	-d "ethtool" \
+	-d "procps" \
+	-d "libc6 >= 2.14" \
+	-d "bash >= 3.0" \
+	-d "ebtables" \
+	-d "iproute2" \
+	-d "libev4" \
+	-d "openssh-server" \
+	-d "xterm" \
+	-C $(DESTDIR)
+endef
+
+define fpm-distributed-rpm =
+fpm -s dir -t rpm -n core-distributed \
+	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator Distributed Package" \
+	--url https://github.com/coreemu/core \
+	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_distributed_VERSION_ARCH.rpm \
+	-v $(PACKAGE_VERSION) \
+	-d "ethtool" \
+	-d "procps-ng" \
+	-d "bash >= 3.0" \
+	-d "ebtables" \
+	-d "iproute" \
+	-d "libev" \
+	-d "net-tools" \
+	-d "openssh-server" \
+	-d "xterm" \
+	-C $(DESTDIR)
+endef
+
 .PHONY: fpm
 fpm: clean-local-fpm
 	$(MAKE) install DESTDIR=$(DESTDIR)
 	$(call fpm-deb)
 	$(call fpm-rpm)
+
+.PHONY: fpm-distributed
+fpm-distributed: clean-local-fpm
+	$(MAKE) -C netns install DESTDIR=$(DESTDIR)
+	$(call fpm-distributed-deb)
+	$(call fpm-distributed-rpm)
 
 .PHONY: clean-local-fpm
 clean-local-fpm:
@@ -137,7 +185,6 @@ change-files:
 	$(call change-files,scripts/core-daemon.service)
 	$(call change-files,scripts/core-daemon)
 	$(call change-files,daemon/core/constants.py)
-	$(call change-files,ns3/setup.py)
 	$(call change-files,netns/setup.py)
 	$(call change-files,daemon/setup.py)
 

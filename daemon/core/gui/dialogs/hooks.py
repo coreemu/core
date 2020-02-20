@@ -1,14 +1,18 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class HookDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: Any, app: "Application"):
         super().__init__(master, app, "Hook", modal=True)
         self.name = tk.StringVar()
         self.codetext = None
@@ -62,11 +66,11 @@ class HookDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=1, sticky="ew")
 
-    def state_change(self, event):
+    def state_change(self, event: tk.Event):
         state_name = self.state.get()
         self.name.set(f"{state_name.lower()}_hook.sh")
 
-    def set(self, hook):
+    def set(self, hook: core_pb2.Hook):
         self.hook = hook
         self.name.set(hook.file)
         self.codetext.text.delete(1.0, tk.END)
@@ -84,7 +88,7 @@ class HookDialog(Dialog):
 
 
 class HooksDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Hooks", modal=True)
         self.listbox = None
         self.edit_button = None
@@ -140,7 +144,7 @@ class HooksDialog(Dialog):
         self.edit_button.config(state=tk.DISABLED)
         self.delete_button.config(state=tk.DISABLED)
 
-    def select(self, event):
+    def select(self, event: tk.Event):
         if self.listbox.curselection():
             index = self.listbox.curselection()[0]
             self.selected = self.listbox.get(index)

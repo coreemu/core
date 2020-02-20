@@ -1,17 +1,21 @@
 """
 link configuration
 """
-import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Union
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.graph import CanvasGraph, CanvasEdge
 
-def get_int(var):
+
+def get_int(var: tk.StringVar) -> Union[int, None]:
     value = var.get()
     if value != "":
         return int(value)
@@ -19,7 +23,7 @@ def get_int(var):
         return None
 
 
-def get_float(var):
+def get_float(var: tk.StringVar) -> Union[float, None]:
     value = var.get()
     if value != "":
         return float(value)
@@ -28,7 +32,7 @@ def get_float(var):
 
 
 class LinkConfigurationDialog(Dialog):
-    def __init__(self, master, app, edge):
+    def __init__(self, master: "CanvasGraph", app: "Application", edge: "CanvasEdge"):
         super().__init__(master, app, "Link Configuration", modal=True)
         self.app = app
         self.edge = edge
@@ -103,7 +107,7 @@ class LinkConfigurationDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def get_frame(self):
+    def get_frame(self) -> ttk.Frame:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(1, weight=1)
         if self.is_symmetric:
@@ -243,7 +247,6 @@ class LinkConfigurationDialog(Dialog):
         self.color_button.config(background=color)
 
     def click_apply(self):
-        logging.debug("click apply")
         self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
         self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
         link = self.edge.link
@@ -319,8 +322,6 @@ class LinkConfigurationDialog(Dialog):
         self.destroy()
 
     def change_symmetry(self):
-        logging.debug("change symmetry")
-
         if self.is_symmetric:
             self.is_symmetric = False
             self.symmetry_var.set("<<")
@@ -339,8 +340,6 @@ class LinkConfigurationDialog(Dialog):
     def load_link_config(self):
         """
         populate link config to the table
-
-        :return: nothing
         """
         width = self.app.canvas.itemcget(self.edge.id, "width")
         self.width.set(width)

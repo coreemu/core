@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 6.0.0)
+AC_INIT(core, 6.1.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -262,8 +262,7 @@ AC_CONFIG_FILES([Makefile
 		daemon/doc/conf.py
 		daemon/proto/Makefile
 		netns/Makefile
-		netns/version.h
-		ns3/Makefile],)
+		netns/version.h],)
 AC_OUTPUT
 
 # Summary text

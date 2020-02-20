@@ -1,5 +1,12 @@
+import logging
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images
+
+if TYPE_CHECKING:
+    from core.api.grpc import core_pb2
+    from PIL import ImageTk
 
 ICON_SIZE = 48
 ANTENNA_SIZE = 32
@@ -7,16 +14,23 @@ ANTENNA_SIZE = 32
 
 class NodeDraw:
     def __init__(self):
-        self.custom = False
+        self.custom: bool = False
         self.image = None
-        self.image_enum = None
+        self.image_enum: Optional[ImageEnum] = None
         self.image_file = None
-        self.node_type = None
-        self.model = None
-        self.services = set()
+        self.node_type: core_pb2.NodeType = None
+        self.model: Optional[str] = None
+        self.services: Set[str] = set()
 
     @classmethod
-    def from_setup(cls, image_enum, node_type, label, model=None, tooltip=None):
+    def from_setup(
+        cls,
+        image_enum: ImageEnum,
+        node_type: "core_pb2.NodeType",
+        label: str,
+        model: str = None,
+        tooltip=None,
+    ):
         node_draw = NodeDraw()
         node_draw.image_enum = image_enum
         node_draw.image = Images.get(image_enum, ICON_SIZE)
@@ -27,7 +41,7 @@ class NodeDraw:
         return node_draw
 
     @classmethod
-    def from_custom(cls, name, image_file, services):
+    def from_custom(cls, name: str, image_file: str, services: Set[str]):
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = image_file
@@ -47,35 +61,84 @@ class NodeUtils:
     CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
     IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
     WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+    RJ45_NODES = {NodeType.RJ45}
     IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
     ANTENNA_ICON = None
 
     @classmethod
-    def is_ignore_node(cls, node_type):
+    def is_ignore_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.IGNORE_NODES
 
     @classmethod
-    def is_container_node(cls, node_type):
+    def is_container_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.CONTAINER_NODES
 
     @classmethod
-    def is_model_node(cls, node_type):
+    def is_model_node(cls, node_type: NodeType) -> bool:
         return node_type == NodeType.DEFAULT
 
     @classmethod
-    def is_image_node(cls, node_type):
+    def is_image_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.IMAGE_NODES
 
     @classmethod
-    def is_wireless_node(cls, node_type):
+    def is_wireless_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.WIRELESS_NODES
 
     @classmethod
-    def node_icon(cls, node_type, model):
+    def is_rj45_node(cls, node_type: NodeType) -> bool:
+        return node_type in cls.RJ45_NODES
+
+    @classmethod
+    def node_icon(
+        cls,
+        node_type: NodeType,
+        model: str,
+        gui_config: Dict[str, List[Dict[str, str]]],
+    ) -> "ImageTk.PhotoImage":
         if model == "":
             model = None
-        return cls.NODE_ICONS[(node_type, model)]
+        try:
+            image = cls.NODE_ICONS[(node_type, model)]
+            return image
+        except KeyError:
+            image_stem = cls.get_image_file(gui_config, model)
+            if image_stem:
+                return Images.get_with_image_file(image_stem, ICON_SIZE)
+
+    @classmethod
+    def node_image(
+        cls, core_node: "core_pb2.Node", gui_config: Dict[str, List[Dict[str, str]]]
+    ) -> "ImageTk.PhotoImage":
+        image = cls.node_icon(core_node.type, core_node.model, gui_config)
+        if core_node.icon:
+            try:
+                image = Images.create(core_node.icon, ICON_SIZE)
+            except OSError:
+                logging.error("invalid icon: %s", core_node.icon)
+        return image
+
+    @classmethod
+    def is_custom(cls, model: str) -> bool:
+        return model not in cls.NODE_MODELS
+
+    @classmethod
+    def get_custom_node_services(
+        cls, gui_config: Dict[str, List[Dict[str, str]]], name: str
+    ) -> List[str]:
+        for m in gui_config["nodes"]:
+            if m["name"] == name:
+                return m["services"]
+        return []
+
+    @classmethod
+    def get_image_file(cls, gui_config, name: str) -> Union[str, None]:
+        if "nodes" in gui_config:
+            for m in gui_config["nodes"]:
+                if m["name"] == name:
+                    return m["image"]
+        return None
 
     @classmethod
     def setup(cls):
@@ -106,3 +169,9 @@ class NodeUtils:
             cls.NETWORK_NODES.append(node_draw)
             cls.NODE_ICONS[(node_type, None)] = node_draw.image
         cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
+
+
+class EdgeUtils:
+    @classmethod
+    def get_token(cls, src: int, dst: int) -> Tuple[int, ...]:
+        return tuple(sorted([src, dst]))

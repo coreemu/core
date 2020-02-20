@@ -1,18 +1,30 @@
 import logging
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from lxml import etree
 
 import core.nodes.base
 import core.nodes.physical
 from core.emane.nodes import EmaneNet
+from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
-from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import MacAddress
+from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.network import CtrlNet
+from core.services.coreservices import CoreService
+
+if TYPE_CHECKING:
+    from core.emane.emanemanager import EmaneGlobalModel
+    from core.emane.emanemodel import EmaneModel
+    from core.emulator.session import Session
+
+    EmaneModelType = Type[EmaneModel]
+T = TypeVar("T")
 
 
-def write_xml_file(xml_element, file_path, doctype=None):
+def write_xml_file(
+    xml_element: etree.Element, file_path: str, doctype: str = None
+) -> None:
     xml_data = etree.tostring(
         xml_element,
         xml_declaration=True,
@@ -24,32 +36,30 @@ def write_xml_file(xml_element, file_path, doctype=None):
         xml_file.write(xml_data)
 
 
-def get_type(element, name, _type):
+def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T]:
     value = element.get(name)
     if value is not None:
         value = _type(value)
     return value
 
 
-def get_float(element, name):
+def get_float(element: etree.Element, name: str) -> float:
     return get_type(element, name, float)
 
 
-def get_int(element, name):
+def get_int(element: etree.Element, name: str) -> int:
     return get_type(element, name, int)
 
 
-def add_attribute(element, name, value):
+def add_attribute(element: etree.Element, name: str, value: Any) -> None:
     if value is not None:
         element.set(name, str(value))
 
 
-def create_interface_data(interface_element):
+def create_interface_data(interface_element: etree.Element) -> InterfaceData:
     interface_id = int(interface_element.get("id"))
     name = interface_element.get("name")
     mac = interface_element.get("mac")
-    if mac:
-        mac = MacAddress.from_string(mac)
     ip4 = interface_element.get("ip4")
     ip4_mask = get_int(interface_element, "ip4_mask")
     ip6 = interface_element.get("ip6")
@@ -57,7 +67,9 @@ def create_interface_data(interface_element):
     return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
 
 
-def create_emane_config(node_id, emane_config, config):
+def create_emane_config(
+    node_id: int, emane_config: "EmaneGlobalModel", config: Dict[str, str]
+) -> etree.Element:
     emane_configuration = etree.Element("emane_configuration")
     add_attribute(emane_configuration, "node", node_id)
     add_attribute(emane_configuration, "model", "emane")
@@ -75,7 +87,9 @@ def create_emane_config(node_id, emane_config, config):
     return emane_configuration
 
 
-def create_emane_model_config(node_id, model, config):
+def create_emane_model_config(
+    node_id: int, model: "EmaneModelType", config: Dict[str, str]
+) -> etree.Element:
     emane_element = etree.Element("emane_configuration")
     add_attribute(emane_element, "node", node_id)
     add_attribute(emane_element, "model", model.name)
@@ -98,14 +112,14 @@ def create_emane_model_config(node_id, model, config):
     return emane_element
 
 
-def add_configuration(parent, name, value):
+def add_configuration(parent: etree.Element, name: str, value: str) -> None:
     config_element = etree.SubElement(parent, "configuration")
     add_attribute(config_element, "name", name)
     add_attribute(config_element, "value", value)
 
 
 class NodeElement:
-    def __init__(self, session, node, element_name):
+    def __init__(self, session: "Session", node: NodeBase, element_name: str) -> None:
         self.session = session
         self.node = node
         self.element = etree.Element(element_name)
@@ -115,7 +129,7 @@ class NodeElement:
         add_attribute(self.element, "canvas", node.canvas)
         self.add_position()
 
-    def add_position(self):
+    def add_position(self) -> None:
         x = self.node.position.x
         y = self.node.position.y
         z = self.node.position.z
@@ -132,7 +146,7 @@ class NodeElement:
 
 
 class ServiceElement:
-    def __init__(self, service):
+    def __init__(self, service: Type[CoreService]) -> None:
         self.service = service
         self.element = etree.Element("service")
         add_attribute(self.element, "name", service.name)
@@ -142,7 +156,7 @@ class ServiceElement:
         self.add_shutdown()
         self.add_files()
 
-    def add_directories(self):
+    def add_directories(self) -> None:
         # get custom directories
         directories = etree.Element("directories")
         for directory in self.service.dirs:
@@ -152,7 +166,7 @@ class ServiceElement:
         if directories.getchildren():
             self.element.append(directories)
 
-    def add_files(self):
+    def add_files(self) -> None:
         # get custom files
         file_elements = etree.Element("files")
         for file_name in self.service.config_data:
@@ -164,7 +178,7 @@ class ServiceElement:
         if file_elements.getchildren():
             self.element.append(file_elements)
 
-    def add_startup(self):
+    def add_startup(self) -> None:
         # get custom startup
         startup_elements = etree.Element("startups")
         for startup in self.service.startup:
@@ -174,7 +188,7 @@ class ServiceElement:
         if startup_elements.getchildren():
             self.element.append(startup_elements)
 
-    def add_validate(self):
+    def add_validate(self) -> None:
         # get custom validate
         validate_elements = etree.Element("validates")
         for validate in self.service.validate:
@@ -184,7 +198,7 @@ class ServiceElement:
         if validate_elements.getchildren():
             self.element.append(validate_elements)
 
-    def add_shutdown(self):
+    def add_shutdown(self) -> None:
         # get custom shutdown
         shutdown_elements = etree.Element("shutdowns")
         for shutdown in self.service.shutdown:
@@ -196,22 +210,27 @@ class ServiceElement:
 
 
 class DeviceElement(NodeElement):
-    def __init__(self, session, node):
+    def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
         self.add_services()
 
-    def add_services(self):
+    def add_services(self) -> None:
         service_elements = etree.Element("services")
         for service in self.node.services:
             etree.SubElement(service_elements, "service", name=service.name)
-
         if service_elements.getchildren():
             self.element.append(service_elements)
 
+        config_service_elements = etree.Element("configservices")
+        for name, service in self.node.config_services.items():
+            etree.SubElement(config_service_elements, "service", name=name)
+        if config_service_elements.getchildren():
+            self.element.append(config_service_elements)
+
 
 class NetworkElement(NodeElement):
-    def __init__(self, session, node):
+    def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "network")
         model = getattr(self.node, "model", None)
         if model:
@@ -224,7 +243,7 @@ class NetworkElement(NodeElement):
             add_attribute(self.element, "grekey", grekey)
         self.add_type()
 
-    def add_type(self):
+    def add_type(self) -> None:
         if self.node.apitype:
             node_type = NodeTypes(self.node.apitype).name
         else:
@@ -233,27 +252,28 @@ class NetworkElement(NodeElement):
 
 
 class CoreXmlWriter:
-    def __init__(self, session):
+    def __init__(self, session: "Session") -> None:
         self.session = session
         self.scenario = etree.Element("scenario")
         self.networks = None
         self.devices = None
         self.write_session()
 
-    def write_session(self):
+    def write_session(self) -> None:
         # generate xml content
         links = self.write_nodes()
         self.write_links(links)
         self.write_mobility_configs()
         self.write_emane_configs()
         self.write_service_configs()
+        self.write_configservice_configs()
         self.write_session_origin()
         self.write_session_hooks()
         self.write_session_options()
         self.write_session_metadata()
         self.write_default_services()
 
-    def write(self, file_name):
+    def write(self, file_name: str) -> None:
         self.scenario.set("name", file_name)
 
         # write out generated xml
@@ -262,7 +282,7 @@ class CoreXmlWriter:
             file_name, xml_declaration=True, pretty_print=True, encoding="UTF-8"
         )
 
-    def write_session_origin(self):
+    def write_session_origin(self) -> None:
         # origin: geolocation of cartesian coordinate 0,0,0
         lat, lon, alt = self.session.location.refgeo
         origin = etree.Element("session_origin")
@@ -282,7 +302,7 @@ class CoreXmlWriter:
                 add_attribute(origin, "y", y)
                 add_attribute(origin, "z", z)
 
-    def write_session_hooks(self):
+    def write_session_hooks(self) -> None:
         # hook scripts
         hooks = etree.Element("session_hooks")
         for state in sorted(self.session._hooks.keys()):
@@ -295,7 +315,7 @@ class CoreXmlWriter:
         if hooks.getchildren():
             self.scenario.append(hooks)
 
-    def write_session_options(self):
+    def write_session_options(self) -> None:
         option_elements = etree.Element("session_options")
         options_config = self.session.options.get_configs()
         if not options_config:
@@ -310,7 +330,7 @@ class CoreXmlWriter:
         if option_elements.getchildren():
             self.scenario.append(option_elements)
 
-    def write_session_metadata(self):
+    def write_session_metadata(self) -> None:
         # metadata
         metadata_elements = etree.Element("session_metadata")
         config = self.session.metadata
@@ -324,7 +344,7 @@ class CoreXmlWriter:
         if metadata_elements.getchildren():
             self.scenario.append(metadata_elements)
 
-    def write_emane_configs(self):
+    def write_emane_configs(self) -> None:
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
@@ -350,7 +370,7 @@ class CoreXmlWriter:
         if emane_configurations.getchildren():
             self.scenario.append(emane_configurations)
 
-    def write_mobility_configs(self):
+    def write_mobility_configs(self) -> None:
         mobility_configurations = etree.Element("mobility_configurations")
         for node_id in self.session.mobility.nodes():
             all_configs = self.session.mobility.get_all_configs(node_id)
@@ -374,7 +394,7 @@ class CoreXmlWriter:
         if mobility_configurations.getchildren():
             self.scenario.append(mobility_configurations)
 
-    def write_service_configs(self):
+    def write_service_configs(self) -> None:
         service_configurations = etree.Element("service_configurations")
         service_configs = self.session.services.all_configs()
         for node_id, service in service_configs:
@@ -385,7 +405,33 @@ class CoreXmlWriter:
         if service_configurations.getchildren():
             self.scenario.append(service_configurations)
 
-    def write_default_services(self):
+    def write_configservice_configs(self) -> None:
+        service_configurations = etree.Element("configservice_configurations")
+        for node in self.session.nodes.values():
+            if not isinstance(node, CoreNodeBase):
+                continue
+            for name, service in node.config_services.items():
+                service_element = etree.SubElement(
+                    service_configurations, "service", name=name
+                )
+                add_attribute(service_element, "node", node.id)
+                if service.custom_config:
+                    configs_element = etree.SubElement(service_element, "configs")
+                    for key, value in service.custom_config.items():
+                        etree.SubElement(
+                            configs_element, "config", key=key, value=value
+                        )
+                if service.custom_templates:
+                    templates_element = etree.SubElement(service_element, "templates")
+                    for template_name, template in service.custom_templates.items():
+                        template_element = etree.SubElement(
+                            templates_element, "template", name=template_name
+                        )
+                        template_element.text = etree.CDATA(template)
+        if service_configurations.getchildren():
+            self.scenario.append(service_configurations)
+
+    def write_default_services(self) -> None:
         node_types = etree.Element("default_services")
         for node_type in self.session.services.default_services:
             services = self.session.services.default_services[node_type]
@@ -396,7 +442,7 @@ class CoreXmlWriter:
         if node_types.getchildren():
             self.scenario.append(node_types)
 
-    def write_nodes(self):
+    def write_nodes(self) -> List[LinkData]:
         self.networks = etree.SubElement(self.scenario, "networks")
         self.devices = etree.SubElement(self.scenario, "devices")
 
@@ -419,7 +465,7 @@ class CoreXmlWriter:
 
         return links
 
-    def write_network(self, node):
+    def write_network(self, node: NodeBase) -> None:
         # ignore p2p and other nodes that are not part of the api
         if not node.apitype:
             return
@@ -427,7 +473,7 @@ class CoreXmlWriter:
         network = NetworkElement(self.session, node)
         self.networks.append(network.element)
 
-    def write_links(self, links):
+    def write_links(self, links: List[LinkData]) -> None:
         link_elements = etree.Element("links")
         # add link data
         for link_data in links:
@@ -441,13 +487,21 @@ class CoreXmlWriter:
         if link_elements.getchildren():
             self.scenario.append(link_elements)
 
-    def write_device(self, node):
+    def write_device(self, node: NodeBase) -> None:
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
 
     def create_interface_element(
-        self, element_name, node_id, interface_id, mac, ip4, ip4_mask, ip6, ip6_mask
-    ):
+        self,
+        element_name: str,
+        node_id: int,
+        interface_id: int,
+        mac: str,
+        ip4: str,
+        ip4_mask: int,
+        ip6: str,
+        ip6_mask: int,
+    ) -> etree.Element:
         interface = etree.Element(element_name)
         node = self.session.get_node(node_id)
         interface_name = None
@@ -470,7 +524,7 @@ class CoreXmlWriter:
 
         return interface
 
-    def create_link_element(self, link_data):
+    def create_link_element(self, link_data: LinkData) -> etree.Element:
         link_element = etree.Element("link")
         add_attribute(link_element, "node_one", link_data.node1_id)
         add_attribute(link_element, "node_two", link_data.node2_id)
@@ -528,11 +582,11 @@ class CoreXmlWriter:
 
 
 class CoreXmlReader:
-    def __init__(self, session):
+    def __init__(self, session: "Session") -> None:
         self.session = session
         self.scenario = None
 
-    def read(self, file_name):
+    def read(self, file_name: str) -> None:
         xml_tree = etree.parse(file_name)
         self.scenario = xml_tree.getroot()
 
@@ -546,9 +600,10 @@ class CoreXmlReader:
         self.read_mobility_configs()
         self.read_emane_configs()
         self.read_nodes()
+        self.read_configservice_configs()
         self.read_links()
 
-    def read_default_services(self):
+    def read_default_services(self) -> None:
         default_services = self.scenario.find("default_services")
         if default_services is None:
             return
@@ -563,7 +618,7 @@ class CoreXmlReader:
             )
             self.session.services.default_services[node_type] = services
 
-    def read_session_metadata(self):
+    def read_session_metadata(self) -> None:
         session_metadata = self.scenario.find("session_metadata")
         if session_metadata is None:
             return
@@ -576,7 +631,7 @@ class CoreXmlReader:
         logging.info("reading session metadata: %s", configs)
         self.session.metadata = configs
 
-    def read_session_options(self):
+    def read_session_options(self) -> None:
         session_options = self.scenario.find("session_options")
         if session_options is None:
             return
@@ -589,7 +644,7 @@ class CoreXmlReader:
         logging.info("reading session options: %s", configs)
         self.session.options.set_configs(configs)
 
-    def read_session_hooks(self):
+    def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")
         if session_hooks is None:
             return
@@ -604,7 +659,7 @@ class CoreXmlReader:
                 hook_type, file_name=name, source_name=None, data=data
             )
 
-    def read_session_origin(self):
+    def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")
         if session_origin is None:
             return
@@ -628,7 +683,7 @@ class CoreXmlReader:
             logging.info("reading session reference xyz: %s, %s, %s", x, y, z)
             self.session.location.refxyz = (x, y, z)
 
-    def read_service_configs(self):
+    def read_service_configs(self) -> None:
         service_configurations = self.scenario.find("service_configurations")
         if service_configurations is None:
             return
@@ -664,12 +719,15 @@ class CoreXmlReader:
 
             file_elements = service_configuration.find("files")
             if file_elements is not None:
+                files = set(service.configs)
                 for file_element in file_elements.iterchildren():
                     name = file_element.get("name")
                     data = file_element.text
                     service.config_data[name] = data
+                    files.add(name)
+                service.configs = tuple(files)
 
-    def read_emane_configs(self):
+    def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")
         if emane_configurations is None:
             return
@@ -702,7 +760,7 @@ class CoreXmlReader:
             )
             self.session.emane.set_model_config(node_id, model_name, configs)
 
-    def read_mobility_configs(self):
+    def read_mobility_configs(self) -> None:
         mobility_configurations = self.scenario.find("mobility_configurations")
         if mobility_configurations is None:
             return
@@ -722,7 +780,7 @@ class CoreXmlReader:
             )
             self.session.mobility.set_model_config(node_id, model_name, configs)
 
-    def read_nodes(self):
+    def read_nodes(self) -> None:
         device_elements = self.scenario.find("devices")
         if device_elements is not None:
             for device_element in device_elements.iterchildren():
@@ -733,15 +791,23 @@ class CoreXmlReader:
             for network_element in network_elements.iterchildren():
                 self.read_network(network_element)
 
-    def read_device(self, device_element):
+    def read_device(self, device_element: etree.Element) -> None:
         node_id = get_int(device_element, "id")
         name = device_element.get("name")
         model = device_element.get("type")
+        icon = device_element.get("icon")
         options = NodeOptions(name, model)
+        options.icon = icon
 
         service_elements = device_element.find("services")
         if service_elements is not None:
             options.services = [x.get("name") for x in service_elements.iterchildren()]
+
+        config_service_elements = device_element.find("configservices")
+        if config_service_elements is not None:
+            options.config_services = [
+                x.get("name") for x in config_service_elements.iterchildren()
+            ]
 
         position_element = device_element.find("position")
         if position_element is not None:
@@ -759,11 +825,13 @@ class CoreXmlReader:
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
         self.session.add_node(_id=node_id, options=options)
 
-    def read_network(self, network_element):
+    def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
+        icon = network_element.get("icon")
         options = NodeOptions(name)
+        options.icon = icon
 
         position_element = network_element.find("position")
         if position_element is not None:
@@ -783,7 +851,37 @@ class CoreXmlReader:
         )
         self.session.add_node(_type=node_type, _id=node_id, options=options)
 
-    def read_links(self):
+    def read_configservice_configs(self) -> None:
+        configservice_configs = self.scenario.find("configservice_configurations")
+        if configservice_configs is None:
+            return
+
+        for configservice_element in configservice_configs.iterchildren():
+            name = configservice_element.get("name")
+            node_id = get_int(configservice_element, "node")
+            node = self.session.get_node(node_id)
+            service = node.config_services[name]
+
+            configs_element = configservice_element.find("configs")
+            if configs_element is not None:
+                config = {}
+                for config_element in configs_element.iterchildren():
+                    key = config_element.get("key")
+                    value = config_element.get("value")
+                    config[key] = value
+                service.set_config(config)
+
+            templates_element = configservice_element.find("templates")
+            if templates_element is not None:
+                for template_element in templates_element.iterchildren():
+                    name = template_element.get("name")
+                    template = template_element.text
+                    logging.info(
+                        "loading xml template(%s): %s", type(template), template
+                    )
+                    service.set_template(name, template)
+
+    def read_links(self) -> None:
         link_elements = self.scenario.find("links")
         if link_elements is None:
             return
@@ -825,20 +923,14 @@ class CoreXmlReader:
 
             if link_options.unidirectional == 1 and node_set in node_sets:
                 logging.info(
-                    "updating link node_one(%s) node_two(%s): %s",
-                    node_one,
-                    node_two,
-                    link_options,
+                    "updating link node_one(%s) node_two(%s)", node_one, node_two
                 )
                 self.session.update_link(
                     node_one, node_two, interface_one.id, interface_two.id, link_options
                 )
             else:
                 logging.info(
-                    "adding link node_one(%s) node_two(%s): %s",
-                    node_one,
-                    node_two,
-                    link_options,
+                    "adding link node_one(%s) node_two(%s)", node_one, node_two
                 )
                 self.session.add_link(
                     node_one, node_two, interface_one, interface_two, link_options

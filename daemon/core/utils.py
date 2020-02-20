@@ -11,23 +11,47 @@ import json
 import logging
 import logging.config
 import os
+import random
 import shlex
 import sys
 from subprocess import PIPE, STDOUT, Popen
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
-from core.errors import CoreCommandError
+import netaddr
+
+from core.errors import CoreCommandError, CoreError
+
+if TYPE_CHECKING:
+    from core.emulator.session import Session
+    from core.nodes.base import CoreNode
+T = TypeVar("T")
 
 DEVNULL = open(os.devnull, "wb")
 
 
-def execute_file(path, exec_globals=None, exec_locals=None):
+def execute_file(
+    path: str, exec_globals: Dict[str, str] = None, exec_locals: Dict[str, str] = None
+) -> None:
     """
     Provides an alternative way to run execfile to be compatible for
     both python2/3.
 
-    :param str path: path of file to execute
-    :param dict exec_globals: globals values to pass to execution
-    :param dict exec_locals:  local values to pass to execution
+    :param path: path of file to execute
+    :param exec_globals: globals values to pass to execution
+    :param exec_locals:  local values to pass to execution
     :return: nothing
     """
     if exec_globals is None:
@@ -38,15 +62,14 @@ def execute_file(path, exec_globals=None, exec_locals=None):
         exec(data, exec_globals, exec_locals)
 
 
-def hashkey(value):
+def hashkey(value: Union[str, int]) -> int:
     """
     Provide a consistent hash that can be used in place
     of the builtin hash, that no longer behaves consistently
     in python3.
 
-    :param str/int value: value to hash
+    :param value: value to hash
     :return: hash value
-    :rtype: int
     """
     if isinstance(value, int):
         value = str(value)
@@ -54,7 +77,7 @@ def hashkey(value):
     return int(hashlib.sha256(value).hexdigest(), 16)
 
 
-def _detach_init():
+def _detach_init() -> None:
     """
     Fork a child process and exit.
 
@@ -66,14 +89,13 @@ def _detach_init():
     os.setsid()
 
 
-def _valid_module(path, file_name):
+def _valid_module(path: str, file_name: str) -> bool:
     """
     Check if file is a valid python module.
 
-    :param str path: path to file
-    :param str file_name: file name to check
+    :param path: path to file
+    :param file_name: file name to check
     :return: True if a valid python module file, False otherwise
-    :rtype: bool
     """
     file_path = os.path.join(path, file_name)
     if not os.path.isfile(file_path):
@@ -88,7 +110,7 @@ def _valid_module(path, file_name):
     return True
 
 
-def _is_class(module, member, clazz):
+def _is_class(module: Any, member: Type, clazz: Type) -> bool:
     """
     Validates if a module member is a class and an instance of a CoreService.
 
@@ -96,7 +118,6 @@ def _is_class(module, member, clazz):
     :param member: member to validate for service
     :param clazz: clazz type to check for validation
     :return: True if a valid service, False otherwise
-    :rtype: bool
     """
     if not inspect.isclass(member):
         return False
@@ -110,7 +131,7 @@ def _is_class(module, member, clazz):
     return True
 
 
-def close_onexec(fd):
+def close_onexec(fd: int) -> None:
     """
     Close on execution of a shell process.
 
@@ -121,12 +142,12 @@ def close_onexec(fd):
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def which(command, required):
+def which(command: str, required: bool) -> str:
     """
     Find location of desired executable within current PATH.
 
-    :param str command: command to find location for
-    :param bool required: command is required to be found, false otherwise
+    :param command: command to find location for
+    :param required: command is required to be found, false otherwise
     :return: command location or None
     :raises ValueError: when not found and required
     """
@@ -143,13 +164,12 @@ def which(command, required):
     return found_path
 
 
-def make_tuple(obj):
+def make_tuple(obj: Generic[T]) -> Tuple[T]:
     """
     Create a tuple from an object, or return the object itself.
 
     :param obj: object to convert to a tuple
     :return: converted tuple or the object itself
-    :rtype: tuple
     """
     if hasattr(obj, "__iter__"):
         return tuple(obj)
@@ -157,14 +177,13 @@ def make_tuple(obj):
         return (obj,)
 
 
-def make_tuple_fromstr(s, value_type):
+def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> Tuple[T]:
     """
     Create a tuple from a string.
 
-    :param str s: string to convert to a tuple
+    :param s: string to convert to a tuple
     :param value_type: type of values to be contained within tuple
     :return: tuple from string
-    :rtype: tuple
     """
     # remove tuple braces and strip commands and space from all values in the tuple
     # string
@@ -176,14 +195,13 @@ def make_tuple_fromstr(s, value_type):
     return tuple(value_type(i) for i in values)
 
 
-def mute_detach(args, **kwargs):
+def mute_detach(args: str, **kwargs: Dict[str, Any]) -> int:
     """
     Run a muted detached process by forking it.
 
-    :param list[str]|str args: arguments for the command
-    :param dict kwargs: keyword arguments for the command
+    :param args: arguments for the command
+    :param kwargs: keyword arguments for the command
     :return: process id of the command
-    :rtype: int
     """
     args = shlex.split(args)
     kwargs["preexec_fn"] = _detach_init
@@ -192,18 +210,23 @@ def mute_detach(args, **kwargs):
     return Popen(args, **kwargs).pid
 
 
-def cmd(args, env=None, cwd=None, wait=True, shell=False):
+def cmd(
+    args: str,
+    env: Dict[str, str] = None,
+    cwd: str = None,
+    wait: bool = True,
+    shell: bool = False,
+) -> str:
     """
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
 
-    :param str args: command arguments
-    :param dict env: environment to run command with
-    :param str cwd: directory to run command in
-    :param bool wait: True to wait for status, False otherwise
-    :param bool shell: True to use shell, False otherwise
+    :param args: command arguments
+    :param env: environment to run command with
+    :param cwd: directory to run command in
+    :param wait: True to wait for status, False otherwise
+    :param shell: True to use shell, False otherwise
     :return: combined stdout and stderr
-    :rtype: str
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
@@ -224,13 +247,13 @@ def cmd(args, env=None, cwd=None, wait=True, shell=False):
         raise CoreCommandError(-1, args)
 
 
-def file_munge(pathname, header, text):
+def file_munge(pathname: str, header: str, text: str) -> None:
     """
     Insert text at the end of a file, surrounded by header comments.
 
-    :param str pathname: file path to add text to
-    :param str header: header text comments
-    :param str text: text to append to file
+    :param pathname: file path to add text to
+    :param header: header text comments
+    :param text: text to append to file
     :return: nothing
     """
     # prevent duplicates
@@ -242,12 +265,12 @@ def file_munge(pathname, header, text):
         append_file.write(f"# END {header}\n")
 
 
-def file_demunge(pathname, header):
+def file_demunge(pathname: str, header: str) -> None:
     """
     Remove text that was inserted in a file surrounded by header comments.
 
-    :param str pathname: file path to open for removing a header
-    :param str header: header text to target for removal
+    :param pathname: file path to open for removing a header
+    :param header: header text to target for removal
     :return: nothing
     """
     with open(pathname, "r") as read_file:
@@ -270,15 +293,16 @@ def file_demunge(pathname, header):
         write_file.write("".join(lines))
 
 
-def expand_corepath(pathname, session=None, node=None):
+def expand_corepath(
+    pathname: str, session: "Session" = None, node: "CoreNode" = None
+) -> str:
     """
     Expand a file path given session information.
 
-    :param str pathname: file path to expand
-    :param core.emulator.session.Session session: core session object to expand path
-    :param core.nodes.base.CoreNode node: node to expand path with
+    :param pathname: file path to expand
+    :param session: core session object to expand path
+    :param node: node to expand path with
     :return: expanded path
-    :rtype: str
     """
     if session is not None:
         pathname = pathname.replace("~", f"/home/{session.user}")
@@ -293,26 +317,25 @@ def expand_corepath(pathname, session=None, node=None):
     return pathname
 
 
-def sysctl_devname(devname):
+def sysctl_devname(devname: str) -> Optional[str]:
     """
     Translate a device name to the name used with sysctl.
 
-    :param str devname: device name to translate
+    :param devname: device name to translate
     :return: translated device name
-    :rtype: str
     """
     if devname is None:
         return None
     return devname.replace(".", "/")
 
 
-def load_config(filename, d):
+def load_config(filename: str, d: Dict[str, str]) -> None:
     """
     Read key=value pairs from a file, into a dict. Skip comments; strip newline
     characters and spacing.
 
-    :param str filename: file to read into a dictionary
-    :param dict d: dictionary to read file into
+    :param filename: file to read into a dictionary
+    :param d: dictionary to read file into
     :return: nothing
     """
     with open(filename, "r") as f:
@@ -329,7 +352,7 @@ def load_config(filename, d):
             logging.exception("error reading file to dict: %s", filename)
 
 
-def load_classes(path, clazz):
+def load_classes(path: str, clazz: Generic[T]) -> T:
     """
     Dynamically load classes for use within CORE.
 
@@ -372,11 +395,11 @@ def load_classes(path, clazz):
     return classes
 
 
-def load_logging_config(config_path):
+def load_logging_config(config_path: str) -> None:
     """
     Load CORE logging configuration file.
 
-    :param str config_path: path to logging config file
+    :param config_path: path to logging config file
     :return: nothing
     """
     with open(config_path, "r") as log_config_file:
@@ -384,15 +407,16 @@ def load_logging_config(config_path):
         logging.config.dictConfig(log_config)
 
 
-def threadpool(funcs, workers=10):
+def threadpool(
+    funcs: List[Tuple[Callable, Iterable[Any], Dict[Any, Any]]], workers: int = 10
+) -> Tuple[List[Any], List[Exception]]:
     """
     Run provided functions, arguments, and keywords within a threadpool
     collecting results and exceptions.
 
-    :param iter funcs: iterable that provides a func, args, kwargs
-    :param int workers: number of workers for the threadpool
+    :param funcs: iterable that provides a func, args, kwargs
+    :param workers: number of workers for the threadpool
     :return: results and exceptions from running functions with args and kwargs
-    :rtype: tuple
     """
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
         futures = []
@@ -406,5 +430,48 @@ def threadpool(funcs, workers=10):
                 result = future.result()
                 results.append(result)
             except Exception as e:
+                logging.exception("thread pool exception")
                 exceptions.append(e)
     return results, exceptions
+
+
+def random_mac() -> str:
+    """
+    Create a random mac address using Xen OID 00:16:3E.
+
+    :return: random mac address
+    """
+    value = random.randint(0, 0xFFFFFF)
+    value |= 0x00163E << 24
+    mac = netaddr.EUI(value)
+    mac.dialect = netaddr.mac_unix
+    return str(mac)
+
+
+def validate_mac(value: str) -> str:
+    """
+    Validate mac and return unix formatted version.
+
+    :param value: address to validate
+    :return: unix formatted mac
+    """
+    try:
+        mac = netaddr.EUI(value)
+        mac.dialect = netaddr.mac_unix_expanded
+        return str(mac)
+    except netaddr.AddrFormatError as e:
+        raise CoreError(f"invalid mac address {value}: {e}")
+
+
+def validate_ip(value: str) -> str:
+    """
+    Validate ip address with prefix and return formatted version.
+
+    :param value: address to validate
+    :return: formatted ip address
+    """
+    try:
+        ip = netaddr.IPNetwork(value)
+        return str(ip)
+    except (ValueError, netaddr.AddrFormatError) as e:
+        raise CoreError(f"invalid ip address {value}: {e}")

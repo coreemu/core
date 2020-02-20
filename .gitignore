@@ -18,8 +18,8 @@ debian
 stamp-h1
 
 # generated protobuf files
-daemon/core/api/grpc/core_pb2.py
-daemon/core/api/grpc/core_pb2_grpc.py
+*_pb2.py
+*_pb2_grpc.py
 
 # python build directory
 dist
@@ -54,7 +54,6 @@ coverage.xml
 # ignore built input files
 netns/setup.py
 daemon/setup.py
-ns3/setup.py
 
 # ignore corefx build
 corefx/target

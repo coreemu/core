@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any
 
 import grpc
 
@@ -9,11 +10,21 @@ from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 ICON_SIZE = 16
 
 
 class MobilityPlayer:
-    def __init__(self, master, app, canvas_node, config):
+    def __init__(
+        self,
+        master: "Application",
+        app: "Application",
+        canvas_node: "CanvasNode",
+        config,
+    ):
         self.master = master
         self.app = app
         self.canvas_node = canvas_node
@@ -57,7 +68,9 @@ class MobilityPlayer:
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(self, master, app, canvas_node, config):
+    def __init__(
+        self, master: Any, app: "Application", canvas_node: "CanvasNode", config
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )
@@ -140,7 +153,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.START
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
 
     def click_pause(self):
         self.set_pause()
@@ -150,7 +163,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.PAUSE
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
 
     def click_stop(self):
         self.set_stop()
@@ -160,4 +173,4 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.STOP
             )
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)

@@ -1,5 +1,7 @@
+import logging
 import tkinter as tk
 from tkinter import font
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -9,6 +11,7 @@ from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
+from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
@@ -16,11 +19,22 @@ from core.gui.graph import tags
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.nodeutils import NodeUtils
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from PIL.ImageTk import PhotoImage
+
 NODE_TEXT_OFFSET = 5
 
 
 class CanvasNode:
-    def __init__(self, app, x, y, core_node, image):
+    def __init__(
+        self,
+        app: "Application",
+        x: float,
+        y: float,
+        core_node: core_pb2.Node,
+        image: "PhotoImage",
+    ):
         self.app = app
         self.canvas = app.canvas
         self.image = image
@@ -51,9 +65,10 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
 
     def delete(self):
+        logging.debug("Delete canvas node for %s", self.core_node)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
-        self.delete_antennae()
+        self.delete_antennas()
 
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
@@ -70,19 +85,17 @@ class CanvasNode:
     def delete_antenna(self):
         """
         delete one antenna
-
-        :return: nothing
         """
+        logging.debug("Delete an antenna on %s", self.core_node.name)
         if self.antennae:
             antenna_id = self.antennae.pop()
             self.canvas.delete(antenna_id)
 
-    def delete_antennae(self):
+    def delete_antennas(self):
         """
         delete all antennas
-
-        :return: nothing
         """
+        logging.debug("Remove all antennas for %s", self.core_node.name)
         for antenna_id in self.antennae:
             self.canvas.delete(antenna_id)
         self.antennae.clear()
@@ -95,14 +108,14 @@ class CanvasNode:
         image_box = self.canvas.bbox(self.id)
         return image_box[3] + NODE_TEXT_OFFSET
 
-    def move(self, x, y):
+    def move(self, x: int, y: int):
         x, y = self.canvas.get_scaled_coords(x, y)
         current_x, current_y = self.canvas.coords(self.id)
         x_offset = x - current_x
         y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
-    def motion(self, x_offset, y_offset, update=True):
+    def motion(self, x_offset: int, y_offset: int, update: bool = True):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         x, y = self.canvas.coords(self.id)
@@ -144,7 +157,7 @@ class CanvasNode:
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 
-    def on_enter(self, event):
+    def on_enter(self, event: tk.Event):
         if self.app.core.is_runtime() and self.app.core.observer:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
@@ -152,18 +165,18 @@ class CanvasNode:
                 output = self.app.core.run(self.core_node.id)
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
-                show_grpc_error(e)
+                show_grpc_error(e, self.app, self.app)
 
-    def on_leave(self, event):
+    def on_leave(self, event: tk.Event):
         self.tooltip.on_leave(event)
 
-    def double_click(self, event):
+    def double_click(self, event: tk.Event):
         if self.app.core.is_runtime():
             self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
 
-    def create_context(self):
+    def create_context(self) -> tk.Menu:
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
         context = tk.Menu(self.canvas)
@@ -172,6 +185,7 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", state=tk.DISABLED)
+                context.add_command(label="Config Services", state=tk.DISABLED)
             if is_wlan:
                 context.add_command(label="WLAN Config", command=self.show_wlan_config)
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
@@ -190,6 +204,9 @@ class CanvasNode:
             context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Services", command=self.show_services)
+                context.add_command(
+                    label="Config Services", command=self.show_config_services
+                )
             if is_emane:
                 context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -223,12 +240,14 @@ class CanvasNode:
     def show_wlan_config(self):
         self.canvas.context = None
         dialog = WlanConfigDialog(self.app, self.app, self)
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
     def show_mobility_config(self):
         self.canvas.context = None
         dialog = MobilityConfigDialog(self.app, self.app, self)
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
     def show_mobility_player(self):
         self.canvas.context = None
@@ -245,7 +264,12 @@ class CanvasNode:
         dialog = NodeServiceDialog(self.app.master, self.app, self)
         dialog.show()
 
-    def has_emane_link(self, interface_id):
+    def show_config_services(self):
+        self.canvas.context = None
+        dialog = NodeConfigServiceDialog(self.app.master, self.app, self)
+        dialog.show()
+
+    def has_emane_link(self, interface_id: int) -> core_pb2.Node:
         result = None
         for edge in self.edges:
             if self.id == edge.src:

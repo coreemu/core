@@ -12,14 +12,23 @@ import subprocess
 import tempfile
 import threading
 import time
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.data import (
+    ConfigData,
+    EventData,
+    ExceptionData,
+    FileData,
+    LinkData,
+    NodeData,
+)
 from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
+    InterfaceData,
     LinkOptions,
     NodeOptions,
     create_interface,
@@ -31,9 +40,9 @@ from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import BasicRangeModel, MobilityManager
-from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
+from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.ipaddress import MacAddress
+from core.nodes.interface import CoreInterface, GreTap
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -75,13 +84,15 @@ class Session:
     CORE session manager.
     """
 
-    def __init__(self, _id, config=None, mkdir=True):
+    def __init__(
+        self, _id: int, config: Dict[str, str] = None, mkdir: bool = True
+    ) -> None:
         """
         Create a Session instance.
 
-        :param int _id: session id
-        :param dict config: session configuration
-        :param bool mkdir: flag to determine if a directory should be made
+        :param _id: session id
+        :param config: session configuration
+        :param mkdir: flag to determine if a directory should be made
         """
         self.id = _id
 
@@ -150,12 +161,15 @@ class Session:
             "host": ("DefaultRoute", "SSH"),
         }
 
+        # config services
+        self.service_manager = None
+
     @classmethod
-    def get_node_class(cls, _type):
+    def get_node_class(cls, _type: NodeTypes) -> Type[NodeBase]:
         """
         Retrieve the class for a given node type.
 
-        :param core.emulator.enumerations.NodeTypes _type: node type to get class for
+        :param _type: node type to get class for
         :return: node class
         """
         node_class = NODES.get(_type)
@@ -164,27 +178,30 @@ class Session:
         return node_class
 
     @classmethod
-    def get_node_type(cls, _class):
+    def get_node_type(cls, _class: Type[NodeBase]) -> NodeTypes:
         """
         Retrieve node type for a given node class.
 
         :param _class: node class to get a node type for
         :return: node type
-        :rtype: core.emulator.enumerations.NodeTypes
+        :raises CoreError: when node type does not exist
         """
         node_type = NODES_TYPE.get(_class)
         if node_type is None:
             raise CoreError(f"invalid node class: {_class}")
         return node_type
 
-    def _link_nodes(self, node_one_id, node_two_id):
+    def _link_nodes(
+        self, node_one_id: int, node_two_id: int
+    ) -> Tuple[
+        CoreNode, CoreNode, CoreNetworkBase, CoreNetworkBase, Tuple[GreTap, GreTap]
+    ]:
         """
         Convenience method for retrieving nodes within link data.
 
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
+        :param node_one_id: node one id
+        :param node_two_id: node two id
         :return: nodes, network nodes if present, and tunnel if present
-        :rtype: tuple
         """
         logging.debug(
             "link message between node1(%s) and node2(%s)", node_one_id, node_two_id
@@ -238,14 +255,15 @@ class Session:
         )
         return node_one, node_two, net_one, net_two, tunnel
 
-    def _link_wireless(self, objects, connect):
+    def _link_wireless(self, objects: Iterable[CoreNodeBase], connect: bool) -> None:
         """
         Objects to deal with when connecting/disconnecting wireless links.
 
-        :param list objects: possible objects to deal with
-        :param bool connect: link interfaces if True, unlink otherwise
+        :param objects: possible objects to deal with
+        :param connect: link interfaces if True, unlink otherwise
         :return: nothing
-        :raises core.CoreError: when objects to link is less than 2, or no common networks are found
+        :raises core.CoreError: when objects to link is less than 2, or no common
+            networks are found
         """
         objects = [x for x in objects if x]
         if len(objects) < 2:
@@ -278,21 +296,24 @@ class Session:
 
     def add_link(
         self,
-        node_one_id,
-        node_two_id,
-        interface_one=None,
-        interface_two=None,
-        link_options=None,
-    ):
+        node_one_id: int,
+        node_two_id: int,
+        interface_one: InterfaceData = None,
+        interface_two: InterfaceData = None,
+        link_options: LinkOptions = None,
+    ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
 
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param core.emulator.emudata.InterfaceData interface_one: node one interface data, defaults to none
-        :param core.emulator.emudata.InterfaceData interface_two: node two interface data, defaults to none
-        :param core.emulator.emudata.LinkOptions link_options: data for creating link, defaults to no options
-        :return: nothing
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param interface_one: node one interface
+            data, defaults to none
+        :param interface_two: node two interface
+            data, defaults to none
+        :param link_options: data for creating link,
+            defaults to no options
+        :return: tuple of created core interfaces, depending on link
         """
         if not link_options:
             link_options = LinkOptions()
@@ -306,6 +327,9 @@ class Session:
             node_one.lock.acquire()
         if node_two:
             node_two.lock.acquire()
+
+        node_one_interface = None
+        node_two_interface = None
 
         try:
             # wireless link
@@ -332,6 +356,7 @@ class Session:
                         net_one.name,
                     )
                     interface = create_interface(node_one, net_one, interface_one)
+                    node_one_interface = interface
                     link_config(net_one, interface, link_options)
 
                 # network to node
@@ -342,6 +367,7 @@ class Session:
                         net_one.name,
                     )
                     interface = create_interface(node_two, net_one, interface_two)
+                    node_two_interface = interface
                     if not link_options.unidirectional:
                         link_config(net_one, interface, link_options)
 
@@ -353,6 +379,7 @@ class Session:
                         net_two.name,
                     )
                     interface = net_one.linknet(net_two)
+                    node_one_interface = interface
                     link_config(net_one, interface, link_options)
 
                     if not link_options.unidirectional:
@@ -405,22 +432,24 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
+        return node_one_interface, node_two_interface
+
     def delete_link(
         self,
-        node_one_id,
-        node_two_id,
-        interface_one_id,
-        interface_two_id,
-        link_type=LinkTypes.WIRED,
-    ):
+        node_one_id: int,
+        node_two_id: int,
+        interface_one_id: int,
+        interface_two_id: int,
+        link_type: LinkTypes = LinkTypes.WIRED,
+    ) -> None:
         """
         Delete a link between nodes.
 
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param int interface_one_id: interface id for node one
-        :param int interface_two_id: interface id for node two
-        :param core.emulator.enumerations.LinkTypes link_type: link type to delete
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param interface_one_id: interface id for node one
+        :param interface_two_id: interface id for node two
+        :param link_type: link type to delete
         :return: nothing
         :raises core.CoreError: when no common network is found for link being deleted
         """
@@ -513,20 +542,20 @@ class Session:
 
     def update_link(
         self,
-        node_one_id,
-        node_two_id,
-        interface_one_id=None,
-        interface_two_id=None,
-        link_options=None,
-    ):
+        node_one_id: int,
+        node_two_id: int,
+        interface_one_id: int = None,
+        interface_two_id: int = None,
+        link_options: LinkOptions = None,
+    ) -> None:
         """
         Update link information between nodes.
 
-        :param int node_one_id: node one id
-        :param int node_two_id: node two id
-        :param int interface_one_id: interface id for node one
-        :param int interface_two_id: interface id for node two
-        :param core.emulator.emudata.LinkOptions link_options: data to update link with
+        :param node_one_id: node one id
+        :param node_two_id: node two id
+        :param interface_one_id: interface id for node one
+        :param interface_two_id: interface id for node two
+        :param link_options: data to update link with
         :return: nothing
         :raises core.CoreError: when updating a wireless type link, when there is a unknown
             link between networks
@@ -624,14 +653,20 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
-    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, options=None, _cls=None):
+    def add_node(
+        self,
+        _type: NodeTypes = NodeTypes.DEFAULT,
+        _id: int = None,
+        options: NodeOptions = None,
+        _cls: Type[NodeBase] = None,
+    ) -> NodeBase:
         """
         Add a node to the session, based on the provided node data.
 
-        :param core.emulator.enumerations.NodeTypes _type: type of node to create
-        :param int _id: id for node, defaults to None for generated id
-        :param core.emulator.emudata.NodeOptions options: data to create node with
-        :param class _cls: optional custom class to use for a created node
+        :param _type: type of node to create
+        :param _id: id for node, defaults to None for generated id
+        :param options: data to create node with
+        :param _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
@@ -702,6 +737,12 @@ class Session:
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
 
+            # add config services
+            logging.info("setting node config services: %s", options.config_services)
+            for name in options.config_services:
+                service_class = self.service_manager.get_service(name)
+                node.add_config_service(service_class)
+
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
             self.emane.set_model_config(_id, options.emane)
@@ -718,14 +759,13 @@ class Session:
 
         return node
 
-    def edit_node(self, node_id, options):
+    def edit_node(self, node_id: int, options: NodeOptions) -> None:
         """
         Edit node information.
 
-        :param int node_id: id of node to update
-        :param core.emulator.emudata.NodeOptions options: data to update node with
+        :param node_id: id of node to update
+        :param options: data to update node with
         :return: True if node updated, False otherwise
-        :rtype: bool
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
@@ -738,12 +778,12 @@ class Session:
         node.canvas = options.canvas
         node.icon = options.icon
 
-    def set_node_position(self, node, options):
+    def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
         """
         Set position for a node, use lat/lon/alt if needed.
 
         :param node: node to set position for
-        :param core.emulator.emudata.NodeOptions options: data for node
+        :param options: data for node
         :return: nothing
         """
         # extract location values
@@ -768,11 +808,11 @@ class Session:
         if using_lat_lon_alt:
             self.broadcast_node_location(node)
 
-    def broadcast_node_location(self, node):
+    def broadcast_node_location(self, node: NodeBase) -> None:
         """
         Broadcast node location to all listeners.
 
-        :param core.nodes.base.NodeBase node: node to broadcast location for
+        :param node: node to broadcast location for
         :return: nothing
         """
         node_data = NodeData(
@@ -783,16 +823,16 @@ class Session:
         )
         self.broadcast_node(node_data)
 
-    def start_mobility(self, node_ids=None):
+    def start_mobility(self, node_ids: List[int] = None) -> None:
         """
         Start mobility for the provided node ids.
 
-        :param list[int] node_ids: nodes to start mobility for
+        :param node_ids: nodes to start mobility for
         :return: nothing
         """
         self.mobility.startup(node_ids)
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """
         Determine if this session is considered to be active. (Runtime or Data collect states)
 
@@ -805,12 +845,12 @@ class Session:
         logging.info("session(%s) checking if active: %s", self.id, result)
         return result
 
-    def open_xml(self, file_name, start=False):
+    def open_xml(self, file_name: str, start: bool = False) -> None:
         """
         Import a session from the EmulationScript XML format.
 
-        :param str file_name: xml file to load session from
-        :param bool start: instantiate session if true, false otherwise
+        :param file_name: xml file to load session from
+        :param start: instantiate session if true, false otherwise
         :return: nothing
         """
         logging.info("opening xml: %s", file_name)
@@ -833,22 +873,22 @@ class Session:
         if start:
             self.instantiate()
 
-    def save_xml(self, file_name):
+    def save_xml(self, file_name: str) -> None:
         """
         Export a session to the EmulationScript XML format.
 
-        :param str file_name: file name to write session xml to
+        :param file_name: file name to write session xml to
         :return: nothing
         """
         CoreXmlWriter(self).write(file_name)
 
-    def add_hook(self, state, file_name, source_name, data):
+    def add_hook(self, state: int, file_name: str, source_name: str, data: str) -> None:
         """
         Store a hook from a received file message.
 
-        :param int state: when to run hook
-        :param str file_name: file name for hook
-        :param str source_name: source name
+        :param state: when to run hook
+        :param file_name: file name for hook
+        :param source_name: source name
         :param data: hook data
         :return: nothing
         """
@@ -856,14 +896,16 @@ class Session:
         state = f":{state}"
         self.set_hook(state, file_name, source_name, data)
 
-    def add_node_file(self, node_id, source_name, file_name, data):
+    def add_node_file(
+        self, node_id: int, source_name: str, file_name: str, data: str
+    ) -> None:
         """
         Add a file to a node.
 
-        :param int node_id: node to add file to
-        :param str source_name: source file name
-        :param str file_name: file name to add
-        :param str data: file data
+        :param node_id: node to add file to
+        :param source_name: source file name
+        :param file_name: file name to add
+        :param data: file data
         :return: nothing
         """
 
@@ -874,7 +916,7 @@ class Session:
         elif data is not None:
             node.nodefile(file_name, data)
 
-    def clear(self):
+    def clear(self) -> None:
         """
         Clear all CORE session data. (nodes, hooks, etc)
 
@@ -890,7 +932,7 @@ class Session:
         self.services.reset()
         self.mobility.config_reset()
 
-    def start_events(self):
+    def start_events(self) -> None:
         """
         Start event loop.
 
@@ -898,29 +940,29 @@ class Session:
         """
         self.event_loop.run()
 
-    def mobility_event(self, event_data):
+    def mobility_event(self, event_data: EventData) -> None:
         """
         Handle a mobility event.
 
-        :param core.emulator.data.EventData event_data: event data to handle
+        :param event_data: event data to handle
         :return: nothing
         """
         self.mobility.handleevent(event_data)
 
-    def set_location(self, lat, lon, alt, scale):
+    def set_location(self, lat: float, lon: float, alt: float, scale: float) -> None:
         """
         Set session geospatial location.
 
-        :param float lat: latitude
-        :param float lon: longitude
-        :param float alt: altitude
-        :param float scale: reference scale
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :param scale: reference scale
         :return: nothing
         """
         self.location.setrefgeo(lat, lon, alt)
         self.location.refscale = scale
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown all session nodes and remove the session directory.
         """
@@ -943,77 +985,77 @@ class Session:
         for handler in self.shutdown_handlers:
             handler(self)
 
-    def broadcast_event(self, event_data):
+    def broadcast_event(self, event_data: EventData) -> None:
         """
         Handle event data that should be provided to event handler.
 
-        :param core.data.EventData event_data: event data to send out
+        :param event_data: event data to send out
         :return: nothing
         """
 
         for handler in self.event_handlers:
             handler(event_data)
 
-    def broadcast_exception(self, exception_data):
+    def broadcast_exception(self, exception_data: ExceptionData) -> None:
         """
         Handle exception data that should be provided to exception handlers.
 
-        :param core.emulator.data.ExceptionData exception_data: exception data to send out
+        :param exception_data: exception data to send out
         :return: nothing
         """
 
         for handler in self.exception_handlers:
             handler(exception_data)
 
-    def broadcast_node(self, node_data):
+    def broadcast_node(self, node_data: NodeData) -> None:
         """
         Handle node data that should be provided to node handlers.
 
-        :param core.emulator.data.ExceptionData node_data: node data to send out
+        :param node_data: node data to send out
         :return: nothing
         """
 
         for handler in self.node_handlers:
             handler(node_data)
 
-    def broadcast_file(self, file_data):
+    def broadcast_file(self, file_data: FileData) -> None:
         """
         Handle file data that should be provided to file handlers.
 
-        :param core.data.FileData file_data: file data to send out
+        :param file_data: file data to send out
         :return: nothing
         """
 
         for handler in self.file_handlers:
             handler(file_data)
 
-    def broadcast_config(self, config_data):
+    def broadcast_config(self, config_data: ConfigData) -> None:
         """
         Handle config data that should be provided to config handlers.
 
-        :param core.emulator.data.ConfigData config_data: config data to send out
+        :param config_data: config data to send out
         :return: nothing
         """
 
         for handler in self.config_handlers:
             handler(config_data)
 
-    def broadcast_link(self, link_data):
+    def broadcast_link(self, link_data: LinkData) -> None:
         """
         Handle link data that should be provided to link handlers.
 
-        :param core.emulator.data.ExceptionData link_data: link data to send out
+        :param link_data: link data to send out
         :return: nothing
         """
 
         for handler in self.link_handlers:
             handler(link_data)
 
-    def set_state(self, state, send_event=False):
+    def set_state(self, state: EventTypes, send_event: bool = False) -> None:
         """
         Set the session's current state.
 
-        :param core.enumerations.EventTypes state: state to set to
+        :param state: state to set to
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
@@ -1040,11 +1082,11 @@ class Session:
             event_data = EventData(event_type=state_value, time=str(time.monotonic()))
             self.broadcast_event(event_data)
 
-    def write_state(self, state):
+    def write_state(self, state: int) -> None:
         """
         Write the current state to a state file in the session dir.
 
-        :param int state: state to write to file
+        :param state: state to write to file
         :return: nothing
         """
         try:
@@ -1054,11 +1096,12 @@ class Session:
         except IOError:
             logging.exception("error writing state file: %s", state)
 
-    def run_hooks(self, state):
+    def run_hooks(self, state: int) -> None:
         """
-        Run hook scripts upon changing states. If hooks is not specified, run all hooks in the given state.
+        Run hook scripts upon changing states. If hooks is not specified, run all hooks
+        in the given state.
 
-        :param int state: state to run hooks for
+        :param state: state to run hooks for
         :return: nothing
         """
 
@@ -1076,14 +1119,16 @@ class Session:
         else:
             logging.info("no state hooks for %s", state)
 
-    def set_hook(self, hook_type, file_name, source_name, data):
+    def set_hook(
+        self, hook_type: str, file_name: str, source_name: str, data: str
+    ) -> None:
         """
         Store a hook from a received file message.
 
-        :param str hook_type: hook type
-        :param str file_name: file name for hook
-        :param str source_name: source name
-        :param str data: hook data
+        :param hook_type: hook type
+        :param file_name: file name for hook
+        :param source_name: source name
+        :param data: hook data
         :return: nothing
         """
         logging.info(
@@ -1108,17 +1153,17 @@ class Session:
             logging.info("immediately running new state hook")
             self.run_hook(hook)
 
-    def del_hooks(self):
+    def del_hooks(self) -> None:
         """
         Clear the hook scripts dict.
         """
         self._hooks.clear()
 
-    def run_hook(self, hook):
+    def run_hook(self, hook: Tuple[str, str]) -> None:
         """
         Run a hook.
 
-        :param tuple hook: hook to run
+        :param hook: hook to run
         :return: nothing
         """
         file_name, data = hook
@@ -1155,11 +1200,11 @@ class Session:
         except (OSError, subprocess.CalledProcessError):
             logging.exception("error running hook: %s", file_name)
 
-    def run_state_hooks(self, state):
+    def run_state_hooks(self, state: int) -> None:
         """
         Run state hooks.
 
-        :param int state: state to run hooks for
+        :param state: state to run hooks for
         :return: nothing
         """
         for hook in self._state_hooks.get(state, []):
@@ -1175,12 +1220,12 @@ class Session:
                     ExceptionLevels.ERROR, "Session.run_state_hooks", None, message
                 )
 
-    def add_state_hook(self, state, hook):
+    def add_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
         """
         Add a state hook.
 
-        :param int state: state to add hook for
-        :param func hook: hook callback for the state
+        :param state: state to add hook for
+        :param hook: hook callback for the state
         :return: nothing
         """
         hooks = self._state_hooks.setdefault(state, [])
@@ -1191,22 +1236,22 @@ class Session:
         if self.state == state:
             hook(state)
 
-    def del_state_hook(self, state, hook):
+    def del_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
         """
         Delete a state hook.
 
-        :param int state: state to delete hook for
-        :param func hook: hook to delete
-        :return:
+        :param state: state to delete hook for
+        :param hook: hook to delete
+        :return: nothing
         """
         hooks = self._state_hooks.setdefault(state, [])
         hooks.remove(hook)
 
-    def runtime_state_hook(self, state):
+    def runtime_state_hook(self, state: int) -> None:
         """
         Runtime state hook check.
 
-        :param int state: state to check
+        :param state: state to check
         :return: nothing
         """
         if state == EventTypes.RUNTIME_STATE.value:
@@ -1218,15 +1263,14 @@ class Session:
             corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
             xml_writer.write(xml_file_name)
 
-    def get_environment(self, state=True):
+    def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
         Get an environment suitable for a subprocess.Popen call.
         This is the current process environment with some session-specific
         variables.
 
-        :param bool state: flag to determine if session state should be included
+        :param state: flag to determine if session state should be included
         :return: environment variables
-        :rtype: dict
         """
         env = os.environ.copy()
         env["SESSION"] = str(self.id)
@@ -1266,11 +1310,11 @@ class Session:
 
         return env
 
-    def set_thumbnail(self, thumb_file):
+    def set_thumbnail(self, thumb_file: str) -> None:
         """
         Set the thumbnail filename. Move files from /tmp to session dir.
 
-        :param str thumb_file: tumbnail file to set for session
+        :param thumb_file: tumbnail file to set for session
         :return: nothing
         """
         if not os.path.exists(thumb_file):
@@ -1282,12 +1326,12 @@ class Session:
         shutil.copy(thumb_file, destination_file)
         self.thumbnail = destination_file
 
-    def set_user(self, user):
+    def set_user(self, user: str) -> None:
         """
         Set the username for this session. Update the permissions of the
         session dir to allow the user write access.
 
-        :param str user: user to give write permissions to for the session directory
+        :param user: user to give write permissions to for the session directory
         :return: nothing
         """
         if user:
@@ -1300,7 +1344,7 @@ class Session:
 
         self.user = user
 
-    def get_node_id(self):
+    def get_node_id(self) -> int:
         """
         Return a unique, new node id.
         """
@@ -1309,49 +1353,44 @@ class Session:
                 node_id = random.randint(1, 0xFFFF)
                 if node_id not in self.nodes:
                     break
-
         return node_id
 
-    def create_node(self, cls, *args, **kwargs):
+    def create_node(self, cls: Type[NodeBase], *args: Any, **kwargs: Any) -> NodeBase:
         """
         Create an emulation node.
 
-        :param class cls: node class to create
-        :param list args: list of arguments for the class to create
-        :param dict kwargs: dictionary of arguments for the class to create
+        :param cls: node class to create
+        :param args: list of arguments for the class to create
+        :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
         node = cls(self, *args, **kwargs)
-
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
-
         return node
 
-    def get_node(self, _id):
+    def get_node(self, _id: int) -> NodeBase:
         """
         Get a session node.
 
-        :param int _id: node id to retrieve
+        :param _id: node id to retrieve
         :return: node for the given id
-        :rtype: core.nodes.base.CoreNode
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
             raise CoreError(f"unknown node id {_id}")
         return self.nodes[_id]
 
-    def delete_node(self, _id):
+    def delete_node(self, _id: int) -> bool:
         """
         Delete a node from the session and check if session should shutdown, if no nodes are left.
 
-        :param int _id: id of node to delete
+        :param _id: id of node to delete
         :return: True if node deleted, False otherwise
-        :rtype: bool
         """
         # delete node and check for session shutdown if a node was removed
         logging.info("deleting node(%s)", _id)
@@ -1366,7 +1405,7 @@ class Session:
 
         return node is not None
 
-    def delete_nodes(self):
+    def delete_nodes(self) -> None:
         """
         Clear the nodes dictionary, and call shutdown for each node.
         """
@@ -1378,7 +1417,7 @@ class Session:
             utils.threadpool(funcs)
         self.node_id_gen.id = 0
 
-    def write_nodes(self):
+    def write_nodes(self) -> None:
         """
         Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
@@ -1393,7 +1432,7 @@ class Session:
         except IOError:
             logging.exception("error writing nodes file")
 
-    def dump_session(self):
+    def dump_session(self) -> None:
         """
         Log information about the session in its current state.
         """
@@ -1406,14 +1445,16 @@ class Session:
             len(self.nodes),
         )
 
-    def exception(self, level, source, node_id, text):
+    def exception(
+        self, level: ExceptionLevels, source: str, node_id: int, text: str
+    ) -> None:
         """
         Generate and broadcast an exception event.
 
-        :param core.emulator.enumerations.ExceptionLevel level: exception level
-        :param str source: source name
-        :param int node_id: node related to exception
-        :param str text: exception message
+        :param level: exception level
+        :param source: source name
+        :param node_id: node related to exception
+        :param text: exception message
         :return: nothing
         """
         exception_data = ExceptionData(
@@ -1426,27 +1467,28 @@ class Session:
         )
         self.broadcast_exception(exception_data)
 
-    def instantiate(self):
+    def instantiate(self) -> List[Exception]:
         """
         We have entered the instantiation state, invoke startup methods
         of various managers and boot the nodes. Validate nodes and check
         for transition to the runtime state.
-        """
 
+        :return: list of service boot errors during startup
+        """
         # write current nodes out to session directory file
         self.write_nodes()
 
         # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
-        self.add_remove_control_interface(node=None, remove=False)
+        self.add_remove_control_net(0, remove=False)
 
         # initialize distributed tunnels
         self.distributed.start()
 
-        # instantiate will be invoked again upon Emane configure
+        # instantiate will be invoked again upon emane configure
         if self.emane.startup() == self.emane.NOT_READY:
-            return
+            return []
 
         # boot node services and then start mobility
         exceptions = self.boot_nodes()
@@ -1463,12 +1505,13 @@ class Session:
             self.check_runtime()
         return exceptions
 
-    def get_node_count(self):
+    def get_node_count(self) -> int:
         """
         Returns the number of CoreNodes and CoreNets, except for those
         that are not considered in the GUI's node count.
-        """
 
+        :return: created node count
+        """
         with self._nodes_lock:
             count = 0
             for node_id in self.nodes:
@@ -1481,14 +1524,15 @@ class Session:
                     continue
 
                 count += 1
-
         return count
 
-    def check_runtime(self):
+    def check_runtime(self) -> None:
         """
         Check if we have entered the runtime state, that all nodes have been
         started and the emulation is running. Start the event loop once we
         have entered runtime (time=0).
+
+        :return: nothing
         """
         # this is called from instantiate() after receiving an event message
         # for the instantiation state
@@ -1505,10 +1549,12 @@ class Session:
         self.event_loop.run()
         self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
 
-    def data_collect(self):
+    def data_collect(self) -> None:
         """
         Tear down a running session. Stop the event loop and any running
         nodes, and perform clean-up.
+
+        :return: nothing
         """
         # stop event loop
         self.event_loop.stop()
@@ -1518,9 +1564,10 @@ class Session:
             funcs = []
             for node_id in self.nodes:
                 node = self.nodes[node_id]
-                if isinstance(node, CoreNodeBase):
-                    args = (node,)
-                    funcs.append((self.services.stop_services, args, {}))
+                if not isinstance(node, CoreNodeBase) or not node.up:
+                    continue
+                args = (node,)
+                funcs.append((self.services.stop_services, args, {}))
             utils.threadpool(funcs)
 
         # shutdown emane
@@ -1529,58 +1576,59 @@ class Session:
         # update control interface hosts
         self.update_control_interface_hosts(remove=True)
 
-        # remove all four possible control networks. Does nothing if ctrlnet is not
-        # installed.
-        self.add_remove_control_interface(node=None, net_index=0, remove=True)
-        self.add_remove_control_interface(node=None, net_index=1, remove=True)
-        self.add_remove_control_interface(node=None, net_index=2, remove=True)
-        self.add_remove_control_interface(node=None, net_index=3, remove=True)
+        # remove all four possible control networks
+        self.add_remove_control_net(0, remove=True)
+        self.add_remove_control_net(1, remove=True)
+        self.add_remove_control_net(2, remove=True)
+        self.add_remove_control_net(3, remove=True)
 
-    def check_shutdown(self):
+    def check_shutdown(self) -> bool:
         """
         Check if we have entered the shutdown state, when no running nodes
         and links remain.
+
+        :return: True if should shutdown, False otherwise
         """
         node_count = self.get_node_count()
         logging.debug(
             "session(%s) checking shutdown: %s nodes remaining", self.id, node_count
         )
-
         shutdown = False
         if node_count == 0:
             shutdown = True
             self.set_state(EventTypes.SHUTDOWN_STATE)
-
         return shutdown
 
-    def short_session_id(self):
+    def short_session_id(self) -> str:
         """
         Return a shorter version of the session ID, appropriate for
         interface names, where length may be limited.
+
+        :return: short session id
         """
         ssid = (self.id >> 8) ^ (self.id & ((1 << 8) - 1))
         return f"{ssid:x}"
 
-    def boot_node(self, node):
+    def boot_node(self, node: CoreNode) -> None:
         """
         Boot node by adding a control interface when necessary and starting
         node services.
 
-        :param core.nodes.base.CoreNodeBase node: node to boot
+        :param node: node to boot
         :return: nothing
         """
         logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
         self.add_remove_control_interface(node=node, remove=False)
         self.services.boot_services(node)
+        node.start_config_services()
 
-    def boot_nodes(self):
+    def boot_nodes(self) -> List[Exception]:
         """
         Invoke the boot() procedure for all nodes and send back node
         messages to the GUI for node messages that had the status
         request flag.
 
         :return: service boot exceptions
-        :rtype: list[core.services.coreservices.ServiceBootError]
         """
         with self._nodes_lock:
             funcs = []
@@ -1597,30 +1645,26 @@ class Session:
             self.update_control_interface_hosts()
         return exceptions
 
-    def get_control_net_prefixes(self):
+    def get_control_net_prefixes(self) -> List[str]:
         """
         Retrieve control net prefixes.
 
         :return: control net prefix list
-        :rtype: list
         """
         p = self.options.get_config("controlnet")
         p0 = self.options.get_config("controlnet0")
         p1 = self.options.get_config("controlnet1")
         p2 = self.options.get_config("controlnet2")
         p3 = self.options.get_config("controlnet3")
-
         if not p0 and p:
             p0 = p
-
         return [p0, p1, p2, p3]
 
-    def get_control_net_server_interfaces(self):
+    def get_control_net_server_interfaces(self) -> List[str]:
         """
         Retrieve control net server interfaces.
 
         :return: list of control net server interfaces
-        :rtype: list
         """
         d0 = self.options.get_config("controlnetif0")
         if d0:
@@ -1630,13 +1674,12 @@ class Session:
         d3 = self.options.get_config("controlnetif3")
         return [None, d1, d2, d3]
 
-    def get_control_net_index(self, dev):
+    def get_control_net_index(self, dev: str) -> int:
         """
         Retrieve control net index.
 
-        :param str dev: device to get control net index for
+        :param dev: device to get control net index for
         :return: control net index, -1 otherwise
-        :rtype: int
         """
         if dev[0:4] == "ctrl" and int(dev[4]) in [0, 1, 2, 3]:
             index = int(dev[4])
@@ -1646,21 +1689,32 @@ class Session:
                 return index
         return -1
 
-    def get_control_net(self, net_index):
-        return self.get_node(CTRL_NET_ID + net_index)
+    def get_control_net(self, net_index: int) -> CtrlNet:
+        """
+        Retrieve a control net based on index.
 
-    def add_remove_control_net(self, net_index, remove=False, conf_required=True):
+        :param net_index: control net index
+        :return: control net
+        :raises CoreError: when control net is not found
+        """
+        node = self.get_node(CTRL_NET_ID + net_index)
+        if not isinstance(node, CtrlNet):
+            raise CoreError("node is not a valid CtrlNet: %s", node.name)
+        return node
+
+    def add_remove_control_net(
+        self, net_index: int, remove: bool = False, conf_required: bool = True
+    ) -> Optional[CtrlNet]:
         """
         Create a control network bridge as necessary.
         When the remove flag is True, remove the bridge that connects control
         interfaces. The conf_reqd flag, when False, causes a control network
         bridge to be added even if one has not been configured.
 
-        :param int net_index: network index
-        :param bool remove: flag to check if it should be removed
-        :param bool conf_required: flag to check if conf is required
+        :param net_index: network index
+        :param remove: flag to check if it should be removed
+        :param conf_required: flag to check if conf is required
         :return: control net node
-        :rtype: core.nodes.network.CtrlNet
         """
         logging.debug(
             "add/remove control net: index(%s) remove(%s) conf_required(%s)",
@@ -1683,11 +1737,9 @@ class Session:
         # return any existing controlnet bridge
         try:
             control_net = self.get_control_net(net_index)
-
             if remove:
                 self.delete_node(control_net.id)
                 return None
-
             return control_net
         except CoreError:
             if remove:
@@ -1731,12 +1783,15 @@ class Session:
             updown_script=updown_script,
             serverintf=server_interface,
         )
-
         return control_net
 
     def add_remove_control_interface(
-        self, node, net_index=0, remove=False, conf_required=True
-    ):
+        self,
+        node: CoreNode,
+        net_index: int = 0,
+        remove: bool = False,
+        conf_required: bool = True,
+    ) -> None:
         """
         Add a control interface to a node when a 'controlnet' prefix is
         listed in the config file or session options. Uses
@@ -1744,10 +1799,10 @@ class Session:
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
 
-        :param core.nodes.base.CoreNodeBase node: node to add or remove control interface
-        :param int net_index: network index
-        :param bool remove: flag to check if it should be removed
-        :param bool conf_required: flag to check if conf is required
+        :param node: node to add or remove control interface
+        :param net_index: network index
+        :param remove: flag to check if it should be removed
+        :param conf_required: flag to check if conf is required
         :return: nothing
         """
         control_net = self.add_remove_control_net(net_index, remove, conf_required)
@@ -1764,7 +1819,7 @@ class Session:
         control_ip = node.id
 
         try:
-            address = control_net.prefix.addr(control_ip)
+            address = control_net.prefix[control_ip]
             prefix = control_net.prefix.prefixlen
             addrlist = [f"{address}/{prefix}"]
         except ValueError:
@@ -1778,17 +1833,19 @@ class Session:
             net=control_net,
             ifindex=control_net.CTRLIF_IDX_BASE + net_index,
             ifname=f"ctrl{net_index}",
-            hwaddr=MacAddress.random(),
+            hwaddr=utils.random_mac(),
             addrlist=addrlist,
         )
         node.netif(interface1).control = True
 
-    def update_control_interface_hosts(self, net_index=0, remove=False):
+    def update_control_interface_hosts(
+        self, net_index: int = 0, remove: bool = False
+    ) -> None:
         """
         Add the IP addresses of control interfaces to the /etc/hosts file.
 
-        :param int net_index: network index to update
-        :param bool remove: flag to check if it should be removed
+        :param net_index: network index to update
+        :param remove: flag to check if it should be removed
         :return: nothing
         """
         if not self.options.get_config_bool("update_etc_hosts", default=False):
@@ -1814,10 +1871,9 @@ class Session:
                 entries.append(f"{address} {name}")
 
         logging.info("Adding %d /etc/hosts file entries.", len(entries))
-
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
-    def runtime(self):
+    def runtime(self) -> float:
         """
         Return the current time we have been in the runtime state, or zero
         if not in runtime.
@@ -1827,14 +1883,20 @@ class Session:
         else:
             return 0.0
 
-    def add_event(self, event_time, node=None, name=None, data=None):
+    def add_event(
+        self,
+        event_time: float,
+        node: CoreNode = None,
+        name: str = None,
+        data: str = None,
+    ) -> None:
         """
         Add an event to the event queue, with a start time relative to the
         start of the runtime state.
 
         :param event_time: event time
-        :param core.nodes.base.CoreNode node: node to add event for
-        :param str name: name of event
+        :param node: node to add event for
+        :param name: name of event
         :param data: data for event
         :return: nothing
         """
@@ -1866,13 +1928,15 @@ class Session:
 
     # TODO: if data is None, this blows up, but this ties into how event functions
     #  are ran, need to clean that up
-    def run_event(self, node_id=None, name=None, data=None):
+    def run_event(
+        self, node_id: int = None, name: str = None, data: str = None
+    ) -> None:
         """
         Run a scheduled event, executing commands in the data string.
 
-        :param int node_id: node id to run event
-        :param str name: event name
-        :param str data: event data
+        :param node_id: node id to run event
+        :param name: event name
+        :param data: event data
         :return: nothing
         """
         now = self.runtime()

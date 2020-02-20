@@ -7,15 +7,19 @@ import os
 import threading
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
+from typing import TYPE_CHECKING, Callable, Dict, Tuple
 
+import netaddr
 from fabric import Connection
 from invoke import UnexpectedExit
 
 from core import utils
 from core.errors import CoreCommandError
 from core.nodes.interface import GreTap
-from core.nodes.ipaddress import IpAddress
 from core.nodes.network import CoreNetwork, CtrlNet
+
+if TYPE_CHECKING:
+    from core.emulator.session import Session
 
 LOCK = threading.Lock()
 CMD_HIDE = True
@@ -26,29 +30,30 @@ class DistributedServer:
     Provides distributed server interactions.
     """
 
-    def __init__(self, name, host):
+    def __init__(self, name: str, host: str) -> None:
         """
         Create a DistributedServer instance.
 
-        :param str name: convenience name to associate with host
-        :param str host: host to connect to
+        :param name: convenience name to associate with host
+        :param host: host to connect to
         """
         self.name = name
         self.host = host
         self.conn = Connection(host, user="root")
         self.lock = threading.Lock()
 
-    def remote_cmd(self, cmd, env=None, cwd=None, wait=True):
+    def remote_cmd(
+        self, cmd: str, env: Dict[str, str] = None, cwd: str = None, wait: bool = True
+    ) -> str:
         """
         Run command remotely using server connection.
 
-        :param str cmd: command to run
-        :param dict env: environment for remote command, default is None
-        :param str cwd: directory to run command in, defaults to None, which is the
+        :param cmd: command to run
+        :param env: environment for remote command, default is None
+        :param cwd: directory to run command in, defaults to None, which is the
             user's home directory
-        :param bool wait: True to wait for status, False to background process
+        :param wait: True to wait for status, False to background process
         :return: stdout when success
-        :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
 
@@ -73,24 +78,24 @@ class DistributedServer:
             stdout, stderr = e.streams_for_display()
             raise CoreCommandError(e.result.exited, cmd, stdout, stderr)
 
-    def remote_put(self, source, destination):
+    def remote_put(self, source: str, destination: str) -> None:
         """
         Push file to remote server.
 
-        :param str source: source file to push
-        :param str destination: destination file location
+        :param source: source file to push
+        :param destination: destination file location
         :return: nothing
         """
         with self.lock:
             self.conn.put(source, destination)
 
-    def remote_put_temp(self, destination, data):
+    def remote_put_temp(self, destination: str, data: str) -> None:
         """
         Remote push file contents to a remote server, using a temp file as an
         intermediate step.
 
-        :param str destination: file destination for data
-        :param str data: data to store in remote file
+        :param destination: file destination for data
+        :param data: data to store in remote file
         :return: nothing
         """
         with self.lock:
@@ -106,11 +111,11 @@ class DistributedController:
     Provides logic for dealing with remote tunnels and distributed servers.
     """
 
-    def __init__(self, session):
+    def __init__(self, session: "Session") -> None:
         """
         Create
 
-        :param session:
+        :param session: session
         """
         self.session = session
         self.servers = OrderedDict()
@@ -119,12 +124,12 @@ class DistributedController:
             "distributed_address", default=None
         )
 
-    def add_server(self, name, host):
+    def add_server(self, name: str, host: str) -> None:
         """
         Add distributed server configuration.
 
-        :param str name: distributed server name
-        :param str host: distributed server host address
+        :param name: distributed server name
+        :param host: distributed server host address
         :return: nothing
         """
         server = DistributedServer(name, host)
@@ -132,7 +137,7 @@ class DistributedController:
         cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)
 
-    def execute(self, func):
+    def execute(self, func: Callable[[DistributedServer], None]) -> None:
         """
         Convenience for executing logic against all distributed servers.
 
@@ -143,7 +148,7 @@ class DistributedController:
             server = self.servers[name]
             func(server)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown logic for dealing with distributed tunnels and server session
         directories.
@@ -165,7 +170,7 @@ class DistributedController:
         # clear tunnels
         self.tunnels.clear()
 
-    def start(self):
+    def start(self) -> None:
         """
         Start distributed network tunnels.
 
@@ -184,19 +189,20 @@ class DistributedController:
                 server = self.servers[name]
                 self.create_gre_tunnel(node, server)
 
-    def create_gre_tunnel(self, node, server):
+    def create_gre_tunnel(
+        self, node: CoreNetwork, server: DistributedServer
+    ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
 
 
-        :param core.nodes.network.CoreNetwork node: node to create gre tunnel for
-        :param core.emulator.distributed.DistributedServer server: server to create
+        :param node: node to create gre tunnel for
+        :param server: server to create
             tunnel for
         :return: local and remote gre taps created for tunnel
-        :rtype: tuple
         """
         host = server.host
-        key = self.tunnel_key(node.id, IpAddress.to_int(host))
+        key = self.tunnel_key(node.id, netaddr.IPAddress(host).value)
         tunnel = self.tunnels.get(key)
         if tunnel is not None:
             return tunnel
@@ -222,16 +228,15 @@ class DistributedController:
         self.tunnels[key] = tunnel
         return tunnel
 
-    def tunnel_key(self, n1_id, n2_id):
+    def tunnel_key(self, n1_id: int, n2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
         The hash(n1num), hash(n2num) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
-        :param int n1_id: node one id
-        :param int n2_id: node two id
+        :param n1_id: node one id
+        :param n2_id: node two id
         :return: tunnel key for the node pair
-        :rtype: int
         """
         logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
         key = (
@@ -239,12 +244,12 @@ class DistributedController:
         )
         return key & 0xFFFFFFFF
 
-    def get_tunnel(self, n1_id, n2_id):
+    def get_tunnel(self, n1_id: int, n2_id: int) -> Tuple[GreTap, GreTap]:
         """
         Return the GreTap between two nodes if it exists.
 
-        :param int n1_id: node one id
-        :param int n2_id: node two id
+        :param n1_id: node one id
+        :param n2_id: node two id
         :return: gre tap between nodes or None
         """
         key = self.tunnel_key(n1_id, n2_id)

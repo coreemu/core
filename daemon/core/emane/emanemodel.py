@@ -3,12 +3,14 @@ Defines Emane Models used within CORE.
 """
 import logging
 import os
+from typing import Dict, List
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
+from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
 
@@ -45,12 +47,12 @@ class EmaneModel(WirelessModel):
     config_ignore = set()
 
     @classmethod
-    def load(cls, emane_prefix):
+    def load(cls, emane_prefix: str) -> None:
         """
         Called after being loaded within the EmaneManager. Provides configured emane_prefix for
         parsing xml files.
 
-        :param str emane_prefix: configured emane prefix path
+        :param emane_prefix: configured emane prefix path
         :return: nothing
         """
         manifest_path = "share/emane/manifest"
@@ -63,22 +65,20 @@ class EmaneModel(WirelessModel):
         cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
 
     @classmethod
-    def configurations(cls):
+    def configurations(cls) -> List[Configuration]:
         """
         Returns the combination all all configurations (mac, phy, and external).
 
         :return: all configurations
-        :rtype: list[Configuration]
         """
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
-    def config_groups(cls):
+    def config_groups(cls) -> List[ConfigGroup]:
         """
         Returns the defined configuration groups.
 
         :return: list of configuration groups.
-        :rtype: list[ConfigGroup]
         """
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
@@ -89,12 +89,14 @@ class EmaneModel(WirelessModel):
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
-    def build_xml_files(self, config, interface=None):
+    def build_xml_files(
+        self, config: Dict[str, str], interface: CoreInterface = None
+    ) -> None:
         """
-        Builds xml files for this emane model. Creates a nem.xml file that points to both mac.xml and phy.xml
-        definitions.
+        Builds xml files for this emane model. Creates a nem.xml file that points to
+        both mac.xml and phy.xml definitions.
 
-        :param dict config: emane model configuration for the node and interface
+        :param config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
@@ -127,7 +129,7 @@ class EmaneModel(WirelessModel):
         phy_file = os.path.join(self.session.session_dir, phy_name)
         emanexml.create_phy_xml(self, config, phy_file, server)
 
-    def post_startup(self):
+    def post_startup(self) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 
@@ -135,15 +137,15 @@ class EmaneModel(WirelessModel):
         """
         logging.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved, moved_netifs):
+    def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
-        :param bool moved: were nodes moved
-        :param list moved_netifs: interfaces that were moved
-        :return:
+        :param moved: were nodes moved
+        :param moved_netifs: interfaces that were moved
+        :return: nothing
         """
         try:
             wlan = self.session.get_node(self.id)
@@ -153,24 +155,24 @@ class EmaneModel(WirelessModel):
 
     def linkconfig(
         self,
-        netif,
-        bw=None,
-        delay=None,
-        loss=None,
-        duplicate=None,
-        jitter=None,
-        netif2=None,
-    ):
+        netif: CoreInterface,
+        bw: float = None,
+        delay: float = None,
+        loss: float = None,
+        duplicate: float = None,
+        jitter: float = None,
+        netif2: CoreInterface = None,
+    ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param core.nodes.interface.Veth netif: interface one
+        :param netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
-        :param core.netns.vif.Veth netif2: interface two
+        :param netif2: interface two
         :return: nothing
         """
         logging.warning(

@@ -1,23 +1,29 @@
 import logging
 import time
+from typing import Any, Dict, List, Tuple, Type
+
+import netaddr
 
 from core import utils
-from core.api.grpc import core_pb2
+from core.api.grpc import common_pb2, core_pb2
+from core.config import ConfigurableOptions
+from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import MacAddress
+from core.emulator.session import Session
+from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.interface import CoreInterface
+from core.services.coreservices import CoreService
 
 WORKERS = 10
 
 
-def add_node_data(node_proto):
+def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOptions]:
     """
     Convert node protobuf message to data for creating a node.
 
-    :param core_pb2.Node node_proto: node proto message
+    :param node_proto: node proto message
     :return: node type, id, and options
-    :rtype: tuple
     """
     _id = node_proto.id
     _type = node_proto.type
@@ -30,6 +36,7 @@ def add_node_data(node_proto):
     options.opaque = node_proto.opaque
     options.image = node_proto.image
     options.services = node_proto.services
+    options.config_services = node_proto.config_services
     if node_proto.emane:
         options.emane = node_proto.emane
     if node_proto.server:
@@ -41,13 +48,12 @@ def add_node_data(node_proto):
     return _type, _id, options
 
 
-def link_interface(interface_proto):
+def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     """
     Create interface data from interface proto.
 
-    :param core_pb2.Interface interface_proto: interface proto
+    :param interface_proto: interface proto
     :return: interface data
-    :rtype: InterfaceData
     """
     interface = None
     if interface_proto:
@@ -57,8 +63,6 @@ def link_interface(interface_proto):
         mac = interface_proto.mac
         if mac == "":
             mac = None
-        else:
-            mac = MacAddress.from_string(mac)
         interface = InterfaceData(
             _id=interface_proto.id,
             name=name,
@@ -71,13 +75,14 @@ def link_interface(interface_proto):
     return interface
 
 
-def add_link_data(link_proto):
+def add_link_data(
+    link_proto: core_pb2.Link
+) -> Tuple[InterfaceData, InterfaceData, LinkOptions]:
     """
     Convert link proto to link interfaces and options data.
 
-    :param core_pb2.Link link_proto: link  proto
+    :param link_proto: link  proto
     :return: link interfaces and options
-    :rtype: tuple
     """
     interface_one = link_interface(link_proto.interface_one)
     interface_two = link_interface(link_proto.interface_two)
@@ -105,14 +110,15 @@ def add_link_data(link_proto):
     return interface_one, interface_two, options
 
 
-def create_nodes(session, node_protos):
+def create_nodes(
+    session: Session, node_protos: List[core_pb2.Node]
+) -> Tuple[List[NodeBase], List[Exception]]:
     """
     Create nodes using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Node] node_protos: node proto messages
+    :param session: session to create nodes in
+    :param node_protos: node proto messages
     :return: results and exceptions for created nodes
-    :rtype: tuple
     """
     funcs = []
     for node_proto in node_protos:
@@ -126,14 +132,15 @@ def create_nodes(session, node_protos):
     return results, exceptions
 
 
-def create_links(session, link_protos):
+def create_links(
+    session: Session, link_protos: List[core_pb2.Link]
+) -> Tuple[List[NodeBase], List[Exception]]:
     """
     Create links using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Link] link_protos: link proto messages
+    :param session: session to create nodes in
+    :param link_protos: link proto messages
     :return: results and exceptions for created links
-    :rtype: tuple
     """
     funcs = []
     for link_proto in link_protos:
@@ -149,14 +156,15 @@ def create_links(session, link_protos):
     return results, exceptions
 
 
-def edit_links(session, link_protos):
+def edit_links(
+    session: Session, link_protos: List[core_pb2.Link]
+) -> Tuple[List[None], List[Exception]]:
     """
     Edit links using a thread pool and wait for completion.
 
-    :param core.emulator.session.Session session: session to create nodes in
-    :param list[core_pb2.Link] link_protos: link proto messages
+    :param session: session to create nodes in
+    :param link_protos: link proto messages
     :return: results and exceptions for created links
-    :rtype: tuple
     """
     funcs = []
     for link_proto in link_protos:
@@ -172,32 +180,32 @@ def edit_links(session, link_protos):
     return results, exceptions
 
 
-def convert_value(value):
+def convert_value(value: Any) -> str:
     """
     Convert value into string.
 
     :param value: value
     :return: string conversion of the value
-    :rtype: str
     """
     if value is not None:
         value = str(value)
     return value
 
 
-def get_config_options(config, configurable_options):
+def get_config_options(
+    config: Dict[str, str], configurable_options: Type[ConfigurableOptions]
+) -> Dict[str, common_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
 
-    :param dict config: configuration
-    :param core.config.ConfigurableOptions configurable_options: configurable options
+    :param config: configuration
+    :param configurable_options: configurable options
     :return: mapping of configuration ids to configuration options
-    :rtype: dict[str,core.api.grpc.core_pb2.ConfigOption]
     """
     results = {}
     for configuration in configurable_options.configurations():
         value = config[configuration.id]
-        config_option = core_pb2.ConfigOption(
+        config_option = common_pb2.ConfigOption(
             label=configuration.label,
             name=configuration.id,
             value=value,
@@ -214,12 +222,12 @@ def get_config_options(config, configurable_options):
     return results
 
 
-def get_links(session, node):
+def get_links(session: Session, node: NodeBase):
     """
     Retrieve a list of links for grpc to use
 
-    :param core.emulator.Session session: node's section
-    :param core.nodes.base.CoreNode node: node to get links from
+    :param session: node's section
+    :param node: node to get links from
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
@@ -229,14 +237,13 @@ def get_links(session, node):
     return links
 
 
-def get_emane_model_id(node_id, interface_id):
+def get_emane_model_id(node_id: int, interface_id: int) -> int:
     """
     Get EMANE model id
 
-    :param int node_id: node id
-    :param int interface_id: interface id
+    :param node_id: node id
+    :param interface_id: interface id
     :return: EMANE model id
-    :rtype: int
     """
     if interface_id >= 0:
         return node_id * 1000 + interface_id
@@ -244,13 +251,12 @@ def get_emane_model_id(node_id, interface_id):
         return node_id
 
 
-def parse_emane_model_id(_id):
+def parse_emane_model_id(_id: int) -> Tuple[int, int]:
     """
     Parses EMANE model id to get true node id and interface id.
 
     :param _id: id to parse
     :return: node id and interface id
-    :rtype: tuple
     """
     interface = -1
     node_id = _id
@@ -260,14 +266,13 @@ def parse_emane_model_id(_id):
     return node_id, interface
 
 
-def convert_link(session, link_data):
+def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf Link
 
-    :param core.emulator.session.Session session:
-    :param core.emulator.data.LinkData link_data:
+    :param session:
+    :param link_data:
     :return: core protobuf Link
-    :rtype: core.api.grpc.core_pb2.Link
     """
     interface_one = None
     if link_data.interface1_id is not None:
@@ -327,12 +332,11 @@ def convert_link(session, link_data):
     )
 
 
-def get_net_stats():
+def get_net_stats() -> Dict[str, Dict]:
     """
     Retrieve status about the current interfaces in the system
 
     :return: send and receive status of the interfaces in the system
-    :rtype: dict
     """
     with open("/proc/net/dev", "r") as f:
         data = f.readlines()[2:]
@@ -349,12 +353,12 @@ def get_net_stats():
     return stats
 
 
-def session_location(session, location):
+def session_location(session: Session, location: core_pb2.SessionLocation) -> None:
     """
     Set session location based on location proto.
 
-    :param core.emulator.session.Session session: session for location
-    :param core_pb2.SessionLocation location: location to set
+    :param session: session for location
+    :param location: location to set
     :return: nothing
     """
     session.location.refxyz = (location.x, location.y, location.z)
@@ -362,28 +366,34 @@ def session_location(session, location):
     session.location.refscale = location.scale
 
 
-def service_configuration(session, config):
+def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> None:
     """
     Convenience method for setting a node service configuration.
 
-    :param core.emulator.session.Session session: session for service configuration
-    :param core_pb2.ServiceConfig config: service configuration
+    :param session: session for service configuration
+    :param config: service configuration
     :return:
     """
     session.services.set_service(config.node_id, config.service)
     service = session.services.get_service(config.node_id, config.service)
-    service.startup = tuple(config.startup)
-    service.validate = tuple(config.validate)
-    service.shutdown = tuple(config.shutdown)
+    if config.files:
+        service.files = tuple(config.files)
+    if config.directories:
+        service.directories = tuple(config.directories)
+    if config.startup:
+        service.startup = tuple(config.startup)
+    if config.validate:
+        service.validate = tuple(config.validate)
+    if config.shutdown:
+        service.shutdown = tuple(config.shutdown)
 
 
-def get_service_configuration(service):
+def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServiceData:
     """
     Convenience for converting a service to service data proto.
 
     :param service: service to get proto data for
     :return: service proto data
-    :rtype: core.api.grpc.core_pb2.NodeServiceData
     """
     return core_pb2.NodeServiceData(
         executables=service.executables,
@@ -396,4 +406,41 @@ def get_service_configuration(service):
         validation_timer=service.validation_timer,
         shutdown=service.shutdown,
         meta=service.meta,
+    )
+
+
+def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
+    """
+    Convenience for converting a core interface to the protobuf representation.
+    :param interface: interface to convert
+    :return: interface proto
+    """
+    net_id = None
+    if interface.net:
+        net_id = interface.net.id
+    ip4 = None
+    ip4mask = None
+    ip6 = None
+    ip6mask = None
+    for addr in interface.addrlist:
+        network = netaddr.IPNetwork(addr)
+        mask = network.prefixlen
+        ip = str(network.ip)
+        if netaddr.valid_ipv4(ip) and not ip4:
+            ip4 = ip
+            ip4mask = mask
+        elif netaddr.valid_ipv6(ip) and not ip6:
+            ip6 = ip
+            ip6mask = mask
+    return core_pb2.Interface(
+        id=interface.netindex,
+        netid=net_id,
+        name=interface.name,
+        mac=str(interface.hwaddr),
+        mtu=interface.mtu,
+        flowid=interface.flow_id,
+        ip4=ip4,
+        ip4mask=ip4mask,
+        ip6=ip6,
+        ip6mask=ip6mask,
     )

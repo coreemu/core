@@ -1,11 +1,11 @@
 """
 quagga.py: defines routing services provided by Quagga.
 """
+import netaddr
 
 from core import constants
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
-from core.nodes import ipaddress
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
@@ -82,7 +82,7 @@ class Zebra(CoreService):
 
             if want_ipv4:
                 ipv4list = filter(
-                    lambda x: ipaddress.is_ipv4_address(x.split("/")[0]), ifc.addrlist
+                    lambda x: netaddr.valid_ipv4(x.split("/")[0]), ifc.addrlist
                 )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv4list))
@@ -90,7 +90,7 @@ class Zebra(CoreService):
                 cfg += cfgv4
             if want_ipv6:
                 ipv6list = filter(
-                    lambda x: ipaddress.is_ipv6_address(x.split("/")[0]), ifc.addrlist
+                    lambda x: netaddr.valid_ipv6(x.split("/")[0]), ifc.addrlist
                 )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv6list))
@@ -110,9 +110,9 @@ class Zebra(CoreService):
         helper for mapping IP addresses to zebra config statements
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv4_address(addr):
+        if netaddr.valid_ipv4(addr):
             return "ip address %s" % x
-        elif ipaddress.is_ipv6_address(addr):
+        elif netaddr.valid_ipv6(addr):
             return "ipv6 address %s" % x
         else:
             raise ValueError("invalid address: %s", x)
@@ -257,7 +257,7 @@ class QuaggaService(CoreService):
                 continue
             for a in ifc.addrlist:
                 a = a.split("/")[0]
-                if ipaddress.is_ipv4_address(a):
+                if netaddr.valid_ipv4(a):
                     return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
@@ -341,28 +341,14 @@ class Ospfv2(QuaggaService):
                 continue
             for a in ifc.addrlist:
                 addr = a.split("/")[0]
-                if ipaddress.is_ipv4_address(addr):
-                    net = ipaddress.Ipv4Prefix(a)
-                    cfg += "  network %s area 0\n" % net
+                if netaddr.valid_ipv4(addr):
+                    cfg += "  network %s area 0\n" % a
         cfg += "!\n"
         return cfg
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ip ospf hello-interval 2
-#  ip ospf dead-interval 6
-#  ip ospf retransmit-interval 5
-# """
 
 
 class Ospfv3(QuaggaService):
@@ -420,6 +406,7 @@ class Ospfv3(QuaggaService):
     def generatequaggaconfig(cls, node):
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
+        cfg += "  instance-id 65\n"
         cfg += "  router-id %s\n" % rtrid
         for ifc in node.netifs():
             if hasattr(ifc, "control") and ifc.control is True:
@@ -431,19 +418,6 @@ class Ospfv3(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ipv6 ospf6 hello-interval 2
-#  ipv6 ospf6 dead-interval 6
-#  ipv6 ospf6 retransmit-interval 5
-# """
 
 
 class Ospfv3mdr(Ospfv3):
@@ -460,8 +434,6 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
-        # Uncomment the following line to use Address Family Translation for IPv4
-        cfg += "  ipv6 ospf6 instance-id 65\n"
         if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNet)):
             return (
                 cfg
@@ -470,7 +442,7 @@ class Ospfv3mdr(Ospfv3):
   ipv6 ospf6 dead-interval 6
   ipv6 ospf6 retransmit-interval 5
   ipv6 ospf6 network manet-designated-router
-  ipv6 ospf6 diffhellos
+  ipv6 ospf6 twohoprefresh 3
   ipv6 ospf6 adjacencyconnectivity uniconnected
   ipv6 ospf6 lsafullness mincostlsa
 """

@@ -4,9 +4,18 @@ share the same MAC+PHY model.
 """
 
 import logging
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
+from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes.base import CoreNetworkBase
+from core.nodes.interface import CoreInterface
+
+if TYPE_CHECKING:
+    from core.emulator.session import Session
+    from core.location.mobility import WirelessModel
+
+    WirelessModelType = Type[WirelessModel]
 
 try:
     from emane.events import LocationEvent
@@ -29,7 +38,14 @@ class EmaneNet(CoreNetworkBase):
     type = "wlan"
     is_emane = True
 
-    def __init__(self, session, _id=None, name=None, start=True, server=None):
+    def __init__(
+        self,
+        session: "Session",
+        _id: int = None,
+        name: str = None,
+        start: bool = True,
+        server: DistributedServer = None,
+    ) -> None:
         super().__init__(session, _id, name, start, server)
         self.conf = ""
         self.up = False
@@ -39,20 +55,20 @@ class EmaneNet(CoreNetworkBase):
 
     def linkconfig(
         self,
-        netif,
-        bw=None,
-        delay=None,
-        loss=None,
-        duplicate=None,
-        jitter=None,
-        netif2=None,
-    ):
+        netif: CoreInterface,
+        bw: float = None,
+        delay: float = None,
+        loss: float = None,
+        duplicate: float = None,
+        jitter: float = None,
+        netif2: CoreInterface = None,
+    ) -> None:
         """
         The CommEffect model supports link configuration.
         """
         if not self.model:
             return
-        return self.model.linkconfig(
+        self.model.linkconfig(
             netif=netif,
             bw=bw,
             delay=delay,
@@ -62,19 +78,19 @@ class EmaneNet(CoreNetworkBase):
             netif2=netif2,
         )
 
-    def config(self, conf):
+    def config(self, conf: str) -> None:
         self.conf = conf
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         pass
 
-    def link(self, netif1, netif2):
+    def link(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
         pass
 
-    def unlink(self, netif1, netif2):
+    def unlink(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
         pass
 
-    def updatemodel(self, config):
+    def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
         logging.info(
@@ -82,7 +98,7 @@ class EmaneNet(CoreNetworkBase):
         )
         self.model.set_configs(config, node_id=self.id)
 
-    def setmodel(self, model, config):
+    def setmodel(self, model: "WirelessModelType", config: Dict[str, str]) -> None:
         """
         set the EmaneModel associated with this node
         """
@@ -96,14 +112,14 @@ class EmaneNet(CoreNetworkBase):
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
-    def setnemid(self, netif, nemid):
+    def setnemid(self, netif: CoreInterface, nemid: int) -> None:
         """
         Record an interface to numerical ID mapping. The Emane controller
         object manages and assigns these IDs for all NEMs.
         """
         self.nemidmap[netif] = nemid
 
-    def getnemid(self, netif):
+    def getnemid(self, netif: CoreInterface) -> Optional[int]:
         """
         Given an interface, return its numerical ID.
         """
@@ -112,7 +128,7 @@ class EmaneNet(CoreNetworkBase):
         else:
             return self.nemidmap[netif]
 
-    def getnemnetif(self, nemid):
+    def getnemnetif(self, nemid: int) -> Optional[CoreInterface]:
         """
         Given a numerical NEM ID, return its interface. This returns the
         first interface that matches the given NEM ID.
@@ -122,13 +138,13 @@ class EmaneNet(CoreNetworkBase):
                 return netif
         return None
 
-    def netifs(self, sort=True):
+    def netifs(self, sort: bool = True) -> List[CoreInterface]:
         """
         Retrieve list of linked interfaces sorted by node number.
         """
         return sorted(self._netif.values(), key=lambda ifc: ifc.node.id)
 
-    def installnetifs(self):
+    def installnetifs(self) -> None:
         """
         Install TAP devices into their namespaces. This is done after
         EMANE daemons have been started, because that is their only chance
@@ -159,7 +175,7 @@ class EmaneNet(CoreNetworkBase):
             x, y, z = netif.node.position.get()
             self.setnemposition(netif, x, y, z)
 
-    def deinstallnetifs(self):
+    def deinstallnetifs(self) -> None:
         """
         Uninstall TAP devices. This invokes their shutdown method for
         any required cleanup; the device may be actually removed when
@@ -170,7 +186,9 @@ class EmaneNet(CoreNetworkBase):
                 netif.shutdown()
             netif.poshook = None
 
-    def setnemposition(self, netif, x, y, z):
+    def setnemposition(
+        self, netif: CoreInterface, x: float, y: float, z: float
+    ) -> None:
         """
         Publish a NEM location change event using the EMANE event service.
         """
@@ -191,7 +209,7 @@ class EmaneNet(CoreNetworkBase):
         event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)
 
-    def setnempositions(self, moved_netifs):
+    def setnempositions(self, moved_netifs: List[CoreInterface]) -> None:
         """
         Several NEMs have moved, from e.g. a WaypointMobilityModel
         calculation. Generate an EMANE Location Event having several

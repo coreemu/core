@@ -1,26 +1,38 @@
-"Service configuration dialog"
-import logging
+"""
+Service configuration dialog
+"""
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any, List
 
 import grpc
 
 from core.api.grpc import core_pb2
+from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ServiceConfigDialog(Dialog):
-    def __init__(self, master, app, service_name, node_id):
+    def __init__(
+        self, master: Any, app: "Application", service_name: str, node_id: int
+    ):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)
+        self.master = master
         self.app = app
         self.core = app.core
         self.node_id = node_id
         self.service_name = service_name
+        self.service_configs = app.core.service_configs
+        self.file_configs = app.core.file_configs
+
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
         self.metadata = ""
@@ -30,6 +42,9 @@ class ServiceConfigDialog(Dialog):
         self.startup_commands = []
         self.validation_commands = []
         self.shutdown_commands = []
+        self.default_startup = []
+        self.default_validate = []
+        self.default_shutdown = []
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = None
@@ -49,31 +64,38 @@ class ServiceConfigDialog(Dialog):
         self.original_service_files = {}
         self.temp_service_files = {}
         self.modified_files = set()
-        self.load()
-        self.draw()
 
-    def load(self):
+        self.has_error = False
+
+        self.load()
+        if not self.has_error:
+            self.draw()
+
+    def load(self) -> bool:
         try:
             self.app.core.create_nodes_and_links()
-            service_configs = self.app.core.service_configs
+            default_config = self.app.core.get_node_service(
+                self.node_id, self.service_name
+            )
+            self.default_startup = default_config.startup[:]
+            self.default_validate = default_config.validate[:]
+            self.default_shutdown = default_config.shutdown[:]
+            custom_configs = self.service_configs
             if (
-                self.node_id in service_configs
-                and self.service_name in service_configs[self.node_id]
+                self.node_id in custom_configs
+                and self.service_name in custom_configs[self.node_id]
             ):
-                service_config = self.app.core.service_configs[self.node_id][
-                    self.service_name
-                ]
+                service_config = custom_configs[self.node_id][self.service_name]
             else:
-                service_config = self.app.core.get_node_service(
-                    self.node_id, self.service_name
-                )
-            self.dependencies = [x for x in service_config.dependencies]
-            self.executables = [x for x in service_config.executables]
+                service_config = default_config
+
+            self.dependencies = service_config.dependencies[:]
+            self.executables = service_config.executables[:]
             self.metadata = service_config.meta
-            self.filenames = [x for x in service_config.configs]
-            self.startup_commands = [x for x in service_config.startup]
-            self.validation_commands = [x for x in service_config.validate]
-            self.shutdown_commands = [x for x in service_config.shutdown]
+            self.filenames = service_config.configs[:]
+            self.startup_commands = service_config.startup[:]
+            self.validation_commands = service_config.validate[:]
+            self.shutdown_commands = service_config.shutdown[:]
             self.validation_mode = service_config.validation_mode
             self.validation_time = service_config.validation_timer
             self.original_service_files = {
@@ -82,10 +104,8 @@ class ServiceConfigDialog(Dialog):
                 )
                 for x in self.filenames
             }
-            self.temp_service_files = {
-                x: self.original_service_files[x] for x in self.original_service_files
-            }
-            file_configs = self.app.core.file_configs
+            self.temp_service_files = dict(self.original_service_files)
+            file_configs = self.file_configs
             if (
                 self.node_id in file_configs
                 and self.service_name in file_configs[self.node_id]
@@ -93,7 +113,8 @@ class ServiceConfigDialog(Dialog):
                 for file, data in file_configs[self.node_id][self.service_name].items():
                     self.temp_service_files[file] = data
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.has_error = True
+            show_grpc_error(e, self.master, self.app)
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -116,8 +137,6 @@ class ServiceConfigDialog(Dialog):
         self.draw_tab_startstop()
         self.draw_tab_configuration()
 
-        button = ttk.Button(self.top, text="Only Save Changes")
-        button.grid(sticky="ew", pady=PADY)
         self.draw_buttons()
 
     def draw_tab_files(self):
@@ -219,7 +238,7 @@ class ServiceConfigDialog(Dialog):
         for i in range(3):
             tab.rowconfigure(i, weight=1)
         self.notebook.add(tab, text="Startup/Shutdown")
-
+        commands = []
         # tab 3
         for i in range(3):
             label_frame = None
@@ -332,18 +351,14 @@ class ServiceConfigDialog(Dialog):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
-        button = ttk.Button(
-            frame, text="Defaults", command=self.click_defaults, state="disabled"
-        )
+        button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
-        button = ttk.Button(
-            frame, text="Copy...", command=self.click_copy, state="disabled"
-        )
+        button = ttk.Button(frame, text="Copy...", command=self.click_copy)
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def add_filename(self, event):
+    def add_filename(self, event: tk.Event):
         # not worry about it for now
         return
         frame_contains_button = event.widget.master
@@ -352,7 +367,7 @@ class ServiceConfigDialog(Dialog):
         if filename not in combobox["values"]:
             combobox["values"] += (filename,)
 
-    def delete_filename(self, event):
+    def delete_filename(self, event: tk.Event):
         # not worry about it for now
         return
         frame_comntains_button = event.widget.master
@@ -362,7 +377,7 @@ class ServiceConfigDialog(Dialog):
             combobox["values"] = tuple([x for x in combobox["values"] if x != filename])
             combobox.set("")
 
-    def add_command(self, event):
+    def add_command(self, event: tk.Event):
         frame_contains_button = event.widget.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
         command_to_add = frame_contains_button.grid_slaves(row=0, column=0)[0].get()
@@ -373,7 +388,7 @@ class ServiceConfigDialog(Dialog):
                 return
         listbox.insert(tk.END, command_to_add)
 
-    def update_entry(self, event):
+    def update_entry(self, event: tk.Event):
         listbox = event.widget
         current_selection = listbox.curselection()
         if len(current_selection) > 0:
@@ -384,7 +399,7 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, "end")
             entry.insert(0, cmd)
 
-    def delete_command(self, event):
+    def delete_command(self, event: tk.Event):
         button = event.widget
         frame_contains_button = button.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
@@ -395,46 +410,55 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, tk.END)
 
     def click_apply(self):
-        service_configs = self.app.core.service_configs
-        startup_commands = self.startup_commands_listbox.get(0, "end")
-        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-        validate_commands = self.validate_commands_listbox.get(0, "end")
+        current_listbox = self.master.current.listbox
+        if not self.is_custom_service_config() and not self.is_custom_service_file():
+            if self.node_id in self.service_configs:
+                self.service_configs[self.node_id].pop(self.service_name, None)
+            current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
+            self.destroy()
+            return
+
         try:
-            config = self.core.set_node_service(
-                self.node_id,
-                self.service_name,
-                startup_commands,
-                validate_commands,
-                shutdown_commands,
-            )
-            if self.node_id not in service_configs:
-                service_configs[self.node_id] = {}
-            if self.service_name not in service_configs[self.node_id]:
-                self.app.core.service_configs[self.node_id][self.service_name] = config
+            if self.is_custom_service_config():
+                startup_commands = self.startup_commands_listbox.get(0, "end")
+                shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
+                validate_commands = self.validate_commands_listbox.get(0, "end")
+                config = self.core.set_node_service(
+                    self.node_id,
+                    self.service_name,
+                    startups=startup_commands,
+                    validations=validate_commands,
+                    shutdowns=shutdown_commands,
+                )
+                if self.node_id not in self.service_configs:
+                    self.service_configs[self.node_id] = {}
+                self.service_configs[self.node_id][self.service_name] = config
+
             for file in self.modified_files:
-                file_configs = self.app.core.file_configs
-                if self.node_id not in file_configs:
-                    file_configs[self.node_id] = {}
-                if self.service_name not in file_configs[self.node_id]:
-                    file_configs[self.node_id][self.service_name] = {}
-                file_configs[self.node_id][self.service_name][
+                if self.node_id not in self.file_configs:
+                    self.file_configs[self.node_id] = {}
+                if self.service_name not in self.file_configs[self.node_id]:
+                    self.file_configs[self.node_id][self.service_name] = {}
+                self.file_configs[self.node_id][self.service_name][
                     file
                 ] = self.temp_service_files[file]
 
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
+            all_current = current_listbox.get(0, tk.END)
+            current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
         self.destroy()
 
-    def display_service_file_data(self, event):
+    def display_service_file_data(self, event: tk.Event):
         combobox = event.widget
         filename = combobox.get()
         self.service_file_data.text.delete(1.0, "end")
         self.service_file_data.text.insert("end", self.temp_service_files[filename])
 
-    def update_temp_service_file_data(self, event):
+    def update_temp_service_file_data(self, event: tk.Event):
         scrolledtext = event.widget
         filename = self.filename_combobox.get()
         self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
@@ -443,11 +467,45 @@ class ServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(filename)
 
+    def is_custom_service_config(self):
+        startup_commands = self.startup_commands_listbox.get(0, "end")
+        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
+        validate_commands = self.validate_commands_listbox.get(0, "end")
+        return (
+            set(self.default_startup) != set(startup_commands)
+            or set(self.default_validate) != set(validate_commands)
+            or set(self.default_shutdown) != set(shutdown_commands)
+        )
+
+    def is_custom_service_file(self):
+        return len(self.modified_files) > 0
+
     def click_defaults(self):
-        logging.info("not implemented")
+        if self.node_id in self.service_configs:
+            self.service_configs[self.node_id].pop(self.service_name, None)
+        if self.node_id in self.file_configs:
+            self.file_configs[self.node_id].pop(self.service_name, None)
+        self.temp_service_files = dict(self.original_service_files)
+        filename = self.filename_combobox.get()
+        self.service_file_data.text.delete(1.0, "end")
+        self.service_file_data.text.insert("end", self.temp_service_files[filename])
+        self.startup_commands_listbox.delete(0, tk.END)
+        self.validate_commands_listbox.delete(0, tk.END)
+        self.shutdown_commands_listbox.delete(0, tk.END)
+        for cmd in self.default_startup:
+            self.startup_commands_listbox.insert(tk.END, cmd)
+        for cmd in self.default_validate:
+            self.validate_commands_listbox.insert(tk.END, cmd)
+        for cmd in self.default_shutdown:
+            self.shutdown_commands_listbox.insert(tk.END, cmd)
 
     def click_copy(self):
-        logging.info("not implemented")
+        dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
+        dialog.show()
 
-    def click_cancel(self):
-        logging.info("not implemented")
+    def append_commands(
+        self, commands: List[str], listbox: tk.Listbox, to_add: List[str]
+    ):
+        for cmd in to_add:
+            commands.append(cmd)
+            listbox.insert(tk.END, cmd)

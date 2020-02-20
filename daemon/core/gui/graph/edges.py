@@ -1,11 +1,15 @@
 import logging
 import tkinter as tk
 from tkinter.font import Font
+from typing import TYPE_CHECKING, Any, Tuple
 
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.graph import tags
-from core.gui.nodeutils import NodeUtils
+from core.gui.nodeutils import EdgeUtils, NodeUtils
+
+if TYPE_CHECKING:
+    from core.gui.graph.graph import CanvasGraph
 
 TEXT_DISTANCE = 0.30
 EDGE_WIDTH = 3
@@ -13,7 +17,15 @@ EDGE_COLOR = "#ff0000"
 
 
 class CanvasWirelessEdge:
-    def __init__(self, token, position, src, dst, canvas):
+    def __init__(
+        self,
+        token: Tuple[Any, ...],
+        position: Tuple[float, float, float, float],
+        src: int,
+        dst: int,
+        canvas: "CanvasGraph",
+    ):
+        logging.debug("Draw wireless link from node %s to node %s", src, dst)
         self.token = token
         self.src = src
         self.dst = dst
@@ -31,15 +43,17 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    def __init__(self, x1, y1, x2, y2, src, canvas):
+    def __init__(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        src: int,
+        canvas: "CanvasGraph",
+    ):
         """
         Create an instance of canvas edge object
-        :param int x1: source x-coord
-        :param int y1: source y-coord
-        :param int x2: destination x-coord
-        :param int y2: destination y-coord
-        :param int src: source id
-        :param coretk.graph.graph.GraphCanvas canvas: canvas object
         """
         self.src = src
         self.dst = None
@@ -66,7 +80,7 @@ class CanvasEdge:
         self.link = link
         self.draw_labels()
 
-    def get_coordinates(self):
+    def get_coordinates(self) -> [float, float, float, float]:
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         v1 = x2 - x1
         v2 = y2 - y1
@@ -78,7 +92,7 @@ class CanvasEdge:
         y2 = y2 - uy
         return x1, y1, x2, y2
 
-    def get_midpoint(self):
+    def get_midpoint(self) -> [float, float]:
         x1, y1, x2, y2 = self.canvas.coords(self.id)
         x = (x1 + x2) / 2
         y = (y1 + y2) / 2
@@ -118,8 +132,6 @@ class CanvasEdge:
     def update_labels(self):
         """
         Move edge labels based on current position.
-
-        :return: nothing
         """
         x1, y1, x2, y2 = self.get_coordinates()
         self.canvas.coords(self.text_src, x1, y1)
@@ -128,7 +140,7 @@ class CanvasEdge:
             x, y = self.get_midpoint()
             self.canvas.coords(self.text_middle, x, y)
 
-    def set_throughput(self, throughput):
+    def set_throughput(self, throughput: float):
         throughput = 0.001 * throughput
         value = f"{throughput:.3f} kbps"
         if self.text_middle is None:
@@ -147,17 +159,18 @@ class CanvasEdge:
             width = EDGE_WIDTH
         self.canvas.itemconfig(self.id, fill=color, width=width)
 
-    def complete(self, dst):
+    def complete(self, dst: int):
         self.dst = dst
-        self.token = tuple(sorted((self.src, self.dst)))
+        self.token = EdgeUtils.get_token(self.src, self.dst)
         x, y = self.canvas.coords(self.dst)
         x1, y1, _, _ = self.canvas.coords(self.id)
         self.canvas.coords(self.id, x1, y1, x, y)
         self.check_wireless()
         self.canvas.tag_raise(self.src)
         self.canvas.tag_raise(self.dst)
+        logging.debug("Draw wired link from node %s to node %s", self.src, dst)
 
-    def is_wireless(self):
+    def is_wireless(self) -> [bool, bool]:
         src_node = self.canvas.nodes[self.src]
         dst_node = self.canvas.nodes[self.dst]
         src_node_type = src_node.core_node.type
@@ -183,11 +196,11 @@ class CanvasEdge:
                 dst_node.add_antenna()
             elif not is_src_wireless and is_dst_wireless:
                 src_node.add_antenna()
-            # TODO: remove this? dont allow linking wireless nodes?
             else:
                 src_node.add_antenna()
 
     def delete(self):
+        logging.debug("Delete canvas edge, id: %s", self.id)
         self.canvas.delete(self.id)
         if self.link:
             self.canvas.delete(self.text_src)
@@ -199,8 +212,7 @@ class CanvasEdge:
         self.text_middle = None
         self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
 
-    def create_context(self, event):
-        logging.debug("create link context")
+    def create_context(self, event: tk.Event):
         context = tk.Menu(self.canvas)
         themes.style_menu(context)
         context.add_command(label="Configure", command=self.configure)
@@ -214,6 +226,5 @@ class CanvasEdge:
         context.post(event.x_root, event.y_root)
 
     def configure(self):
-        logging.debug("link configuration")
         dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
         dialog.show()

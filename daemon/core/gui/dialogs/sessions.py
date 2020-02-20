@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING, Iterable
 
 import grpc
 
@@ -11,23 +12,32 @@ from core.gui.images import ImageEnum, Images
 from core.gui.task import BackgroundTask
 from core.gui.themes import PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class SessionsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(
+        self, master: "Application", app: "Application", is_start_app: bool = False
+    ):
         super().__init__(master, app, "Sessions", modal=True)
+        self.is_start_app = is_start_app
         self.selected = False
         self.selected_id = None
         self.tree = None
+        self.has_error = False
         self.sessions = self.get_sessions()
-        self.draw()
+        if not self.has_error:
+            self.draw()
 
-    def get_sessions(self):
+    def get_sessions(self) -> Iterable[core_pb2.SessionSummary]:
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
             return response.sessions
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.app, self.app)
+            self.has_error = True
             self.destroy()
 
     def draw(self):
@@ -40,7 +50,6 @@ class SessionsDialog(Dialog):
     def draw_description(self):
         """
         write a short description
-        :return: nothing
         """
         label = ttk.Label(
             self.top,
@@ -89,7 +98,7 @@ class SessionsDialog(Dialog):
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
-        for i in range(4):
+        for i in range(5):
             frame.columnconfigure(i, weight=1)
         frame.grid(sticky="ew")
 
@@ -111,7 +120,7 @@ class SessionsDialog(Dialog):
         b.image = image
         b.grid(row=0, column=1, padx=PADX, sticky="ew")
 
-        image = Images.get(ImageEnum.EDITDELETE, 16)
+        image = Images.get(ImageEnum.SHUTDOWN, 16)
         b = ttk.Button(
             frame,
             image=image,
@@ -122,14 +131,38 @@ class SessionsDialog(Dialog):
         b.image = image
         b.grid(row=0, column=2, padx=PADX, sticky="ew")
 
-        b = ttk.Button(frame, text="Cancel", command=self.click_new)
-        b.grid(row=0, column=3, sticky="ew")
+        image = Images.get(ImageEnum.DELETE, 16)
+        b = ttk.Button(
+            frame,
+            image=image,
+            text="Delete",
+            compound=tk.LEFT,
+            command=self.click_delete,
+        )
+        b.image = image
+        b.grid(row=0, column=3, padx=PADX, sticky="ew")
+
+        image = Images.get(ImageEnum.CANCEL, 16)
+        if self.is_start_app:
+            b = ttk.Button(
+                frame, image=image, text="Exit", compound=tk.LEFT, command=self.destroy
+            )
+        else:
+            b = ttk.Button(
+                frame,
+                image=image,
+                text="Cancel",
+                compound=tk.LEFT,
+                command=self.destroy,
+            )
+        b.image = image
+        b.grid(row=0, column=4, sticky="ew")
 
     def click_new(self):
         self.app.core.create_new_session()
         self.destroy()
 
-    def click_select(self, event):
+    def click_select(self, event: tk.Event):
         item = self.tree.selection()
         session_id = int(self.tree.item(item, "text"))
         self.selected = True
@@ -138,8 +171,6 @@ class SessionsDialog(Dialog):
     def click_connect(self):
         """
         if no session is selected yet, create a new one else join that session
-
-        :return: nothing
         """
         if self.selected and self.selected_id is not None:
             self.join_session(self.selected_id)
@@ -152,8 +183,6 @@ class SessionsDialog(Dialog):
         """
         if no session is currently selected create a new session else shut the selected
         session down.
-
-        :return: nothing
         """
         if self.selected and self.selected_id is not None:
             self.shutdown_session(self.selected_id)
@@ -162,18 +191,34 @@ class SessionsDialog(Dialog):
         else:
             logging.error("querysessiondrawing.py invalid state")
 
-    def join_session(self, session_id):
+    def join_session(self, session_id: int):
+        if self.app.core.xml_file:
+            self.app.core.xml_file = None
         self.app.statusbar.progress_bar.start(5)
         task = BackgroundTask(self.app, self.app.core.join_session, args=(session_id,))
         task.start()
         self.destroy()
 
-    def on_selected(self, event):
+    def on_selected(self, event: tk.Event):
         item = self.tree.selection()
         sid = int(self.tree.item(item, "text"))
         self.join_session(sid)
 
-    def shutdown_session(self, sid):
+    def shutdown_session(self, sid: int):
         self.app.core.stop_session(sid)
         self.click_new()
         self.destroy()
+
+    def click_delete(self):
+        logging.debug("Click delete")
+        item = self.tree.selection()
+        if item:
+            sid = int(self.tree.item(item, "text"))
+            self.app.core.delete_session(sid, self.top)
+            self.tree.delete(item[0])
+            if sid == self.app.core.session_id:
+                self.click_new()
+        selections = self.tree.get_children()
+        if selections:
+            self.tree.focus(selections[0])
+            self.tree.selection_set(selections[0])

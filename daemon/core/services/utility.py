@@ -4,10 +4,10 @@ utility.py: defines miscellaneous utility services.
 
 import os
 
+import netaddr
+
 from core import constants, utils
 from core.errors import CoreCommandError
-from core.nodes import ipaddress
-from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService, ServiceMode
 
 
@@ -88,19 +88,15 @@ class DefaultRouteService(UtilService):
 
     @staticmethod
     def addrstr(x):
-        addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
-            net = Ipv6Prefix(x)
-        else:
-            net = Ipv4Prefix(x)
-        if net.max_addr() == net.min_addr():
+        net = netaddr.IPNetwork(x)
+        if net[1] == net[-2]:
             return ""
         else:
             if os.uname()[0] == "Linux":
                 rtcmd = "ip route add default via"
             else:
                 raise Exception("unknown platform")
-            return "%s %s" % (rtcmd, net.min_addr())
+            return "%s %s" % (rtcmd, net[1])
 
 
 class DefaultMulticastRouteService(UtilService):
@@ -150,20 +146,19 @@ class StaticRouteService(UtilService):
     @staticmethod
     def routestr(x):
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
-            net = Ipv6Prefix(x)
+        if netaddr.valid_ipv6(addr):
             dst = "3ffe:4::/64"
         else:
-            net = Ipv4Prefix(x)
             dst = "10.9.8.0/24"
-        if net.max_addr() == net.min_addr():
+        net = netaddr.IPNetwork(x)
+        if net[-2] == net[1]:
             return ""
         else:
             if os.uname()[0] == "Linux":
                 rtcmd = "#/sbin/ip route add %s via" % dst
             else:
                 raise Exception("unknown platform")
-            return "%s %s" % (rtcmd, net.min_addr())
+            return "%s %s" % (rtcmd, net[1])
 
 
 class SshService(UtilService):
@@ -285,14 +280,14 @@ ddns-update-style none;
         for inclusion in the dhcpd3 config file.
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
+        if netaddr.valid_ipv6(addr):
             return ""
         else:
-            addr = x.split("/")[0]
-            net = Ipv4Prefix(x)
+            net = netaddr.IPNetwork(x)
             # divide the address space in half
-            rangelow = net.addr(net.num_addr() / 2)
-            rangehigh = net.max_addr()
+            index = (net.size - 2) / 2
+            rangelow = net[index]
+            rangehigh = net[-2]
             return """
 subnet %s netmask %s {
   pool {
@@ -302,8 +297,8 @@ subnet %s netmask %s {
   }
 }
 """ % (
-                net.prefix_str(),
-                net.netmask_str(),
+                net.ip,
+                net.netmask,
                 rangelow,
                 rangehigh,
                 addr,
@@ -669,7 +664,7 @@ class RadvdService(UtilService):
         for ifc in node.netifs():
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
-            prefixes = map(cls.subnetentry, ifc.addrlist)
+            prefixes = list(map(cls.subnetentry, ifc.addrlist))
             if len(prefixes) < 1:
                 continue
             cfg += (
@@ -708,9 +703,8 @@ interface %s
         for inclusion in the RADVD config file.
         """
         addr = x.split("/")[0]
-        if ipaddress.is_ipv6_address(addr):
-            net = Ipv6Prefix(x)
-            return str(net)
+        if netaddr.valid_ipv6(addr):
+            return x
         else:
             return ""
 

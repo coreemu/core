@@ -3,17 +3,20 @@ import logging
 import os
 import signal
 import sys
+from typing import Mapping, Type
 
 import core.services
+from core import configservices
+from core.configservice.manager import ConfigServiceManager
 from core.emulator.session import Session
 from core.services.coreservices import ServiceManager
 
 
-def signal_handler(signal_number, _):
+def signal_handler(signal_number: int, _) -> None:
     """
     Handle signals and force an exit with cleanup.
 
-    :param int signal_number: signal number
+    :param signal_number: signal number
     :param _: ignored
     :return: nothing
     """
@@ -33,11 +36,11 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, config: Mapping[str, str] = None) -> None:
         """
         Create a CoreEmu object.
 
-        :param dict config: configuration options
+        :param config: configuration options
         """
         # set umask 0
         os.umask(0)
@@ -54,10 +57,18 @@ class CoreEmu:
         self.service_errors = []
         self.load_services()
 
+        # config services
+        self.service_manager = ConfigServiceManager()
+        config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
+        self.service_manager.load(config_services_path)
+        custom_dir = self.config.get("custom_config_services_dir")
+        if custom_dir:
+            self.service_manager.load(custom_dir)
+
         # catch exit event
         atexit.register(self.shutdown)
 
-    def load_services(self):
+    def load_services(self) -> None:
         # load default services
         self.service_errors = core.services.load()
 
@@ -70,7 +81,7 @@ class CoreEmu:
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown all CORE session.
 
@@ -83,31 +94,30 @@ class CoreEmu:
             session = sessions[_id]
             session.shutdown()
 
-    def create_session(self, _id=None, _cls=Session):
+    def create_session(self, _id: int = None, _cls: Type[Session] = Session) -> Session:
         """
         Create a new CORE session.
 
-        :param int _id: session id for new session
-        :param class _cls: Session class to use
+        :param _id: session id for new session
+        :param _cls: Session class to use
         :return: created session
-        :rtype: EmuSession
         """
         if not _id:
             _id = 1
             while _id in self.sessions:
                 _id += 1
         session = _cls(_id, config=self.config)
+        session.service_manager = self.service_manager
         logging.info("created session: %s", _id)
         self.sessions[_id] = session
         return session
 
-    def delete_session(self, _id):
+    def delete_session(self, _id: int) -> bool:
         """
         Shutdown and delete a CORE session.
 
-        :param int _id: session id to delete
+        :param _id: session id to delete
         :return: True if deleted, False otherwise
-        :rtype: bool
         """
         logging.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)

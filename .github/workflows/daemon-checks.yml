@@ -35,7 +35,7 @@ jobs:
       - name: grpc
         run: |
           cd daemon/proto
-          pipenv run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/core.proto
+          pipenv run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
       - name: test
         run: |
           cd daemon

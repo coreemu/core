@@ -16,6 +16,5 @@ def load():
     Loads all services from the modules that reside under core.services.
 
     :return: list of services that failed to load
-    :rtype: list[str]
     """
     return ServiceManager.add_services(_PATH)

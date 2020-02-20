@@ -6,6 +6,7 @@ https://pypi.python.org/pypi/utm (version 0.3.0).
 """
 
 import logging
+from typing import Optional, Tuple
 
 from core.emulator.enumerations import RegisterTlvs
 from core.location import utm
@@ -21,7 +22,7 @@ class CoreLocation:
     name = "location"
     config_type = RegisterTlvs.UTILITY.value
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Creates a MobilityManager instance.
 
@@ -37,7 +38,7 @@ class CoreLocation:
         for n, l in utm.ZONE_LETTERS:
             self.zonemap[l] = n
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset to initial state.
         """
@@ -50,7 +51,7 @@ class CoreLocation:
         # cached distance to refpt in other zones
         self.zoneshifts = {}
 
-    def px2m(self, val):
+    def px2m(self, val: float) -> float:
         """
         Convert the specified value in pixels to meters using the
         configured scale. The scale is given as s, where
@@ -61,7 +62,7 @@ class CoreLocation:
         """
         return (val / 100.0) * self.refscale
 
-    def m2px(self, val):
+    def m2px(self, val: float) -> float:
         """
         Convert the specified value in meters to pixels using the
         configured scale. The scale is given as s, where
@@ -74,7 +75,7 @@ class CoreLocation:
             return 0.0
         return 100.0 * (val / self.refscale)
 
-    def setrefgeo(self, lat, lon, alt):
+    def setrefgeo(self, lat: float, lon: float, alt: float) -> None:
         """
         Record the geographical reference point decimal (lat, lon, alt)
         and convert and store its UTM equivalent for later use.
@@ -89,7 +90,7 @@ class CoreLocation:
         e, n, zonen, zonel = utm.from_latlon(lat, lon)
         self.refutm = ((zonen, zonel), e, n, alt)
 
-    def getgeo(self, x, y, z):
+    def getgeo(self, x: float, y: float, z: float) -> Tuple[float, float, float]:
         """
         Given (x, y, z) Cartesian coordinates, convert them to latitude,
         longitude, and altitude based on the configured reference point
@@ -99,7 +100,6 @@ class CoreLocation:
         :param y: y value
         :param z: z value
         :return: lat, lon, alt values for provided coordinates
-        :rtype: tuple
         """
         # shift (x,y,z) over to reference point (x,y,z)
         x -= self.refxyz[0]
@@ -130,7 +130,7 @@ class CoreLocation:
             lat, lon = self.refgeo[:2]
         return lat, lon, alt
 
-    def getxyz(self, lat, lon, alt):
+    def getxyz(self, lat: float, lon: float, alt: float) -> Tuple[float, float, float]:
         """
         Given latitude, longitude, and altitude location data, convert them
         to (x, y, z) Cartesian coordinates based on the configured
@@ -142,7 +142,6 @@ class CoreLocation:
         :param lon: longitude
         :param alt: altitude
         :return: converted x, y, z coordinates
-        :rtype: tuple
         """
         # convert lat/lon to UTM coordinates in meters
         e, n, zonen, zonel = utm.from_latlon(lat, lon)
@@ -165,7 +164,7 @@ class CoreLocation:
         z = self.m2px(zm) + self.refxyz[2]
         return x, y, z
 
-    def geteastingshift(self, zonen, zonel):
+    def geteastingshift(self, zonen: float, zonel: float) -> Optional[float]:
         """
         If the lat, lon coordinates being converted are located in a
         different UTM zone than the canvas reference point, the UTM meters
@@ -201,7 +200,7 @@ class CoreLocation:
         self.zoneshifts[z] = (xshift, yshift)
         return xshift
 
-    def getnorthingshift(self, zonen, zonel):
+    def getnorthingshift(self, zonen: float, zonel: float) -> Optional[float]:
         """
         If the lat, lon coordinates being converted are located in a
         different UTM zone than the canvas reference point, the UTM meters
@@ -238,7 +237,9 @@ class CoreLocation:
         self.zoneshifts[z] = (xshift, yshift)
         return yshift
 
-    def getutmzoneshift(self, e, n):
+    def getutmzoneshift(
+        self, e: float, n: float
+    ) -> Tuple[float, float, Tuple[float, str]]:
         """
         Given UTM easting and northing values, check if they fall outside
         the reference point's zone boundary. Return the UTM coordinates in a
@@ -248,7 +249,6 @@ class CoreLocation:
         :param e: easting value
         :param n: northing value
         :return: modified easting, northing, and zone values
-        :rtype: tuple
         """
         zone = self.refutm[0]
         rlat, rlon, _ralt = self.refgeo

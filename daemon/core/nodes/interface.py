@@ -4,10 +4,16 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
+from typing import TYPE_CHECKING, Callable, Dict, List, Tuple
 
 from core import utils
 from core.errors import CoreCommandError
 from core.nodes.netclient import get_net_client
+
+if TYPE_CHECKING:
+    from core.emulator.distributed import DistributedServer
+    from core.emulator.session import Session
+    from core.nodes.base import CoreNetworkBase, CoreNode
 
 
 class CoreInterface:
@@ -15,15 +21,22 @@ class CoreInterface:
     Base class for network interfaces.
     """
 
-    def __init__(self, session, node, name, mtu, server=None):
+    def __init__(
+        self,
+        session: "Session",
+        node: "CoreNode",
+        name: str,
+        mtu: int,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
         Creates a CoreInterface instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: node for interface
-        :param str name: interface name
-        :param int mtu: mtu value
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: node for interface
+        :param name: interface name
+        :param mtu: mtu value
+        :param server: remote server node
             will run on, default is None for localhost
         """
         self.session = session
@@ -50,17 +63,23 @@ class CoreInterface:
         use_ovs = session.options.get_config("ovs") == "True"
         self.net_client = get_net_client(use_ovs, self.host_cmd)
 
-    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
+    def host_cmd(
+        self,
+        args: str,
+        env: Dict[str, str] = None,
+        cwd: str = None,
+        wait: bool = True,
+        shell: bool = False,
+    ) -> str:
         """
         Runs a command on the host system or distributed server.
 
-        :param str args: command to run
-        :param dict env: environment to run command with
-        :param str cwd: directory to run command in
-        :param bool wait: True to wait for status, False otherwise
-        :param bool shell: True to use shell, False otherwise
+        :param args: command to run
+        :param env: environment to run command with
+        :param cwd: directory to run command in
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
         :return: combined stdout and stderr
-        :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
@@ -68,7 +87,7 @@ class CoreInterface:
         else:
             return self.server.remote_cmd(args, env, cwd, wait)
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Startup method for the interface.
 
@@ -76,7 +95,7 @@ class CoreInterface:
         """
         pass
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown method for the interface.
 
@@ -84,11 +103,11 @@ class CoreInterface:
         """
         pass
 
-    def attachnet(self, net):
+    def attachnet(self, net: "CoreNetworkBase") -> None:
         """
         Attach network.
 
-        :param core.nodes.base.CoreNetworkBase net: network to attach
+        :param net: network to attach
         :return: nothing
         """
         if self.net:
@@ -98,7 +117,7 @@ class CoreInterface:
         net.attach(self)
         self.net = net
 
-    def detachnet(self):
+    def detachnet(self) -> None:
         """
         Detach from a network.
 
@@ -107,35 +126,37 @@ class CoreInterface:
         if self.net is not None:
             self.net.detach(self)
 
-    def addaddr(self, addr):
+    def addaddr(self, addr: str) -> None:
         """
         Add address.
 
-        :param str addr: address to add
+        :param addr: address to add
         :return: nothing
         """
-
+        addr = utils.validate_ip(addr)
         self.addrlist.append(addr)
 
-    def deladdr(self, addr):
+    def deladdr(self, addr: str) -> None:
         """
         Delete address.
 
-        :param str addr: address to delete
+        :param addr: address to delete
         :return: nothing
         """
         self.addrlist.remove(addr)
 
-    def sethwaddr(self, addr):
+    def sethwaddr(self, addr: str) -> None:
         """
         Set hardware address.
 
-        :param core.nodes.ipaddress.MacAddress addr: hardware address to set to.
+        :param addr: hardware address to set to.
         :return: nothing
         """
+        if addr is not None:
+            addr = utils.validate_mac(addr)
         self.hwaddr = addr
 
-    def getparam(self, key):
+    def getparam(self, key: str) -> float:
         """
         Retrieve a parameter from the, or None if the parameter does not exist.
 
@@ -144,7 +165,7 @@ class CoreInterface:
         """
         return self._params.get(key)
 
-    def getparams(self):
+    def getparams(self) -> List[Tuple[str, float]]:
         """
         Return (key, value) pairs for parameters.
         """
@@ -153,7 +174,7 @@ class CoreInterface:
             parameters.append((k, self._params[k]))
         return parameters
 
-    def setparam(self, key, value):
+    def setparam(self, key: str, value: float) -> bool:
         """
         Set a parameter value, returns True if the parameter has changed.
 
@@ -173,13 +194,13 @@ class CoreInterface:
         self._params[key] = value
         return True
 
-    def swapparams(self, name):
+    def swapparams(self, name: str) -> None:
         """
         Swap out parameters dict for name. If name does not exist,
         intialize it. This is for supporting separate upstream/downstream
         parameters when two layer-2 nodes are linked together.
 
-        :param str name: name of parameter to swap
+        :param name: name of parameter to swap
         :return: nothing
         """
         tmp = self._params
@@ -188,7 +209,7 @@ class CoreInterface:
         self._params = getattr(self, name)
         setattr(self, name, tmp)
 
-    def setposition(self, x, y, z):
+    def setposition(self, x: float, y: float, z: float) -> None:
         """
         Dispatch position hook handler.
 
@@ -199,13 +220,12 @@ class CoreInterface:
         """
         self.poshook(self, x, y, z)
 
-    def __lt__(self, other):
+    def __lt__(self, other: "CoreInterface") -> bool:
         """
         Used for comparisons of this object.
 
         :param other: other interface
         :return: true if less than, false otherwise
-        :rtype: bool
         """
         return id(self) < id(other)
 
@@ -216,19 +236,26 @@ class Veth(CoreInterface):
     """
 
     def __init__(
-        self, session, node, name, localname, mtu=1500, server=None, start=True
-    ):
+        self,
+        session: "Session",
+        node: "CoreNode",
+        name: str,
+        localname: str,
+        mtu: int = 1500,
+        server: "DistributedServer" = None,
+        start: bool = True,
+    ) -> None:
         """
         Creates a VEth instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param str localname: interface local name
-        :param int mtu: interface mtu
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: related core node
+        :param name: interface name
+        :param localname: interface local name
+        :param mtu: interface mtu
+        :param server: remote server node
             will run on, default is None for localhost
-        :param bool start: start flag
+        :param start: start flag
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
@@ -238,7 +265,7 @@ class Veth(CoreInterface):
         if start:
             self.startup()
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Interface startup logic.
 
@@ -249,7 +276,7 @@ class Veth(CoreInterface):
         self.net_client.device_up(self.localname)
         self.up = True
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Interface shutdown logic.
 
@@ -279,19 +306,26 @@ class TunTap(CoreInterface):
     """
 
     def __init__(
-        self, session, node, name, localname, mtu=1500, server=None, start=True
-    ):
+        self,
+        session: "Session",
+        node: "CoreNode",
+        name: str,
+        localname: str,
+        mtu: int = 1500,
+        server: "DistributedServer" = None,
+        start: bool = True,
+    ) -> None:
         """
         Create a TunTap instance.
 
-        :param core.emulator.session.Session session: core session instance
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param str localname: local interface name
-        :param int mtu: interface mtu
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param session: core session instance
+        :param node: related core node
+        :param name: interface name
+        :param localname: local interface name
+        :param mtu: interface mtu
+        :param server: remote server node
             will run on, default is None for localhost
-        :param bool start: start flag
+        :param start: start flag
         """
         super().__init__(session, node, name, mtu, server)
         self.localname = localname
@@ -300,7 +334,7 @@ class TunTap(CoreInterface):
         if start:
             self.startup()
 
-    def startup(self):
+    def startup(self) -> None:
         """
         Startup logic for a tunnel tap.
 
@@ -314,7 +348,7 @@ class TunTap(CoreInterface):
         #   self.install()
         self.up = True
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown functionality for a tunnel tap.
 
@@ -330,15 +364,16 @@ class TunTap(CoreInterface):
 
         self.up = False
 
-    def waitfor(self, func, attempts=10, maxretrydelay=0.25):
+    def waitfor(
+        self, func: Callable[[], int], attempts: int = 10, maxretrydelay: float = 0.25
+    ) -> bool:
         """
         Wait for func() to return zero with exponential backoff.
 
         :param func: function to wait for a result of zero
-        :param int attempts: number of attempts to wait for a zero result
-        :param float maxretrydelay: maximum retry delay
+        :param attempts: number of attempts to wait for a zero result
+        :param maxretrydelay: maximum retry delay
         :return: True if wait succeeded, False otherwise
-        :rtype: bool
         """
         delay = 0.01
         result = False
@@ -361,13 +396,12 @@ class TunTap(CoreInterface):
 
         return result
 
-    def waitfordevicelocal(self):
+    def waitfordevicelocal(self) -> None:
         """
         Check for presence of a local device - tap device may not
         appear right away waits
 
         :return: wait for device local response
-        :rtype: int
         """
         logging.debug("waiting for device local: %s", self.localname)
 
@@ -380,7 +414,7 @@ class TunTap(CoreInterface):
 
         self.waitfor(localdevexists)
 
-    def waitfordevicenode(self):
+    def waitfordevicenode(self) -> None:
         """
         Check for presence of a node device - tap device may not appear right away waits.
 
@@ -411,7 +445,7 @@ class TunTap(CoreInterface):
             else:
                 raise RuntimeError("node device failed to exist")
 
-    def install(self):
+    def install(self) -> None:
         """
         Install this TAP into its namespace. This is not done from the
         startup() method but called at a later time when a userspace
@@ -427,7 +461,7 @@ class TunTap(CoreInterface):
         self.node.node_net_client.device_name(self.localname, self.name)
         self.node.node_net_client.device_up(self.name)
 
-    def setaddrs(self):
+    def setaddrs(self) -> None:
         """
         Set interface addresses based on self.addrlist.
 
@@ -447,32 +481,32 @@ class GreTap(CoreInterface):
 
     def __init__(
         self,
-        node=None,
-        name=None,
-        session=None,
-        mtu=1458,
-        remoteip=None,
-        _id=None,
-        localip=None,
-        ttl=255,
-        key=None,
-        start=True,
-        server=None,
-    ):
+        node: "CoreNode" = None,
+        name: str = None,
+        session: "Session" = None,
+        mtu: int = 1458,
+        remoteip: str = None,
+        _id: int = None,
+        localip: str = None,
+        ttl: int = 255,
+        key: int = None,
+        start: bool = True,
+        server: "DistributedServer" = None,
+    ) -> None:
         """
         Creates a GreTap instance.
 
-        :param core.nodes.base.CoreNode node: related core node
-        :param str name: interface name
-        :param core.emulator.session.Session session: core session instance
-        :param int mtu: interface mtu
-        :param str remoteip: remote address
-        :param int _id: object id
-        :param str localip: local address
-        :param int ttl: ttl value
-        :param int key: gre tap key
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
+        :param node: related core node
+        :param name: interface name
+        :param session: core session instance
+        :param mtu: interface mtu
+        :param remoteip: remote address
+        :param _id: object id
+        :param localip: local address
+        :param ttl: ttl value
+        :param key: gre tap key
+        :param start: start flag
+        :param server: remote server node
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
@@ -496,7 +530,7 @@ class GreTap(CoreInterface):
         self.net_client.device_up(self.localname)
         self.up = True
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown logic for a GreTap.
 
@@ -511,7 +545,7 @@ class GreTap(CoreInterface):
 
             self.localname = None
 
-    def data(self, message_type):
+    def data(self, message_type: int) -> None:
         """
         Data for a gre tap.
 
@@ -520,12 +554,11 @@ class GreTap(CoreInterface):
         """
         return None
 
-    def all_link_data(self, flags):
+    def all_link_data(self, flags: int) -> List:
         """
         Retrieve link data.
 
         :param flags: link flags
         :return: link data
-        :rtype: list[core.emulator.data.LinkData]
         """
         return []

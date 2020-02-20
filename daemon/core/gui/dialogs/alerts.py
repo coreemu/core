@@ -3,15 +3,19 @@ check engine light
 """
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.api.grpc.core_pb2 import ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class AlertsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Alerts", modal=True)
         self.app = app
         self.tree = None
@@ -110,7 +114,7 @@ class AlertsDialog(Dialog):
         dialog = DaemonLog(self, self.app)
         dialog.show()
 
-    def click_select(self, event):
+    def click_select(self, event: tk.Event):
         current = self.tree.selection()[0]
         alarm = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)
@@ -120,7 +124,7 @@ class AlertsDialog(Dialog):
 
 
 class DaemonLog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: tk.Widget, app: "Application"):
         super().__init__(master, app, "core-daemon log", modal=True)
         self.columnconfigure(0, weight=1)
         self.path = tk.StringVar(value="/var/log/core-daemon.log")

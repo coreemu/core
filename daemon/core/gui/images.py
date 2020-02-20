@@ -1,4 +1,5 @@
 from enum import Enum
+from tkinter import messagebox
 
 from PIL import Image, ImageTk
 
@@ -9,7 +10,7 @@ class Images:
     images = {}
 
     @classmethod
-    def create(cls, file_path, width, height=None):
+    def create(cls, file_path: str, width: int, height: int = None):
         if height is None:
             height = width
         image = Image.open(file_path)
@@ -22,14 +23,31 @@ class Images:
             cls.images[image.stem] = str(image)
 
     @classmethod
-    def get(cls, image_enum, width, height=None):
+    def get(
+        cls, image_enum: Enum, width: int, height: int = None
+    ) -> ImageTk.PhotoImage:
         file_path = cls.images[image_enum.value]
         return cls.create(file_path, width, height)
 
     @classmethod
-    def get_custom(cls, name, width, height=None):
-        file_path = cls.images[name]
+    def get_with_image_file(
+        cls, stem: str, width: int, height: int = None
+    ) -> ImageTk.PhotoImage:
+        file_path = cls.images[stem]
         return cls.create(file_path, width, height)
+
+    @classmethod
+    def get_custom(
+        cls, name: str, width: int, height: int = None
+    ) -> ImageTk.PhotoImage:
+        try:
+            file_path = cls.images[name]
+            return cls.create(file_path, width, height)
+        except KeyError:
+            messagebox.showwarning(
+                "Missing image file",
+                f"{name}.png is missing at daemon/core/gui/data/icons, drop image file at daemon/core/gui/data/icons and restart the gui",
+            )
 
 
 class ImageEnum(Enum):
@@ -68,3 +86,7 @@ class ImageEnum(Enum):
     DOCKER = "docker"
     LXC = "lxc"
     ALERT = "alert"
+    DELETE = "delete"
+    SHUTDOWN = "shutdown"
+    CANCEL = "cancel"
+    ERROR = "error"

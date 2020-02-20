@@ -1,22 +1,27 @@
 """
 emane configuration
 """
-import logging
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
+from typing import TYPE_CHECKING, Any
 
 import grpc
 
+from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
+
 
 class GlobalEmaneDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: Any, app: "Application"):
         super().__init__(master, app, "EMANE Configuration", modal=True)
         self.config_frame = None
         self.draw()
@@ -47,20 +52,29 @@ class GlobalEmaneDialog(Dialog):
 
 
 class EmaneModelDialog(Dialog):
-    def __init__(self, master, app, node, model, interface=None):
+    def __init__(
+        self,
+        master: Any,
+        app: "Application",
+        node: core_pb2.Node,
+        model: str,
+        interface: int = None,
+    ):
         super().__init__(master, app, f"{node.name} {model} Configuration", modal=True)
         self.node = node
         self.model = f"emane_{model}"
         self.interface = interface
         self.config_frame = None
+        self.has_error = False
         try:
             self.config = self.app.core.get_emane_model_config(
                 self.node.id, self.model, self.interface
             )
+            self.draw()
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.app, self.app)
+            self.has_error = True
             self.destroy()
-        self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -91,7 +105,9 @@ class EmaneModelDialog(Dialog):
 
 
 class EmaneConfigDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+    def __init__(
+        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
+    ):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} EMANE Configuration", modal=True
         )
@@ -116,8 +132,6 @@ class EmaneConfigDialog(Dialog):
     def draw_emane_configuration(self):
         """
         draw the main frame for emane configuration
-
-        :return: nothing
         """
         label = ttk.Label(
             self.top,
@@ -143,8 +157,6 @@ class EmaneConfigDialog(Dialog):
     def draw_emane_models(self):
         """
         create a combobox that has all the known emane models
-
-        :return: nothing
         """
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PADY)
@@ -210,22 +222,17 @@ class EmaneConfigDialog(Dialog):
     def click_model_config(self):
         """
         draw emane model configuration
-
-        :return: nothing
         """
         model_name = self.emane_model.get()
-        logging.info("configuring emane model: %s", model_name)
         dialog = EmaneModelDialog(
             self, self.app, self.canvas_node.core_node, model_name
         )
-        dialog.show()
+        if not dialog.has_error:
+            dialog.show()
 
-    def emane_model_change(self, event):
+    def emane_model_change(self, event: tk.Event):
         """
         update emane model options button
-
-        :param event:
-        :return: nothing
         """
         model_name = self.emane_model.get()
         self.emane_model_button.config(text=f"{model_name} options")

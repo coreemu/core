@@ -1,5 +1,6 @@
 import logging
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -8,13 +9,18 @@ from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class SessionOptionsDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Session Options", modal=True)
         self.config_frame = None
+        self.has_error = False
         self.config = self.get_config()
-        self.draw()
+        if not self.has_error:
+            self.draw()
 
     def get_config(self):
         try:
@@ -22,7 +28,8 @@ class SessionOptionsDialog(Dialog):
             response = self.app.core.client.get_session_options(session_id)
             return response.config
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            self.has_error = True
+            show_grpc_error(e, self.app, self.app)
             self.destroy()
 
     def draw(self):
@@ -49,5 +56,5 @@ class SessionOptionsDialog(Dialog):
             response = self.app.core.client.set_session_options(session_id, config)
             logging.info("saved session config: %s", response)
         except grpc.RpcError as e:
-            show_grpc_error(e)
+            show_grpc_error(e, self.top, self.app)
         self.destroy()

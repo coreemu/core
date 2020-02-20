@@ -19,6 +19,7 @@ from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
+from core.nodes.netclient import LinuxNetClient
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -27,8 +28,8 @@ class PatchManager:
     def __init__(self):
         self.patches = []
 
-    def patch_obj(self, _cls, attribute):
-        p = mock.patch.object(_cls, attribute)
+    def patch_obj(self, _cls, attribute, return_value=None):
+        p = mock.patch.object(_cls, attribute, return_value=return_value)
         p.start()
         self.patches.append(p)
 
@@ -51,11 +52,14 @@ class MockServer:
 @pytest.fixture(scope="session")
 def patcher(request):
     patch_manager = PatchManager()
-    patch_manager.patch_obj(DistributedServer, "remote_cmd")
+    patch_manager.patch_obj(DistributedServer, "remote_cmd", return_value="1")
     if request.config.getoption("mock"):
         patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
         patch_manager.patch("core.nodes.netclient.get_net_client")
+        patch_manager.patch_obj(
+            LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
+        )
         patch_manager.patch_obj(CoreNode, "nodefile")
         patch_manager.patch_obj(Session, "write_state")
         patch_manager.patch_obj(Session, "write_nodes")

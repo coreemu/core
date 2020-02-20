@@ -1,14 +1,18 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class PreferencesDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master: "Application", app: "Application"):
         super().__init__(master, app, "Preferences", modal=True)
         preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])
@@ -72,7 +76,7 @@ class PreferencesDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def theme_change(self, event):
+    def theme_change(self, event: tk.Event):
         theme = self.theme.get()
         logging.info("changing theme: %s", theme)
         self.app.style.theme_use(theme)
