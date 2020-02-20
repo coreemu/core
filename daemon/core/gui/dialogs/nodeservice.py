@@ -38,7 +38,7 @@ class NodeServiceDialog(Dialog):
             if len(services) == 0:
                 # not custom node type and node's services haven't been modified before
                 if not NodeUtils.is_custom(
-                    canvas_node.core_node.model
+                    canvas_node.core_node.type, canvas_node.core_node.model
                 ) and not self.app.core.service_been_modified(self.node_id):
                     services = set(self.app.core.default_services[model])
                 # services of default type nodes were modified to be empty

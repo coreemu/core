@@ -74,6 +74,9 @@ bootfrr()
     fi
 
     bootdaemon "zebra"
+    if grep -q "^ip route " $FRR_CONF; then
+        bootdaemon "staticd"
+    fi
     for r in rip ripng ospf6 ospf bgp babel; do
         if grep -q "^router \\<$${}{r}\\>" $FRR_CONF; then
             bootdaemon "$${}{r}d"
@@ -93,3 +96,10 @@ if [ "$1" != "zebra" ]; then
 fi
 confcheck
 bootfrr
+
+# reset interfaces
+% for ifc, _, _ , _ in interfaces:
+ip link set dev ${ifc.name} down
+sleep 1
+ip link set dev ${ifc.name} up
+% endfor

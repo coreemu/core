@@ -570,10 +570,10 @@ class WayPoint:
         return not self == other
 
     def __lt__(self, other: "WayPoint") -> bool:
-        result = self.time < other.time
-        if result:
-            result = self.nodenum < other.nodenum
-        return result
+        if self.time == other.time:
+            return self.nodenum < other.nodenum
+        else:
+            return self.time < other.time
 
 
 class WayPointMobility(WirelessModel):

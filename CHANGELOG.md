@@ -1,3 +1,35 @@
+## 2020-02-20 CORE 6.1.0
+* New
+    * config services - these services leverage a proper template engine and have configurable parameters, given enough time may replace existing services
+    * core-imn-to-xml - IMN to XML utility script
+    * replaced internal code for determining ip/mac address with netaddr library
+* Enhancements
+    * added distributed package for built packages
+    * made use of python type hinting for functions and their return values
+    * updated Quagga zebra service to remove deprecated warning
+* Removed
+    * removed stale ns3 code
+* CORETK GUI
+    * added logging
+    * improved error dialog
+    * properly use global ipv6 addresses for nodes
+    * disable proxy usage by default, flag available to enable
+* gRPC API
+    * add_link - now returns created interface information
+    * set_node_service - can now set files and directories to properly replicate previous usage
+    * get_emane_event_channel - return information related to the currently used emane event channel
+* Bugfixes
+    * fixed session SDT functionality back to working order, due to python3 changes
+    * avoid shutting down services for nodes that are not up
+    * EMANE bypass model options will now display properly in GUIs
+    * XML scenarios will now properly read in custom node icons
+    * \#372 - fixed mobility waypoint comparisons
+    * \#370 - fixed radvd service
+    * \#368 - updated frr services to properly start staticd when needed
+    * \#358 - fixed systemd service install path
+    * \#350 - fixed frr babel wireless configuration
+    * \#354 - updated frr to reset interfaces to properly take configurations
+
 ## 2020-01-01 CORE 6.0.0
 * New
     * beta release of the python based tk GUI, use **coretk-gui** to try it out, plan will be to eventually sunset the old GUI once this is good enough
@@ -114,11 +146,11 @@
     * Added EMANE prefix configuration when looking for emane model manifest files
     * requires configuring **emane_prefix** in /etc/core/core.conf
 * Cleanup
-    * Refactoring of the core python package structure, trying to help provide better organization and 
+    * Refactoring of the core python package structure, trying to help provide better organization and
   logical groupings
 * Issues
     * \#246 - Fixed network to network link handling when reading xml files
-    * \#236 - Fixed storing/reading of link configuration values within xml files 
+    * \#236 - Fixed storing/reading of link configuration values within xml files
     * \#170 - FRR Service
     * \#155 - EMANE path configuration
     * \#233 - Python 3 support
@@ -152,16 +184,16 @@
 
 ## 2018-05-22 CORE 5.1
 * DAEMON:
-    * removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB 
+    * removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB
  specific files)
     * default nodes are now set in the node map
     * moved ns3 and netns directories to the top of the repo
     * changes to make use of fpm as the tool for building packages
     * removed usage of logzero to avoid dependency issues for built packages
     * removed daemon addons directory
-    * added CoreEmu to core.emulator.coreemu to help begin serving as the basis for a more formal API for scripting 
+    * added CoreEmu to core.emulator.coreemu to help begin serving as the basis for a more formal API for scripting
  and creating new external APIs out of
-    * cleaned up logging, moved more logging to DEBUG from INFO, tried to mold INFO message to be more simple and 
+    * cleaned up logging, moved more logging to DEBUG from INFO, tried to mold INFO message to be more simple and
  informative
     * EMANE 1.0.1-1.21 supported
     * updates to leverage EMANE python bindings for dynamically parsing phy/mac manifest files
@@ -175,7 +207,7 @@
     * updated broken help links in GUI Help->About
 * Packaging:
     * fixed PYTHON_PATH to PYTHONPATH in sysv script
-    * added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation 
+    * added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation
  within README.md to try it out
 * TEST:
     * fixed some broken tests
@@ -184,7 +216,7 @@
     * \#142 - duplication of custom services
     * \#136 - sphinx-apidoc command not found
     * \#137 - make command fails when using distclean
- 
+
 ## 2017-09-01 CORE 5.0
 * DEVELOPMENT:
     * support for editorconfig to help standardize development across IDEs, from the defined configuration file
@@ -339,7 +371,7 @@
     * added "--addons" startup mode to pass control to code included from addons dir
     * added "Locked" entry to View menu to prevent moving items
     * use currently selected node type when invoking a topology generator
-    * updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot 
+    * updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot
   configuration with imn file
     * improved session dialog
 * EMANE:
@@ -356,11 +388,11 @@
     * XML import and export
     * renamed "cored.py" to "cored", "coresendmsg.py" to "coresendmsg"
     * code reorganization and clean-up
-    * updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new 
+    * updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new
   "Save As XML..." File menu entry
     * added script_start/pause/stop options to Ns2ScriptedMobility
     * "python" source sub-directory renamed to "daemon"
-    * added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for 
+    * added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for
   GUI connection
     * support comma-separated list for custom_services_dir in core.conf file
     * updated kernel patches for Linux kernel 3.5
@@ -369,7 +401,7 @@
     * integrate ns-3 node location between CORE and ns-3 simulation
     * added ns-3 random walk mobility example
     * updated ns-3 Wifi example to allow GUI connection and moving of nodes
-* fixed the following bugs: 54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 
+* fixed the following bugs: 54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176,
 184, 190, 193
 
 ## 2012-09-25 CORE 4.4
@@ -410,7 +442,7 @@
     * support /etc/core/environment and ~/.core/environment files
     * added Ns2ScriptedMobility model to Python, removed from the GUI
     * namespace nodes mount a private /sys
-    * fixed the following bugs: 80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146, 
+    * fixed the following bugs: 80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146,
   147, 151, 154, 155
 
 ## 2012-03-07 CORE 4.3
