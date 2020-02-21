@@ -42,6 +42,7 @@ setup(
         "mako",
         "pillow",
         "protobuf",
+        "pyproj",
         "pyyaml",
     ],
     tests_require=[
