@@ -100,16 +100,9 @@ class Sdt:
         lat = node_data.latitude
         lon = node_data.longitude
         alt = node_data.altitude
-
-        if all([lat, lon, alt]):
-            self.updatenodegeo(
-                node_data.id,
-                node_data.latitude,
-                node_data.longitude,
-                node_data.altitude,
-            )
-
-        if node_data.message_type == 0:
+        if all([lat is not None, lon is not None, alt is not None]):
+            self.updatenodegeo(node_data.id, lat, lon, alt)
+        elif node_data.message_type == 0:
             # TODO: z is not currently supported by node messages
             self.updatenode(node_data.id, 0, x, y, 0)
 
