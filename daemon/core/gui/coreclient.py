@@ -1064,3 +1064,6 @@ class CoreClient:
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes
+
+    def is_runtime_state(self):
+        return self.state == core_pb2.SessionState.RUNTIME

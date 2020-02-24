@@ -656,8 +656,11 @@ class CanvasGraph(tk.Canvas):
         delete selected nodes and any data that relates to it
         """
         logging.debug("press delete key")
-        nodes = self.delete_selection_objects()
-        self.core.delete_graph_nodes(nodes)
+        if not self.app.core.is_runtime_state():
+            nodes = self.delete_selection_objects()
+            self.core.delete_graph_nodes(nodes)
+        else:
+            logging.debug("node deletion is disabled during runtime")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
@@ -850,7 +853,7 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
-        if self.selection:
+        if self.selection and not self.app.core.is_runtime_state():
             logging.debug("to copy %s nodes", len(self.selection))
             self.to_copy = self.selection.keys()
 
