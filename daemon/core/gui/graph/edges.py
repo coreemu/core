@@ -186,6 +186,17 @@ class CanvasEdge:
         dst_node_type = dst_node.core_node.type
         is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
         is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+
+        # update the wlan/EMANE network
+        wlan_network = self.canvas.wireless_network
+        if is_src_wireless and not is_dst_wireless:
+            if self.src not in wlan_network:
+                wlan_network[self.src] = set()
+            wlan_network[self.src].add(self.dst)
+        elif not is_src_wireless and is_dst_wireless:
+            if self.dst not in wlan_network:
+                wlan_network[self.dst] = set()
+            wlan_network[self.dst].add(self.src)
         return is_src_wireless or is_dst_wireless
 
     def check_wireless(self):
