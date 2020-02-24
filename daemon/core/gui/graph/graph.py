@@ -656,11 +656,11 @@ class CanvasGraph(tk.Canvas):
         delete selected nodes and any data that relates to it
         """
         logging.debug("press delete key")
-        if not self.app.core.is_runtime_state():
+        if not self.app.core.is_runtime():
             nodes = self.delete_selection_objects()
             self.core.delete_graph_nodes(nodes)
         else:
-            logging.debug("node deletion is disabled during runtime")
+            logging.info("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
@@ -853,11 +853,17 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
-        if self.selection and not self.app.core.is_runtime_state():
+        if self.app.core.is_runtime():
+            logging.info("copy is disabled during runtime state")
+            return
+        if self.selection:
             logging.debug("to copy %s nodes", len(self.selection))
             self.to_copy = self.selection.keys()
 
     def paste(self):
+        if self.app.core.is_runtime():
+            logging.info("paste is disabled during runtime state")
+            return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over

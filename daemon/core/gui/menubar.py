@@ -25,6 +25,7 @@ class Menubar(tk.Menu):
         self.app = app
         self.menuaction = action.MenuAction(app, master)
         self.recent_menu = None
+        self.edit_menu = None
         self.draw()
 
     def draw(self):
@@ -110,6 +111,7 @@ class Menubar(tk.Menu):
 
         self.app.master.bind_all("<Control-c>", self.menuaction.copy)
         self.app.master.bind_all("<Control-v>", self.menuaction.paste)
+        self.edit_menu = menu
 
     def draw_canvas_menu(self):
         """
@@ -439,3 +441,15 @@ class Menubar(tk.Menu):
             self.app.core.save_xml(xml_file)
         else:
             self.menuaction.file_save_as_xml()
+
+    def change_menubar_item_state(self, is_runtime: bool):
+        for i in range(self.edit_menu.index("end")):
+            try:
+                label_name = self.edit_menu.entrycget(i, "label")
+                if label_name in ["Copy", "Paste"]:
+                    if is_runtime:
+                        self.edit_menu.entryconfig(i, state="disabled")
+                    else:
+                        self.edit_menu.entryconfig(i, state="normal")
+            except tk.TclError:
+                logging.debug("Ignore separators")
