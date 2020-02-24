@@ -698,8 +698,6 @@ class EmaneManager(ModelManager):
             self.initeventservice(shutdown=True)
 
         if self.eventmonthread is not None:
-            # TODO: fix this
-            self.eventmonthread._Thread__stop()
             self.eventmonthread.join()
             self.eventmonthread = None
 
@@ -773,7 +771,7 @@ class EmaneManager(ModelManager):
         x = int(x)
         y = int(y)
         z = int(z)
-        logging.info(
+        logging.debug(
             "location event NEM %s (%s, %s, %s) -> (%s, %s, %s)",
             nemid,
             lat,
