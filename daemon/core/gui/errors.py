@@ -36,3 +36,12 @@ def show_grpc_error(e: "grpc.RpcError", master, app: "Application"):
     title = f"GRPC {title}"
     dialog = ErrorDialog(master, app, title, e.details())
     dialog.show()
+
+
+def show_grpc_response_exceptions(class_name, exceptions, master, app: "Application"):
+    title = f"Exceptions from {class_name}"
+    detail = ""
+    for e in exceptions:
+        detail = detail + f"{e}\n"
+    dialog = ErrorDialog(master, app, title, detail)
+    dialog.show()
