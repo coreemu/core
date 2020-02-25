@@ -521,7 +521,6 @@ class CoreClient:
             logging.info(
                 "start session(%s), result: %s", self.session_id, response.result
             )
-
             if response.result:
                 self.set_metadata()
         except grpc.RpcError as e:
@@ -620,6 +619,7 @@ class CoreClient:
         self,
         node_id: int,
         service_name: str,
+        files: List[str],
         startups: List[str],
         validations: List[str],
         shutdowns: List[str],
@@ -628,14 +628,16 @@ class CoreClient:
             self.session_id,
             node_id,
             service_name,
+            files=files,
             startup=startups,
             validate=validations,
             shutdown=shutdowns,
         )
         logging.info(
-            "Set %s service for node(%s), Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
+            "Set %s service for node(%s), files: %s, Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
             service_name,
             node_id,
+            files,
             startups,
             validations,
             shutdowns,

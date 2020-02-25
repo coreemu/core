@@ -1,6 +1,7 @@
 """
 Service configuration dialog
 """
+import logging
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Any, List
@@ -155,15 +156,15 @@ class ServiceConfigDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="File Name")
         label.grid(row=0, column=0, padx=PADX, sticky="w")
-        self.filename_combobox = ttk.Combobox(
-            frame, values=self.filenames, state="readonly"
-        )
+        self.filename_combobox = ttk.Combobox(frame, values=self.filenames)
         self.filename_combobox.bind(
             "<<ComboboxSelected>>", self.display_service_file_data
         )
         self.filename_combobox.grid(row=0, column=1, sticky="ew", padx=PADX)
-        button = ttk.Button(frame, image=self.documentnew_img, state="disabled")
-        button.bind("<Button-1>", self.add_filename)
+        button = ttk.Button(
+            frame, image=self.documentnew_img, command=self.add_filename
+        )
+        # button.bind("<Button-1>", self.add_filename)
         button.grid(row=0, column=2, padx=PADX)
         button = ttk.Button(frame, image=self.editdelete_img, state="disabled")
         button.bind("<Button-1>", self.delete_filename)
@@ -358,14 +359,16 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def add_filename(self, event: tk.Event):
-        # not worry about it for now
-        return
-        frame_contains_button = event.widget.master
-        combobox = frame_contains_button.grid_slaves(row=0, column=1)[0]
-        filename = combobox.get()
-        if filename not in combobox["values"]:
-            combobox["values"] += (filename,)
+    def add_filename(self):
+        filename = self.filename_combobox.get()
+        if filename not in self.filename_combobox["values"]:
+            self.filename_combobox["values"] += (filename,)
+            self.filename_combobox.set(filename)
+            self.temp_service_files[filename] = self.service_file_data.text.get(
+                1.0, "end"
+            )
+        else:
+            logging.debug("file already existed")
 
     def delete_filename(self, event: tk.Event):
         # not worry about it for now
@@ -411,7 +414,11 @@ class ServiceConfigDialog(Dialog):
 
     def click_apply(self):
         current_listbox = self.master.current.listbox
-        if not self.is_custom_service_config() and not self.is_custom_service_file():
+        if (
+            not self.is_custom_service_config()
+            and not self.is_custom_service_file()
+            and not self.has_new_files()
+        ):
             if self.node_id in self.service_configs:
                 self.service_configs[self.node_id].pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
@@ -419,13 +426,14 @@ class ServiceConfigDialog(Dialog):
             return
 
         try:
-            if self.is_custom_service_config():
+            if self.is_custom_service_config() or self.has_new_files():
                 startup_commands = self.startup_commands_listbox.get(0, "end")
                 shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
                 validate_commands = self.validate_commands_listbox.get(0, "end")
                 config = self.core.set_node_service(
                     self.node_id,
                     self.service_name,
+                    files=list(self.filename_combobox["values"]),
                     startups=startup_commands,
                     validations=validate_commands,
                     shutdowns=shutdown_commands,
@@ -433,7 +441,6 @@ class ServiceConfigDialog(Dialog):
                 if self.node_id not in self.service_configs:
                     self.service_configs[self.node_id] = {}
                 self.service_configs[self.node_id][self.service_name] = config
-
             for file in self.modified_files:
                 if self.node_id not in self.file_configs:
                     self.file_configs[self.node_id] = {}
@@ -442,7 +449,6 @@ class ServiceConfigDialog(Dialog):
                 self.file_configs[self.node_id][self.service_name][
                     file
                 ] = self.temp_service_files[file]
-
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
@@ -462,7 +468,9 @@ class ServiceConfigDialog(Dialog):
         scrolledtext = event.widget
         filename = self.filename_combobox.get()
         self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
-        if self.temp_service_files[filename] != self.original_service_files[filename]:
+        if self.temp_service_files[filename] != self.original_service_files.get(
+            filename, ""
+        ):
             self.modified_files.add(filename)
         else:
             self.modified_files.discard(filename)
@@ -476,6 +484,9 @@ class ServiceConfigDialog(Dialog):
             or set(self.default_validate) != set(validate_commands)
             or set(self.default_shutdown) != set(shutdown_commands)
         )
+
+    def has_new_files(self):
+        return set(self.filenames) != set(self.filename_combobox["values"])
 
     def is_custom_service_file(self):
         return len(self.modified_files) > 0
