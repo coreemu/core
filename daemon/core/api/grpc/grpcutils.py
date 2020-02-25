@@ -377,7 +377,7 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
     session.services.set_service(config.node_id, config.service)
     service = session.services.get_service(config.node_id, config.service)
     if config.files:
-        service.files = tuple(config.files)
+        service.configs = tuple(config.files)
     if config.directories:
         service.directories = tuple(config.directories)
     if config.startup:
