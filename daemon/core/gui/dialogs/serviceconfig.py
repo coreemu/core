@@ -2,8 +2,9 @@
 Service configuration dialog
 """
 import logging
+import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 from typing import TYPE_CHECKING, Any, List
 
 import grpc
@@ -49,12 +50,18 @@ class ServiceConfigDialog(Dialog):
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = None
-        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW, 16 * app.app_scale)
-        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16 * app.app_scale)
+        self.directory_entry = None
+        self.default_directories = []
+        self.temp_directories = []
+        self.documentnew_img = Images.get(
+            ImageEnum.DOCUMENTNEW, int(16 * app.app_scale)
+        )
+        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, int(16 * app.app_scale))
 
         self.notebook = None
         self.metadata_entry = None
         self.filename_combobox = None
+        self.dir_list = None
         self.startup_commands_listbox = None
         self.shutdown_commands_listbox = None
         self.validate_commands_listbox = None
@@ -81,6 +88,7 @@ class ServiceConfigDialog(Dialog):
             self.default_startup = default_config.startup[:]
             self.default_validate = default_config.validate[:]
             self.default_shutdown = default_config.shutdown[:]
+            self.default_directories = default_config.dirs[:]
             custom_configs = self.service_configs
             if (
                 self.node_id in custom_configs
@@ -99,6 +107,7 @@ class ServiceConfigDialog(Dialog):
             self.shutdown_commands = service_config.shutdown[:]
             self.validation_mode = service_config.validation_mode
             self.validation_time = service_config.validation_timer
+            self.temp_directories = service_config.dirs[:]
             self.original_service_files = {
                 x: self.app.core.get_node_service_file(
                     self.node_id, self.service_name, x
@@ -231,7 +240,30 @@ class ServiceConfigDialog(Dialog):
             tab,
             text="Directories required by this service that are unique for each node.",
         )
-        label.grid()
+        label.grid(row=0, column=0, sticky="ew")
+        frame = ttk.Frame(tab, padding=FRAME_PAD)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.grid(row=1, column=0, sticky="nsew")
+        var = tk.StringVar(value="")
+        self.directory_entry = ttk.Entry(frame, textvariable=var)
+        self.directory_entry.grid(row=0, column=0, sticky="ew")
+        button = ttk.Button(frame, text="...", command=self.find_directory_button)
+        button.grid(row=0, column=1, sticky="ew")
+        self.dir_list = ListboxScroll(tab)
+        self.dir_list.grid(row=2, column=0, sticky="nsew")
+        self.dir_list.listbox.bind("<<ListboxSelect>>", self.directory_select)
+        for d in self.temp_directories:
+            self.dir_list.listbox.insert("end", d)
+
+        frame = ttk.Frame(tab)
+        frame.grid(row=3, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        button = ttk.Button(frame, text="Add", command=self.add_directory)
+        button.grid(row=0, column=0, sticky="ew")
+        button = ttk.Button(frame, text="Remove", command=self.remove_directory)
+        button.grid(row=0, column=1, sticky="ew")
 
     def draw_tab_startstop(self):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -527,3 +559,34 @@ class ServiceConfigDialog(Dialog):
         shutdown = self.shutdown_commands_listbox.get(0, "end")
         validate = self.validate_commands_listbox.get(0, "end")
         return startup, validate, shutdown
+
+    def find_directory_button(self):
+        d = filedialog.askdirectory(initialdir="/")
+        self.directory_entry.delete(0, "end")
+        self.directory_entry.insert("end", d)
+
+    def add_directory(self):
+        d = self.directory_entry.get()
+        if os.path.isdir(d):
+            if d not in self.temp_directories:
+                self.dir_list.listbox.insert("end", d)
+                self.temp_directories.append(d)
+
+    def remove_directory(self):
+        d = self.directory_entry.get()
+        dirs = self.dir_list.listbox.get(0, "end")
+        if d and d in self.temp_directories:
+            self.temp_directories.remove(d)
+            try:
+                i = dirs.index(d)
+                self.dir_list.listbox.delete(i)
+            except ValueError:
+                logging.debug("directory is not in the list")
+        self.directory_entry.delete(0, "end")
+
+    def directory_select(self, event):
+        i = self.dir_list.listbox.curselection()
+        if i:
+            d = self.dir_list.listbox.get(i)
+            self.directory_entry.delete(0, "end")
+            self.directory_entry.insert("end", d)
