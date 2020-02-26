@@ -328,7 +328,6 @@ class EmaneManager(ModelManager):
         nems = []
         with self._emane_node_lock:
             self.buildxml()
-            self.initeventservice()
             self.starteventmonitor()
 
             if self.numnems() > 0:
