@@ -1128,7 +1128,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.location.refgeo,
                     self.session.location.refscale,
                 )
-                logging.info("location configured: UTM%s", self.session.location.refutm)
 
     def handle_config_metadata(self, message_type, config_data):
         replies = []

@@ -37,8 +37,8 @@ from core.emulator.emudata import (
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
-from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
+from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
@@ -146,7 +146,7 @@ class Session:
         self.distributed = DistributedController(self)
 
         # initialize session feature helpers
-        self.location = CoreLocation()
+        self.location = GeoLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
         self.emane = EmaneManager(session=self)
