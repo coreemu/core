@@ -1,6 +1,3 @@
-"""
-Service configuration dialog
-"""
 import logging
 import os
 import tkinter as tk
@@ -79,7 +76,7 @@ class ServiceConfigDialog(Dialog):
         if not self.has_error:
             self.draw()
 
-    def load(self) -> bool:
+    def load(self):
         try:
             self.app.core.create_nodes_and_links()
             default_config = self.app.core.get_node_service(
@@ -89,15 +86,12 @@ class ServiceConfigDialog(Dialog):
             self.default_validate = default_config.validate[:]
             self.default_shutdown = default_config.shutdown[:]
             self.default_directories = default_config.dirs[:]
-            custom_configs = self.service_configs
-            if (
-                self.node_id in custom_configs
-                and self.service_name in custom_configs[self.node_id]
-            ):
-                service_config = custom_configs[self.node_id][self.service_name]
-            else:
-                service_config = default_config
-
+            custom_service_config = self.service_configs.get(self.node_id, {}).get(
+                self.service_name, None
+            )
+            service_config = (
+                custom_service_config if custom_service_config else default_config
+            )
             self.dependencies = service_config.dependencies[:]
             self.executables = service_config.executables[:]
             self.metadata = service_config.meta
@@ -115,13 +109,11 @@ class ServiceConfigDialog(Dialog):
                 for x in default_config.configs
             }
             self.temp_service_files = dict(self.original_service_files)
-            file_configs = self.file_configs
-            if (
-                self.node_id in file_configs
-                and self.service_name in file_configs[self.node_id]
-            ):
-                for file, data in file_configs[self.node_id][self.service_name].items():
-                    self.temp_service_files[file] = data
+            file_config = self.file_configs.get(self.node_id, {}).get(
+                self.service_name, {}
+            )
+            for file, data in file_config.items():
+                self.temp_service_files[file] = data
         except grpc.RpcError as e:
             self.has_error = True
             show_grpc_error(e, self.master, self.app)
@@ -451,23 +443,30 @@ class ServiceConfigDialog(Dialog):
 
     def click_apply(self):
         current_listbox = self.master.current.listbox
+        all_current = current_listbox.get(0, tk.END)
         if (
             not self.is_custom_command()
             and not self.is_custom_service_file()
             and not self.has_new_files()
+            and not self.is_custom_directory()
         ):
             if self.node_id in self.service_configs:
                 self.service_configs[self.node_id].pop(self.service_name, None)
-            current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
+            current_listbox.itemconfig(all_current.index(self.service_name), bg="")
             self.destroy()
             return
 
         try:
-            if self.is_custom_command() or self.has_new_files():
+            if (
+                self.is_custom_command()
+                or self.has_new_files()
+                or self.is_custom_directory()
+            ):
                 startup, validate, shutdown = self.get_commands()
                 config = self.core.set_node_service(
                     self.node_id,
                     self.service_name,
+                    dirs=self.temp_directories,
                     files=list(self.filename_combobox["values"]),
                     startups=startup,
                     validations=validate,
@@ -487,22 +486,19 @@ class ServiceConfigDialog(Dialog):
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
-            all_current = current_listbox.get(0, tk.END)
             current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         except grpc.RpcError as e:
             show_grpc_error(e, self.top, self.app)
         self.destroy()
 
     def display_service_file_data(self, event: tk.Event):
-        combobox = event.widget
-        filename = combobox.get()
+        filename = self.filename_combobox.get()
         self.service_file_data.text.delete(1.0, "end")
         self.service_file_data.text.insert("end", self.temp_service_files[filename])
 
     def update_temp_service_file_data(self, event: tk.Event):
-        scrolledtext = event.widget
         filename = self.filename_combobox.get()
-        self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
+        self.temp_service_files[filename] = self.service_file_data.text.get(1.0, "end")
         if self.temp_service_files[filename] != self.original_service_files.get(
             filename, ""
         ):
@@ -523,6 +519,9 @@ class ServiceConfigDialog(Dialog):
 
     def is_custom_service_file(self):
         return len(self.modified_files) > 0
+
+    def is_custom_directory(self):
+        return set(self.default_directories) != set(self.dir_list.listbox.get(0, "end"))
 
     def click_defaults(self):
         if self.node_id in self.service_configs:
@@ -547,8 +546,9 @@ class ServiceConfigDialog(Dialog):
         dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
         dialog.show()
 
+    @classmethod
     def append_commands(
-        self, commands: List[str], listbox: tk.Listbox, to_add: List[str]
+        cls, commands: List[str], listbox: tk.Listbox, to_add: List[str]
     ):
         for cmd in to_add:
             commands.append(cmd)
