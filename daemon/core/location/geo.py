@@ -10,6 +10,8 @@ import pyproj
 from core.emulator.enumerations import RegisterTlvs
 
 SCALE_FACTOR = 100.0
+CRS_WGS84 = 4326
+CRS_PROJ = 3857
 
 
 class GeoLocation:
@@ -25,7 +27,10 @@ class GeoLocation:
         """
         Creates a GeoLocation instance.
         """
-        self.projection = pyproj.Proj("epsg:3857")
+        self.to_pixels = pyproj.Transformer.from_crs(
+            CRS_WGS84, CRS_PROJ, always_xy=True
+        )
+        self.to_geo = pyproj.Transformer.from_crs(CRS_PROJ, CRS_WGS84, always_xy=True)
         self.refproj = (0.0, 0.0)
         self.refgeo = (0.0, 0.0, 0.0)
         self.refxyz = (0.0, 0.0, 0.0)
@@ -41,7 +46,7 @@ class GeoLocation:
         :return: nothing
         """
         self.refgeo = (lat, lon, alt)
-        px, py = self.projection(lon, lat)
+        px, py = self.to_pixels.transform(lon, lat)
         self.refproj = (px, py, alt)
 
     def reset(self) -> None:
@@ -53,7 +58,7 @@ class GeoLocation:
         self.refxyz = (0.0, 0.0, 0.0)
         self.refgeo = (0.0, 0.0, 0.0)
         self.refscale = 1.0
-        self.refproj = self.projection(self.refgeo[0], self.refgeo[1])
+        self.refproj = self.to_pixels.transform(self.refgeo[0], self.refgeo[1])
 
     def pixels2meters(self, value: float) -> float:
         """
@@ -85,7 +90,7 @@ class GeoLocation:
         :return: x,y,z representation of provided values
         """
         logging.debug("input lon,lat,alt(%s, %s, %s)", lon, lat, alt)
-        px, py = self.projection(lon, lat)
+        px, py = self.to_pixels.transform(lon, lat)
         px -= self.refproj[0]
         py -= self.refproj[1]
         pz = alt - self.refproj[2]
@@ -113,7 +118,7 @@ class GeoLocation:
             z -= self.refxyz[2]
         px = self.refproj[0] + self.pixels2meters(x)
         py = self.refproj[1] + self.pixels2meters(y)
-        lon, lat = self.projection(px, py, inverse=True)
+        lon, lat = self.to_geo.transform(px, py)
         alt = self.refgeo[2] + self.pixels2meters(z)
-        logging.debug("result lon,lat(%s, %s)", lon, lat)
+        logging.debug("result lon,lat,alt(%s, %s, %s)", lon, lat, alt)
         return lat, lon, alt
