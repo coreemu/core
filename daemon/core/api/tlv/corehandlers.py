@@ -952,8 +952,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         daemon=True,
                     )
                     thread.start()
-                    # allow time for session creation
-                    time.sleep(0.25)
+                    thread.join()
 
                 if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())
