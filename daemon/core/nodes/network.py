@@ -70,8 +70,7 @@ class EbtablesQueue:
             return
 
         self.doupdateloop = True
-        self.updatethread = threading.Thread(target=self.updateloop)
-        self.updatethread.daemon = True
+        self.updatethread = threading.Thread(target=self.updateloop, daemon=True)
         self.updatethread.start()
 
     def stopupdateloop(self, wlan: "CoreNetwork") -> None:

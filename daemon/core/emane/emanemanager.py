@@ -682,8 +682,9 @@ class EmaneManager(ModelManager):
             )
             return
         self.doeventloop = True
-        self.eventmonthread = threading.Thread(target=self.eventmonitorloop)
-        self.eventmonthread.daemon = True
+        self.eventmonthread = threading.Thread(
+            target=self.eventmonitorloop, daemon=True
+        )
         self.eventmonthread.start()
 
     def stopeventmonitor(self) -> None:

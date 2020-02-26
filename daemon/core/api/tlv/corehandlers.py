@@ -949,8 +949,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
                             file_name,
                             {"__file__": file_name, "coreemu": self.coreemu},
                         ),
+                        daemon=True,
                     )
-                    thread.daemon = True
                     thread.start()
                     # allow time for session creation
                     time.sleep(0.25)
