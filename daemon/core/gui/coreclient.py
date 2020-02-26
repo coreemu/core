@@ -935,6 +935,7 @@ class CoreClient:
                 config_proto = core_pb2.ServiceConfig(
                     node_id=node_id,
                     service=name,
+                    files=config.configs,
                     startup=config.startup,
                     validate=config.validate,
                     shutdown=config.shutdown,

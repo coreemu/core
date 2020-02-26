@@ -49,8 +49,8 @@ class ServiceConfigDialog(Dialog):
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = None
-        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW, 16)
-        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16)
+        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW, 16 * app.app_scale)
+        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16 * app.app_scale)
 
         self.notebook = None
         self.metadata_entry = None
@@ -103,7 +103,7 @@ class ServiceConfigDialog(Dialog):
                 x: self.app.core.get_node_service_file(
                     self.node_id, self.service_name, x
                 )
-                for x in self.filenames
+                for x in default_config.configs
             }
             self.temp_service_files = dict(self.original_service_files)
             file_configs = self.file_configs
@@ -164,10 +164,11 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(
             frame, image=self.documentnew_img, command=self.add_filename
         )
-        # button.bind("<Button-1>", self.add_filename)
         button.grid(row=0, column=2, padx=PADX)
-        button = ttk.Button(frame, image=self.editdelete_img, state="disabled")
-        button.bind("<Button-1>", self.delete_filename)
+        button = ttk.Button(
+            frame, image=self.editdelete_img, command=self.delete_filename
+        )
+        # button.bind("<Button-1>", self.delete_filename)
         button.grid(row=0, column=3)
 
         frame = ttk.Frame(tab)
@@ -370,17 +371,19 @@ class ServiceConfigDialog(Dialog):
         else:
             logging.debug("file already existed")
 
-    def delete_filename(self, event: tk.Event):
-        # not worry about it for now
-        return
-        frame_comntains_button = event.widget.master
-        combobox = frame_comntains_button.grid_slaves(row=0, column=1)[0]
-        filename = combobox.get()
-        if filename in combobox["values"]:
-            combobox["values"] = tuple([x for x in combobox["values"] if x != filename])
-            combobox.set("")
+    def delete_filename(self):
+        cbb = self.filename_combobox
+        filename = cbb.get()
+        if filename in cbb["values"]:
+            cbb["values"] = tuple([x for x in cbb["values"] if x != filename])
+        cbb.set("")
+        self.service_file_data.text.delete(1.0, "end")
+        self.temp_service_files.pop(filename, None)
+        if filename in self.modified_files:
+            self.modified_files.remove(filename)
 
-    def add_command(self, event: tk.Event):
+    @classmethod
+    def add_command(cls, event: tk.Event):
         frame_contains_button = event.widget.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
         command_to_add = frame_contains_button.grid_slaves(row=0, column=0)[0].get()
@@ -391,7 +394,8 @@ class ServiceConfigDialog(Dialog):
                 return
         listbox.insert(tk.END, command_to_add)
 
-    def update_entry(self, event: tk.Event):
+    @classmethod
+    def update_entry(cls, event: tk.Event):
         listbox = event.widget
         current_selection = listbox.curselection()
         if len(current_selection) > 0:
@@ -402,7 +406,8 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, "end")
             entry.insert(0, cmd)
 
-    def delete_command(self, event: tk.Event):
+    @classmethod
+    def delete_command(cls, event: tk.Event):
         button = event.widget
         frame_contains_button = button.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
@@ -415,7 +420,7 @@ class ServiceConfigDialog(Dialog):
     def click_apply(self):
         current_listbox = self.master.current.listbox
         if (
-            not self.is_custom_service_config()
+            not self.is_custom_command()
             and not self.is_custom_service_file()
             and not self.has_new_files()
         ):
@@ -426,17 +431,15 @@ class ServiceConfigDialog(Dialog):
             return
 
         try:
-            if self.is_custom_service_config() or self.has_new_files():
-                startup_commands = self.startup_commands_listbox.get(0, "end")
-                shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-                validate_commands = self.validate_commands_listbox.get(0, "end")
+            if self.is_custom_command() or self.has_new_files():
+                startup, validate, shutdown = self.get_commands()
                 config = self.core.set_node_service(
                     self.node_id,
                     self.service_name,
                     files=list(self.filename_combobox["values"]),
-                    startups=startup_commands,
-                    validations=validate_commands,
-                    shutdowns=shutdown_commands,
+                    startups=startup,
+                    validations=validate,
+                    shutdowns=shutdown,
                 )
                 if self.node_id not in self.service_configs:
                     self.service_configs[self.node_id] = {}
@@ -475,14 +478,12 @@ class ServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(filename)
 
-    def is_custom_service_config(self):
-        startup_commands = self.startup_commands_listbox.get(0, "end")
-        shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
-        validate_commands = self.validate_commands_listbox.get(0, "end")
+    def is_custom_command(self):
+        startup, validate, shutdown = self.get_commands()
         return (
-            set(self.default_startup) != set(startup_commands)
-            or set(self.default_validate) != set(validate_commands)
-            or set(self.default_shutdown) != set(shutdown_commands)
+            set(self.default_startup) != set(startup)
+            or set(self.default_validate) != set(validate)
+            or set(self.default_shutdown) != set(shutdown)
         )
 
     def has_new_files(self):
@@ -520,3 +521,9 @@ class ServiceConfigDialog(Dialog):
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)
+
+    def get_commands(self):
+        startup = self.startup_commands_listbox.get(0, "end")
+        shutdown = self.shutdown_commands_listbox.get(0, "end")
+        validate = self.validate_commands_listbox.get(0, "end")
+        return startup, validate, shutdown
