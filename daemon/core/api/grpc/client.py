@@ -146,8 +146,9 @@ def start_streamer(stream: Any, handler: Callable[[core_pb2.Event], None]) -> No
     :param handler: function that handles an event
     :return: nothing
     """
-    thread = threading.Thread(target=stream_listener, args=(stream, handler))
-    thread.daemon = True
+    thread = threading.Thread(
+        target=stream_listener, args=(stream, handler), daemon=True
+    )
     thread.start()
 
 

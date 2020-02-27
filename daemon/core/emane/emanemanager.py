@@ -328,7 +328,6 @@ class EmaneManager(ModelManager):
         nems = []
         with self._emane_node_lock:
             self.buildxml()
-            self.initeventservice()
             self.starteventmonitor()
 
             if self.numnems() > 0:
@@ -683,8 +682,9 @@ class EmaneManager(ModelManager):
             )
             return
         self.doeventloop = True
-        self.eventmonthread = threading.Thread(target=self.eventmonitorloop)
-        self.eventmonthread.daemon = True
+        self.eventmonthread = threading.Thread(
+            target=self.eventmonitorloop, daemon=True
+        )
         self.eventmonthread.start()
 
     def stopeventmonitor(self) -> None:

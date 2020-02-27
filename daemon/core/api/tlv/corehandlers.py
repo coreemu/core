@@ -949,11 +949,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                             file_name,
                             {"__file__": file_name, "coreemu": self.coreemu},
                         ),
+                        daemon=True,
                     )
-                    thread.daemon = True
                     thread.start()
-                    # allow time for session creation
-                    time.sleep(0.25)
+                    thread.join()
 
                 if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())
@@ -1128,7 +1127,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.location.refgeo,
                     self.session.location.refscale,
                 )
-                logging.info("location configured: UTM%s", self.session.location.refutm)
 
     def handle_config_metadata(self, message_type, config_data):
         replies = []
