@@ -67,6 +67,7 @@ class ServiceConfigDialog(Dialog):
         self.service_file_data = None
         self.validation_period_entry = None
         self.original_service_files = {}
+        self.default_config = None
         self.temp_service_files = {}
         self.modified_files = set()
 
@@ -89,6 +90,7 @@ class ServiceConfigDialog(Dialog):
             custom_service_config = self.service_configs.get(self.node_id, {}).get(
                 self.service_name, None
             )
+            self.default_config = default_config
             service_config = (
                 custom_service_config if custom_service_config else default_config
             )
@@ -169,7 +171,6 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(
             frame, image=self.editdelete_img, command=self.delete_filename
         )
-        # button.bind("<Button-1>", self.delete_filename)
         button.grid(row=0, column=3)
 
         frame = ttk.Frame(tab)
@@ -442,17 +443,14 @@ class ServiceConfigDialog(Dialog):
             entry.delete(0, tk.END)
 
     def click_apply(self):
-        current_listbox = self.master.current.listbox
-        all_current = current_listbox.get(0, tk.END)
         if (
             not self.is_custom_command()
             and not self.is_custom_service_file()
             and not self.has_new_files()
             and not self.is_custom_directory()
         ):
-            if self.node_id in self.service_configs:
-                self.service_configs[self.node_id].pop(self.service_name, None)
-            current_listbox.itemconfig(all_current.index(self.service_name), bg="")
+            self.service_configs.get(self.node_id, {}).pop(self.service_name, None)
+            self.current_service_color("")
             self.destroy()
             return
 
@@ -486,7 +484,7 @@ class ServiceConfigDialog(Dialog):
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
-            current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
+            self.current_service_color("green")
         except grpc.RpcError as e:
             show_grpc_error(e, self.top, self.app)
         self.destroy()
@@ -524,14 +522,26 @@ class ServiceConfigDialog(Dialog):
         return set(self.default_directories) != set(self.dir_list.listbox.get(0, "end"))
 
     def click_defaults(self):
-        if self.node_id in self.service_configs:
-            self.service_configs[self.node_id].pop(self.service_name, None)
-        if self.node_id in self.file_configs:
-            self.file_configs[self.node_id].pop(self.service_name, None)
+        """
+        clears out any custom configuration permanently
+        """
+        # clear coreclient data
+        self.service_configs.get(self.node_id, {}).pop(self.service_name, None)
+        self.file_configs.get(self.node_id, {}).pop(self.service_name, None)
         self.temp_service_files = dict(self.original_service_files)
-        filename = self.filename_combobox.get()
+        self.modified_files.clear()
+
+        # reset files tab
+        files = list(self.default_config.configs[:])
+        self.filenames = files
+        self.filename_combobox.config(values=files)
         self.service_file_data.text.delete(1.0, "end")
-        self.service_file_data.text.insert("end", self.temp_service_files[filename])
+        if len(files) > 0:
+            filename = files[0]
+            self.filename_combobox.set(filename)
+            self.service_file_data.text.insert("end", self.temp_service_files[filename])
+
+        # reset commands
         self.startup_commands_listbox.delete(0, tk.END)
         self.validate_commands_listbox.delete(0, tk.END)
         self.shutdown_commands_listbox.delete(0, tk.END)
@@ -541,6 +551,15 @@ class ServiceConfigDialog(Dialog):
             self.validate_commands_listbox.insert(tk.END, cmd)
         for cmd in self.default_shutdown:
             self.shutdown_commands_listbox.insert(tk.END, cmd)
+
+        # reset directories
+        self.directory_entry.delete(0, "end")
+        self.dir_list.listbox.delete(0, "end")
+        self.temp_directories = list(self.default_directories)
+        for d in self.default_directories:
+            self.dir_list.listbox.insert("end", d)
+
+        self.current_service_color("")
 
     def click_copy(self):
         dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
@@ -590,3 +609,11 @@ class ServiceConfigDialog(Dialog):
             d = self.dir_list.listbox.get(i)
             self.directory_entry.delete(0, "end")
             self.directory_entry.insert("end", d)
+
+    def current_service_color(self, color=""):
+        """
+        change the current service label color
+        """
+        listbox = self.master.current.listbox
+        services = listbox.get(0, tk.END)
+        listbox.itemconfig(services.index(self.service_name), bg=color)
