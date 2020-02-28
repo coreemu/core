@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import tempfile
+import threading
 import time
 from concurrent import futures
 from typing import Type
@@ -10,6 +11,7 @@ from typing import Type
 import grpc
 from grpc import ServicerContext
 
+from core import utils
 from core.api.grpc import (
     common_pb2,
     configservices_pb2,
@@ -33,6 +35,7 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceResponse,
 )
 from core.api.grpc.core_pb2 import (
+    ExecuteScriptResponse,
     GetEmaneEventChannelRequest,
     GetEmaneEventChannelResponse,
 )
@@ -1645,3 +1648,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if session.emane.eventchannel:
             group, port, device = session.emane.eventchannel
         return GetEmaneEventChannelResponse(group=group, port=port, device=device)
+
+    def ExecuteScript(self, request, context):
+        existing_sessions = set(self.coreemu.sessions.keys())
+        thread = threading.Thread(
+            target=utils.execute_file,
+            args=(
+                request.script,
+                {"__file__": request.script, "coreemu": self.coreemu},
+            ),
+            daemon=True,
+        )
+        thread.start()
+        thread.join()
+        current_sessions = set(self.coreemu.sessions.keys())
+        new_sessions = list(current_sessions.difference(existing_sessions))
+        new_session = -1
+        if new_sessions:
+            new_session = new_sessions[0]
+        return ExecuteScriptResponse(session_id=new_session)
