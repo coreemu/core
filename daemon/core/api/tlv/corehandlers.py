@@ -526,11 +526,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug(
             "%s handling message:\n%s", threading.currentThread().getName(), message
         )
-
-        # provide to sdt, if enabled
-        if self.session and self.session.sdt.is_enabled():
-            self.session.sdt.handle_distributed(message)
-
         if message.message_type not in self.message_handlers:
             logging.error("no handler for message type: %s", message.type_str())
             return
@@ -2042,7 +2037,6 @@ class CoreUdpHandler(CoreHandler):
                     logging.debug("session handling message: %s", session.session_id)
                     self.session = session
                     self.handle_message(message)
-                    self.session.sdt.handle_distributed(message)
                     self.broadcast(message)
                 else:
                     logging.error(
@@ -2067,7 +2061,6 @@ class CoreUdpHandler(CoreHandler):
             if session or message.message_type == MessageTypes.REGISTER.value:
                 self.session = session
                 self.handle_message(message)
-                self.session.sdt.handle_distributed(message)
                 self.broadcast(message)
             else:
                 logging.error(
