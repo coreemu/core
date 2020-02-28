@@ -432,6 +432,7 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
+        self.sdt.add_link(node_one_id, node_two_id, is_wireless=False)
         return node_one_interface, node_two_interface
 
     def delete_link(
@@ -539,6 +540,8 @@ class Session:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
+
+        self.sdt.delete_link(node_one_id, node_two_id)
 
     def update_link(
         self,
@@ -757,6 +760,7 @@ class Session:
             self.add_remove_control_interface(node=node, remove=False)
             self.services.boot_services(node)
 
+        self.sdt.add_node(node)
         return node
 
     def edit_node(self, node_id: int, options: NodeOptions) -> None:
@@ -765,7 +769,7 @@ class Session:
 
         :param node_id: id of node to update
         :param options: data to update node with
-        :return: True if node updated, False otherwise
+        :return: nothing
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
@@ -777,6 +781,8 @@ class Session:
         # update attributes
         node.canvas = options.canvas
         node.icon = options.icon
+
+        self.sdt.edit_node(node)
 
     def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
         """
@@ -1402,6 +1408,7 @@ class Session:
         if node:
             node.shutdown()
             self.check_shutdown()
+            self.sdt.delete_node(_id)
 
         return node is not None
 
@@ -1413,6 +1420,7 @@ class Session:
             funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
+                self.sdt.delete_node(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
         self.node_id_gen.id = 0
