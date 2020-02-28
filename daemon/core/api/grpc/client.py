@@ -27,6 +27,8 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceResponse,
 )
 from core.api.grpc.core_pb2 import (
+    ExecuteScriptRequest,
+    ExecuteScriptResponse,
     GetEmaneEventChannelRequest,
     GetEmaneEventChannelResponse,
 )
@@ -1147,6 +1149,10 @@ class CoreGrpcClient:
     def get_emane_event_channel(self, session_id: int) -> GetEmaneEventChannelResponse:
         request = GetEmaneEventChannelRequest(session_id=session_id)
         return self.stub.GetEmaneEventChannel(request)
+
+    def execute_script(self, script: str) -> ExecuteScriptResponse:
+        request = ExecuteScriptRequest(script=script)
+        return self.stub.ExecuteScript(request)
 
     def connect(self) -> None:
         """

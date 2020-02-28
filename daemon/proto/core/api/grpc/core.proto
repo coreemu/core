@@ -154,6 +154,8 @@ service CoreApi {
     }
     rpc EmaneLink (EmaneLinkRequest) returns (EmaneLinkResponse) {
     }
+    rpc ExecuteScript (ExecuteScriptRequest) returns (ExecuteScriptResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -757,6 +759,14 @@ message EmaneLinkRequest {
 
 message EmaneLinkResponse {
     bool result = 1;
+}
+
+message ExecuteScriptRequest {
+    string script = 1;
+}
+
+message ExecuteScriptResponse {
+    int32 session_id = 1;
 }
 
 // data structures for messages below
