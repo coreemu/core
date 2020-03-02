@@ -11,6 +11,8 @@ from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 if TYPE_CHECKING:
     from core.gui.app import Application
 
+SCALE_INTERVAL = 0.01
+
 
 class PreferencesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
@@ -90,6 +92,9 @@ class PreferencesDialog(Dialog):
         )
         entry.grid(row=0, column=1)
 
+        scrollbar = ttk.Scrollbar(scale_frame, command=self.adjust_scale)
+        scrollbar.grid(row=0, column=2)
+
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -138,3 +143,16 @@ class PreferencesDialog(Dialog):
         # scale toolbar and canvas items
         self.app.toolbar.scale()
         self.app.canvas.scale_graph()
+
+    def adjust_scale(self, arg1: str, arg2: str, arg3: str):
+        scale_value = self.gui_scale.get()
+        if arg2 == "-1":
+            if scale_value <= 4.9:
+                self.gui_scale.set(scale_value + SCALE_INTERVAL)
+            else:
+                self.gui_scale.set(5.0)
+        elif arg2 == "1":
+            if scale_value >= 0.6:
+                self.gui_scale.set(scale_value - SCALE_INTERVAL)
+            else:
+                self.gui_scale.set(0.5)
