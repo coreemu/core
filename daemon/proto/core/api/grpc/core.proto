@@ -408,6 +408,7 @@ message EditNodeRequest {
     Position position = 3;
     string icon = 4;
     string source = 5;
+    Geo geo = 6;
 }
 
 message EditNodeResponse {
@@ -977,6 +978,7 @@ message Node {
     string image = 10;
     string server = 11;
     repeated string config_services = 12;
+    Geo geo = 13;
 }
 
 message Link {
@@ -1029,7 +1031,10 @@ message Position {
     float x = 1;
     float y = 2;
     float z = 3;
-    float lat = 4;
-    float lon = 5;
-    float alt = 6;
+}
+
+message Geo {
+    float lat = 1;
+    float lon = 2;
+    float alt = 3;
 }

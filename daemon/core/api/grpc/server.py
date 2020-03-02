@@ -688,21 +688,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = self.get_node(session, request.node_id, context)
         options = NodeOptions()
         options.icon = request.icon
-        x = request.position.x
-        y = request.position.y
-        options.set_position(x, y)
-        lat = request.position.lat
-        lon = request.position.lon
-        alt = request.position.alt
-        options.set_location(lat, lon, alt)
+        if request.HasField("position"):
+            x = request.position.x
+            y = request.position.y
+            options.set_position(x, y)
+        lat, lon, alt = None, None, None
+        has_geo = request.HasField("geo")
+        if has_geo:
+            lat = request.geo.lat
+            lon = request.geo.lon
+            alt = request.geo.alt
+            options.set_location(lat, lon, alt)
         result = True
         try:
             session.edit_node(node.id, options)
             source = None
             if request.source:
                 source = request.source
-            node_data = node.data(0, source=source)
-            session.broadcast_node(node_data)
+            if not has_geo:
+                node_data = node.data(0, source=source)
+                session.broadcast_node(node_data)
         except CoreError:
             result = False
         return core_pb2.EditNodeResponse(result=result)

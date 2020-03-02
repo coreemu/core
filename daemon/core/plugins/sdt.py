@@ -255,20 +255,28 @@ class Sdt:
             self.cmd(f"sprite {node_type} image {icon}")
         self.cmd(f'node {node.id} type {node_type} label on,"{node.name}" {pos}')
 
-    def edit_node(self, node: NodeBase) -> None:
+    def edit_node(self, node: NodeBase, lon: float, lat: float, alt: float) -> None:
         """
         Handle updating a node in SDT.
 
         :param node: node to update
+        :param lon: node longitude
+        :param lat: node latitude
+        :param alt: node altitude
         :return: nothing
         """
         logging.debug("sdt update node: %s - %s", node.id, node.name)
         if not self.connect():
             return
-        pos = self.get_node_position(node)
-        if not pos:
-            return
-        self.cmd(f"node {node.id} {pos}")
+
+        if all([lat is not None, lon is not None, alt is not None]):
+            pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
+            self.cmd(f"node {node.id} {pos}")
+        else:
+            pos = self.get_node_position(node)
+            if not pos:
+                return
+            self.cmd(f"node {node.id} {pos}")
 
     def delete_node(self, node_id: int) -> None:
         """
