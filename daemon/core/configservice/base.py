@@ -6,13 +6,12 @@ import pathlib
 import time
 from typing import Any, Dict, List
 
-from mako import exceptions
-from mako.lookup import TemplateLookup
-from mako.template import Template
-
 from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
+from mako import exceptions
+from mako.lookup import TemplateLookup
+from mako.template import Template
 
 TEMPLATES_DIR = "templates"
 

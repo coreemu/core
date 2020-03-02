@@ -6,7 +6,6 @@ import logging
 from typing import Tuple
 
 import pyproj
-
 from core.emulator.enumerations import RegisterTlvs
 
 SCALE_FACTOR = 100.0
