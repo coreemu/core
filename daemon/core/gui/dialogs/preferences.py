@@ -81,7 +81,11 @@ class PreferencesDialog(Dialog):
         )
         scale.grid(row=0, column=0, sticky="ew")
         entry = ttk.Entry(
-            scale_frame, textvariable=self.gui_scale, width=4, state="disabled"
+            scale_frame,
+            textvariable=self.gui_scale,
+            width=4,
+            validate="key",
+            validatecommand=(self.app.validation.app_scale, "%P"),
         )
         entry.grid(row=0, column=1)
 

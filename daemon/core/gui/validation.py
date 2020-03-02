@@ -11,12 +11,16 @@ from netaddr import IPNetwork
 if TYPE_CHECKING:
     from core.gui.app import Application
 
+SMALLEST_SCALE = 0.5
+LARGEST_SCALE = 5.0
+
 
 class InputValidation:
     def __init__(self, app: "Application"):
         self.master = app.master
         self.positive_int = None
         self.positive_float = None
+        self.app_scale = None
         self.name = None
         self.ip4 = None
         self.rgb = None
@@ -26,6 +30,7 @@ class InputValidation:
     def register(self):
         self.positive_int = self.master.register(self.check_positive_int)
         self.positive_float = self.master.register(self.check_positive_float)
+        self.app_scale = self.master.register(self.check_scale_value)
         self.name = self.master.register(self.check_node_name)
         self.ip4 = self.master.register(self.check_ip4)
         self.rgb = self.master.register(self.check_rbg)
@@ -100,6 +105,18 @@ class InputValidation:
         try:
             float_value = float(s)
             if float_value >= 0.0:
+                return True
+            return False
+        except ValueError:
+            return False
+
+    @classmethod
+    def check_scale_value(cls, s: str) -> bool:
+        if not s:
+            return True
+        try:
+            float_value = float(s)
+            if SMALLEST_SCALE <= float_value <= LARGEST_SCALE or float_value == 0:
                 return True
             return False
         except ValueError:
