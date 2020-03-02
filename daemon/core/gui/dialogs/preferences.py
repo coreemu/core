@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
+from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -76,8 +77,8 @@ class PreferencesDialog(Dialog):
         scale_frame.columnconfigure(0, weight=1)
         scale = ttk.Scale(
             scale_frame,
-            from_=0.5,
-            to=5,
+            from_=SMALLEST_SCALE,
+            to=LARGEST_SCALE,
             value=1,
             orient=tk.HORIZONTAL,
             variable=self.gui_scale,
@@ -147,12 +148,12 @@ class PreferencesDialog(Dialog):
     def adjust_scale(self, arg1: str, arg2: str, arg3: str):
         scale_value = self.gui_scale.get()
         if arg2 == "-1":
-            if scale_value <= 4.9:
-                self.gui_scale.set(scale_value + SCALE_INTERVAL)
+            if scale_value <= LARGEST_SCALE - SCALE_INTERVAL:
+                self.gui_scale.set(round(scale_value + SCALE_INTERVAL, 2))
             else:
-                self.gui_scale.set(5.0)
+                self.gui_scale.set(round(LARGEST_SCALE, 2))
         elif arg2 == "1":
-            if scale_value >= 0.6:
-                self.gui_scale.set(scale_value - SCALE_INTERVAL)
+            if scale_value >= SMALLEST_SCALE + SCALE_INTERVAL:
+                self.gui_scale.set(round(scale_value - SCALE_INTERVAL, 2))
             else:
-                self.gui_scale.set(0.5)
+                self.gui_scale.set(round(SMALLEST_SCALE, 2))
