@@ -1,4 +1,5 @@
 import logging
+import math
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
@@ -127,8 +128,9 @@ class PreferencesDialog(Dialog):
 
         # scale fonts
         scale_fonts(self.app.fonts_size, app_scale)
-        self.app.icon_text_font.config(size=int(12 * app_scale))
-        self.app.edge_font.config(size=int(8 * app_scale))
+        text_scale = app_scale if app_scale < 1 else math.sqrt(app_scale)
+        self.app.icon_text_font.config(size=int(12 * text_scale))
+        self.app.edge_font.config(size=int(8 * text_scale))
 
         # scale application window
         self.app.center()
