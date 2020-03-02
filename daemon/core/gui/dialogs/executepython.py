@@ -2,6 +2,7 @@ import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from core.gui.appconfig import SCRIPT_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
 
@@ -68,7 +69,7 @@ class ExecutePythonDialog(Dialog):
     def select_file(self):
         file = filedialog.askopenfilename(
             parent=self.top,
-            initialdir="/",
+            initialdir=str(SCRIPT_PATH),
             title="Open python script",
             filetypes=((".py Files", "*.py"), ("All Files", "*")),
         )
