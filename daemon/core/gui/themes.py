@@ -182,21 +182,21 @@ def theme_change(event: tk.Event):
         background="green",
         padding=0,
         relief=tk.NONE,
-        font="TkSmallCaptionFont",
+        font="TkDefaultFont",
     )
     style.configure(
         Styles.yellow_alert,
         background="yellow",
         padding=0,
         relief=tk.NONE,
-        font="TkSmallCaptionFont",
+        font="TkDefaultFont",
     )
     style.configure(
         Styles.red_alert,
         background="red",
         padding=0,
         relief=tk.NONE,
-        font="TkSmallCaptionFont",
+        font="TkDefaultFont",
     )
 
 
