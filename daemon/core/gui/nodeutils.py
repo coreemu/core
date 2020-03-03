@@ -91,10 +91,6 @@ class NodeUtils:
         return node_type in cls.RJ45_NODES
 
     @classmethod
-    def is_mdr_node(cls, node_type: NodeType, model: str) -> bool:
-        return cls.is_container_node(node_type) and model == "mdr"
-
-    @classmethod
     def node_icon(
         cls,
         node_type: NodeType,

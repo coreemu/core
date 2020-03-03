@@ -500,7 +500,6 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
-
         response = core_pb2.StartSessionResponse(result=False)
         try:
             response = self.client.start_session(
@@ -521,7 +520,6 @@ class CoreClient:
             logging.info(
                 "start session(%s), result: %s", self.session_id, response.result
             )
-
             if response.result:
                 self.set_metadata()
         except grpc.RpcError as e:
@@ -620,6 +618,8 @@ class CoreClient:
         self,
         node_id: int,
         service_name: str,
+        dirs: List[str],
+        files: List[str],
         startups: List[str],
         validations: List[str],
         shutdowns: List[str],
@@ -628,14 +628,17 @@ class CoreClient:
             self.session_id,
             node_id,
             service_name,
+            directories=dirs,
+            files=files,
             startup=startups,
             validate=validations,
             shutdown=shutdowns,
         )
         logging.info(
-            "Set %s service for node(%s), Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
+            "Set %s service for node(%s), files: %s, Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
             service_name,
             node_id,
+            files,
             startups,
             validations,
             shutdowns,
@@ -933,6 +936,8 @@ class CoreClient:
                 config_proto = core_pb2.ServiceConfig(
                     node_id=node_id,
                     service=name,
+                    directories=config.dirs,
+                    files=config.configs,
                     startup=config.startup,
                     validate=config.validate,
                     shutdown=config.shutdown,
