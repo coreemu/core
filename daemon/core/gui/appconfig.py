@@ -16,6 +16,7 @@ MOBILITY_PATH = HOME_PATH.joinpath("mobility")
 XMLS_PATH = HOME_PATH.joinpath("xmls")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 LOG_PATH = HOME_PATH.joinpath("gui.log")
+SCRIPT_PATH = HOME_PATH.joinpath("scripts")
 
 # local paths
 DATA_PATH = Path(__file__).parent.joinpath("data")
@@ -67,6 +68,7 @@ def check_directory():
     ICONS_PATH.mkdir()
     MOBILITY_PATH.mkdir()
     XMLS_PATH.mkdir()
+    SCRIPT_PATH.mkdir()
 
     copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
     copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)

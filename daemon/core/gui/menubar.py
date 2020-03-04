@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import core.gui.menuaction as action
 from core.gui.coreclient import OBSERVERS
+from core.gui.dialogs.executepython import ExecutePythonDialog
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -68,7 +69,7 @@ class Menubar(tk.Menu):
         menu.add_cascade(label="Recent files", menu=self.recent_menu)
         menu.add_separator()
         menu.add_command(label="Export Python script...", state=tk.DISABLED)
-        menu.add_command(label="Execute XML or Python script...", state=tk.DISABLED)
+        menu.add_command(label="Execute Python script...", command=self.execute_python)
         menu.add_command(
             label="Execute Python script with options...", state=tk.DISABLED
         )
@@ -441,6 +442,10 @@ class Menubar(tk.Menu):
             self.app.core.save_xml(xml_file)
         else:
             self.menuaction.file_save_as_xml()
+
+    def execute_python(self):
+        dialog = ExecutePythonDialog(self.app, self.app)
+        dialog.show()
 
     def change_menubar_item_state(self, is_runtime: bool):
         for i in range(self.edit_menu.index("end")):

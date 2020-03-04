@@ -1063,3 +1063,9 @@ class CoreClient:
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes
+
+    def execute_script(self, script):
+        response = self.client.execute_script(script)
+        logging.info("execute python script %s", response)
+        if response.session_id != -1:
+            self.join_session(response.session_id)
