@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
+from core.gui.graph import tags
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -19,7 +20,7 @@ class MarkerDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", initcolor: str = "#000000"
     ):
-        super().__init__(master, app, "marker tool", modal=False)
+        super().__init__(master, app, "Marker Tool", modal=False)
         self.app = app
         self.color = initcolor
         self.radius = MARKER_THICKNESS[0]
@@ -56,8 +57,7 @@ class MarkerDialog(Dialog):
 
     def clear_marker(self):
         canvas = self.app.canvas
-        for i in canvas.find_withtag("marker"):
-            canvas.delete(i)
+        canvas.delete(tags.MARKER)
 
     def change_color(self, event: tk.Event):
         color_picker = ColorPickerDialog(self, self.app, self.color)

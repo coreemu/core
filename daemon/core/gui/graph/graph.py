@@ -534,7 +534,7 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags="marker",
+                    tags=tags.MARKER,
                 )
                 return
             if selected is None:
