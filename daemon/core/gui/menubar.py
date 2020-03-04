@@ -49,7 +49,7 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="New Session",
             accelerator="Ctrl+N",
-            command=self.app.core.create_new_session,
+            command=self.menuaction.new_session,
         )
         self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
         menu.add_command(

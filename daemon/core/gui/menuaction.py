@@ -192,3 +192,7 @@ class MenuAction:
             logging.error("unexpected number of recent files")
         self.app.save_config()
         self.app.menubar.update_recent_files()
+
+    def new_session(self):
+        self.prompt_save_running_session()
+        self.app.core.create_new_session()
