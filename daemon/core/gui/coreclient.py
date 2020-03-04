@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, List
 
 import grpc
@@ -36,17 +37,6 @@ OBSERVERS = {
     "IPv6 MFC entries": "ip -6 mroute show",
     "firewall rules": "iptables -L",
     "IPSec policies": "setkey -DP",
-}
-
-DEFAULT_TERMS = {
-    "xterm": "xterm -e",
-    "aterm": "aterm -e",
-    "eterm": "eterm -e",
-    "rxvt": "rxvt -e",
-    "konsole": "konsole -e",
-    "lxterminal": "lxterminal -e",
-    "xfce4-terminal": "xfce4-terminal -x",
-    "gnome-terminal": "gnome-terminal --window --",
 }
 
 
@@ -571,11 +561,15 @@ class CoreClient:
     def launch_terminal(self, node_id: int):
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
+            if not terminal:
+                messagebox.showerror(
+                    "Terminal Error",
+                    "No terminal set, please set within the preferences menu",
+                    parent=self.app,
+                )
+                return
             response = self.client.get_node_terminal(self.session_id, node_id)
-            output = os.popen(f"echo {terminal}").read()[:-1]
-            if output in DEFAULT_TERMS:
-                terminal = DEFAULT_TERMS[output]
-            cmd = f'{terminal} "{response.terminal}" &'
+            cmd = f"{terminal} {response.terminal} &"
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:

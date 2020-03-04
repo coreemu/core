@@ -25,17 +25,16 @@ LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
 LOCAL_MOBILITY_PATH = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
-TERMINALS = [
-    "$TERM",
-    "gnome-terminal --window --",
-    "lxterminal -e",
-    "konsole -e",
-    "xterm -e",
-    "aterm -e",
-    "eterm -e",
-    "rxvt -e",
-    "xfce4-terminal -x",
-]
+TERMINALS = {
+    "xterm": "xterm -e",
+    "aterm": "aterm -e",
+    "eterm": "eterm -e",
+    "rxvt": "rxvt -e",
+    "konsole": "konsole -e",
+    "lxterminal": "lxterminal -e",
+    "xfce4-terminal": "xfce4-terminal -x",
+    "gnome-terminal": "gnome-terminal --window --",
+}
 EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
 
 
@@ -48,6 +47,14 @@ def copy_files(current_path, new_path):
     for current_file in current_path.glob("*"):
         new_file = new_path.joinpath(current_file.name)
         shutil.copy(current_file, new_file)
+
+
+def find_terminal():
+    for term in sorted(TERMINALS):
+        cmd = TERMINALS[term]
+        if shutil.which(term):
+            return cmd
+    return None
 
 
 def check_directory():
@@ -66,10 +73,7 @@ def check_directory():
     copy_files(LOCAL_XMLS_PATH, XMLS_PATH)
     copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
 
-    if "TERM" in os.environ:
-        terminal = TERMINALS[0]
-    else:
-        terminal = TERMINALS[1]
+    terminal = find_terminal()
     if "EDITOR" in os.environ:
         editor = EDITORS[0]
     else:
