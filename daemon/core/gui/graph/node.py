@@ -107,6 +107,8 @@ class CanvasNode:
     def redraw(self):
         self.canvas.itemconfig(self.id, image=self.image)
         self.canvas.itemconfig(self.text_id, text=self.core_node.name)
+        for edge in self.edges:
+            edge.redraw()
 
     def _get_label_y(self):
         image_box = self.canvas.bbox(self.id)
