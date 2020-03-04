@@ -46,7 +46,7 @@ DEFAULT_TERMS = {
     "konsole": "konsole -e",
     "lxterminal": "lxterminal -e",
     "xfce4-terminal": "xfce4-terminal -x",
-    "gnome-terminal": "gnome-terminal --window--",
+    "gnome-terminal": "gnome-terminal --window --",
 }
 
 
