@@ -107,8 +107,7 @@ class CanvasEdge:
         y = (y1 + y2) / 2
         return x, y
 
-    def draw_labels(self):
-        x1, y1, x2, y2 = self.get_coordinates()
+    def create_labels(self):
         label_one = None
         if self.link.HasField("interface_one"):
             label_one = (
@@ -121,6 +120,11 @@ class CanvasEdge:
                 f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
                 f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
             )
+        return label_one, label_two
+
+    def draw_labels(self):
+        x1, y1, x2, y2 = self.get_coordinates()
+        label_one, label_two = self.create_labels()
         self.text_src = self.canvas.create_text(
             x1,
             y1,
@@ -137,6 +141,11 @@ class CanvasEdge:
             font=self.canvas.app.edge_font,
             tags=tags.LINK_INFO,
         )
+
+    def redraw(self):
+        label_one, label_two = self.create_labels()
+        self.canvas.itemconfig(self.text_src, text=label_one)
+        self.canvas.itemconfig(self.text_dst, text=label_two)
 
     def update_labels(self):
         """

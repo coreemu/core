@@ -1,8 +1,10 @@
 import logging
 import tkinter as tk
 from functools import partial
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING
+
+import netaddr
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -16,6 +18,58 @@ from core.gui.widgets import ListboxScroll, image_chooser
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
+
+
+def check_ip6(parent, name: str, value: str) -> bool:
+    title = f"IP6 Error for {name}"
+    if not value:
+        messagebox.showerror(title, "Empty Value", parent=parent)
+        return False
+    values = value.split("/")
+    if len(values) != 2:
+        messagebox.showerror(
+            title, "Must be in the format address/prefix", parent=parent
+        )
+        return False
+    addr, mask = values
+    if not netaddr.valid_ipv6(addr):
+        messagebox.showerror(title, "Invalid IP6 address", parent=parent)
+        return False
+    try:
+        mask = int(mask)
+        if not (0 <= mask <= 128):
+            messagebox.showerror(title, "Mask must be between 0-128", parent=parent)
+            return False
+    except ValueError:
+        messagebox.showerror(title, "Invalid Mask", parent=parent)
+        return False
+    return True
+
+
+def check_ip4(parent, name: str, value: str) -> bool:
+    title = f"IP4 Error for {name}"
+    if not value:
+        messagebox.showerror(title, "Empty Value", parent=parent)
+        return False
+    values = value.split("/")
+    if len(values) != 2:
+        messagebox.showerror(
+            title, "Must be in the format address/prefix", parent=parent
+        )
+        return False
+    addr, mask = values
+    if not netaddr.valid_ipv4(addr):
+        messagebox.showerror(title, "Invalid IP4 address", parent=parent)
+        return False
+    try:
+        mask = int(mask)
+        if not (0 <= mask <= 32):
+            messagebox.showerror(title, "Mask must be between 0-32", parent=parent)
+            return False
+    except ValueError:
+        messagebox.showerror(title, "Invalid mask", parent=parent)
+        return False
+    return True
 
 
 def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry):
@@ -203,7 +257,6 @@ class NodeConfigDialog(Dialog):
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip4 = tk.StringVar(value=f"{interface.ip4}/{interface.ip4mask}")
             entry = ttk.Entry(tab, textvariable=ip4)
-            entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
             row += 1
 
@@ -211,7 +264,6 @@ class NodeConfigDialog(Dialog):
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip6 = tk.StringVar(value=f"{interface.ip6}/{interface.ip6mask}")
             entry = ttk.Entry(tab, textvariable=ip6)
-            entry.bind("<FocusOut>", self.app.validation.ip_focus_out)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
 
             self.interfaces[interface.id] = InterfaceData(is_auto, mac, ip4, ip6)
@@ -240,6 +292,8 @@ class NodeConfigDialog(Dialog):
             self.image_file = file_path
 
     def config_apply(self):
+        error = False
+
         # update core node
         self.node.name = self.name.get()
         if NodeUtils.is_image_node(self.node.type):
@@ -255,9 +309,31 @@ class NodeConfigDialog(Dialog):
         # update canvas node
         self.canvas_node.image = self.image
 
+        # update node interface data
+        for interface in self.canvas_node.interfaces:
+            data = self.interfaces[interface.id]
+            if check_ip4(self, interface.name, data.ip4.get()):
+                ip4, ip4mask = data.ip4.get().split("/")
+                interface.ip4 = ip4
+                interface.ip4mask = int(ip4mask)
+            else:
+                error = True
+                data.ip4.set(f"{interface.ip4}/{interface.ip4mask}")
+                break
+            if check_ip6(self, interface.name, data.ip6.get()):
+                ip6, ip6mask = data.ip6.get().split("/")
+                interface.ip6 = ip6
+                interface.ip6mask = int(ip6mask)
+                interface.mac = data.mac.get()
+            else:
+                error = True
+                data.ip6.set(f"{interface.ip6}/{interface.ip6mask}")
+                break
+
         # redraw
-        self.canvas_node.redraw()
-        self.destroy()
+        if not error:
+            self.canvas_node.redraw()
+            self.destroy()
 
     def interface_select(self, event: tk.Event):
         listbox = event.widget

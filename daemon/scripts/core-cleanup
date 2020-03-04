@@ -19,7 +19,7 @@ PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 export PATH
 
 if [ "z$1" = "z-d" ]; then
-    pypids=`pidof python python2`
+    pypids=`pidof python3 python`
     for p in $pypids; do
 	grep -q core-daemon /proc/$p/cmdline
 	if [ $? = 0 ]; then
