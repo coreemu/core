@@ -57,10 +57,7 @@ class PreferencesDialog(Dialog):
         label = ttk.Label(frame, text="Terminal")
         label.grid(row=2, column=0, pady=PADY, padx=PADX, sticky="w")
         combobox = ttk.Combobox(
-            frame,
-            textvariable=self.terminal,
-            values=appconfig.TERMINALS,
-            state="readonly",
+            frame, textvariable=self.terminal, values=appconfig.TERMINALS
         )
         combobox.grid(row=2, column=1, sticky="ew")
 
