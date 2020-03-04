@@ -575,7 +575,8 @@ class CoreClient:
             output = os.popen(f"echo {terminal}").read()[:-1]
             if output in DEFAULT_TERMS:
                 terminal = DEFAULT_TERMS[output]
-            cmd = f'{terminal} "{response.terminal}" &'
+
+            cmd = f"{terminal} {response.terminal} &"
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
