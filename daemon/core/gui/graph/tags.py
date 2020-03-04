@@ -10,6 +10,7 @@ NODE = "node"
 WALLPAPER = "wallpaper"
 SELECTION = "selectednodes"
 THROUGHPUT = "throughput"
+MARKER = "marker"
 ABOVE_WALLPAPER_TAGS = [
     GRIDLINE,
     SHAPE,
@@ -33,4 +34,5 @@ COMPONENT_TAGS = [
     SELECTION,
     SHAPE,
     SHAPE_TEXT,
+    MARKER,
 ]

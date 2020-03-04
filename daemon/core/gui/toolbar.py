@@ -280,6 +280,7 @@ class Toolbar(ttk.Frame):
         server.
         """
         self.app.canvas.hide_context()
+        self.app.menubar.change_menubar_item_state(is_runtime=True)
         self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
         self.time = time.perf_counter()
@@ -469,6 +470,7 @@ class Toolbar(ttk.Frame):
         """
         logging.info("Click stop button")
         self.app.canvas.hide_context()
+        self.app.menubar.change_menubar_item_state(is_runtime=False)
         self.app.statusbar.progress_bar.start(5)
         self.time = time.perf_counter()
         task = BackgroundTask(self, self.app.core.stop_session, self.stop_callback)

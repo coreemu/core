@@ -1,4 +1,5 @@
 import logging
+import math
 import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
@@ -6,9 +7,12 @@ from typing import TYPE_CHECKING
 from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
+from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+
+SCALE_INTERVAL = 0.01
 
 
 class PreferencesDialog(Dialog):
@@ -73,17 +77,24 @@ class PreferencesDialog(Dialog):
         scale_frame.columnconfigure(0, weight=1)
         scale = ttk.Scale(
             scale_frame,
-            from_=0.5,
-            to=5,
+            from_=SMALLEST_SCALE,
+            to=LARGEST_SCALE,
             value=1,
             orient=tk.HORIZONTAL,
             variable=self.gui_scale,
         )
         scale.grid(row=0, column=0, sticky="ew")
         entry = ttk.Entry(
-            scale_frame, textvariable=self.gui_scale, width=4, state="disabled"
+            scale_frame,
+            textvariable=self.gui_scale,
+            width=4,
+            validate="key",
+            validatecommand=(self.app.validation.app_scale, "%P"),
         )
         entry.grid(row=0, column=1)
+
+        scrollbar = ttk.Scrollbar(scale_frame, command=self.adjust_scale)
+        scrollbar.grid(row=0, column=2)
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)
@@ -123,8 +134,9 @@ class PreferencesDialog(Dialog):
 
         # scale fonts
         scale_fonts(self.app.fonts_size, app_scale)
-        self.app.icon_text_font.config(size=int(12 * app_scale))
-        self.app.edge_font.config(size=int(8 * app_scale))
+        text_scale = app_scale if app_scale < 1 else math.sqrt(app_scale)
+        self.app.icon_text_font.config(size=int(12 * text_scale))
+        self.app.edge_font.config(size=int(8 * text_scale))
 
         # scale application window
         self.app.center()
@@ -132,3 +144,16 @@ class PreferencesDialog(Dialog):
         # scale toolbar and canvas items
         self.app.toolbar.scale()
         self.app.canvas.scale_graph()
+
+    def adjust_scale(self, arg1: str, arg2: str, arg3: str):
+        scale_value = self.gui_scale.get()
+        if arg2 == "-1":
+            if scale_value <= LARGEST_SCALE - SCALE_INTERVAL:
+                self.gui_scale.set(round(scale_value + SCALE_INTERVAL, 2))
+            else:
+                self.gui_scale.set(round(LARGEST_SCALE, 2))
+        elif arg2 == "1":
+            if scale_value >= SMALLEST_SCALE + SCALE_INTERVAL:
+                self.gui_scale.set(round(scale_value - SCALE_INTERVAL, 2))
+            else:
+                self.gui_scale.set(round(SMALLEST_SCALE, 2))

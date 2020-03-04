@@ -782,7 +782,8 @@ class Session:
         node.canvas = options.canvas
         node.icon = options.icon
 
-        self.sdt.edit_node(node)
+        # provide edits to sdt
+        self.sdt.edit_node(node, options.lon, options.lat, options.alt)
 
     def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
         """
@@ -812,9 +813,11 @@ class Session:
 
         # broadcast updated location when using lat/lon/alt
         if using_lat_lon_alt:
-            self.broadcast_node_location(node)
+            self.broadcast_node_location(node, lon, lat, alt)
 
-    def broadcast_node_location(self, node: NodeBase) -> None:
+    def broadcast_node_location(
+        self, node: NodeBase, lon: float, lat: float, alt: float
+    ) -> None:
         """
         Broadcast node location to all listeners.
 
@@ -826,6 +829,9 @@ class Session:
             id=node.id,
             x_position=node.position.x,
             y_position=node.position.y,
+            latitude=lat,
+            longitude=lon,
+            altitude=alt,
         )
         self.broadcast_node(node_data)
 

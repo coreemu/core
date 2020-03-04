@@ -475,9 +475,10 @@ class CoreGrpcClient:
         self,
         session_id: int,
         node_id: int,
-        position: core_pb2.Position,
+        position: core_pb2.Position = None,
         icon: str = None,
         source: str = None,
+        geo: core_pb2.Geo = None,
     ) -> core_pb2.EditNodeResponse:
         """
         Edit a node, currently only changes position.
@@ -487,6 +488,7 @@ class CoreGrpcClient:
         :param position: position to set node to
         :param icon: path to icon for gui to use for node
         :param source: application source editing node
+        :param geo: lon,lat,alt location for node
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or node doesn't exist
         """
@@ -496,6 +498,7 @@ class CoreGrpcClient:
             position=position,
             icon=icon,
             source=source,
+            geo=geo,
         )
         return self.stub.EditNode(request)
 

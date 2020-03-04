@@ -106,6 +106,8 @@ class TypeToImage:
         (core_pb2.NodeType.EMANE, ""): ImageEnum.EMANE,
         (core_pb2.NodeType.RJ45, ""): ImageEnum.RJ45,
         (core_pb2.NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
+        (core_pb2.NodeType.DOCKER, ""): ImageEnum.DOCKER,
+        (core_pb2.NodeType.LXC, ""): ImageEnum.LXC,
     }
 
     @classmethod

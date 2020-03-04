@@ -10,6 +10,8 @@ from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
+from core.nodes.docker import DockerNode
+from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet
 from core.services.coreservices import CoreService
 
@@ -213,7 +215,20 @@ class DeviceElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
+        self.add_class()
         self.add_services()
+
+    def add_class(self) -> None:
+        clazz = ""
+        image = ""
+        if isinstance(self.node, DockerNode):
+            clazz = "docker"
+            image = self.node.image
+        elif isinstance(self.node, LxcNode):
+            clazz = "lxc"
+            image = self.node.image
+        add_attribute(self.element, "class", clazz)
+        add_attribute(self.element, "image", image)
 
     def add_services(self) -> None:
         service_elements = etree.Element("services")
@@ -796,8 +811,16 @@ class CoreXmlReader:
         name = device_element.get("name")
         model = device_element.get("type")
         icon = device_element.get("icon")
-        options = NodeOptions(name, model)
+        clazz = device_element.get("class")
+        image = device_element.get("image")
+        options = NodeOptions(name, model, image)
         options.icon = icon
+
+        node_type = NodeTypes.DEFAULT
+        if clazz == "docker":
+            node_type = NodeTypes.DOCKER
+        elif clazz == "lxc":
+            node_type = NodeTypes.LXC
 
         service_elements = device_element.find("services")
         if service_elements is not None:
@@ -823,7 +846,7 @@ class CoreXmlReader:
                 options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_id=node_id, options=options)
+        self.session.add_node(_type=node_type, _id=node_id, options=options)
 
     def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")

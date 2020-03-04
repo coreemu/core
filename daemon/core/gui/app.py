@@ -1,3 +1,4 @@
+import math
 import tkinter as tk
 from tkinter import font, ttk
 
@@ -47,11 +48,10 @@ class Application(tk.Frame):
 
     def setup_scaling(self):
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
+        text_scale = self.app_scale if self.app_scale < 1 else math.sqrt(self.app_scale)
         themes.scale_fonts(self.fonts_size, self.app_scale)
-        self.icon_text_font = font.Font(
-            family="TkIconFont", size=int(12 * self.app_scale)
-        )
-        self.edge_font = font.Font(family="TkDefaultFont", size=int(8 * self.app_scale))
+        self.icon_text_font = font.Font(family="TkIconFont", size=int(12 * text_scale))
+        self.edge_font = font.Font(family="TkDefaultFont", size=int(8 * text_scale))
 
     def setup_theme(self):
         themes.load(self.style)
