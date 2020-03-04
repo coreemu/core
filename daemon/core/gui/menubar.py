@@ -50,7 +50,7 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="New Session",
             accelerator="Ctrl+N",
-            command=self.app.core.create_new_session,
+            command=self.menuaction.new_session,
         )
         self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
         menu.add_command(
@@ -58,6 +58,7 @@ class Menubar(tk.Menu):
         )
         self.app.bind_all("<Control-o>", self.menuaction.file_open_xml)
         menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
+        menu.add_command(label="Save As", command=self.menuaction.file_save_as_xml)
         menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
         self.app.bind_all("<Control-s>", self.save)
 
