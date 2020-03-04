@@ -90,6 +90,7 @@ class MenuAction:
         if file_path:
             self.add_recent_file_to_gui_config(file_path)
             self.app.core.save_xml(file_path)
+            self.app.core.xml_file = file_path
 
     def file_open_xml(self, event: tk.Event = None):
         init_dir = self.app.core.xml_dir
@@ -196,3 +197,4 @@ class MenuAction:
     def new_session(self):
         self.prompt_save_running_session()
         self.app.core.create_new_session()
+        self.app.core.xml_file = None

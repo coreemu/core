@@ -57,6 +57,7 @@ class Menubar(tk.Menu):
         )
         self.app.bind_all("<Control-o>", self.menuaction.file_open_xml)
         menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
+        menu.add_command(label="Save As", command=self.menuaction.file_save_as_xml)
         menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
         self.app.bind_all("<Control-s>", self.save)
 
