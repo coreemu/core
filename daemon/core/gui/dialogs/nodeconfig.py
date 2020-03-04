@@ -21,10 +21,9 @@ if TYPE_CHECKING:
 
 
 def check_ip6(parent, name: str, value: str) -> bool:
-    title = f"IP6 Error for {name}"
     if not value:
-        messagebox.showerror(title, "Empty Value", parent=parent)
-        return False
+        return True
+    title = f"IP6 Error for {name}"
     values = value.split("/")
     if len(values) != 2:
         messagebox.showerror(
@@ -47,10 +46,9 @@ def check_ip6(parent, name: str, value: str) -> bool:
 
 
 def check_ip4(parent, name: str, value: str) -> bool:
-    title = f"IP4 Error for {name}"
     if not value:
-        messagebox.showerror(title, "Empty Value", parent=parent)
-        return False
+        return True
+    title = f"IP4 Error for {name}"
     values = value.split("/")
     if len(values) != 2:
         messagebox.showerror(
@@ -255,14 +253,20 @@ class NodeConfigDialog(Dialog):
 
             label = ttk.Label(tab, text="IPv4")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
-            ip4 = tk.StringVar(value=f"{interface.ip4}/{interface.ip4mask}")
+            ip4_net = ""
+            if interface.ip4:
+                ip4_net = f"{interface.ip4}/{interface.ip4mask}"
+            ip4 = tk.StringVar(value=ip4_net)
             entry = ttk.Entry(tab, textvariable=ip4)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
             row += 1
 
             label = ttk.Label(tab, text="IPv6")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
-            ip6 = tk.StringVar(value=f"{interface.ip6}/{interface.ip6mask}")
+            ip6_net = ""
+            if interface.ip6:
+                ip6_net = f"{interface.ip6}/{interface.ip6mask}"
+            ip6 = tk.StringVar(value=ip6_net)
             entry = ttk.Entry(tab, textvariable=ip6)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
 
@@ -312,23 +316,36 @@ class NodeConfigDialog(Dialog):
         # update node interface data
         for interface in self.canvas_node.interfaces:
             data = self.interfaces[interface.id]
-            if check_ip4(self, interface.name, data.ip4.get()):
-                ip4, ip4mask = data.ip4.get().split("/")
-                interface.ip4 = ip4
-                interface.ip4mask = int(ip4mask)
-            else:
+
+            # validate ip4
+            ip4_net = data.ip4.get()
+            if not check_ip4(self, interface.name, ip4_net):
                 error = True
                 data.ip4.set(f"{interface.ip4}/{interface.ip4mask}")
                 break
-            if check_ip6(self, interface.name, data.ip6.get()):
-                ip6, ip6mask = data.ip6.get().split("/")
-                interface.ip6 = ip6
-                interface.ip6mask = int(ip6mask)
-                interface.mac = data.mac.get()
+            if ip4_net:
+                ip4, ip4mask = ip4_net.split("/")
+                ip4mask = int(ip4mask)
             else:
+                ip4, ip4mask = "", 0
+            interface.ip4 = ip4
+            interface.ip4mask = ip4mask
+
+            # validate ip6
+            ip6_net = data.ip6.get()
+            if not check_ip6(self, interface.name, ip6_net):
                 error = True
                 data.ip6.set(f"{interface.ip6}/{interface.ip6mask}")
                 break
+            if ip6_net:
+                ip6, ip6mask = ip6_net.split("/")
+                ip6mask = int(ip6mask)
+            else:
+                ip6, ip6mask = "", 0
+            interface.ip6 = ip6
+            interface.ip6mask = ip6mask
+
+            interface.mac = data.mac.get()
 
         # redraw
         if not error:

@@ -110,17 +110,19 @@ class CanvasEdge:
     def create_labels(self):
         label_one = None
         if self.link.HasField("interface_one"):
-            label_one = (
-                f"{self.link.interface_one.ip4}/{self.link.interface_one.ip4mask}\n"
-                f"{self.link.interface_one.ip6}/{self.link.interface_one.ip6mask}\n"
-            )
+            label_one = self.create_label(self.link.interface_one)
         label_two = None
         if self.link.HasField("interface_two"):
-            label_two = (
-                f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
-                f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
-            )
+            label_two = self.create_label(self.link.interface_two)
         return label_one, label_two
+
+    def create_label(self, interface):
+        label = ""
+        if interface.ip4:
+            label = f"{interface.ip4}/{interface.ip4mask}"
+        if interface.ip6:
+            label = f"{label}\n{interface.ip6}/{interface.ip6mask}"
+        return label
 
     def draw_labels(self):
         x1, y1, x2, y2 = self.get_coordinates()
