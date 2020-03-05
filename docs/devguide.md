@@ -26,7 +26,7 @@ the core-daemon for development based on Ubuntu 18.04.
 
 ```shell
 sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk \
-        python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
+        python3.7 python3.7-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
 ```
 
 ### Install OSPF MDR
@@ -75,7 +75,7 @@ sudo make install
 
 ### Setup Python Environment
 
-To leverage the dev environment you need python 3.6+.
+To leverage the dev environment you need python 3.7+.
 
 ```shell
 # change to daemon directory

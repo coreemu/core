@@ -64,7 +64,7 @@ fpm -s dir -t rpm -n core \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "python3 >= 3.6" \
+	-d "python3 >= 3.7" \
 	-d "python3-tkinter" \
 	-C $(DESTDIR)
 endef
@@ -91,7 +91,7 @@ fpm -s dir -t deb -n core \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "python3 >= 3.6" \
+	-d "python3 >= 3.7" \
 	-d "python3-tk" \
 	-C $(DESTDIR)
 endef

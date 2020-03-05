@@ -71,7 +71,7 @@ case ${os} in
 "ubuntu")
   echo "Installing CORE for Ubuntu"
   sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk iproute2 \
-    python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
+    python3.7 python3.7-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
   install_ospf_mdr
   if [[ -z ${dev} ]]; then
     echo "normal install"

@@ -110,7 +110,7 @@ if test "x$enable_daemon" = "xyes"; then
   AC_FUNC_REALLOC
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
-  AM_PATH_PYTHON(3.6)
+  AM_PATH_PYTHON(3.7)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)

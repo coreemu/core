@@ -35,7 +35,7 @@ Install Path | Description
 /usr/bin/core-daemon|Daemon startup command
 /usr/bin/{core-cleanup, coresendmsg, core-manage}|Misc. helper commands/scripts
 /usr/lib/core|GUI files
-/usr/lib/python{3.6+}/dist-packages/core|Python modules for daemon/scripts
+/usr/lib/python{3.7+}/dist-packages/core|Python modules for daemon/scripts
 /etc/core/|Daemon and log configuration files
 ~/.core/|User-specific GUI preferences and scenario files
 /usr/share/core/|Example scripts and scenarios
@@ -49,7 +49,7 @@ You may already have these installed, and can ignore this step if so, but if
  needed you can run the following to install python and pip.
 
 ```shell
-sudo apt install python3.6
+sudo apt install python3.7
 sudo apt install python3-pip
 ```
 
@@ -217,7 +217,7 @@ sudo pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc iproute2 libev-dev ebtables python3.6 python3.6-dev python3-pip tk libtk-img ethtool python3-tk
+sudo apt install automake pkg-config gcc iproute2 libev-dev ebtables python3.7 python3.7-dev python3-pip tk libtk-img ethtool python3-tk
 ```
 
 ### Ubuntu 16.04 Requirements
