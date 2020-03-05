@@ -3,6 +3,7 @@ cffi==1.14.0
 cryptography==2.8
 fabric==2.5.0
 grpcio==1.27.2
+grpcio-tools==1.21.1
 invoke==1.4.1
 lxml==4.5.0
 Mako==1.1.1
