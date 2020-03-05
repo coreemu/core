@@ -262,6 +262,16 @@ class CoreGrpcClient:
         """
         return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
+    def check_session(self, session_id: int) -> core_pb2.CheckSessionResponse:
+        """
+        Check if a session exists.
+
+        :param session_id: id of session to check for
+        :return: response with result if session was found
+        """
+        request = core_pb2.CheckSessionRequest(session_id=session_id)
+        return self.stub.CheckSession(request)
+
     def get_session(self, session_id: int) -> core_pb2.GetSessionResponse:
         """
         Retrieve a session.

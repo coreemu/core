@@ -22,6 +22,8 @@ service CoreApi {
     }
     rpc GetSession (GetSessionRequest) returns (GetSessionResponse) {
     }
+    rpc CheckSession (CheckSessionRequest) returns (CheckSessionResponse) {
+    }
     rpc GetSessionOptions (GetSessionOptionsRequest) returns (GetSessionOptionsResponse) {
     }
     rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
@@ -210,6 +212,14 @@ message GetSessionsRequest {
 
 message GetSessionsResponse {
     repeated SessionSummary sessions = 1;
+}
+
+message CheckSessionRequest {
+    int32 session_id = 1;
+}
+
+message CheckSessionResponse {
+    bool result = 1;
 }
 
 message GetSessionRequest {

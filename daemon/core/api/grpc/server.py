@@ -453,6 +453,19 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.metadata = dict(request.config)
         return core_pb2.SetSessionMetadataResponse(result=True)
 
+    def CheckSession(
+        self, request: core_pb2.GetSessionRequest, context: ServicerContext
+    ) -> core_pb2.CheckSessionResponse:
+        """
+        Checks if a session exists.
+
+        :param request: check session request
+        :param context: context object
+        :return: check session response
+        """
+        result = request.session_id in self.coreemu.sessions
+        return core_pb2.CheckSessionResponse(result=result)
+
     def GetSession(
         self, request: core_pb2.GetSessionRequest, context: ServicerContext
     ) -> core_pb2.GetSessionResponse:

@@ -58,7 +58,7 @@ class CoreClient:
         """
         Create a CoreGrpc instance
         """
-        self.client = client.CoreGrpcClient(proxy=proxy)
+        self._client = client.CoreGrpcClient(proxy=proxy)
         self.session_id = None
         self.node_ids = []
         self.app = app
@@ -102,6 +102,22 @@ class CoreClient:
 
         self.modified_service_nodes = set()
 
+    @property
+    def client(self):
+        if self.session_id:
+            response = self._client.check_session(self.session_id)
+            if not response.result:
+                throughputs_enabled = self.handling_throughputs is not None
+                self.cancel_throughputs()
+                self.cancel_events()
+                self._client.create_session(self.session_id)
+                self.handling_events = self._client.events(
+                    self.session_id, self.handle_events
+                )
+                if throughputs_enabled:
+                    self.enable_throughputs()
+        return self._client
+
     def reset(self):
         # helpers
         self.interfaces_manager.reset()
@@ -121,12 +137,8 @@ class CoreClient:
             mobility_player.handle_close()
         self.mobility_players.clear()
         # clear streams
-        if self.handling_throughputs:
-            self.handling_throughputs.cancel()
-            self.handling_throughputs = None
-        if self.handling_events:
-            self.handling_events.cancel()
-            self.handling_events = None
+        self.cancel_throughputs()
+        self.cancel_events()
 
     def set_observer(self, value: str):
         self.observer = value
@@ -217,8 +229,14 @@ class CoreClient:
         )
 
     def cancel_throughputs(self):
-        self.handling_throughputs.cancel()
-        self.handling_throughputs = None
+        if self.handling_throughputs:
+            self.handling_throughputs.cancel()
+            self.handling_throughputs = None
+
+    def cancel_events(self):
+        if self.handling_events:
+            self.handling_events.cancel()
+            self.handling_events = None
 
     def handle_throughputs(self, event: core_pb2.ThroughputsEvent):
         if event.session_id != self.session_id:
