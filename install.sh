@@ -89,9 +89,9 @@ case ${os} in
   echo "installing core system dependencies"
   sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
     python36 python36-devel python3-pip python3-tkinter tk ethtool autoconf
-  python3 -m pip install grpcio-tools
+  sudo python3 -m pip install grpcio-tools
   echo "installing ospf-mdr system dependencies"
-  sudo apt install -y libtool gawk readline-devel
+  sudo yum install -y libtool gawk readline-devel
   install_ospf_mdr
   if [[ -z ${dev} ]]; then
     echo "normal install"
