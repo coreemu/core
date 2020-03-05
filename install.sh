@@ -81,7 +81,7 @@ case ${os} in
     python3 -m pip install pipenv
     build_core
     install_dev_core
-    python3 -m pipenv install --dev
+    python3 -m pipenv sync --dev
   fi
   ;;
 "centos")
@@ -103,7 +103,8 @@ case ${os} in
     sudo python3 -m pip install pipenv
     build_core --prefix=/usr
     install_dev_core
-    sudo python3 -m pipenv install --dev
+    sudo python3 -m pipenv sync --dev
+    python3 -m pipenv sync --dev
   fi
   ;;
 *)
