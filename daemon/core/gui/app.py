@@ -44,7 +44,7 @@ class Application(tk.Frame):
         self.core = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
-        self.core.set_up()
+        self.core.setup()
 
     def setup_scaling(self):
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}

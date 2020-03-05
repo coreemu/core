@@ -446,7 +446,7 @@ class CoreClient:
                 master = parent_frame
             self.app.after(0, show_grpc_error, e, master, self.app)
 
-    def set_up(self):
+    def setup(self):
         """
         Query sessions, if there exist any, prompt whether to join one
         """
@@ -480,7 +480,7 @@ class CoreClient:
                 x.node_type: set(x.services) for x in response.defaults
             }
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e, self.app, self.app)
+            show_grpc_error(e, self.app, self.app)
             self.app.close()
 
     def edit_node(self, core_node: core_pb2.Node):
