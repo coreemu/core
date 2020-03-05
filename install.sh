@@ -90,6 +90,7 @@ case ${os} in
     build_core
     install_dev_core
     python3 -m pipenv sync --dev
+    python3 -m pipenv run pre-commit install
   fi
   ;;
 "centos")
@@ -113,6 +114,7 @@ case ${os} in
     install_dev_core
     sudo python3 -m pipenv sync --dev
     python3 -m pipenv sync --dev
+    python3 -m pipenv run pre-commit install
   fi
   ;;
 *)
