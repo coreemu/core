@@ -3,6 +3,9 @@
 # exit on error
 set -e
 
+ubuntu_py=3.6
+centos_py=36
+
 function install_python_depencencies() {
   sudo python3 -m pip install -r daemon/requirements.txt
 }
@@ -48,13 +51,18 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # parse arguments
-while getopts ":d" opt; do
+while getopts "dv:" opt; do
   case ${opt} in
   d)
     dev=1
     ;;
+  v)
+    ubuntu_py=${OPTARG}
+    centos_py=${OPTARG}
+    ;;
   \?)
-    echo "Invalid Option: $OPTARG" 1>&2
+    echo "script usage: $(basename $0) [-d] [-v python version]" >&2
+    exit 1
     ;;
   esac
 done
@@ -66,7 +74,7 @@ case ${os} in
   echo "Installing CORE for Ubuntu"
   echo "installing core system dependencies"
   sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
-    python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool autoconf
+    python${ubuntu_py} python${ubuntu_py}-dev python3-pip python3-tk tk libtk-img ethtool autoconf
   python3 -m pip install grpcio-tools
   echo "installing ospf-mdr system dependencies"
   sudo apt install -y libtool gawk libreadline-dev
@@ -88,7 +96,7 @@ case ${os} in
   echo "Installing CORE for CentOS"
   echo "installing core system dependencies"
   sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
-    python36 python36-devel python3-pip python3-tkinter tk ethtool autoconf
+    python${centos_py} python${centos_py}-devel python3-pip python3-tkinter tk ethtool autoconf
   sudo python3 -m pip install grpcio-tools
   echo "installing ospf-mdr system dependencies"
   sudo yum install -y libtool gawk readline-devel
