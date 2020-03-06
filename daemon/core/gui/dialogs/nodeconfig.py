@@ -240,12 +240,17 @@ class NodeConfigDialog(Dialog):
 
             label = ttk.Label(tab, text="MAC")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
-            is_auto = tk.BooleanVar(value=True)
+            auto_set = not interface.mac
+            if auto_set:
+                state = tk.DISABLED
+            else:
+                state = tk.NORMAL
+            is_auto = tk.BooleanVar(value=auto_set)
             checkbutton = ttk.Checkbutton(tab, text="Auto?", variable=is_auto)
             checkbutton.var = is_auto
             checkbutton.grid(row=row, column=1, padx=PADX)
             mac = tk.StringVar(value=interface.mac)
-            entry = ttk.Entry(tab, textvariable=mac, state=tk.DISABLED)
+            entry = ttk.Entry(tab, textvariable=mac, state=state)
             entry.grid(row=row, column=2, sticky="ew")
             func = partial(mac_auto, is_auto, entry)
             checkbutton.config(command=func)
@@ -345,7 +350,17 @@ class NodeConfigDialog(Dialog):
             interface.ip6 = ip6
             interface.ip6mask = ip6mask
 
-            interface.mac = data.mac.get()
+            mac = data.mac.get()
+            if mac and not netaddr.valid_mac(mac):
+                title = f"MAC Error for {interface.name}"
+                messagebox.showerror(title, "Invalid MAC Address")
+                error = True
+                data.mac.set(interface.mac)
+                break
+            else:
+                mac = netaddr.EUI(mac)
+                mac.dialect = netaddr.mac_unix_expanded
+                interface.mac = str(mac)
 
         # redraw
         if not error:

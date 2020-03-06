@@ -444,7 +444,7 @@ def random_mac() -> str:
     value = random.randint(0, 0xFFFFFF)
     value |= 0x00163E << 24
     mac = netaddr.EUI(value)
-    mac.dialect = netaddr.mac_unix
+    mac.dialect = netaddr.mac_unix_expanded
     return str(mac)
 
 

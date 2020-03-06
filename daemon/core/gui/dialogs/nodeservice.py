@@ -148,11 +148,12 @@ class NodeServiceDialog(Dialog):
                 dialog.destroy()
         else:
             messagebox.showinfo(
-                "Node service configuration", "Select a service to configure"
+                "Service Configuration", "Select a service to configure", parent=self
             )
 
     def click_save(self):
-        # if node is custom type or current services are not the default services then set core node services and add node to modified services node set
+        # if node is custom type or current services are not the default services then
+        # set core node services and add node to modified services node set
         if (
             self.canvas_node.core_node.model not in self.app.core.default_services
             or self.current_services
