@@ -376,14 +376,14 @@ class TestGui:
         assert len(coretlv.coreemu.sessions) == 0
 
     def test_file_hook_add(self, coretlv):
-        state = EventTypes.DATACOLLECT_STATE.value
+        state = EventTypes.DATACOLLECT_STATE
         assert coretlv.session._hooks.get(state) is None
         file_name = "test.sh"
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
             MessageFlags.ADD.value,
             [
-                (FileTlvs.TYPE, f"hook:{state}"),
+                (FileTlvs.TYPE, f"hook:{state.value}"),
                 (FileTlvs.NAME, file_name),
                 (FileTlvs.DATA, file_data),
             ],
@@ -514,7 +514,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        assert coretlv.session.state == state.value
+        assert coretlv.session.state == state
 
     def test_event_schedule(self, coretlv):
         coretlv.session.add_event = mock.MagicMock()

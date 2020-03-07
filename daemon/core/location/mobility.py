@@ -142,17 +142,11 @@ class MobilityManager(ModelManager):
                 )
                 continue
 
-            if (
-                event_type == EventTypes.STOP.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 model.stop(move_initial=True)
-            if (
-                event_type == EventTypes.START.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.START, EventTypes.RESTART]:
                 model.start()
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 model.pause()
 
     def sendevent(self, model: "WayPointMobility") -> None:
@@ -163,13 +157,13 @@ class MobilityManager(ModelManager):
         :param model: mobility model to send event for
         :return: nothing
         """
-        event_type = EventTypes.NONE.value
+        event_type = EventTypes.NONE
         if model.state == model.STATE_STOPPED:
-            event_type = EventTypes.STOP.value
+            event_type = EventTypes.STOP
         elif model.state == model.STATE_RUNNING:
-            event_type = EventTypes.START.value
+            event_type = EventTypes.START
         elif model.state == model.STATE_PAUSED:
-            event_type = EventTypes.PAUSE.value
+            event_type = EventTypes.PAUSE
 
         start_time = int(model.lasttime - model.timezero)
         end_time = int(model.endtime)

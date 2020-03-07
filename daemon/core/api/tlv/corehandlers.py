@@ -228,7 +228,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             coreapi.CoreEventTlv,
             [
                 (EventTlvs.NODE, event_data.node),
-                (EventTlvs.TYPE, event_data.event_type),
+                (EventTlvs.TYPE, event_data.event_type.value),
                 (EventTlvs.NAME, event_data.name),
                 (EventTlvs.DATA, event_data.data),
                 (EventTlvs.TIME, event_data.time),
@@ -723,7 +723,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
 
-                if self.session.state == EventTypes.RUNTIME_STATE.value:
+                if self.session.state == EventTypes.RUNTIME_STATE:
                     self.send_node_emulation_id(node.id)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
@@ -966,7 +966,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
-                    while session.state != EventTypes.RUNTIME_STATE.value:
+                    while session.state != EventTypes.RUNTIME_STATE:
                         logging.debug(
                             "waiting for session %d to enter RUNTIME state", sid
                         )
@@ -1375,7 +1375,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
-            if self.session.state == EventTypes.RUNTIME_STATE.value and parsed_config:
+            if self.session.state == EventTypes.RUNTIME_STATE and parsed_config:
                 try:
                     node = self.session.get_node(node_id)
                     if object_name == BasicRangeModel.name:
@@ -1502,6 +1502,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         logging.error("error setting hook having state '%s'", state)
                         return ()
                     state = int(state)
+                    state = EventTypes(state)
                     self.session.add_hook(state, file_name, source_name, data)
                     return ()
 
@@ -1538,9 +1539,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         :raises core.CoreError: when event type <= SHUTDOWN_STATE and not a known node id
         """
+        event_type_value = message.get_tlv(EventTlvs.TYPE.value)
+        event_type = EventTypes(event_type_value)
         event_data = EventData(
             node=message.get_tlv(EventTlvs.NODE.value),
-            event_type=message.get_tlv(EventTlvs.TYPE.value),
+            event_type=event_type,
             name=message.get_tlv(EventTlvs.NAME.value),
             data=message.get_tlv(EventTlvs.DATA.value),
             time=message.get_tlv(EventTlvs.TIME.value),
@@ -1549,7 +1552,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if event_data.event_type is None:
             raise NotImplementedError("Event message missing event type")
-        event_type = EventTypes(event_data.event_type)
         node_id = event_data.node
 
         logging.debug("handling event %s at %s", event_type.name, time.ctime())
@@ -1667,25 +1669,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 unknown.append(service_name)
                 continue
 
-            if (
-                event_type == EventTypes.STOP.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 status = self.session.services.stop_service(node, service)
                 if status:
                     fail += f"Stop {service.name},"
-            if (
-                event_type == EventTypes.START.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.START, EventTypes.RESTART]:
                 status = self.session.services.startup_service(node, service)
                 if status:
                     fail += f"Start ({service.name}),"
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 status = self.session.services.validate_service(node, service)
                 if status:
                     fail += f"{service.name},"
-            if event_type == EventTypes.RECONFIGURE.value:
+            if event_type == EventTypes.RECONFIGURE:
                 self.session.services.service_reconfigure(node, service)
 
         fail_data = ""
@@ -2052,7 +2048,7 @@ class CoreUdpHandler(CoreHandler):
                 current_session = self.server.mainserver.coreemu.sessions[session_id]
                 current_node_count = current_session.get_node_count()
                 if (
-                    current_session.state == EventTypes.RUNTIME_STATE.value
+                    current_session.state == EventTypes.RUNTIME_STATE
                     and current_node_count > node_count
                 ):
                     node_count = current_node_count

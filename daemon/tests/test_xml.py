@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import pytest
 
 from core.emulator.emudata import LinkOptions, NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
@@ -20,7 +20,8 @@ class TestXml:
         # create hook
         file_name = "runtime_hook.sh"
         data = "#!/bin/sh\necho hello"
-        session.set_hook("hook:4", file_name, None, data)
+        state = EventTypes.RUNTIME_STATE
+        session.add_hook(state, file_name, None, data)
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -38,7 +39,7 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session._hooks.get(4)
+        runtime_hooks = session._hooks.get(state)
         assert runtime_hooks
         runtime_hook = runtime_hooks[0]
         assert file_name == runtime_hook[0]

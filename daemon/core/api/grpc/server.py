@@ -173,7 +173,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # add all hooks
         for hook in request.hooks:
-            session.add_hook(hook.state, hook.file, None, hook.data)
+            state = EventTypes(hook.state)
+            session.add_hook(state, hook.file, None, hook.data)
 
         # create nodes
         _, exceptions = grpcutils.create_nodes(session, request.nodes)
@@ -279,7 +280,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150000.0
         return core_pb2.CreateSessionResponse(
-            session_id=session.id, state=session.state
+            session_id=session.id, state=session.state.value
         )
 
     def DeleteSession(
@@ -312,7 +313,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session = self.coreemu.sessions[session_id]
             session_summary = core_pb2.SessionSummary(
                 id=session_id,
-                state=session.state,
+                state=session.state.value,
                 nodes=session.get_node_count(),
                 file=session.file_name,
             )
@@ -521,7 +522,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node_links = get_links(session, node)
             links.extend(node_links)
 
-        session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
+        session_proto = core_pb2.Session(
+            state=session.state.value, nodes=nodes, links=links
+        )
         return core_pb2.GetSessionResponse(session=session_proto)
 
     def AddSessionServer(
@@ -896,7 +899,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for state in session._hooks:
             state_hooks = session._hooks[state]
             for file_name, file_data in state_hooks:
-                hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
+                hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
                 hooks.append(hook)
         return core_pb2.GetHooksResponse(hooks=hooks)
 
@@ -913,7 +916,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("add hook: %s", request)
         session = self.get_session(request.session_id, context)
         hook = request.hook
-        session.add_hook(hook.state, hook.file, None, hook.data)
+        state = EventTypes(hook.state)
+        session.add_hook(state, hook.file, None, hook.data)
         return core_pb2.AddHookResponse(result=True)
 
     def GetMobilityConfigs(
@@ -1267,7 +1271,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.mobility.set_model_config(
             wlan_config.node_id, BasicRangeModel.name, wlan_config.config
         )
-        if session.state == EventTypes.RUNTIME_STATE.value:
+        if session.state == EventTypes.RUNTIME_STATE:
             node = self.get_node(session, wlan_config.node_id, context)
             node.updatemodel(wlan_config.config)
         return core_pb2.SetWlanConfigResponse(result=True)

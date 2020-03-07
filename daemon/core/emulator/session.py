@@ -112,8 +112,7 @@ class Session:
         self.nodes = {}
         self._nodes_lock = threading.Lock()
 
-        # TODO: should the default state be definition?
-        self.state = EventTypes.NONE.value
+        self.state = EventTypes.DEFINITION_STATE
         self._state_time = time.monotonic()
         self._state_file = os.path.join(self.session_dir, "state")
 
@@ -121,7 +120,7 @@ class Session:
         self._hooks = {}
         self._state_hooks = {}
         self.add_state_hook(
-            state=EventTypes.RUNTIME_STATE.value, hook=self.runtime_state_hook
+            state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
         )
 
         # handlers for broadcasting information
@@ -345,7 +344,7 @@ class Session:
                         node_one.name,
                         node_two.name,
                     )
-                    start = self.state > EventTypes.DEFINITION_STATE.value
+                    start = self.state.should_start()
                     net_one = self.create_node(cls=PtpNet, start=start)
 
                 # node to network
@@ -680,7 +679,7 @@ class Session:
             node_class = _cls
 
         # set node start based on current session state, override and check when rj45
-        start = self.state > EventTypes.DEFINITION_STATE.value
+        start = self.state.should_start()
         enable_rj45 = self.options.get_config("enablerj45") == "1"
         if _type == NodeTypes.RJ45 and not enable_rj45:
             start = False
@@ -755,7 +754,7 @@ class Session:
 
         # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
-        if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
+        if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
             self.write_nodes()
             self.add_remove_control_interface(node=node, remove=False)
             self.services.boot_services(node)
@@ -850,10 +849,7 @@ class Session:
 
         :return: True if active, False otherwise
         """
-        result = self.state in {
-            EventTypes.RUNTIME_STATE.value,
-            EventTypes.DATACOLLECT_STATE.value,
-        }
+        result = self.state in {EventTypes.RUNTIME_STATE, EventTypes.DATACOLLECT_STATE}
         logging.info("session(%s) checking if active: %s", self.id, result)
         return result
 
@@ -894,7 +890,9 @@ class Session:
         """
         CoreXmlWriter(self).write(file_name)
 
-    def add_hook(self, state: int, file_name: str, source_name: str, data: str) -> None:
+    def add_hook(
+        self, state: EventTypes, file_name: str, source_name: str, data: str
+    ) -> None:
         """
         Store a hook from a received file message.
 
@@ -904,9 +902,17 @@ class Session:
         :param data: hook data
         :return: nothing
         """
-        # hack to conform with old logic until updated
-        state = f":{state}"
-        self.set_hook(state, file_name, source_name, data)
+        logging.info(
+            "setting state hook: %s - %s from %s", state, file_name, source_name
+        )
+        hook = file_name, data
+        state_hooks = self._hooks.setdefault(state, [])
+        state_hooks.append(hook)
+
+        # immediately run a hook if it is in the current state
+        if self.state == state:
+            logging.info("immediately running new state hook")
+            self.run_hook(hook)
 
     def add_node_file(
         self, node_id: int, source_name: str, file_name: str, data: str
@@ -1071,10 +1077,8 @@ class Session:
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
-        state_value = state.value
         state_name = state.name
-
-        if self.state == state_value:
+        if self.state == state:
             logging.info(
                 "session(%s) is already in state: %s, skipping change",
                 self.id,
@@ -1082,33 +1086,32 @@ class Session:
             )
             return
 
-        self.state = state_value
+        self.state = state
         self._state_time = time.monotonic()
         logging.info("changing session(%s) to state %s", self.id, state_name)
-
-        self.write_state(state_value)
-        self.run_hooks(state_value)
-        self.run_state_hooks(state_value)
+        self.write_state(state)
+        self.run_hooks(state)
+        self.run_state_hooks(state)
 
         if send_event:
-            event_data = EventData(event_type=state_value, time=str(time.monotonic()))
+            event_data = EventData(event_type=state, time=str(time.monotonic()))
             self.broadcast_event(event_data)
 
-    def write_state(self, state: int) -> None:
+    def write_state(self, state: EventTypes) -> None:
         """
-        Write the current state to a state file in the session dir.
+        Write the state to a state file in the session dir.
 
         :param state: state to write to file
         :return: nothing
         """
         try:
             state_file = open(self._state_file, "w")
-            state_file.write(f"{state} {EventTypes(self.state).name}\n")
+            state_file.write(f"{state.value} {state.name}\n")
             state_file.close()
         except IOError:
-            logging.exception("error writing state file: %s", state)
+            logging.exception("error writing state file: %s", state.name)
 
-    def run_hooks(self, state: int) -> None:
+    def run_hooks(self, state: EventTypes) -> None:
         """
         Run hook scripts upon changing states. If hooks is not specified, run all hooks
         in the given state.
@@ -1212,7 +1215,7 @@ class Session:
         except (OSError, subprocess.CalledProcessError):
             logging.exception("error running hook: %s", file_name)
 
-    def run_state_hooks(self, state: int) -> None:
+    def run_state_hooks(self, state: EventTypes) -> None:
         """
         Run state hooks.
 
@@ -1223,16 +1226,17 @@ class Session:
             try:
                 hook(state)
             except Exception:
-                state_name = EventTypes(self.state).name
                 message = (
-                    f"exception occured when running {state_name} state hook: {hook}"
+                    f"exception occured when running {state.name} state hook: {hook}"
                 )
                 logging.exception(message)
                 self.exception(
                     ExceptionLevels.ERROR, "Session.run_state_hooks", None, message
                 )
 
-    def add_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
+    def add_state_hook(
+        self, state: EventTypes, hook: Callable[[EventTypes], None]
+    ) -> None:
         """
         Add a state hook.
 
@@ -1259,14 +1263,14 @@ class Session:
         hooks = self._state_hooks.setdefault(state, [])
         hooks.remove(hook)
 
-    def runtime_state_hook(self, state: int) -> None:
+    def runtime_state_hook(self, state: EventTypes) -> None:
         """
         Runtime state hook check.
 
         :param state: state to check
         :return: nothing
         """
-        if state == EventTypes.RUNTIME_STATE.value:
+        if state == EventTypes.RUNTIME_STATE:
             self.emane.poststartup()
 
             # create session deployed xml
@@ -1510,7 +1514,7 @@ class Session:
             self.mobility.startup()
 
             # notify listeners that instantiation is complete
-            event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
+            event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
             self.broadcast_event(event)
 
             # assume either all nodes have booted already, or there are some
@@ -1553,9 +1557,9 @@ class Session:
         logging.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
-            EventTypes(self.state).name,
+            self.state.name,
         )
-        if self.state == EventTypes.RUNTIME_STATE.value:
+        if self.state == EventTypes.RUNTIME_STATE:
             logging.info("valid runtime state found, returning")
             return
 

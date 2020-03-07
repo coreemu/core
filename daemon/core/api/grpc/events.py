@@ -102,7 +102,7 @@ def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
         event_time = float(event_time)
     return core_pb2.SessionEvent(
         node_id=event.node,
-        event=event.event_type,
+        event=event.event_type.value,
         name=event.name,
         data=event.data,
         time=event_time,

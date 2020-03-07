@@ -293,6 +293,9 @@ class EventTypes(Enum):
     RECONFIGURE = 14
     INSTANTIATION_COMPLETE = 15
 
+    def should_start(self) -> bool:
+        return self.value > self.DEFINITION_STATE.value
+
 
 class SessionTlvs(Enum):
     """

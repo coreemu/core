@@ -100,7 +100,7 @@ class Sdt:
             return False
         if self.connected:
             return True
-        if self.session.state == EventTypes.SHUTDOWN_STATE.value:
+        if self.session.state == EventTypes.SHUTDOWN_STATE:
             return False
 
         self.seturl()

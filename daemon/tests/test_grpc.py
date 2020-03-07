@@ -127,7 +127,7 @@ class TestGrpc:
         assert wlan_node.id in session.nodes
         assert session.nodes[node_one.id].netif(0) is not None
         assert session.nodes[node_two.id].netif(0) is not None
-        hook_file, hook_data = session._hooks[core_pb2.SessionState.RUNTIME][0]
+        hook_file, hook_data = session._hooks[EventTypes.RUNTIME_STATE][0]
         assert hook_file == hook.file
         assert hook_data == hook.data
         assert session.location.refxyz == (location_x, location_y, location_z)
@@ -169,7 +169,7 @@ class TestGrpc:
         assert isinstance(response.state, int)
         session = grpc_server.coreemu.sessions.get(response.session_id)
         assert session is not None
-        assert session.state == response.state
+        assert session.state == EventTypes(response.state)
         if session_id is not None:
             assert response.session_id == session_id
             assert session.id == session_id
@@ -341,7 +341,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert session.state == core_pb2.SessionState.DEFINITION
+        assert session.state == EventTypes.DEFINITION_STATE
 
     def test_add_node(self, grpc_server):
         # given
@@ -447,7 +447,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         file_name = "test"
         file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE.value, file_name, None, file_data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, None, file_data)
 
         # then
         with client.context_connect():
@@ -1065,7 +1065,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(
-                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.monotonic())
+                event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
             )
             session.broadcast_event(event)
 
