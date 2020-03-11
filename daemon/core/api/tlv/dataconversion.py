@@ -17,7 +17,7 @@ def convert_node(node_data):
         coreapi.CoreNodeTlv,
         [
             (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type),
+            (NodeTlvs.TYPE, node_data.node_type.value),
             (NodeTlvs.NAME, node_data.name),
             (NodeTlvs.IP_ADDRESS, node_data.ip_address),
             (NodeTlvs.MAC_ADDRESS, node_data.mac_address),

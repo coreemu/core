@@ -260,7 +260,7 @@ class NetworkElement(NodeElement):
 
     def add_type(self) -> None:
         if self.node.apitype:
-            node_type = NodeTypes(self.node.apitype).name
+            node_type = self.node.apitype.name
         else:
             node_type = self.node.__class__.__name__
         add_attribute(self.element, "type", node_type)

@@ -72,7 +72,7 @@ class DockerClient:
 
 
 class DockerNode(CoreNode):
-    apitype = NodeTypes.DOCKER.value
+    apitype = NodeTypes.DOCKER
 
     def __init__(
         self,

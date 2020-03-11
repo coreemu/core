@@ -33,7 +33,7 @@ class EmaneNet(CoreNetworkBase):
     Emane controller object that exists in a session.
     """
 
-    apitype = NodeTypes.EMANE.value
+    apitype = NodeTypes.EMANE
     linktype = LinkTypes.WIRED
     type = "wlan"
     is_emane = True

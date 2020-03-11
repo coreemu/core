@@ -264,7 +264,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     network.
     """
 
-    apitype = NodeTypes.RJ45.value
+    apitype = NodeTypes.RJ45
     type = "rj45"
 
     def __init__(
