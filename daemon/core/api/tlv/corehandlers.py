@@ -356,7 +356,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.BURST, link_data.burst),
                 (LinkTlvs.SESSION, link_data.session),
                 (LinkTlvs.MBURST, link_data.mburst),
-                (LinkTlvs.TYPE, link_data.link_type),
+                (LinkTlvs.TYPE, link_data.link_type.value),
                 (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
                 (LinkTlvs.UNIDIRECTIONAL, link_data.unidirectional),
                 (LinkTlvs.EMULATION_ID, link_data.emulation_id),

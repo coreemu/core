@@ -499,7 +499,7 @@ class BasicRangeModel(WirelessModel):
             node1_id=interface1.node.id,
             node2_id=interface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS.value,
+            link_type=LinkTypes.WIRELESS,
         )
 
     def sendlinkmsg(

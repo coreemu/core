@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 def link_data_params(link_data: LinkData) -> Tuple[int, int, bool]:
     node_one = link_data.node1_id
     node_two = link_data.node2_id
-    is_wireless = link_data.link_type == LinkTypes.WIRELESS.value
+    is_wireless = link_data.link_type == LinkTypes.WIRELESS
     return node_one, node_two, is_wireless
 
 

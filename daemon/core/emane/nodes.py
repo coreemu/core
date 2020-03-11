@@ -34,7 +34,7 @@ class EmaneNet(CoreNetworkBase):
     """
 
     apitype = NodeTypes.EMANE.value
-    linktype = LinkTypes.WIRED.value
+    linktype = LinkTypes.WIRED
     type = "wlan"
     is_emane = True
 

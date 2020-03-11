@@ -325,7 +325,7 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     )
 
     return core_pb2.Link(
-        type=link_data.link_type,
+        type=link_data.link_type.value,
         node_one_id=link_data.node1_id,
         node_two_id=link_data.node2_id,
         interface_one=interface_one,

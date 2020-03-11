@@ -80,7 +80,7 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
         unidirectional=event.unidirectional,
     )
     link = core_pb2.Link(
-        type=event.link_type,
+        type=event.link_type.value,
         node_one_id=event.node1_id,
         node_two_id=event.node2_id,
         interface_one=interface_one,

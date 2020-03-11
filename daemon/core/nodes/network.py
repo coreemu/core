@@ -1030,7 +1030,7 @@ class WlanNode(CoreNetwork):
     """
 
     apitype = NodeTypes.WIRELESS_LAN.value
-    linktype = LinkTypes.WIRED.value
+    linktype = LinkTypes.WIRED
     policy = "DROP"
     type = "wlan"
 

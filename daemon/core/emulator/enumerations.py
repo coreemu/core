@@ -86,16 +86,6 @@ class NodeTypes(Enum):
     LXC = 16
 
 
-class Rj45Models(Enum):
-    """
-    RJ45 model types.
-    """
-
-    LINKED = 0
-    WIRELESS = 1
-    INSTALLED = 2
-
-
 # Link Message TLV Types
 class LinkTlvs(Enum):
     """

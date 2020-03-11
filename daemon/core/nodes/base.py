@@ -982,7 +982,7 @@ class CoreNetworkBase(NodeBase):
     Base class for networks
     """
 
-    linktype = LinkTypes.WIRED.value
+    linktype = LinkTypes.WIRED
     is_emane = False
 
     def __init__(

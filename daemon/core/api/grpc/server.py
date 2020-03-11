@@ -1501,7 +1501,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 flag = MessageFlags.DELETE.value
             link = LinkData(
                 message_type=flag,
-                link_type=LinkTypes.WIRELESS.value,
+                link_type=LinkTypes.WIRELESS,
                 node1_id=node_one.id,
                 node2_id=node_two.id,
                 network_id=emane_one.id,
