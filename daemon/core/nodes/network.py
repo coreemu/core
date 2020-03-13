@@ -1067,6 +1067,7 @@ class WlanNode(CoreNetwork):
         """
         super().startup()
         self.net_client.disable_mac_learning(self.brname)
+        ebq.ebchange(self)
 
     def attach(self, netif: CoreInterface) -> None:
         """
