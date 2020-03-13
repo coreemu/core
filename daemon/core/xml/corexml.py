@@ -476,7 +476,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data(0))
+            links.extend(node.all_link_data())
 
         return links
 

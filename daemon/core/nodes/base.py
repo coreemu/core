@@ -14,7 +14,7 @@ from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes import client
 from core.nodes.interface import CoreInterface, TunTap, Veth
@@ -193,7 +193,7 @@ class NodeBase:
 
     def data(
         self,
-        message_type: int,
+        message_type: MessageFlags = MessageFlags.NONE,
         lat: float = None,
         lon: float = None,
         alt: float = None,
@@ -244,7 +244,7 @@ class NodeBase:
 
         return node_data
 
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE Link data for this object. There is no default
         method for PyCoreObjs as PyCoreNodes do not implement this but
@@ -1069,7 +1069,7 @@ class CoreNetworkBase(NodeBase):
         with self._linked_lock:
             del self._linked[netif]
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.

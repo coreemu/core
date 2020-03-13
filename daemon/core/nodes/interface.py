@@ -7,6 +7,7 @@ import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Tuple
 
 from core import utils
+from core.emulator.enumerations import MessageFlags
 from core.errors import CoreCommandError
 from core.nodes.netclient import get_net_client
 
@@ -554,7 +555,7 @@ class GreTap(CoreInterface):
         """
         return None
 
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
         """
         Retrieve link data.
 

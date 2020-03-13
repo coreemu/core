@@ -87,7 +87,7 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
         interface_two=interface_two,
         options=options,
     )
-    return core_pb2.LinkEvent(message_type=event.message_type, link=link)
+    return core_pb2.LinkEvent(message_type=event.message_type.value, link=link)
 
 
 def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
@@ -158,7 +158,7 @@ def handle_file_event(event: FileData) -> core_pb2.FileEvent:
     :return: file event
     """
     return core_pb2.FileEvent(
-        message_type=event.message_type,
+        message_type=event.message_type.value,
         node_id=event.node,
         name=event.name,
         mode=event.mode,

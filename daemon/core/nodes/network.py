@@ -12,7 +12,7 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
@@ -848,7 +848,7 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Do not include CtrlNet in link messages describing this session.
 
@@ -899,7 +899,7 @@ class PtpNet(CoreNetwork):
         """
         return None
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE API TLVs for a point-to-point link. One Link message
         describes this network.
@@ -1122,7 +1122,7 @@ class WlanNode(CoreNetwork):
                 x, y, z = netif.node.position.get()
                 netif.poshook(netif, x, y, z)
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Retrieve all link data.
 

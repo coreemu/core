@@ -265,7 +265,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (FileTlvs.COMPRESSED_DATA, file_data.compressed_data),
             ],
         )
-        message = coreapi.CoreFileMessage.pack(file_data.message_type, tlv_data)
+        message = coreapi.CoreFileMessage.pack(file_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -380,7 +380,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ],
         )
 
-        message = coreapi.CoreLinkMessage.pack(link_data.message_type, tlv_data)
+        message = coreapi.CoreLinkMessage.pack(link_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -1841,11 +1841,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                node_data = node.data(message_type=MessageFlags.ADD.value)
+                node_data = node.data(message_type=MessageFlags.ADD)
                 if node_data:
                     nodes_data.append(node_data)
 
-                node_links = node.all_link_data(flags=MessageFlags.ADD.value)
+                node_links = node.all_link_data(flags=MessageFlags.ADD)
                 for link_data in node_links:
                     links_data.append(link_data)
 
@@ -1913,7 +1913,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             for file_name, config_data in self.session.services.all_files(service):
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     node=node_id,
                     name=str(file_name),
                     type=opaque,
@@ -1927,7 +1927,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for state in sorted(self.session._hooks.keys()):
             for file_name, config_data in self.session._hooks[state]:
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     name=str(file_name),
                     type=f"hook:{state}",
                     data=str(config_data),

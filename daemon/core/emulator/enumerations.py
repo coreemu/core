@@ -30,6 +30,7 @@ class MessageFlags(Enum):
     CORE message flags.
     """
 
+    NONE = 0x00
     ADD = 0x01
     DELETE = 0x02
     CRI = 0x04

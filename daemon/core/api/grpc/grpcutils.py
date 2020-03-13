@@ -229,7 +229,7 @@ def get_links(session: Session, node: NodeBase):
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
-    for link_data in node.all_link_data(0):
+    for link_data in node.all_link_data():
         link = convert_link(session, link_data)
         links.append(link)
     return links

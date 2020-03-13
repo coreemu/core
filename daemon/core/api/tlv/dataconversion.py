@@ -38,7 +38,7 @@ def convert_node(node_data):
             (NodeTlvs.OPAQUE, node_data.opaque),
         ],
     )
-    return coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
+    return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
 
 
 def convert_config(config_data):

@@ -722,7 +722,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if request.source:
                 source = request.source
             if not has_geo:
-                node_data = node.data(0, source=source)
+                node_data = node.data(source=source)
                 session.broadcast_node(node_data)
         except CoreError:
             result = False
@@ -1496,9 +1496,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         if emane_one.id == emane_two.id:
             if request.linked:
-                flag = MessageFlags.ADD.value
+                flag = MessageFlags.ADD
             else:
-                flag = MessageFlags.DELETE.value
+                flag = MessageFlags.DELETE
             link = LinkData(
                 message_type=flag,
                 link_type=LinkTypes.WIRELESS,

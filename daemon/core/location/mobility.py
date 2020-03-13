@@ -220,7 +220,7 @@ class WirelessModel(ConfigurableOptions):
         self.session = session
         self.id = _id
 
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
         """
         May be used if the model can populate the GUI with wireless (green)
         link lines.
@@ -484,7 +484,10 @@ class BasicRangeModel(WirelessModel):
         return True
 
     def create_link_data(
-        self, interface1: CoreInterface, interface2: CoreInterface, message_type: int
+        self,
+        interface1: CoreInterface,
+        interface2: CoreInterface,
+        message_type: MessageFlags,
     ) -> LinkData:
         """
         Create a wireless link/unlink data message.
@@ -514,14 +517,14 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         if unlink:
-            message_type = MessageFlags.DELETE.value
+            message_type = MessageFlags.DELETE
         else:
-            message_type = MessageFlags.ADD.value
+            message_type = MessageFlags.ADD
 
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Return a list of wireless link messages for when the GUI reconnects.
 
@@ -816,7 +819,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0)
+        node_data = node.data()
         self.session.broadcast_node(node_data)
 
     def setendtime(self) -> None:

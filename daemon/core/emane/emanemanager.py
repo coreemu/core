@@ -806,7 +806,7 @@ class EmaneManager(ModelManager):
 
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
+        node_data = node.data(lat=lat, lon=lon, alt=alt)
         self.session.broadcast_node(node_data)
         return True
 

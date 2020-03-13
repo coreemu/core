@@ -540,7 +540,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(_type=NodeTypes.SWITCH)
         node = session.add_node()
-        assert len(switch.all_link_data(0)) == 0
+        assert len(switch.all_link_data()) == 0
 
         # then
         interface = interface_helper.create_interface(node.id, 0)
@@ -549,7 +549,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert len(switch.all_link_data(0)) == 1
+        assert len(switch.all_link_data()) == 1
 
     def test_add_link_exception(self, grpc_server, interface_helper):
         # given
@@ -572,7 +572,7 @@ class TestGrpc:
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface)
         options = core_pb2.LinkOptions(bandwidth=30000)
-        link = switch.all_link_data(0)[0]
+        link = switch.all_link_data()[0]
         assert options.bandwidth != link.bandwidth
 
         # then
@@ -583,7 +583,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        link = switch.all_link_data(0)[0]
+        link = switch.all_link_data()[0]
         assert options.bandwidth == link.bandwidth
 
     def test_delete_link(self, grpc_server, ip_prefixes):
@@ -986,7 +986,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        node_data = node.data(message_type=0)
+        node_data = node.data()
         queue = Queue()
 
         def handle_event(event_data):
@@ -1011,7 +1011,7 @@ class TestGrpc:
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface)
-        link_data = wlan.all_link_data(0)[0]
+        link_data = wlan.all_link_data()[0]
         queue = Queue()
 
         def handle_event(event_data):

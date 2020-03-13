@@ -210,7 +210,7 @@ class Sdt:
                 self.add_node(node)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD.value)
+                all_links = net.all_link_data(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     if is_wireless and link_data.node1_id == net.id:
@@ -302,7 +302,7 @@ class Sdt:
             return
 
         # delete node
-        if node_data.message_type == MessageFlags.DELETE.value:
+        if node_data.message_type == MessageFlags.DELETE:
             self.cmd(f"delete node,{node_data.id}")
         else:
             x = node_data.x_position
@@ -375,9 +375,9 @@ class Sdt:
         :param link_data: link data to handle
         :return: nothing
         """
-        if link_data.message_type == MessageFlags.ADD.value:
+        if link_data.message_type == MessageFlags.ADD:
             params = link_data_params(link_data)
             self.add_link(*params)
-        elif link_data.message_type == MessageFlags.DELETE.value:
+        elif link_data.message_type == MessageFlags.DELETE:
             params = link_data_params(link_data)
             self.delete_link(*params[:2])
