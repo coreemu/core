@@ -3,6 +3,7 @@ from tkinter import messagebox
 
 from PIL import Image, ImageTk
 
+from core.api.grpc import core_pb2
 from core.gui.appconfig import LOCAL_ICONS_PATH
 
 
@@ -90,3 +91,25 @@ class ImageEnum(Enum):
     SHUTDOWN = "shutdown"
     CANCEL = "cancel"
     ERROR = "error"
+
+
+class TypeToImage:
+    type_to_image = {
+        (core_pb2.NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
+        (core_pb2.NodeType.DEFAULT, "PC"): ImageEnum.PC,
+        (core_pb2.NodeType.DEFAULT, "host"): ImageEnum.HOST,
+        (core_pb2.NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
+        (core_pb2.NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
+        (core_pb2.NodeType.HUB, ""): ImageEnum.HUB,
+        (core_pb2.NodeType.SWITCH, ""): ImageEnum.SWITCH,
+        (core_pb2.NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
+        (core_pb2.NodeType.EMANE, ""): ImageEnum.EMANE,
+        (core_pb2.NodeType.RJ45, ""): ImageEnum.RJ45,
+        (core_pb2.NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
+        (core_pb2.NodeType.DOCKER, ""): ImageEnum.DOCKER,
+        (core_pb2.NodeType.LXC, ""): ImageEnum.LXC,
+    }
+
+    @classmethod
+    def get(cls, node_type, model):
+        return cls.type_to_image.get((node_type, model), None)

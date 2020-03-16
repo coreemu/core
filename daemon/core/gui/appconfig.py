@@ -16,6 +16,7 @@ MOBILITY_PATH = HOME_PATH.joinpath("mobility")
 XMLS_PATH = HOME_PATH.joinpath("xmls")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 LOG_PATH = HOME_PATH.joinpath("gui.log")
+SCRIPT_PATH = HOME_PATH.joinpath("scripts")
 
 # local paths
 DATA_PATH = Path(__file__).parent.joinpath("data")
@@ -25,17 +26,16 @@ LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
 LOCAL_MOBILITY_PATH = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
-TERMINALS = [
-    "$TERM",
-    "gnome-terminal --window --",
-    "lxterminal -e",
-    "konsole -e",
-    "xterm -e",
-    "aterm -e",
-    "eterm -e",
-    "rxvt -e",
-    "xfce4-terminal -x",
-]
+TERMINALS = {
+    "xterm": "xterm -e",
+    "aterm": "aterm -e",
+    "eterm": "eterm -e",
+    "rxvt": "rxvt -e",
+    "konsole": "konsole -e",
+    "lxterminal": "lxterminal -e",
+    "xfce4-terminal": "xfce4-terminal -x",
+    "gnome-terminal": "gnome-terminal --window --",
+}
 EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
 
 
@@ -50,6 +50,14 @@ def copy_files(current_path, new_path):
         shutil.copy(current_file, new_file)
 
 
+def find_terminal():
+    for term in sorted(TERMINALS):
+        cmd = TERMINALS[term]
+        if shutil.which(term):
+            return cmd
+    return None
+
+
 def check_directory():
     if HOME_PATH.exists():
         return
@@ -60,16 +68,14 @@ def check_directory():
     ICONS_PATH.mkdir()
     MOBILITY_PATH.mkdir()
     XMLS_PATH.mkdir()
+    SCRIPT_PATH.mkdir()
 
     copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
     copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)
     copy_files(LOCAL_XMLS_PATH, XMLS_PATH)
     copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
 
-    if "TERM" in os.environ:
-        terminal = TERMINALS[0]
-    else:
-        terminal = TERMINALS[1]
+    terminal = find_terminal()
     if "EDITOR" in os.environ:
         editor = EDITORS[0]
     else:
@@ -96,6 +102,7 @@ def check_directory():
         "nodes": [],
         "recentfiles": [],
         "observers": [{"name": "hello", "cmd": "echo hello"}],
+        "scale": 1.0,
     }
     save(config)
 

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from pathlib import Path
+from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, List
 
 import grpc
@@ -38,17 +39,6 @@ OBSERVERS = {
     "IPSec policies": "setkey -DP",
 }
 
-DEFAULT_TERMS = {
-    "xterm": "xterm -e",
-    "aterm": "aterm -e",
-    "eterm": "eterm -e",
-    "rxvt": "rxvt -e",
-    "konsole": "konsole -e",
-    "lxterminal": "lxterminal -e",
-    "xfce4-terminal": "xfce4-terminal -x",
-    "gnome-terminal": "gnome-terminal --window--",
-}
-
 
 class CoreServer:
     def __init__(self, name: str, address: str, port: int):
@@ -68,7 +58,7 @@ class CoreClient:
         """
         Create a CoreGrpc instance
         """
-        self.client = client.CoreGrpcClient(proxy=proxy)
+        self._client = client.CoreGrpcClient(proxy=proxy)
         self.session_id = None
         self.node_ids = []
         self.app = app
@@ -112,6 +102,22 @@ class CoreClient:
 
         self.modified_service_nodes = set()
 
+    @property
+    def client(self):
+        if self.session_id:
+            response = self._client.check_session(self.session_id)
+            if not response.result:
+                throughputs_enabled = self.handling_throughputs is not None
+                self.cancel_throughputs()
+                self.cancel_events()
+                self._client.create_session(self.session_id)
+                self.handling_events = self._client.events(
+                    self.session_id, self.handle_events
+                )
+                if throughputs_enabled:
+                    self.enable_throughputs()
+        return self._client
+
     def reset(self):
         # helpers
         self.interfaces_manager.reset()
@@ -131,12 +137,8 @@ class CoreClient:
             mobility_player.handle_close()
         self.mobility_players.clear()
         # clear streams
-        if self.handling_throughputs:
-            self.handling_throughputs.cancel()
-            self.handling_throughputs = None
-        if self.handling_events:
-            self.handling_events.cancel()
-            self.handling_events = None
+        self.cancel_throughputs()
+        self.cancel_events()
 
     def set_observer(self, value: str):
         self.observer = value
@@ -227,8 +229,14 @@ class CoreClient:
         )
 
     def cancel_throughputs(self):
-        self.handling_throughputs.cancel()
-        self.handling_throughputs = None
+        if self.handling_throughputs:
+            self.handling_throughputs.cancel()
+            self.handling_throughputs = None
+
+    def cancel_events(self):
+        if self.handling_events:
+            self.handling_events.cancel()
+            self.handling_events = None
 
     def handle_throughputs(self, event: core_pb2.ThroughputsEvent):
         if event.session_id != self.session_id:
@@ -438,7 +446,7 @@ class CoreClient:
                 master = parent_frame
             self.app.after(0, show_grpc_error, e, master, self.app)
 
-    def set_up(self):
+    def setup(self):
         """
         Query sessions, if there exist any, prompt whether to join one
         """
@@ -472,7 +480,7 @@ class CoreClient:
                 x.node_type: set(x.services) for x in response.defaults
             }
         except grpc.RpcError as e:
-            self.app.after(0, show_grpc_error, e, self.app, self.app)
+            show_grpc_error(e, self.app, self.app)
             self.app.close()
 
     def edit_node(self, core_node: core_pb2.Node):
@@ -500,7 +508,6 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
-
         response = core_pb2.StartSessionResponse(result=False)
         try:
             response = self.client.start_session(
@@ -521,7 +528,6 @@ class CoreClient:
             logging.info(
                 "start session(%s), result: %s", self.session_id, response.result
             )
-
             if response.result:
                 self.set_metadata()
         except grpc.RpcError as e:
@@ -573,11 +579,15 @@ class CoreClient:
     def launch_terminal(self, node_id: int):
         try:
             terminal = self.app.guiconfig["preferences"]["terminal"]
+            if not terminal:
+                messagebox.showerror(
+                    "Terminal Error",
+                    "No terminal set, please set within the preferences menu",
+                    parent=self.app,
+                )
+                return
             response = self.client.get_node_terminal(self.session_id, node_id)
-            output = os.popen(f"echo {terminal}").read()[:-1]
-            if output in DEFAULT_TERMS:
-                terminal = DEFAULT_TERMS[output]
-            cmd = f'{terminal} "{response.terminal}" &'
+            cmd = f"{terminal} {response.terminal} &"
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
@@ -620,6 +630,8 @@ class CoreClient:
         self,
         node_id: int,
         service_name: str,
+        dirs: List[str],
+        files: List[str],
         startups: List[str],
         validations: List[str],
         shutdowns: List[str],
@@ -628,14 +640,17 @@ class CoreClient:
             self.session_id,
             node_id,
             service_name,
+            directories=dirs,
+            files=files,
             startup=startups,
             validate=validations,
             shutdown=shutdowns,
         )
         logging.info(
-            "Set %s service for node(%s), Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
+            "Set %s service for node(%s), files: %s, Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
             service_name,
             node_id,
+            files,
             startups,
             validations,
             shutdowns,
@@ -794,7 +809,7 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-        if NodeUtils.is_custom(model):
+        if NodeUtils.is_custom(node_type, model):
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
         logging.info(
@@ -933,6 +948,8 @@ class CoreClient:
                 config_proto = core_pb2.ServiceConfig(
                     node_id=node_id,
                     service=name,
+                    directories=config.dirs,
+                    files=config.configs,
                     startup=config.startup,
                     validate=config.validate,
                     shutdown=config.shutdown,
@@ -1064,3 +1081,9 @@ class CoreClient:
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes
+
+    def execute_script(self, script):
+        response = self.client.execute_script(script)
+        logging.info("execute python script %s", response)
+        if response.session_id != -1:
+            self.join_session(response.session_id)

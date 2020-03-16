@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import font, ttk
 
 THEME_DARK = "black"
 PADX = (0, 5)
@@ -176,25 +176,35 @@ def style_listbox(widget: tk.Widget):
 
 def theme_change(event: tk.Event):
     style = ttk.Style()
-    style.configure(Styles.picker_button, font=("TkDefaultFont", 8, "normal"))
+    style.configure(Styles.picker_button, font="TkSmallCaptionFont")
     style.configure(
         Styles.green_alert,
         background="green",
         padding=0,
         relief=tk.NONE,
-        font=("TkDefaultFont", 8, "normal"),
+        font="TkDefaultFont",
     )
     style.configure(
         Styles.yellow_alert,
         background="yellow",
         padding=0,
         relief=tk.NONE,
-        font=("TkDefaultFont", 8, "normal"),
+        font="TkDefaultFont",
     )
     style.configure(
         Styles.red_alert,
         background="red",
         padding=0,
         relief=tk.NONE,
-        font=("TkDefaultFont", 8, "normal"),
+        font="TkDefaultFont",
     )
+
+
+def scale_fonts(fonts_size, scale):
+    for name in font.names():
+        f = font.nametofont(name)
+        if name in fonts_size:
+            if name == "TkSmallCaptionFont":
+                f.config(size=int(fonts_size[name] * scale * 8 / 9))
+            else:
+                f.config(size=int(fonts_size[name] * scale))

@@ -1,6 +1,5 @@
 import logging
 import tkinter as tk
-from tkinter.font import Font
 from typing import TYPE_CHECKING, Any, Tuple
 
 from core.gui import themes
@@ -14,6 +13,8 @@ if TYPE_CHECKING:
 TEXT_DISTANCE = 0.30
 EDGE_WIDTH = 3
 EDGE_COLOR = "#ff0000"
+WIRELESS_WIDTH = 1.5
+WIRELESS_COLOR = "#009933"
 
 
 class CanvasWirelessEdge:
@@ -31,7 +32,10 @@ class CanvasWirelessEdge:
         self.dst = dst
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            *position, tags=tags.WIRELESS_EDGE, width=1.5, fill="#009933"
+            *position,
+            tags=tags.WIRELESS_EDGE,
+            width=WIRELESS_WIDTH * self.canvas.app.app_scale,
+            fill=WIRELESS_COLOR,
         )
 
     def delete(self):
@@ -61,13 +65,18 @@ class CanvasEdge:
         self.dst_interface = None
         self.canvas = canvas
         self.id = self.canvas.create_line(
-            x1, y1, x2, y2, tags=tags.EDGE, width=EDGE_WIDTH, fill=EDGE_COLOR
+            x1,
+            y1,
+            x2,
+            y2,
+            tags=tags.EDGE,
+            width=EDGE_WIDTH * self.canvas.app.app_scale,
+            fill=EDGE_COLOR,
         )
         self.text_src = None
         self.text_dst = None
         self.text_middle = None
         self.token = None
-        self.font = Font(size=8)
         self.link = None
         self.asymmetric_link = None
         self.throughput = None
@@ -98,26 +107,32 @@ class CanvasEdge:
         y = (y1 + y2) / 2
         return x, y
 
-    def draw_labels(self):
-        x1, y1, x2, y2 = self.get_coordinates()
+    def create_labels(self):
         label_one = None
         if self.link.HasField("interface_one"):
-            label_one = (
-                f"{self.link.interface_one.ip4}/{self.link.interface_one.ip4mask}\n"
-                f"{self.link.interface_one.ip6}/{self.link.interface_one.ip6mask}\n"
-            )
+            label_one = self.create_label(self.link.interface_one)
         label_two = None
         if self.link.HasField("interface_two"):
-            label_two = (
-                f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
-                f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
-            )
+            label_two = self.create_label(self.link.interface_two)
+        return label_one, label_two
+
+    def create_label(self, interface):
+        label = ""
+        if interface.ip4:
+            label = f"{interface.ip4}/{interface.ip4mask}"
+        if interface.ip6:
+            label = f"{label}\n{interface.ip6}/{interface.ip6mask}"
+        return label
+
+    def draw_labels(self):
+        x1, y1, x2, y2 = self.get_coordinates()
+        label_one, label_two = self.create_labels()
         self.text_src = self.canvas.create_text(
             x1,
             y1,
             text=label_one,
             justify=tk.CENTER,
-            font=self.font,
+            font=self.canvas.app.edge_font,
             tags=tags.LINK_INFO,
         )
         self.text_dst = self.canvas.create_text(
@@ -125,9 +140,14 @@ class CanvasEdge:
             y2,
             text=label_two,
             justify=tk.CENTER,
-            font=self.font,
+            font=self.canvas.app.edge_font,
             tags=tags.LINK_INFO,
         )
+
+    def redraw(self):
+        label_one, label_two = self.create_labels()
+        self.canvas.itemconfig(self.text_src, text=label_one)
+        self.canvas.itemconfig(self.text_dst, text=label_two)
 
     def update_labels(self):
         """
@@ -146,7 +166,7 @@ class CanvasEdge:
         if self.text_middle is None:
             x, y = self.get_midpoint()
             self.text_middle = self.canvas.create_text(
-                x, y, tags=tags.THROUGHPUT, font=self.font, text=value
+                x, y, tags=tags.THROUGHPUT, font=self.canvas.app.edge_font, text=value
             )
         else:
             self.canvas.itemconfig(self.text_middle, text=value)
@@ -177,6 +197,17 @@ class CanvasEdge:
         dst_node_type = dst_node.core_node.type
         is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
         is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+
+        # update the wlan/EMANE network
+        wlan_network = self.canvas.wireless_network
+        if is_src_wireless and not is_dst_wireless:
+            if self.src not in wlan_network:
+                wlan_network[self.src] = set()
+            wlan_network[self.src].add(self.dst)
+        elif not is_src_wireless and is_dst_wireless:
+            if self.dst not in wlan_network:
+                wlan_network[self.dst] = set()
+            wlan_network[self.dst].add(self.src)
         return is_src_wireless or is_dst_wireless
 
     def check_wireless(self):

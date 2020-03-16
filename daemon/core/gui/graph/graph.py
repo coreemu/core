@@ -7,12 +7,12 @@ from PIL import Image, ImageTk
 from core.api.grpc import core_pb2
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
-from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
+from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum, Images, TypeToImage
 from core.gui.nodeutils import EdgeUtils, NodeUtils
 
 if TYPE_CHECKING:
@@ -42,6 +42,10 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.shapes = {}
         self.wireless_edges = {}
+
+        # map wireless/EMANE node to the set of MDRs connected to that node
+        self.wireless_network = {}
+
         self.drawing_edge = None
         self.grid = None
         self.shape_drawing = False
@@ -113,6 +117,7 @@ class CanvasGraph(tk.Canvas):
         self.edges.clear()
         self.shapes.clear()
         self.wireless_edges.clear()
+        self.wireless_network.clear()
         self.drawing_edge = None
         self.draw_session(session)
 
@@ -220,10 +225,14 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(core_node, self.app.guiconfig)
+            image = NodeUtils.node_image(
+                core_node, self.app.guiconfig, self.app.app_scale
+            )
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(ImageEnum.EDITNODE, ICON_SIZE)
+                image = Images.get(
+                    ImageEnum.EDITNODE, int(ICON_SIZE * self.app.app_scale)
+                )
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.master, x, y, core_node, image)
@@ -525,7 +534,7 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags="marker",
+                    tags=tags.MARKER,
                 )
                 return
             if selected is None:
@@ -647,8 +656,11 @@ class CanvasGraph(tk.Canvas):
         delete selected nodes and any data that relates to it
         """
         logging.debug("press delete key")
-        nodes = self.delete_selection_objects()
-        self.core.delete_graph_nodes(nodes)
+        if not self.app.core.is_runtime():
+            nodes = self.delete_selection_objects()
+            self.core.delete_graph_nodes(nodes)
+        else:
+            logging.info("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
@@ -663,6 +675,14 @@ class CanvasGraph(tk.Canvas):
             core_node = self.core.create_node(
                 actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
             )
+            try:
+                self.node_draw.image = Images.get(
+                    self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
+                )
+            except AttributeError:
+                self.node_draw.image = Images.get_custom(
+                    self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
+                )
             node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
@@ -833,11 +853,17 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
+        if self.app.core.is_runtime():
+            logging.info("copy is disabled during runtime state")
+            return
         if self.selection:
             logging.debug("to copy %s nodes", len(self.selection))
             self.to_copy = self.selection.keys()
 
     def paste(self):
+        if self.app.core.is_runtime():
+            logging.info("paste is disabled during runtime state")
+            return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
@@ -911,3 +937,28 @@ class CanvasGraph(tk.Canvas):
                 width=self.itemcget(edge.id, "width"),
                 fill=self.itemcget(edge.id, "fill"),
             )
+
+    def scale_graph(self):
+        for nid, canvas_node in self.nodes.items():
+            img = None
+            if NodeUtils.is_custom(
+                canvas_node.core_node.type, canvas_node.core_node.model
+            ):
+                for custom_node in self.app.guiconfig["nodes"]:
+                    if custom_node["name"] == canvas_node.core_node.model:
+                        img = Images.get_custom(
+                            custom_node["image"], int(ICON_SIZE * self.app.app_scale)
+                        )
+            else:
+                image_enum = TypeToImage.get(
+                    canvas_node.core_node.type, canvas_node.core_node.model
+                )
+                img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+
+            self.itemconfig(nid, image=img)
+            canvas_node.image = img
+            canvas_node.scale_text()
+            canvas_node.scale_antennas()
+
+            for edge_id in self.find_withtag(tags.EDGE):
+                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))

@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import tempfile
+import threading
 import time
 from concurrent import futures
 from typing import Type
@@ -10,6 +11,7 @@ from typing import Type
 import grpc
 from grpc import ServicerContext
 
+from core import utils
 from core.api.grpc import (
     common_pb2,
     configservices_pb2,
@@ -33,6 +35,7 @@ from core.api.grpc.configservices_pb2 import (
     SetNodeConfigServiceResponse,
 )
 from core.api.grpc.core_pb2 import (
+    ExecuteScriptResponse,
     GetEmaneEventChannelRequest,
     GetEmaneEventChannelResponse,
 )
@@ -450,6 +453,19 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.metadata = dict(request.config)
         return core_pb2.SetSessionMetadataResponse(result=True)
 
+    def CheckSession(
+        self, request: core_pb2.GetSessionRequest, context: ServicerContext
+    ) -> core_pb2.CheckSessionResponse:
+        """
+        Checks if a session exists.
+
+        :param request: check session request
+        :param context: context object
+        :return: check session response
+        """
+        result = request.session_id in self.coreemu.sessions
+        return core_pb2.CheckSessionResponse(result=result)
+
     def GetSession(
         self, request: core_pb2.GetSessionRequest, context: ServicerContext
     ) -> core_pb2.GetSessionResponse:
@@ -685,21 +701,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = self.get_node(session, request.node_id, context)
         options = NodeOptions()
         options.icon = request.icon
-        x = request.position.x
-        y = request.position.y
-        options.set_position(x, y)
-        lat = request.position.lat
-        lon = request.position.lon
-        alt = request.position.alt
-        options.set_location(lat, lon, alt)
+        if request.HasField("position"):
+            x = request.position.x
+            y = request.position.y
+            options.set_position(x, y)
+        lat, lon, alt = None, None, None
+        has_geo = request.HasField("geo")
+        if has_geo:
+            lat = request.geo.lat
+            lon = request.geo.lon
+            alt = request.geo.alt
+            options.set_location(lat, lon, alt)
         result = True
         try:
             session.edit_node(node.id, options)
             source = None
             if request.source:
                 source = request.source
-            node_data = node.data(0, source=source)
-            session.broadcast_node(node_data)
+            if not has_geo:
+                node_data = node.data(0, source=source)
+                session.broadcast_node(node_data)
         except CoreError:
             result = False
         return core_pb2.EditNodeResponse(result=result)
@@ -1645,3 +1666,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if session.emane.eventchannel:
             group, port, device = session.emane.eventchannel
         return GetEmaneEventChannelResponse(group=group, port=port, device=device)
+
+    def ExecuteScript(self, request, context):
+        existing_sessions = set(self.coreemu.sessions.keys())
+        thread = threading.Thread(
+            target=utils.execute_file,
+            args=(
+                request.script,
+                {"__file__": request.script, "coreemu": self.coreemu},
+            ),
+            daemon=True,
+        )
+        thread.start()
+        thread.join()
+        current_sessions = set(self.coreemu.sessions.keys())
+        new_sessions = list(current_sessions.difference(existing_sessions))
+        new_session = -1
+        if new_sessions:
+            new_session = new_sessions[0]
+        return ExecuteScriptResponse(session_id=new_session)

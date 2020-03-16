@@ -128,7 +128,9 @@ class NodeConfigServiceDialog(Dialog):
                 dialog.show()
         else:
             messagebox.showinfo(
-                "Node service configuration", "Select a service to configure"
+                "Config Service Configuration",
+                "Select a service to configure",
+                parent=self,
             )
 
     def click_save(self):

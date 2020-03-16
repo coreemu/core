@@ -37,8 +37,8 @@ from core.emulator.emudata import (
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
-from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
+from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
@@ -146,7 +146,7 @@ class Session:
         self.distributed = DistributedController(self)
 
         # initialize session feature helpers
-        self.location = CoreLocation()
+        self.location = GeoLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
         self.emane = EmaneManager(session=self)
@@ -432,6 +432,7 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
+        self.sdt.add_link(node_one_id, node_two_id, is_wireless=False)
         return node_one_interface, node_two_interface
 
     def delete_link(
@@ -539,6 +540,8 @@ class Session:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
+
+        self.sdt.delete_link(node_one_id, node_two_id)
 
     def update_link(
         self,
@@ -757,6 +760,7 @@ class Session:
             self.add_remove_control_interface(node=node, remove=False)
             self.services.boot_services(node)
 
+        self.sdt.add_node(node)
         return node
 
     def edit_node(self, node_id: int, options: NodeOptions) -> None:
@@ -765,7 +769,7 @@ class Session:
 
         :param node_id: id of node to update
         :param options: data to update node with
-        :return: True if node updated, False otherwise
+        :return: nothing
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
@@ -777,6 +781,9 @@ class Session:
         # update attributes
         node.canvas = options.canvas
         node.icon = options.icon
+
+        # provide edits to sdt
+        self.sdt.edit_node(node, options.lon, options.lat, options.alt)
 
     def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
         """
@@ -806,9 +813,11 @@ class Session:
 
         # broadcast updated location when using lat/lon/alt
         if using_lat_lon_alt:
-            self.broadcast_node_location(node)
+            self.broadcast_node_location(node, lon, lat, alt)
 
-    def broadcast_node_location(self, node: NodeBase) -> None:
+    def broadcast_node_location(
+        self, node: NodeBase, lon: float, lat: float, alt: float
+    ) -> None:
         """
         Broadcast node location to all listeners.
 
@@ -820,6 +829,9 @@ class Session:
             id=node.id,
             x_position=node.position.x,
             y_position=node.position.y,
+            latitude=lat,
+            longitude=lon,
+            altitude=alt,
         )
         self.broadcast_node(node_data)
 
@@ -1402,6 +1414,7 @@ class Session:
         if node:
             node.shutdown()
             self.check_shutdown()
+            self.sdt.delete_node(_id)
 
         return node is not None
 
@@ -1413,6 +1426,7 @@ class Session:
             funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
+                self.sdt.delete_node(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
         self.node_id_gen.id = 0

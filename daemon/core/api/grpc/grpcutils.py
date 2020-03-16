@@ -44,7 +44,9 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
 
     position = node_proto.position
     options.set_position(position.x, position.y)
-    options.set_location(position.lat, position.lon, position.alt)
+    if node_proto.HasField("geo"):
+        geo = node_proto.geo
+        options.set_location(geo.lat, geo.lon, geo.alt)
     return _type, _id, options
 
 
@@ -377,9 +379,9 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
     session.services.set_service(config.node_id, config.service)
     service = session.services.get_service(config.node_id, config.service)
     if config.files:
-        service.files = tuple(config.files)
+        service.configs = tuple(config.files)
     if config.directories:
-        service.directories = tuple(config.directories)
+        service.dirs = tuple(config.directories)
     if config.startup:
         service.startup = tuple(config.startup)
     if config.validate:

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import core.gui.menuaction as action
 from core.gui.coreclient import OBSERVERS
+from core.gui.dialogs.executepython import ExecutePythonDialog
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -25,6 +26,7 @@ class Menubar(tk.Menu):
         self.app = app
         self.menuaction = action.MenuAction(app, master)
         self.recent_menu = None
+        self.edit_menu = None
         self.draw()
 
     def draw(self):
@@ -48,7 +50,7 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="New Session",
             accelerator="Ctrl+N",
-            command=self.app.core.create_new_session,
+            command=self.menuaction.new_session,
         )
         self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
         menu.add_command(
@@ -56,6 +58,7 @@ class Menubar(tk.Menu):
         )
         self.app.bind_all("<Control-o>", self.menuaction.file_open_xml)
         menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
+        menu.add_command(label="Save As", command=self.menuaction.file_save_as_xml)
         menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
         self.app.bind_all("<Control-s>", self.save)
 
@@ -67,7 +70,7 @@ class Menubar(tk.Menu):
         menu.add_cascade(label="Recent files", menu=self.recent_menu)
         menu.add_separator()
         menu.add_command(label="Export Python script...", state=tk.DISABLED)
-        menu.add_command(label="Execute XML or Python script...", state=tk.DISABLED)
+        menu.add_command(label="Execute Python script...", command=self.execute_python)
         menu.add_command(
             label="Execute Python script with options...", state=tk.DISABLED
         )
@@ -110,6 +113,7 @@ class Menubar(tk.Menu):
 
         self.app.master.bind_all("<Control-c>", self.menuaction.copy)
         self.app.master.bind_all("<Control-v>", self.menuaction.paste)
+        self.edit_menu = menu
 
     def draw_canvas_menu(self):
         """
@@ -439,3 +443,19 @@ class Menubar(tk.Menu):
             self.app.core.save_xml(xml_file)
         else:
             self.menuaction.file_save_as_xml()
+
+    def execute_python(self):
+        dialog = ExecutePythonDialog(self.app, self.app)
+        dialog.show()
+
+    def change_menubar_item_state(self, is_runtime: bool):
+        for i in range(self.edit_menu.index("end")):
+            try:
+                label_name = self.edit_menu.entrycget(i, "label")
+                if label_name in ["Copy", "Paste"]:
+                    if is_runtime:
+                        self.edit_menu.entryconfig(i, state="disabled")
+                    else:
+                        self.edit_menu.entryconfig(i, state="normal")
+            except tk.TclError:
+                logging.debug("Ignore separators")

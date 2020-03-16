@@ -22,6 +22,8 @@ service CoreApi {
     }
     rpc GetSession (GetSessionRequest) returns (GetSessionResponse) {
     }
+    rpc CheckSession (CheckSessionRequest) returns (CheckSessionResponse) {
+    }
     rpc GetSessionOptions (GetSessionOptionsRequest) returns (GetSessionOptionsResponse) {
     }
     rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
@@ -154,6 +156,8 @@ service CoreApi {
     }
     rpc EmaneLink (EmaneLinkRequest) returns (EmaneLinkResponse) {
     }
+    rpc ExecuteScript (ExecuteScriptRequest) returns (ExecuteScriptResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -208,6 +212,14 @@ message GetSessionsRequest {
 
 message GetSessionsResponse {
     repeated SessionSummary sessions = 1;
+}
+
+message CheckSessionRequest {
+    int32 session_id = 1;
+}
+
+message CheckSessionResponse {
+    bool result = 1;
 }
 
 message GetSessionRequest {
@@ -406,6 +418,7 @@ message EditNodeRequest {
     Position position = 3;
     string icon = 4;
     string source = 5;
+    Geo geo = 6;
 }
 
 message EditNodeResponse {
@@ -759,6 +772,14 @@ message EmaneLinkResponse {
     bool result = 1;
 }
 
+message ExecuteScriptRequest {
+    string script = 1;
+}
+
+message ExecuteScriptResponse {
+    int32 session_id = 1;
+}
+
 // data structures for messages below
 message WlanConfig {
     int32 node_id = 1;
@@ -967,6 +988,7 @@ message Node {
     string image = 10;
     string server = 11;
     repeated string config_services = 12;
+    Geo geo = 13;
 }
 
 message Link {
@@ -1019,7 +1041,10 @@ message Position {
     float x = 1;
     float y = 2;
     float z = 3;
-    float lat = 4;
-    float lon = 5;
-    float alt = 6;
+}
+
+message Geo {
+    float lat = 1;
+    float lon = 2;
+    float alt = 3;
 }

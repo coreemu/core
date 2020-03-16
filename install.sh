@@ -3,12 +3,11 @@
 # exit on error
 set -e
 
+ubuntu_py=3.6
+centos_py=36
+
 function install_python_depencencies() {
   sudo python3 -m pip install -r daemon/requirements.txt
-}
-
-function install_python_dev_dependencies() {
-  sudo python3 -m pip install pipenv grpcio-tools
 }
 
 function install_ospf_mdr() {
@@ -42,8 +41,6 @@ function install_dev_core() {
   sudo make install
   cd -
   cd daemon
-  pipenv install --dev
-  cd -
 }
 
 # detect os/ver for install type
@@ -54,13 +51,18 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # parse arguments
-while getopts ":d" opt; do
+while getopts "dv:" opt; do
   case ${opt} in
   d)
     dev=1
     ;;
+  v)
+    ubuntu_py=${OPTARG}
+    centos_py=${OPTARG}
+    ;;
   \?)
-    echo "Invalid Option: $OPTARG" 1>&2
+    echo "script usage: $(basename $0) [-d] [-v python version]" >&2
+    exit 1
     ;;
   esac
 done
@@ -70,8 +72,12 @@ shift $((OPTIND - 1))
 case ${os} in
 "ubuntu")
   echo "Installing CORE for Ubuntu"
-  sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk iproute2 \
-    python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
+  echo "installing core system dependencies"
+  sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
+    python${ubuntu_py} python${ubuntu_py}-dev python3-pip python3-tk tk libtk-img ethtool autoconf
+  python3 -m pip install grpcio-tools
+  echo "installing ospf-mdr system dependencies"
+  sudo apt install -y libtool gawk libreadline-dev
   install_ospf_mdr
   if [[ -z ${dev} ]]; then
     echo "normal install"
@@ -80,23 +86,35 @@ case ${os} in
     install_core
   else
     echo "dev install"
-    install_python_dev_dependencies
+    python3 -m pip install pipenv
     build_core
     install_dev_core
+    python3 -m pipenv sync --dev
+    python3 -m pipenv run pre-commit install
   fi
   ;;
 "centos")
+  echo "Installing CORE for CentOS"
+  echo "installing core system dependencies"
   sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
-    python36 python36-devel python3-pip python3-tkinter tk ethtool libtool readline-devel autoconf gawk
+    python${centos_py} python${centos_py}-devel python3-pip python3-tkinter tk ethtool autoconf
+  sudo python3 -m pip install grpcio-tools
+  echo "installing ospf-mdr system dependencies"
+  sudo yum install -y libtool gawk readline-devel
   install_ospf_mdr
   if [[ -z ${dev} ]]; then
+    echo "normal install"
     install_python_depencencies
     build_core --prefix=/usr
     install_core
   else
-    install_python_dev_dependencies
+    echo "dev install"
+    sudo python3 -m pip install pipenv
     build_core --prefix=/usr
     install_dev_core
+    sudo python3 -m pipenv sync --dev
+    python3 -m pipenv sync --dev
+    python3 -m pipenv run pre-commit install
   fi
   ;;
 *)

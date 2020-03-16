@@ -526,11 +526,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug(
             "%s handling message:\n%s", threading.currentThread().getName(), message
         )
-
-        # provide to sdt, if enabled
-        if self.session and self.session.sdt.is_enabled():
-            self.session.sdt.handle_distributed(message)
-
         if message.message_type not in self.message_handlers:
             logging.error("no handler for message type: %s", message.type_str())
             return
@@ -949,11 +944,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                             file_name,
                             {"__file__": file_name, "coreemu": self.coreemu},
                         ),
+                        daemon=True,
                     )
-                    thread.daemon = True
                     thread.start()
-                    # allow time for session creation
-                    time.sleep(0.25)
+                    thread.join()
 
                 if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())
@@ -1128,7 +1122,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.location.refgeo,
                     self.session.location.refscale,
                 )
-                logging.info("location configured: UTM%s", self.session.location.refutm)
 
     def handle_config_metadata(self, message_type, config_data):
         replies = []
@@ -2044,7 +2037,6 @@ class CoreUdpHandler(CoreHandler):
                     logging.debug("session handling message: %s", session.session_id)
                     self.session = session
                     self.handle_message(message)
-                    self.session.sdt.handle_distributed(message)
                     self.broadcast(message)
                 else:
                     logging.error(
@@ -2069,7 +2061,6 @@ class CoreUdpHandler(CoreHandler):
             if session or message.message_type == MessageTypes.REGISTER.value:
                 self.session = session
                 self.handle_message(message)
-                self.session.sdt.handle_distributed(message)
                 self.broadcast(message)
             else:
                 logging.error(
