@@ -422,7 +422,7 @@ class CoreNodeBase(NodeBase):
         changed = super().setposition(x, y, z)
         if changed:
             for netif in self.netifs(sort=True):
-                netif.setposition(x, y, z)
+                netif.setposition()
 
     def commonnets(
         self, obj: "CoreNodeBase", want_ctrl: bool = False
@@ -1173,11 +1173,13 @@ class Position:
         :param x: x position
         :param y: y position
         :param z: z position
-        :return:
         """
         self.x = x
         self.y = y
         self.z = z
+        self.lon = None
+        self.lat = None
+        self.alt = None
 
     def set(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
@@ -1202,3 +1204,24 @@ class Position:
         :return: x,y,z position tuple
         """
         return self.x, self.y, self.z
+
+    def set_geo(self, lon: float, lat: float, alt: float) -> None:
+        """
+        Set geo position lon, lat, alt.
+
+        :param lon: longitude value
+        :param lat: latitude value
+        :param alt: altitude value
+        :return: nothing
+        """
+        self.lon = lon
+        self.lat = lat
+        self.alt = alt
+
+    def get_geo(self) -> Tuple[float, float, float]:
+        """
+        Retrieve current geo position lon, lat, alt.
+
+        :return: lon, lat, alt position tuple
+        """
+        return self.lon, self.lat, self.alt

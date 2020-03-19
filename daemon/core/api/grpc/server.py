@@ -705,7 +705,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             x = request.position.x
             y = request.position.y
             options.set_position(x, y)
-        lat, lon, alt = None, None, None
         has_geo = request.HasField("geo")
         if has_geo:
             lat = request.geo.lat

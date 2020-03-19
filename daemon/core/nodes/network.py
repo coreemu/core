@@ -1079,11 +1079,7 @@ class WlanNode(CoreNetwork):
         super().attach(netif)
         if self.model:
             netif.poshook = self.model.position_callback
-            if netif.node is None:
-                return
-            x, y, z = netif.node.position.get()
-            # invokes any netif.poshook
-            netif.setposition(x, y, z)
+            netif.setposition()
 
     def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
         """
@@ -1098,9 +1094,7 @@ class WlanNode(CoreNetwork):
             self.model = model(session=self.session, _id=self.id)
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
-                if netif.poshook and netif.node:
-                    x, y, z = netif.node.position.get()
-                    netif.poshook(netif, x, y, z)
+                netif.setposition()
             self.updatemodel(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, _id=self.id)
@@ -1119,9 +1113,7 @@ class WlanNode(CoreNetwork):
         )
         self.model.update_config(config)
         for netif in self.netifs():
-            if netif.poshook and netif.node:
-                x, y, z = netif.node.position.get()
-                netif.poshook(netif, x, y, z)
+            netif.setposition()
 
     def all_link_data(self, flags: int) -> List[LinkData]:
         """

@@ -369,8 +369,7 @@ class EmaneManager(ModelManager):
                 )
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
-                    x, y, z = netif.node.position.get()
-                    emane_node.setnemposition(netif, x, y, z)
+                    netif.setposition()
 
     def reset(self) -> None:
         """
@@ -806,6 +805,7 @@ class EmaneManager(ModelManager):
 
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
+        node.position.set_geo(lon, lat, alt)
         node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
         self.session.broadcast_node(node_data)
         return True

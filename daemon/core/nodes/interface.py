@@ -50,7 +50,7 @@ class CoreInterface:
         self.addrlist = []
         self.hwaddr = None
         # placeholder position hook
-        self.poshook = lambda a, b, c, d: None
+        self.poshook = lambda x: None
         # used with EMANE
         self.transport_type = None
         # node interface index
@@ -209,16 +209,14 @@ class CoreInterface:
         self._params = getattr(self, name)
         setattr(self, name, tmp)
 
-    def setposition(self, x: float, y: float, z: float) -> None:
+    def setposition(self) -> None:
         """
-        Dispatch position hook handler.
+        Dispatch position hook handler when possible.
 
-        :param x: x position
-        :param y: y position
-        :param z: z position
         :return: nothing
         """
-        self.poshook(self, x, y, z)
+        if self.poshook and self.node:
+            self.poshook(self)
 
     def __lt__(self, other: "CoreInterface") -> bool:
         """
