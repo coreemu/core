@@ -36,7 +36,7 @@ class MobilityManager(ModelManager):
     """
 
     name = "MobilityManager"
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
 
     def __init__(self, session: "Session") -> None:
         """
@@ -121,10 +121,7 @@ class MobilityManager(ModelManager):
                 logging.warning("Ignoring event for unknown model '%s'", model)
                 continue
 
-            if cls.config_type in [
-                RegisterTlvs.WIRELESS.value,
-                RegisterTlvs.MOBILITY.value,
-            ]:
+            if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
@@ -206,7 +203,7 @@ class WirelessModel(ConfigurableOptions):
     Used for managing arbitrary configuration parameters.
     """
 
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
     bitmap = None
     position_callback = None
 
@@ -575,7 +572,7 @@ class WayPointMobility(WirelessModel):
     """
 
     name = "waypoint"
-    config_type = RegisterTlvs.MOBILITY.value
+    config_type = RegisterTlvs.MOBILITY
 
     STATE_STOPPED = 0
     STATE_RUNNING = 1

@@ -315,7 +315,7 @@ class CoreServices:
     """
 
     name = "services"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self, session: "Session") -> None:
         """

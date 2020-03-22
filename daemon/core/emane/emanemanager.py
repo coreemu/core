@@ -60,7 +60,7 @@ class EmaneManager(ModelManager):
     """
 
     name = "emane"
-    config_type = RegisterTlvs.EMULATION_SERVER.value
+    config_type = RegisterTlvs.EMULATION_SERVER
     SUCCESS, NOT_NEEDED, NOT_READY = (0, 1, 2)
     EVENTCFGVAR = "LIBEMANEEVENTSERVICECONFIG"
     DEFAULT_LOG_LEVEL = 3

@@ -15,6 +15,7 @@ from queue import Empty, Queue
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
+from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import (
     ConfigFlags,
     ConfigTlvs,
@@ -27,7 +28,6 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
-from core.config import ConfigShim
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
@@ -398,7 +398,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.info(
             "GUI has connected to session %d at %s", self.session.id, time.ctime()
         )
-
         tlv_data = b""
         tlv_data += coreapi.CoreRegisterTlv.pack(
             RegisterTlvs.EXECUTE_SERVER.value, "core-daemon"
@@ -408,29 +407,29 @@ class CoreHandler(socketserver.BaseRequestHandler):
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "broker")
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.location.config_type, self.session.location.name
+            self.session.location.config_type.value, self.session.location.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.mobility.config_type, self.session.mobility.name
+            self.session.mobility.config_type.value, self.session.mobility.name
         )
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(
-                model_class.config_type, model_class.name
+                model_class.config_type.value, model_class.name
             )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.services.config_type, self.session.services.name
+            self.session.services.config_type.value, self.session.services.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.emane.config_type, self.session.emane.name
+            self.session.emane.config_type.value, self.session.emane.name
         )
         for model_name in self.session.emane.models:
             model_class = self.session.emane.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(
-                model_class.config_type, model_class.name
+                model_class.config_type.value, model_class.name
             )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.options.config_type, self.session.options.name
+            self.session.options.config_type.value, self.session.options.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "metadata")
 

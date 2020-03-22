@@ -1897,7 +1897,7 @@ class Session:
         Return the current time we have been in the runtime state, or zero
         if not in runtime.
         """
-        if self.state == EventTypes.RUNTIME_STATE.value:
+        if self.state == EventTypes.RUNTIME_STATE:
             return time.monotonic() - self._state_time
         else:
             return 0.0

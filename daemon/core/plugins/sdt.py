@@ -90,7 +90,7 @@ class Sdt:
         self.address = (self.url.hostname, self.url.port)
         self.protocol = self.url.scheme
 
-    def connect(self, flags: int = 0) -> bool:
+    def connect(self) -> bool:
         """
         Connect to the SDT address/port if enabled.
 
@@ -122,7 +122,7 @@ class Sdt:
 
         self.connected = True
         # refresh all objects in SDT3D when connecting after session start
-        if not flags & MessageFlags.ADD.value and not self.sendobjs():
+        if not self.sendobjs():
             return False
         return True
 

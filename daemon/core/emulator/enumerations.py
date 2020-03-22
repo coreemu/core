@@ -49,7 +49,6 @@ class LinkTypes(Enum):
     WIRED = 1
 
 
-# TODO: cleanup usage of .value
 class RegisterTlvs(Enum):
     """
     Register type, length, value enumerations.

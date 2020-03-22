@@ -1090,13 +1090,13 @@ class WlanNode(CoreNetwork):
         :return: nothing
         """
         logging.debug("node(%s) setting model: %s", self.name, model.name)
-        if model.config_type == RegisterTlvs.WIRELESS.value:
+        if model.config_type == RegisterTlvs.WIRELESS:
             self.model = model(session=self.session, _id=self.id)
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
                 netif.setposition()
             self.updatemodel(config)
-        elif model.config_type == RegisterTlvs.MOBILITY.value:
+        elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
