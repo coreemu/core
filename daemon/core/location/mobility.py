@@ -364,20 +364,16 @@ class BasicRangeModel(WirelessModel):
         with self._netifslock:
             return self._netifs[netif]
 
-    def set_position(
-        self, netif: CoreInterface, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_position(self, netif: CoreInterface) -> None:
         """
         A node has moved; given an interface, a new (x,y,z) position has
         been set; calculate the new distance between other nodes and link or
         unlink node pairs based on the configured range.
 
         :param netif: network interface to set position for
-        :param x: x position
-        :param y: y position
-        :param z: z position
         :return: nothing
         """
+        x, y, z = netif.node.position.get()
         self._netifslock.acquire()
         self._netifs[netif] = (x, y, z)
         if x is None or y is None:

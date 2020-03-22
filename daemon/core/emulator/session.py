@@ -805,6 +805,7 @@ class Session:
         using_lat_lon_alt = has_empty_position and has_lat_lon_alt
         if using_lat_lon_alt:
             x, y, _ = self.location.getxyz(lat, lon, alt)
+            node.position.set_geo(lon, lat, alt)
 
         # set position and broadcast
         if None not in [x, y]:
