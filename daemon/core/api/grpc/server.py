@@ -721,8 +721,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if request.source:
                 source = request.source
             if not has_geo:
-                node_data = node.data(source=source)
-                session.broadcast_node(node_data)
+                session.broadcast_node(node, source=source)
         except CoreError:
             result = False
         return core_pb2.EditNodeResponse(result=result)

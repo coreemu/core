@@ -1836,23 +1836,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
         Return API messages that describe the current session.
         """
         # find all nodes and links
-
-        nodes_data = []
         links_data = []
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                node_data = node.data(message_type=MessageFlags.ADD)
-                if node_data:
-                    nodes_data.append(node_data)
+                self.session.broadcast_node(node, MessageFlags.ADD)
 
                 node_links = node.all_link_data(flags=MessageFlags.ADD)
                 for link_data in node_links:
                     links_data.append(link_data)
-
-        # send all nodes first, so that they will exist for any links
-        for node_data in nodes_data:
-            self.session.broadcast_node(node_data)
 
         for link_data in links_data:
             self.session.broadcast_link(link_data)
@@ -1960,8 +1952,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             )
             self.session.broadcast_config(config_data)
 
+        node_count = self.session.get_node_count()
         logging.info(
-            "informed GUI about %d nodes and %d links", len(nodes_data), len(links_data)
+            "informed GUI about %d nodes and %d links", node_count, len(links_data)
         )
 
 

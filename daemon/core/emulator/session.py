@@ -17,14 +17,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
-from core.emulator.data import (
-    ConfigData,
-    EventData,
-    ExceptionData,
-    FileData,
-    LinkData,
-    NodeData,
-)
+from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData
 from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
@@ -34,7 +27,13 @@ from core.emulator.emudata import (
     create_interface,
     link_config,
 )
-from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
+from core.emulator.enumerations import (
+    EventTypes,
+    ExceptionLevels,
+    LinkTypes,
+    MessageFlags,
+    NodeTypes,
+)
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.location.event import EventLoop
@@ -805,35 +804,13 @@ class Session:
         using_lat_lon_alt = has_empty_position and has_lat_lon_alt
         if using_lat_lon_alt:
             x, y, _ = self.location.getxyz(lat, lon, alt)
-            node.position.set_geo(lon, lat, alt)
-
-        # set position and broadcast
-        if None not in [x, y]:
             node.setposition(x, y, None)
-
-        # broadcast updated location when using lat/lon/alt
-        if using_lat_lon_alt:
-            self.broadcast_node_location(node, lon, lat, alt)
-
-    def broadcast_node_location(
-        self, node: NodeBase, lon: float, lat: float, alt: float
-    ) -> None:
-        """
-        Broadcast node location to all listeners.
-
-        :param node: node to broadcast location for
-        :return: nothing
-        """
-        node_data = NodeData(
-            message_type=0,
-            id=node.id,
-            x_position=node.position.x,
-            y_position=node.position.y,
-            latitude=lat,
-            longitude=lon,
-            altitude=alt,
-        )
-        self.broadcast_node(node_data)
+            node.position.set_geo(lon, lat, alt)
+            self.broadcast_node(node)
+        else:
+            if has_empty_position:
+                x, y = 0, 0
+            node.setposition(x, y, None)
 
     def start_mobility(self, node_ids: List[int] = None) -> None:
         """
@@ -1026,14 +1003,23 @@ class Session:
         for handler in self.exception_handlers:
             handler(exception_data)
 
-    def broadcast_node(self, node_data: NodeData) -> None:
+    def broadcast_node(
+        self,
+        node: NodeBase,
+        message_type: MessageFlags = MessageFlags.NONE,
+        source: str = None,
+    ) -> None:
         """
         Handle node data that should be provided to node handlers.
 
-        :param node_data: node data to send out
+        :param node: node to broadcast
+        :param message_type: type of message to broadcast, None by default
+        :param source: source of broadcast, None by default
         :return: nothing
         """
-
+        node_data = node.data(message_type, source)
+        if not node_data:
+            return
         for handler in self.node_handlers:
             handler(node_data)
 

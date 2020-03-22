@@ -812,8 +812,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         node.position.set(x, y, z)
-        node_data = node.data()
-        self.session.broadcast_node(node_data)
+        self.session.broadcast_node(node)
 
     def setendtime(self) -> None:
         """

@@ -982,7 +982,6 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        node_data = node.data()
         queue = Queue()
 
         def handle_event(event_data):
@@ -994,7 +993,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.broadcast_node(node_data)
+            session.broadcast_node(node)
 
             # then
             queue.get(timeout=5)

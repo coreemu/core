@@ -192,20 +192,12 @@ class NodeBase:
         return ifindex
 
     def data(
-        self,
-        message_type: MessageFlags = MessageFlags.NONE,
-        lat: float = None,
-        lon: float = None,
-        alt: float = None,
-        source: str = None,
+        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
     ) -> NodeData:
         """
         Build a data object for this node.
 
         :param message_type: purpose for the data object we are creating
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
         :param source: source of node data
         :return: node data object
         """
@@ -217,12 +209,10 @@ class NodeBase:
         server = None
         if self.server is not None:
             server = self.server.name
-
         services = self.services
         if services is not None:
             services = "|".join([service.name for service in services])
-
-        node_data = NodeData(
+        return NodeData(
             message_type=message_type,
             id=self.id,
             node_type=self.apitype,
@@ -233,16 +223,14 @@ class NodeBase:
             opaque=self.opaque,
             x_position=x,
             y_position=y,
-            latitude=lat,
-            longitude=lon,
-            altitude=alt,
+            latitude=self.position.lat,
+            longitude=self.position.lon,
+            altitude=self.position.alt,
             model=model,
             server=server,
             services=services,
             source=source,
         )
-
-        return node_data
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """

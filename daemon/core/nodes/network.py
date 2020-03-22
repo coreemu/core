@@ -879,21 +879,13 @@ class PtpNet(CoreNetwork):
         super().attach(netif)
 
     def data(
-        self,
-        message_type: int,
-        lat: float = None,
-        lon: float = None,
-        alt: float = None,
-        source: str = None,
+        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
     ) -> NodeData:
         """
         Do not generate a Node Message for point-to-point links. They are
         built using a link message instead.
 
         :param message_type: purpose for the data object we are creating
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
         :param source: source of node data
         :return: node data object
         """

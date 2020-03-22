@@ -806,8 +806,7 @@ class EmaneManager(ModelManager):
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
         node.position.set_geo(lon, lat, alt)
-        node_data = node.data(lat=lat, lon=lon, alt=alt)
-        self.session.broadcast_node(node_data)
+        self.session.broadcast_node(node)
         return True
 
     def emanerunning(self, node: CoreNode) -> bool:
