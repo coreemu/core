@@ -114,7 +114,7 @@ class TestCore:
         session.instantiate()
 
         # check link data gets generated
-        assert ptp_node.all_link_data(MessageFlags.ADD.value)
+        assert ptp_node.all_link_data(MessageFlags.ADD)
 
         # check common nets exist between linked nodes
         assert node_one.commonnets(node_two)

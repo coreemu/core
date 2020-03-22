@@ -10,21 +10,18 @@ import pytest
 from mock import MagicMock
 
 from core.api.tlv import coreapi
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import (
+from core.api.tlv.enumerations import (
     ConfigFlags,
     ConfigTlvs,
     EventTlvs,
-    EventTypes,
     ExecuteTlvs,
     FileTlvs,
     LinkTlvs,
-    MessageFlags,
     NodeTlvs,
-    NodeTypes,
-    RegisterTlvs,
     SessionTlvs,
 )
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 
@@ -117,7 +114,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
     def test_link_add_net_to_node(self, coretlv):
@@ -141,7 +138,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
     def test_link_add_node_to_node(self, coretlv):
@@ -171,7 +168,7 @@ class TestGui:
         all_links = []
         for node_id in coretlv.session.nodes:
             node = coretlv.session.nodes[node_id]
-            all_links += node.all_link_data(0)
+            all_links += node.all_link_data()
         assert len(all_links) == 1
 
     def test_link_update(self, coretlv):
@@ -193,7 +190,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
         assert link.bandwidth is None
@@ -211,7 +208,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
         assert link.bandwidth == bandwidth
@@ -240,7 +237,7 @@ class TestGui:
         all_links = []
         for node_id in coretlv.session.nodes:
             node = coretlv.session.nodes[node_id]
-            all_links += node.all_link_data(0)
+            all_links += node.all_link_data()
         assert len(all_links) == 1
 
         message = coreapi.CoreLinkMessage.create(
@@ -257,7 +254,7 @@ class TestGui:
         all_links = []
         for node_id in coretlv.session.nodes:
             node = coretlv.session.nodes[node_id]
-            all_links += node.all_link_data(0)
+            all_links += node.all_link_data()
         assert len(all_links) == 0
 
     def test_link_delete_node_to_net(self, coretlv):
@@ -279,7 +276,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
         message = coreapi.CoreLinkMessage.create(
@@ -293,7 +290,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
     def test_link_delete_net_to_node(self, coretlv):
@@ -315,7 +312,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
         message = coreapi.CoreLinkMessage.create(
@@ -329,7 +326,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         switch_node = coretlv.session.get_node(switch)
-        all_links = switch_node.all_link_data(0)
+        all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
     def test_session_update(self, coretlv):
@@ -376,14 +373,14 @@ class TestGui:
         assert len(coretlv.coreemu.sessions) == 0
 
     def test_file_hook_add(self, coretlv):
-        state = EventTypes.DATACOLLECT_STATE.value
+        state = EventTypes.DATACOLLECT_STATE
         assert coretlv.session._hooks.get(state) is None
         file_name = "test.sh"
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
             MessageFlags.ADD.value,
             [
-                (FileTlvs.TYPE, f"hook:{state}"),
+                (FileTlvs.TYPE, f"hook:{state.value}"),
                 (FileTlvs.NAME, file_name),
                 (FileTlvs.DATA, file_data),
             ],
@@ -514,7 +511,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        assert coretlv.session.state == state.value
+        assert coretlv.session.state == state
 
     def test_event_schedule(self, coretlv):
         coretlv.session.add_event = mock.MagicMock()

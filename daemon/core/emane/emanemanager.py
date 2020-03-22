@@ -60,7 +60,7 @@ class EmaneManager(ModelManager):
     """
 
     name = "emane"
-    config_type = RegisterTlvs.EMULATION_SERVER.value
+    config_type = RegisterTlvs.EMULATION_SERVER
     SUCCESS, NOT_NEEDED, NOT_READY = (0, 1, 2)
     EVENTCFGVAR = "LIBEMANEEVENTSERVICECONFIG"
     DEFAULT_LOG_LEVEL = 3
@@ -806,7 +806,7 @@ class EmaneManager(ModelManager):
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
         node.position.set_geo(lon, lat, alt)
-        node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
+        node_data = node.data(lat=lat, lon=lon, alt=alt)
         self.session.broadcast_node(node_data)
         return True
 

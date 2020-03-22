@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 def link_data_params(link_data: LinkData) -> Tuple[int, int, bool]:
     node_one = link_data.node1_id
     node_two = link_data.node2_id
-    is_wireless = link_data.link_type == LinkTypes.WIRELESS.value
+    is_wireless = link_data.link_type == LinkTypes.WIRELESS
     return node_one, node_two, is_wireless
 
 
@@ -90,7 +90,7 @@ class Sdt:
         self.address = (self.url.hostname, self.url.port)
         self.protocol = self.url.scheme
 
-    def connect(self, flags: int = 0) -> bool:
+    def connect(self) -> bool:
         """
         Connect to the SDT address/port if enabled.
 
@@ -100,7 +100,7 @@ class Sdt:
             return False
         if self.connected:
             return True
-        if self.session.state == EventTypes.SHUTDOWN_STATE.value:
+        if self.session.state == EventTypes.SHUTDOWN_STATE:
             return False
 
         self.seturl()
@@ -122,7 +122,7 @@ class Sdt:
 
         self.connected = True
         # refresh all objects in SDT3D when connecting after session start
-        if not flags & MessageFlags.ADD.value and not self.sendobjs():
+        if not self.sendobjs():
             return False
         return True
 
@@ -210,7 +210,7 @@ class Sdt:
                 self.add_node(node)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD.value)
+                all_links = net.all_link_data(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     if is_wireless and link_data.node1_id == net.id:
@@ -302,7 +302,7 @@ class Sdt:
             return
 
         # delete node
-        if node_data.message_type == MessageFlags.DELETE.value:
+        if node_data.message_type == MessageFlags.DELETE:
             self.cmd(f"delete node,{node_data.id}")
         else:
             x = node_data.x_position
@@ -375,9 +375,9 @@ class Sdt:
         :param link_data: link data to handle
         :return: nothing
         """
-        if link_data.message_type == MessageFlags.ADD.value:
+        if link_data.message_type == MessageFlags.ADD:
             params = link_data_params(link_data)
             self.add_link(*params)
-        elif link_data.message_type == MessageFlags.DELETE.value:
+        elif link_data.message_type == MessageFlags.DELETE:
             params = link_data_params(link_data)
             self.delete_link(*params[:2])

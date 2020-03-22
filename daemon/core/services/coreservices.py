@@ -315,7 +315,7 @@ class CoreServices:
     """
 
     name = "services"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self, session: "Session") -> None:
         """
@@ -672,7 +672,7 @@ class CoreServices:
 
         filetypestr = "service:%s" % service.name
         return FileData(
-            message_type=MessageFlags.ADD.value,
+            message_type=MessageFlags.ADD,
             node=node.id,
             name=filename,
             type=filetypestr,

@@ -26,11 +26,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     :return: node type, id, and options
     """
     _id = node_proto.id
-    _type = node_proto.type
-    if _type is None:
-        _type = NodeTypes.DEFAULT.value
-    _type = NodeTypes(_type)
-
+    _type = NodeTypes(node_proto.type)
     options = NodeOptions(name=node_proto.name, model=node_proto.model)
     options.icon = node_proto.icon
     options.opaque = node_proto.opaque
@@ -233,7 +229,7 @@ def get_links(session: Session, node: NodeBase):
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
-    for link_data in node.all_link_data(0):
+    for link_data in node.all_link_data():
         link = convert_link(session, link_data)
         links.append(link)
     return links
@@ -325,7 +321,7 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     )
 
     return core_pb2.Link(
-        type=link_data.link_type,
+        type=link_data.link_type.value,
         node_one_id=link_data.node1_id,
         node_two_id=link_data.node2_id,
         interface_one=interface_one,

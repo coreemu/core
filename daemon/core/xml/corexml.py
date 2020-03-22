@@ -8,7 +8,7 @@ import core.nodes.physical
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
@@ -260,7 +260,7 @@ class NetworkElement(NodeElement):
 
     def add_type(self) -> None:
         if self.node.apitype:
-            node_type = NodeTypes(self.node.apitype).name
+            node_type = self.node.apitype.name
         else:
             node_type = self.node.__class__.__name__
         add_attribute(self.element, "type", node_type)
@@ -324,7 +324,7 @@ class CoreXmlWriter:
             for file_name, data in self.session._hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
-                add_attribute(hook, "state", state)
+                add_attribute(hook, "state", state.value)
                 hook.text = data
 
         if hooks.getchildren():
@@ -476,7 +476,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data(0))
+            links.extend(node.all_link_data())
 
         return links
 
@@ -666,13 +666,11 @@ class CoreXmlReader:
 
         for hook in session_hooks.iterchildren():
             name = hook.get("name")
-            state = hook.get("state")
+            state = get_int(hook, "state")
+            state = EventTypes(state)
             data = hook.text
-            hook_type = f"hook:{state}"
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.set_hook(
-                hook_type, file_name=name, source_name=None, data=data
-            )
+            self.session.add_hook(state, name, None, data)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")

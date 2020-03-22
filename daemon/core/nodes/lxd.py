@@ -66,7 +66,7 @@ class LxdClient:
 
 
 class LxcNode(CoreNode):
-    apitype = NodeTypes.LXC.value
+    apitype = NodeTypes.LXC
 
     def __init__(
         self,

@@ -21,7 +21,7 @@ class GeoLocation:
     """
 
     name = "location"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self) -> None:
         """

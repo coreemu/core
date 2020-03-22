@@ -1,9 +1,14 @@
 """
 Converts CORE data objects into legacy API messages.
 """
+import logging
+from collections import OrderedDict
+from typing import Dict, List
 
 from core.api.tlv import coreapi, structutils
-from core.emulator.enumerations import ConfigTlvs, NodeTlvs
+from core.api.tlv.enumerations import ConfigTlvs, NodeTlvs
+from core.config import ConfigGroup, ConfigurableOptions
+from core.emulator.data import ConfigData
 
 
 def convert_node(node_data):
@@ -17,7 +22,7 @@ def convert_node(node_data):
         coreapi.CoreNodeTlv,
         [
             (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type),
+            (NodeTlvs.TYPE, node_data.node_type.value),
             (NodeTlvs.NAME, node_data.name),
             (NodeTlvs.IP_ADDRESS, node_data.ip_address),
             (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
@@ -38,7 +43,7 @@ def convert_node(node_data):
             (NodeTlvs.OPAQUE, node_data.opaque),
         ],
     )
-    return coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
+    return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
 
 
 def convert_config(config_data):
@@ -67,3 +72,102 @@ def convert_config(config_data):
         ],
     )
     return coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
+
+
+class ConfigShim:
+    """
+    Provides helper methods for converting newer configuration values into TLV
+    compatible formats.
+    """
+
+    @classmethod
+    def str_to_dict(cls, key_values: str) -> Dict[str, str]:
+        """
+        Converts a TLV key/value string into an ordered mapping.
+
+        :param key_values:
+        :return: ordered mapping of key/value pairs
+        """
+        key_values = key_values.split("|")
+        values = OrderedDict()
+        for key_value in key_values:
+            key, value = key_value.split("=", 1)
+            values[key] = value
+        return values
+
+    @classmethod
+    def groups_to_str(cls, config_groups: List[ConfigGroup]) -> str:
+        """
+        Converts configuration groups to a TLV formatted string.
+
+        :param config_groups: configuration groups to format
+        :return: TLV configuration group string
+        """
+        group_strings = []
+        for config_group in config_groups:
+            group_string = (
+                f"{config_group.name}:{config_group.start}-{config_group.stop}"
+            )
+            group_strings.append(group_string)
+        return "|".join(group_strings)
+
+    @classmethod
+    def config_data(
+        cls,
+        flags: int,
+        node_id: int,
+        type_flags: int,
+        configurable_options: ConfigurableOptions,
+        config: Dict[str, str],
+    ) -> ConfigData:
+        """
+        Convert this class to a Config API message. Some TLVs are defined
+        by the class, but node number, conf type flags, and values must
+        be passed in.
+
+        :param flags: message flags
+        :param node_id: node id
+        :param type_flags: type flags
+        :param configurable_options: options to create config data for
+        :param config: configuration values for options
+        :return: configuration data object
+        """
+        key_values = None
+        captions = None
+        data_types = []
+        possible_values = []
+        logging.debug("configurable: %s", configurable_options)
+        logging.debug("configuration options: %s", configurable_options.configurations)
+        logging.debug("configuration data: %s", config)
+        for configuration in configurable_options.configurations():
+            if not captions:
+                captions = configuration.label
+            else:
+                captions += f"|{configuration.label}"
+
+            data_types.append(configuration.type.value)
+
+            options = ",".join(configuration.options)
+            possible_values.append(options)
+
+            _id = configuration.id
+            config_value = config.get(_id, configuration.default)
+            key_value = f"{_id}={config_value}"
+            if not key_values:
+                key_values = key_value
+            else:
+                key_values += f"|{key_value}"
+
+        groups_str = cls.groups_to_str(configurable_options.config_groups())
+        return ConfigData(
+            message_type=flags,
+            node=node_id,
+            object=configurable_options.name,
+            type=type_flags,
+            data_types=tuple(data_types),
+            data_values=key_values,
+            captions=captions,
+            possible_values="|".join(possible_values),
+            bitmap=configurable_options.bitmap,
+            groups=groups_str,
+        )

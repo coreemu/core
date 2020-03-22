@@ -36,7 +36,7 @@ class MobilityManager(ModelManager):
     """
 
     name = "MobilityManager"
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
 
     def __init__(self, session: "Session") -> None:
         """
@@ -121,10 +121,7 @@ class MobilityManager(ModelManager):
                 logging.warning("Ignoring event for unknown model '%s'", model)
                 continue
 
-            if cls.config_type in [
-                RegisterTlvs.WIRELESS.value,
-                RegisterTlvs.MOBILITY.value,
-            ]:
+            if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
@@ -142,17 +139,11 @@ class MobilityManager(ModelManager):
                 )
                 continue
 
-            if (
-                event_type == EventTypes.STOP.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 model.stop(move_initial=True)
-            if (
-                event_type == EventTypes.START.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.START, EventTypes.RESTART]:
                 model.start()
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 model.pause()
 
     def sendevent(self, model: "WayPointMobility") -> None:
@@ -163,13 +154,13 @@ class MobilityManager(ModelManager):
         :param model: mobility model to send event for
         :return: nothing
         """
-        event_type = EventTypes.NONE.value
+        event_type = EventTypes.NONE
         if model.state == model.STATE_STOPPED:
-            event_type = EventTypes.STOP.value
+            event_type = EventTypes.STOP
         elif model.state == model.STATE_RUNNING:
-            event_type = EventTypes.START.value
+            event_type = EventTypes.START
         elif model.state == model.STATE_PAUSED:
-            event_type = EventTypes.PAUSE.value
+            event_type = EventTypes.PAUSE
 
         start_time = int(model.lasttime - model.timezero)
         end_time = int(model.endtime)
@@ -212,7 +203,7 @@ class WirelessModel(ConfigurableOptions):
     Used for managing arbitrary configuration parameters.
     """
 
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
     bitmap = None
     position_callback = None
 
@@ -226,7 +217,7 @@ class WirelessModel(ConfigurableOptions):
         self.session = session
         self.id = _id
 
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
         """
         May be used if the model can populate the GUI with wireless (green)
         link lines.
@@ -486,7 +477,10 @@ class BasicRangeModel(WirelessModel):
         return True
 
     def create_link_data(
-        self, interface1: CoreInterface, interface2: CoreInterface, message_type: int
+        self,
+        interface1: CoreInterface,
+        interface2: CoreInterface,
+        message_type: MessageFlags,
     ) -> LinkData:
         """
         Create a wireless link/unlink data message.
@@ -501,7 +495,7 @@ class BasicRangeModel(WirelessModel):
             node1_id=interface1.node.id,
             node2_id=interface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS.value,
+            link_type=LinkTypes.WIRELESS,
         )
 
     def sendlinkmsg(
@@ -516,14 +510,14 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         if unlink:
-            message_type = MessageFlags.DELETE.value
+            message_type = MessageFlags.DELETE
         else:
-            message_type = MessageFlags.ADD.value
+            message_type = MessageFlags.ADD
 
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Return a list of wireless link messages for when the GUI reconnects.
 
@@ -578,7 +572,7 @@ class WayPointMobility(WirelessModel):
     """
 
     name = "waypoint"
-    config_type = RegisterTlvs.MOBILITY.value
+    config_type = RegisterTlvs.MOBILITY
 
     STATE_STOPPED = 0
     STATE_RUNNING = 1
@@ -818,7 +812,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0)
+        node_data = node.data()
         self.session.broadcast_node(node_data)
 
     def setendtime(self) -> None:

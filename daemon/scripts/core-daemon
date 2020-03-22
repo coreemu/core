@@ -17,8 +17,8 @@ from core import constants
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler, CoreUdpHandler
 from core.api.tlv.coreserver import CoreServer, CoreUdpServer
+from core.api.tlv.enumerations import CORE_API_PORT
 from core.constants import CORE_CONF_DIR, COREDPY_VERSION
-from core.emulator.enumerations import CORE_API_PORT
 from core.utils import close_onexec, load_logging_config
 
 

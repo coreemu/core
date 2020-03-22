@@ -15,26 +15,28 @@ from queue import Empty, Queue
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
-from core.config import ConfigShim
-from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import (
-    ConfigDataTypes,
+from core.api.tlv.dataconversion import ConfigShim
+from core.api.tlv.enumerations import (
     ConfigFlags,
     ConfigTlvs,
     EventTlvs,
-    EventTypes,
     ExceptionTlvs,
     ExecuteTlvs,
     FileTlvs,
     LinkTlvs,
-    LinkTypes,
-    MessageFlags,
     MessageTypes,
     NodeTlvs,
+    SessionTlvs,
+)
+from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    EventTypes,
+    LinkTypes,
+    MessageFlags,
     NodeTypes,
     RegisterTlvs,
-    SessionTlvs,
 )
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
@@ -228,7 +230,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             coreapi.CoreEventTlv,
             [
                 (EventTlvs.NODE, event_data.node),
-                (EventTlvs.TYPE, event_data.event_type),
+                (EventTlvs.TYPE, event_data.event_type.value),
                 (EventTlvs.NAME, event_data.name),
                 (EventTlvs.DATA, event_data.data),
                 (EventTlvs.TIME, event_data.time),
@@ -265,7 +267,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (FileTlvs.COMPRESSED_DATA, file_data.compressed_data),
             ],
         )
-        message = coreapi.CoreFileMessage.pack(file_data.message_type, tlv_data)
+        message = coreapi.CoreFileMessage.pack(file_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -356,7 +358,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.BURST, link_data.burst),
                 (LinkTlvs.SESSION, link_data.session),
                 (LinkTlvs.MBURST, link_data.mburst),
-                (LinkTlvs.TYPE, link_data.link_type),
+                (LinkTlvs.TYPE, link_data.link_type.value),
                 (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
                 (LinkTlvs.UNIDIRECTIONAL, link_data.unidirectional),
                 (LinkTlvs.EMULATION_ID, link_data.emulation_id),
@@ -380,7 +382,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ],
         )
 
-        message = coreapi.CoreLinkMessage.pack(link_data.message_type, tlv_data)
+        message = coreapi.CoreLinkMessage.pack(link_data.message_type.value, tlv_data)
 
         try:
             self.sendall(message)
@@ -396,7 +398,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.info(
             "GUI has connected to session %d at %s", self.session.id, time.ctime()
         )
-
         tlv_data = b""
         tlv_data += coreapi.CoreRegisterTlv.pack(
             RegisterTlvs.EXECUTE_SERVER.value, "core-daemon"
@@ -406,29 +407,29 @@ class CoreHandler(socketserver.BaseRequestHandler):
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "broker")
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.location.config_type, self.session.location.name
+            self.session.location.config_type.value, self.session.location.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.mobility.config_type, self.session.mobility.name
+            self.session.mobility.config_type.value, self.session.mobility.name
         )
         for model_name in self.session.mobility.models:
             model_class = self.session.mobility.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(
-                model_class.config_type, model_class.name
+                model_class.config_type.value, model_class.name
             )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.services.config_type, self.session.services.name
+            self.session.services.config_type.value, self.session.services.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.emane.config_type, self.session.emane.name
+            self.session.emane.config_type.value, self.session.emane.name
         )
         for model_name in self.session.emane.models:
             model_class = self.session.emane.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(
-                model_class.config_type, model_class.name
+                model_class.config_type.value, model_class.name
             )
         tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.options.config_type, self.session.options.name
+            self.session.options.config_type.value, self.session.options.name
         )
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "metadata")
 
@@ -723,7 +724,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
 
-                if self.session.state == EventTypes.RUNTIME_STATE.value:
+                if self.session.state == EventTypes.RUNTIME_STATE:
                     self.send_node_emulation_id(node.id)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
@@ -966,7 +967,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
-                    while session.state != EventTypes.RUNTIME_STATE.value:
+                    while session.state != EventTypes.RUNTIME_STATE:
                         logging.debug(
                             "waiting for session %d to enter RUNTIME state", sid
                         )
@@ -1375,7 +1376,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
-            if self.session.state == EventTypes.RUNTIME_STATE.value and parsed_config:
+            if self.session.state == EventTypes.RUNTIME_STATE and parsed_config:
                 try:
                     node = self.session.get_node(node_id)
                     if object_name == BasicRangeModel.name:
@@ -1502,6 +1503,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         logging.error("error setting hook having state '%s'", state)
                         return ()
                     state = int(state)
+                    state = EventTypes(state)
                     self.session.add_hook(state, file_name, source_name, data)
                     return ()
 
@@ -1538,9 +1540,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         :raises core.CoreError: when event type <= SHUTDOWN_STATE and not a known node id
         """
+        event_type_value = message.get_tlv(EventTlvs.TYPE.value)
+        event_type = EventTypes(event_type_value)
         event_data = EventData(
             node=message.get_tlv(EventTlvs.NODE.value),
-            event_type=message.get_tlv(EventTlvs.TYPE.value),
+            event_type=event_type,
             name=message.get_tlv(EventTlvs.NAME.value),
             data=message.get_tlv(EventTlvs.DATA.value),
             time=message.get_tlv(EventTlvs.TIME.value),
@@ -1549,7 +1553,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if event_data.event_type is None:
             raise NotImplementedError("Event message missing event type")
-        event_type = EventTypes(event_data.event_type)
         node_id = event_data.node
 
         logging.debug("handling event %s at %s", event_type.name, time.ctime())
@@ -1667,25 +1670,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 unknown.append(service_name)
                 continue
 
-            if (
-                event_type == EventTypes.STOP.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 status = self.session.services.stop_service(node, service)
                 if status:
                     fail += f"Stop {service.name},"
-            if (
-                event_type == EventTypes.START.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.START, EventTypes.RESTART]:
                 status = self.session.services.startup_service(node, service)
                 if status:
                     fail += f"Start ({service.name}),"
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 status = self.session.services.validate_service(node, service)
                 if status:
                     fail += f"{service.name},"
-            if event_type == EventTypes.RECONFIGURE.value:
+            if event_type == EventTypes.RECONFIGURE:
                 self.session.services.service_reconfigure(node, service)
 
         fail_data = ""
@@ -1845,11 +1842,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                node_data = node.data(message_type=MessageFlags.ADD.value)
+                node_data = node.data(message_type=MessageFlags.ADD)
                 if node_data:
                     nodes_data.append(node_data)
 
-                node_links = node.all_link_data(flags=MessageFlags.ADD.value)
+                node_links = node.all_link_data(flags=MessageFlags.ADD)
                 for link_data in node_links:
                     links_data.append(link_data)
 
@@ -1917,7 +1914,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             for file_name, config_data in self.session.services.all_files(service):
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     node=node_id,
                     name=str(file_name),
                     type=opaque,
@@ -1931,7 +1928,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for state in sorted(self.session._hooks.keys()):
             for file_name, config_data in self.session._hooks[state]:
                 file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
+                    message_type=MessageFlags.ADD,
                     name=str(file_name),
                     type=f"hook:{state}",
                     data=str(config_data),
@@ -2052,7 +2049,7 @@ class CoreUdpHandler(CoreHandler):
                 current_session = self.server.mainserver.coreemu.sessions[session_id]
                 current_node_count = current_session.get_node_count()
                 if (
-                    current_session.state == EventTypes.RUNTIME_STATE.value
+                    current_session.state == EventTypes.RUNTIME_STATE
                     and current_node_count > node_count
                 ):
                     node_count = current_node_count
