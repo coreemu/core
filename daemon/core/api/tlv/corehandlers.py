@@ -15,26 +15,28 @@ from queue import Empty, Queue
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
+from core.api.tlv.enumerations import (
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    ExceptionTlvs,
+    ExecuteTlvs,
+    FileTlvs,
+    LinkTlvs,
+    MessageTypes,
+    NodeTlvs,
+    SessionTlvs,
+)
 from core.config import ConfigShim
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
-    ConfigFlags,
-    ConfigTlvs,
-    EventTlvs,
     EventTypes,
-    ExceptionTlvs,
-    ExecuteTlvs,
-    FileTlvs,
-    LinkTlvs,
     LinkTypes,
     MessageFlags,
-    MessageTypes,
-    NodeTlvs,
     NodeTypes,
     RegisterTlvs,
-    SessionTlvs,
 )
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel

@@ -7,16 +7,12 @@ from mock import patch
 
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper
+from core.api.tlv.enumerations import ConfigFlags
 from core.config import ConfigShim
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import (
-    ConfigFlags,
-    EventTypes,
-    ExceptionLevels,
-    NodeTypes,
-)
+from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.xml.corexml import CoreXmlWriter

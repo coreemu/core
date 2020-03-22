@@ -3,7 +3,7 @@ Converts CORE data objects into legacy API messages.
 """
 
 from core.api.tlv import coreapi, structutils
-from core.emulator.enumerations import ConfigTlvs, NodeTlvs
+from core.api.tlv.enumerations import ConfigTlvs, NodeTlvs
 
 
 def convert_node(node_data):

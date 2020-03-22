@@ -10,21 +10,18 @@ import pytest
 from mock import MagicMock
 
 from core.api.tlv import coreapi
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import (
+from core.api.tlv.enumerations import (
     ConfigFlags,
     ConfigTlvs,
     EventTlvs,
-    EventTypes,
     ExecuteTlvs,
     FileTlvs,
     LinkTlvs,
-    MessageFlags,
     NodeTlvs,
-    NodeTypes,
-    RegisterTlvs,
     SessionTlvs,
 )
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 
