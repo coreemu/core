@@ -1841,10 +1841,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 self.session.broadcast_node(node, MessageFlags.ADD)
-
                 node_links = node.all_link_data(flags=MessageFlags.ADD)
-                for link_data in node_links:
-                    links_data.append(link_data)
+                links_data.extend(node_links)
 
         for link_data in links_data:
             self.session.broadcast_link(link_data)
