@@ -474,7 +474,6 @@ class BasicRangeModel(WirelessModel):
         """
         self.values_from_config(config)
         self.setlinkparams()
-        return True
 
     def create_link_data(
         self,
@@ -790,7 +789,7 @@ class WayPointMobility(WirelessModel):
         """
         self.queue_copy = list(self.queue)
 
-    def loopwaypoints(self) -> None:
+    def loopwaypoints(self) -> bool:
         """
         Restore backup copy of waypoints when looping.
 
