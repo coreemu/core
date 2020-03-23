@@ -6,6 +6,7 @@ import netaddr
 
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
+from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig
 from core.config import ConfigurableOptions
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
@@ -364,7 +365,7 @@ def session_location(session: Session, location: core_pb2.SessionLocation) -> No
     session.location.refscale = location.scale
 
 
-def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> None:
+def service_configuration(session: Session, config: ServiceConfig) -> None:
     """
     Convenience method for setting a node service configuration.
 
@@ -386,14 +387,14 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
         service.shutdown = tuple(config.shutdown)
 
 
-def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServiceData:
+def get_service_configuration(service: Type[CoreService]) -> NodeServiceData:
     """
     Convenience for converting a service to service data proto.
 
     :param service: service to get proto data for
     :return: service proto data
     """
-    return core_pb2.NodeServiceData(
+    return NodeServiceData(
         executables=service.executables,
         dependencies=service.dependencies,
         dirs=service.dirs,

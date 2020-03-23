@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, List
 
 import grpc
 
-from core.api.grpc import core_pb2
+from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.themes import FRAME_PAD, PADX, PADY
@@ -256,9 +256,9 @@ class ConfigServiceConfigDialog(Dialog):
 
         label = ttk.Label(frame, text="Validation Mode")
         label.grid(row=1, column=0, sticky="w", padx=PADX)
-        if self.validation_mode == core_pb2.ServiceValidationMode.BLOCKING:
+        if self.validation_mode == ServiceValidationMode.BLOCKING:
             mode = "BLOCKING"
-        elif self.validation_mode == core_pb2.ServiceValidationMode.NON_BLOCKING:
+        elif self.validation_mode == ServiceValidationMode.NON_BLOCKING:
             mode = "NON_BLOCKING"
         else:
             mode = "TIMER"

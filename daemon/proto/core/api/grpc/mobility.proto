@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package mobility;
+
+import "core/api/grpc/common.proto";
+
+message MobilityAction {
+    enum Enum {
+        START = 0;
+        PAUSE = 1;
+        STOP = 2;
+    }
+}
+
+message MobilityConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message GetMobilityConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetMobilityConfigsResponse {
+    map<int32, common.MappedConfig> configs = 1;
+}
+
+message GetMobilityConfigRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetMobilityConfigResponse {
+    map<string, common.ConfigOption> config = 1;
+}
+
+message SetMobilityConfigRequest {
+    int32 session_id = 1;
+    MobilityConfig mobility_config = 2;
+}
+
+message SetMobilityConfigResponse {
+    bool result = 1;
+}
+
+message MobilityActionRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    MobilityAction.Enum action = 3;
+}
+
+message MobilityActionResponse {
+    bool result = 1;
+}

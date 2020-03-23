@@ -7,6 +7,10 @@ from mock import patch
 
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper
+from core.api.grpc.emane_pb2 import EmaneModelConfig
+from core.api.grpc.mobility_pb2 import MobilityAction, MobilityConfig
+from core.api.grpc.services_pb2 import ServiceAction, ServiceConfig, ServiceFileConfig
+from core.api.grpc.wlan_pb2 import WlanConfig
 from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import ConfigFlags
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
@@ -69,7 +73,7 @@ class TestGrpc:
         model_node_id = 20
         model_config_key = "bandwidth"
         model_config_value = "500000"
-        model_config = core_pb2.EmaneModelConfig(
+        model_config = EmaneModelConfig(
             node_id=model_node_id,
             interface_id=-1,
             model=EmaneIeee80211abgModel.name,
@@ -78,21 +82,21 @@ class TestGrpc:
         model_configs = [model_config]
         wlan_config_key = "range"
         wlan_config_value = "333"
-        wlan_config = core_pb2.WlanConfig(
+        wlan_config = WlanConfig(
             node_id=wlan_node.id, config={wlan_config_key: wlan_config_value}
         )
         wlan_configs = [wlan_config]
         mobility_config_key = "refresh_ms"
         mobility_config_value = "60"
-        mobility_config = core_pb2.MobilityConfig(
+        mobility_config = MobilityConfig(
             node_id=wlan_node.id, config={mobility_config_key: mobility_config_value}
         )
         mobility_configs = [mobility_config]
-        service_config = core_pb2.ServiceConfig(
+        service_config = ServiceConfig(
             node_id=node_one.id, service="DefaultRoute", validate=["echo hello"]
         )
         service_configs = [service_config]
-        service_file_config = core_pb2.ServiceFileConfig(
+        service_file_config = ServiceFileConfig(
             node_id=node_one.id,
             service="DefaultRoute",
             file="defaultroute.sh",
@@ -829,9 +833,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.mobility_action(
-                session.id, wlan.id, core_pb2.MobilityAction.STOP
-            )
+            response = client.mobility_action(session.id, wlan.id, MobilityAction.STOP)
 
         # then
         assert response.result is True
@@ -971,7 +973,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.service_action(
-                session.id, node.id, service_name, core_pb2.ServiceAction.STOP
+                session.id, node.id, service_name, ServiceAction.STOP
             )
 
         # then
