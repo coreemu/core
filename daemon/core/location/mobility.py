@@ -302,38 +302,30 @@ class BasicRangeModel(WirelessModel):
         self.wlan = session.get_node(_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
-
         self.range = 0
         self.bw = None
         self.delay = None
         self.loss = None
         self.jitter = None
 
-    def values_from_config(self, config: Dict[str, str]) -> None:
+    def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
         """
-        Values to convert to link parameters.
+        Convenience for updating value to use from a provided configuration.
 
-        :param config: values to convert
-        :return: nothing
+        :param current_value: current config value to use when one is not provided
+        :param config: config to get values from
+        :param name: name of config value to get
+        :return: current config value when not provided, new value otherwise
         """
-        self.range = int(float(config["range"]))
-        logging.debug(
-            "basic range model configured for WLAN %d using range %d",
-            self.wlan.id,
-            self.range,
-        )
-        self.bw = int(config["bandwidth"])
-        if self.bw == 0:
-            self.bw = None
-        self.delay = int(config["delay"])
-        if self.delay == 0:
-            self.delay = None
-        self.loss = int(float(config["error"]))
-        if self.loss == 0:
-            self.loss = None
-        self.jitter = int(config["jitter"])
-        if self.jitter == 0:
-            self.jitter = None
+        value = config.get(name)
+        if value is not None:
+            if value == "":
+                value = None
+            else:
+                value = int(float(value))
+        else:
+            value = current_value
+        return value
 
     def setlinkparams(self) -> None:
         """
@@ -472,7 +464,14 @@ class BasicRangeModel(WirelessModel):
         :param config: values to update configuration
         :return: nothing
         """
-        self.values_from_config(config)
+        self.range = self._get_config(self.range, config, "range")
+        if self.range is None:
+            self.range = 0
+        logging.debug("wlan %s set range to %s", self.wlan.name, self.range)
+        self.bw = self._get_config(self.bw, config, "bandwidth")
+        self.delay = self._get_config(self.delay, config, "delay")
+        self.loss = self._get_config(self.loss, config, "error")
+        self.jitter = self._get_config(self.jitter, config, "jitter")
         self.setlinkparams()
 
     def create_link_data(
