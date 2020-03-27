@@ -152,31 +152,34 @@ class MenuAction:
         dialog = ServersDialog(self.app, self.app)
         dialog.show()
 
-    def edit_observer_widgets(self):
+    def edit_observer_widgets(self) -> None:
         dialog = ObserverDialog(self.app, self.app)
         dialog.show()
 
-    def show_about(self):
+    def show_about(self) -> None:
         dialog = AboutDialog(self.app, self.app)
         dialog.show()
 
-    def throughput(self):
+    def throughput(self) -> None:
         if not self.app.core.handling_throughputs:
             self.app.core.enable_throughputs()
         else:
             self.app.core.cancel_throughputs()
 
-    def copy(self, event: tk.Event = None):
+    def copy(self, event: tk.Event = None) -> None:
         self.app.canvas.copy()
 
-    def paste(self, event: tk.Event = None):
+    def paste(self, event: tk.Event = None) -> None:
         self.app.canvas.paste()
 
-    def config_throughput(self):
+    def delete(self, event: tk.Event = None) -> None:
+        self.app.canvas.delete_selected_objects()
+
+    def config_throughput(self) -> None:
         dialog = ThroughputDialog(self.app, self.app)
         dialog.show()
 
-    def add_recent_file_to_gui_config(self, file_path):
+    def add_recent_file_to_gui_config(self, file_path) -> None:
         recent_files = self.app.guiconfig["recentfiles"]
         num_files = len(recent_files)
         if num_files == 0:

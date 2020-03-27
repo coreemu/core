@@ -101,6 +101,9 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Paste", accelerator="Ctrl+V", command=self.menuaction.paste
         )
+        menu.add_command(
+            label="Delete", accelerator="Ctrl+D", command=self.menuaction.delete
+        )
         menu.add_separator()
         menu.add_command(label="Select all", accelerator="Ctrl+A", state=tk.DISABLED)
         menu.add_command(
@@ -113,6 +116,7 @@ class Menubar(tk.Menu):
 
         self.app.master.bind_all("<Control-c>", self.menuaction.copy)
         self.app.master.bind_all("<Control-v>", self.menuaction.paste)
+        self.app.master.bind_all("<Control-d>", self.menuaction.delete)
         self.edit_menu = menu
 
     def draw_canvas_menu(self):

@@ -233,16 +233,24 @@ class CanvasNode:
                     label="Link To Selected", command=self.wireless_link_selected
                 )
                 context.add_command(label="Select Members", state=tk.DISABLED)
-            context.add_command(label="Select Adjacent", state=tk.DISABLED)
-            context.add_command(label="Create Link To", state=tk.DISABLED)
-            context.add_command(label="Assign To", state=tk.DISABLED)
-            context.add_command(label="Move To", state=tk.DISABLED)
-            context.add_command(label="Cut", state=tk.DISABLED)
-            context.add_command(label="Copy", state=tk.DISABLED)
-            context.add_command(label="Paste", state=tk.DISABLED)
-            context.add_command(label="Delete", state=tk.DISABLED)
-            context.add_command(label="Hide", state=tk.DISABLED)
+            edit_menu = tk.Menu(context)
+            themes.style_menu(edit_menu)
+            edit_menu.add_command(label="Cut", state=tk.DISABLED)
+            edit_menu.add_command(label="Copy", command=self.canvas_copy)
+            edit_menu.add_command(label="Delete", command=self.canvas_delete)
+            edit_menu.add_command(label="Hide", state=tk.DISABLED)
+            context.add_cascade(label="Edit", menu=edit_menu)
         return context
+
+    def canvas_delete(self) -> None:
+        self.canvas.clear_selection()
+        self.canvas.selection[self.id] = self
+        self.canvas.delete_selected_objects()
+
+    def canvas_copy(self) -> None:
+        self.canvas.clear_selection()
+        self.canvas.selection[self.id] = self
+        self.canvas.copy()
 
     def show_config(self):
         self.canvas.context = None
