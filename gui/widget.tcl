@@ -1972,7 +1972,7 @@ proc widget_adjacency_init {command} {
 	array unset adjacency_cache *
 	foreach node $node_list { ;# save router-id node pairs for later lookup
             if { [nodeType $node] != "router" } { continue }
-	    if {[lsearch [getNodeServices $node true] "zebra"] < 0 &&
+	    if {[lsearch -regexp [getNodeServices $node true] "(FRR)?zebra"] < 0 &&
                 [lsearch [getNodeServices $node true] "OLSR"] < 0 &&
                 [lsearch [getNodeServices $node true] "OLSRv2"] < 0} {
 		continue
@@ -2041,7 +2041,7 @@ proc widget_adjacency_periodic { now } {
         foreach node $node_list {
 	    if { [nodeType $node] != "router" } { continue }
             if { [getNodeCanvas $node] != $curcanvas } { continue }
-            if {[lsearch [getNodeServices $node true] "zebra"] < 0} {
+            if {[lsearch -regexp [getNodeServices $node true] "(FRR)?zebra"] < 0} {
 	        continue
 	    }
 
