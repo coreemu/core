@@ -29,7 +29,6 @@ from core.xml import emanexml
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
-
 try:
     from emane.events import EventService
     from emane.events import LocationEvent
@@ -846,6 +845,12 @@ class EmaneGlobalModel:
         self.session = session
         self.core_config = [
             Configuration(
+                _id="platform_id_start",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Starting Platform ID",
+            ),
+            Configuration(
                 _id="nem_id_start",
                 _type=ConfigDataTypes.INT32,
                 default="1",
@@ -891,15 +896,6 @@ class EmaneGlobalModel:
             "otamanagergroup": "224.1.2.8:45702",
         }
         self.emulator_config = emanemanifest.parse(emulator_xml, emulator_defaults)
-        self.emulator_config.insert(
-            0,
-            Configuration(
-                _id="platform_id_start",
-                _type=ConfigDataTypes.INT32,
-                default="1",
-                label="Starting Platform ID (core)",
-            ),
-        )
 
     def configurations(self) -> List[Configuration]:
         return self.emulator_config + self.core_config
