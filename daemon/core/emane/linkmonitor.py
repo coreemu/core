@@ -297,3 +297,4 @@ class EmaneLinkMonitor:
             client.stop()
         self.clients.clear()
         self.links.clear()
+        self.complete_links.clear()
