@@ -82,9 +82,9 @@ def create_emane_config(
         add_configuration(emulator_element, emulator_config.id, value)
 
     nem_element = etree.SubElement(emane_configuration, "nem")
-    for nem_config in emane_config.nem_config:
-        value = config[nem_config.id]
-        add_configuration(nem_element, nem_config.id, value)
+    for core_config in emane_config.core_config:
+        value = config[core_config.id]
+        add_configuration(nem_element, core_config.id, value)
 
     return emane_configuration
 

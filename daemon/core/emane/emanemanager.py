@@ -15,6 +15,7 @@ from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
@@ -89,6 +90,9 @@ class EmaneManager(ModelManager):
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
+
+        # link  monitor
+        self.link_monitor = EmaneLinkMonitor(self)
 
         self.service = None
         self.eventchannel = None
@@ -349,8 +353,12 @@ class EmaneManager(ModelManager):
                         f.write(f"{nodename} {ifname} {nemid}\n")
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
-
+        if self.links_enabled():
+            self.link_monitor.start()
         return EmaneManager.SUCCESS
+
+    def links_enabled(self) -> bool:
+        return self.get_config("link_enabled") == "1"
 
     def poststartup(self) -> None:
         """
@@ -393,7 +401,9 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             if not self._emane_nets:
                 return
-            logging.info("stopping EMANE daemons.")
+            logging.info("stopping EMANE daemons")
+            if self.links_enabled():
+                self.link_monitor.stop()
             self.deinstallnetifs()
             self.stopdaemons()
             self.stopeventmonitor()
@@ -834,13 +844,37 @@ class EmaneGlobalModel:
 
     def __init__(self, session: "Session") -> None:
         self.session = session
-        self.nem_config = [
+        self.core_config = [
             Configuration(
                 _id="nem_id_start",
                 _type=ConfigDataTypes.INT32,
                 default="1",
-                label="Starting NEM ID (core)",
-            )
+                label="Starting NEM ID",
+            ),
+            Configuration(
+                _id="link_enabled",
+                _type=ConfigDataTypes.BOOL,
+                default="1",
+                label="Enable Links?",
+            ),
+            Configuration(
+                _id="loss_threshold",
+                _type=ConfigDataTypes.INT32,
+                default="30",
+                label="Link Loss Threshold (%)",
+            ),
+            Configuration(
+                _id="link_interval",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Link Check Interval (sec)",
+            ),
+            Configuration(
+                _id="link_timeout",
+                _type=ConfigDataTypes.INT32,
+                default="4",
+                label="Link Timeout (sec)",
+            ),
         ]
         self.emulator_config = None
         self.parse_config()
@@ -868,14 +902,14 @@ class EmaneGlobalModel:
         )
 
     def configurations(self) -> List[Configuration]:
-        return self.emulator_config + self.nem_config
+        return self.emulator_config + self.core_config
 
     def config_groups(self) -> List[ConfigGroup]:
         emulator_len = len(self.emulator_config)
         config_len = len(self.configurations())
         return [
             ConfigGroup("Platform Attributes", 1, emulator_len),
-            ConfigGroup("NEM Parameters", emulator_len + 1, config_len),
+            ConfigGroup("CORE Configuration", emulator_len + 1, config_len),
         ]
 
     def default_values(self) -> Dict[str, str]:
