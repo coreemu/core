@@ -5,12 +5,20 @@ import time
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 import netaddr
-from emane import shell as emanesh
 from lxml import etree
 
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.nodes.network import CtrlNet
+
+try:
+    from emane import shell
+except ImportError:
+    try:
+        from emanesh import shell
+    except ImportError:
+        logging.debug("compatible emane python bindings not installed")
+
 
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
@@ -70,7 +78,7 @@ class EmaneLink:
 class EmaneClient:
     def __init__(self, address: str) -> None:
         self.address = address
-        self.client = emanesh.ControlPortClient(self.address, DEFAULT_PORT)
+        self.client = shell.ControlPortClient(self.address, DEFAULT_PORT)
         self.nems = {}
         self.setup()
 
@@ -214,7 +222,7 @@ class EmaneLinkMonitor:
         for client in self.clients:
             try:
                 client.check_links(self.links, self.loss_threshold)
-            except emanesh.ControlPortException:
+            except shell.ControlPortException:
                 if self.running:
                     logging.exception("link monitor error")
 
