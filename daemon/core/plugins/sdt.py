@@ -21,11 +21,18 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 
-def link_data_params(link_data: LinkData) -> Tuple[int, int, bool]:
+def link_data_params(link_data: LinkData) -> Tuple[int, int, bool, int]:
     node_one = link_data.node1_id
     node_two = link_data.node2_id
     is_wireless = link_data.link_type == LinkTypes.WIRELESS
-    return node_one, node_two, is_wireless
+    network_id = link_data.network_id
+    return node_one, node_two, is_wireless, network_id
+
+
+CORE_LAYER = "CORE"
+NODE_LAYER = "CORE::Nodes"
+LINK_LAYER = "CORE::Links"
+CORE_LAYERS = [CORE_LAYER, LINK_LAYER, NODE_LAYER]
 
 
 class Sdt:
@@ -200,6 +207,10 @@ class Sdt:
         :return: nothing
         """
         nets = []
+        # create layers
+        for layer in CORE_LAYERS:
+            self.cmd(f"layer {layer}")
+
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
@@ -253,7 +264,10 @@ class Sdt:
             icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
             icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
             self.cmd(f"sprite {node_type} image {icon}")
-        self.cmd(f'node {node.id} type {node_type} label on,"{node.name}" {pos}')
+        self.cmd(
+            f'node {node.id} nodeLayer "{NODE_LAYER}" '
+            f'type {node_type} label on,"{node.name}" {pos}'
+        )
 
     def edit_node(self, node: NodeBase, lon: float, lat: float, alt: float) -> None:
         """
@@ -333,13 +347,16 @@ class Sdt:
             pass
         return result
 
-    def add_link(self, node_one: int, node_two: int, is_wireless: bool) -> None:
+    def add_link(
+        self, node_one: int, node_two: int, is_wireless: bool, network_id: int = None
+    ) -> None:
         """
         Handle adding a link in SDT.
 
         :param node_one: node one id
         :param node_two: node two id
         :param is_wireless: True if link is wireless, False otherwise
+        :param network_id: network link is associated with
         :return: nothing
         """
         logging.debug("sdt add link: %s, %s, %s", node_one, node_two, is_wireless)
@@ -351,7 +368,15 @@ class Sdt:
             attr = "green,2"
         else:
             attr = "red,2"
-        self.cmd(f"link {node_one},{node_two} line {attr}")
+        link_id = f"{node_one}-{node_two}"
+        if network_id is not None:
+            link_id = f"{link_id}-{network_id}"
+        layer = LINK_LAYER
+        if network_id:
+            node = self.session.nodes[network_id]
+            network_name = node.name
+            layer = f"{layer}::{network_name}"
+        self.cmd(f"link {node_one},{node_two},{link_id} linkLayer {layer} line {attr}")
 
     def delete_link(self, node_one: int, node_two: int) -> None:
         """

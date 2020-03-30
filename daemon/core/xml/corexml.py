@@ -75,10 +75,10 @@ def create_emane_config(session: "Session") -> etree.Element:
     for emulator_config in session.emane.emane_config.emulator_config:
         value = config[emulator_config.id]
         add_configuration(emulator_element, emulator_config.id, value)
-    nem_element = etree.SubElement(emane_configuration, "nem")
-    for nem_config in session.emane.emane_config.nem_config:
-        value = config[nem_config.id]
-        add_configuration(nem_element, nem_config.id, value)
+    core_element = etree.SubElement(emane_configuration, "core")
+    for core_config in session.emane.emane_config.core_config:
+        value = config[core_config.id]
+        add_configuration(core_element, core_config.id, value)
     return emane_configuration
 
 
@@ -737,8 +737,8 @@ class CoreXmlReader:
             name = config.get("name")
             value = config.get("value")
             configs[name] = value
-        nem_configuration = emane_global_configuration.find("nem")
-        for config in nem_configuration.iterchildren():
+        core_configuration = emane_global_configuration.find("core")
+        for config in core_configuration.iterchildren():
             name = config.get("name")
             value = config.get("value")
             configs[name] = value
