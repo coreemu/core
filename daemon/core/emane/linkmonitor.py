@@ -4,8 +4,8 @@ import threading
 import time
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
-import emane.shell as emanesh
 import netaddr
+from emane import shell as emanesh
 from lxml import etree
 
 from core.emulator.data import LinkData
