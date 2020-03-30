@@ -100,6 +100,7 @@ class EmaneClient:
             else:
                 logging.warning("unknown emane link model: %s", emane_model)
                 continue
+            logging.info("monitoring links nem(%s) model(%s)", nem_id, emane_model)
             loss_table.mac_id = mac_id
             self.nems[nem_id] = loss_table
 
@@ -187,6 +188,9 @@ class EmaneLinkMonitor:
         self.link_interval = int(self.emane_manager.get_config("link_interval"))
         self.link_timeout = int(self.emane_manager.get_config("link_timeout"))
         self.initialize()
+        if not self.clients:
+            logging.info("no valid emane models to monitor links")
+            return
         self.scheduler = sched.scheduler()
         self.scheduler.enter(0, 0, self.check_links)
         self.running = True
@@ -197,13 +201,13 @@ class EmaneLinkMonitor:
         addresses = self.get_addresses()
         for address in addresses:
             client = EmaneClient(address)
-            self.clients.append(client)
+            if client.nems:
+                self.clients.append(client)
 
     def get_addresses(self) -> List[str]:
         addresses = []
         nodes = self.emane_manager.getnodes()
         for node in nodes:
-            logging.info("link monitor node: %s", node.name)
             for netif in node.netifs():
                 if isinstance(netif.net, CtrlNet):
                     ip4 = None
