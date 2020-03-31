@@ -5,7 +5,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 import logging
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
 from core import constants
@@ -21,12 +21,11 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 
-def link_data_params(link_data: LinkData) -> Tuple[int, int, bool, int]:
-    node_one = link_data.node1_id
-    node_two = link_data.node2_id
-    is_wireless = link_data.link_type == LinkTypes.WIRELESS
-    network_id = link_data.network_id
-    return node_one, node_two, is_wireless, network_id
+def get_link_id(node_one: int, node_two: int, network_id: int) -> str:
+    link_id = f"{node_one}-{node_two}"
+    if network_id is not None:
+        link_id = f"{link_id}-{network_id}"
+    return link_id
 
 
 CORE_LAYER = "CORE"
@@ -226,8 +225,7 @@ class Sdt:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     if is_wireless and link_data.node1_id == net.id:
                         continue
-                    params = link_data_params(link_data)
-                    self.add_link(*params)
+                    self.handle_link_update(link_data)
 
     def get_node_position(self, node: NodeBase) -> Optional[str]:
         """
@@ -348,15 +346,19 @@ class Sdt:
         return result
 
     def add_link(
-        self, node_one: int, node_two: int, is_wireless: bool, network_id: int = None
+        self,
+        node_one: int,
+        node_two: int,
+        network_id: int = None,
+        is_wireless: bool = False,
     ) -> None:
         """
         Handle adding a link in SDT.
 
         :param node_one: node one id
         :param node_two: node two id
+        :param network_id: network link is associated with, None otherwise
         :param is_wireless: True if link is wireless, False otherwise
-        :param network_id: network link is associated with
         :return: nothing
         """
         logging.debug("sdt add link: %s, %s, %s", node_one, node_two, is_wireless)
@@ -368,9 +370,7 @@ class Sdt:
             attr = "green,2"
         else:
             attr = "red,2"
-        link_id = f"{node_one}-{node_two}"
-        if network_id is not None:
-            link_id = f"{link_id}-{network_id}"
+        link_id = get_link_id(node_one, node_two, network_id)
         layer = LINK_LAYER
         if network_id:
             node = self.session.nodes[network_id]
@@ -378,12 +378,13 @@ class Sdt:
             layer = f"{layer}::{network_name}"
         self.cmd(f"link {node_one},{node_two},{link_id} linkLayer {layer} line {attr}")
 
-    def delete_link(self, node_one: int, node_two: int) -> None:
+    def delete_link(self, node_one: int, node_two: int, network_id: int = None) -> None:
         """
         Handle deleting a node in SDT.
 
         :param node_one: node one id
         :param node_two: node two id
+        :param network_id: network link is associated with, None otherwise
         :return: nothing
         """
         logging.debug("sdt delete link: %s, %s", node_one, node_two)
@@ -391,7 +392,8 @@ class Sdt:
             return
         if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
             return
-        self.cmd(f"delete link,{node_one},{node_two}")
+        link_id = get_link_id(node_one, node_two, network_id)
+        self.cmd(f"delete link,{node_one},{node_two},{link_id}")
 
     def handle_link_update(self, link_data: LinkData) -> None:
         """
@@ -400,9 +402,11 @@ class Sdt:
         :param link_data: link data to handle
         :return: nothing
         """
+        node_one = link_data.node1_id
+        node_two = link_data.node2_id
+        network_id = link_data.network_id
+        is_wireless = link_data.link_type == LinkTypes.WIRELESS
         if link_data.message_type == MessageFlags.ADD:
-            params = link_data_params(link_data)
-            self.add_link(*params)
+            self.add_link(node_one, node_two, network_id, is_wireless)
         elif link_data.message_type == MessageFlags.DELETE:
-            params = link_data_params(link_data)
-            self.delete_link(*params[:2])
+            self.delete_link(node_one, node_two, network_id)

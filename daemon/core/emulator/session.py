@@ -430,7 +430,7 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
-        self.sdt.add_link(node_one_id, node_two_id, is_wireless=False)
+        self.sdt.add_link(node_one_id, node_two_id)
         return node_one_interface, node_two_interface
 
     def delete_link(
