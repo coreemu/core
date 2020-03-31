@@ -630,8 +630,8 @@ class CoreServices:
                 self.session.exception(
                     ExceptionLevels.ERROR,
                     "services",
-                    node.id,
                     f"error stopping service {service.name}: {e.stderr}",
+                    node.id,
                 )
                 logging.exception("error running stop command %s", args)
                 status = -1

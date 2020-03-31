@@ -1218,7 +1218,7 @@ class Session:
                 )
                 logging.exception(message)
                 self.exception(
-                    ExceptionLevels.ERROR, "Session.run_state_hooks", None, message
+                    ExceptionLevels.ERROR, "Session.run_state_hooks", message
                 )
 
     def add_state_hook(
@@ -1451,15 +1451,15 @@ class Session:
         )
 
     def exception(
-        self, level: ExceptionLevels, source: str, node_id: int, text: str
+        self, level: ExceptionLevels, source: str, text: str, node_id: int = None
     ) -> None:
         """
         Generate and broadcast an exception event.
 
         :param level: exception level
         :param source: source name
-        :param node_id: node related to exception
         :param text: exception message
+        :param node_id: node related to exception
         :return: nothing
         """
         exception_data = ExceptionData(

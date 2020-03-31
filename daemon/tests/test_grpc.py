@@ -1117,7 +1117,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(exception_level, source, node_id, text)
+            session.exception(exception_level, source, text, node_id)
 
             # then
             queue.get(timeout=5)

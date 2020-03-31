@@ -637,7 +637,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param str source: source where exception came from
         :param str text: details about exception
         :param int node: node id, if related to a specific node
-        :return:
+        :return: nothing
         """
         exception_data = ExceptionData(
             session=self.session.id,
