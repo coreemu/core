@@ -880,7 +880,7 @@ class PtpNet(CoreNetwork):
 
     def data(
         self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> NodeData:
+    ) -> Optional[NodeData]:
         """
         Do not generate a Node Message for point-to-point links. They are
         built using a link message instead.

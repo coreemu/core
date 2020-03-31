@@ -193,7 +193,7 @@ class NodeBase:
 
     def data(
         self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> NodeData:
+    ) -> Optional[NodeData]:
         """
         Build a data object for this node.
 
@@ -209,9 +209,9 @@ class NodeBase:
         server = None
         if self.server is not None:
             server = self.server.name
-        services = self.services
-        if services is not None:
-            services = "|".join([service.name for service in services])
+        services = None
+        if self.services is not None:
+            services = [service.name for service in self.services]
         return NodeData(
             message_type=message_type,
             id=self.id,
@@ -1131,7 +1131,7 @@ class CoreNetworkBase(NodeBase):
 
             netif.swapparams("_params_up")
             link_data = LinkData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node1_id=linked_node.id,
                 node2_id=self.id,
                 link_type=self.linktype,

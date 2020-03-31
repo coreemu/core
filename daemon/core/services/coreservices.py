@@ -637,7 +637,9 @@ class CoreServices:
                 status = -1
         return status
 
-    def get_service_file(self, node: CoreNode, service_name: str, filename: str) -> str:
+    def get_service_file(
+        self, node: CoreNode, service_name: str, filename: str
+    ) -> FileData:
         """
         Send a File Message when the GUI has requested a service file.
         The file data is either auto-generated or comes from an existing config.
@@ -645,7 +647,7 @@ class CoreServices:
         :param node: node to get service file from
         :param service_name: service to get file from
         :param filename: file name to retrieve
-        :return: file message for node
+        :return: file data
         """
         # get service to get file from
         service = self.get_service(node.id, service_name, default_service=True)

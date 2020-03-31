@@ -1464,7 +1464,7 @@ class Session:
         """
         exception_data = ExceptionData(
             node=node_id,
-            session=str(self.id),
+            session=self.id,
             level=level,
             source=source,
             date=time.ctime(),
