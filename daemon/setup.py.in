@@ -34,7 +34,7 @@ setup(
     version="@PACKAGE_VERSION@",
     packages=find_packages(),
     install_requires=[
-        "dataclasses",
+        'dataclasses;python_version=="3.6"',
         "fabric",
         "grpcio",
         "invoke",
