@@ -18,6 +18,9 @@ def convert_node(node_data):
     :param core.emulator.data.NodeData node_data: node data to convert
     :return: packed node message
     """
+    services = None
+    if node_data.services is not None:
+        services = "|".join([x for x in node_data.services])
     tlv_data = structutils.pack_values(
         coreapi.CoreNodeTlv,
         [
@@ -30,12 +33,12 @@ def convert_node(node_data):
             (NodeTlvs.MODEL, node_data.model),
             (NodeTlvs.EMULATION_ID, node_data.emulation_id),
             (NodeTlvs.EMULATION_SERVER, node_data.server),
-            (NodeTlvs.SESSION, node_data.session),
+            (NodeTlvs.SESSION, str(node_data.session)),
             (NodeTlvs.X_POSITION, int(node_data.x_position)),
             (NodeTlvs.Y_POSITION, int(node_data.y_position)),
             (NodeTlvs.CANVAS, node_data.canvas),
             (NodeTlvs.NETWORK_ID, node_data.network_id),
-            (NodeTlvs.SERVICES, node_data.services),
+            (NodeTlvs.SERVICES, services),
             (NodeTlvs.LATITUDE, str(node_data.latitude)),
             (NodeTlvs.LONGITUDE, str(node_data.longitude)),
             (NodeTlvs.ALTITUDE, str(node_data.altitude)),
@@ -65,7 +68,7 @@ def convert_config(config_data):
             (ConfigTlvs.BITMAP, config_data.bitmap),
             (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
             (ConfigTlvs.GROUPS, config_data.groups),
-            (ConfigTlvs.SESSION, config_data.session),
+            (ConfigTlvs.SESSION, str(config_data.session)),
             (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
             (ConfigTlvs.NETWORK_ID, config_data.network_id),
             (ConfigTlvs.OPAQUE, config_data.opaque),

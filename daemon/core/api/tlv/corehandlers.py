@@ -300,7 +300,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             coreapi.CoreExceptionTlv,
             [
                 (ExceptionTlvs.NODE, exception_data.node),
-                (ExceptionTlvs.SESSION, exception_data.session),
+                (ExceptionTlvs.SESSION, str(exception_data.session)),
                 (ExceptionTlvs.LEVEL, exception_data.level.value),
                 (ExceptionTlvs.SOURCE, exception_data.source),
                 (ExceptionTlvs.DATE, exception_data.date),
@@ -639,7 +639,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return:
         """
         exception_data = ExceptionData(
-            session=str(self.session.id),
+            session=self.session.id,
             node=node,
             date=time.ctime(),
             level=level.value,
@@ -1891,13 +1891,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
             node = self.session.get_node(node_id)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node=node_id,
                 object=self.session.services.name,
                 type=ConfigFlags.UPDATE.value,
                 data_types=data_types,
                 data_values=values,
-                session=str(self.session.id),
+                session=self.session.id,
                 opaque=opaque,
             )
             self.session.broadcast_config(config_data)
