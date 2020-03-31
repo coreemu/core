@@ -33,6 +33,7 @@ from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
+    ExceptionLevels,
     LinkTypes,
     MessageFlags,
     NodeTypes,
@@ -532,12 +533,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
             return
 
         message_handler = self.message_handlers[message.message_type]
-
         try:
             # TODO: this needs to be removed, make use of the broadcast message methods
             replies = message_handler(message)
             self.dispatch_replies(replies, message)
-        except Exception:
+        except Exception as e:
+            self.send_exception(ExceptionLevels.ERROR, "corehandler", str(e))
             logging.exception(
                 "%s: exception while handling message: %s",
                 threading.currentThread().getName(),
@@ -642,7 +643,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             session=self.session.id,
             node=node,
             date=time.ctime(),
-            level=level.value,
+            level=level,
             source=source,
             text=text,
         )

@@ -39,6 +39,9 @@ except ImportError:
         from emanesh.events import LocationEvent
         from emanesh.events.eventserviceexception import EventServiceException
     except ImportError:
+        EventService = None
+        LocationEvent = None
+        EventServiceException = None
         logging.debug("compatible emane python bindings not installed")
 
 EMANE_MODELS = [
@@ -278,6 +281,10 @@ class EmaneManager(ModelManager):
             if not self._emane_nets:
                 logging.debug("no emane nodes in session")
                 return EmaneManager.NOT_NEEDED
+
+        # check if bindings were installed
+        if EventService is None:
+            raise CoreError("EMANE python bindings are not installed")
 
         # control network bridge required for EMANE 0.9.2
         # - needs to exist when eventservice binds to it (initeventservice)
