@@ -731,6 +731,8 @@ class CoreXmlReader:
 
     def read_emane_global_config(self) -> None:
         emane_global_configuration = self.scenario.find("emane_global_configuration")
+        if emane_global_configuration is None:
+            return
         emulator_configuration = emane_global_configuration.find("emulator")
         configs = {}
         for config in emulator_configuration.iterchildren():
