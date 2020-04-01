@@ -16,7 +16,7 @@ from core.emulator.enumerations import (
 
 @dataclass
 class ConfigData:
-    message_type: MessageFlags = None
+    message_type: int = None
     node: int = None
     object: str = None
     type: int = None

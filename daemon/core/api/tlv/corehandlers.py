@@ -1892,7 +1892,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             node = self.session.get_node(node_id)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
-                message_type=MessageFlags.NONE,
+                message_type=0,
                 node=node_id,
                 object=self.session.services.name,
                 type=ConfigFlags.UPDATE.value,
