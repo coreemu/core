@@ -96,6 +96,7 @@ class NodeData:
 @dataclass
 class LinkData:
     message_type: MessageFlags = None
+    label: str = None
     node1_id: int = None
     node2_id: int = None
     delay: float = None

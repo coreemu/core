@@ -19,7 +19,6 @@ except ImportError:
     except ImportError:
         logging.debug("compatible emane python bindings not installed")
 
-
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
 
@@ -59,9 +58,11 @@ class EmaneLink:
         self.to_nem = to_nem
         self.sinr = sinr
         self.last_seen = None
+        self.updated = False
         self.touch()
 
     def update(self, sinr: float) -> None:
+        self.updated = self.sinr != sinr
         self.sinr = sinr
         self.touch()
 
@@ -234,19 +235,23 @@ class EmaneLinkMonitor:
         current_links = set(self.links.keys())
         new_links = current_links - previous_links
 
-        # find dead links
+        # find updated and dead links
         dead_links = []
         for link_id, link in self.links.items():
+            complete_id = self.get_complete_id(link_id)
             if link.is_dead(self.link_timeout):
                 dead_links.append(link_id)
+            elif link.updated and complete_id in self.complete_links:
+                link.updated = False
+                self.send_link(MessageFlags.NONE, complete_id)
 
         # announce dead links
         for link_id in dead_links:
-            del self.links[link_id]
             complete_id = self.get_complete_id(link_id)
             if complete_id in self.complete_links:
                 self.complete_links.remove(complete_id)
                 self.send_link(MessageFlags.DELETE, complete_id)
+            del self.links[link_id]
 
         # announce new links
         for link_id in new_links:
@@ -271,6 +276,13 @@ class EmaneLinkMonitor:
         reverse_id = link_id[1], link_id[0]
         return link_id in self.links and reverse_id in self.links
 
+    def get_link_label(self, link_id: Tuple[int, int]) -> str:
+        source_id = tuple(sorted(link_id))
+        source_link = self.links[source_id]
+        dest_id = link_id[::-1]
+        dest_link = self.links[dest_id]
+        return f"{source_link.sinr:.1f} / {dest_link.sinr:.1f}"
+
     def send_link(self, message_type: MessageFlags, link_id: Tuple[int, int]) -> None:
         nem_one, nem_two = link_id
         emane_one, netif = self.emane_manager.nemlookup(nem_one)
@@ -291,11 +303,20 @@ class EmaneLinkMonitor:
             node_two.name,
             nem_two,
         )
-        self.send_message(message_type, node_one.id, node_two.id, emane_one.id)
+        label = self.get_link_label(link_id)
+        self.send_message(message_type, label, node_one.id, node_two.id, emane_one.id)
 
-    def send_message(self, message_type, node_one, node_two, emane_id) -> None:
+    def send_message(
+        self,
+        message_type: MessageFlags,
+        label: str,
+        node_one: int,
+        node_two: int,
+        emane_id: int,
+    ) -> None:
         link_data = LinkData(
             message_type=message_type,
+            label=label,
             node1_id=node_one,
             node2_id=node_two,
             network_id=emane_id,
