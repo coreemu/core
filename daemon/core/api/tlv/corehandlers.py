@@ -50,6 +50,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
     The CoreHandler class uses the RequestHandler class for servicing requests.
     """
 
+    session_clients = {}
+
     def __init__(self, request, client_address, server):
         """
         Create a CoreRequestHandler instance.
@@ -87,7 +89,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             thread.start()
 
         self.session = None
-        self.session_clients = {}
         self.coreemu = server.coreemu
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -1972,6 +1973,7 @@ class CoreUdpHandler(CoreHandler):
         }
         self.session = None
         self.coreemu = server.mainserver.coreemu
+        self.tcp_handler = server.RequestHandlerClass
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def setup(self):
@@ -2060,7 +2062,7 @@ class CoreUdpHandler(CoreHandler):
         if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
             return
 
-        clients = self.session_clients[self.session.id]
+        clients = self.tcp_handler.session_clients[self.session.id]
         for client in clients:
             try:
                 client.sendall(message.raw_message)
