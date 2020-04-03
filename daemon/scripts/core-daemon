@@ -41,8 +41,7 @@ def start_udp(mainserver, server_address):
     :return: CoreUdpServer
     """
     mainserver.udpserver = CoreUdpServer(server_address, CoreUdpHandler, mainserver)
-    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start)
-    mainserver.udpthread.daemon = True
+    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start, daemon=True)
     mainserver.udpthread.start()
 
 
@@ -70,8 +69,7 @@ def cored(cfg):
     address_config = cfg["grpcaddress"]
     port_config = cfg["grpcport"]
     grpc_address = f"{address_config}:{port_config}"
-    grpc_thread = threading.Thread(target=grpc_server.listen, args=(grpc_address,))
-    grpc_thread.daemon = True
+    grpc_thread = threading.Thread(target=grpc_server.listen, args=(grpc_address,), daemon=True)
     grpc_thread.start()
 
     # start udp server
