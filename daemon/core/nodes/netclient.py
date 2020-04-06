@@ -4,7 +4,7 @@ Clients for dealing with bridge/interface commands.
 import json
 from typing import Callable
 
-from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN, SYSCTL_BIN
+from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, SYSCTL_BIN, TC_BIN
 
 
 class LinuxNetClient:
