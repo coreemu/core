@@ -211,7 +211,7 @@ bootfrr()
     if grep -q "^ip route " $FRR_CONF; then
         bootdaemon "staticd"
     fi
-    for r in rip ripng ospf6 ospf bgp babel; do
+    for r in rip ripng ospf6 ospf bgp babel isis; do
         if grep -q "^router \\<${r}\\>" $FRR_CONF; then
             bootdaemon "${r}d"
         fi
@@ -651,3 +651,45 @@ class FRRpimd(FrrService):
     @classmethod
     def generatefrrifcconfig(cls, node, ifc):
         return "  ip mfea\n  ip igmp\n  ip pim\n"
+
+
+class FRRIsis(FrrService):
+    """
+    The ISIS service provides IPv4 and IPv6 routing for wired networks. It does
+    not build its own configuration file but has hooks for adding to the
+    unified frr.conf file.
+    """
+
+    name = "FRRISIS"
+    startup = ()
+    shutdown = ("killall isisd",)
+    validate = ("pidof isisd",)
+    ipv4_routing = True
+    ipv6_routing = True
+
+    @staticmethod
+    def ptpcheck(ifc):
+        """
+        Helper to detect whether interface is connected to a notional
+        point-to-point link.
+        """
+        if isinstance(ifc.net, PtpNet):
+            return "  isis network point-to-point\n"
+        return ""
+
+    @classmethod
+    def generatefrrconfig(cls, node):
+        cfg = "router isis DEFAULT\n"
+        cfg += "  net 47.0001.0000.1900.%04x.00\n" % node.id
+        cfg += "  metric-style wide\n"
+        cfg += "  is-type level-2-only\n"
+        cfg += "!\n"
+        return cfg
+
+    @classmethod
+    def generatefrrifcconfig(cls, node, ifc):
+        cfg = "  ip router isis DEFAULT\n"
+        cfg += "  ipv6 router isis DEFAULT\n"
+        cfg += "  isis circuit-type level-2-only\n"
+        cfg += cls.ptpcheck(ifc)
+        return cfg
