@@ -650,6 +650,7 @@ message Session {
     SessionState.Enum state = 2;
     repeated Node nodes = 3;
     repeated Link links = 4;
+    string dir = 5;
 }
 
 message SessionSummary {
@@ -657,6 +658,7 @@ message SessionSummary {
     SessionState.Enum state = 2;
     int32 nodes = 3;
     string file = 4;
+    string dir = 5;
 }
 
 message Node {
@@ -673,6 +675,8 @@ message Node {
     string server = 11;
     repeated string config_services = 12;
     Geo geo = 13;
+    string dir = 14;
+    string channel = 15;
 }
 
 message Link {
