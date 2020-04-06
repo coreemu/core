@@ -11,6 +11,7 @@ from queue import Queue
 from threading import Thread
 from typing import Dict, Tuple
 
+from core import utils
 from core.api.grpc.client import CoreGrpcClient
 from core.api.grpc.core_pb2 import NodeType
 
@@ -172,6 +173,10 @@ class RouterMonitor:
 
 
 def main() -> None:
+    if not utils.which("tcpdump", required=False):
+        print("core-route-monitor requires tcpdump to be installed")
+        return
+
     parser = argparse.ArgumentParser(
         description="core route monitor",
         formatter_class=ArgumentDefaultsHelpFormatter,
@@ -200,7 +205,7 @@ def main() -> None:
         monitor.start()
     except KeyboardInterrupt:
         monitor.stop()
-        print("ending packet monitor")
+        print("ending route monitor")
 
 
 if __name__ == "__main__":
