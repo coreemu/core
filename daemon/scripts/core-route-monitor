@@ -33,9 +33,11 @@ class SdtClient:
         self.links = []
         self.send(f'layer "{ROUTE_LAYER}"')
 
+    def close(self) -> None:
+        self.sock.close()
+
     def send(self, cmd: str) -> None:
         sdt_cmd = f"{cmd}\n".encode()
-        print("sdt cmd: ", cmd)
         self.sock.sendall(sdt_cmd)
 
     def add_link(self, node1, node2) -> None:
@@ -64,6 +66,7 @@ class RouterMonitor:
         self.seen = {}
         self.running = False
         self.route_time = None
+        self.listeners = []
         self.sdt = SdtClient((sdt_host, sdt_port))
         self.nodes = self.get_nodes()
 
@@ -77,7 +80,7 @@ class RouterMonitor:
                 session = sessions[0]
             if not session:
                 raise Exception("no current core sessions")
-            print(session.dir)
+            print("session: ", session.dir)
             response = self.core.get_session(session.id)
             for node in response.session.nodes:
                 if node.type != NodeType.DEFAULT:
@@ -88,8 +91,10 @@ class RouterMonitor:
     def start(self) -> None:
         self.running = True
         for node_id, node in self.nodes.items():
+            print("listening on node: ", node)
             thread = Thread(target=self.listen, args=(node_id, node), daemon=True)
             thread.start()
+            self.listeners.append(thread)
         self.manage()
 
     def manage(self) -> None:
@@ -123,7 +128,6 @@ class RouterMonitor:
                         key=cmp_to_key(self.route_sort),
                         reverse=True)
         print("current route:")
-        print(values)
         for index, node_data in enumerate(values):
             next_index = index + 1
             if next_index == len(values):
@@ -133,8 +137,13 @@ class RouterMonitor:
             print(f"{node_id} -> {next_node_id}")
             self.sdt.add_link(node_id, next_node_id)
 
-    def cleanup(self) -> None:
+    def stop(self) -> None:
+        self.running = False
         self.sdt.delete_links()
+        self.sdt.close()
+        for thread in self.listeners:
+            thread.join()
+        self.listeners.clear()
 
     def listen(self, node_id, node) -> None:
         cmd = (
@@ -149,16 +158,17 @@ class RouterMonitor:
                 ready, _, _ = select.select([p.stdout], [], [], 1)
                 if ready:
                     line = p.stdout.readline().strip().decode()
-                    line = line.split("ttl", 1)[1]
-                    ttl = int(line.split(",", 1)[0])
-                    p.stdout.readline()
-                    self.queue.put((RouteEnum.ADD, node_id, ttl))
-                    current = time.monotonic()
+                    if line:
+                        line = line.split("ttl", 1)[1]
+                        ttl = int(line.split(",", 1)[0])
+                        p.stdout.readline()
+                        self.queue.put((RouteEnum.ADD, node_id, ttl))
+                        current = time.monotonic()
                 else:
                     if (time.monotonic() - current) >= DEAD_TIME:
                         self.queue.put((RouteEnum.DEL, node_id, None))
         except Exception as e:
-            print(f"listen error: {e}")
+            print(f"listener error: {e}")
 
 
 def main() -> None:
@@ -189,7 +199,7 @@ def main() -> None:
     try:
         monitor.start()
     except KeyboardInterrupt:
-        monitor.cleanup()
+        monitor.stop()
         print("ending packet monitor")
 
 

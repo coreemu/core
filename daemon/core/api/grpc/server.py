@@ -103,7 +103,6 @@ from core.api.grpc.wlan_pb2 import (
     SetWlanConfigRequest,
     SetWlanConfigResponse,
 )
-from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import LinkData
 from core.emulator.emudata import LinkOptions, NodeOptions
@@ -111,9 +110,7 @@ from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
-from core.nodes.docker import DockerNode
-from core.nodes.lxd import LxcNode
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -544,42 +541,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node = session.nodes[_id]
             if not isinstance(node.id, int):
                 continue
-            node_type = session.get_node_type(node.__class__)
-            model = getattr(node, "type", None)
-            position = core_pb2.Position(
-                x=node.position.x, y=node.position.y, z=node.position.z
-            )
-            services = getattr(node, "services", [])
-            if services is None:
-                services = []
-            services = [x.name for x in services]
-            config_services = getattr(node, "config_services", {})
-            config_services = [x for x in config_services]
-            emane_model = None
-            if isinstance(node, EmaneNet):
-                emane_model = node.model.name
-            node_dir = None
-            channel = None
-            if isinstance(node, CoreNode):
-                node_dir = node.nodedir
-                channel = node.ctrlchnlname
-            image = getattr(node, "image", None)
-            node_proto = core_pb2.Node(
-                id=node.id,
-                name=node.name,
-                emane=emane_model,
-                model=model,
-                type=node_type.value,
-                position=position,
-                services=services,
-                icon=node.icon,
-                image=image,
-                config_services=config_services,
-                dir=node_dir,
-                channel=channel,
-            )
-            if isinstance(node, (DockerNode, LxcNode)):
-                node_proto.image = node.image
+            node_proto = grpcutils.get_node_proto(session, node)
             nodes.append(node_proto)
             node_links = get_links(session, node)
             links.extend(node_links)
@@ -723,34 +685,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interface = node._netif[interface_id]
             interface_proto = grpcutils.interface_to_proto(interface)
             interfaces.append(interface_proto)
-        emane_model = None
-        if isinstance(node, EmaneNet):
-            emane_model = node.model.name
-        node_dir = None
-        channel = None
-        if isinstance(node, CoreNode):
-            node_dir = node.nodedir
-            channel = node.ctrlchnlname
-        services = []
-        if node.services:
-            services = [x.name for x in node.services]
-        position = core_pb2.Position(
-            x=node.position.x, y=node.position.y, z=node.position.z
-        )
-        node_type = session.get_node_type(node.__class__)
-        node_proto = core_pb2.Node(
-            id=node.id,
-            name=node.name,
-            type=node_type.value,
-            emane=emane_model,
-            model=node.type,
-            position=position,
-            services=services,
-            dir=node_dir,
-            channel=channel,
-        )
-        if isinstance(node, (DockerNode, LxcNode)):
-            node_proto.image = node.image
+        node_proto = grpcutils.get_node_proto(session, node)
         return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
 
     def EditNode(
