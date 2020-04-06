@@ -168,10 +168,10 @@ class LinuxNetClient:
             )
         else:
             self.run(f"{IP_BIN} address add {address} dev {device}")
-        if ':' in address:
-            # IPv6 addresses are removed by default on interface down. 
+        if ":" in address:
+            # IPv6 addresses are removed by default on interface down.
             # Make sure that the IPv6 address we add is not removed
-            self.run(f"{SYSCTL_BIN} -w net.ipv6.conf.{device}.keep_addr_on_down=1")            
+            self.run(f"{SYSCTL_BIN} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
 
     def delete_address(self, device: str, address: str) -> None:
         """
