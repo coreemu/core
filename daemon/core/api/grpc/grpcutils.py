@@ -8,6 +8,7 @@ from core import utils
 from core.api.grpc import common_pb2, core_pb2
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig
 from core.config import ConfigurableOptions
+from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -219,6 +220,47 @@ def get_config_options(
         for option in options:
             option.group = config_group.name
     return results
+
+
+def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
+    """
+    Convert CORE node to protobuf representation.
+
+    :param session: session containing node
+    :param node: node to convert
+    :return: node proto
+    """
+    node_type = session.get_node_type(node.__class__)
+    position = core_pb2.Position(
+        x=node.position.x, y=node.position.y, z=node.position.z
+    )
+    services = getattr(node, "services", [])
+    if services is None:
+        services = []
+    services = [x.name for x in services]
+    config_services = getattr(node, "config_services", {})
+    config_services = [x for x in config_services]
+    emane_model = None
+    if isinstance(node, EmaneNet):
+        emane_model = node.model.name
+    model = getattr(node, "type", None)
+    node_dir = getattr(node, "nodedir", None)
+    channel = getattr(node, "ctrlchnlname", None)
+    image = getattr(node, "image", None)
+    return core_pb2.Node(
+        id=node.id,
+        name=node.name,
+        emane=emane_model,
+        model=model,
+        type=node_type.value,
+        position=position,
+        services=services,
+        icon=node.icon,
+        image=image,
+        config_services=config_services,
+        dir=node_dir,
+        channel=channel,
+    )
 
 
 def get_links(session: Session, node: NodeBase):
