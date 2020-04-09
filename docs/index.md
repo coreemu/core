@@ -21,17 +21,17 @@ networking scenarios, security studies, and increasing the size of physical test
 | Topic | Description|
 |-------|------------|
 |[Architecture](architecture.md)|Overview of the architecture|
-|[Installation](install.md)|Installing from source, packages, & other dependencies|
-|[Using the GUI](usage.md)|Details on the different node types and options in the GUI|
-|[Distributed](distributed.md)|Overview and detals for running CORE across multiple servers|
+|[Installation](install.md)|How to install CORE and its requirements|
+|[GUI](gui.md)|How to use the GUI|
+|[Distributed](distributed.md)|Details for running CORE across multiple servers|
 |[Python Scripting](scripting.md)|How to write python scripts for creating a CORE session|
 |[gRPC API](grpc.md)|How to enable and use the gRPC API|
-|[Node Types](machine.md)|Overview of node types supported within CORE|
+|[Node Types](nodetypes.md)|Overview of node types supported within CORE|
 |[CTRLNET](ctrlnet.md)|How to use control networks to communicate with nodes from host|
 |[Services](services.md)|Overview of provided services and creating custom ones|
 |[EMANE](emane.md)|Overview of EMANE integration and integrating custom EMANE models|
 |[Performance](performance.md)|Notes on performance when using CORE|
-|[Developers Guide](devguide.md)|Overview of topics when developing CORE|
+|[Developers Guide](devguide.md)|Overview on how to contribute to CORE|
 
 ## Credits
 
@@ -45,4 +45,4 @@ Python framework and has made significant contributions. Claudiu Danilov, Rod Sa
 Phil Spagnolo, and Ian Chakeres have contributed code to CORE. Dan Mackley helped develop the CORE API, originally to
 interface with a simulator. Jae Kim and Tom Henderson have supervised the project and provided direction.
 
-Copyright (c) 2005-2018, the Boeing Company.
+Copyright (c) 2005-2020, the Boeing Company.
