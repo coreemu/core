@@ -181,7 +181,7 @@ Files. Generally, these menu items should not be used in Execute mode.
 | Option | Description |
 |---|---|
 | Undo | Attempts to undo the last edit in edit mode. |
-| Redo* | Attempts to redo an edit that has been undone. |
+| Redo | Attempts to redo an edit that has been undone. |
 | Cut, Copy, Paste | Used to cut, copy, and paste a selection. When nodes are pasted, their node numbers are automatically incremented, and existing links are preserved with new IP addresses assigned. Services and their customizations are copied to the new node, but care should be taken as node IP addresses have changed with possibly old addresses remaining in any custom service configurations. Annotations may also be copied and pasted.
 | Select All | Selects all items on the canvas. Selected items can be moved as a group. |
 | Select Adjacent | Select all nodes that are linked to the already selected node(s). For wireless nodes this simply selects the WLAN node(s) that the wireless node belongs to. You can use this by clicking on a node and pressing CTRL+N to select the adjacent nodes. |
@@ -266,7 +266,7 @@ dialog box which is also accessible from the *Widgets* menu.
 
 Here are some standard widgets:
 
-* *Adjacency* - displays router adjacency states for Quagga's OSPFv2 and OSPFv3
+* **Adjacency** - displays router adjacency states for Quagga's OSPFv2 and OSPFv3
   routing protocols. A line is drawn from each router halfway to the router ID
   of an adjacent router. The color of the line is based on the OSPF adjacency
   state such as Two-way or Full. To learn about the different colors, see the
@@ -274,7 +274,7 @@ Here are some standard widgets:
   dump OSPF neighbor information.
   Only half of the line is drawn because each
   router may be in a different adjacency state with respect to the other.
-* *Throughput* - displays the kilobits-per-second throughput above each link,
+* **Throughput** - displays the kilobits-per-second throughput above each link,
   using statistics gathered from the ng_pipe Netgraph node that implements each
   link. If the throughput exceeds a certain threshold, the link will become
   highlighted. For wireless nodes which broadcast data to all nodes in range,
