@@ -12,7 +12,7 @@ from core import constants
 from core.constants import CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
+from core.emulator.enumerations import EventTypes, MessageFlags
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
 from core.nodes.network import WlanNode
@@ -32,6 +32,8 @@ CORE_LAYER = "CORE"
 NODE_LAYER = "CORE::Nodes"
 LINK_LAYER = "CORE::Links"
 CORE_LAYERS = [CORE_LAYER, LINK_LAYER, NODE_LAYER]
+DEFAULT_LINK_COLOR = "red"
+LINK_COLORS = ["green", "blue", "orange", "purple", "white"]
 
 
 class Sdt:
@@ -68,10 +70,11 @@ class Sdt:
         self.lock = threading.Lock()
         self.sock = None
         self.connected = False
-        self.showerror = True
         self.url = self.DEFAULT_SDT_URL
         self.address = None
         self.protocol = None
+        self.colors = {}
+        self.network_layers = set()
         self.session.node_handlers.append(self.handle_node_update)
         self.session.link_handlers.append(self.handle_link_update)
 
@@ -171,8 +174,13 @@ class Sdt:
         :return: nothing
         """
         self.cmd("clear all")
+        for layer in self.network_layers:
+            self.cmd(f"delete layer,{layer}")
+        for layer in CORE_LAYERS[::-1]:
+            self.cmd(f"delete layer,{layer}")
         self.disconnect()
-        self.showerror = True
+        self.network_layers.clear()
+        self.colors.clear()
 
     def cmd(self, cmdstr: str) -> bool:
         """
@@ -345,13 +353,26 @@ class Sdt:
             pass
         return result
 
+    def get_link_line(self, network_id: int) -> str:
+        """
+        Retrieve link line color based on network.
+
+        :param network_id: network id of link, None for wired links
+        :return: link line configuration
+        """
+        network = self.session.nodes.get(network_id)
+        if network:
+            color = self.colors.get(network_id)
+            if not color:
+                index = len(self.colors) % len(LINK_COLORS)
+                color = LINK_COLORS[index]
+                self.colors[network_id] = color
+        else:
+            color = DEFAULT_LINK_COLOR
+        return f"{color},2"
+
     def add_link(
-        self,
-        node_one: int,
-        node_two: int,
-        network_id: int = None,
-        label: str = None,
-        is_wireless: bool = False,
+        self, node_one: int, node_two: int, network_id: int = None, label: str = None
     ) -> None:
         """
         Handle adding a link in SDT.
@@ -360,7 +381,6 @@ class Sdt:
         :param node_two: node two id
         :param network_id: network link is associated with, None otherwise
         :param label: label for link
-        :param is_wireless: True if link is wireless, False otherwise
         :return: nothing
         """
         logging.debug("sdt add link: %s, %s, %s", node_one, node_two, network_id)
@@ -368,21 +388,20 @@ class Sdt:
             return
         if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
             return
-        if is_wireless:
-            attr = "green,2"
-        else:
-            attr = "red,2"
+        line = self.get_link_line(network_id)
         link_id = get_link_id(node_one, node_two, network_id)
         layer = LINK_LAYER
         if network_id:
-            node = self.session.nodes[network_id]
-            network_name = node.name
-            layer = f"{layer}::{network_name}"
+            node = self.session.nodes.get(network_id)
+            if node:
+                network_name = node.name
+                layer = f"{layer}::{network_name}"
+                self.network_layers.add(layer)
         link_label = ""
         if label:
             link_label = f'linklabel on,"{label}"'
         self.cmd(
-            f"link {node_one},{node_two},{link_id} linkLayer {layer} line {attr} "
+            f"link {node_one},{node_two},{link_id} linkLayer {layer} line {line} "
             f"{link_label}"
         )
 
@@ -434,10 +453,9 @@ class Sdt:
         node_one = link_data.node1_id
         node_two = link_data.node2_id
         network_id = link_data.network_id
-        is_wireless = link_data.link_type == LinkTypes.WIRELESS
         label = link_data.label
         if link_data.message_type == MessageFlags.ADD:
-            self.add_link(node_one, node_two, network_id, label, is_wireless)
+            self.add_link(node_one, node_two, network_id, label)
         elif link_data.message_type == MessageFlags.DELETE:
             self.delete_link(node_one, node_two, network_id)
         elif link_data.message_type == MessageFlags.NONE and label:

@@ -1404,8 +1404,8 @@ class Session:
 
         if node:
             node.shutdown()
-            self.check_shutdown()
             self.sdt.delete_node(_id)
+            self.check_shutdown()
 
         return node is not None
 
@@ -1602,6 +1602,8 @@ class Session:
         if node_count == 0:
             shutdown = True
             self.set_state(EventTypes.SHUTDOWN_STATE)
+            # clearing sdt saved data here for legacy gui
+            self.sdt.shutdown()
         return shutdown
 
     def short_session_id(self) -> str:
