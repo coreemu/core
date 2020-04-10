@@ -66,7 +66,7 @@ The CORE Python modules are documented with comments in the code. From an
 interactive Python shell, you can retrieve online help about the various
 classes and methods; for example *help(CoreNode)* or *help(Session)*.
 
-> :warning: The CORE daemon *core-daemon* manages a list of sessions and allows
+> **NOTE:** The CORE daemon *core-daemon* manages a list of sessions and allows
 the GUI to connect and control sessions. Your Python script uses the same CORE
 modules but runs independently of the daemon. The daemon does not need to be
 running for your script to work.

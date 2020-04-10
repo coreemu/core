@@ -369,7 +369,7 @@ physical interface. A list of available interfaces will be shown, and one may
 be selected by double-clicking its name in the list, or an interface name may
 be entered into the text box.
 
-> :warning: When you press the Start button to instantiate your topology, the
+> **NOTE:** When you press the Start button to instantiate your topology, the
    interface assigned to the RJ45 will be connected to the CORE topology. The
    interface can no longer be used by the system. For example, if there was an
    IP address assigned to the physical interface before execution, the address
@@ -409,7 +409,7 @@ the node will display "UNASSIGNED". This text should be replaced with the IP
 address of the tunnel peer. This is the IP address of the other CORE machine or
 physical machine, not an IP address of another virtual node.
 
-> :warning: Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices. The *gretap* device
+> **NOTE:** Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices. The *gretap* device
    has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
    bridge's MTU
    becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
@@ -674,7 +674,7 @@ would appear for a failed validation command with the UserDefined service.
 Buttons are available at the bottom of the dialog for clearing the exception
 list and for viewing the CORE daemon and node log files.
 
-> :warning: In batch mode, exceptions received from the CORE daemon are displayed on
+> **NOTE:** In batch mode, exceptions received from the CORE daemon are displayed on
    the console.
 
 ## Configuration Files
@@ -694,17 +694,17 @@ has a block contained in braces. The first block is indented by four spaces.
 Within the **network-config** block (and any *custom-*-config* block), the
 indentation is one tab character.
 
-> :bulb: There are several topology examples included with CORE in
+> **NOTE:** There are several topology examples included with CORE in
    the **configs/** directory.
    This directory can be found in **~/.core/configs**, or
    installed to the filesystem
    under **/usr[/local]/share/examples/configs**.
 
-> :bulb: When using the **.imn** file format, file paths for things like custom
+> **NOTE:** When using the **.imn** file format, file paths for things like custom
    icons may contain the special variables **$CORE_DATA_DIR** or **$CONFDIR** which
    will be substituted with **/usr/share/core** or **~/.core/configs**.
 
-> :bulb: Feel free to edit the files directly using your favorite text editor.
+> **NOTE:** Feel free to edit the files directly using your favorite text editor.
 
 ## Customizing your Topology's Look
 

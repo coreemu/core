@@ -15,7 +15,7 @@ set of default services. Each service defines the per-node directories,
 configuration files, startup index, starting commands, validation commands,
 shutdown commands, and meta-data associated with a node.
 
-> :warning: **Network namespace nodes do not undergo the normal Linux boot process**
+> **NOTE:** **Network namespace nodes do not undergo the normal Linux boot process**
    using the **init**, **upstart**, or **systemd** frameworks. These
    lightweight nodes use configured CORE *services*.
 
@@ -79,7 +79,7 @@ the service customization dialog for that service.
 The dialog has three tabs for configuring the different aspects of the service:
 files, directories, and startup/shutdown.
 
-> :warning: A **yellow** customize icon next to a service indicates that service
+> **NOTE:** A **yellow** customize icon next to a service indicates that service
    requires customization (e.g. the *Firewall* service).
    A **green** customize icon indicates that a custom configuration exists.
    Click the *Defaults* button when customizing a service to remove any
@@ -98,7 +98,7 @@ per-node directories that are defined by the services. For example, the
 the Zebra service, because Quagga running on each node needs to write separate
 PID files to that directory.
 
-> :warning: The **/var/log** and **/var/run** directories are
+> **NOTE:** The **/var/log** and **/var/run** directories are
    mounted uniquely per-node by default.
    Per-node mount targets can be found in **/tmp/pycore.nnnnn/nN.conf/**
    (where *nnnnn* is the session number and *N* is the node number.)
@@ -128,7 +128,7 @@ if a process is running and return zero when found. When a validate command
 produces a non-zero return value, an exception is generated, which will cause
 an error to be displayed in the Check Emulation Light.
 
-> :bulb: To start, stop, and restart services during run-time, right-click a
+> **NOTE:** To start, stop, and restart services during run-time, right-click a
    node and use the *Services...* menu.
 
 ## New Services

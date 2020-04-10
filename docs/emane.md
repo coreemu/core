@@ -224,7 +224,7 @@ configured. Click *Apply* to save these settings.
 
 ![](static/distributed-emane-configuration.png)
 
-> :bulb: Here is a quick checklist for distributed emulation with EMANE.
+> **NOTE:** Here is a quick checklist for distributed emulation with EMANE.
 
    1. Follow the steps outlined for normal CORE.
    2. Under the *EMANE* tab of the EMANE WLAN, click on *EMANE options*.
