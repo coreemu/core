@@ -8,7 +8,7 @@ import core.nodes.physical
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
@@ -16,7 +16,6 @@ from core.nodes.network import CtrlNet
 from core.services.coreservices import CoreService
 
 if TYPE_CHECKING:
-    from core.emane.emanemanager import EmaneGlobalModel
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
 
@@ -69,23 +68,17 @@ def create_interface_data(interface_element: etree.Element) -> InterfaceData:
     return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
 
 
-def create_emane_config(
-    node_id: int, emane_config: "EmaneGlobalModel", config: Dict[str, str]
-) -> etree.Element:
-    emane_configuration = etree.Element("emane_configuration")
-    add_attribute(emane_configuration, "node", node_id)
-    add_attribute(emane_configuration, "model", "emane")
-
+def create_emane_config(session: "Session") -> etree.Element:
+    emane_configuration = etree.Element("emane_global_configuration")
+    config = session.emane.get_configs()
     emulator_element = etree.SubElement(emane_configuration, "emulator")
-    for emulator_config in emane_config.emulator_config:
+    for emulator_config in session.emane.emane_config.emulator_config:
         value = config[emulator_config.id]
         add_configuration(emulator_element, emulator_config.id, value)
-
-    nem_element = etree.SubElement(emane_configuration, "nem")
-    for nem_config in emane_config.nem_config:
-        value = config[nem_config.id]
-        add_configuration(nem_element, nem_config.id, value)
-
+    core_element = etree.SubElement(emane_configuration, "core")
+    for core_config in session.emane.emane_config.core_config:
+        value = config[core_config.id]
+        add_configuration(core_element, core_config.id, value)
     return emane_configuration
 
 
@@ -260,7 +253,7 @@ class NetworkElement(NodeElement):
 
     def add_type(self) -> None:
         if self.node.apitype:
-            node_type = NodeTypes(self.node.apitype).name
+            node_type = self.node.apitype.name
         else:
             node_type = self.node.__class__.__name__
         add_attribute(self.element, "type", node_type)
@@ -324,7 +317,7 @@ class CoreXmlWriter:
             for file_name, data in self.session._hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
-                add_attribute(hook, "state", state)
+                add_attribute(hook, "state", state.value)
                 hook.text = data
 
         if hooks.getchildren():
@@ -360,6 +353,9 @@ class CoreXmlWriter:
             self.scenario.append(metadata_elements)
 
     def write_emane_configs(self) -> None:
+        emane_global_configuration = create_emane_config(self.session)
+        self.scenario.append(emane_global_configuration)
+
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
@@ -371,17 +367,9 @@ class CoreXmlWriter:
                 logging.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
-                if model_name == -1:
-                    emane_configuration = create_emane_config(
-                        node_id, self.session.emane.emane_config, config
-                    )
-                else:
-                    model = self.session.emane.models[model_name]
-                    emane_configuration = create_emane_model_config(
-                        node_id, model, config
-                    )
+                model = self.session.emane.models[model_name]
+                emane_configuration = create_emane_model_config(node_id, model, config)
                 emane_configurations.append(emane_configuration)
-
         if emane_configurations.getchildren():
             self.scenario.append(emane_configurations)
 
@@ -476,7 +464,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data(0))
+            links.extend(node.all_link_data())
 
         return links
 
@@ -613,6 +601,7 @@ class CoreXmlReader:
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
+        self.read_emane_global_config()
         self.read_emane_configs()
         self.read_nodes()
         self.read_configservice_configs()
@@ -666,13 +655,11 @@ class CoreXmlReader:
 
         for hook in session_hooks.iterchildren():
             name = hook.get("name")
-            state = hook.get("state")
+            state = get_int(hook, "state")
+            state = EventTypes(state)
             data = hook.text
-            hook_type = f"hook:{state}"
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.set_hook(
-                hook_type, file_name=name, source_name=None, data=data
-            )
+            self.session.add_hook(state, name, None, data)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")
@@ -741,6 +728,23 @@ class CoreXmlReader:
                     service.config_data[name] = data
                     files.add(name)
                 service.configs = tuple(files)
+
+    def read_emane_global_config(self) -> None:
+        emane_global_configuration = self.scenario.find("emane_global_configuration")
+        if emane_global_configuration is None:
+            return
+        emulator_configuration = emane_global_configuration.find("emulator")
+        configs = {}
+        for config in emulator_configuration.iterchildren():
+            name = config.get("name")
+            value = config.get("value")
+            configs[name] = value
+        core_configuration = emane_global_configuration.find("core")
+        for config in core_configuration.iterchildren():
+            name = config.get("name")
+            value = config.get("value")
+            configs[name] = value
+        self.session.emane.set_configs(config=configs)
 
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")

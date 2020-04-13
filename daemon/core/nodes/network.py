@@ -12,7 +12,7 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
@@ -848,7 +848,7 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Do not include CtrlNet in link messages describing this session.
 
@@ -879,27 +879,19 @@ class PtpNet(CoreNetwork):
         super().attach(netif)
 
     def data(
-        self,
-        message_type: int,
-        lat: float = None,
-        lon: float = None,
-        alt: float = None,
-        source: str = None,
-    ) -> NodeData:
+        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
+    ) -> Optional[NodeData]:
         """
         Do not generate a Node Message for point-to-point links. They are
         built using a link message instead.
 
         :param message_type: purpose for the data object we are creating
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
         :param source: source of node data
         :return: node data object
         """
         return None
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE API TLVs for a point-to-point link. One Link message
         describes this network.
@@ -999,7 +991,7 @@ class SwitchNode(CoreNetwork):
     Provides switch functionality within a core node.
     """
 
-    apitype = NodeTypes.SWITCH.value
+    apitype = NodeTypes.SWITCH
     policy = "ACCEPT"
     type = "lanswitch"
 
@@ -1010,7 +1002,7 @@ class HubNode(CoreNetwork):
     ports by turning off MAC address learning.
     """
 
-    apitype = NodeTypes.HUB.value
+    apitype = NodeTypes.HUB
     policy = "ACCEPT"
     type = "hub"
 
@@ -1029,8 +1021,8 @@ class WlanNode(CoreNetwork):
     Provides wireless lan functionality within a core node.
     """
 
-    apitype = NodeTypes.WIRELESS_LAN.value
-    linktype = LinkTypes.WIRED.value
+    apitype = NodeTypes.WIRELESS_LAN
+    linktype = LinkTypes.WIRED
     policy = "DROP"
     type = "wlan"
 
@@ -1079,11 +1071,7 @@ class WlanNode(CoreNetwork):
         super().attach(netif)
         if self.model:
             netif.poshook = self.model.position_callback
-            if netif.node is None:
-                return
-            x, y, z = netif.node.position.get()
-            # invokes any netif.poshook
-            netif.setposition(x, y, z)
+            netif.setposition()
 
     def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
         """
@@ -1094,15 +1082,13 @@ class WlanNode(CoreNetwork):
         :return: nothing
         """
         logging.debug("node(%s) setting model: %s", self.name, model.name)
-        if model.config_type == RegisterTlvs.WIRELESS.value:
+        if model.config_type == RegisterTlvs.WIRELESS:
             self.model = model(session=self.session, _id=self.id)
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
-                if netif.poshook and netif.node:
-                    x, y, z = netif.node.position.get()
-                    netif.poshook(netif, x, y, z)
+                netif.setposition()
             self.updatemodel(config)
-        elif model.config_type == RegisterTlvs.MOBILITY.value:
+        elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
@@ -1119,11 +1105,9 @@ class WlanNode(CoreNetwork):
         )
         self.model.update_config(config)
         for netif in self.netifs():
-            if netif.poshook and netif.node:
-                x, y, z = netif.node.position.get()
-                netif.poshook(netif, x, y, z)
+            netif.setposition()
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Retrieve all link data.
 
@@ -1141,6 +1125,6 @@ class TunnelNode(GreTapBridge):
     Provides tunnel functionality in a core node.
     """
 
-    apitype = NodeTypes.TUNNEL.value
+    apitype = NodeTypes.TUNNEL
     policy = "ACCEPT"
     type = "tunnel"

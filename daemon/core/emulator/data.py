@@ -2,121 +2,130 @@
 CORE data objects.
 """
 
-import collections
+from dataclasses import dataclass
+from typing import List, Tuple
 
-ConfigData = collections.namedtuple(
-    "ConfigData",
-    [
-        "message_type",
-        "node",
-        "object",
-        "type",
-        "data_types",
-        "data_values",
-        "captions",
-        "bitmap",
-        "possible_values",
-        "groups",
-        "session",
-        "interface_number",
-        "network_id",
-        "opaque",
-    ],
+from core.emulator.enumerations import (
+    EventTypes,
+    ExceptionLevels,
+    LinkTypes,
+    MessageFlags,
+    NodeTypes,
 )
-ConfigData.__new__.__defaults__ = (None,) * len(ConfigData._fields)
 
-EventData = collections.namedtuple(
-    "EventData", ["node", "event_type", "name", "data", "time", "session"]
-)
-EventData.__new__.__defaults__ = (None,) * len(EventData._fields)
 
-ExceptionData = collections.namedtuple(
-    "ExceptionData", ["node", "session", "level", "source", "date", "text", "opaque"]
-)
-ExceptionData.__new__.__defaults__ = (None,) * len(ExceptionData._fields)
+@dataclass
+class ConfigData:
+    message_type: int = None
+    node: int = None
+    object: str = None
+    type: int = None
+    data_types: Tuple[int] = None
+    data_values: str = None
+    captions: str = None
+    bitmap: str = None
+    possible_values: str = None
+    groups: str = None
+    session: int = None
+    interface_number: int = None
+    network_id: int = None
+    opaque: str = None
 
-FileData = collections.namedtuple(
-    "FileData",
-    [
-        "message_type",
-        "node",
-        "name",
-        "mode",
-        "number",
-        "type",
-        "source",
-        "session",
-        "data",
-        "compressed_data",
-    ],
-)
-FileData.__new__.__defaults__ = (None,) * len(FileData._fields)
 
-NodeData = collections.namedtuple(
-    "NodeData",
-    [
-        "message_type",
-        "id",
-        "node_type",
-        "name",
-        "ip_address",
-        "mac_address",
-        "ip6_address",
-        "model",
-        "emulation_id",
-        "server",
-        "session",
-        "x_position",
-        "y_position",
-        "canvas",
-        "network_id",
-        "services",
-        "latitude",
-        "longitude",
-        "altitude",
-        "icon",
-        "opaque",
-        "source",
-    ],
-)
-NodeData.__new__.__defaults__ = (None,) * len(NodeData._fields)
+@dataclass
+class EventData:
+    node: int = None
+    event_type: EventTypes = None
+    name: str = None
+    data: str = None
+    time: float = None
+    session: int = None
 
-LinkData = collections.namedtuple(
-    "LinkData",
-    [
-        "message_type",
-        "node1_id",
-        "node2_id",
-        "delay",
-        "bandwidth",
-        "per",
-        "dup",
-        "jitter",
-        "mer",
-        "burst",
-        "session",
-        "mburst",
-        "link_type",
-        "gui_attributes",
-        "unidirectional",
-        "emulation_id",
-        "network_id",
-        "key",
-        "interface1_id",
-        "interface1_name",
-        "interface1_ip4",
-        "interface1_ip4_mask",
-        "interface1_mac",
-        "interface1_ip6",
-        "interface1_ip6_mask",
-        "interface2_id",
-        "interface2_name",
-        "interface2_ip4",
-        "interface2_ip4_mask",
-        "interface2_mac",
-        "interface2_ip6",
-        "interface2_ip6_mask",
-        "opaque",
-    ],
-)
-LinkData.__new__.__defaults__ = (None,) * len(LinkData._fields)
+
+@dataclass
+class ExceptionData:
+    node: int = None
+    session: int = None
+    level: ExceptionLevels = None
+    source: str = None
+    date: str = None
+    text: str = None
+    opaque: str = None
+
+
+@dataclass
+class FileData:
+    message_type: MessageFlags = None
+    node: int = None
+    name: str = None
+    mode: str = None
+    number: int = None
+    type: str = None
+    source: str = None
+    session: int = None
+    data: str = None
+    compressed_data: str = None
+
+
+@dataclass
+class NodeData:
+    message_type: MessageFlags = None
+    id: int = None
+    node_type: NodeTypes = None
+    name: str = None
+    ip_address: str = None
+    mac_address: str = None
+    ip6_address: str = None
+    model: str = None
+    emulation_id: int = None
+    server: str = None
+    session: int = None
+    x_position: float = None
+    y_position: float = None
+    canvas: int = None
+    network_id: int = None
+    services: List[str] = None
+    latitude: float = None
+    longitude: float = None
+    altitude: float = None
+    icon: str = None
+    opaque: str = None
+    source: str = None
+
+
+@dataclass
+class LinkData:
+    message_type: MessageFlags = None
+    label: str = None
+    node1_id: int = None
+    node2_id: int = None
+    delay: float = None
+    bandwidth: float = None
+    per: float = None
+    dup: float = None
+    jitter: float = None
+    mer: float = None
+    burst: float = None
+    session: int = None
+    mburst: float = None
+    link_type: LinkTypes = None
+    gui_attributes: str = None
+    unidirectional: int = None
+    emulation_id: int = None
+    network_id: int = None
+    key: int = None
+    interface1_id: int = None
+    interface1_name: str = None
+    interface1_ip4: str = None
+    interface1_ip4_mask: int = None
+    interface1_mac: str = None
+    interface1_ip6: str = None
+    interface1_ip6_mask: int = None
+    interface2_id: int = None
+    interface2_name: str = None
+    interface2_ip4: str = None
+    interface2_ip4_mask: int = None
+    interface2_mac: str = None
+    interface2_ip6: str = None
+    interface2_ip6_mask: int = None
+    opaque: str = None

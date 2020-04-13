@@ -10,19 +10,19 @@ This section will describe how to install CORE from source or from a pre-built p
 ## Required Hardware
 
 Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
-virtual machines, as a general rule you should select a machine having as much RAM and CPU resources as possible.
+containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 ## Operating System
 
-CORE requires a Linux operating system because it uses virtualization provided by the kernel. It does not run on
-Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The virtualization
+CORE requires a Linux operating system because it uses namespacing provided by the kernel. It does not run on
+Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The
 technology that CORE currently uses is Linux network namespaces.
 
 Ubuntu and CentOS Linux are the recommended distributions for running CORE. However, these distributions are
 not strictly required. CORE will likely work on other flavors of Linux as well, assuming dependencies are met.
 
-**NOTE: CORE Services determine what run on each node. You may require other software packages depending on the
-services you wish to use. For example, the HTTP service will require the apache2 package.**
+> **NOTE:** CORE Services determine what run on each node. You may require other software packages depending on the
+services you wish to use. For example, the HTTP service will require the apache2 package.
 
 ## Installed Files
 
@@ -42,6 +42,30 @@ Install Path | Description
 /usr/share/man/man1/|Command man pages
 /etc/init.d/core-daemon|SysV startup script for daemon
 /usr/lib/systemd/system/core-daemon.service|Systemd startup script for daemon
+
+## Automated Install
+
+There is a helper script in the root of the repository that can help automate
+the CORE installation. Some steps require commands be ran as sudo and you
+will be prompted for a password. This should work on Ubuntu/CentOS and will
+install system dependencies, python dependencies, and CORE. This will target
+system installations of python 3.6.
+
+```shell
+git clone https://github.com/coreemu/core.git
+cd core
+./install.sh
+```
+
+You can target newer system python versions using the **-v** flag. Assuming
+these versions are actually available on your system.
+
+```shell
+# ubuntu 3.7
+./install.sh -v 3.7
+# centos 3.7
+./install.sh -v 37
+```
 
 ## Pre-Req Installing Python
 

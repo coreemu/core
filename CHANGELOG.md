@@ -1,3 +1,46 @@
+## 2020-04-13 CORE 6.3.0
+* Features
+    * \#424 - added FRR IS-IS service
+* Enhancements
+    * \#414 - update GUI OSPFv2 adjacency widget to work with FRR
+    * \#416 - EMANE links can now be drawn for 80211 and RF Pipe models
+    * \#418 #409 - code cleanup
+    * \#425 - added route monitor script for SDT3D integration
+    * a formal error will now be thrown when EMANE binding are not installed, but attempted to be used
+    * node positions will now default to 0,0 to avoid GUI errors, when one is not provided
+    * improved SDT3D integration, multiple link support and usage of custom layers
+* Python GUI Enhancements
+    * enabled edit menu delete
+    * cleaned up node context menu and enabled delete
+* Bugfixes
+    * \#427 - fixed issue in default route service
+    * \#426 - fixed issue reading ipsec template file
+    * \#420 - fixed issue with TLV API udp handler
+    * \#411 - allow wlan to be configured with 0 values
+    * \#415 - general EMANE configuration was not being saved/loaded from XML
+
+## 2020-03-16 CORE 6.2.0
+* gRPC API
+    * Added call to execute python script
+* Enhancements
+    * \#371 - improved coretk gui scaling
+    * \#374 - display range visually for wlan in coretk gui, when configuring
+    * \#377 - improved coretk error dialogs
+    * \#379 - fixed issues with core converting between x,y and lon,lat for values that would cross utm zones
+    * \#384 - sdt integration moved internally to core code allowing it to work for coretk gui as well
+    * \#387 - coretk gui will now auto detect potential valid terminal and command to use for interacting with nodes during runtime
+    * \#389 - coretk gui will now attempt to reconnect to daemon without need to restart
+    * \#395 - coretk gui now has "save" and "save as" menu options
+    * \#402 - coretk will now allow terminal preference to be directly edited
+* Bugfixes
+    * \#375 - fixed issues with emane event monitor handling data
+    * \#381 - executing a python script will now wait until completion before looking to join a new session
+    * \#391 - fixed configuring node ip addresses in coretk gui
+    * \#392 - fixed coretk link display when addresses are cleared out
+    * \#393 - coretk gui will properly clear marker annotations when switching sessions
+    * \#396 - Docker and LXC nodes will now properly save to XML
+    * \#406- WLAN bridge initialization was not ran when all nodes are disconnected
+
 ## 2020-02-20 CORE 6.1.0
 * New
     * config services - these services leverage a proper template engine and have configurable parameters, given enough time may replace existing services

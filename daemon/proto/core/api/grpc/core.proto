@@ -2,11 +2,12 @@ syntax = "proto3";
 
 package core;
 
-option java_package = "com.core.client.grpc";
-option java_outer_classname = "CoreProto";
-
 import "core/api/grpc/configservices.proto";
 import "core/api/grpc/common.proto";
+import "core/api/grpc/emane.proto";
+import "core/api/grpc/mobility.proto";
+import "core/api/grpc/services.proto";
+import "core/api/grpc/wlan.proto";
 
 service CoreApi {
     // session rpc
@@ -78,33 +79,33 @@ service CoreApi {
     }
 
     // mobility rpc
-    rpc GetMobilityConfigs (GetMobilityConfigsRequest) returns (GetMobilityConfigsResponse) {
+    rpc GetMobilityConfigs (mobility.GetMobilityConfigsRequest) returns (mobility.GetMobilityConfigsResponse) {
     }
-    rpc GetMobilityConfig (GetMobilityConfigRequest) returns (GetMobilityConfigResponse) {
+    rpc GetMobilityConfig (mobility.GetMobilityConfigRequest) returns (mobility.GetMobilityConfigResponse) {
     }
-    rpc SetMobilityConfig (SetMobilityConfigRequest) returns (SetMobilityConfigResponse) {
+    rpc SetMobilityConfig (mobility.SetMobilityConfigRequest) returns (mobility.SetMobilityConfigResponse) {
     }
-    rpc MobilityAction (MobilityActionRequest) returns (MobilityActionResponse) {
+    rpc MobilityAction (mobility.MobilityActionRequest) returns (mobility.MobilityActionResponse) {
     }
 
     // service rpc
-    rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
+    rpc GetServices (services.GetServicesRequest) returns (services.GetServicesResponse) {
     }
-    rpc GetServiceDefaults (GetServiceDefaultsRequest) returns (GetServiceDefaultsResponse) {
+    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
     }
-    rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
+    rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
     }
-    rpc GetNodeServiceConfigs (GetNodeServiceConfigsRequest) returns (GetNodeServiceConfigsResponse) {
+    rpc GetNodeServiceConfigs (services.GetNodeServiceConfigsRequest) returns (services.GetNodeServiceConfigsResponse) {
     }
-    rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
+    rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
     }
-    rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
+    rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
     }
-    rpc SetNodeService (SetNodeServiceRequest) returns (SetNodeServiceResponse) {
+    rpc SetNodeService (services.SetNodeServiceRequest) returns (services.SetNodeServiceResponse) {
     }
-    rpc SetNodeServiceFile (SetNodeServiceFileRequest) returns (SetNodeServiceFileResponse) {
+    rpc SetNodeServiceFile (services.SetNodeServiceFileRequest) returns (services.SetNodeServiceFileResponse) {
     }
-    rpc ServiceAction (ServiceActionRequest) returns (ServiceActionResponse) {
+    rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
 
     // config services
@@ -122,27 +123,27 @@ service CoreApi {
     }
 
     // wlan rpc
-    rpc GetWlanConfigs (GetWlanConfigsRequest) returns (GetWlanConfigsResponse) {
+    rpc GetWlanConfigs (wlan.GetWlanConfigsRequest) returns (wlan.GetWlanConfigsResponse) {
     }
-    rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
+    rpc GetWlanConfig (wlan.GetWlanConfigRequest) returns (wlan.GetWlanConfigResponse) {
     }
-    rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
+    rpc SetWlanConfig (wlan.SetWlanConfigRequest) returns (wlan.SetWlanConfigResponse) {
     }
 
     // emane rpc
-    rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
+    rpc GetEmaneConfig (emane.GetEmaneConfigRequest) returns (emane.GetEmaneConfigResponse) {
     }
-    rpc SetEmaneConfig (SetEmaneConfigRequest) returns (SetEmaneConfigResponse) {
+    rpc SetEmaneConfig (emane.SetEmaneConfigRequest) returns (emane.SetEmaneConfigResponse) {
     }
-    rpc GetEmaneModels (GetEmaneModelsRequest) returns (GetEmaneModelsResponse) {
+    rpc GetEmaneModels (emane.GetEmaneModelsRequest) returns (emane.GetEmaneModelsResponse) {
     }
-    rpc GetEmaneModelConfig (GetEmaneModelConfigRequest) returns (GetEmaneModelConfigResponse) {
+    rpc GetEmaneModelConfig (emane.GetEmaneModelConfigRequest) returns (emane.GetEmaneModelConfigResponse) {
     }
-    rpc SetEmaneModelConfig (SetEmaneModelConfigRequest) returns (SetEmaneModelConfigResponse) {
+    rpc SetEmaneModelConfig (emane.SetEmaneModelConfigRequest) returns (emane.SetEmaneModelConfigResponse) {
     }
-    rpc GetEmaneModelConfigs (GetEmaneModelConfigsRequest) returns (GetEmaneModelConfigsResponse) {
+    rpc GetEmaneModelConfigs (emane.GetEmaneModelConfigsRequest) returns (emane.GetEmaneModelConfigsResponse) {
     }
-    rpc GetEmaneEventChannel (GetEmaneEventChannelRequest) returns (GetEmaneEventChannelResponse) {
+    rpc GetEmaneEventChannel (emane.GetEmaneEventChannelRequest) returns (emane.GetEmaneEventChannelResponse) {
     }
 
     // xml rpc
@@ -154,7 +155,7 @@ service CoreApi {
     // utilities
     rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesResponse) {
     }
-    rpc EmaneLink (EmaneLinkRequest) returns (EmaneLinkResponse) {
+    rpc EmaneLink (emane.EmaneLinkRequest) returns (emane.EmaneLinkResponse) {
     }
     rpc ExecuteScript (ExecuteScriptRequest) returns (ExecuteScriptResponse) {
     }
@@ -168,11 +169,11 @@ message StartSessionRequest {
     repeated Hook hooks = 4;
     SessionLocation location = 5;
     map<string, string> emane_config = 6;
-    repeated WlanConfig wlan_configs = 7;
-    repeated EmaneModelConfig emane_model_configs = 8;
-    repeated MobilityConfig mobility_configs = 9;
-    repeated ServiceConfig service_configs = 10;
-    repeated ServiceFileConfig service_file_configs = 11;
+    repeated wlan.WlanConfig wlan_configs = 7;
+    repeated emane.EmaneModelConfig emane_model_configs = 8;
+    repeated mobility.MobilityConfig mobility_configs = 9;
+    repeated services.ServiceConfig service_configs = 10;
+    repeated services.ServiceFileConfig service_file_configs = 11;
     repeated Link asymmetric_links = 12;
     repeated configservices.ConfigServiceConfig config_service_configs = 13;
 }
@@ -515,226 +516,6 @@ message AddHookResponse {
     bool result = 1;
 }
 
-message GetMobilityConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetMobilityConfigsResponse {
-    map<int32, MappedConfig> configs = 1;
-}
-
-message GetMobilityConfigRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-}
-
-message GetMobilityConfigResponse {
-    map<string, common.ConfigOption> config = 1;
-}
-
-message SetMobilityConfigRequest {
-    int32 session_id = 1;
-    MobilityConfig mobility_config = 2;
-}
-
-message SetMobilityConfigResponse {
-    bool result = 1;
-}
-
-message MobilityActionRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    MobilityAction.Enum action = 3;
-}
-
-message MobilityActionResponse {
-    bool result = 1;
-}
-
-message GetServicesRequest {
-
-}
-
-message GetServicesResponse {
-    repeated Service services = 1;
-}
-
-message GetServiceDefaultsRequest {
-    int32 session_id = 1;
-}
-
-message GetServiceDefaultsResponse {
-    repeated ServiceDefaults defaults = 1;
-}
-
-message SetServiceDefaultsRequest {
-    int32 session_id = 1;
-    repeated ServiceDefaults defaults = 2;
-}
-
-message SetServiceDefaultsResponse {
-    bool result = 1;
-}
-
-message GetNodeServiceConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetNodeServiceConfigsResponse {
-    message ServiceConfig {
-        int32 node_id = 1;
-        string service = 2;
-        NodeServiceData data = 3;
-        map<string, string> files = 4;
-    }
-    repeated ServiceConfig configs = 1;
-}
-
-message GetNodeServiceRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-}
-
-message GetNodeServiceResponse {
-    NodeServiceData service = 1;
-}
-
-message GetNodeServiceFileRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    string file = 4;
-}
-
-message GetNodeServiceFileResponse {
-    string data = 1;
-}
-
-message SetNodeServiceRequest {
-    int32 session_id = 1;
-    ServiceConfig config = 2;
-}
-
-message SetNodeServiceResponse {
-    bool result = 1;
-}
-
-message SetNodeServiceFileRequest {
-    int32 session_id = 1;
-    ServiceFileConfig config = 2;
-}
-
-message SetNodeServiceFileResponse {
-    bool result = 1;
-}
-
-message ServiceActionRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    ServiceAction.Enum action = 4;
-}
-
-message ServiceActionResponse {
-    bool result = 1;
-}
-
-message GetWlanConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetWlanConfigsResponse {
-    map<int32, MappedConfig> configs = 1;
-}
-
-message GetWlanConfigRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-}
-
-message GetWlanConfigResponse {
-    map<string, common.ConfigOption> config = 1;
-}
-
-message SetWlanConfigRequest {
-    int32 session_id = 1;
-    WlanConfig wlan_config = 2;
-}
-
-message SetWlanConfigResponse {
-    bool result = 1;
-}
-
-message GetEmaneConfigRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneConfigResponse {
-    map<string, common.ConfigOption> config = 1;
-}
-
-message SetEmaneConfigRequest {
-    int32 session_id = 1;
-    map<string, string> config = 2;
-}
-
-message SetEmaneConfigResponse {
-    bool result = 1;
-}
-
-message GetEmaneModelsRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneModelsResponse {
-    repeated string models = 1;
-}
-
-message GetEmaneModelConfigRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    int32 interface = 3;
-    string model = 4;
-}
-
-message GetEmaneModelConfigResponse {
-    map<string, common.ConfigOption> config = 1;
-}
-
-message SetEmaneModelConfigRequest {
-    int32 session_id = 1;
-    EmaneModelConfig emane_model_config = 2;
-}
-
-message SetEmaneModelConfigResponse {
-    bool result = 1;
-}
-
-message GetEmaneModelConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneModelConfigsResponse {
-    message ModelConfig {
-        int32 node_id = 1;
-        string model = 2;
-        int32 interface = 3;
-        map<string, common.ConfigOption> config = 4;
-    }
-    repeated ModelConfig configs = 1;
-}
-
-message GetEmaneEventChannelRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneEventChannelResponse {
-    string group = 1;
-    int32 port = 2;
-    string device = 3;
-}
-
 message SaveXmlRequest {
     int32 session_id = 1;
 }
@@ -761,17 +542,6 @@ message GetInterfacesResponse {
     repeated string interfaces = 1;
 }
 
-message EmaneLinkRequest {
-    int32 session_id = 1;
-    int32 nem_one = 2;
-    int32 nem_two = 3;
-    bool linked = 4;
-}
-
-message EmaneLinkResponse {
-    bool result = 1;
-}
-
 message ExecuteScriptRequest {
     string script = 1;
 }
@@ -781,40 +551,6 @@ message ExecuteScriptResponse {
 }
 
 // data structures for messages below
-message WlanConfig {
-    int32 node_id = 1;
-    map<string, string> config = 2;
-}
-
-message MobilityConfig {
-    int32 node_id = 1;
-    map<string, string> config = 2;
-}
-
-message EmaneModelConfig {
-    int32 node_id = 1;
-    int32 interface_id = 2;
-    string model = 3;
-    map<string, string> config = 4;
-}
-
-message ServiceConfig {
-    int32 node_id = 1;
-    string service = 2;
-    repeated string startup = 3;
-    repeated string validate = 4;
-    repeated string shutdown = 5;
-    repeated string files = 6;
-    repeated string directories = 7;
-}
-
-message ServiceFileConfig {
-    int32 node_id = 1;
-    string service = 2;
-    string file = 3;
-    string data = 4;
-}
-
 message EventType {
     enum Enum {
         SESSION = 0;
@@ -893,31 +629,6 @@ message ConfigOptionType {
     }
 }
 
-message ServiceValidationMode {
-    enum Enum {
-        BLOCKING = 0;
-        NON_BLOCKING = 1;
-        TIMER = 2;
-    }
-}
-
-message ServiceAction {
-    enum Enum {
-        START = 0;
-        STOP = 1;
-        RESTART = 2;
-        VALIDATE = 3;
-    }
-}
-
-message MobilityAction {
-    enum Enum {
-        START = 0;
-        PAUSE = 1;
-        STOP = 2;
-    }
-}
-
 message ExceptionLevel {
     enum Enum {
         DEFAULT = 0;
@@ -934,38 +645,12 @@ message Hook {
     string data = 3;
 }
 
-message ServiceDefaults {
-    string node_type = 1;
-    repeated string services = 2;
-}
-
-message Service {
-    string group = 1;
-    string name = 2;
-}
-
-message NodeServiceData {
-    repeated string executables = 1;
-    repeated string dependencies = 2;
-    repeated string dirs = 3;
-    repeated string configs = 4;
-    repeated string startup = 5;
-    repeated string validate = 6;
-    ServiceValidationMode.Enum validation_mode = 7;
-    int32 validation_timer = 8;
-    repeated string shutdown = 9;
-    string meta = 10;
-}
-
-message MappedConfig {
-    map<string, common.ConfigOption> config = 1;
-}
-
 message Session {
     int32 id = 1;
     SessionState.Enum state = 2;
     repeated Node nodes = 3;
     repeated Link links = 4;
+    string dir = 5;
 }
 
 message SessionSummary {
@@ -973,6 +658,7 @@ message SessionSummary {
     SessionState.Enum state = 2;
     int32 nodes = 3;
     string file = 4;
+    string dir = 5;
 }
 
 message Node {
@@ -989,6 +675,8 @@ message Node {
     string server = 11;
     repeated string config_services = 12;
     Geo geo = 13;
+    string dir = 14;
+    string channel = 15;
 }
 
 message Link {

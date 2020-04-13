@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageTk
 
@@ -440,7 +440,7 @@ class CanvasGraph(tk.Canvas):
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selection_objects(self) -> List[CanvasNode]:
+    def delete_selected_objects(self) -> None:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -484,7 +484,7 @@ class CanvasGraph(tk.Canvas):
                 shape.delete()
 
         self.selection.clear()
-        return nodes
+        self.core.delete_graph_nodes(nodes)
 
     def zoom(self, event: tk.Event, factor: float = None):
         if not factor:
@@ -640,16 +640,17 @@ class CanvasGraph(tk.Canvas):
                 self.select_box.shape_motion(x, y)
 
     def click_context(self, event: tk.Event):
+        logging.info("context: %s", self.context)
         if not self.context:
             selected = self.get_selected(event)
             canvas_node = self.nodes.get(selected)
             if canvas_node:
                 logging.debug("node context: %s", selected)
                 self.context = canvas_node.create_context()
-                self.context.bind("<Leave>", self.hide_context)
+                self.context.bind("<Unmap>", self.hide_context)
                 self.context.post(event.x_root, event.y_root)
-        # else:
-        #     self.hide_context()
+        else:
+            self.hide_context()
 
     def press_delete(self, event: tk.Event):
         """
@@ -657,8 +658,7 @@ class CanvasGraph(tk.Canvas):
         """
         logging.debug("press delete key")
         if not self.app.core.is_runtime():
-            nodes = self.delete_selection_objects()
-            self.core.delete_graph_nodes(nodes)
+            self.delete_selected_objects()
         else:
             logging.info("node deletion is disabled during runtime state")
 

@@ -4,7 +4,9 @@ Clients for dealing with bridge/interface commands.
 import json
 from typing import Callable
 
-from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
+import netaddr
+
+from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, SYSCTL_BIN, TC_BIN
 
 
 class LinuxNetClient:
@@ -168,6 +170,10 @@ class LinuxNetClient:
             )
         else:
             self.run(f"{IP_BIN} address add {address} dev {device}")
+        if netaddr.valid_ipv6(address.split("/")[0]):
+            # IPv6 addresses are removed by default on interface down.
+            # Make sure that the IPv6 address we add is not removed
+            self.run(f"{SYSCTL_BIN} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
 
     def delete_address(self, device: str, address: str) -> None:
         """

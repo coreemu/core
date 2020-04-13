@@ -57,7 +57,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
             label="SDT3D URL",
         ),
     ]
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self) -> None:
         super().__init__()

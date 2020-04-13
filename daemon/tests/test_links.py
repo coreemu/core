@@ -43,7 +43,7 @@ class TestLinks:
         session.add_link(node_one.id, node_two.id, interface_one)
 
         # then
-        assert node_two.all_link_data(0)
+        assert node_two.all_link_data()
         assert node_one.netif(interface_one.id)
 
     def test_net_to_node(self, session, ip_prefixes):
@@ -56,7 +56,7 @@ class TestLinks:
         session.add_link(node_one.id, node_two.id, interface_two=interface_two)
 
         # then
-        assert node_one.all_link_data(0)
+        assert node_one.all_link_data()
         assert node_two.netif(interface_two.id)
 
     def test_net_to_net(self, session):
@@ -68,7 +68,7 @@ class TestLinks:
         session.add_link(node_one.id, node_two.id)
 
         # then
-        assert node_one.all_link_data(0)
+        assert node_one.all_link_data()
 
     def test_link_update(self, session, ip_prefixes):
         # given

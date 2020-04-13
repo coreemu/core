@@ -23,14 +23,12 @@ def handle_node_event(event: NodeData) -> core_pb2.NodeEvent:
     :return: node event that contains node id, name, model, position, and services
     """
     position = core_pb2.Position(x=event.x_position, y=event.y_position)
-    services = event.services or ""
-    services = services.split("|")
     node_proto = core_pb2.Node(
         id=event.id,
         name=event.name,
         model=event.model,
         position=position,
-        services=services,
+        services=event.services,
     )
     return core_pb2.NodeEvent(node=node_proto, source=event.source)
 
@@ -80,14 +78,14 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
         unidirectional=event.unidirectional,
     )
     link = core_pb2.Link(
-        type=event.link_type,
+        type=event.link_type.value,
         node_one_id=event.node1_id,
         node_two_id=event.node2_id,
         interface_one=interface_one,
         interface_two=interface_two,
         options=options,
     )
-    return core_pb2.LinkEvent(message_type=event.message_type, link=link)
+    return core_pb2.LinkEvent(message_type=event.message_type.value, link=link)
 
 
 def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
@@ -102,7 +100,7 @@ def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
         event_time = float(event_time)
     return core_pb2.SessionEvent(
         node_id=event.node,
-        event=event.event_type,
+        event=event.event_type.value,
         name=event.name,
         data=event.data,
         time=event_time,
@@ -158,7 +156,7 @@ def handle_file_event(event: FileData) -> core_pb2.FileEvent:
     :return: file event
     """
     return core_pb2.FileEvent(
-        message_type=event.message_type,
+        message_type=event.message_type.value,
         node_id=event.node,
         name=event.name,
         mode=event.mode,

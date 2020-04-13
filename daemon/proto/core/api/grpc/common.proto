@@ -10,3 +10,7 @@ message ConfigOption {
     repeated string select = 5;
     string group = 6;
 }
+
+message MappedConfig {
+    map<string, common.ConfigOption> config = 1;
+}

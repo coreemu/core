@@ -4,7 +4,7 @@ share the same MAC+PHY model.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
@@ -33,8 +33,8 @@ class EmaneNet(CoreNetworkBase):
     Emane controller object that exists in a session.
     """
 
-    apitype = NodeTypes.EMANE.value
-    linktype = LinkTypes.WIRED.value
+    apitype = NodeTypes.EMANE
+    linktype = LinkTypes.WIRED
     type = "wlan"
     is_emane = True
 
@@ -103,12 +103,12 @@ class EmaneNet(CoreNetworkBase):
         set the EmaneModel associated with this node
         """
         logging.info("adding model: %s", model.name)
-        if model.config_type == RegisterTlvs.WIRELESS.value:
+        if model.config_type == RegisterTlvs.WIRELESS:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
             self.model = model(session=self.session, _id=self.id)
             self.model.update_config(config)
-        elif model.config_type == RegisterTlvs.MOBILITY.value:
+        elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
@@ -172,8 +172,7 @@ class EmaneNet(CoreNetworkBase):
             # at this point we register location handlers for generating
             # EMANE location events
             netif.poshook = self.setnemposition
-            x, y, z = netif.node.position.get()
-            self.setnemposition(netif, x, y, z)
+            netif.setposition()
 
     def deinstallnetifs(self) -> None:
         """
@@ -186,28 +185,45 @@ class EmaneNet(CoreNetworkBase):
                 netif.shutdown()
             netif.poshook = None
 
-    def setnemposition(
-        self, netif: CoreInterface, x: float, y: float, z: float
-    ) -> None:
+    def _nem_position(
+        self, netif: CoreInterface
+    ) -> Optional[Tuple[int, float, float, float]]:
         """
-        Publish a NEM location change event using the EMANE event service.
+        Creates nem position for emane event for a given interface.
+
+        :param netif: interface to get nem emane position for
+        :return: nem position tuple, None otherwise
         """
-        if self.session.emane.service is None:
-            logging.info("position service not available")
-            return
         nemid = self.getnemid(netif)
         ifname = netif.localname
         if nemid is None:
             logging.info("nemid for %s is unknown", ifname)
             return
+        node = netif.node
+        x, y, z = node.getposition()
         lat, lon, alt = self.session.location.getgeo(x, y, z)
-        event = LocationEvent()
-
+        if node.position.alt is not None:
+            alt = node.position.alt
         # altitude must be an integer or warning is printed
-        # unused: yaw, pitch, roll, azimuth, elevation, velocity
         alt = int(round(alt))
-        event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
-        self.session.emane.service.publish(0, event)
+        return nemid, lon, lat, alt
+
+    def setnemposition(self, netif: CoreInterface) -> None:
+        """
+        Publish a NEM location change event using the EMANE event service.
+
+        :param netif: interface to set nem position for
+        """
+        if self.session.emane.service is None:
+            logging.info("position service not available")
+            return
+
+        position = self._nem_position(netif)
+        if position:
+            nemid, lon, lat, alt = position
+            event = LocationEvent()
+            event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
+            self.session.emane.service.publish(0, event)
 
     def setnempositions(self, moved_netifs: List[CoreInterface]) -> None:
         """
@@ -223,18 +239,9 @@ class EmaneNet(CoreNetworkBase):
             return
 
         event = LocationEvent()
-        i = 0
         for netif in moved_netifs:
-            nemid = self.getnemid(netif)
-            ifname = netif.localname
-            if nemid is None:
-                logging.info("nemid for %s is unknown", ifname)
-                continue
-            x, y, z = netif.node.getposition()
-            lat, lon, alt = self.session.location.getgeo(x, y, z)
-            # altitude must be an integer or warning is printed
-            alt = int(round(alt))
-            event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
-            i += 1
-
+            position = self._nem_position(netif)
+            if position:
+                nemid, lon, lat, alt = position
+                event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)

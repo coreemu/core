@@ -9,21 +9,22 @@ A large emulation scenario can be deployed on multiple emulation servers and
 controlled by a single GUI. The GUI, representing the entire topology, can be
 run on one of the emulation servers or on a separate machine.
 
-Each machine that will act as an emulation will require the installation of a distributed CORE package and
-some configuration to allow SSH as root.
+Each machine that will act as an emulation will require the installation of a
+distributed CORE package and some configuration to allow SSH as root.
 
 ## Configuring SSH
 
-Distributed CORE works using the python fabric library to run commands on remote servers over SSH.
+Distributed CORE works using the python fabric library to run commands on
+remote servers over SSH.
 
 ### Remote GUI Terminals
 
-You need to have the same user defined on each server, since the user used 
+You need to have the same user defined on each server, since the user used
 for these remote shells is the same user that is running the CORE GUI.
 
 **Edit -> Preferences... -> Terminal program:**
 
-Currently recommend setting this to **xterm -e** as the default 
+Currently recommend setting this to **xterm -e** as the default
 **gnome-terminal** will not work.
 
 May need to install xterm if, not already installed.
@@ -34,7 +35,8 @@ sudo apt install xterm
 
 ### Distributed Server SSH Configuration
 
-First the distributed servers must be configured to allow passwordless root login over SSH.
+First the distributed servers must be configured to allow passwordless root
+login over SSH.
 
 On distributed server:
 ```shelll
@@ -48,7 +50,7 @@ vi /etc/ssh/sshd_config
 PermitRootLogin yes
 PasswordAuthentication yes
 
-# if desired add/modify the following line to allow SSH to 
+# if desired add/modify the following line to allow SSH to
 # accept all env variables
 AcceptEnv *
 
@@ -72,7 +74,7 @@ sudo vi /etc/fabric.yml
 
 # set configuration
 connect_kwargs: {"key_filename": "/home/user/.ssh/core"}
-``` 
+```
 
 On distributed server:
 ```shell
@@ -125,7 +127,7 @@ the **all nodes** button. Servers that have assigned nodes are shown in blue in
 the server list. Another option is to first select a subset of nodes, then open
 the **CORE emulation servers** box and use the **selected nodes** button.
 
-**IMPORTANT: Leave the nodes unassigned if they are to be run on the master 
+**IMPORTANT: Leave the nodes unassigned if they are to be run on the master
 server. Do not explicitly assign the nodes to the master server.**
 
 ## GUI Visualization
@@ -137,23 +139,23 @@ will draw the link with a dashed line.
 
 Wireless nodes, i.e. those connected to a WLAN node, can be assigned to
 different emulation servers and participate in the same wireless network
-only if an EMANE model is used for the WLAN. The basic range model does 
-not work across multiple servers due to the Linux bridging and ebtables 
+only if an EMANE model is used for the WLAN. The basic range model does
+not work across multiple servers due to the Linux bridging and ebtables
 rules that are used.
 
 **NOTE: The basic range wireless model does not support distributed emulation,
 but EMANE does.**
- 
-When nodes are linked across servers **core-daemons** will automatically 
+
+When nodes are linked across servers **core-daemons** will automatically
 create necessary tunnels between the nodes when executed. Care should be taken
-to arrange the topology such that the number of tunnels is minimized. The 
+to arrange the topology such that the number of tunnels is minimized. The
 tunnels carry data between servers to connect nodes as specified in the topology.
 These tunnels are created using GRE tunneling, similar to the Tunnel Tool.
 
 ### EMANE Configuration and Issues
 
 EMANE needs to have controlnet configured in **core.conf** in order to startup correctly.
-The names before the addresses need to match the servers configured in 
+The names before the addresses need to match the servers configured in
 **~/.core/servers.conf** previously.
 
 ```shell

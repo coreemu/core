@@ -6,7 +6,9 @@ import netaddr
 
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
+from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig
 from core.config import ConfigurableOptions
+from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -26,11 +28,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     :return: node type, id, and options
     """
     _id = node_proto.id
-    _type = node_proto.type
-    if _type is None:
-        _type = NodeTypes.DEFAULT.value
-    _type = NodeTypes(_type)
-
+    _type = NodeTypes(node_proto.type)
     options = NodeOptions(name=node_proto.name, model=node_proto.model)
     options.icon = node_proto.icon
     options.opaque = node_proto.opaque
@@ -224,6 +222,47 @@ def get_config_options(
     return results
 
 
+def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
+    """
+    Convert CORE node to protobuf representation.
+
+    :param session: session containing node
+    :param node: node to convert
+    :return: node proto
+    """
+    node_type = session.get_node_type(node.__class__)
+    position = core_pb2.Position(
+        x=node.position.x, y=node.position.y, z=node.position.z
+    )
+    services = getattr(node, "services", [])
+    if services is None:
+        services = []
+    services = [x.name for x in services]
+    config_services = getattr(node, "config_services", {})
+    config_services = [x for x in config_services]
+    emane_model = None
+    if isinstance(node, EmaneNet):
+        emane_model = node.model.name
+    model = getattr(node, "type", None)
+    node_dir = getattr(node, "nodedir", None)
+    channel = getattr(node, "ctrlchnlname", None)
+    image = getattr(node, "image", None)
+    return core_pb2.Node(
+        id=node.id,
+        name=node.name,
+        emane=emane_model,
+        model=model,
+        type=node_type.value,
+        position=position,
+        services=services,
+        icon=node.icon,
+        image=image,
+        config_services=config_services,
+        dir=node_dir,
+        channel=channel,
+    )
+
+
 def get_links(session: Session, node: NodeBase):
     """
     Retrieve a list of links for grpc to use
@@ -233,7 +272,7 @@ def get_links(session: Session, node: NodeBase):
     :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
-    for link_data in node.all_link_data(0):
+    for link_data in node.all_link_data():
         link = convert_link(session, link_data)
         links.append(link)
     return links
@@ -325,7 +364,7 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
     )
 
     return core_pb2.Link(
-        type=link_data.link_type,
+        type=link_data.link_type.value,
         node_one_id=link_data.node1_id,
         node_two_id=link_data.node2_id,
         interface_one=interface_one,
@@ -368,7 +407,7 @@ def session_location(session: Session, location: core_pb2.SessionLocation) -> No
     session.location.refscale = location.scale
 
 
-def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> None:
+def service_configuration(session: Session, config: ServiceConfig) -> None:
     """
     Convenience method for setting a node service configuration.
 
@@ -390,14 +429,14 @@ def service_configuration(session: Session, config: core_pb2.ServiceConfig) -> N
         service.shutdown = tuple(config.shutdown)
 
 
-def get_service_configuration(service: Type[CoreService]) -> core_pb2.NodeServiceData:
+def get_service_configuration(service: Type[CoreService]) -> NodeServiceData:
     """
     Convenience for converting a service to service data proto.
 
     :param service: service to get proto data for
     :return: service proto data
     """
-    return core_pb2.NodeServiceData(
+    return NodeServiceData(
         executables=service.executables,
         dependencies=service.dependencies,
         dirs=service.dirs,

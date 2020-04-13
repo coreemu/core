@@ -7,16 +7,16 @@ from mock import patch
 
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper
-from core.config import ConfigShim
+from core.api.grpc.emane_pb2 import EmaneModelConfig
+from core.api.grpc.mobility_pb2 import MobilityAction, MobilityConfig
+from core.api.grpc.services_pb2 import ServiceAction, ServiceConfig, ServiceFileConfig
+from core.api.grpc.wlan_pb2 import WlanConfig
+from core.api.tlv.dataconversion import ConfigShim
+from core.api.tlv.enumerations import ConfigFlags
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import (
-    ConfigFlags,
-    EventTypes,
-    ExceptionLevels,
-    NodeTypes,
-)
+from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.xml.corexml import CoreXmlWriter
@@ -73,7 +73,7 @@ class TestGrpc:
         model_node_id = 20
         model_config_key = "bandwidth"
         model_config_value = "500000"
-        model_config = core_pb2.EmaneModelConfig(
+        model_config = EmaneModelConfig(
             node_id=model_node_id,
             interface_id=-1,
             model=EmaneIeee80211abgModel.name,
@@ -82,21 +82,21 @@ class TestGrpc:
         model_configs = [model_config]
         wlan_config_key = "range"
         wlan_config_value = "333"
-        wlan_config = core_pb2.WlanConfig(
+        wlan_config = WlanConfig(
             node_id=wlan_node.id, config={wlan_config_key: wlan_config_value}
         )
         wlan_configs = [wlan_config]
         mobility_config_key = "refresh_ms"
         mobility_config_value = "60"
-        mobility_config = core_pb2.MobilityConfig(
+        mobility_config = MobilityConfig(
             node_id=wlan_node.id, config={mobility_config_key: mobility_config_value}
         )
         mobility_configs = [mobility_config]
-        service_config = core_pb2.ServiceConfig(
+        service_config = ServiceConfig(
             node_id=node_one.id, service="DefaultRoute", validate=["echo hello"]
         )
         service_configs = [service_config]
-        service_file_config = core_pb2.ServiceFileConfig(
+        service_file_config = ServiceFileConfig(
             node_id=node_one.id,
             service="DefaultRoute",
             file="defaultroute.sh",
@@ -127,7 +127,7 @@ class TestGrpc:
         assert wlan_node.id in session.nodes
         assert session.nodes[node_one.id].netif(0) is not None
         assert session.nodes[node_two.id].netif(0) is not None
-        hook_file, hook_data = session._hooks[core_pb2.SessionState.RUNTIME][0]
+        hook_file, hook_data = session._hooks[EventTypes.RUNTIME_STATE][0]
         assert hook_file == hook.file
         assert hook_data == hook.data
         assert session.location.refxyz == (location_x, location_y, location_z)
@@ -169,7 +169,7 @@ class TestGrpc:
         assert isinstance(response.state, int)
         session = grpc_server.coreemu.sessions.get(response.session_id)
         assert session is not None
-        assert session.state == response.state
+        assert session.state == EventTypes(response.state)
         if session_id is not None:
             assert response.session_id == session_id
             assert session.id == session_id
@@ -341,7 +341,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert session.state == core_pb2.SessionState.DEFINITION
+        assert session.state == EventTypes.DEFINITION_STATE
 
     def test_add_node(self, grpc_server):
         # given
@@ -447,7 +447,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         file_name = "test"
         file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE.value, file_name, None, file_data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, None, file_data)
 
         # then
         with client.context_connect():
@@ -540,7 +540,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(_type=NodeTypes.SWITCH)
         node = session.add_node()
-        assert len(switch.all_link_data(0)) == 0
+        assert len(switch.all_link_data()) == 0
 
         # then
         interface = interface_helper.create_interface(node.id, 0)
@@ -549,7 +549,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert len(switch.all_link_data(0)) == 1
+        assert len(switch.all_link_data()) == 1
 
     def test_add_link_exception(self, grpc_server, interface_helper):
         # given
@@ -572,7 +572,7 @@ class TestGrpc:
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface)
         options = core_pb2.LinkOptions(bandwidth=30000)
-        link = switch.all_link_data(0)[0]
+        link = switch.all_link_data()[0]
         assert options.bandwidth != link.bandwidth
 
         # then
@@ -583,7 +583,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        link = switch.all_link_data(0)[0]
+        link = switch.all_link_data()[0]
         assert options.bandwidth == link.bandwidth
 
     def test_delete_link(self, grpc_server, ip_prefixes):
@@ -833,9 +833,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.mobility_action(
-                session.id, wlan.id, core_pb2.MobilityAction.STOP
-            )
+            response = client.mobility_action(session.id, wlan.id, MobilityAction.STOP)
 
         # then
         assert response.result is True
@@ -975,7 +973,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.service_action(
-                session.id, node.id, service_name, core_pb2.ServiceAction.STOP
+                session.id, node.id, service_name, ServiceAction.STOP
             )
 
         # then
@@ -986,7 +984,6 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        node_data = node.data(message_type=0)
         queue = Queue()
 
         def handle_event(event_data):
@@ -998,7 +995,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.broadcast_node(node_data)
+            session.broadcast_node(node)
 
             # then
             queue.get(timeout=5)
@@ -1011,7 +1008,7 @@ class TestGrpc:
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface)
-        link_data = wlan.all_link_data(0)[0]
+        link_data = wlan.all_link_data()[0]
         queue = Queue()
 
         def handle_event(event_data):
@@ -1065,7 +1062,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(
-                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.monotonic())
+                event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
             )
             session.broadcast_event(event)
 
@@ -1120,7 +1117,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(exception_level, source, node_id, text)
+            session.exception(exception_level, source, text, node_id)
 
             # then
             queue.get(timeout=5)

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 import grpc
 
-from core.api.grpc.core_pb2 import MobilityAction
+from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images

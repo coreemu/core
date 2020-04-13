@@ -5,8 +5,9 @@
 
 ## Repository Overview
 
-The CORE source consists of several different programming languages for historical reasons.
-Current development focuses on the Python modules and daemon. Here is a brief description of the source directories.
+The CORE source consists of several different programming languages for
+historical reasons. Current development focuses on the Python modules and
+daemon. Here is a brief description of the source directories.
 
 | Directory | Description |
 |---|---|
@@ -14,13 +15,12 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 |docs|Markdown Documentation currently hosted on GitHub|
 |gui|Tcl/Tk GUI|
 |man|Template files for creating man pages for various CORE command line utilities|
-|netns|Python C extension modules for creating CORE containers|
+|netns|C program for creating CORE containers|
 |scripts|Template files used for running CORE as a service|
 
 ## Getting started
 
 To setup CORE for develop we will leverage to automated install script.
-
 
 ## Clone CORE Repo
 

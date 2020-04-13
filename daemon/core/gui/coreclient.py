@@ -11,6 +11,10 @@ from typing import TYPE_CHECKING, Dict, List
 import grpc
 
 from core.api.grpc import client, common_pb2, configservices_pb2, core_pb2
+from core.api.grpc.emane_pb2 import EmaneModelConfig
+from core.api.grpc.mobility_pb2 import MobilityConfig
+from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
+from core.api.grpc.wlan_pb2 import WlanConfig
 from core.gui import appconfig
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
@@ -617,9 +621,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e, self.app, self.app)
 
-    def get_node_service(
-        self, node_id: int, service_name: str
-    ) -> core_pb2.NodeServiceData:
+    def get_node_service(self, node_id: int, service_name: str) -> NodeServiceData:
         response = self.client.get_node_service(self.session_id, node_id, service_name)
         logging.debug(
             "get node(%s) %s service, response: %s", node_id, service_name, response
@@ -635,7 +637,7 @@ class CoreClient:
         startups: List[str],
         validations: List[str],
         shutdowns: List[str],
-    ) -> core_pb2.NodeServiceData:
+    ) -> NodeServiceData:
         response = self.client.set_node_service(
             self.session_id,
             node_id,
@@ -675,7 +677,7 @@ class CoreClient:
         return response.data
 
     def set_node_service_file(
-        self, node_id: int, service_name: str, file_name: str, data: bytes
+        self, node_id: int, service_name: str, file_name: str, data: str
     ):
         response = self.client.set_node_service_file(
             self.session_id, node_id, service_name, file_name, data
@@ -912,40 +914,40 @@ class CoreClient:
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)
 
-    def get_wlan_configs_proto(self) -> List[core_pb2.WlanConfig]:
+    def get_wlan_configs_proto(self) -> List[WlanConfig]:
         configs = []
         for node_id, config in self.wlan_configs.items():
             config = {x: config[x].value for x in config}
-            wlan_config = core_pb2.WlanConfig(node_id=node_id, config=config)
+            wlan_config = WlanConfig(node_id=node_id, config=config)
             configs.append(wlan_config)
         return configs
 
-    def get_mobility_configs_proto(self) -> List[core_pb2.MobilityConfig]:
+    def get_mobility_configs_proto(self) -> List[MobilityConfig]:
         configs = []
         for node_id, config in self.mobility_configs.items():
             config = {x: config[x].value for x in config}
-            mobility_config = core_pb2.MobilityConfig(node_id=node_id, config=config)
+            mobility_config = MobilityConfig(node_id=node_id, config=config)
             configs.append(mobility_config)
         return configs
 
-    def get_emane_model_configs_proto(self) -> List[core_pb2.EmaneModelConfig]:
+    def get_emane_model_configs_proto(self) -> List[EmaneModelConfig]:
         configs = []
         for key, config in self.emane_model_configs.items():
             node_id, model, interface = key
             config = {x: config[x].value for x in config}
             if interface is None:
                 interface = -1
-            config_proto = core_pb2.EmaneModelConfig(
+            config_proto = EmaneModelConfig(
                 node_id=node_id, interface_id=interface, model=model, config=config
             )
             configs.append(config_proto)
         return configs
 
-    def get_service_configs_proto(self) -> List[core_pb2.ServiceConfig]:
+    def get_service_configs_proto(self) -> List[ServiceConfig]:
         configs = []
         for node_id, services in self.service_configs.items():
             for name, config in services.items():
-                config_proto = core_pb2.ServiceConfig(
+                config_proto = ServiceConfig(
                     node_id=node_id,
                     service=name,
                     directories=config.dirs,
@@ -957,12 +959,12 @@ class CoreClient:
                 configs.append(config_proto)
         return configs
 
-    def get_service_file_configs_proto(self) -> List[core_pb2.ServiceFileConfig]:
+    def get_service_file_configs_proto(self) -> List[ServiceFileConfig]:
         configs = []
         for (node_id, file_configs) in self.file_configs.items():
             for service, file_config in file_configs.items():
                 for file, data in file_config.items():
-                    config_proto = core_pb2.ServiceFileConfig(
+                    config_proto = ServiceFileConfig(
                         node_id=node_id, service=service, file=file, data=data
                     )
                     configs.append(config_proto)
