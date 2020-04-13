@@ -1,3 +1,24 @@
+## 2020-04-13 CORE 6.3.0
+* Features
+    * \#424 - added FRR IS-IS service
+* Enhancements
+    * \#414 - update GUI OSPFv2 adjacency widget to work with FRR
+    * \#416 - EMANE links can now be drawn for 80211 and RF Pipe models
+    * \#418 #409 - code cleanup
+    * \#425 - added route monitor script for SDT3D integration
+    * a formal error will now be thrown when EMANE binding are not installed, but attempted to be used
+    * node positions will now default to 0,0 to avoid GUI errors, when one is not provided
+    * improved SDT3D integration, multiple link support and usage of custom layers
+* Python GUI Enhancements
+    * enabled edit menu delete
+    * cleaned up node context menu and enabled delete
+* Bugfixes
+    * \#427 - fixed issue in default route service
+    * \#426 - fixed issue reading ipsec template file
+    * \#420 - fixed issue with TLV API udp handler
+    * \#411 - allow wlan to be configured with 0 values
+    * \#415 - general EMANE configuration was not being saved/loaded from XML
+
 ## 2020-03-16 CORE 6.2.0
 * gRPC API
     * Added call to execute python script
