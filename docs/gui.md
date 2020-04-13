@@ -18,8 +18,8 @@ staying in the **runtime** phase.  After the session is stopped, CORE will
 proceed to the **data collection** phase before tearing down the emulated
 state.
 
-CORE can be customized to perform any action at each phase in the workflow
-above. See the *Hooks...* entry on the **Session Menu** for details about
+CORE can be customized to perform any action at each state. See the
+**Hooks...** entry on the [Session Menu](#session-menu) for details about
 when these session states are reached.
 
 ## Prerequisites
