@@ -5,29 +5,34 @@
 
 ## Main Components
 
-* CORE Daemon
-  * Manages emulation sessions
-  * Builds the emulated networks using Linux namespaces for nodes and
-    some form of bridging and packet manipulation for virtual networks
-  * Nodes and networks come together via interfaces installed on nodes
+* core-daemon
+  * Manages emulated sessions of nodes and links for a given network
+  * Nodes are created using Linux namespaces
+  * Links are created using Linux bridges and virtual ethernet peers
+  * Packets sent over links are manipulated using traffic control
   * Controlled via the CORE GUI
-  * Written in python and can be scripted, given direct control of scenarios
-* CORE GUI
-  * GUI and daemon communicate using a custom, asynchronous, sockets-based
-    API, known as the CORE API
-  * Drag and drop creation for nodes and network interfaces
-  * Can launch terminals for emulated nodes in running scenarios
+  * Provides both a custo TLV API and gRPC API
+  * Python program that leverages a small C binary for node creation
+* core-gui
+  * GUI and daemon communicate over the custom TLV API
+  * Drag and drop creation for nodes and links
+  * Can launch terminals for emulated nodes in running sessions
   * Can save/open scenario files to recreate previous sessions
   * TCL/TK program
+* coresendmsg
+  * Command line utility for sending TLV API messages to the core-daemon
+* vcmd
+  * Command line utility for sending shell commands to nodes
 
-![](static/core-architecture.jpg)
+![](static/architecture.png)
 
 ## Sessions
 
-CORE can create and run multiple sessions at once, below is a high level
-overview of the states a session will go between.
+CORE can create and run multiple emulated sessions at once, below is an
+overview of the states a session will transition between during typical
+GUI interactions.
 
-![](static/core-workflow.jpg)
+![](static/workflow.png)
 
 ## How Does it Work?
 
@@ -38,7 +43,7 @@ together for a specific purpose.
 
 ### Linux
 
-Linux network namespaces (also known as netns) is the primary virtualization
+Linux network namespaces (also known as netns) is the primary
 technique used by CORE. Most recent Linux distributions have
 namespaces-enabled kernels out of the box. Each namespace has its own process
 environment and private network stack. Network namespaces share the same
@@ -56,7 +61,7 @@ The Tcl/Tk CORE GUI was originally derived from the open source
 [IMUNES](http://imunes.net) project from the University of Zagreb as a custom
 project within Boeing Research and Technology's Network Technology research
 group in 2004. Since then they have developed the CORE framework to use Linux
-virtualization, have developed a Python framework, and made numerous user and
+namespacing, have developed a Python framework, and made numerous user and
 kernel-space developments, such as support for wireless networks, IPsec,
 distribute emulation, simulation integration, and more. The IMUNES project
 also consists of userspace and kernel components.

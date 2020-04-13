@@ -10,12 +10,12 @@ This section will describe how to install CORE from source or from a pre-built p
 ## Required Hardware
 
 Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
-virtual machines, as a general rule you should select a machine having as much RAM and CPU resources as possible.
+containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 ## Operating System
 
-CORE requires a Linux operating system because it uses virtualization provided by the kernel. It does not run on
-Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The virtualization
+CORE requires a Linux operating system because it uses namespacing provided by the kernel. It does not run on
+Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The
 technology that CORE currently uses is Linux network namespaces.
 
 Ubuntu and CentOS Linux are the recommended distributions for running CORE. However, these distributions are
