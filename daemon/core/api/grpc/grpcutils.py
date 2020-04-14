@@ -370,6 +370,7 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
         interface_one=interface_one,
         interface_two=interface_two,
         options=options,
+        network_id=link_data.network_id,
     )
 
 

@@ -17,6 +17,7 @@ EDGE_WIDTH = 3
 EDGE_COLOR = "#ff0000"
 WIRELESS_WIDTH = 1.5
 WIRELESS_COLOR = "#009933"
+ARC_DISTANCE = 50
 
 
 def interface_label(interface: core_pb2.Interface) -> str:
@@ -28,8 +29,40 @@ def interface_label(interface: core_pb2.Interface) -> str:
     return label
 
 
-def create_edge_token(src: int, dst: int) -> Tuple[int, ...]:
-    return tuple(sorted([src, dst]))
+def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
+    values = [src, dst]
+    if network is not None:
+        values.append(network)
+    return tuple(sorted(values))
+
+
+def arc_edges(edges) -> None:
+    if not edges:
+        return
+    mid_index = len(edges) // 2
+    if mid_index == 0:
+        arc_step = ARC_DISTANCE
+    else:
+        arc_step = ARC_DISTANCE / mid_index
+    # below edges
+    arc = 0
+    for edge in edges[:mid_index]:
+        arc -= arc_step
+        edge.arc = arc
+        edge.redraw()
+    # mid edge
+    if len(edges) % 2 != 0:
+        arc = 0
+        edge = edges[mid_index]
+        edge.arc = arc
+        edge.redraw()
+        mid_index += 1
+    # above edges
+    arc = 0
+    for edge in edges[mid_index:]:
+        arc += arc_step
+        edge.arc = arc
+        edge.redraw()
 
 
 class Edge:
@@ -49,27 +82,52 @@ class Edge:
     def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
         return tuple(sorted([src, dst]))
 
-    def _get_midpoint(
+    def _get_arcpoint(
         self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]
     ) -> Tuple[float, float]:
         src_x, src_y = src_pos
         dst_x, dst_y = dst_pos
-        t = math.atan2(dst_y - src_y, dst_x - src_y)
-        x_mp = (src_x + dst_x) / 2 + self.arc * math.sin(t)
-        y_mp = (src_y + dst_y) / 2 - self.arc * math.cos(t)
-        return x_mp, y_mp
+        mp_x = (src_x + dst_x) / 2
+        mp_y = (src_y + dst_y) / 2
+        slope_denominator = src_x - dst_x
+        slope_numerator = src_y - dst_y
+        # vertical line
+        if slope_denominator == 0:
+            return mp_x + self.arc, mp_y
+        # horizontal line
+        if slope_numerator == 0:
+            return mp_x, mp_y + self.arc
+        # everything else
+        m = slope_numerator / slope_denominator
+        perp_m = -1 / m
+        b = mp_y - (perp_m * mp_x)
+        # get arc x and y
+        offset = math.sqrt(self.arc ** 2 / (1 + (1 / m ** 2)))
+        arc_x = mp_x
+        if self.arc >= 0:
+            arc_x += offset
+        else:
+            arc_x -= offset
+        arc_y = (perp_m * arc_x) + b
+        return arc_x, arc_y
 
     def draw(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
-        mid_pos = self._get_midpoint(src_pos, dst_pos)
+        arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.id = self.canvas.create_line(
             *src_pos,
-            *mid_pos,
+            *arc_pos,
             *dst_pos,
             smooth=True,
             tags=self.tag,
             width=self.width * self.canvas.app.app_scale,
             fill=self.color,
         )
+
+    def redraw(self):
+        width = self.width * self.canvas.app.app_scale
+        self.canvas.itemconfig(self.id, width=width, fill=self.color)
+        src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
+        self.move_src(src_x, src_y)
 
     def move_node(self, node_id: int, x: float, y: float) -> None:
         if self.src == node_id:
@@ -81,15 +139,15 @@ class Edge:
         dst_pos = (x, y)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
         src_pos = (src_x, src_y)
-        mid_pos = self._get_midpoint(src_pos, dst_pos)
-        self.canvas.coords(self.id, *src_pos, *mid_pos, *dst_pos)
+        arc_pos = self._get_arcpoint(src_pos, dst_pos)
+        self.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
 
     def move_src(self, x: float, y: float) -> None:
         src_pos = (x, y)
         _, _, _, _, dst_x, dst_y = self.canvas.coords(self.id)
         dst_pos = (dst_x, dst_y)
-        mid_pos = self._get_midpoint(src_pos, dst_pos)
-        self.canvas.coords(self.id, *src_pos, *mid_pos, *dst_pos)
+        arc_pos = self._get_arcpoint(src_pos, dst_pos)
+        self.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
 
     def delete(self) -> None:
         self.canvas.delete(self.id)
@@ -201,6 +259,7 @@ class CanvasEdge(Edge):
         )
 
     def redraw(self) -> None:
+        super().redraw()
         label_one, label_two = self.create_labels()
         self.canvas.itemconfig(self.text_src, text=label_one)
         self.canvas.itemconfig(self.text_dst, text=label_two)

@@ -11,6 +11,7 @@ from core.gui.graph.edges import (
     EDGE_WIDTH,
     CanvasEdge,
     CanvasWirelessEdge,
+    arc_edges,
     create_edge_token,
 )
 from core.gui.graph.enums import GraphMode, ScaleOption
@@ -198,11 +199,13 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.grid)
 
-    def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
+    def add_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
+    ):
         """
         add a wireless edge between 2 canvas nodes
         """
-        token = create_edge_token(src.id, dst.id)
+        token = create_edge_token(src.id, dst.id, network_id)
         src_pos = self.coords(src.id)
         dst_pos = self.coords(dst.id)
         edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
@@ -211,13 +214,21 @@ class CanvasGraph(tk.Canvas):
         dst.wireless_edges.add(edge)
         self.tag_raise(src.id)
         self.tag_raise(dst.id)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
 
-    def delete_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
-        token = create_edge_token(src.id, dst.id)
+    def delete_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
+    ):
+        token = create_edge_token(src.id, dst.id, network_id)
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
         dst.wireless_edges.remove(edge)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
 
     def draw_session(self, session: core_pb2.Session):
         """
