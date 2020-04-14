@@ -148,19 +148,9 @@ class CanvasNode:
 
         # move edges
         for edge in self.edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if edge.src == self.id:
-                self.canvas.coords(edge.id, x, y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, x, y)
-            edge.update_labels()
-
+            edge.move_node(self.id, x, y)
         for edge in self.wireless_edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if edge.src == self.id:
-                self.canvas.coords(edge.id, x, y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, x, y)
+            edge.move_node(self.id, x, y)
 
         # set actual coords for node and update core is running
         real_x, real_y = self.canvas.get_actual_coords(x, y)
