@@ -59,8 +59,17 @@ class SdtClient:
 
 
 class RouterMonitor:
-    def __init__(self, session: int, src: str, dst: str, pkt: str, rate: int, dead: int,
-                 sdt_host: str, sdt_port: int) -> None:
+    def __init__(
+        self,
+        session: int,
+        src: str,
+        dst: str,
+        pkt: str,
+        rate: int,
+        dead: int,
+        sdt_host: str,
+        sdt_port: int,
+    ) -> None:
         self.queue = Queue()
         self.core = CoreGrpcClient()
         self.session = session
@@ -102,7 +111,9 @@ class RouterMonitor:
         if self.src_id is None:
             print(f"could not find node with source address: {self.src}")
             sys.exit(1)
-        print(f"monitoring src_id ({self.src_id}) src({self.src}) dst({self.dst}) pkt({self.pkt})")
+        print(
+            f"monitoring src_id ({self.src_id}) src({self.src}) dst({self.dst}) pkt({self.pkt})"
+        )
         return node_map
 
     def get_session(self) -> int:
@@ -152,9 +163,9 @@ class RouterMonitor:
         self.sdt.delete_links()
         if not self.seen:
             return
-        values = sorted(self.seen.items(),
-                        key=cmp_to_key(self.route_sort),
-                        reverse=True)
+        values = sorted(
+            self.seen.items(), key=cmp_to_key(self.route_sort), reverse=True
+        )
         print("current route:")
         for index, node_data in enumerate(values):
             next_index = index + 1
@@ -174,12 +185,11 @@ class RouterMonitor:
         self.listeners.clear()
 
     def listen(self, node_id, node) -> None:
-        cmd = (
-            f"tcpdump -lnvi any src host {self.src} and dst host {self.dst} and {self.pkt}"
-        )
+        cmd = f"tcpdump -lnvi any src host {self.src} and dst host {self.dst} and {self.pkt}"
         node_cmd = f"vcmd -c {node} -- {cmd}"
-        p = subprocess.Popen(node_cmd, shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.DEVNULL)
+        p = subprocess.Popen(
+            node_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+        )
         current = time.monotonic()
         try:
             while not p.poll() and self.running:
@@ -206,21 +216,27 @@ def main() -> None:
 
     desc = "core route monitor leverages tcpdump to monitor traffic and find route using TTL"
     parser = argparse.ArgumentParser(
-        description=desc,
-        formatter_class=ArgumentDefaultsHelpFormatter
+        description=desc, formatter_class=ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("--src", required=True,
-                        help="source address for route monitoring")
-    parser.add_argument("--dst", required=True,
-                        help="destination address for route monitoring")
-    parser.add_argument("--session", type=int,
-                        help="session to monitor route")
-    parser.add_argument("--pkt", default="icmp", choices=PACKET_CHOICES,
-                        help="packet type")
-    parser.add_argument("--rate", type=int, default=ROUTE_TIME,
-                        help="rate to update route, in seconds")
-    parser.add_argument("--dead", type=int, default=DEAD_TIME,
-                        help="timeout to declare path dead, in seconds")
+    parser.add_argument(
+        "--src", required=True, help="source address for route monitoring"
+    )
+    parser.add_argument(
+        "--dst", required=True, help="destination address for route monitoring"
+    )
+    parser.add_argument("--session", type=int, help="session to monitor route")
+    parser.add_argument(
+        "--pkt", default="icmp", choices=PACKET_CHOICES, help="packet type"
+    )
+    parser.add_argument(
+        "--rate", type=int, default=ROUTE_TIME, help="rate to update route, in seconds"
+    )
+    parser.add_argument(
+        "--dead",
+        type=int,
+        default=DEAD_TIME,
+        help="timeout to declare path dead, in seconds",
+    )
     parser.add_argument("--sdt-host", default=SDT_HOST, help="sdt host address")
     parser.add_argument("--sdt-port", type=int, default=SDT_PORT, help="sdt port")
     args = parser.parse_args()
