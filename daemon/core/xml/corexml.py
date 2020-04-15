@@ -9,6 +9,7 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
+from core.errors import CoreXmlError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
@@ -602,8 +603,8 @@ class CoreXmlReader:
         self.read_service_configs()
         self.read_mobility_configs()
         self.read_emane_global_config()
-        self.read_emane_configs()
         self.read_nodes()
+        self.read_emane_configs()
         self.read_configservice_configs()
         self.read_links()
 
@@ -756,6 +757,18 @@ class CoreXmlReader:
             model_name = emane_configuration.get("model")
             configs = {}
 
+            # validate node and model
+            node = self.session.nodes.get(node_id)
+            if not node:
+                raise CoreXmlError(f"node for emane config doesn't exist: {node_id}")
+            if not isinstance(node, EmaneNet):
+                raise CoreXmlError(f"invalid node for emane config: {node.name}")
+            model = self.session.emane.models.get(model_name)
+            if not model:
+                raise CoreXmlError(f"invalid emane model: {model_name}")
+            node.setmodel(model, {})
+
+            # read and set emane model configuration
             mac_configuration = emane_configuration.find("mac")
             for config in mac_configuration.iterchildren():
                 name = config.get("name")
