@@ -289,7 +289,6 @@ class CanvasEdge(Edge):
         throughput = 0.001 * throughput
         text = f"{throughput:.3f} kbps"
         self.middle_label_text(text)
-        self.canvas.addtag(self.middle_label, tags.THROUGHPUT)
         if throughput > self.canvas.throughput_threshold:
             color = self.canvas.throughput_color
             width = self.canvas.throughput_width
