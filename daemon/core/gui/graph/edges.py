@@ -75,7 +75,9 @@ class Edge:
         self.dst = dst
         self.arc = 0
         self.token = None
+        self.src_label = None
         self.middle_label = None
+        self.dst_label = None
         self.color = EDGE_COLOR
         self.width = EDGE_WIDTH
 
@@ -146,6 +148,44 @@ class Edge:
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
 
+    def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+        src_x, src_y, _, _, dst_x, dst_y = self.canvas.coords(self.id)
+        v1 = dst_x - src_x
+        v2 = dst_y - src_y
+        ux = TEXT_DISTANCE * v1
+        uy = TEXT_DISTANCE * v2
+        src_x = src_x + ux
+        src_y = src_y + uy
+        dst_x = dst_x - ux
+        dst_y = dst_y - uy
+        return (src_x, src_y), (dst_x, dst_y)
+
+    def src_label_text(self, text: str) -> None:
+        if self.src_label is None:
+            src_pos, _ = self.node_label_positions()
+            self.src_label = self.canvas.create_text(
+                *src_pos,
+                text=text,
+                justify=tk.CENTER,
+                font=self.canvas.app.edge_font,
+                tags=tags.LINK_INFO,
+            )
+        else:
+            self.canvas.itemconfig(self.src_label, text=text)
+
+    def dst_label_text(self, text: str) -> None:
+        if self.dst_label is None:
+            _, dst_pos = self.node_label_positions()
+            self.dst_label = self.canvas.create_text(
+                *dst_pos,
+                text=text,
+                justify=tk.CENTER,
+                font=self.canvas.app.edge_font,
+                tags=tags.LINK_INFO,
+            )
+        else:
+            self.canvas.itemconfig(self.dst_label, text=text)
+
     def move_node(self, node_id: int, pos: Tuple[float, float]) -> None:
         if self.src == node_id:
             self.move_src(pos)
@@ -167,10 +207,22 @@ class Edge:
         self.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
         if self.middle_label:
             self.canvas.coords(self.middle_label, *arc_pos)
+        src_pos, dst_pos = self.node_label_positions()
+        if self.src_label:
+            self.canvas.coords(self.src_label, *src_pos)
+        if self.dst_label:
+            self.canvas.coords(self.dst_label, *dst_pos)
 
     def delete(self) -> None:
+        logging.debug("deleting canvas edge, id: %s", self.id)
         self.canvas.delete(self.id)
+        self.canvas.delete(self.src_label)
         self.canvas.delete(self.middle_label)
+        self.canvas.delete(self.dst_label)
+        self.id = None
+        self.src_label = None
+        self.middle_label = None
+        self.dst_label = None
 
 
 class CanvasWirelessEdge(Edge):
@@ -219,10 +271,6 @@ class CanvasEdge(Edge):
         self.draw(src_pos, dst_pos)
         self.set_binding()
 
-    def move_node(self, node_id: int, pos: Tuple[float, float]) -> None:
-        super().move_node(node_id, pos)
-        self.update_labels()
-
     def set_binding(self) -> None:
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.create_context)
 
@@ -230,19 +278,7 @@ class CanvasEdge(Edge):
         self.link = link
         self.draw_labels()
 
-    def get_coordinates(self) -> [float, float, float, float]:
-        x1, y1, _, _, x2, y2 = self.canvas.coords(self.id)
-        v1 = x2 - x1
-        v2 = y2 - y1
-        ux = TEXT_DISTANCE * v1
-        uy = TEXT_DISTANCE * v2
-        x1 = x1 + ux
-        y1 = y1 + uy
-        x2 = x2 - ux
-        y2 = y2 - uy
-        return x1, y1, x2, y2
-
-    def create_labels(self) -> Tuple[str, str]:
+    def create_node_labels(self) -> Tuple[str, str]:
         label_one = None
         if self.link.HasField("interface_one"):
             label_one = interface_label(self.link.interface_one)
@@ -252,38 +288,13 @@ class CanvasEdge(Edge):
         return label_one, label_two
 
     def draw_labels(self) -> None:
-        x1, y1, x2, y2 = self.get_coordinates()
-        label_one, label_two = self.create_labels()
-        self.text_src = self.canvas.create_text(
-            x1,
-            y1,
-            text=label_one,
-            justify=tk.CENTER,
-            font=self.canvas.app.edge_font,
-            tags=tags.LINK_INFO,
-        )
-        self.text_dst = self.canvas.create_text(
-            x2,
-            y2,
-            text=label_two,
-            justify=tk.CENTER,
-            font=self.canvas.app.edge_font,
-            tags=tags.LINK_INFO,
-        )
+        src_text, dst_text = self.create_node_labels()
+        self.src_label_text(src_text)
+        self.dst_label_text(dst_text)
 
     def redraw(self) -> None:
         super().redraw()
-        label_one, label_two = self.create_labels()
-        self.canvas.itemconfig(self.text_src, text=label_one)
-        self.canvas.itemconfig(self.text_dst, text=label_two)
-
-    def update_labels(self) -> None:
-        """
-        Move edge labels based on current position.
-        """
-        x1, y1, x2, y2 = self.get_coordinates()
-        self.canvas.coords(self.text_src, x1, y1)
-        self.canvas.coords(self.text_dst, x2, y2)
+        self.draw_labels()
 
     def set_throughput(self, throughput: float) -> None:
         throughput = 0.001 * throughput
@@ -346,12 +357,6 @@ class CanvasEdge(Edge):
                 src_node.add_antenna()
             else:
                 src_node.add_antenna()
-
-    def delete(self) -> None:
-        logging.debug("Delete canvas edge, id: %s", self.id)
-        super().delete()
-        self.canvas.delete(self.text_src)
-        self.canvas.delete(self.text_dst)
 
     def reset(self) -> None:
         self.canvas.delete(self.middle_label)
