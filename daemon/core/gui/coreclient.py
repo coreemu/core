@@ -208,6 +208,9 @@ class CoreClient:
         node_one_id = event.link.node_one_id
         node_two_id = event.link.node_two_id
         network_id = event.link.network_id
+        if node_one_id == node_two_id:
+            logging.warning("ignoring invalid link: %s", event)
+            return
         canvas_node_one = self.canvas_nodes[node_one_id]
         canvas_node_two = self.canvas_nodes[node_two_id]
         if event.message_type == core_pb2.MessageType.ADD:

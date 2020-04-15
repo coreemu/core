@@ -206,6 +206,8 @@ class CanvasGraph(tk.Canvas):
         add a wireless edge between 2 canvas nodes
         """
         token = create_edge_token(src.id, dst.id, network_id)
+        if token in self.wireless_edges:
+            return
         src_pos = self.coords(src.id)
         dst_pos = self.coords(dst.id)
         edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
@@ -222,6 +224,8 @@ class CanvasGraph(tk.Canvas):
         self, src: CanvasNode, dst: CanvasNode, network_id: int = None
     ):
         token = create_edge_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            return
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
