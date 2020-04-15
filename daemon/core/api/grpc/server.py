@@ -1494,12 +1494,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 flag = MessageFlags.ADD
             else:
                 flag = MessageFlags.DELETE
+            color = session.get_link_color(emane_one.id)
             link = LinkData(
                 message_type=flag,
                 link_type=LinkTypes.WIRELESS,
                 node1_id=node_one.id,
                 node2_id=node_two.id,
                 network_id=emane_one.id,
+                color=color,
             )
             session.broadcast_link(link)
             return EmaneLinkResponse(result=True)

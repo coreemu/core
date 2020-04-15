@@ -33,7 +33,6 @@ NODE_LAYER = "CORE::Nodes"
 LINK_LAYER = "CORE::Links"
 CORE_LAYERS = [CORE_LAYER, LINK_LAYER, NODE_LAYER]
 DEFAULT_LINK_COLOR = "red"
-LINK_COLORS = ["green", "blue", "orange", "purple", "white"]
 
 
 class Sdt:
@@ -73,7 +72,6 @@ class Sdt:
         self.url = self.DEFAULT_SDT_URL
         self.address = None
         self.protocol = None
-        self.colors = {}
         self.network_layers = set()
         self.session.node_handlers.append(self.handle_node_update)
         self.session.link_handlers.append(self.handle_link_update)
@@ -180,7 +178,6 @@ class Sdt:
             self.cmd(f"delete layer,{layer}")
         self.disconnect()
         self.network_layers.clear()
-        self.colors.clear()
 
     def cmd(self, cmdstr: str) -> bool:
         """
@@ -353,24 +350,6 @@ class Sdt:
             pass
         return result
 
-    def get_link_line(self, network_id: int) -> str:
-        """
-        Retrieve link line color based on network.
-
-        :param network_id: network id of link, None for wired links
-        :return: link line configuration
-        """
-        network = self.session.nodes.get(network_id)
-        if network:
-            color = self.colors.get(network_id)
-            if not color:
-                index = len(self.colors) % len(LINK_COLORS)
-                color = LINK_COLORS[index]
-                self.colors[network_id] = color
-        else:
-            color = DEFAULT_LINK_COLOR
-        return f"{color},2"
-
     def add_link(
         self, node_one: int, node_two: int, network_id: int = None, label: str = None
     ) -> None:
@@ -388,7 +367,10 @@ class Sdt:
             return
         if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
             return
-        line = self.get_link_line(network_id)
+        color = DEFAULT_LINK_COLOR
+        if network_id:
+            color = self.session.get_link_color(network_id)
+        line = f"{color},2"
         link_id = get_link_id(node_one, node_two, network_id)
         layer = LINK_LAYER
         if network_id:

@@ -76,6 +76,7 @@ NODES = {
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
 CTRL_NET_ID = 9001
+LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
 
 
 class Session:
@@ -105,6 +106,7 @@ class Session:
         self.thumbnail = None
         self.user = None
         self.event_loop = EventLoop()
+        self.link_colors = {}
 
         # dict of nodes: all nodes and nets
         self.node_id_gen = IdGen()
@@ -927,6 +929,7 @@ class Session:
         self.location.reset()
         self.services.reset()
         self.mobility.config_reset()
+        self.link_colors.clear()
 
     def start_events(self) -> None:
         """
@@ -1956,3 +1959,17 @@ class Session:
         else:
             node = self.get_node(node_id)
             node.cmd(data, wait=False)
+
+    def get_link_color(self, network_id: int) -> str:
+        """
+        Assign a color for links associated with a network.
+
+        :param network_id: network to get a link color for
+        :return: link color
+        """
+        color = self.link_colors.get(network_id)
+        if not color:
+            index = len(self.link_colors) % len(LINK_COLORS)
+            color = LINK_COLORS[index]
+            self.link_colors[network_id] = color
+        return color

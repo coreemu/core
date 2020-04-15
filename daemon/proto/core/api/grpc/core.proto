@@ -688,6 +688,7 @@ message Link {
     LinkOptions options = 6;
     int32 network_id = 7;
     string label = 8;
+    string color = 9;
 }
 
 message LinkOptions {

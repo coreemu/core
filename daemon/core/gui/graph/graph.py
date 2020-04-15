@@ -212,6 +212,8 @@ class CanvasGraph(tk.Canvas):
         edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
         if link.label:
             edge.middle_label_text(link.label)
+        if link.color:
+            edge.color = link.color
         self.wireless_edges[token] = edge
         src.wireless_edges.add(edge)
         dst.wireless_edges.add(edge)
