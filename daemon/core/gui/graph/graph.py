@@ -200,17 +200,18 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(self.grid)
 
     def add_wireless_edge(
-        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
-    ):
-        """
-        add a wireless edge between 2 canvas nodes
-        """
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        network_id = link.network_id if link.network_id else None
         token = create_edge_token(src.id, dst.id, network_id)
         if token in self.wireless_edges:
+            logging.warning("ignoring link that already exists: %s", link)
             return
         src_pos = self.coords(src.id)
         dst_pos = self.coords(dst.id)
         edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
+        if link.label:
+            edge.middle_label_text(link.label)
         self.wireless_edges[token] = edge
         src.wireless_edges.add(edge)
         dst.wireless_edges.add(edge)
@@ -221,8 +222,9 @@ class CanvasGraph(tk.Canvas):
         arc_edges(common_edges)
 
     def delete_wireless_edge(
-        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
-    ):
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        network_id = link.network_id if link.network_id else None
         token = create_edge_token(src.id, dst.id, network_id)
         if token not in self.wireless_edges:
             return
@@ -233,6 +235,16 @@ class CanvasGraph(tk.Canvas):
         # update arcs when there are multiple links
         common_edges = list(src.wireless_edges & dst.wireless_edges)
         arc_edges(common_edges)
+
+    def update_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        if not link.label:
+            return
+        network_id = link.network_id if link.network_id else None
+        token = create_edge_token(src.id, dst.id, network_id)
+        edge = self.wireless_edges[token]
+        edge.middle_label_text(link.label)
 
     def draw_session(self, session: core_pb2.Session):
         """

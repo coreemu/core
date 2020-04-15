@@ -75,12 +75,16 @@ class Edge:
         self.dst = dst
         self.arc = 0
         self.token = None
+        self.middle_label = None
         self.color = EDGE_COLOR
         self.width = EDGE_WIDTH
 
     @classmethod
     def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
         return tuple(sorted([src, dst]))
+
+    def scaled_width(self) -> float:
+        return self.width * self.canvas.app.app_scale
 
     def _get_arcpoint(
         self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]
@@ -119,15 +123,27 @@ class Edge:
             *dst_pos,
             smooth=True,
             tags=self.tag,
-            width=self.width * self.canvas.app.app_scale,
+            width=self.scaled_width(),
             fill=self.color,
         )
 
     def redraw(self):
-        width = self.width * self.canvas.app.app_scale
-        self.canvas.itemconfig(self.id, width=width, fill=self.color)
+        self.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
         self.move_src(src_x, src_y)
+
+    def middle_label_pos(self) -> Tuple[float, float]:
+        _, _, x, y, _, _ = self.canvas.coords(self.id)
+        return x, y
+
+    def middle_label_text(self, text: str) -> None:
+        if self.middle_label is None:
+            x, y = self.middle_label_pos()
+            self.middle_label = self.canvas.create_text(
+                x, y, font=self.canvas.app.edge_font, text=text
+            )
+        else:
+            self.canvas.itemconfig(self.middle_label, text=text)
 
     def move_node(self, node_id: int, x: float, y: float) -> None:
         if self.src == node_id:
@@ -139,18 +155,23 @@ class Edge:
         dst_pos = (x, y)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
         src_pos = (src_x, src_y)
-        arc_pos = self._get_arcpoint(src_pos, dst_pos)
-        self.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
+        self.moved(src_pos, dst_pos)
 
     def move_src(self, x: float, y: float) -> None:
         src_pos = (x, y)
         _, _, _, _, dst_x, dst_y = self.canvas.coords(self.id)
         dst_pos = (dst_x, dst_y)
+        self.moved(src_pos, dst_pos)
+
+    def moved(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
         arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
+        if self.middle_label:
+            self.canvas.coords(self.middle_label, *arc_pos)
 
     def delete(self) -> None:
         self.canvas.delete(self.id)
+        self.canvas.delete(self.middle_label)
 
 
 class CanvasWirelessEdge(Edge):
@@ -193,7 +214,6 @@ class CanvasEdge(Edge):
         self.dst_interface = None
         self.text_src = None
         self.text_dst = None
-        self.text_middle = None
         self.link = None
         self.asymmetric_link = None
         self.throughput = None
@@ -222,12 +242,6 @@ class CanvasEdge(Edge):
         x2 = x2 - ux
         y2 = y2 - uy
         return x1, y1, x2, y2
-
-    def get_midpoint(self) -> [float, float]:
-        x1, y1, x2, y2 = self.canvas.coords(self.id)
-        x = (x1 + x2) / 2
-        y = (y1 + y2) / 2
-        return x, y
 
     def create_labels(self) -> Tuple[str, str]:
         label_one = None
@@ -271,27 +285,18 @@ class CanvasEdge(Edge):
         x1, y1, x2, y2 = self.get_coordinates()
         self.canvas.coords(self.text_src, x1, y1)
         self.canvas.coords(self.text_dst, x2, y2)
-        if self.text_middle is not None:
-            x, y = self.get_midpoint()
-            self.canvas.coords(self.text_middle, x, y)
 
     def set_throughput(self, throughput: float) -> None:
         throughput = 0.001 * throughput
-        value = f"{throughput:.3f} kbps"
-        if self.text_middle is None:
-            x, y = self.get_midpoint()
-            self.text_middle = self.canvas.create_text(
-                x, y, tags=tags.THROUGHPUT, font=self.canvas.app.edge_font, text=value
-            )
-        else:
-            self.canvas.itemconfig(self.text_middle, text=value)
-
+        text = f"{throughput:.3f} kbps"
+        self.middle_label_text(text)
+        self.canvas.addtag(self.middle_label, tags.THROUGHPUT)
         if throughput > self.canvas.throughput_threshold:
             color = self.canvas.throughput_color
             width = self.canvas.throughput_width
         else:
-            color = EDGE_COLOR
-            width = EDGE_WIDTH
+            color = self.color
+            width = self.scaled_width()
         self.canvas.itemconfig(self.id, fill=color, width=width)
 
     def complete(self, dst: int) -> None:
@@ -349,12 +354,11 @@ class CanvasEdge(Edge):
         super().delete()
         self.canvas.delete(self.text_src)
         self.canvas.delete(self.text_dst)
-        self.canvas.delete(self.text_middle)
 
     def reset(self) -> None:
-        self.canvas.delete(self.text_middle)
-        self.text_middle = None
-        self.canvas.itemconfig(self.id, fill=EDGE_COLOR, width=EDGE_WIDTH)
+        self.canvas.delete(self.middle_label)
+        self.middle_label = None
+        self.canvas.itemconfig(self.id, fill=self.color, width=self.scaled_width())
 
     def create_context(self, event: tk.Event) -> None:
         context = tk.Menu(self.canvas)

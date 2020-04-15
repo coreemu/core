@@ -207,22 +207,25 @@ class CoreClient:
         logging.debug("Link event: %s", event)
         node_one_id = event.link.node_one_id
         node_two_id = event.link.node_two_id
-        network_id = event.link.network_id
         if node_one_id == node_two_id:
-            logging.warning("ignoring invalid link: %s", event)
+            logging.warning("ignoring links with loops: %s", event)
             return
         canvas_node_one = self.canvas_nodes[node_one_id]
         canvas_node_two = self.canvas_nodes[node_two_id]
         if event.message_type == core_pb2.MessageType.ADD:
             self.app.canvas.add_wireless_edge(
-                canvas_node_one, canvas_node_two, network_id
+                canvas_node_one, canvas_node_two, event.link
             )
         elif event.message_type == core_pb2.MessageType.DELETE:
             self.app.canvas.delete_wireless_edge(
-                canvas_node_one, canvas_node_two, network_id
+                canvas_node_one, canvas_node_two, event.link
+            )
+        elif event.message_type == core_pb2.MessageType.NONE:
+            self.app.canvas.update_wireless_edge(
+                canvas_node_one, canvas_node_two, event.link
             )
         else:
-            logging.warning("unknown link event: %s", event.message_type)
+            logging.warning("unknown link event: %s", event)
 
     def handle_node_event(self, event: core_pb2.NodeEvent):
         logging.debug("node event: %s", event)

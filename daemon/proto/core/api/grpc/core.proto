@@ -687,6 +687,7 @@ message Link {
     Interface interface_two = 5;
     LinkOptions options = 6;
     int32 network_id = 7;
+    string label = 8;
 }
 
 message LinkOptions {

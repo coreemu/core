@@ -85,6 +85,7 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
         interface_two=interface_two,
         options=options,
         network_id=event.network_id,
+        label=event.label,
     )
     return core_pb2.LinkEvent(message_type=event.message_type.value, link=link)
 
