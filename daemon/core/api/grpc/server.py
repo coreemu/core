@@ -543,7 +543,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 continue
             node_proto = grpcutils.get_node_proto(session, node)
             nodes.append(node_proto)
-            node_links = get_links(session, node)
+            node_links = get_links(node)
             links.extend(node_links)
 
         session_proto = core_pb2.Session(
@@ -788,7 +788,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node links: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        links = get_links(session, node)
+        links = get_links(node)
         return core_pb2.GetNodeLinksResponse(links=links)
 
     def AddLink(

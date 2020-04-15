@@ -1112,6 +1112,7 @@ class CoreNetworkBase(NodeBase):
                 link_type=self.linktype,
                 unidirectional=unidirectional,
                 interface2_id=linked_node.getifindex(netif),
+                interface2_name=netif.name,
                 interface2_mac=netif.hwaddr,
                 interface2_ip4=interface2_ip4,
                 interface2_ip4_mask=interface2_ip4_mask,

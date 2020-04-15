@@ -949,12 +949,14 @@ class PtpNet(CoreNetwork):
             dup=if1.getparam("duplicate"),
             jitter=if1.getparam("jitter"),
             interface1_id=if1.node.getifindex(if1),
+            interface1_name=if1.name,
             interface1_mac=if1.hwaddr,
             interface1_ip4=interface1_ip4,
             interface1_ip4_mask=interface1_ip4_mask,
             interface1_ip6=interface1_ip6,
             interface1_ip6_mask=interface1_ip6_mask,
             interface2_id=if2.node.getifindex(if2),
+            interface2_name=if2.name,
             interface2_mac=if2.hwaddr,
             interface2_ip4=interface2_ip4,
             interface2_ip4_mask=interface2_ip4_mask,
@@ -968,7 +970,7 @@ class PtpNet(CoreNetwork):
         # (swap if1 and if2)
         if unidirectional:
             link_data = LinkData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 link_type=self.linktype,
                 node1_id=if2.node.id,
                 node2_id=if1.node.id,
