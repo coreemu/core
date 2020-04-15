@@ -130,7 +130,8 @@ class Edge:
     def redraw(self):
         self.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
-        self.move_src(src_x, src_y)
+        src_pos = src_x, src_y
+        self.move_src(src_pos)
 
     def middle_label_pos(self) -> Tuple[float, float]:
         _, _, x, y, _, _ = self.canvas.coords(self.id)
@@ -145,22 +146,20 @@ class Edge:
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
 
-    def move_node(self, node_id: int, x: float, y: float) -> None:
+    def move_node(self, node_id: int, pos: Tuple[float, float]) -> None:
         if self.src == node_id:
-            self.move_src(x, y)
+            self.move_src(pos)
         else:
-            self.move_dst(x, y)
+            self.move_dst(pos)
 
-    def move_dst(self, x: float, y: float) -> None:
-        dst_pos = (x, y)
+    def move_dst(self, dst_pos: Tuple[float, float]) -> None:
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
-        src_pos = (src_x, src_y)
+        src_pos = src_x, src_y
         self.moved(src_pos, dst_pos)
 
-    def move_src(self, x: float, y: float) -> None:
-        src_pos = (x, y)
+    def move_src(self, src_pos: Tuple[float, float]) -> None:
         _, _, _, _, dst_x, dst_y = self.canvas.coords(self.id)
-        dst_pos = (dst_x, dst_y)
+        dst_pos = dst_x, dst_y
         self.moved(src_pos, dst_pos)
 
     def moved(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
@@ -220,8 +219,8 @@ class CanvasEdge(Edge):
         self.draw(src_pos, dst_pos)
         self.set_binding()
 
-    def move_node(self, node_id: int, x: float, y: float) -> None:
-        super().move_node(node_id, x, y)
+    def move_node(self, node_id: int, pos: Tuple[float, float]) -> None:
+        super().move_node(node_id, pos)
         self.update_labels()
 
     def set_binding(self) -> None:
@@ -302,8 +301,8 @@ class CanvasEdge(Edge):
     def complete(self, dst: int) -> None:
         self.dst = dst
         self.token = create_edge_token(self.src, self.dst)
-        x, y = self.canvas.coords(self.dst)
-        self.move_dst(x, y)
+        dst_pos = self.canvas.coords(self.dst)
+        self.move_dst(dst_pos)
         self.check_wireless()
         self.canvas.tag_raise(self.src)
         self.canvas.tag_raise(self.dst)

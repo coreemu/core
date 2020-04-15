@@ -130,7 +130,7 @@ class CanvasNode:
     def motion(self, x_offset: int, y_offset: int, update: bool = True):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
-        x, y = self.canvas.coords(self.id)
+        pos = self.canvas.coords(self.id)
 
         # check new position
         bbox = self.canvas.bbox(self.id)
@@ -148,12 +148,12 @@ class CanvasNode:
 
         # move edges
         for edge in self.edges:
-            edge.move_node(self.id, x, y)
+            edge.move_node(self.id, pos)
         for edge in self.wireless_edges:
-            edge.move_node(self.id, x, y)
+            edge.move_node(self.id, pos)
 
         # set actual coords for node and update core is running
-        real_x, real_y = self.canvas.get_actual_coords(x, y)
+        real_x, real_y = self.canvas.get_actual_coords(*pos)
         self.core_node.position.x = real_x
         self.core_node.position.y = real_y
         if self.app.core.is_runtime() and update:

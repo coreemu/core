@@ -628,7 +628,7 @@ class CanvasGraph(tk.Canvas):
         self.cursor = x, y
 
         if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
-            self.drawing_edge.move_dst(x, y)
+            self.drawing_edge.move_dst(self.cursor)
         if self.mode == GraphMode.ANNOTATION:
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
