@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
 
 from core.api.grpc.core_pb2 import NodeType
 from core.gui.images import ImageEnum, Images, TypeToImage
@@ -172,9 +172,3 @@ class NodeUtils:
             cls.NETWORK_NODES.append(node_draw)
             cls.NODE_ICONS[(node_type, None)] = node_draw.image
         cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
-
-
-class EdgeUtils:
-    @classmethod
-    def get_token(cls, src: int, dst: int) -> Tuple[int, ...]:
-        return tuple(sorted([src, dst]))

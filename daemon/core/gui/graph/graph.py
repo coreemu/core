@@ -7,13 +7,19 @@ from PIL import Image, ImageTk
 from core.api.grpc import core_pb2
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
-from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge, CanvasWirelessEdge
+from core.gui.graph.edges import (
+    EDGE_WIDTH,
+    CanvasEdge,
+    CanvasWirelessEdge,
+    arc_edges,
+    create_edge_token,
+)
 from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, Images, TypeToImage
-from core.gui.nodeutils import EdgeUtils, NodeUtils
+from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -193,27 +199,40 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.grid)
 
-    def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
+    def add_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
+    ):
         """
         add a wireless edge between 2 canvas nodes
         """
-        token = EdgeUtils.get_token(src.id, dst.id)
-        x1, y1 = self.coords(src.id)
-        x2, y2 = self.coords(dst.id)
-        position = (x1, y1, x2, y2)
-        edge = CanvasWirelessEdge(token, position, src.id, dst.id, self)
+        token = create_edge_token(src.id, dst.id, network_id)
+        if token in self.wireless_edges:
+            return
+        src_pos = self.coords(src.id)
+        dst_pos = self.coords(dst.id)
+        edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
         self.wireless_edges[token] = edge
         src.wireless_edges.add(edge)
         dst.wireless_edges.add(edge)
         self.tag_raise(src.id)
         self.tag_raise(dst.id)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
 
-    def delete_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
-        token = EdgeUtils.get_token(src.id, dst.id)
+    def delete_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, network_id: int = None
+    ):
+        token = create_edge_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            return
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
         dst.wireless_edges.remove(edge)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
 
     def draw_session(self, session: core_pb2.Session):
         """
@@ -246,20 +265,15 @@ class CanvasGraph(tk.Canvas):
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
-            token = EdgeUtils.get_token(canvas_node_one.id, canvas_node_two.id)
+            token = create_edge_token(canvas_node_one.id, canvas_node_two.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node_one, canvas_node_two)
             else:
                 if token not in self.edges:
-                    edge = CanvasEdge(
-                        node_one.position.x,
-                        node_one.position.y,
-                        node_two.position.x,
-                        node_two.position.y,
-                        canvas_node_one.id,
-                        self,
-                    )
+                    src_pos = (node_one.position.x, node_one.position.y)
+                    dst_pos = (node_two.position.x, node_two.position.y)
+                    edge = CanvasEdge(self, canvas_node_one.id, src_pos, dst_pos)
                     edge.token = token
                     edge.dst = canvas_node_two.id
                     edge.set_link(link)
@@ -391,7 +405,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         # ignore repeated edges
-        token = EdgeUtils.get_token(edge.src, self.selected)
+        token = create_edge_token(edge.src, self.selected)
         if token in self.edges:
             edge.delete()
             return
@@ -520,11 +534,10 @@ class CanvasGraph(tk.Canvas):
         logging.debug("click press offset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
-            x, y = self.coords(selected)
-            self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
+            pos = self.coords(selected)
+            self.drawing_edge = CanvasEdge(self, selected, pos, pos)
 
         if self.mode == GraphMode.ANNOTATION:
-
             if is_marker(self.annotation_type):
                 r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
@@ -603,8 +616,7 @@ class CanvasGraph(tk.Canvas):
         self.cursor = x, y
 
         if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
-            x1, y1, _, _ = self.coords(self.drawing_edge.id)
-            self.coords(self.drawing_edge.id, x1, y1, x, y)
+            self.drawing_edge.move_dst(x, y)
         if self.mode == GraphMode.ANNOTATION:
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
@@ -841,11 +853,10 @@ class CanvasGraph(tk.Canvas):
         """
         create an edge between source node and destination node
         """
-        if (source.id, dest.id) not in self.edges:
-            pos0 = source.core_node.position
-            x0 = pos0.x
-            y0 = pos0.y
-            edge = CanvasEdge(x0, y0, x0, y0, source.id, self)
+        token = create_edge_token(source.id, dest.id)
+        if token not in self.edges:
+            pos = (source.core_node.position.x, source.core_node.position.y)
+            edge = CanvasEdge(self, source.id, pos, pos)
             edge.complete(dest.id)
             self.edges[edge.token] = edge
             self.nodes[source.id].edges.add(edge)
@@ -905,7 +916,7 @@ class CanvasGraph(tk.Canvas):
             dest_node_copy = self.nodes[copy_map[edge.token[1]]]
             self.create_edge(source_node_copy, dest_node_copy)
             copy_edge = self.edges[
-                EdgeUtils.get_token(source_node_copy.id, dest_node_copy.id)
+                create_edge_token(source_node_copy.id, dest_node_copy.id)
             ]
             copy_link = copy_edge.link
             options = edge.link.options
