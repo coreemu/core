@@ -163,14 +163,12 @@ class ServiceElement:
             self.element.append(directories)
 
     def add_files(self) -> None:
-        # get custom files
         file_elements = etree.Element("files")
         for file_name in self.service.config_data:
             data = self.service.config_data[file_name]
             file_element = etree.SubElement(file_elements, "file")
             add_attribute(file_element, "name", file_name)
-            file_element.text = data
-
+            file_element.text = etree.CDATA(data)
         if file_elements.getchildren():
             self.element.append(file_elements)
 
