@@ -3,6 +3,7 @@ session.py: defines the Session class used by the core-daemon daemon program
 that manages a CORE session.
 """
 
+import copy
 import logging
 import os
 import pwd
@@ -161,6 +162,164 @@ class Session:
 
         # config services
         self.service_manager = None
+
+        # ========================================
+        # ========================================
+
+        # list to store network node attributes and keys
+        self.ntwk_node_attr = []
+
+        self.ntwk_node_attr_key = { \
+            'node_id': 0, \
+            'node_name': 1, \
+            'node_type': 2 \
+            }
+        # ntwk_node_attr_defaults[] must match the above keys
+        self.ntwk_node_attr_defaults = [-1, "", ""]
+
+        # ========================================
+        # ========================================
+
+        # list to store network parameters and keys
+        self.ntwk_param = []
+
+        self.ntwk_param_key = { \
+            'node_1_id': 0, \
+            'node_1_name': 1, \
+            'node_1_type': 2, \
+            'node_2_id': 3, \
+            'node_2_name': 4, \
+            'node_2_type': 5, \
+            'intf_1_present': 6, \
+            'node_1__name': 7, \
+            'intf_1_id': 8, \
+            'intf_1_name': 9, \
+            'node_1_mac_addr': 10, \
+            'node_1_ip4_addr': 11, \
+            'node_1_ip4_mask': 12, \
+            'node_1_ip6_addr': 13, \
+            'node_1_ip6_mask': 14, \
+            'intf_2_present': 15, \
+            'node_2__name': 16, \
+            'intf_2_id': 17, \
+            'intf_2_name': 18, \
+            'node_2_mac_addr': 19, \
+            'node_2_ip4_addr': 20, \
+            'node_2_ip4_mask': 21, \
+            'node_2_ip6_addr': 22, \
+            'node_2_ip6_mask': 23 \
+            }
+
+        # ntwk_param_defaults[] must match the above keys
+        self.ntwk_param_defaults = [-1, "", "", -1, "", "",
+                                    "Intf 1 ABSENT", "", 0, "", "", "", 0, "", 0,
+                                    "Intf 2 ABSENT", "", 0, "", "", "", 0, "", 0
+                                    ]
+
+        # ========================================
+        # ========================================
+
+    # save link attributes in session.ntwk_param[][]
+    def save_ntwk_link_attributes(self, node_one_id, node_two_id, node_one, node_two,
+                                  interface_one, interface_two):
+
+        # init ntwk_param[][] with default (place-holder) values
+        ntwk_param_tmp = copy.deepcopy(self.ntwk_param_defaults)
+
+        # retrieve node_id, node_name, node_type from ntwk_node_attr[][]
+
+        # number of rows in ntwk_node_attr[][]
+        num_rows = len(self.ntwk_node_attr)
+
+        # find the row in ntwk_node_attr[][] which contains "node_one_id"
+        row = -1  # init: invalid val
+        for idx in range(num_rows):
+            if node_one_id == self.ntwk_node_attr[idx][
+                self.ntwk_node_attr_key['node_id']]:
+                row = idx
+                break
+
+        if row == -1:
+            logging.debug(
+                "ntwk_node_attr[][]: num_rows %d.  ERROR: node_one_id  %s  not found. EXIT.",
+                num_rows, node_one_id)
+            return None
+        else:
+            ntwk_param_tmp[self.ntwk_param_key['node_1_name']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_name']])
+            ntwk_param_tmp[self.ntwk_param_key['node_1__name']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_name']])
+            ntwk_param_tmp[self.ntwk_param_key['node_1_type']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_type']])
+
+        # find the row in ntwk_node_attr[][] which contains "node_two_id"
+        row = -1  # init: invalid val
+        for idx in range(num_rows):
+            if node_two_id == self.ntwk_node_attr[idx][
+                self.ntwk_node_attr_key['node_id']]:
+                row = idx
+                break
+
+        if row == -1:
+            logging.debug(
+                "ntwk_node_attr[][]: num_rows %d.  ERROR: node_two_id  %s  not found. EXIT.",
+                num_rows, node_two_id)
+            return None
+        else:
+            ntwk_param_tmp[self.ntwk_param_key['node_2_name']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_name']])
+            ntwk_param_tmp[self.ntwk_param_key['node_2__name']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_name']])
+            ntwk_param_tmp[self.ntwk_param_key['node_2_type']] = str(
+                self.ntwk_node_attr[row][self.ntwk_node_attr_key['node_type']])
+
+        # replace place-holders in ntwk_param[][] with current values
+
+        ntwk_param_tmp[self.ntwk_param_key['node_1_id']] = node_one_id
+        ntwk_param_tmp[self.ntwk_param_key['node_2_id']] = node_two_id
+        """
+        #this is already done above
+        if node_one:
+            ntwk_param_tmp[self.ntwk_param_key['node_1_name']] = str(node_one.name)
+            ntwk_param_tmp[self.ntwk_param_key['node_1__name']] = str(node_one.name)
+        if node_two:
+            ntwk_param_tmp[self.ntwk_param_key['node_2_name']] = str(node_two.name)
+            ntwk_param_tmp[self.ntwk_param_key['node_2__name']] = str(node_two.name)
+        """
+
+        # fill interface attributes in ntwk_param[][]
+
+        if interface_one:
+            ntwk_param_tmp[self.ntwk_param_key['intf_1_present']] = "INTF 1:"
+            ntwk_param_tmp[self.ntwk_param_key['intf_1_id']] = interface_one.id
+            ntwk_param_tmp[self.ntwk_param_key['intf_1_name']] = str(interface_one.name)
+            ntwk_param_tmp[self.ntwk_param_key['node_1_mac_addr']] = str(
+                interface_one.mac)
+            ntwk_param_tmp[self.ntwk_param_key['node_1_ip4_addr']] = str(
+                interface_one.ip4)
+            ntwk_param_tmp[
+                self.ntwk_param_key['node_1_ip4_mask']] = interface_one.ip4_mask
+            ntwk_param_tmp[self.ntwk_param_key['node_1_ip6_addr']] = str(
+                interface_one.ip6)
+            ntwk_param_tmp[
+                self.ntwk_param_key['node_1_ip6_mask']] = interface_one.ip6_mask
+
+        if interface_two:
+            ntwk_param_tmp[self.ntwk_param_key['intf_2_present']] = "INTF 2:"
+            ntwk_param_tmp[self.ntwk_param_key['intf_2_id']] = interface_two.id
+            ntwk_param_tmp[self.ntwk_param_key['intf_2_name']] = str(interface_two.name)
+            ntwk_param_tmp[self.ntwk_param_key['node_2_mac_addr']] = str(
+                interface_two.mac)
+            ntwk_param_tmp[self.ntwk_param_key['node_2_ip4_addr']] = str(
+                interface_two.ip4)
+            ntwk_param_tmp[
+                self.ntwk_param_key['node_2_ip4_mask']] = interface_two.ip4_mask
+            ntwk_param_tmp[self.ntwk_param_key['node_2_ip6_addr']] = str(
+                interface_two.ip6)
+            ntwk_param_tmp[
+                self.ntwk_param_key['node_2_ip6_mask']] = interface_two.ip6_mask
+
+        self.ntwk_param.append(ntwk_param_tmp)
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> Type[NodeBase]:
@@ -325,6 +484,10 @@ class Session:
             node_one.lock.acquire()
         if node_two:
             node_two.lock.acquire()
+
+        # save link attributes in session.ntwk_param[][]
+        self.save_ntwk_link_attributes(node_one_id, node_two_id, node_one, node_two,
+                                       interface_one, interface_two)
 
         node_one_interface = None
         node_two_interface = None
