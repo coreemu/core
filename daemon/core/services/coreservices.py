@@ -404,7 +404,7 @@ class CoreServices:
         :param services: names of services to add to node
         :return: nothing
         """
-        if services is None:
+        if not services:
             logging.info(
                 "using default services for node(%s) type(%s)", node.name, node_type
             )
