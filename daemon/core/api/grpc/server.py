@@ -1031,8 +1031,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve all the default services of all node types in a session
 
-        :param request:
-            get-default-service request
+        :param request: get-default-service request
         :param context: context object
         :return: get-service-defaults response about all the available default services
         """
@@ -1050,8 +1049,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> SetServiceDefaultsResponse:
         """
         Set new default services to the session after whipping out the old ones
-        :param request: set-service-defaults
-            request
+
+        :param request: set-service-defaults request
         :param context: context object
         :return: set-service-defaults response
         """
