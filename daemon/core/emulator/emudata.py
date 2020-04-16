@@ -74,7 +74,7 @@ class NodeOptions:
         self.canvas = None
         self.icon = None
         self.opaque = None
-        self.services = []
+        self.services = None
         self.config_services = []
         self.x = None
         self.y = None
