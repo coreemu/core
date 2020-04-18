@@ -6,7 +6,6 @@ from core.gui import appconfig, themes
 from core.gui.coreclient import CoreClient
 from core.gui.graph.graph import CanvasGraph
 from core.gui.images import ImageEnum, Images
-from core.gui.menuaction import MenuAction
 from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
@@ -104,8 +103,7 @@ class Application(tk.Frame):
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
     def on_closing(self):
-        menu_action = MenuAction(self, self.master)
-        menu_action.on_quit()
+        self.menubar.prompt_save_running_session(True)
 
     def save_config(self):
         appconfig.save(self.guiconfig)

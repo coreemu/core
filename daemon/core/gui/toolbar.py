@@ -499,7 +499,6 @@ class Toolbar(ttk.Frame):
     def click_two_node_button(self):
         logging.debug("Click TWONODE button")
 
-    # def scale_button(cls, button, image_enum, scale):
     def scale_button(self, button, image_enum):
         image = icon(image_enum, int(TOOLBAR_SIZE * self.app.app_scale))
         button.config(image=image)

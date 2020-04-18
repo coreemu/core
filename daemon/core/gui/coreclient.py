@@ -32,15 +32,15 @@ if TYPE_CHECKING:
 
 GUI_SOURCE = "gui"
 OBSERVERS = {
-    "processes": "ps",
-    "ifconfig": "ifconfig",
+    "List Processes": "ps",
+    "Show Interfaces": "ip address",
     "IPV4 Routes": "ip -4 ro",
     "IPV6 Routes": "ip -6 ro",
-    "Listening sockets": "netstat -tuwnl",
-    "IPv4 MFC entries": "ip -4 mroute show",
-    "IPv6 MFC entries": "ip -6 mroute show",
-    "firewall rules": "iptables -L",
-    "IPSec policies": "setkey -DP",
+    "Listening Sockets": "netstat -tuwnl",
+    "IPv4 MFC Entries": "ip -4 mroute show",
+    "IPv6 MFC Entries": "ip -6 mroute show",
+    "Firewall Rules": "iptables -L",
+    "IPSec Policies": "setkey -DP",
 }
 
 
@@ -100,10 +100,8 @@ class CoreClient:
         self.mobility_players = {}
         self.handling_throughputs = None
         self.handling_events = None
-
         self.xml_dir = None
         self.xml_file = None
-
         self.modified_service_nodes = set()
 
     @property
@@ -454,7 +452,8 @@ class CoreClient:
             response = self.client.delete_session(session_id)
             logging.info("deleted session(%s), Result: %s", session_id, response)
         except grpc.RpcError as e:
-            # use the right master widget so the error dialog displays right on top of it
+            # use the right master widget so the error dialog displays
+            # right on top of it
             master = self.app
             if parent_frame:
                 master = parent_frame
