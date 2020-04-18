@@ -53,31 +53,21 @@ class Menubar(tk.Menu):
             command=self.menuaction.new_session,
         )
         self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
+        menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
+        self.app.bind_all("<Control-s>", self.save)
+        menu.add_command(label="Save As...", command=self.menuaction.file_save_as_xml)
         menu.add_command(
             label="Open...", command=self.menuaction.file_open_xml, accelerator="Ctrl+O"
         )
         self.app.bind_all("<Control-o>", self.menuaction.file_open_xml)
-        menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
-        menu.add_command(label="Save As", command=self.menuaction.file_save_as_xml)
-        menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
-        self.app.bind_all("<Control-s>", self.save)
-
         self.recent_menu = tk.Menu(menu)
         for i in self.app.guiconfig["recentfiles"]:
             self.recent_menu.add_command(
                 label=i, command=partial(self.open_recent_files, i)
             )
-        menu.add_cascade(label="Recent files", menu=self.recent_menu)
+        menu.add_cascade(label="Recent Files", menu=self.recent_menu)
         menu.add_separator()
-        menu.add_command(label="Export Python script...", state=tk.DISABLED)
-        menu.add_command(label="Execute Python script...", command=self.execute_python)
-        menu.add_command(
-            label="Execute Python script with options...", state=tk.DISABLED
-        )
-        menu.add_separator()
-        menu.add_command(label="Open current file in editor...", state=tk.DISABLED)
-        menu.add_command(label="Print...", underline=0, state=tk.DISABLED)
-        menu.add_command(label="Save screenshot...", state=tk.DISABLED)
+        menu.add_command(label="Execute Python Script...", command=self.execute_python)
         menu.add_separator()
         menu.add_command(
             label="Quit", accelerator="Ctrl+Q", command=self.menuaction.on_quit
@@ -104,14 +94,6 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Delete", accelerator="Ctrl+D", command=self.menuaction.delete
         )
-        menu.add_separator()
-        menu.add_command(label="Select all", accelerator="Ctrl+A", state=tk.DISABLED)
-        menu.add_command(
-            label="Select Adjacent", accelerator="Ctrl+J", state=tk.DISABLED
-        )
-        menu.add_separator()
-        menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
-        menu.add_command(label="Clear marker", state=tk.DISABLED)
         self.add_cascade(label="Edit", menu=menu)
 
         self.app.master.bind_all("<Control-c>", self.menuaction.copy)
@@ -125,41 +107,18 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(
-            label="Size/scale...", command=self.menuaction.canvas_size_and_scale
+            label="Size / Scale", command=self.menuaction.canvas_size_and_scale
         )
         menu.add_command(
-            label="Wallpaper...", command=self.menuaction.canvas_set_wallpaper
+            label="Wallpaper", command=self.menuaction.canvas_set_wallpaper
         )
-        menu.add_separator()
-        menu.add_command(label="New", state=tk.DISABLED)
-        menu.add_command(label="Manage...", state=tk.DISABLED)
-        menu.add_command(label="Delete", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Previous", accelerator="PgUp", state=tk.DISABLED)
-        menu.add_command(label="Next", accelerator="PgDown", state=tk.DISABLED)
-        menu.add_command(label="First", accelerator="Home", state=tk.DISABLED)
-        menu.add_command(label="Last", accelerator="End", state=tk.DISABLED)
         self.add_cascade(label="Canvas", menu=menu)
 
     def draw_view_menu(self):
         """
         Create view menu
         """
-        view_menu = tk.Menu(self)
-        self.create_show_menu(view_menu)
-        view_menu.add_command(label="Show hidden nodes", state=tk.DISABLED)
-        view_menu.add_command(label="Locked", state=tk.DISABLED)
-        view_menu.add_command(label="3D GUI...", state=tk.DISABLED)
-        view_menu.add_separator()
-        view_menu.add_command(label="Zoom in", accelerator="+", state=tk.DISABLED)
-        view_menu.add_command(label="Zoom out", accelerator="-", state=tk.DISABLED)
-        self.add_cascade(label="View", menu=view_menu)
-
-    def create_show_menu(self, view_menu: tk.Menu):
-        """
-        Create the menu items in View/Show
-        """
-        menu = tk.Menu(view_menu)
+        menu = tk.Menu(self)
         menu.add_command(label="All", state=tk.DISABLED)
         menu.add_command(label="None", state=tk.DISABLED)
         menu.add_separator()
@@ -169,170 +128,16 @@ class Menubar(tk.Menu):
         menu.add_command(label="Node Labels", state=tk.DISABLED)
         menu.add_command(label="Annotations", state=tk.DISABLED)
         menu.add_command(label="Grid", state=tk.DISABLED)
-        menu.add_command(label="API Messages", state=tk.DISABLED)
-        view_menu.add_cascade(label="Show", menu=menu)
-
-    def create_experimental_menu(self, tools_menu: tk.Menu):
-        """
-        Create experimental menu item and the sub menu items inside
-        """
-        menu = tk.Menu(tools_menu)
-        menu.add_command(label="Plugins...", state=tk.DISABLED)
-        menu.add_command(label="ns2immunes converter...", state=tk.DISABLED)
-        menu.add_command(label="Topology partitioning...", state=tk.DISABLED)
-        tools_menu.add_cascade(label="Experimental", menu=menu)
-
-    def create_random_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create random menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # list of number of random nodes to create
-        nums = [1, 5, 10, 15, 20, 30, 40, 50, 75, 100]
-        for i in nums:
-            label = f"R({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Random", menu=menu)
-
-    def create_grid_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create grid menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # list of number of nodes to create
-        nums = [1, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100]
-        for i in nums:
-            label = f"G({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Grid", menu=menu)
-
-    def create_connected_grid_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create connected grid menu items and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(1, 11, 1):
-            submenu = tk.Menu(menu)
-            for j in range(1, 11, 1):
-                label = f"{i} X {j}"
-                submenu.add_command(label=label, state=tk.DISABLED)
-            label = str(i) + " X N"
-            menu.add_cascade(label=label, menu=submenu)
-        topology_generator_menu.add_cascade(label="Connected Grid", menu=menu)
-
-    def create_chain_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create chain menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # number of nodes to create
-        nums = list(range(2, 25, 1)) + [32, 64, 128]
-        for i in nums:
-            label = f"P({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Chain", menu=menu)
-
-    def create_star_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create star menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 26, 1):
-            label = f"C({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Star", menu=menu)
-
-    def create_cycle_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create cycle menu item and the sub items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 25, 1):
-            label = f"C({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Cycle", menu=menu)
-
-    def create_wheel_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create wheel menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(4, 26, 1):
-            label = f"W({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Wheel", menu=menu)
-
-    def create_cube_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create cube menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(2, 7, 1):
-            label = f"Q({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Cube", menu=menu)
-
-    def create_clique_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create clique menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 25, 1):
-            label = f"K({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Clique", menu=menu)
-
-    def create_bipartite_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create bipartite menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        temp = 24
-        for i in range(1, 13, 1):
-            submenu = tk.Menu(menu)
-            for j in range(i, temp, 1):
-                label = f"K({i} X {j})"
-                submenu.add_command(label=label, state=tk.DISABLED)
-            label = f"K({i})"
-            menu.add_cascade(label=label, menu=submenu)
-            temp = temp - 1
-        topology_generator_menu.add_cascade(label="Bipartite", menu=menu)
-
-    def create_topology_generator_menu(self, tools_menu: tk.Menu):
-        """
-        Create topology menu item and its sub menu items
-        """
-        menu = tk.Menu(tools_menu)
-        self.create_random_menu(menu)
-        self.create_grid_menu(menu)
-        self.create_connected_grid_menu(menu)
-        self.create_chain_menu(menu)
-        self.create_star_menu(menu)
-        self.create_cycle_menu(menu)
-        self.create_wheel_menu(menu)
-        self.create_cube_menu(menu)
-        self.create_clique_menu(menu)
-        self.create_bipartite_menu(menu)
-        tools_menu.add_cascade(label="Topology generator", menu=menu)
+        self.add_cascade(label="View", menu=menu)
 
     def draw_tools_menu(self):
         """
         Create tools menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="Auto rearrange all", state=tk.DISABLED)
-        menu.add_command(label="Auto rearrange selected", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Align to grid", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Traffic...", state=tk.DISABLED)
-        menu.add_command(label="IP addresses...", state=tk.DISABLED)
-        menu.add_command(label="MAC addresses...", state=tk.DISABLED)
-        menu.add_command(label="Build hosts file...", state=tk.DISABLED)
-        menu.add_command(label="Renumber nodes...", state=tk.DISABLED)
-        self.create_experimental_menu(menu)
-        self.create_topology_generator_menu(menu)
-        menu.add_command(label="Debugger...", state=tk.DISABLED)
+        menu.add_command(label="Auto Grid", state=tk.DISABLED)
+        menu.add_command(label="IP Addresses", state=tk.DISABLED)
+        menu.add_command(label="MAC Addresses", state=tk.DISABLED)
         self.add_cascade(label="Tools", menu=menu)
 
     def create_observer_widgets_menu(self, widget_menu: tk.Menu):
@@ -375,11 +180,22 @@ class Menubar(tk.Menu):
         Create adjacency menu item and the sub menu items inside
         """
         menu = tk.Menu(widget_menu)
-        menu.add_command(label="OSPFv2", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3", state=tk.DISABLED)
-        menu.add_command(label="OSLR", state=tk.DISABLED)
-        menu.add_command(label="OSLRv2", state=tk.DISABLED)
+        menu.add_command(label="Configure Adjacency", state=tk.DISABLED)
+        menu.add_command(label="Enable OSPFv2?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSPFv3?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSLR?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSLRv2?", state=tk.DISABLED)
         widget_menu.add_cascade(label="Adjacency", menu=menu)
+
+    def create_throughput_menu(self, widget_menu: tk.Menu):
+        menu = tk.Menu(widget_menu)
+        menu.add_command(
+            label="Configure Throughput", command=self.menuaction.config_throughput
+        )
+        menu.add_checkbutton(
+            label="Enable Throughput?", command=self.menuaction.throughput
+        )
+        widget_menu.add_cascade(label="Throughput", menu=menu)
 
     def draw_widgets_menu(self):
         """
@@ -388,12 +204,7 @@ class Menubar(tk.Menu):
         menu = tk.Menu(self)
         self.create_observer_widgets_menu(menu)
         self.create_adjacency_menu(menu)
-        menu.add_checkbutton(label="Throughput", command=self.menuaction.throughput)
-        menu.add_separator()
-        menu.add_command(label="Configure Adjacency...", state=tk.DISABLED)
-        menu.add_command(
-            label="Configure Throughput...", command=self.menuaction.config_throughput
-        )
+        self.create_throughput_menu(menu)
         self.add_cascade(label="Widgets", menu=menu)
 
     def draw_session_menu(self):
@@ -402,14 +213,11 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(
-            label="Sessions...", command=self.menuaction.session_change_sessions
+            label="Sessions", command=self.menuaction.session_change_sessions
         )
-        menu.add_separator()
-        menu.add_command(label="Options...", command=self.menuaction.session_options)
-        menu.add_command(label="Servers...", command=self.menuaction.session_servers)
-        menu.add_command(label="Hooks...", command=self.menuaction.session_hooks)
-        menu.add_command(label="Reset Nodes", state=tk.DISABLED)
-        menu.add_command(label="Comments...", state=tk.DISABLED)
+        menu.add_command(label="Servers", command=self.menuaction.session_servers)
+        menu.add_command(label="Options", command=self.menuaction.session_options)
+        menu.add_command(label="Hooks", command=self.menuaction.session_hooks)
         self.add_cascade(label="Session", menu=menu)
 
     def draw_help_menu(self):
