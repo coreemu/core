@@ -47,7 +47,8 @@ class Images:
         except KeyError:
             messagebox.showwarning(
                 "Missing image file",
-                f"{name}.png is missing at daemon/core/gui/data/icons, drop image file at daemon/core/gui/data/icons and restart the gui",
+                f"{name}.png is missing at daemon/core/gui/data/icons, drop image "
+                f"file at daemon/core/gui/data/icons and restart the gui",
             )
 
 

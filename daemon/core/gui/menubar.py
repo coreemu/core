@@ -19,6 +19,7 @@ from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
+from core.gui.nodeutils import ICON_SIZE
 from core.gui.task import BackgroundTask
 
 if TYPE_CHECKING:
@@ -144,7 +145,7 @@ class Menubar(tk.Menu):
         Create tools menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="Auto Grid", state=tk.DISABLED)
+        menu.add_command(label="Auto Grid", command=self.click_autogrid)
         menu.add_command(label="IP Addresses", state=tk.DISABLED)
         menu.add_command(label="MAC Addresses", state=tk.DISABLED)
         self.add_cascade(label="Tools", menu=menu)
@@ -414,3 +415,18 @@ class Menubar(tk.Menu):
     def click_edit_observer_widgets(self) -> None:
         dialog = ObserverDialog(self.app, self.app)
         dialog.show()
+
+    def click_autogrid(self) -> None:
+        width, height = self.app.canvas.current_dimensions
+        padding = (ICON_SIZE / 2) + 10
+        layout_size = padding + ICON_SIZE
+        col_count = width // layout_size
+        logging.info(
+            "auto grid layout: dimens(%s, %s) col(%s)", width, height, col_count
+        )
+        for i, node in enumerate(self.app.canvas.nodes.values()):
+            col = i % col_count
+            row = i // col_count
+            x = (col * layout_size) + padding
+            y = (row * layout_size) + padding
+            node.move(x, y)
