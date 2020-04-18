@@ -5,6 +5,7 @@ installation page.
 """
 
 import logging
+import time
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
@@ -12,6 +13,7 @@ from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 
 NODES = 2
+EMANE_DELAY = 10
 
 
 def main():
@@ -30,7 +32,7 @@ def main():
     session.set_location(47.57917, -122.13232, 2.00000, 1.0)
     options = NodeOptions()
     options.set_position(80, 50)
-    emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+    emane_network = session.add_node(_type=NodeTypes.EMANE, options=options, _id=100)
     session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
     # create nodes
@@ -44,8 +46,19 @@ def main():
     # instantiate session
     session.instantiate()
 
+    # OSPF MDR requires some time for routes to be created
+    logging.info("waiting %s seconds for OSPF MDR to create routes", EMANE_DELAY)
+    time.sleep(EMANE_DELAY)
+
+    # get nodes to run example
+    first_node = session.get_node(1)
+    last_node = session.get_node(NODES)
+    address = prefixes.ip4_address(first_node)
+    logging.info("node %s pinging %s", last_node.name, address)
+    output = last_node.cmd(f"ping -c 3 {address}")
+    logging.info(output)
+
     # shutdown session
-    input("press enter to exit...")
     coreemu.shutdown()
 
 
