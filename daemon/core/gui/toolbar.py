@@ -60,9 +60,7 @@ class Toolbar(ttk.Frame):
         # runtime buttons
         self.runtime_select_button = None
         self.stop_button = None
-        self.plot_button = None
         self.runtime_marker_button = None
-        self.node_command_button = None
         self.run_command_button = None
 
         # frames
@@ -75,8 +73,8 @@ class Toolbar(ttk.Frame):
         # dialog
         self.marker_tool = None
 
-        # these variables help keep track of what images being drawn so that scaling is possible
-        # since ImageTk.PhotoImage does not have resize method
+        # these variables help keep track of what images being drawn so that scaling
+        # is possible since ImageTk.PhotoImage does not have resize method
         self.node_enum = None
         self.network_enum = None
         self.annotation_enum = None
@@ -133,9 +131,7 @@ class Toolbar(ttk.Frame):
         logging.debug("selecting runtime button: %s", button)
         self.runtime_select_button.state(["!pressed"])
         self.stop_button.state(["!pressed"])
-        self.plot_button.state(["!pressed"])
         self.runtime_marker_button.state(["!pressed"])
-        self.node_command_button.state(["!pressed"])
         self.run_command_button.state(["!pressed"])
         button.state(["pressed"])
 
@@ -143,7 +139,6 @@ class Toolbar(ttk.Frame):
         self.runtime_frame = ttk.Frame(self)
         self.runtime_frame.grid(row=0, column=0, sticky="nsew")
         self.runtime_frame.columnconfigure(0, weight=1)
-
         self.stop_button = self.create_button(
             self.runtime_frame,
             self.get_icon(ImageEnum.STOP),
@@ -156,23 +151,11 @@ class Toolbar(ttk.Frame):
             self.click_runtime_selection,
             "selection tool",
         )
-        self.plot_button = self.create_button(
-            self.runtime_frame,
-            self.get_icon(ImageEnum.PLOT),
-            self.click_plot_button,
-            "plot",
-        )
         self.runtime_marker_button = self.create_button(
             self.runtime_frame,
             icon(ImageEnum.MARKER),
             self.click_marker_button,
             "marker",
-        )
-        self.node_command_button = self.create_button(
-            self.runtime_frame,
-            icon(ImageEnum.TWONODE),
-            self.click_two_node_button,
-            "run command from one node to another",
         )
         self.run_command_button = self.create_button(
             self.runtime_frame, icon(ImageEnum.RUN), self.click_run_button, "run"
@@ -503,9 +486,6 @@ class Toolbar(ttk.Frame):
     def click_run_button(self):
         logging.debug("Click on RUN button")
 
-    def click_plot_button(self):
-        logging.debug("Click on plot button")
-
     def click_marker_button(self):
         logging.debug("Click on marker button")
         self.runtime_select(self.runtime_marker_button)
@@ -532,10 +512,7 @@ class Toolbar(ttk.Frame):
         self.scale_button(self.node_button, self.node_enum)
         self.scale_button(self.network_button, self.network_enum)
         self.scale_button(self.annotation_button, self.annotation_enum)
-
         self.scale_button(self.runtime_select_button, ImageEnum.SELECT)
         self.scale_button(self.stop_button, ImageEnum.STOP)
-        self.scale_button(self.plot_button, ImageEnum.PLOT)
         self.scale_button(self.runtime_marker_button, ImageEnum.MARKER)
-        self.scale_button(self.node_command_button, ImageEnum.TWONODE)
         self.scale_button(self.run_command_button, ImageEnum.RUN)
