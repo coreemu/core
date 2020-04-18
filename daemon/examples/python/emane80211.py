@@ -1,14 +1,20 @@
-import datetime
+"""
+This is a standalone script to run a small EMANE scenario and will not interact
+with the GUI. You also must have installed OSPF MDR as noted in the documentation
+installation page.
+"""
+
 import logging
-import parser
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 
+NODES = 2
 
-def example(args):
+
+def main():
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
@@ -19,7 +25,8 @@ def example(args):
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
-    # create emane network node
+    # create emane network node, emane determines connectivity based on
+    # location, so the session and nodes must be configured to provide one
     session.set_location(47.57917, -122.13232, 2.00000, 1.0)
     options = NodeOptions()
     options.set_position(80, 50)
@@ -28,7 +35,7 @@ def example(args):
 
     # create nodes
     options = NodeOptions(model="mdr")
-    for i in range(args.nodes):
+    for i in range(NODES):
         node = session.add_node(options=options)
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
@@ -42,16 +49,6 @@ def example(args):
     coreemu.shutdown()
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-    args = parser.parse("emane80211")
-    start = datetime.datetime.now()
-    logging.info(
-        "running emane 80211 example: nodes(%s) time(%s)", args.nodes, args.time
-    )
-    example(args)
-    logging.info("elapsed time: %s", datetime.datetime.now() - start)
-
-
 if __name__ == "__main__" or __name__ == "__builtin__":
+    logging.basicConfig(level=logging.INFO)
     main()
