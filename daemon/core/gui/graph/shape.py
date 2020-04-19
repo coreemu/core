@@ -80,12 +80,12 @@ class Shape:
                 self.y1,
                 self.x2,
                 self.y2,
-                tags=tags.SHAPE,
+                tags=(tags.SHAPE, tags.ANNOTATION),
                 dash=dash,
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_shapes.state(),
+                state=self.canvas.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.RECTANGLE:
@@ -94,12 +94,12 @@ class Shape:
                 self.y1,
                 self.x2,
                 self.y2,
-                tags=tags.SHAPE,
+                tags=(tags.SHAPE, tags.ANNOTATION),
                 dash=dash,
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_shapes.state(),
+                state=self.canvas.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.TEXT:
@@ -107,11 +107,11 @@ class Shape:
             self.id = self.canvas.create_text(
                 self.x1,
                 self.y1,
-                tags=tags.SHAPE_TEXT,
+                tags=(tags.SHAPE_TEXT, tags.ANNOTATION),
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_shapes.state(),
+                state=self.canvas.show_annotations.state(),
             )
         else:
             logging.error("unknown shape type: %s", self.shape_type)
@@ -135,11 +135,11 @@ class Shape:
             self.text_id = self.canvas.create_text(
                 x,
                 y,
-                tags=tags.SHAPE_TEXT,
+                tags=(tags.SHAPE_TEXT, tags.ANNOTATION),
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_shape_labels.state(),
+                state=self.canvas.show_annotations.state(),
             )
 
     def shape_motion(self, x1: float, y1: float):

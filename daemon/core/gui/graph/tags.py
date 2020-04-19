@@ -1,3 +1,4 @@
+ANNOTATION = "annotation"
 GRIDLINE = "gridline"
 SHAPE = "shape"
 SHAPE_TEXT = "shapetext"

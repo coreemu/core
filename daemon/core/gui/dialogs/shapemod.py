@@ -235,7 +235,7 @@ class ShapeDialog(Dialog):
                 text=shape_text,
                 fill=self.text_color,
                 font=text_font,
-                tags=tags.SHAPE_TEXT,
+                tags=(tags.SHAPE_TEXT, tags.ANNOTATION),
             )
             self.shape.created = True
         else:

@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 import webbrowser
 from functools import partial
-from tkinter import BooleanVar, filedialog, messagebox
+from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING
 
 from core.gui.appconfig import XMLS_PATH
@@ -44,7 +44,6 @@ class Menubar(tk.Menu):
         self.canvas = app.canvas
         self.recent_menu = None
         self.edit_menu = None
-        self.show_annotations = BooleanVar(value=True)
         self.draw()
 
     def draw(self) -> None:
@@ -158,8 +157,8 @@ class Menubar(tk.Menu):
         )
         menu.add_checkbutton(
             label="Annotations",
-            command=self.click_show_annotations,
-            variable=self.show_annotations,
+            command=self.canvas.show_annotations.click_handler,
+            variable=self.canvas.show_annotations,
         )
         menu.add_checkbutton(
             label="Canvas Grid",
@@ -462,12 +461,3 @@ class Menubar(tk.Menu):
     def click_edge_label_change(self) -> None:
         for edge in self.canvas.edges.values():
             edge.draw_labels()
-
-    def click_show_annotations(self) -> None:
-        value = self.show_annotations.get()
-        self.canvas.show_shapes.set(value)
-        self.canvas.show_shape_labels.set(value)
-        self.canvas.show_marker.set(value)
-        self.canvas.show_shapes.click_handler()
-        self.canvas.show_shape_labels.click_handler()
-        self.canvas.show_marker.click_handler()

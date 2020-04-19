@@ -94,9 +94,7 @@ class CanvasGraph(tk.Canvas):
         self.show_node_labels = ShowVar(self, tags.NODE_LABEL, value=True)
         self.show_link_labels = ShowVar(self, tags.LINK_LABEL, value=True)
         self.show_grid = ShowVar(self, tags.GRIDLINE, value=True)
-        self.show_shapes = ShowVar(self, tags.SHAPE, value=True)
-        self.show_shape_labels = ShowVar(self, tags.SHAPE_TEXT, value=True)
-        self.show_marker = ShowVar(self, tags.MARKER, value=True)
+        self.show_annotations = ShowVar(self, tags.ANNOTATION, value=True)
         self.show_interface_names = BooleanVar(value=False)
         self.show_ip4s = BooleanVar(value=True)
         self.show_ip6s = BooleanVar(value=True)
@@ -585,8 +583,8 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags=tags.MARKER,
-                    state=self.show_marker.state(),
+                    tags=(tags.MARKER, tags.ANNOTATION),
+                    state=self.show_annotations.state(),
                 )
                 return
             if selected is None:
@@ -669,7 +667,7 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags="marker",
+                    tags=(tags.MARKER, tags.ANNOTATION),
                 )
             return
 
