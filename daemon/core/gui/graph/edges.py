@@ -20,15 +20,6 @@ WIRELESS_COLOR = "#009933"
 ARC_DISTANCE = 50
 
 
-def interface_label(interface: core_pb2.Interface) -> str:
-    label = ""
-    if interface.ip4:
-        label = f"{interface.ip4}/{interface.ip4mask}"
-    if interface.ip6:
-        label = f"{label}\n{interface.ip6}/{interface.ip6mask}"
-    return label
-
-
 def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
     values = [src, dst]
     if network is not None:
@@ -143,7 +134,12 @@ class Edge:
         if self.middle_label is None:
             x, y = self.middle_label_pos()
             self.middle_label = self.canvas.create_text(
-                x, y, font=self.canvas.app.edge_font, text=text
+                x,
+                y,
+                font=self.canvas.app.edge_font,
+                text=text,
+                tags=tags.LINK_LABEL,
+                state=self.canvas.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
@@ -168,7 +164,8 @@ class Edge:
                 text=text,
                 justify=tk.CENTER,
                 font=self.canvas.app.edge_font,
-                tags=tags.LINK_INFO,
+                tags=tags.LINK_LABEL,
+                state=self.canvas.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.src_label, text=text)
@@ -181,7 +178,8 @@ class Edge:
                 text=text,
                 justify=tk.CENTER,
                 font=self.canvas.app.edge_font,
-                tags=tags.LINK_INFO,
+                tags=tags.LINK_LABEL,
+                state=self.canvas.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.dst_label, text=text)
@@ -278,13 +276,25 @@ class CanvasEdge(Edge):
         self.link = link
         self.draw_labels()
 
+    def interface_label(self, interface: core_pb2.Interface) -> str:
+        label = ""
+        if interface.name and self.canvas.show_interface_names.get():
+            label = f"{interface.name}"
+        if interface.ip4 and self.canvas.show_ip4s.get():
+            label = f"{label}\n" if label else ""
+            label += f"{interface.ip4}/{interface.ip4mask}"
+        if interface.ip6 and self.canvas.show_ip6s.get():
+            label = f"{label}\n" if label else ""
+            label += f"{interface.ip6}/{interface.ip6mask}"
+        return label
+
     def create_node_labels(self) -> Tuple[str, str]:
         label_one = None
         if self.link.HasField("interface_one"):
-            label_one = interface_label(self.link.interface_one)
+            label_one = self.interface_label(self.link.interface_one)
         label_two = None
         if self.link.HasField("interface_two"):
-            label_two = interface_label(self.link.interface_two)
+            label_two = self.interface_label(self.link.interface_two)
         return label_one, label_two
 
     def draw_labels(self) -> None:

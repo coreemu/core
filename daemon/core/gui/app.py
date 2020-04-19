@@ -78,11 +78,11 @@ class Application(tk.Frame):
 
     def draw(self):
         self.master.option_add("*tearOff", tk.FALSE)
-        self.menubar = Menubar(self.master, self)
         self.toolbar = Toolbar(self, self)
         self.toolbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
         self.draw_canvas()
         self.draw_status()
+        self.menubar = Menubar(self.master, self)
 
     def draw_canvas(self):
         width = self.guiconfig["preferences"]["width"]

@@ -369,21 +369,16 @@ class CoreClient:
         logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-
             gridlines = canvas_config.get("gridlines", True)
             self.app.canvas.show_grid.set(gridlines)
-
             fit_image = canvas_config.get("fit_image", False)
             self.app.canvas.adjust_to_dim.set(fit_image)
-
             wallpaper_style = canvas_config.get("wallpaper-style", 1)
             self.app.canvas.scale_option.set(wallpaper_style)
-
             width = self.app.guiconfig["preferences"]["width"]
             height = self.app.guiconfig["preferences"]["height"]
             dimensions = canvas_config.get("dimensions", [width, height])
             self.app.canvas.redraw_canvas(dimensions)
-
             wallpaper = canvas_config.get("wallpaper")
             if wallpaper:
                 wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))

@@ -47,9 +47,10 @@ class CanvasNode:
             x,
             label_y,
             text=self.core_node.name,
-            tags=tags.NODE_NAME,
+            tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
+            state=self.canvas.show_node_labels.state(),
         )
         self.tooltip = CanvasTooltip(self.canvas)
         self.edges = set()
@@ -195,7 +196,6 @@ class CanvasNode:
                     label="Mobility Player", command=self.show_mobility_player
                 )
             context.add_command(label="Select Adjacent", state=tk.DISABLED)
-            context.add_command(label="Hide", state=tk.DISABLED)
             if NodeUtils.is_container_node(self.core_node.type):
                 context.add_command(label="Shell Window", state=tk.DISABLED)
                 context.add_command(label="Tcpdump", state=tk.DISABLED)
@@ -228,7 +228,6 @@ class CanvasNode:
             edit_menu.add_command(label="Cut", state=tk.DISABLED)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
-            edit_menu.add_command(label="Hide", state=tk.DISABLED)
             context.add_cascade(label="Edit", menu=edit_menu)
         return context
 

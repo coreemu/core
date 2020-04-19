@@ -2,10 +2,10 @@ GRIDLINE = "gridline"
 SHAPE = "shape"
 SHAPE_TEXT = "shapetext"
 EDGE = "edge"
-LINK_INFO = "linkinfo"
+LINK_LABEL = "linklabel"
 WIRELESS_EDGE = "wireless"
 ANTENNA = "antenna"
-NODE_NAME = "nodename"
+NODE_LABEL = "nodename"
 NODE = "node"
 WALLPAPER = "wallpaper"
 SELECTION = "selectednodes"
@@ -15,19 +15,19 @@ ABOVE_WALLPAPER_TAGS = [
     SHAPE,
     SHAPE_TEXT,
     EDGE,
-    LINK_INFO,
+    LINK_LABEL,
     WIRELESS_EDGE,
     ANTENNA,
     NODE,
-    NODE_NAME,
+    NODE_LABEL,
 ]
-ABOVE_SHAPE = [GRIDLINE, EDGE, LINK_INFO, WIRELESS_EDGE, ANTENNA, NODE, NODE_NAME]
+ABOVE_SHAPE = [GRIDLINE, EDGE, LINK_LABEL, WIRELESS_EDGE, ANTENNA, NODE, NODE_LABEL]
 COMPONENT_TAGS = [
     EDGE,
     NODE,
-    NODE_NAME,
+    NODE_LABEL,
     WALLPAPER,
-    LINK_INFO,
+    LINK_LABEL,
     ANTENNA,
     WIRELESS_EDGE,
     SELECTION,

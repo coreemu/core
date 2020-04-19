@@ -3,7 +3,7 @@ import os
 import tkinter as tk
 import webbrowser
 from functools import partial
-from tkinter import filedialog, messagebox
+from tkinter import BooleanVar, filedialog, messagebox
 from typing import TYPE_CHECKING
 
 from core.gui.appconfig import XMLS_PATH
@@ -41,8 +41,10 @@ class Menubar(tk.Menu):
         self.master.config(menu=self)
         self.app = app
         self.core = app.core
+        self.canvas = app.canvas
         self.recent_menu = None
         self.edit_menu = None
+        self.show_annotations = BooleanVar(value=True)
         self.draw()
 
     def draw(self) -> None:
@@ -129,15 +131,41 @@ class Menubar(tk.Menu):
         Create view menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="All", state=tk.DISABLED)
-        menu.add_command(label="None", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Interface Names", state=tk.DISABLED)
-        menu.add_command(label="IPv4 Addresses", state=tk.DISABLED)
-        menu.add_command(label="IPv6 Addresses", state=tk.DISABLED)
-        menu.add_command(label="Node Labels", state=tk.DISABLED)
-        menu.add_command(label="Annotations", state=tk.DISABLED)
-        menu.add_command(label="Grid", state=tk.DISABLED)
+        menu.add_checkbutton(
+            label="Interface Names",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_interface_names,
+        )
+        menu.add_checkbutton(
+            label="IPv4 Addresses",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_ip4s,
+        )
+        menu.add_checkbutton(
+            label="IPv6 Addresses",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_ip6s,
+        )
+        menu.add_checkbutton(
+            label="Node Labels",
+            command=self.canvas.show_node_labels.click_handler,
+            variable=self.canvas.show_node_labels,
+        )
+        menu.add_checkbutton(
+            label="Link Labels",
+            command=self.canvas.show_link_labels.click_handler,
+            variable=self.canvas.show_link_labels,
+        )
+        menu.add_checkbutton(
+            label="Annotations",
+            command=self.click_show_annotations,
+            variable=self.show_annotations,
+        )
+        menu.add_checkbutton(
+            label="Canvas Grid",
+            command=self.canvas.show_grid.click_handler,
+            variable=self.canvas.show_grid,
+        )
         self.add_cascade(label="View", menu=menu)
 
     def draw_tools_menu(self) -> None:
@@ -430,3 +458,16 @@ class Menubar(tk.Menu):
             x = (col * layout_size) + padding
             y = (row * layout_size) + padding
             node.move(x, y)
+
+    def click_edge_label_change(self) -> None:
+        for edge in self.canvas.edges.values():
+            edge.draw_labels()
+
+    def click_show_annotations(self) -> None:
+        value = self.show_annotations.get()
+        self.canvas.show_shapes.set(value)
+        self.canvas.show_shape_labels.set(value)
+        self.canvas.show_marker.set(value)
+        self.canvas.show_shapes.click_handler()
+        self.canvas.show_shape_labels.click_handler()
+        self.canvas.show_marker.click_handler()

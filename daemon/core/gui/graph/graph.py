@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from tkinter import BooleanVar
 from typing import TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageTk
@@ -28,6 +29,19 @@ if TYPE_CHECKING:
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
 ICON_SIZE = 48
+
+
+class ShowVar(BooleanVar):
+    def __init__(self, canvas: "CanvasGraph", tag: str, value: bool) -> None:
+        super().__init__(value=value)
+        self.canvas = canvas
+        self.tag = tag
+
+    def state(self) -> str:
+        return tk.NORMAL if self.get() else tk.HIDDEN
+
+    def click_handler(self):
+        self.canvas.itemconfigure(self.tag, state=self.state())
 
 
 class CanvasGraph(tk.Canvas):
@@ -69,13 +83,23 @@ class CanvasGraph(tk.Canvas):
         self.wallpaper_drawn = None
         self.wallpaper_file = ""
         self.scale_option = tk.IntVar(value=1)
-        self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
 
         # throughput related
         self.throughput_threshold = 250.0
         self.throughput_width = 10
         self.throughput_color = "#FF0000"
+
+        # drawing related
+        self.show_node_labels = ShowVar(self, tags.NODE_LABEL, value=True)
+        self.show_link_labels = ShowVar(self, tags.LINK_LABEL, value=True)
+        self.show_grid = ShowVar(self, tags.GRIDLINE, value=True)
+        self.show_shapes = ShowVar(self, tags.SHAPE, value=True)
+        self.show_shape_labels = ShowVar(self, tags.SHAPE_TEXT, value=True)
+        self.show_marker = ShowVar(self, tags.MARKER, value=True)
+        self.show_interface_names = BooleanVar(value=False)
+        self.show_ip4s = BooleanVar(value=True)
+        self.show_ip6s = BooleanVar(value=True)
 
         # bindings
         self.setup_bindings()
@@ -562,6 +586,7 @@ class CanvasGraph(tk.Canvas):
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
                     tags=tags.MARKER,
+                    state=self.show_marker.state(),
                 )
                 return
             if selected is None:
@@ -818,7 +843,7 @@ class CanvasGraph(tk.Canvas):
         # redraw gridlines to new canvas size
         self.delete(tags.GRIDLINE)
         self.draw_grid()
-        self.update_grid()
+        self.app.canvas.show_grid.click_handler()
 
     def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
@@ -839,13 +864,6 @@ class CanvasGraph(tk.Canvas):
         # raise items above wallpaper
         for component in tags.ABOVE_WALLPAPER_TAGS:
             self.tag_raise(component)
-
-    def update_grid(self):
-        logging.debug("updating grid show grid: %s", self.show_grid.get())
-        if self.show_grid.get():
-            self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
-        else:
-            self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
 
     def set_wallpaper(self, filename: str):
         logging.debug("setting wallpaper: %s", filename)
@@ -906,7 +924,8 @@ class CanvasGraph(tk.Canvas):
                 self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
             )
 
-            # add new node to modified_service_nodes set if that set contains the to_copy node
+            # add new node to modified_service_nodes set if that set contains the
+            # to_copy node
             if self.app.core.service_been_modified(core_node.id):
                 self.app.core.modified_service_nodes.add(copy.id)
 
