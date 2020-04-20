@@ -2062,7 +2062,7 @@ class CoreUdpHandler(CoreHandler):
         if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
             return
 
-        clients = self.tcp_handler.session_clients[self.session.id]
+        clients = self.tcp_handler.session_clients.get(self.session.id, [])
         for client in clients:
             try:
                 client.sendall(message.raw_message)
