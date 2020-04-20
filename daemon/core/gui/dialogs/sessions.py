@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
-from tkinter import ttk
-from typing import TYPE_CHECKING, Iterable
+from tkinter import messagebox, ttk
+from typing import TYPE_CHECKING, List
 
 import grpc
 
@@ -19,35 +19,35 @@ if TYPE_CHECKING:
 class SessionsDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", is_start_app: bool = False
-    ):
+    ) -> None:
         super().__init__(master, app, "Sessions", modal=True)
         self.is_start_app = is_start_app
-        self.selected = False
+        self.selected_session = None
         self.selected_id = None
         self.tree = None
-        self.has_error = False
         self.sessions = self.get_sessions()
-        if not self.has_error:
-            self.draw()
+        self.connect_button = None
+        self.delete_button = None
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.draw()
 
-    def get_sessions(self) -> Iterable[core_pb2.SessionSummary]:
+    def get_sessions(self) -> List[core_pb2.SessionSummary]:
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
             return response.sessions
         except grpc.RpcError as e:
             show_grpc_error(e, self.app, self.app)
-            self.has_error = True
             self.destroy()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
         self.draw_description()
         self.draw_tree()
         self.draw_buttons()
 
-    def draw_description(self):
+    def draw_description(self) -> None:
         """
         write a short description
         """
@@ -61,13 +61,16 @@ class SessionsDialog(Dialog):
         )
         label.grid(pady=PADY)
 
-    def draw_tree(self):
+    def draw_tree(self) -> None:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
         frame.grid(sticky="nsew", pady=PADY)
         self.tree = ttk.Treeview(
-            frame, columns=("id", "state", "nodes"), show="headings"
+            frame,
+            columns=("id", "state", "nodes"),
+            show="headings",
+            selectmode=tk.BROWSE,
         )
         self.tree.grid(sticky="nsew")
         self.tree.column("id", stretch=tk.YES)
@@ -85,7 +88,7 @@ class SessionsDialog(Dialog):
                 text=str(session.id),
                 values=(session.id, state_name, session.nodes),
             )
-        self.tree.bind("<Double-1>", self.on_selected)
+        self.tree.bind("<Double-1>", self.double_click_join)
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
@@ -96,9 +99,9 @@ class SessionsDialog(Dialog):
         xscrollbar.grid(row=1, sticky="ew")
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        for i in range(5):
+        for i in range(4):
             frame.columnconfigure(i, weight=1)
         frame.grid(sticky="ew")
 
@@ -110,42 +113,37 @@ class SessionsDialog(Dialog):
         b.grid(row=0, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.FILEOPEN, 16)
-        b = ttk.Button(
+        self.connect_button = ttk.Button(
             frame,
             image=image,
             text="Connect",
             compound=tk.LEFT,
             command=self.click_connect,
+            state=tk.DISABLED,
         )
-        b.image = image
-        b.grid(row=0, column=1, padx=PADX, sticky="ew")
-
-        image = Images.get(ImageEnum.SHUTDOWN, 16)
-        b = ttk.Button(
-            frame,
-            image=image,
-            text="Shutdown",
-            compound=tk.LEFT,
-            command=self.click_shutdown,
-        )
-        b.image = image
-        b.grid(row=0, column=2, padx=PADX, sticky="ew")
+        self.connect_button.image = image
+        self.connect_button.grid(row=0, column=1, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.DELETE, 16)
-        b = ttk.Button(
+        self.delete_button = ttk.Button(
             frame,
             image=image,
             text="Delete",
             compound=tk.LEFT,
             command=self.click_delete,
+            state=tk.DISABLED,
         )
-        b.image = image
-        b.grid(row=0, column=3, padx=PADX, sticky="ew")
+        self.delete_button.image = image
+        self.delete_button.grid(row=0, column=2, padx=PADX, sticky="ew")
 
         image = Images.get(ImageEnum.CANCEL, 16)
         if self.is_start_app:
             b = ttk.Button(
-                frame, image=image, text="Exit", compound=tk.LEFT, command=self.destroy
+                frame,
+                image=image,
+                text="Exit",
+                compound=tk.LEFT,
+                command=self.click_exit,
             )
         else:
             b = ttk.Button(
@@ -156,42 +154,32 @@ class SessionsDialog(Dialog):
                 command=self.destroy,
             )
         b.image = image
-        b.grid(row=0, column=4, sticky="ew")
+        b.grid(row=0, column=3, sticky="ew")
 
-    def click_new(self):
+    def click_new(self) -> None:
         self.app.core.create_new_session()
         self.destroy()
 
-    def click_select(self, event: tk.Event):
+    def click_select(self, _event: tk.Event = None) -> None:
         item = self.tree.selection()
-        session_id = int(self.tree.item(item, "text"))
-        self.selected = True
-        self.selected_id = session_id
-
-    def click_connect(self):
-        """
-        if no session is selected yet, create a new one else join that session
-        """
-        if self.selected and self.selected_id is not None:
-            self.join_session(self.selected_id)
-        elif not self.selected and self.selected_id is None:
-            self.click_new()
+        if item:
+            self.selected_session = int(self.tree.item(item, "text"))
+            self.selected_id = item
+            self.delete_button.config(state=tk.NORMAL)
+            self.connect_button.config(state=tk.NORMAL)
         else:
-            logging.error("sessions invalid state")
+            self.selected_session = None
+            self.selected_id = None
+            self.delete_button.config(state=tk.DISABLED)
+            self.connect_button.config(state=tk.DISABLED)
+        logging.debug("selected session: %s", self.selected_session)
 
-    def click_shutdown(self):
-        """
-        if no session is currently selected create a new session else shut the selected
-        session down.
-        """
-        if self.selected and self.selected_id is not None:
-            self.shutdown_session(self.selected_id)
-        elif not self.selected and self.selected_id is None:
-            self.click_new()
-        else:
-            logging.error("querysessiondrawing.py invalid state")
+    def click_connect(self) -> None:
+        if not self.selected_session:
+            return
+        self.join_session(self.selected_session)
 
-    def join_session(self, session_id: int):
+    def join_session(self, session_id: int) -> None:
         if self.app.core.xml_file:
             self.app.core.xml_file = None
         self.app.statusbar.progress_bar.start(5)
@@ -199,26 +187,29 @@ class SessionsDialog(Dialog):
         task.start()
         self.destroy()
 
-    def on_selected(self, event: tk.Event):
+    def double_click_join(self, _event: tk.Event) -> None:
         item = self.tree.selection()
-        sid = int(self.tree.item(item, "text"))
-        self.join_session(sid)
+        if item is None:
+            return
+        session_id = int(self.tree.item(item, "text"))
+        self.join_session(session_id)
 
-    def shutdown_session(self, sid: int):
-        self.app.core.stop_session(sid)
-        self.click_new()
+    def click_delete(self) -> None:
+        if not self.selected_session:
+            return
+        logging.debug("delete session: %s", self.selected_session)
+        # self.app.core.delete_session(self.selected_id, self.top)
+        self.tree.delete(self.selected_id)
+        self.app.core.delete_session(self.selected_session)
+        if self.selected_session == self.app.core.session_id:
+            self.click_new()
+            self.destroy()
+        self.click_select()
+
+    def click_exit(self) -> None:
         self.destroy()
+        self.app.close()
 
-    def click_delete(self):
-        logging.debug("Click delete")
-        item = self.tree.selection()
-        if item:
-            sid = int(self.tree.item(item, "text"))
-            self.app.core.delete_session(sid, self.top)
-            self.tree.delete(item[0])
-            if sid == self.app.core.session_id:
-                self.click_new()
-        selections = self.tree.get_children()
-        if selections:
-            self.tree.focus(selections[0])
-            self.tree.selection_set(selections[0])
+    def on_closing(self) -> None:
+        if self.is_start_app and messagebox.askokcancel("Exit", "Quit?", parent=self):
+            self.click_exit()

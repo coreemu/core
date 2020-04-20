@@ -283,6 +283,12 @@ class CoreClient:
                 self.session_id, self.handle_events
             )
 
+            # get session service defaults
+            response = self.client.get_service_defaults(self.session_id)
+            self.default_services = {
+                x.node_type: set(x.services) for x in response.defaults
+            }
+
             # get location
             if query_location:
                 response = self.client.get_session_location(self.session_id)
@@ -483,10 +489,6 @@ class CoreClient:
             else:
                 dialog = SessionsDialog(self.app, self.app, True)
                 dialog.show()
-            response = self.client.get_service_defaults(self.session_id)
-            self.default_services = {
-                x.node_type: set(x.services) for x in response.defaults
-            }
         except grpc.RpcError as e:
             show_grpc_error(e, self.app, self.app)
             self.app.close()
