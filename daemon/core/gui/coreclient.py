@@ -911,6 +911,8 @@ class CoreClient:
         for canvas_node in self.canvas_nodes.values():
             if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
                 continue
+            if not canvas_node.wlan_config:
+                continue
             config = canvas_node.wlan_config
             config = {x: config[x].value for x in config}
             node_id = canvas_node.core_node.id
@@ -922,6 +924,8 @@ class CoreClient:
         configs = []
         for canvas_node in self.canvas_nodes.values():
             if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+                continue
+            if not canvas_node.mobility_config:
                 continue
             config = canvas_node.mobility_config
             config = {x: config[x].value for x in config}
