@@ -91,7 +91,6 @@ class CoreClient:
         self.links = {}
         self.hooks = {}
         self.emane_config = None
-        self.config_service_configs = {}
         self.mobility_players = {}
         self.handling_throughputs = None
         self.handling_events = None
@@ -341,10 +340,10 @@ class CoreClient:
             # get config service configurations
             response = self.client.get_node_config_service_configs(self.session_id)
             for config in response.configs:
-                node_configs = self.config_service_configs.setdefault(
-                    config.node_id, {}
+                canvas_node = self.canvas_nodes[config.node_id]
+                service_config = canvas_node.config_service_configs.setdefault(
+                    config.name, {}
                 )
-                service_config = node_configs.setdefault(config.name, {})
                 if config.templates:
                     service_config["templates"] = config.templates
                 if config.config:
@@ -989,8 +988,13 @@ class CoreClient:
         self
     ) -> List[configservices_pb2.ConfigServiceConfig]:
         config_service_protos = []
-        for node_id, node_config in self.config_service_configs.items():
-            for name, service_config in node_config.items():
+        for canvas_node in self.canvas_nodes.values():
+            if not NodeUtils.is_container_node(canvas_node.core_node.type):
+                continue
+            if not canvas_node.config_service_configs:
+                continue
+            node_id = canvas_node.core_node.id
+            for name, service_config in canvas_node.config_service_configs.items():
                 config = service_config.get("config", {})
                 config_proto = configservices_pb2.ConfigServiceConfig(
                     node_id=node_id,

@@ -925,11 +925,13 @@ class CanvasGraph(tk.Canvas):
 
             # copy configurations and services
             node.core_node.services[:] = canvas_node.core_node.services
+            node.core_node.config_services[:] = canvas_node.core_node.config_services
             node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
             node.wlan_config = deepcopy(canvas_node.wlan_config)
             node.mobility_config = deepcopy(canvas_node.mobility_config)
             node.service_configs = deepcopy(canvas_node.service_configs)
             node.service_file_configs = deepcopy(canvas_node.service_file_configs)
+            node.config_service_configs = deepcopy(canvas_node.config_service_configs)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node
