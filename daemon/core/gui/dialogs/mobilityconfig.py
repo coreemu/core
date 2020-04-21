@@ -31,7 +31,9 @@ class MobilityConfigDialog(Dialog):
         self.config_frame = None
         self.has_error = False
         try:
-            self.config = self.app.core.get_mobility_config(self.node.id)
+            self.config = self.canvas_node.mobility_config
+            if not self.config:
+                self.config = self.app.core.get_mobility_config(self.node.id)
             self.draw()
         except grpc.RpcError as e:
             self.has_error = True
@@ -60,5 +62,5 @@ class MobilityConfigDialog(Dialog):
 
     def click_apply(self):
         self.config_frame.parse_config()
-        self.app.core.mobility_configs[self.node.id] = self.config
+        self.canvas_node.mobility_config = self.config
         self.destroy()

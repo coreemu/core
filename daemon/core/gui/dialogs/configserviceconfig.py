@@ -16,21 +16,26 @@ from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
 
 
 class ConfigServiceConfigDialog(Dialog):
     def __init__(
-        self, master: Any, app: "Application", service_name: str, node_id: int
+        self,
+        master: Any,
+        app: "Application",
+        service_name: str,
+        canvas_node: "CanvasNode",
+        node_id: int,
     ):
         title = f"{service_name} Config Service"
         super().__init__(master, app, title, modal=True)
         self.master = master
         self.app = app
         self.core = app.core
+        self.canvas_node = canvas_node
         self.node_id = node_id
         self.service_name = service_name
-        self.service_configs = app.core.config_service_configs
-
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
         self.directories = []
@@ -95,9 +100,9 @@ class ConfigServiceConfigDialog(Dialog):
             self.modes = sorted(x.name for x in response.modes)
             self.mode_configs = {x.name: x.config for x in response.modes}
 
-            node_configs = self.service_configs.get(self.node_id, {})
-            service_config = node_configs.get(self.service_name, {})
-
+            service_config = self.canvas_node.config_service_configs.get(
+                self.service_name, {}
+            )
             self.config = response.config
             self.default_config = {x.name: x.value for x in self.config.values()}
             custom_config = service_config.get("config")
@@ -313,15 +318,15 @@ class ConfigServiceConfigDialog(Dialog):
     def click_apply(self):
         current_listbox = self.master.current.listbox
         if not self.is_custom():
-            if self.node_id in self.service_configs:
-                self.service_configs[self.node_id].pop(self.service_name, None)
+            self.canvas_node.config_service_configs.pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
 
         try:
-            node_config = self.service_configs.setdefault(self.node_id, {})
-            service_config = node_config.setdefault(self.service_name, {})
+            service_config = self.canvas_node.config_service_configs.setdefault(
+                self.service_name, {}
+            )
             if self.config_frame:
                 self.config_frame.parse_config()
                 service_config["config"] = {
@@ -365,9 +370,10 @@ class ConfigServiceConfigDialog(Dialog):
         return has_custom_templates or has_custom_config
 
     def click_defaults(self):
-        if self.node_id in self.service_configs:
-            node_config = self.service_configs.get(self.node_id, {})
-            node_config.pop(self.service_name, None)
+        self.canvas_node.config_service_configs.pop(self.service_name, None)
+        logging.info(
+            "cleared config service config: %s", self.canvas_node.config_service_configs
+        )
         self.temp_service_files = dict(self.original_service_files)
         filename = self.templates_combobox.get()
         self.template_text.text.delete(1.0, "end")

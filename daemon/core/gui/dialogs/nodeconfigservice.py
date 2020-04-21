@@ -70,12 +70,10 @@ class NodeConfigServiceDialog(Dialog):
         label_frame.grid(row=0, column=2, sticky="nsew")
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
+
         self.current = ListboxScroll(label_frame)
         self.current.grid(sticky="nsew")
-        for service in sorted(self.current_services):
-            self.current.listbox.insert(tk.END, service)
-            if self.is_custom_service(service):
-                self.current.listbox.itemconfig(tk.END, bg="green")
+        self.draw_current_services()
 
         frame = ttk.Frame(self.top)
         frame.grid(stick="ew")
@@ -108,30 +106,35 @@ class NodeConfigServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
-        self.current.listbox.delete(0, tk.END)
-        for name in sorted(self.current_services):
-            self.current.listbox.insert(tk.END, name)
-            if self.is_custom_service(name):
-                self.current.listbox.itemconfig(tk.END, bg="green")
+        self.draw_current_services()
         self.canvas_node.core_node.config_services[:] = self.current_services
 
     def click_configure(self):
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
             dialog = ConfigServiceConfigDialog(
-                master=self,
-                app=self.app,
-                service_name=self.current.listbox.get(current_selection[0]),
-                node_id=self.node_id,
+                self,
+                self.app,
+                self.current.listbox.get(current_selection[0]),
+                self.canvas_node,
+                self.node_id,
             )
             if not dialog.has_error:
                 dialog.show()
+                self.draw_current_services()
         else:
             messagebox.showinfo(
                 "Config Service Configuration",
                 "Select a service to configure",
                 parent=self,
             )
+
+    def draw_current_services(self):
+        self.current.listbox.delete(0, tk.END)
+        for name in sorted(self.current_services):
+            self.current.listbox.insert(tk.END, name)
+            if self.is_custom_service(name):
+                self.current.listbox.itemconfig(tk.END, bg="green")
 
     def click_save(self):
         self.canvas_node.core_node.config_services[:] = self.current_services
@@ -156,9 +159,4 @@ class NodeConfigServiceDialog(Dialog):
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        node_configs = self.app.core.config_service_configs.get(self.node_id, {})
-        service_config = node_configs.get(service)
-        if node_configs and service_config:
-            return True
-        else:
-            return False
+        return service in self.canvas_node.config_service_configs

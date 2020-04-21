@@ -58,6 +58,13 @@ class CanvasNode:
         self.wireless_edges = set()
         self.antennas = []
         self.antenna_images = {}
+        # possible configurations
+        self.emane_model_configs = {}
+        self.wlan_config = {}
+        self.mobility_config = {}
+        self.service_configs = {}
+        self.service_file_configs = {}
+        self.config_service_configs = {}
         self.setup_bindings()
 
     def setup_bindings(self):
@@ -225,11 +232,15 @@ class CanvasNode:
                 context.add_command(label="Select Members", state=tk.DISABLED)
             edit_menu = tk.Menu(context)
             themes.style_menu(edit_menu)
-            edit_menu.add_command(label="Cut", state=tk.DISABLED)
+            edit_menu.add_command(label="Cut", command=self.click_cut)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
             context.add_cascade(label="Edit", menu=edit_menu)
         return context
+
+    def click_cut(self) -> None:
+        self.canvas_copy()
+        self.canvas_delete()
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()

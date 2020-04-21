@@ -181,7 +181,6 @@ class ConfigFrame(ttk.Notebook):
                     option.value = "0"
             else:
                 option.value = config_value
-
         return {x: self.config[x].value for x in self.config}
 
     def set_values(self, config: Dict[str, str]) -> None:

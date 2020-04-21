@@ -135,10 +135,11 @@ class NodeServiceDialog(Dialog):
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
             dialog = ServiceConfigDialog(
-                master=self,
-                app=self.app,
-                service_name=self.current.listbox.get(current_selection[0]),
-                node_id=self.node_id,
+                self,
+                self.app,
+                self.current.listbox.get(current_selection[0]),
+                self.canvas_node,
+                self.node_id,
             )
 
             # if error occurred when creating ServiceConfigDialog, don't show the dialog
@@ -182,14 +183,6 @@ class NodeServiceDialog(Dialog):
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        service_configs = self.app.core.service_configs
-        file_configs = self.app.core.file_configs
-        if self.node_id in service_configs and service in service_configs[self.node_id]:
-            return True
-        if (
-            self.node_id in file_configs
-            and service in file_configs[self.node_id]
-            and file_configs[self.node_id][service]
-        ):
-            return True
-        return False
+        has_service_config = service in self.canvas_node.service_configs
+        has_file_config = service in self.canvas_node.service_file_configs
+        return has_service_config or has_file_config

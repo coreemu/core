@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from copy import deepcopy
 from tkinter import BooleanVar
 from typing import TYPE_CHECKING, Tuple
 
@@ -304,7 +305,7 @@ class CanvasGraph(tk.Canvas):
             token = create_edge_token(canvas_node_one.id, canvas_node_two.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
-                self.add_wireless_edge(canvas_node_one, canvas_node_two)
+                self.add_wireless_edge(canvas_node_one, canvas_node_two, link)
             else:
                 if token not in self.edges:
                     src_pos = (node_one.position.x, node_one.position.y)
@@ -420,7 +421,7 @@ class CanvasGraph(tk.Canvas):
                     self.mode = GraphMode.NODE
         self.selected = None
 
-    def handle_edge_release(self, event: tk.Event):
+    def handle_edge_release(self, _event: tk.Event):
         edge = self.drawing_edge
         self.drawing_edge = None
 
@@ -701,7 +702,7 @@ class CanvasGraph(tk.Canvas):
         else:
             self.hide_context()
 
-    def press_delete(self, event: tk.Event):
+    def press_delete(self, _event: tk.Event):
         """
         delete selected nodes and any data that relates to it
         """
@@ -894,61 +895,72 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
-        if self.app.core.is_runtime():
+        if self.core.is_runtime():
             logging.info("copy is disabled during runtime state")
             return
         if self.selection:
-            logging.debug("to copy %s nodes", len(self.selection))
-            self.to_copy = self.selection.keys()
+            logging.info("to copy nodes: %s", self.selection)
+            self.to_copy.clear()
+            for node_id in self.selection.keys():
+                canvas_node = self.nodes[node_id]
+                self.to_copy.append(canvas_node)
 
     def paste(self):
-        if self.app.core.is_runtime():
+        if self.core.is_runtime():
             logging.info("paste is disabled during runtime state")
             return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
         to_copy_edges = []
-        for canvas_nid in self.to_copy:
-            core_node = self.nodes[canvas_nid].core_node
+        for canvas_node in self.to_copy:
+            core_node = canvas_node.core_node
             actual_x = core_node.position.x + 50
             actual_y = core_node.position.y + 50
             scaled_x, scaled_y = self.get_scaled_coords(actual_x, actual_y)
-
             copy = self.core.create_node(
                 actual_x, actual_y, core_node.type, core_node.model
             )
-            node = CanvasNode(
-                self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
-            )
+            node = CanvasNode(self.master, scaled_x, scaled_y, copy, canvas_node.image)
+
+            # copy configurations and services
+            node.core_node.services[:] = canvas_node.core_node.services
+            node.core_node.config_services[:] = canvas_node.core_node.config_services
+            node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
+            node.wlan_config = deepcopy(canvas_node.wlan_config)
+            node.mobility_config = deepcopy(canvas_node.mobility_config)
+            node.service_configs = deepcopy(canvas_node.service_configs)
+            node.service_file_configs = deepcopy(canvas_node.service_file_configs)
+            node.config_service_configs = deepcopy(canvas_node.config_service_configs)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node
-            if self.app.core.service_been_modified(core_node.id):
-                self.app.core.modified_service_nodes.add(copy.id)
+            if self.core.service_been_modified(core_node.id):
+                self.core.modified_service_nodes.add(copy.id)
 
-            copy_map[canvas_nid] = node.id
+            copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
-            self.core.copy_node_config(core_node.id, copy.id)
-
-            edges = self.nodes[canvas_nid].edges
-            for edge in edges:
+            for edge in canvas_node.edges:
                 if edge.src not in self.to_copy or edge.dst not in self.to_copy:
-                    if canvas_nid == edge.src:
-                        self.create_edge(node, self.nodes[edge.dst])
-                    elif canvas_nid == edge.dst:
-                        self.create_edge(self.nodes[edge.src], node)
+                    if canvas_node.id == edge.src:
+                        dst_node = self.nodes[edge.dst]
+                        self.create_edge(node, dst_node)
+                    elif canvas_node.id == edge.dst:
+                        src_node = self.nodes[edge.src]
+                        self.create_edge(src_node, node)
                 else:
                     to_copy_edges.append(edge)
+
         # copy link and link config
         for edge in to_copy_edges:
-            source_node_copy = self.nodes[copy_map[edge.token[0]]]
-            dest_node_copy = self.nodes[copy_map[edge.token[1]]]
-            self.create_edge(source_node_copy, dest_node_copy)
-            copy_edge = self.edges[
-                create_edge_token(source_node_copy.id, dest_node_copy.id)
-            ]
+            src_node_id = copy_map[edge.token[0]]
+            dst_node_id = copy_map[edge.token[1]]
+            src_node_copy = self.nodes[src_node_id]
+            dst_node_copy = self.nodes[dst_node_id]
+            self.create_edge(src_node_copy, dst_node_copy)
+            token = create_edge_token(src_node_copy.id, dst_node_copy.id)
+            copy_edge = self.edges[token]
             copy_link = copy_edge.link
             options = edge.link.options
             copy_link.options.CopyFrom(options)
