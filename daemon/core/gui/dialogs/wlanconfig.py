@@ -104,7 +104,7 @@ class WlanConfigDialog(Dialog):
         if len(s) == 0:
             return True
         try:
-            int_value = int(s)
+            int_value = int(s) / 2
             if int_value >= 0:
                 net_range = int_value * self.canvas.ratio
                 if self.canvas_node.id in self.canvas.wireless_network:
