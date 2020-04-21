@@ -268,8 +268,11 @@ class CanvasGraph(tk.Canvas):
             return
         network_id = link.network_id if link.network_id else None
         token = create_edge_token(src.id, dst.id, network_id)
-        edge = self.wireless_edges[token]
-        edge.middle_label_text(link.label)
+        if token not in self.wireless_edges:
+            self.add_wireless_edge(src, dst, link)
+        else:
+            edge = self.wireless_edges[token]
+            edge.middle_label_text(link.label)
 
     def draw_session(self, session: core_pb2.Session):
         """
