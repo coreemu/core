@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any
 
 import grpc
 
-from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
@@ -56,20 +55,30 @@ class EmaneModelDialog(Dialog):
         self,
         master: Any,
         app: "Application",
-        node: core_pb2.Node,
+        canvas_node: "CanvasNode",
         model: str,
         interface: int = None,
     ):
-        super().__init__(master, app, f"{node.name} {model} Configuration", modal=True)
-        self.node = node
+        super().__init__(
+            master,
+            app,
+            f"{canvas_node.core_node.name} {model} Configuration",
+            modal=True,
+        )
+        self.canvas_node = canvas_node
+        self.node = canvas_node.core_node
         self.model = f"emane_{model}"
         self.interface = interface
         self.config_frame = None
         self.has_error = False
         try:
-            self.config = self.app.core.get_emane_model_config(
-                self.node.id, self.model, self.interface
+            self.config = self.canvas_node.emane_model_configs.get(
+                (self.model, self.interface)
             )
+            if not self.config:
+                self.config = self.app.core.get_emane_model_config(
+                    self.node.id, self.model, self.interface
+                )
             self.draw()
         except grpc.RpcError as e:
             show_grpc_error(e, self.app, self.app)
@@ -98,9 +107,8 @@ class EmaneModelDialog(Dialog):
 
     def click_apply(self):
         self.config_frame.parse_config()
-        self.app.core.set_emane_model_config(
-            self.node.id, self.model, self.config, self.interface
-        )
+        key = (self.model, self.interface)
+        self.canvas_node.emane_model_configs[key] = dict(self.config)
         self.destroy()
 
 
@@ -224,9 +232,7 @@ class EmaneConfigDialog(Dialog):
         draw emane model configuration
         """
         model_name = self.emane_model.get()
-        dialog = EmaneModelDialog(
-            self, self.app, self.canvas_node.core_node, model_name
-        )
+        dialog = EmaneModelDialog(self, self.app, self.canvas_node, model_name)
         if not dialog.has_error:
             dialog.show()
 

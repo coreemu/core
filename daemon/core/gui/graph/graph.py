@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from copy import deepcopy
 from tkinter import BooleanVar
 from typing import TYPE_CHECKING, Tuple
 
@@ -921,6 +922,9 @@ class CanvasGraph(tk.Canvas):
                 actual_x, actual_y, core_node.type, core_node.model
             )
             node = CanvasNode(self.master, scaled_x, scaled_y, copy, canvas_node.image)
+
+            # copy configurations
+            node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node

@@ -58,6 +58,10 @@ class CanvasNode:
         self.wireless_edges = set()
         self.antennas = []
         self.antenna_images = {}
+        # possible configurations
+        self.emane_model_configs = {}
+        self.wlan_config = {}
+        self.mobility_config = {}
         self.setup_bindings()
 
     def setup_bindings(self):

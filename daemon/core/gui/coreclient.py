@@ -92,7 +92,6 @@ class CoreClient:
         self.hooks = {}
         self.wlan_configs = {}
         self.mobility_configs = {}
-        self.emane_model_configs = {}
         self.emane_config = None
         self.service_configs = {}
         self.config_service_configs = {}
@@ -130,7 +129,6 @@ class CoreClient:
         self.hooks.clear()
         self.wlan_configs.clear()
         self.mobility_configs.clear()
-        self.emane_model_configs.clear()
         self.emane_config = None
         self.service_configs.clear()
         self.file_configs.clear()
@@ -303,15 +301,18 @@ class CoreClient:
             for hook in response.hooks:
                 self.hooks[hook.file] = hook
 
+            # get emane config
+            response = self.client.get_emane_config(self.session_id)
+            self.emane_config = response.config
+
+            # draw session
+            self.app.canvas.reset_and_redraw(session)
+
             # get mobility configs
             response = self.client.get_mobility_configs(self.session_id)
             for node_id in response.configs:
                 node_config = response.configs[node_id].config
                 self.mobility_configs[node_id] = node_config
-
-            # get emane config
-            response = self.client.get_emane_config(self.session_id)
-            self.emane_config = response.config
 
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
@@ -319,9 +320,10 @@ class CoreClient:
                 interface = None
                 if config.interface != -1:
                     interface = config.interface
-                self.set_emane_model_config(
-                    config.node_id, config.model, config.config, interface
-                )
+                canvas_node = self.canvas_nodes[config.node_id]
+                canvas_node.emane_model_configs[
+                    (config.model, interface)
+                ] = config.config
 
             # get wlan configurations
             response = self.client.get_wlan_configs(self.session_id)
@@ -353,13 +355,9 @@ class CoreClient:
                 if config.config:
                     service_config["config"] = config.config
 
-            # draw session
-            self.app.canvas.reset_and_redraw(session)
-
             # get metadata
             response = self.client.get_session_metadata(self.session_id)
             self.parse_metadata(response.config)
-
         except grpc.RpcError as e:
             self.app.after(0, show_grpc_error, e, self.app, self.app)
 
@@ -848,10 +846,6 @@ class CoreClient:
                 del self.mobility_configs[node_id]
             if node_id in self.wlan_configs:
                 del self.wlan_configs[node_id]
-            for key in list(self.emane_model_configs):
-                node_id, _, _ = key
-                if node_id == node_id:
-                    del self.emane_model_configs[key]
 
             for edge in canvas_node.edges:
                 if edge in edges:
@@ -938,15 +932,19 @@ class CoreClient:
 
     def get_emane_model_configs_proto(self) -> List[EmaneModelConfig]:
         configs = []
-        for key, config in self.emane_model_configs.items():
-            node_id, model, interface = key
-            config = {x: config[x].value for x in config}
-            if interface is None:
-                interface = -1
-            config_proto = EmaneModelConfig(
-                node_id=node_id, interface_id=interface, model=model, config=config
-            )
-            configs.append(config_proto)
+        for canvas_node in self.canvas_nodes.values():
+            if canvas_node.core_node.type != core_pb2.NodeType.EMANE:
+                continue
+            node_id = canvas_node.core_node.id
+            for key, config in canvas_node.emane_model_configs.items():
+                model, interface = key
+                config = {x: config[x].value for x in config}
+                if interface is None:
+                    interface = -1
+                config_proto = EmaneModelConfig(
+                    node_id=node_id, interface_id=interface, model=model, config=config
+                )
+                configs.append(config_proto)
         return configs
 
     def get_service_configs_proto(self) -> List[ServiceConfig]:
@@ -1023,14 +1021,12 @@ class CoreClient:
     def get_emane_model_config(
         self, node_id: int, model: str, interface: int = None
     ) -> Dict[str, common_pb2.ConfigOption]:
-        config = self.emane_model_configs.get((node_id, model, interface))
-        if not config:
-            if interface is None:
-                interface = -1
-            response = self.client.get_emane_model_config(
-                self.session_id, node_id, model, interface
-            )
-            config = response.config
+        if interface is None:
+            interface = -1
+        response = self.client.get_emane_model_config(
+            self.session_id, node_id, model, interface
+        )
+        config = response.config
         logging.debug(
             "get emane model config: node id: %s, EMANE model: %s, interface: %s, config: %s",
             node_id,
@@ -1038,23 +1034,7 @@ class CoreClient:
             interface,
             config,
         )
-        return config
-
-    def set_emane_model_config(
-        self,
-        node_id: int,
-        model: str,
-        config: Dict[str, common_pb2.ConfigOption],
-        interface: int = None,
-    ):
-        logging.info(
-            "set emane model config: node id: %s, EMANE Model: %s, interface: %s, config: %s",
-            node_id,
-            model,
-            interface,
-            config,
-        )
-        self.emane_model_configs[(node_id, model, interface)] = config
+        return dict(config)
 
     def copy_node_service(self, _from: int, _to: int):
         services = self.canvas_nodes[_from].core_node.services
@@ -1083,10 +1063,6 @@ class CoreClient:
             config = self.mobility_configs.get(src_node.id)
             if config:
                 self.mobility_configs[dst_id] = config
-        elif node_type == core_pb2.NodeType.EMANE:
-            config = self.emane_model_configs.get(src_node.id)
-            if config:
-                self.emane_model_configs[dst_id] = config
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes
