@@ -62,6 +62,8 @@ class CanvasNode:
         self.emane_model_configs = {}
         self.wlan_config = {}
         self.mobility_config = {}
+        self.service_configs = {}
+        self.service_file_configs = {}
         self.setup_bindings()
 
     def setup_bindings(self):

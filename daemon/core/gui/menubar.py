@@ -347,7 +347,6 @@ class Menubar(tk.Menu):
         for i in range(self.edit_menu.index(tk.END) + 1):
             try:
                 label = self.edit_menu.entrycget(i, "label")
-                logging.info("menu label: %s", label)
                 if label not in labels:
                     continue
                 state = tk.DISABLED if is_runtime else tk.NORMAL

@@ -16,22 +16,26 @@ from core.gui.widgets import CodeText, ListboxScroll
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+    from core.gui.graph.node import CanvasNode
 
 
 class ServiceConfigDialog(Dialog):
     def __init__(
-        self, master: Any, app: "Application", service_name: str, node_id: int
+        self,
+        master: Any,
+        app: "Application",
+        service_name: str,
+        canvas_node: "CanvasNode",
+        node_id: int,
     ):
         title = f"{service_name} Service"
         super().__init__(master, app, title, modal=True)
         self.master = master
         self.app = app
         self.core = app.core
+        self.canvas_node = canvas_node
         self.node_id = node_id
         self.service_name = service_name
-        self.service_configs = app.core.service_configs
-        self.file_configs = app.core.file_configs
-
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
         self.metadata = ""
@@ -54,7 +58,6 @@ class ServiceConfigDialog(Dialog):
             ImageEnum.DOCUMENTNEW, int(16 * app.app_scale)
         )
         self.editdelete_img = Images.get(ImageEnum.EDITDELETE, int(16 * app.app_scale))
-
         self.notebook = None
         self.metadata_entry = None
         self.filename_combobox = None
@@ -70,9 +73,7 @@ class ServiceConfigDialog(Dialog):
         self.default_config = None
         self.temp_service_files = {}
         self.modified_files = set()
-
         self.has_error = False
-
         self.load()
         if not self.has_error:
             self.draw()
@@ -87,8 +88,8 @@ class ServiceConfigDialog(Dialog):
             self.default_validate = default_config.validate[:]
             self.default_shutdown = default_config.shutdown[:]
             self.default_directories = default_config.dirs[:]
-            custom_service_config = self.service_configs.get(self.node_id, {}).get(
-                self.service_name, None
+            custom_service_config = self.canvas_node.service_configs.get(
+                self.service_name
             )
             self.default_config = default_config
             service_config = (
@@ -111,10 +112,11 @@ class ServiceConfigDialog(Dialog):
                 for x in default_config.configs
             }
             self.temp_service_files = dict(self.original_service_files)
-            file_config = self.file_configs.get(self.node_id, {}).get(
+
+            file_configs = self.canvas_node.service_file_configs.get(
                 self.service_name, {}
             )
-            for file, data in file_config.items():
+            for file, data in file_configs.items():
                 self.temp_service_files[file] = data
         except grpc.RpcError as e:
             self.has_error = True
@@ -449,7 +451,7 @@ class ServiceConfigDialog(Dialog):
             and not self.has_new_files()
             and not self.is_custom_directory()
         ):
-            self.service_configs.get(self.node_id, {}).pop(self.service_name, None)
+            self.canvas_node.service_configs.pop(self.service_name, None)
             self.current_service_color("")
             self.destroy()
             return
@@ -470,17 +472,13 @@ class ServiceConfigDialog(Dialog):
                     validations=validate,
                     shutdowns=shutdown,
                 )
-                if self.node_id not in self.service_configs:
-                    self.service_configs[self.node_id] = {}
-                self.service_configs[self.node_id][self.service_name] = config
+                self.canvas_node.service_configs[self.service_name] = config
             for file in self.modified_files:
-                if self.node_id not in self.file_configs:
-                    self.file_configs[self.node_id] = {}
-                if self.service_name not in self.file_configs[self.node_id]:
-                    self.file_configs[self.node_id][self.service_name] = {}
-                self.file_configs[self.node_id][self.service_name][
-                    file
-                ] = self.temp_service_files[file]
+                file_configs = self.canvas_node.service_file_configs.setdefault(
+                    self.service_name, {}
+                )
+                file_configs[file] = self.temp_service_files[file]
+                # TODO: check if this is really needed
                 self.app.core.set_node_service_file(
                     self.node_id, self.service_name, file, self.temp_service_files[file]
                 )
@@ -526,8 +524,9 @@ class ServiceConfigDialog(Dialog):
         clears out any custom configuration permanently
         """
         # clear coreclient data
-        self.service_configs.get(self.node_id, {}).pop(self.service_name, None)
-        self.file_configs.get(self.node_id, {}).pop(self.service_name, None)
+        self.canvas_node.service_configs.pop(self.service_name, None)
+        file_configs = self.canvas_node.service_file_configs.pop(self.service_name, {})
+        file_configs.pop(self.service_name, None)
         self.temp_service_files = dict(self.original_service_files)
         self.modified_files.clear()
 

@@ -91,9 +91,7 @@ class CoreClient:
         self.links = {}
         self.hooks = {}
         self.emane_config = None
-        self.service_configs = {}
         self.config_service_configs = {}
-        self.file_configs = {}
         self.mobility_players = {}
         self.handling_throughputs = None
         self.handling_events = None
@@ -126,8 +124,6 @@ class CoreClient:
         self.links.clear()
         self.hooks.clear()
         self.emane_config = None
-        self.service_configs.clear()
-        self.file_configs.clear()
         self.modified_service_nodes.clear()
         for mobility_player in self.mobility_players.values():
             mobility_player.handle_close()
@@ -332,13 +328,14 @@ class CoreClient:
             # get service configurations
             response = self.client.get_node_service_configs(self.session_id)
             for config in response.configs:
-                service_configs = self.service_configs.setdefault(config.node_id, {})
-                service_configs[config.service] = config.data
+                canvas_node = self.canvas_nodes[config.node_id]
+                canvas_node.service_configs[config.service] = config.data
                 logging.debug("service file configs: %s", config.files)
                 for file_name in config.files:
-                    file_configs = self.file_configs.setdefault(config.node_id, {})
-                    files = file_configs.setdefault(config.service, {})
                     data = config.files[file_name]
+                    files = canvas_node.service_file_configs.setdefault(
+                        config.service, {}
+                    )
                     files[file_name] = data
 
             # get config service configurations
@@ -953,8 +950,13 @@ class CoreClient:
 
     def get_service_configs_proto(self) -> List[ServiceConfig]:
         configs = []
-        for node_id, services in self.service_configs.items():
-            for name, config in services.items():
+        for canvas_node in self.canvas_nodes.values():
+            if not NodeUtils.is_container_node(canvas_node.core_node.type):
+                continue
+            if not canvas_node.service_configs:
+                continue
+            node_id = canvas_node.core_node.id
+            for name, config in canvas_node.service_configs.items():
                 config_proto = ServiceConfig(
                     node_id=node_id,
                     service=name,
@@ -969,9 +971,14 @@ class CoreClient:
 
     def get_service_file_configs_proto(self) -> List[ServiceFileConfig]:
         configs = []
-        for (node_id, file_configs) in self.file_configs.items():
-            for service, file_config in file_configs.items():
-                for file, data in file_config.items():
+        for canvas_node in self.canvas_nodes.values():
+            if not NodeUtils.is_container_node(canvas_node.core_node.type):
+                continue
+            if not canvas_node.service_file_configs:
+                continue
+            node_id = canvas_node.core_node.id
+            for service, file_configs in canvas_node.service_file_configs.items():
+                for file, data in file_configs.items():
                     config_proto = ServiceFileConfig(
                         node_id=node_id, service=service, file=file, data=data
                     )
@@ -1035,27 +1042,6 @@ class CoreClient:
             config,
         )
         return dict(config)
-
-    def copy_node_service(self, _from: int, _to: int):
-        services = self.canvas_nodes[_from].core_node.services
-        self.canvas_nodes[_to].core_node.services[:] = services
-        logging.debug("copying node %s service to node %s", _from, _to)
-
-    def copy_node_config(self, src_node: core_pb2.Node, dst_id: int):
-        node_type = src_node.type
-        if node_type == core_pb2.NodeType.DEFAULT:
-            services = src_node.services
-            dst_node = self.canvas_nodes[dst_id]
-            dst_node.core_node.services[:] = services
-            config = self.service_configs.get(src_node.id)
-            if config:
-                self.service_configs[dst_id] = config
-            file_configs = self.file_configs.get(src_node.id)
-            if file_configs:
-                for key, value in file_configs.items():
-                    if dst_id not in self.file_configs:
-                        self.file_configs[dst_id] = {}
-                    self.file_configs[dst_id][key] = value
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes

@@ -352,7 +352,6 @@ class CanvasGraph(tk.Canvas):
         """
         Convert window coordinate to canvas coordinate
         """
-        logging.info("event type: %s", type(event))
         x = self.canvasx(event.x)
         y = self.canvasy(event.y)
         return x, y
@@ -924,10 +923,13 @@ class CanvasGraph(tk.Canvas):
             )
             node = CanvasNode(self.master, scaled_x, scaled_y, copy, canvas_node.image)
 
-            # copy configurations
+            # copy configurations and services
+            node.core_node.services[:] = canvas_node.core_node.services
             node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
             node.wlan_config = deepcopy(canvas_node.wlan_config)
             node.mobility_config = deepcopy(canvas_node.mobility_config)
+            node.service_configs = deepcopy(canvas_node.service_configs)
+            node.service_file_configs = deepcopy(canvas_node.service_file_configs)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node
@@ -937,7 +939,6 @@ class CanvasGraph(tk.Canvas):
             copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
-            self.core.copy_node_config(core_node, copy.id)
             for edge in canvas_node.edges:
                 if edge.src not in self.to_copy or edge.dst not in self.to_copy:
                     if canvas_node.id == edge.src:
