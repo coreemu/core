@@ -103,14 +103,14 @@ class Menubar(tk.Menu):
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
         menu.add_separator()
-        menu.add_command(label="Cut", accelerator="Ctrl+X", state=tk.DISABLED)
+        menu.add_command(label="Cut", accelerator="Ctrl+X", command=self.click_cut)
         menu.add_command(label="Copy", accelerator="Ctrl+C", command=self.click_copy)
         menu.add_command(label="Paste", accelerator="Ctrl+V", command=self.click_paste)
         menu.add_command(
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
         self.add_cascade(label="Edit", menu=menu)
-
+        self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
         self.app.master.bind_all("<Control-d>", self.click_delete)
@@ -343,16 +343,17 @@ class Menubar(tk.Menu):
         self.app.menubar.update_recent_files()
 
     def change_menubar_item_state(self, is_runtime: bool) -> None:
-        for i in range(self.edit_menu.index("end")):
+        labels = {"Copy", "Paste", "Delete", "Cut"}
+        for i in range(self.edit_menu.index(tk.END) + 1):
             try:
-                label_name = self.edit_menu.entrycget(i, "label")
-                if label_name in ["Copy", "Paste"]:
-                    if is_runtime:
-                        self.edit_menu.entryconfig(i, state="disabled")
-                    else:
-                        self.edit_menu.entryconfig(i, state="normal")
+                label = self.edit_menu.entrycget(i, "label")
+                logging.info("menu label: %s", label)
+                if label not in labels:
+                    continue
+                state = tk.DISABLED if is_runtime else tk.NORMAL
+                self.edit_menu.entryconfig(i, state=state)
             except tk.TclError:
-                logging.debug("Ignore separators")
+                pass
 
     def prompt_save_running_session(self, quit_app: bool = False) -> None:
         """
@@ -410,13 +411,17 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_copy(self, _event: tk.Event = None) -> None:
-        self.app.canvas.copy()
+        self.canvas.copy()
 
     def click_paste(self, _event: tk.Event = None) -> None:
-        self.app.canvas.paste()
+        self.canvas.paste()
 
     def click_delete(self, _event: tk.Event = None) -> None:
-        self.app.canvas.delete_selected_objects()
+        self.canvas.delete_selected_objects()
+
+    def click_cut(self, _event: tk.Event = None) -> None:
+        self.canvas.copy()
+        self.canvas.delete_selected_objects()
 
     def click_session_options(self) -> None:
         logging.debug("Click options")
@@ -444,14 +449,14 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_autogrid(self) -> None:
-        width, height = self.app.canvas.current_dimensions
+        width, height = self.canvas.current_dimensions
         padding = (ICON_SIZE / 2) + 10
         layout_size = padding + ICON_SIZE
         col_count = width // layout_size
         logging.info(
-            "auto grid layout: dimens(%s, %s) col(%s)", width, height, col_count
+            "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
         )
-        for i, node in enumerate(self.app.canvas.nodes.values()):
+        for i, node in enumerate(self.canvas.nodes.values()):
             col = i % col_count
             row = i // col_count
             x = (col * layout_size) + padding

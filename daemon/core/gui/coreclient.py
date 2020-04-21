@@ -1061,31 +1061,32 @@ class CoreClient:
         self.canvas_nodes[_to].core_node.services[:] = services
         logging.debug("copying node %s service to node %s", _from, _to)
 
-    def copy_node_config(self, _from: int, _to: int):
-        node_type = self.canvas_nodes[_from].core_node.type
+    def copy_node_config(self, src_node: core_pb2.Node, dst_id: int):
+        node_type = src_node.type
         if node_type == core_pb2.NodeType.DEFAULT:
-            services = self.canvas_nodes[_from].core_node.services
-            self.canvas_nodes[_to].core_node.services[:] = services
-            config = self.service_configs.get(_from)
+            services = src_node.services
+            dst_node = self.canvas_nodes[dst_id]
+            dst_node.core_node.services[:] = services
+            config = self.service_configs.get(src_node.id)
             if config:
-                self.service_configs[_to] = config
-            file_configs = self.file_configs.get(_from)
+                self.service_configs[dst_id] = config
+            file_configs = self.file_configs.get(src_node.id)
             if file_configs:
                 for key, value in file_configs.items():
-                    if _to not in self.file_configs:
-                        self.file_configs[_to] = {}
-                    self.file_configs[_to][key] = value
+                    if dst_id not in self.file_configs:
+                        self.file_configs[dst_id] = {}
+                    self.file_configs[dst_id][key] = value
         elif node_type == core_pb2.NodeType.WIRELESS_LAN:
-            config = self.wlan_configs.get(_from)
+            config = self.wlan_configs.get(src_node.id)
             if config:
-                self.wlan_configs[_to] = config
-            config = self.mobility_configs.get(_from)
+                self.wlan_configs[dst_id] = config
+            config = self.mobility_configs.get(src_node.id)
             if config:
-                self.mobility_configs[_to] = config
+                self.mobility_configs[dst_id] = config
         elif node_type == core_pb2.NodeType.EMANE:
-            config = self.emane_model_configs.get(_from)
+            config = self.emane_model_configs.get(src_node.id)
             if config:
-                self.emane_model_configs[_to] = config
+                self.emane_model_configs[dst_id] = config
 
     def service_been_modified(self, node_id: int) -> bool:
         return node_id in self.modified_service_nodes

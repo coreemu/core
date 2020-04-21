@@ -894,61 +894,63 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
-        if self.app.core.is_runtime():
+        if self.core.is_runtime():
             logging.info("copy is disabled during runtime state")
             return
         if self.selection:
-            logging.debug("to copy %s nodes", len(self.selection))
-            self.to_copy = self.selection.keys()
+            logging.info("to copy nodes: %s", self.selection)
+            self.to_copy.clear()
+            for node_id in self.selection.keys():
+                canvas_node = self.nodes[node_id]
+                self.to_copy.append(canvas_node)
 
     def paste(self):
-        if self.app.core.is_runtime():
+        if self.core.is_runtime():
             logging.info("paste is disabled during runtime state")
             return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
         to_copy_edges = []
-        for canvas_nid in self.to_copy:
-            core_node = self.nodes[canvas_nid].core_node
+        for canvas_node in self.to_copy:
+            core_node = canvas_node.core_node
             actual_x = core_node.position.x + 50
             actual_y = core_node.position.y + 50
             scaled_x, scaled_y = self.get_scaled_coords(actual_x, actual_y)
-
             copy = self.core.create_node(
                 actual_x, actual_y, core_node.type, core_node.model
             )
-            node = CanvasNode(
-                self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
-            )
+            node = CanvasNode(self.master, scaled_x, scaled_y, copy, canvas_node.image)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node
-            if self.app.core.service_been_modified(core_node.id):
-                self.app.core.modified_service_nodes.add(copy.id)
+            if self.core.service_been_modified(core_node.id):
+                self.core.modified_service_nodes.add(copy.id)
 
-            copy_map[canvas_nid] = node.id
+            copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
-            self.core.copy_node_config(core_node.id, copy.id)
-
-            edges = self.nodes[canvas_nid].edges
-            for edge in edges:
+            self.core.copy_node_config(core_node, copy.id)
+            for edge in canvas_node.edges:
                 if edge.src not in self.to_copy or edge.dst not in self.to_copy:
-                    if canvas_nid == edge.src:
-                        self.create_edge(node, self.nodes[edge.dst])
-                    elif canvas_nid == edge.dst:
-                        self.create_edge(self.nodes[edge.src], node)
+                    if canvas_node.id == edge.src:
+                        dst_node = self.nodes[edge.dst]
+                        self.create_edge(node, dst_node)
+                    elif canvas_node.id == edge.dst:
+                        src_node = self.nodes[edge.src]
+                        self.create_edge(src_node, node)
                 else:
                     to_copy_edges.append(edge)
+
         # copy link and link config
         for edge in to_copy_edges:
-            source_node_copy = self.nodes[copy_map[edge.token[0]]]
-            dest_node_copy = self.nodes[copy_map[edge.token[1]]]
-            self.create_edge(source_node_copy, dest_node_copy)
-            copy_edge = self.edges[
-                create_edge_token(source_node_copy.id, dest_node_copy.id)
-            ]
+            src_node_id = copy_map[edge.token[0]]
+            dst_node_id = copy_map[edge.token[1]]
+            src_node_copy = self.nodes[src_node_id]
+            dst_node_copy = self.nodes[dst_node_id]
+            self.create_edge(src_node_copy, dst_node_copy)
+            token = create_edge_token(src_node_copy.id, dst_node_copy.id)
+            copy_edge = self.edges[token]
             copy_link = copy_edge.link
             options = edge.link.options
             copy_link.options.CopyFrom(options)
