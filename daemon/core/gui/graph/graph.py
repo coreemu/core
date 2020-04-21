@@ -305,7 +305,7 @@ class CanvasGraph(tk.Canvas):
             token = create_edge_token(canvas_node_one.id, canvas_node_two.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
-                self.add_wireless_edge(canvas_node_one, canvas_node_two)
+                self.add_wireless_edge(canvas_node_one, canvas_node_two, link)
             else:
                 if token not in self.edges:
                     src_pos = (node_one.position.x, node_one.position.y)
@@ -352,6 +352,7 @@ class CanvasGraph(tk.Canvas):
         """
         Convert window coordinate to canvas coordinate
         """
+        logging.info("event type: %s", type(event))
         x = self.canvasx(event.x)
         y = self.canvasy(event.y)
         return x, y
@@ -421,7 +422,7 @@ class CanvasGraph(tk.Canvas):
                     self.mode = GraphMode.NODE
         self.selected = None
 
-    def handle_edge_release(self, event: tk.Event):
+    def handle_edge_release(self, _event: tk.Event):
         edge = self.drawing_edge
         self.drawing_edge = None
 
@@ -702,7 +703,7 @@ class CanvasGraph(tk.Canvas):
         else:
             self.hide_context()
 
-    def press_delete(self, event: tk.Event):
+    def press_delete(self, _event: tk.Event):
         """
         delete selected nodes and any data that relates to it
         """
@@ -925,6 +926,8 @@ class CanvasGraph(tk.Canvas):
 
             # copy configurations
             node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
+            node.wlan_config = deepcopy(canvas_node.wlan_config)
+            node.mobility_config = deepcopy(canvas_node.mobility_config)
 
             # add new node to modified_service_nodes set if that set contains the
             # to_copy node

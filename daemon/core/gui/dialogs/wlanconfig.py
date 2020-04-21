@@ -32,7 +32,9 @@ class WlanConfigDialog(Dialog):
         self.ranges = {}
         self.positive_int = self.app.master.register(self.validate_and_update)
         try:
-            self.config = self.app.core.get_wlan_config(self.node.id)
+            self.config = self.canvas_node.wlan_config
+            if not self.config:
+                self.config = self.app.core.get_wlan_config(self.node.id)
             self.init_draw_range()
             self.draw()
         except grpc.RpcError as e:
@@ -83,7 +85,7 @@ class WlanConfigDialog(Dialog):
         retrieve user's wlan configuration and store the new configuration values
         """
         config = self.config_frame.parse_config()
-        self.app.core.wlan_configs[self.node.id] = self.config
+        self.canvas_node.wlan_config = self.config
         if self.app.core.is_runtime():
             session_id = self.app.core.session_id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)

@@ -108,7 +108,7 @@ class EmaneModelDialog(Dialog):
     def click_apply(self):
         self.config_frame.parse_config()
         key = (self.model, self.interface)
-        self.canvas_node.emane_model_configs[key] = dict(self.config)
+        self.canvas_node.emane_model_configs[key] = self.config
         self.destroy()
 
 

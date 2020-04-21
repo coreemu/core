@@ -48,8 +48,9 @@ class MobilityPlayer:
         self.dialog.show()
 
     def handle_close(self):
-        self.dialog.destroy()
-        self.dialog = None
+        if self.dialog:
+            self.dialog.destroy()
+            self.dialog = None
 
     def set_play(self):
         self.state = MobilityAction.START
