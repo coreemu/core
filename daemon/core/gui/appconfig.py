@@ -37,6 +37,10 @@ TERMINALS = {
     "gnome-terminal": "gnome-terminal --window --",
 }
 EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
+DEFAULT_IP4S = ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
+DEFAULT_IP4 = DEFAULT_IP4S[0]
+DEFAULT_IP6S = ["2001::", "2002::", "a::"]
+DEFAULT_IP6 = DEFAULT_IP6S[0]
 
 
 class IndentDumper(yaml.Dumper):
@@ -98,11 +102,17 @@ def check_directory():
             "alt": 2.0,
             "scale": 150.0,
         },
-        "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
+        "servers": [],
         "nodes": [],
         "recentfiles": [],
-        "observers": [{"name": "hello", "cmd": "echo hello"}],
+        "observers": [],
         "scale": 1.0,
+        "ips": {
+            "ip4": DEFAULT_IP4,
+            "ip6": DEFAULT_IP6,
+            "ip4s": DEFAULT_IP4S,
+            "ip6s": DEFAULT_IP6S,
+        },
     }
     save(config)
 

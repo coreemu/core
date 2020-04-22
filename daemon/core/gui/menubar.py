@@ -7,12 +7,13 @@ from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING
 
 from core.gui.appconfig import XMLS_PATH
-from core.gui.coreclient import OBSERVERS
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
 from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
 from core.gui.dialogs.executepython import ExecutePythonDialog
 from core.gui.dialogs.hooks import HooksDialog
+from core.gui.dialogs.ipdialog import IpConfigDialog
+from core.gui.dialogs.macdialog import MacConfigDialog
 from core.gui.dialogs.observers import ObserverDialog
 from core.gui.dialogs.preferences import PreferencesDialog
 from core.gui.dialogs.servers import ServersDialog
@@ -26,6 +27,17 @@ if TYPE_CHECKING:
     from core.gui.app import Application
 
 MAX_FILES = 3
+OBSERVERS = {
+    "List Processes": "ps",
+    "Show Interfaces": "ip address",
+    "IPV4 Routes": "ip -4 ro",
+    "IPV6 Routes": "ip -6 ro",
+    "Listening Sockets": "netstat -tuwnl",
+    "IPv4 MFC Entries": "ip -4 mroute show",
+    "IPv6 MFC Entries": "ip -6 mroute show",
+    "Firewall Rules": "iptables -L",
+    "IPSec Policies": "setkey -DP",
+}
 
 
 class Menubar(tk.Menu):
@@ -173,8 +185,8 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(label="Auto Grid", command=self.click_autogrid)
-        menu.add_command(label="IP Addresses", state=tk.DISABLED)
-        menu.add_command(label="MAC Addresses", state=tk.DISABLED)
+        menu.add_command(label="IP Addresses", command=self.click_ip_config)
+        menu.add_command(label="MAC Addresses", command=self.click_mac_config)
         self.add_cascade(label="Tools", menu=menu)
 
     def create_observer_widgets_menu(self, widget_menu: tk.Menu) -> None:
@@ -465,3 +477,11 @@ class Menubar(tk.Menu):
     def click_edge_label_change(self) -> None:
         for edge in self.canvas.edges.values():
             edge.draw_labels()
+
+    def click_mac_config(self) -> None:
+        dialog = MacConfigDialog(self.app, self.app)
+        dialog.show()
+
+    def click_ip_config(self) -> None:
+        dialog = IpConfigDialog(self.app, self.app)
+        dialog.show()

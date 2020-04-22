@@ -31,17 +31,6 @@ if TYPE_CHECKING:
     from core.gui.app import Application
 
 GUI_SOURCE = "gui"
-OBSERVERS = {
-    "List Processes": "ps",
-    "Show Interfaces": "ip address",
-    "IPV4 Routes": "ip -4 ro",
-    "IPV6 Routes": "ip -6 ro",
-    "Listening Sockets": "netstat -tuwnl",
-    "IPv4 MFC Entries": "ip -4 mroute show",
-    "IPv6 MFC Entries": "ip -6 mroute show",
-    "Firewall Rules": "iptables -L",
-    "IPSec Policies": "setkey -DP",
-}
 
 
 class CoreServer:
