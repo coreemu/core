@@ -104,6 +104,7 @@ class ObserverDialog(Dialog):
             observer = Observer(name, cmd)
             self.app.core.custom_observers[name] = observer
             self.observers.insert(tk.END, name)
+            self.app.menubar.draw_custom_observers()
 
     def click_save(self):
         name = self.name.get()
@@ -129,6 +130,7 @@ class ObserverDialog(Dialog):
             self.observers.selection_clear(0, tk.END)
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
+            self.app.menubar.draw_custom_observers()
 
     def handle_observer_change(self, event: tk.Event):
         selection = self.observers.curselection()
