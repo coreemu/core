@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Callable
 from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
+from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
@@ -485,6 +486,8 @@ class Toolbar(ttk.Frame):
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
+        dialog = RunToolDialog(self.app, self.app)
+        dialog.show()
 
     def click_marker_button(self):
         logging.debug("Click on marker button")
