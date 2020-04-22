@@ -638,14 +638,14 @@ class CoreXmlReader:
         session_options = self.scenario.find("session_options")
         if session_options is None:
             return
-
-        configs = {}
-        for config in session_options.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        logging.info("reading session options: %s", configs)
-        self.session.options.set_configs(configs)
+        xml_config = {}
+        for configuration in session_options.iterchildren():
+            name = configuration.get("name")
+            value = configuration.get("value")
+            xml_config[name] = value
+        logging.info("reading session options: %s", xml_config)
+        config = self.session.options.get_configs()
+        config.update(xml_config)
 
     def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")
