@@ -32,20 +32,21 @@ class Subnets:
 
 
 class InterfaceManager:
-    def __init__(
-        self,
-        app: "Application",
-        ip4: str = "10.0.0.0",
-        ip4_mask: int = 24,
-        ip6: str = "2001::",
-        ip6_mask=64,
-    ) -> None:
+    def __init__(self, app: "Application") -> None:
         self.app = app
-        self.ip4_mask = ip4_mask
-        self.ip6_mask = ip6_mask
-        self.ip4_subnets = IPNetwork(f"{ip4}/{ip4_mask}")
-        self.ip6_subnets = IPNetwork(f"{ip6}/{ip6_mask}")
+        ip_config = self.app.guiconfig.get("ips", {})
+        ip4 = ip_config.get("ip4", "10.0.0.0")
+        ip6 = ip_config.get("ip6", "2001::")
+        self.ip4_mask = 24
+        self.ip6_mask = 64
+        self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
+        self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
         self.current_subnets = None
+
+    def update_ips(self, ip4: str, ip6: str) -> None:
+        self.reset()
+        self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
+        self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
 
     def next_subnets(self) -> Subnets:
         # define currently used subnets
