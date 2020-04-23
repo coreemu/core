@@ -100,9 +100,6 @@ class RunToolDialog(Dialog):
         command = self.cmd.get().strip()
         self.result.text.config(state=tk.NORMAL)
         self.result.text.delete("1.0", tk.END)
-        self.result.text.insert(
-            tk.END, f"> {command}\n" * len(self.node_list.listbox.curselection())
-        )
         for selection in self.node_list.listbox.curselection():
             node_name = self.node_list.listbox.get(selection)
             node_id = self.executable_nodes[node_name]
