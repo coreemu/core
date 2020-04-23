@@ -695,6 +695,7 @@ class Session:
         # generate name if not provided
         if not options:
             options = NodeOptions()
+            options.set_position(0, 0)
         name = options.name
         if not name:
             name = f"{node_class.__name__}{_id}"
@@ -809,9 +810,7 @@ class Session:
             node.setposition(x, y, None)
             node.position.set_geo(lon, lat, alt)
             self.broadcast_node(node)
-        else:
-            if has_empty_position:
-                x, y = 0, 0
+        elif not has_empty_position:
             node.setposition(x, y, None)
 
     def start_mobility(self, node_ids: List[int] = None) -> None:
