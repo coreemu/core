@@ -229,6 +229,7 @@ class ServiceConfigDialog(Dialog):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
+        tab.rowconfigure(2, weight=1)
         self.notebook.add(tab, text="Directories")
 
         label = ttk.Label(
@@ -238,15 +239,14 @@ class ServiceConfigDialog(Dialog):
         label.grid(row=0, column=0, sticky="ew")
         frame = ttk.Frame(tab, padding=FRAME_PAD)
         frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
         frame.grid(row=1, column=0, sticky="nsew")
         var = tk.StringVar(value="")
         self.directory_entry = ttk.Entry(frame, textvariable=var)
-        self.directory_entry.grid(row=0, column=0, sticky="ew")
+        self.directory_entry.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="...", command=self.find_directory_button)
         button.grid(row=0, column=1, sticky="ew")
         self.dir_list = ListboxScroll(tab)
-        self.dir_list.grid(row=2, column=0, sticky="nsew")
+        self.dir_list.grid(row=2, column=0, sticky="nsew", pady=PADY)
         self.dir_list.listbox.bind("<<ListboxSelect>>", self.directory_select)
         for d in self.temp_directories:
             self.dir_list.listbox.insert("end", d)
@@ -256,7 +256,7 @@ class ServiceConfigDialog(Dialog):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Add", command=self.add_directory)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.remove_directory)
         button.grid(row=0, column=1, sticky="ew")
 
