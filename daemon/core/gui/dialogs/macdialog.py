@@ -1,6 +1,10 @@
-from tkinter import ttk
+import tkinter as tk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING
 
+import netaddr
+
+from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 
@@ -11,6 +15,8 @@ if TYPE_CHECKING:
 class MacConfigDialog(Dialog):
     def __init__(self, master: "Application", app: "Application") -> None:
         super().__init__(master, app, "MAC Configuration", modal=True)
+        mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
+        self.mac_var = tk.StringVar(value=mac)
         self.draw()
 
     def draw(self) -> None:
@@ -32,7 +38,7 @@ class MacConfigDialog(Dialog):
         frame.grid(stick="ew", pady=PADY)
         label = ttk.Label(frame, text="Starting MAC")
         label.grid(row=0, column=0, sticky="ew", padx=PADX)
-        entry = ttk.Entry(frame)
+        entry = ttk.Entry(frame, textvariable=self.mac_var)
         entry.grid(row=0, column=1, sticky="ew")
 
         # draw buttons
@@ -46,4 +52,10 @@ class MacConfigDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save(self) -> None:
-        pass
+        mac = self.mac_var.get()
+        if not netaddr.valid_mac(mac):
+            messagebox.showerror("MAC Error", f"{mac} is an invalid mac")
+        else:
+            self.app.core.interfaces_manager.mac = netaddr.EUI(mac)
+            self.app.guiconfig["mac"] = mac
+            self.app.save_config()

@@ -483,7 +483,17 @@ class CoreClient:
             self.app.after(0, show_grpc_error, e, self.app, self.app)
 
     def start_session(self) -> core_pb2.StartSessionResponse:
+        self.interfaces_manager.reset_mac()
         nodes = [x.core_node for x in self.canvas_nodes.values()]
+        links = []
+        for edge in self.links.values():
+            link = edge.link
+            logging.info("link: %s", link)
+            if link.HasField("interface_one") and not link.interface_one.mac:
+                link.interface_one.mac = self.interfaces_manager.next_mac()
+            if link.HasField("interface_two") and not link.interface_two.mac:
+                link.interface_two.mac = self.interfaces_manager.next_mac()
+            links.append(link)
         links = [x.link for x in self.links.values()]
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
@@ -849,7 +859,6 @@ class CoreClient:
             ip6=ip6,
             ip6mask=ip6_mask,
         )
-        canvas_node.interfaces.append(interface)
         logging.debug(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
@@ -875,13 +884,11 @@ class CoreClient:
         src_interface = None
         if NodeUtils.is_container_node(src_node.type):
             src_interface = self.create_interface(canvas_src_node)
-            edge.src_interface = src_interface
             self.interface_to_edge[(src_node.id, src_interface.id)] = edge.token
 
         dst_interface = None
         if NodeUtils.is_container_node(dst_node.type):
             dst_interface = self.create_interface(canvas_dst_node)
-            edge.dst_interface = dst_interface
             self.interface_to_edge[(dst_node.id, dst_interface.id)] = edge.token
 
         link = core_pb2.Link(
@@ -891,6 +898,12 @@ class CoreClient:
             interface_one=src_interface,
             interface_two=dst_interface,
         )
+        if src_interface:
+            edge.src_interface = link.interface_one
+            canvas_src_node.interfaces.append(link.interface_one)
+        if dst_interface:
+            edge.dst_interface = link.interface_two
+            canvas_dst_node.interfaces.append(link.interface_two)
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)

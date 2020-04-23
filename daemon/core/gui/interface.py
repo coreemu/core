@@ -2,8 +2,10 @@ import logging
 import random
 from typing import TYPE_CHECKING, Set, Union
 
-from netaddr import IPNetwork
+import netaddr
+from netaddr import EUI, IPNetwork
 
+from core.gui import appconfig
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
@@ -35,18 +37,32 @@ class InterfaceManager:
     def __init__(self, app: "Application") -> None:
         self.app = app
         ip_config = self.app.guiconfig.get("ips", {})
-        ip4 = ip_config.get("ip4", "10.0.0.0")
-        ip6 = ip_config.get("ip6", "2001::")
+        ip4 = ip_config.get("ip4", appconfig.DEFAULT_IP4)
+        ip6 = ip_config.get("ip6", appconfig.DEFAULT_IP6)
         self.ip4_mask = 24
         self.ip6_mask = 64
         self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
         self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
+        mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
+        self.mac = EUI(mac)
+        self.current_mac = None
         self.current_subnets = None
 
     def update_ips(self, ip4: str, ip6: str) -> None:
         self.reset()
         self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
         self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
+
+    def reset_mac(self) -> None:
+        self.current_mac = self.mac
+        self.current_mac.dialect = netaddr.mac_unix_expanded
+
+    def next_mac(self) -> str:
+        mac = str(self.current_mac)
+        value = self.current_mac.value + 1
+        self.current_mac = EUI(value)
+        self.current_mac.dialect = netaddr.mac_unix_expanded
+        return mac
 
     def next_subnets(self) -> Subnets:
         # define currently used subnets

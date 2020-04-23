@@ -41,6 +41,7 @@ DEFAULT_IP4S = ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
 DEFAULT_IP4 = DEFAULT_IP4S[0]
 DEFAULT_IP6S = ["2001::", "2002::", "a::"]
 DEFAULT_IP6 = DEFAULT_IP6S[0]
+DEFAULT_MAC = "00:00:00:aa:00:00"
 
 
 class IndentDumper(yaml.Dumper):
@@ -113,6 +114,7 @@ def check_directory():
             "ip4s": DEFAULT_IP4S,
             "ip6s": DEFAULT_IP6S,
         },
+        "mac": DEFAULT_MAC,
     }
     save(config)
 

@@ -70,16 +70,12 @@ def check_ip4(parent, name: str, value: str) -> bool:
     return True
 
 
-def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry):
-    logging.info("mac auto clicked")
+def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry, mac: tk.StringVar) -> None:
     if is_auto.get():
-        logging.info("disabling mac")
-        entry.delete(0, tk.END)
-        entry.insert(tk.END, "")
+        mac.set("")
         entry.config(state=tk.DISABLED)
     else:
-        entry.delete(0, tk.END)
-        entry.insert(tk.END, "00:00:00:00:00:00")
+        mac.set("00:00:00:00:00:00")
         entry.config(state=tk.NORMAL)
 
 
@@ -252,7 +248,7 @@ class NodeConfigDialog(Dialog):
             mac = tk.StringVar(value=interface.mac)
             entry = ttk.Entry(tab, textvariable=mac, state=state)
             entry.grid(row=row, column=2, sticky="ew")
-            func = partial(mac_auto, is_auto, entry)
+            func = partial(mac_auto, is_auto, entry, mac)
             checkbutton.config(command=func)
             row += 1
 
@@ -283,7 +279,7 @@ class NodeConfigDialog(Dialog):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        button = ttk.Button(frame, text="Apply", command=self.config_apply)
+        button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, padx=PADX, sticky="ew")
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
@@ -302,7 +298,7 @@ class NodeConfigDialog(Dialog):
             self.image_button.config(image=self.image)
             self.image_file = file_path
 
-    def config_apply(self):
+    def click_apply(self):
         error = False
 
         # update core node
@@ -328,7 +324,6 @@ class NodeConfigDialog(Dialog):
             ip4_net = data.ip4.get()
             if not check_ip4(self, interface.name, ip4_net):
                 error = True
-                data.ip4.set(f"{interface.ip4}/{interface.ip4mask}")
                 break
             if ip4_net:
                 ip4, ip4mask = ip4_net.split("/")
@@ -342,7 +337,6 @@ class NodeConfigDialog(Dialog):
             ip6_net = data.ip6.get()
             if not check_ip6(self, interface.name, ip6_net):
                 error = True
-                data.ip6.set(f"{interface.ip6}/{interface.ip6mask}")
                 break
             if ip6_net:
                 ip6, ip6mask = ip6_net.split("/")
@@ -353,13 +347,13 @@ class NodeConfigDialog(Dialog):
             interface.ip6mask = ip6mask
 
             mac = data.mac.get()
-            if mac and not netaddr.valid_mac(mac):
+            auto_mac = data.is_auto.get()
+            if not auto_mac and not netaddr.valid_mac(mac):
                 title = f"MAC Error for {interface.name}"
                 messagebox.showerror(title, "Invalid MAC Address")
                 error = True
-                data.mac.set(interface.mac)
                 break
-            else:
+            elif not auto_mac:
                 mac = netaddr.EUI(mac)
                 mac.dialect = netaddr.mac_unix_expanded
                 interface.mac = str(mac)
