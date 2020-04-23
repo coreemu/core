@@ -1493,6 +1493,11 @@ class Session:
         # initialize distributed tunnels
         self.distributed.start()
 
+        # initialize wlan loss
+        for node in self.nodes.values():
+            if isinstance(node, WlanNode):
+                node.initialize_loss()
+
         # instantiate will be invoked again upon emane configure
         if self.emane.startup() == self.emane.NOT_READY:
             return []

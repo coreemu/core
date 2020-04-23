@@ -59,6 +59,7 @@ class InterfaceManager:
 
     def next_mac(self) -> str:
         mac = str(self.current_mac)
+        logging.info("mac(%s) value(%s)", self.current_mac, self.current_mac.value)
         value = self.current_mac.value + 1
         self.current_mac = EUI(value)
         self.current_mac.dialect = netaddr.mac_unix_expanded

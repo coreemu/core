@@ -288,7 +288,6 @@ class CoreNetwork(CoreNetworkBase):
         self.has_ebtables_chain = False
         if start:
             self.startup()
-            ebq.startupdateloop(self)
 
     def host_cmd(
         self,
@@ -335,16 +334,8 @@ class CoreNetwork(CoreNetworkBase):
         if not self.up:
             return
 
-        ebq.stopupdateloop(self)
-
         try:
             self.net_client.delete_bridge(self.brname)
-            if self.has_ebtables_chain:
-                cmds = [
-                    f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
-                    f"{EBTABLES_BIN} -X {self.brname}",
-                ]
-                ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
 
@@ -421,8 +412,6 @@ class CoreNetwork(CoreNetworkBase):
                 return
             self._linked[netif1][netif2] = False
 
-        ebq.ebchange(self)
-
     def link(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
         """
         Link two interfaces together, resulting in adding or removing
@@ -436,8 +425,6 @@ class CoreNetwork(CoreNetworkBase):
             if self.linked(netif1, netif2):
                 return
             self._linked[netif1][netif2] = True
-
-        ebq.ebchange(self)
 
     def linkconfig(
         self,
@@ -1052,6 +1039,8 @@ class WlanNode(CoreNetwork):
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.model = None
         self.mobility = None
+        self.loss_maps = {}
+        self.bands = None
 
     def startup(self) -> None:
         """
@@ -1061,7 +1050,88 @@ class WlanNode(CoreNetwork):
         """
         super().startup()
         self.net_client.disable_mac_learning(self.brname)
-        ebq.ebchange(self)
+
+    def initialize_loss(self) -> None:
+        logging.info("initializing loss")
+
+        # get band count, must be at least 3
+        self.bands = len(self.netifs())
+        if self.bands < 3:
+            self.bands = 3
+        logging.info("wlan qdisc prio with bands: %s", self.bands)
+
+        # initialize loss rules
+        for netif in self.netifs():
+            node = netif.node
+            name = netif.localname
+            logging.info("connected nodes: %s - %s", node.name, name)
+
+            # setup root handler for wlan interface
+            self.host_cmd(
+                f"tc qdisc add dev {name} root handle 1: " f"prio bands {self.bands}"
+            )
+
+            # setup filter rules and qdisc for each other node
+            index = 1
+            for other_netif in self.netifs():
+                if netif == other_netif:
+                    continue
+                other_name = other_netif.localname
+                logging.info("setup rules from %s to %s", name, other_name)
+
+                # initialize filter rules for all other nodes and catch all
+                mac = other_netif.hwaddr
+                qdisc_index = self._qdisc_index(index)
+                logging.info(
+                    "setup filter to %s for src mac(%s) index(%s) qdisc(%s)",
+                    other_name,
+                    mac,
+                    index,
+                    qdisc_index,
+                )
+
+                # save loss map
+                loss_map = self.loss_maps.setdefault(name, {})
+                loss_map[other_name] = index
+                self.host_cmd(
+                    f"tc filter add dev {name} protocol all parent 1: "
+                    f"prio 1 u32 match eth src {mac} flowid 1:{index}"
+                )
+                self.host_cmd(
+                    f"tc qdisc add dev {name} parent 1:{index} "
+                    f"handle {qdisc_index}: netem loss 0.1%"
+                )
+                index += 1
+
+            # setup catch all
+            self.host_cmd(
+                f"tc filter add dev {name} protocol all parent 1: "
+                f"prio 0 u32 match u32 0 0 flowid 1:{index}"
+            )
+            qdisc_index = self._qdisc_index(index)
+            self.host_cmd(
+                f"tc qdisc add dev {name} parent 1:{index} handle {qdisc_index}: sfq"
+            )
+
+        import pprint
+
+        pretty_map = pprint.pformat(self.loss_maps, indent=4, compact=False)
+        logging.info("wlan loss map:\n%s", pretty_map)
+
+    def _qdisc_index(self, index: int) -> int:
+        return self.bands + index
+
+    def change_loss(
+        self, netif: CoreInterface, netif2: CoreInterface, loss: float
+    ) -> None:
+        name = netif.localname
+        other_name = netif2.localname
+        index = self.loss_maps[name][other_name]
+        qdisc_index = self._qdisc_index(index)
+        self.host_cmd(
+            f"tc qdisc change dev {name} parent 1:{index}"
+            f" handle {qdisc_index}: netem loss {loss}%"
+        )
 
     def attach(self, netif: CoreInterface) -> None:
         """

@@ -363,14 +363,12 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         x, y, z = netif.node.position.get()
-        self._netifslock.acquire()
-        self._netifs[netif] = (x, y, z)
-        if x is None or y is None:
-            self._netifslock.release()
-            return
-        for netif2 in self._netifs:
-            self.calclink(netif, netif2)
-        self._netifslock.release()
+        with self._netifslock:
+            self._netifs[netif] = (x, y, z)
+            if x is None or y is None:
+                return
+            for netif2 in self._netifs:
+                self.calclink(netif, netif2)
 
     position_callback = set_position
 
@@ -407,35 +405,43 @@ class BasicRangeModel(WirelessModel):
         :param netif2: interface two
         :return: nothing
         """
-        if netif == netif2:
+        if not self.range:
             return
 
+        if netif == netif2:
+            return
         try:
             x, y, z = self._netifs[netif]
             x2, y2, z2 = self._netifs[netif2]
-
             if x2 is None or y2 is None:
                 return
-
             d = self.calcdistance((x, y, z), (x2, y2, z2))
 
-            # ordering is important, to keep the wlan._linked dict organized
+            # calculate loss
+            start_point = self.range / 2
+            start_value = max(d - start_point, 0)
+            loss = max(start_value / start_point, 0.001)
+            loss = min(loss, 1.0) * 100
+            self.wlan.change_loss(netif, netif2, loss)
+            self.wlan.change_loss(netif2, netif, loss)
+
+            # # ordering is important, to keep the wlan._linked dict organized
             a = min(netif, netif2)
             b = max(netif, netif2)
-
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
-
             if d > self.range:
                 if linked:
                     logging.debug("was linked, unlinking")
                     self.wlan.unlink(a, b)
-                    self.sendlinkmsg(a, b, unlink=True)
+                    self.sendlinkmsg(MessageFlags.DELETE, a, b)
             else:
                 if not linked:
                     logging.debug("was not linked, linking")
                     self.wlan.link(a, b)
-                    self.sendlinkmsg(a, b)
+                    self.sendlinkmsg(MessageFlags.ADD, a, b, loss=loss)
+                else:
+                    self.sendlinkmsg(MessageFlags.NONE, a, b, loss=loss)
         except KeyError:
             logging.exception("error getting interfaces during calclinkS")
 
@@ -472,7 +478,6 @@ class BasicRangeModel(WirelessModel):
         self.delay = self._get_config(self.delay, config, "delay")
         self.loss = self._get_config(self.loss, config, "error")
         self.jitter = self._get_config(self.jitter, config, "jitter")
-        self.setlinkparams()
 
     def create_link_data(
         self,
@@ -499,22 +504,26 @@ class BasicRangeModel(WirelessModel):
         )
 
     def sendlinkmsg(
-        self, netif: CoreInterface, netif2: CoreInterface, unlink: bool = False
+        self,
+        message_type: MessageFlags,
+        netif: CoreInterface,
+        netif2: CoreInterface,
+        loss: float = None,
     ) -> None:
         """
         Send a wireless link/unlink API message to the GUI.
 
+        :param message_type: type of link message to send
         :param netif: interface one
         :param netif2: interface two
-        :param unlink: unlink or not
+        :param loss: link loss value
         :return: nothing
         """
-        if unlink:
-            message_type = MessageFlags.DELETE
-        else:
-            message_type = MessageFlags.ADD
-
+        label = None
+        if loss is not None:
+            label = f"{loss:.2f}%"
         link_data = self.create_link_data(netif, netif2, message_type)
+        link_data.label = label
         self.session.broadcast_link(link_data)
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
