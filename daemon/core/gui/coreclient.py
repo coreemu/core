@@ -487,14 +487,13 @@ class CoreClient:
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = []
         for edge in self.links.values():
-            link = edge.link
-            logging.info("link: %s", link)
+            link = core_pb2.Link()
+            link.CopyFrom(edge.link)
             if link.HasField("interface_one") and not link.interface_one.mac:
                 link.interface_one.mac = self.interfaces_manager.next_mac()
             if link.HasField("interface_two") and not link.interface_two.mac:
                 link.interface_two.mac = self.interfaces_manager.next_mac()
             links.append(link)
-        links = [x.link for x in self.links.values()]
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()

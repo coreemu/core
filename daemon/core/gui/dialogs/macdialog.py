@@ -59,3 +59,4 @@ class MacConfigDialog(Dialog):
             self.app.core.interfaces_manager.mac = netaddr.EUI(mac)
             self.app.guiconfig["mac"] = mac
             self.app.save_config()
+            self.destroy()
