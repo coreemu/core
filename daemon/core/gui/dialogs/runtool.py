@@ -1,87 +1,78 @@
 import tkinter as tk
 from tkinter import ttk
 
-from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
-from core.gui.themes import FRAME_PAD, PADY
+from core.gui.nodeutils import NodeUtils
+from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
 
 class RunToolDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app) -> None:
         super().__init__(master, app, "Run Tool", modal=True)
-
         self.cmd = tk.StringVar(value="ps ax")
         self.app = app
         self.result = None
         self.node_list = None
         self.executable_nodes = {}
-
         self.store_nodes()
         self.draw()
 
-    def store_nodes(self):
+    def store_nodes(self) -> None:
         """
         store all CORE nodes (nodes that execute commands) from all existing nodes
         """
         for nid, node in self.app.core.canvas_nodes.items():
-            if node.core_node.type == core_pb2.NodeType.DEFAULT:
+            if NodeUtils.is_container_node(node.core_node.type):
                 self.executable_nodes[node.core_node.name] = nid
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.rowconfigure(0, weight=1)
-        self.top.columnconfigure(0, weight=5)
-        self.top.columnconfigure(1, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_command_frame()
         self.draw_nodes_frame()
-        return
 
-    def draw_command_frame(self):
+    def draw_command_frame(self) -> None:
         # the main frame
         frame = ttk.Frame(self.top)
-        frame.grid(row=0, column=0, sticky="nsew")
+        frame.grid(row=0, column=0, sticky="nsew", padx=PADX)
         frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
 
-        labeled_frame = ttk.LabelFrame(frame, text="Command line", padding=FRAME_PAD)
-        labeled_frame.grid(row=0, column=0, sticky="nsew", pady=PADY)
+        labeled_frame = ttk.LabelFrame(frame, text="Command", padding=FRAME_PAD)
+        labeled_frame.grid(sticky="ew", pady=PADY)
         labeled_frame.rowconfigure(0, weight=1)
         labeled_frame.columnconfigure(0, weight=1)
         entry = ttk.Entry(labeled_frame, textvariable=self.cmd)
         entry.grid(sticky="ew")
 
         # results frame
-        labeled_frame = ttk.LabelFrame(frame, text="Command results", padding=FRAME_PAD)
-        labeled_frame.grid(row=1, column=0, sticky="nsew", pady=PADY)
+        labeled_frame = ttk.LabelFrame(frame, text="Output", padding=FRAME_PAD)
+        labeled_frame.grid(sticky="nsew", pady=PADY)
         labeled_frame.columnconfigure(0, weight=1)
-        labeled_frame.rowconfigure(0, weight=5)
-        labeled_frame.rowconfigure(1, weight=1)
+        labeled_frame.rowconfigure(0, weight=1)
 
         self.result = CodeText(labeled_frame)
         self.result.text.config(state=tk.DISABLED, height=15)
-        self.result.grid(sticky="nsew")
-        button_frame = ttk.Frame(labeled_frame, padding=FRAME_PAD)
+        self.result.grid(sticky="nsew", pady=PADY)
+        button_frame = ttk.Frame(labeled_frame)
         button_frame.grid(sticky="nsew")
         button_frame.columnconfigure(0, weight=1)
         button_frame.columnconfigure(1, weight=1)
         button = ttk.Button(button_frame, text="Run", command=self.click_run)
-        button.grid(sticky="nsew")
+        button.grid(sticky="ew", padx=PADX)
         button = ttk.Button(button_frame, text="Close", command=self.destroy)
-        button.grid(row=0, column=1, sticky="nsew")
+        button.grid(row=0, column=1, sticky="ew")
 
-    def draw_nodes_frame(self):
-        labeled_frame = ttk.LabelFrame(
-            self.top, text="Run on these nodes", padding=FRAME_PAD
-        )
+    def draw_nodes_frame(self) -> None:
+        labeled_frame = ttk.LabelFrame(self.top, text="Nodes", padding=FRAME_PAD)
         labeled_frame.grid(row=0, column=1, sticky="nsew")
         labeled_frame.columnconfigure(0, weight=1)
-        labeled_frame.rowconfigure(0, weight=5)
-        labeled_frame.rowconfigure(1, weight=1)
+        labeled_frame.rowconfigure(0, weight=1)
 
         self.node_list = ListboxScroll(labeled_frame)
         self.node_list.listbox.config(selectmode=tk.MULTIPLE)
-        self.node_list.grid(sticky="nsew")
+        self.node_list.grid(sticky="nsew", pady=PADY)
         for n in sorted(self.executable_nodes.keys()):
             self.node_list.listbox.insert(tk.END, n)
 
@@ -91,19 +82,20 @@ class RunToolDialog(Dialog):
         button_frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(button_frame, text="All", command=self.click_all)
-        button.grid(sticky="nsew")
+        button.grid(sticky="nsew", padx=PADX)
         button = ttk.Button(button_frame, text="None", command=self.click_none)
         button.grid(row=0, column=1, sticky="nsew")
 
-    def click_all(self):
+    def click_all(self) -> None:
         self.node_list.listbox.selection_set(0, self.node_list.listbox.size() - 1)
 
-    def click_none(self):
+    def click_none(self) -> None:
         self.node_list.listbox.selection_clear(0, self.node_list.listbox.size() - 1)
 
-    def click_run(self):
+    def click_run(self) -> None:
         """
-        run the command on each of the selected nodes and display the output to result text box
+        Run the command on each of the selected nodes and display the output to result
+        text box.
         """
         command = self.cmd.get().strip()
         self.result.text.config(state=tk.NORMAL)
