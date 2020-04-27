@@ -1037,6 +1037,7 @@ class WlanNode(CoreNetwork):
         """
         super().__init__(session, _id, name, start, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
+        self.initialized = False
         self.model = None
         self.mobility = None
         self.loss_maps = {}
@@ -1051,14 +1052,12 @@ class WlanNode(CoreNetwork):
         super().startup()
         self.net_client.disable_mac_learning(self.brname)
 
-    def initialize_loss(self) -> None:
-        logging.info("initializing loss")
+    def _initialize_tc(self) -> None:
+        logging.info("setting wlan configuration: %s", self.model.bw)
 
-        # get band count, must be at least 3
+        # initial settings
         self.bands = len(self.netifs())
-        if self.bands < 3:
-            self.bands = 3
-        logging.info("wlan qdisc prio with bands: %s", self.bands)
+        self.loss_maps.clear()
 
         # initialize loss rules
         for netif in self.netifs():
@@ -1068,58 +1067,71 @@ class WlanNode(CoreNetwork):
 
             # setup root handler for wlan interface
             self.host_cmd(
-                f"tc qdisc add dev {name} root handle 1: " f"prio bands {self.bands}"
+                f"tc qdisc add dev {name} root handle 1: htb default {self.bands}"
             )
 
             # setup filter rules and qdisc for each other node
-            index = 1
+            index = 2
             for other_netif in self.netifs():
                 if netif == other_netif:
                     continue
                 other_name = other_netif.localname
-                logging.info("setup rules from %s to %s", name, other_name)
-
-                # initialize filter rules for all other nodes and catch all
                 mac = other_netif.hwaddr
-                qdisc_index = self._qdisc_index(index)
                 logging.info(
-                    "setup filter to %s for src mac(%s) index(%s) qdisc(%s)",
-                    other_name,
+                    "tc filter from(%s) to(%s) for src mac(%s) index(%s)",
+                    node.name,
+                    other_netif.node.name,
                     mac,
                     index,
-                    qdisc_index,
                 )
-
                 # save loss map
                 loss_map = self.loss_maps.setdefault(name, {})
                 loss_map[other_name] = index
-                self.host_cmd(
-                    f"tc filter add dev {name} protocol all parent 1: "
-                    f"prio 1 u32 match eth src {mac} flowid 1:{index}"
-                )
-                self.host_cmd(
-                    f"tc qdisc add dev {name} parent 1:{index} "
-                    f"handle {qdisc_index}: netem loss 0.1%"
-                )
+                self._tc_filter(name, index, mac)
                 index += 1
 
             # setup catch all
-            self.host_cmd(
-                f"tc filter add dev {name} protocol all parent 1: "
-                f"prio 0 u32 match u32 0 0 flowid 1:{index}"
-            )
-            qdisc_index = self._qdisc_index(index)
-            self.host_cmd(
-                f"tc qdisc add dev {name} parent 1:{index} handle {qdisc_index}: sfq"
-            )
+            loss_map = self.loss_maps.setdefault(name, {})
+            loss_map["catch"] = index
+            self._tc_catch_all(name, index)
 
         import pprint
 
         pretty_map = pprint.pformat(self.loss_maps, indent=4, compact=False)
         logging.info("wlan loss map:\n%s", pretty_map)
 
-    def _qdisc_index(self, index: int) -> int:
-        return self.bands + index
+    def _tc_update_rate(self):
+        for name, loss_map in self.loss_maps.items():
+            for index in loss_map.values():
+                self.host_cmd(
+                    f"tc class change dev {name} parent 1: classid 1:{index} "
+                    f"htb rate {self.model.bw}"
+                )
+
+    def _tc_catch_all(self, name: str, index: int) -> None:
+        self.host_cmd(
+            f"tc class add dev {name} parent 1: classid 1:{index} "
+            f"htb rate {self.model.bw}"
+        )
+        self.host_cmd(
+            f"tc filter add dev {name} protocol all parent 1: "
+            f"prio 0 u32 match u32 0 0 flowid 1:{index}"
+        )
+        self.host_cmd(f"tc qdisc add dev {name} parent 1:{index} handle {index}: sfq")
+
+    def _tc_filter(self, name: str, index: int, mac: str) -> None:
+        self.host_cmd(
+            f"tc class add dev {name} parent 1: classid 1:{index} "
+            f"htb rate {self.model.bw}"
+        )
+        self.host_cmd(
+            f"tc filter add dev {name} protocol all parent 1: "
+            f"prio 1 u32 match eth src {mac} flowid 1:{index}"
+        )
+        self.host_cmd(
+            f"tc qdisc add dev {name} parent 1:{index} "
+            f"handle {index}: netem loss 0.01%"
+        )
 
     def change_loss(
         self, netif: CoreInterface, netif2: CoreInterface, loss: float
@@ -1127,10 +1139,10 @@ class WlanNode(CoreNetwork):
         name = netif.localname
         other_name = netif2.localname
         index = self.loss_maps[name][other_name]
-        qdisc_index = self._qdisc_index(index)
         self.host_cmd(
             f"tc qdisc change dev {name} parent 1:{index}"
-            f" handle {qdisc_index}: netem loss {loss}%"
+            f" handle {index}: netem loss {loss}%"
+            f" delay {self.model.delay}us {self.model.jitter}us 25%"
         )
 
     def attach(self, netif: CoreInterface) -> None:
@@ -1176,6 +1188,11 @@ class WlanNode(CoreNetwork):
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
         self.model.update_config(config)
+        if not self.initialized:
+            self.initialized = True
+            self._initialize_tc()
+        else:
+            self._tc_update_rate()
         for netif in self.netifs():
             netif.setposition()
 
