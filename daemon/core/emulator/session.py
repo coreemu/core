@@ -357,7 +357,9 @@ class Session:
                     )
                     interface = create_interface(node_one, net_one, interface_one)
                     node_one_interface = interface
-                    link_config(net_one, interface, link_options)
+                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
+                    if not wireless_net:
+                        link_config(net_one, interface, link_options)
 
                 # network to node
                 if node_two and net_one:
@@ -368,7 +370,8 @@ class Session:
                     )
                     interface = create_interface(node_two, net_one, interface_two)
                     node_two_interface = interface
-                    if not link_options.unidirectional:
+                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
+                    if not link_options.unidirectional and not wireless_net:
                         link_config(net_one, interface, link_options)
 
                 # network to network
