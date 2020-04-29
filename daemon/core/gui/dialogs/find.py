@@ -7,7 +7,7 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 
 
 class FindDialog(Dialog):
-    def __init__(self, master, app):
+    def __init__(self, master, app) -> None:
         super().__init__(master, app, "Find", modal=True)
 
         self.find_text = tk.StringVar(value="")
@@ -16,7 +16,7 @@ class FindDialog(Dialog):
         self.protocol("WM_DELETE_WINDOW", self.close_dialog)
         self.bind("<Return>", self.find_node)
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=5)
@@ -75,15 +75,14 @@ class FindDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.close_dialog)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
-    def clear_treeview_items(self):
+    def clear_treeview_items(self) -> None:
         """
         clear all items in the treeview
-        :return:
         """
         for i in list(self.tree.get_children("")):
             self.tree.delete(i)
 
-    def find_node(self, event=None):
+    def find_node(self, _event: tk.Event = None) -> None:
         """
         Query nodes that have the same node name as our search key,
         display results to tree view
@@ -105,11 +104,16 @@ class FindDialog(Dialog):
         if results:
             self.tree.selection_set(results[0])
 
-    def close_dialog(self):
+    def close_dialog(self) -> None:
         self.app.canvas.delete("find")
         self.destroy()
 
     def click_select(self, _event: tk.Event = None) -> None:
+        """
+        find the node that matches search criteria, circle around that node
+        and scroll the x and y scrollbar to be able to see the node if
+        it is out of sight
+        """
         item = self.tree.selection()
         if item:
             self.app.canvas.delete("find")
@@ -137,7 +141,7 @@ class FindDialog(Dialog):
             # calculate the node's location
             # (as fractions of white canvas's width and height)
             # and instantly scroll the x and y scrollbar to that location
-
+            # looks a bit ugly when zoom too much
             xscroll_fraction = abs(x0 - _x) / abs(x0 - x1)
             yscroll_fraction = abs(y0 - _y) / abs(y0 - y1)
             self.app.canvas.xview_moveto(xscroll_fraction)
