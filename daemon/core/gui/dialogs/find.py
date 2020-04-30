@@ -141,8 +141,14 @@ class FindDialog(Dialog):
             # calculate the node's location
             # (as fractions of white canvas's width and height)
             # and instantly scroll the x and y scrollbar to that location
-            # looks a bit ugly when zoom too much
             xscroll_fraction = abs(x0 - _x) / abs(x0 - x1)
             yscroll_fraction = abs(y0 - _y) / abs(y0 - y1)
+            # scroll a little more to the left or a little bit up so that the node
+            # doesn't always fall in the most top-left corner
+            for i in range(2):
+                if xscroll_fraction > 0.05:
+                    xscroll_fraction = xscroll_fraction - 0.05
+                if yscroll_fraction > 0.05:
+                    yscroll_fraction = yscroll_fraction - 0.05
             self.app.canvas.xview_moveto(xscroll_fraction)
             self.app.canvas.yview_moveto(yscroll_fraction)
