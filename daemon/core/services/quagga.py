@@ -347,17 +347,21 @@ class Ospfv2(QuaggaService):
         return cfg
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
         if cls.rj45check(ifc):
             return cfg
         cfg += cls.ptpcheck(ifc)
-        return cfg + """\
+        return (
+            cfg
+            + """\
   ip ospf hello-interval 2
   ip ospf dead-interval 6
   ip ospf retransmit-interval 5
 """
+        )
+
 
 class Ospfv3(QuaggaService):
     """
