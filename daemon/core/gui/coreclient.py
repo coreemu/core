@@ -815,6 +815,10 @@ class CoreClient:
         if NodeUtils.is_custom(node_type, model):
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
+        else:
+            services = self.default_services.get(model, None)
+            if services:
+                node.services[:] = services
         logging.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,

@@ -153,18 +153,19 @@ class NodeServiceDialog(Dialog):
             )
 
     def click_save(self):
-        # if node is custom type or current services are not the default services then
-        # set core node services and add node to modified services node set
+        core_node = self.canvas_node.core_node
+        # custom type node or CORE node with custom services
         if (
-            self.canvas_node.core_node.model not in self.app.core.default_services
-            or self.current_services
-            != self.app.core.default_services[self.canvas_node.core_node.model]
+            core_node.model not in self.app.core.default_services
+            or self.current_services != self.app.core.default_services[core_node.model]
         ):
-            self.canvas_node.core_node.services[:] = self.current_services
-            self.app.core.modified_service_nodes.add(self.canvas_node.core_node.id)
+            core_node.services[:] = self.current_services
+            self.app.core.modified_service_nodes.add(core_node.id)
+        # custom services CORE node but modified back to having default services
+        # or just CORE nodes that don't get any change
         else:
-            if len(self.canvas_node.core_node.services) > 0:
-                self.canvas_node.core_node.services[:] = []
+            core_node.services[:] = self.current_services
+            self.app.core.modified_service_nodes.discard(core_node.id)
         self.destroy()
 
     def click_cancel(self):
