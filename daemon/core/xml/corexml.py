@@ -13,7 +13,7 @@ from core.errors import CoreXmlError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
-from core.nodes.network import CtrlNet
+from core.nodes.network import CtrlNet, WlanNode
 from core.services.coreservices import CoreService
 
 if TYPE_CHECKING:
@@ -559,26 +559,31 @@ class CoreXmlWriter:
             )
             link_element.append(interface_two)
 
-        # check for options
-        options = etree.Element("options")
-        add_attribute(options, "delay", link_data.delay)
-        add_attribute(options, "bandwidth", link_data.bandwidth)
-        add_attribute(options, "per", link_data.per)
-        add_attribute(options, "dup", link_data.dup)
-        add_attribute(options, "jitter", link_data.jitter)
-        add_attribute(options, "mer", link_data.mer)
-        add_attribute(options, "burst", link_data.burst)
-        add_attribute(options, "mburst", link_data.mburst)
-        add_attribute(options, "type", link_data.link_type)
-        add_attribute(options, "gui_attributes", link_data.gui_attributes)
-        add_attribute(options, "unidirectional", link_data.unidirectional)
-        add_attribute(options, "emulation_id", link_data.emulation_id)
-        add_attribute(options, "network_id", link_data.network_id)
-        add_attribute(options, "key", link_data.key)
-        add_attribute(options, "opaque", link_data.opaque)
-        add_attribute(options, "session", link_data.session)
-        if options.items():
-            link_element.append(options)
+        # check for options, don't write for emane/wlan links
+        node_one = self.session.get_node(link_data.node1_id)
+        node_two = self.session.get_node(link_data.node2_id)
+        is_node_one_wireless = isinstance(node_one, (WlanNode, EmaneNet))
+        is_node_two_wireless = isinstance(node_two, (WlanNode, EmaneNet))
+        if not any([is_node_one_wireless, is_node_two_wireless]):
+            options = etree.Element("options")
+            add_attribute(options, "delay", link_data.delay)
+            add_attribute(options, "bandwidth", link_data.bandwidth)
+            add_attribute(options, "per", link_data.per)
+            add_attribute(options, "dup", link_data.dup)
+            add_attribute(options, "jitter", link_data.jitter)
+            add_attribute(options, "mer", link_data.mer)
+            add_attribute(options, "burst", link_data.burst)
+            add_attribute(options, "mburst", link_data.mburst)
+            add_attribute(options, "type", link_data.link_type)
+            add_attribute(options, "gui_attributes", link_data.gui_attributes)
+            add_attribute(options, "unidirectional", link_data.unidirectional)
+            add_attribute(options, "emulation_id", link_data.emulation_id)
+            add_attribute(options, "network_id", link_data.network_id)
+            add_attribute(options, "key", link_data.key)
+            add_attribute(options, "opaque", link_data.opaque)
+            add_attribute(options, "session", link_data.session)
+            if options.items():
+                link_element.append(options)
 
         return link_element
 
