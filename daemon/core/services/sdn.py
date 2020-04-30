@@ -77,9 +77,15 @@ class OvsService(SdnService):
             # add interfaces to bridge
             # Make port numbers explicit so they're easier to follow in reading the script
             cfg += "## Add the CORE interface to the switch\n"
-            cfg += "ovs-vsctl add-port ovsbr0 eth%s -- set Interface eth%s ofport_request=%d\n" % (ifnum, ifnum, portnum)
+            cfg += (
+                "ovs-vsctl add-port ovsbr0 eth%s -- set Interface eth%s ofport_request=%d\n"
+                % (ifnum, ifnum, portnum)
+            )
             cfg += "## And then add its sibling veth interface\n"
-            cfg += "ovs-vsctl add-port ovsbr0 sw%s -- set Interface sw%s ofport_request=%d\n" % (ifnum, ifnum, portnum+1)
+            cfg += (
+                "ovs-vsctl add-port ovsbr0 sw%s -- set Interface sw%s ofport_request=%d\n"
+                % (ifnum, ifnum, portnum + 1)
+            )
             cfg += "## start them up so we can send/receive data\n"
             cfg += "ovs-ofctl mod-port ovsbr0 eth%s up\n" % ifnum
             cfg += "ovs-ofctl mod-port ovsbr0 sw%s up\n" % ifnum
@@ -100,8 +106,14 @@ class OvsService(SdnService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "## Take the data from the CORE interface and put it on the veth and vice versa\n"
-            cfg += "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n" % (portnum, portnum + 1)
-            cfg += "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n" % (portnum + 1, portnum)
+            cfg += (
+                "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"
+                % (portnum, portnum + 1)
+            )
+            cfg += (
+                "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"
+                % (portnum + 1, portnum)
+            )
             portnum += 2
 
         return cfg
