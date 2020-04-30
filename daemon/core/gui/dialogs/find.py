@@ -42,7 +42,7 @@ class FindDialog(Dialog):
             show="headings",
             selectmode=tk.BROWSE,
         )
-        self.tree.grid(sticky="nsew")
+        self.tree.grid(sticky="nsew", pady=PADY)
         style = ttk.Style()
         heading_size = int(self.app.guiconfig["scale"] * 10)
         style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
@@ -94,10 +94,14 @@ class FindDialog(Dialog):
         ):
             name = node.core_node.name
             if not node_name or node_name == name:
-                location = f"<{node.core_node.position.x}, {node.core_node.position.y}>"
+                pos_x = round(node.core_node.position.x, 1)
+                pos_y = round(node.core_node.position.y, 1)
                 # TODO I am not sure what to insert for Detail column, leaving in blank for now
                 self.tree.insert(
-                    "", tk.END, text=str(node_id), values=(node_id, name, location, "")
+                    "",
+                    tk.END,
+                    text=str(node_id),
+                    values=(node_id, name, f"<{pos_x}, {pos_y}>", ""),
                 )
 
         results = self.tree.get_children("")
