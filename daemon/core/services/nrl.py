@@ -2,28 +2,27 @@
 nrl.py: defines services provided by NRL protolib tools hosted here:
     http://www.nrl.navy.mil/itd/ncs/products
 """
+import netaddr
 
-from core.misc import utils
-from core.misc.ipaddress import Ipv4Prefix
-from core.service import CoreService
+from core import utils
+from core.services.coreservices import CoreService
 
 
 class NrlService(CoreService):
     """
     Parent class for NRL services. Defines properties and methods
     common to NRL's routing daemons.
-    """""
-    _name = None
-    _group = "ProtoSvc"
-    _depends = ()
-    _dirs = ()
-    _configs = ()
-    _startindex = 45
-    _startup = ()
-    _shutdown = ()
+    """
+
+    name = None
+    group = "ProtoSvc"
+    dirs = ()
+    configs = ()
+    startup = ()
+    shutdown = ()
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         return ""
 
     @staticmethod
@@ -34,27 +33,26 @@ class NrlService(CoreService):
         interface's prefix length, so e.g. '/32' can turn into '/24'.
         """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    addr = a.split('/')[0]
-                    pre = Ipv4Prefix("%s/%s" % (addr, prefixlen))
-                    return str(pre)
+                a = a.split("/")[0]
+                if netaddr.valid_ipv4(a):
+                    return f"{a}/{prefixlen}"
         # raise ValueError,  "no IPv4 address found"
         return "0.0.0.0/%s" % prefixlen
 
 
 class MgenSinkService(NrlService):
-    _name = "MGEN_Sink"
-    _configs = ("sink.mgen",)
-    _startindex = 5
-    _startup = ("mgen input sink.mgen",)
-    _validate = ("pidof mgen",)
-    _shutdown = ("killall mgen",)
+    name = "MGEN_Sink"
+    executables = ("mgen",)
+    configs = ("sink.mgen",)
+    startup = ("mgen input sink.mgen",)
+    validate = ("pidof mgen",)
+    shutdown = ("killall mgen",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         cfg = "0.0 LISTEN UDP 5000\n"
         for ifc in node.netifs():
             name = utils.sysctl_devname(ifc.name)
@@ -62,57 +60,60 @@ class MgenSinkService(NrlService):
         return cfg
 
     @classmethod
-    def getstartup(cls, node, services):
-        cmd = cls._startup[0]
+    def get_startup(cls, node):
+        cmd = cls.startup[0]
         cmd += " output /tmp/mgen_%s.log" % node.name
-        return cmd,
+        return (cmd,)
 
 
 class NrlNhdp(NrlService):
     """
     NeighborHood Discovery Protocol for MANET networks.
     """
-    _name = "NHDP"
-    _startup = ("nrlnhdp",)
-    _shutdown = ("killall nrlnhdp",)
-    _validate = ("pidof nrlnhdp",)
+
+    name = "NHDP"
+    executables = ("nrlnhdp",)
+    startup = ("nrlnhdp",)
+    shutdown = ("killall nrlnhdp",)
+    validate = ("pidof nrlnhdp",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def get_startup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
-        cmd = cls._startup[0]
+        cmd = cls.startup[0]
         cmd += " -l /var/log/nrlnhdp.log"
         cmd += " -rpipe %s_nhdp" % node.name
 
-        servicenames = map(lambda x: x._name, services)
+        servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
 
-        netifs = filter(lambda x: not getattr(x, 'control', False), \
-                        node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
 
 class NrlSmf(NrlService):
     """
     Simplified Multicast Forwarding for MANET networks.
     """
-    _name = "SMF"
-    _startup = ("sh startsmf.sh",)
-    _shutdown = ("killall nrlsmf",)
-    _validate = ("pidof nrlsmf",)
-    _configs = ("startsmf.sh",)
+
+    name = "SMF"
+    executables = ("nrlsmf",)
+    startup = ("sh startsmf.sh",)
+    shutdown = ("killall nrlsmf",)
+    validate = ("pidof nrlsmf",)
+    configs = ("startsmf.sh",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Generate a startup script for SMF. Because nrlsmf does not
         daemonize, it can cause problems in some situations when launched
@@ -123,8 +124,8 @@ class NrlSmf(NrlService):
         comments = ""
         cmd = "nrlsmf instance %s_smf" % node.name
 
-        servicenames = map(lambda x: x._name, services)
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        servicenames = map(lambda x: x.name, node.services)
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) == 0:
             return ""
 
@@ -156,17 +157,19 @@ class NrlOlsr(NrlService):
     """
     Optimized Link State Routing protocol for MANET networks.
     """
-    _name = "OLSR"
-    _startup = ("nrlolsrd",)
-    _shutdown = ("killall nrlolsrd",)
-    _validate = ("pidof nrlolsrd",)
+
+    name = "OLSR"
+    executables = ("nrlolsrd",)
+    startup = ("nrlolsrd",)
+    shutdown = ("killall nrlolsrd",)
+    validate = ("pidof nrlolsrd",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def get_startup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
-        cmd = cls._startup[0]
+        cmd = cls.startup[0]
         # are multiple interfaces supported? No.
         netifs = list(node.netifs())
         if len(netifs) > 0:
@@ -175,77 +178,81 @@ class NrlOlsr(NrlService):
         cmd += " -l /var/log/nrlolsrd.log"
         cmd += " -rpipe %s_olsr" % node.name
 
-        servicenames = map(lambda x: x._name, services)
-        if "SMF" in servicenames and not "NHDP" in servicenames:
+        servicenames = map(lambda x: x.name, node.services)
+        if "SMF" in servicenames and "NHDP" not in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
         if "zebra" in servicenames:
             cmd += " -z"
 
-        return cmd,
+        return (cmd,)
 
 
 class NrlOlsrv2(NrlService):
     """
     Optimized Link State Routing protocol version 2 for MANET networks.
     """
-    _name = "OLSRv2"
-    _startup = ("nrlolsrv2",)
-    _shutdown = ("killall nrlolsrv2",)
-    _validate = ("pidof nrlolsrv2",)
+
+    name = "OLSRv2"
+    executables = ("nrlolsrv2",)
+    startup = ("nrlolsrv2",)
+    shutdown = ("killall nrlolsrv2",)
+    validate = ("pidof nrlolsrv2",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def get_startup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
-        cmd = cls._startup[0]
+        cmd = cls.startup[0]
         cmd += " -l /var/log/nrlolsrv2.log"
         cmd += " -rpipe %s_olsrv2" % node.name
 
-        servicenames = map(lambda x: x._name, services)
+        servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
 
         cmd += " -p olsr"
 
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
 
 class OlsrOrg(NrlService):
     """
     Optimized Link State Routing protocol from olsr.org for MANET networks.
     """
-    _name = "OLSRORG"
-    _configs = ("/etc/olsrd/olsrd.conf",)
-    _dirs = ("/etc/olsrd",)
-    _startup = ("olsrd",)
-    _shutdown = ("killall olsrd",)
-    _validate = ("pidof olsrd",)
+
+    name = "OLSRORG"
+    executables = ("olsrd",)
+    configs = ("/etc/olsrd/olsrd.conf",)
+    dirs = ("/etc/olsrd",)
+    startup = ("olsrd",)
+    shutdown = ("killall olsrd",)
+    validate = ("pidof olsrd",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def get_startup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
-        cmd = cls._startup[0]
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        cmd = cls.startup[0]
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Generate a default olsrd config file to use the broadcast address of 255.255.255.255.
         """
@@ -572,27 +579,24 @@ class MgenActor(NrlService):
     """
 
     # a unique name is required, without spaces
-    _name = "MgenActor"
+    name = "MgenActor"
+    executables = ("mgen",)
     # you can create your own group here
-    _group = "ProtoSvc"
-    # list of other services this service depends on
-    _depends = ()
+    group = "ProtoSvc"
     # per-node directories
-    _dirs = ()
+    dirs = ()
     # generated files (without a full path this file goes in the node's dir,
     #  e.g. /tmp/pycore.12345/n1.conf/)
-    _configs = ('start_mgen_actor.sh',)
-    # this controls the starting order vs other enabled services
-    _startindex = 50
+    configs = ("start_mgen_actor.sh",)
     # list of startup commands, also may be generated during startup
-    _startup = ("sh start_mgen_actor.sh",)
+    startup = ("sh start_mgen_actor.sh",)
     # list of validation commands
-    _validate = ("pidof mgen",)
+    validate = ("pidof mgen",)
     # list of shutdown commands
-    _shutdown = ("killall mgen",)
+    shutdown = ("killall mgen",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Generate a startup script for MgenActor. Because mgenActor does not
         daemonize, it can cause problems in some situations when launched
@@ -603,8 +607,7 @@ class MgenActor(NrlService):
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % node.name
 
-        servicenames = map(lambda x: x._name, services)
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = [x for x in node.netifs() if not getattr(x, "control", False)]
         if len(netifs) == 0:
             return ""
 
@@ -616,19 +619,21 @@ class Arouted(NrlService):
     """
     Adaptive Routing
     """
-    _name = "arouted"
-    _configs = ("startarouted.sh",)
-    _startindex = NrlService._startindex + 10
-    _startup = ("sh startarouted.sh",)
-    _shutdown = ("pkill arouted",)
-    _validate = ("pidof arouted",)
+
+    name = "arouted"
+    executables = ("arouted",)
+    configs = ("startarouted.sh",)
+    startup = ("sh startarouted.sh",)
+    shutdown = ("pkill arouted",)
+    validate = ("pidof arouted",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """
-        cfg = """
+        cfg = (
+            """
 #!/bin/sh
 for f in "/tmp/%s_smf"; do
     count=1
@@ -642,7 +647,9 @@ for f in "/tmp/%s_smf"; do
     done
 done
 
-""" % node.name
+"""
+            % node.name
+        )
         cfg += "ip route add %s dev lo\n" % cls.firstipv4prefix(node, 24)
         cfg += "arouted instance %s_smf tap %s_tap" % (node.name, node.name)
         # seconds to consider a new route valid

@@ -1,52 +1,54 @@
 """
 quagga.py: defines routing services provided by Quagga.
 """
+import netaddr
 
 from core import constants
-from core.enumerations import LinkTypes, NodeTypes
-from core.misc import ipaddress
-from core.misc import nodeutils
-from core.service import CoreService
+from core.emane.nodes import EmaneNet
+from core.emulator.enumerations import LinkTypes
+from core.nodes.network import PtpNet, WlanNode
+from core.nodes.physical import Rj45Node
+from core.services.coreservices import CoreService
 
 
 class Zebra(CoreService):
-    _name = "zebra"
-    _group = "Quagga"
-    _dirs = ("/usr/local/etc/quagga", "/var/run/quagga")
-    _configs = (
+    name = "zebra"
+    group = "Quagga"
+    dirs = ("/usr/local/etc/quagga", "/var/run/quagga")
+    configs = (
         "/usr/local/etc/quagga/Quagga.conf",
         "quaggaboot.sh",
-        "/usr/local/etc/quagga/vtysh.conf"
+        "/usr/local/etc/quagga/vtysh.conf",
     )
-    _startindex = 35
-    _startup = ("sh quaggaboot.sh zebra",)
-    _shutdown = ("killall zebra",)
-    _validate = ("pidof zebra",)
+    startup = ("sh quaggaboot.sh zebra",)
+    shutdown = ("killall zebra",)
+    validate = ("pidof zebra",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """
-        if filename == cls._configs[0]:
-            return cls.generateQuaggaConf(node, services)
-        elif filename == cls._configs[1]:
-            return cls.generateQuaggaBoot(node, services)
-        elif filename == cls._configs[2]:
-            return cls.generateVtyshConf(node, services)
+        if filename == cls.configs[0]:
+            return cls.generateQuaggaConf(node)
+        elif filename == cls.configs[1]:
+            return cls.generateQuaggaBoot(node)
+        elif filename == cls.configs[2]:
+            return cls.generateVtyshConf(node)
         else:
-            raise ValueError("file name (%s) is not a known configuration: %s",
-                             filename, cls._configs)
+            raise ValueError(
+                "file name (%s) is not a known configuration: %s", filename, cls.configs
+            )
 
     @classmethod
-    def generateVtyshConf(cls, node, services):
+    def generateVtyshConf(cls, node):
         """
         Returns configuration file text.
         """
         return "service integrated-vtysh-config\n"
 
     @classmethod
-    def generateQuaggaConf(cls, node, services):
+    def generateQuaggaConf(cls, node):
         """
         Returns configuration file text. Other services that depend on zebra
         will have generatequaggaifcconfig() and generatequaggaconfig()
@@ -57,7 +59,7 @@ class Zebra(CoreService):
         for ifc in node.netifs():
             cfg += "interface %s\n" % ifc.name
             # include control interfaces in addressing but not routing daemons
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ifc.addrlist))
                 cfg += "\n"
@@ -66,34 +68,38 @@ class Zebra(CoreService):
             cfgv6 = ""
             want_ipv4 = False
             want_ipv6 = False
-            for s in services:
-                if cls._name not in s._depends:
+            for s in node.services:
+                if cls.name not in s.dependencies:
                     continue
                 ifccfg = s.generatequaggaifcconfig(node, ifc)
-                if s._ipv4_routing:
+                if s.ipv4_routing:
                     want_ipv4 = True
-                if s._ipv6_routing:
+                if s.ipv6_routing:
                     want_ipv6 = True
                     cfgv6 += ifccfg
                 else:
                     cfgv4 += ifccfg
 
             if want_ipv4:
-                ipv4list = filter(lambda x: ipaddress.is_ipv4_address(x.split('/')[0]), ifc.addrlist)
+                ipv4list = filter(
+                    lambda x: netaddr.valid_ipv4(x.split("/")[0]), ifc.addrlist
+                )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv4list))
                 cfg += "\n"
                 cfg += cfgv4
             if want_ipv6:
-                ipv6list = filter(lambda x: ipaddress.is_ipv6_address(x.split('/')[0]), ifc.addrlist)
+                ipv6list = filter(
+                    lambda x: netaddr.valid_ipv6(x.split("/")[0]), ifc.addrlist
+                )
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ipv6list))
                 cfg += "\n"
                 cfg += cfgv6
             cfg += "!\n"
 
-        for s in services:
-            if cls._name not in s._depends:
+        for s in node.services:
+            if cls.name not in s.dependencies:
                 continue
             cfg += s.generatequaggaconfig(node)
         return cfg
@@ -103,24 +109,25 @@ class Zebra(CoreService):
         """
         helper for mapping IP addresses to zebra config statements
         """
-        if x.find(".") >= 0:
+        addr = x.split("/")[0]
+        if netaddr.valid_ipv4(addr):
             return "ip address %s" % x
-        elif x.find(":") >= 0:
+        elif netaddr.valid_ipv6(addr):
             return "ipv6 address %s" % x
         else:
             raise ValueError("invalid address: %s", x)
 
     @classmethod
-    def generateQuaggaBoot(cls, node, services):
+    def generateQuaggaBoot(cls, node):
         """
         Generate a shell script used to boot the Quagga daemons.
         """
-        try:
-            quagga_bin_search = node.session.config['quagga_bin_search']
-            quagga_sbin_search = node.session.config['quagga_sbin_search']
-        except KeyError:
-            quagga_bin_search = '"/usr/local/bin /usr/bin /usr/lib/quagga"'
-            quagga_sbin_search = '"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
+        quagga_bin_search = node.session.options.get_config(
+            "quagga_bin_search", default='"/usr/local/bin /usr/bin /usr/lib/quagga"'
+        )
+        quagga_sbin_search = node.session.options.get_config(
+            "quagga_sbin_search", default='"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
+        )
         return """\
 #!/bin/sh
 # auto-generated by zebra service (quagga.py)
@@ -196,7 +203,7 @@ bootquagga()
 
     bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
+        if grep -q "^router \\<${r}\\>" $QUAGGA_CONF; then
             bootdaemon "${r}d"
         fi
     done
@@ -214,7 +221,12 @@ if [ "$1" != "zebra" ]; then
 fi
 confcheck
 bootquagga
-""" % (cls._configs[0], quagga_sbin_search, quagga_bin_search, constants.QUAGGA_STATE_DIR)
+""" % (
+            cls.configs[0],
+            quagga_sbin_search,
+            quagga_bin_search,
+            constants.QUAGGA_STATE_DIR,
+        )
 
 
 class QuaggaService(CoreService):
@@ -222,18 +234,18 @@ class QuaggaService(CoreService):
     Parent class for Quagga services. Defines properties and methods
     common to Quagga's routing daemons.
     """
-    _name = None
-    _group = "Quagga"
-    _depends = ("zebra",)
-    _dirs = ()
-    _configs = ()
-    _startindex = 40
-    _startup = ()
-    _shutdown = ()
-    _meta = "The config file for this service can be found in the Zebra service."
 
-    _ipv4_routing = False
-    _ipv6_routing = False
+    name = None
+    group = "Quagga"
+    dependencies = ("zebra",)
+    dirs = ()
+    configs = ()
+    startup = ()
+    shutdown = ()
+    meta = "The config file for this service can be found in the Zebra service."
+
+    ipv4_routing = False
+    ipv6_routing = False
 
     @staticmethod
     def routerid(node):
@@ -241,11 +253,12 @@ class QuaggaService(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    return a.split('/')[0]
+                a = a.split("/")[0]
+                if netaddr.valid_ipv4(a):
+                    return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -259,12 +272,12 @@ class QuaggaService(CoreService):
             for peerifc in ifc.net.netifs():
                 if peerifc == ifc:
                     continue
-                if nodeutils.is_node(peerifc, NodeTypes.RJ45):
+                if isinstance(peerifc, Rj45Node):
                     return True
         return False
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         return ""
 
     @classmethod
@@ -282,11 +295,12 @@ class Ospfv2(QuaggaService):
     not build its own configuration file but has hooks for adding to the
     unified Quagga.conf file.
     """
-    _name = "OSPFv2"
-    _startup = ()
-    _shutdown = ("killall ospfd",)
-    _validate = ("pidof ospfd",)
-    _ipv4_routing = True
+
+    name = "OSPFv2"
+    startup = ()
+    shutdown = ("killall ospfd",)
+    validate = ("pidof ospfd",)
+    ipv4_routing = True
 
     @staticmethod
     def mtucheck(ifc):
@@ -312,7 +326,7 @@ class Ospfv2(QuaggaService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ip ospf network point-to-point\n"
         return ""
 
@@ -323,32 +337,18 @@ class Ospfv2(QuaggaService):
         cfg += "  router-id %s\n" % rtrid
         # network 10.0.0.0/24 area 0
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") < 0:
-                    continue
-                net = ipaddress.Ipv4Prefix(a)
-                cfg += "  network %s area 0\n" % net
+                addr = a.split("/")[0]
+                if netaddr.valid_ipv4(addr):
+                    cfg += "  network %s area 0\n" % a
         cfg += "!\n"
         return cfg
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ip ospf hello-interval 2
-#  ip ospf dead-interval 6
-#  ip ospf retransmit-interval 5
-# """
 
 
 class Ospfv3(QuaggaService):
@@ -357,12 +357,13 @@ class Ospfv3(QuaggaService):
     not build its own configuration file but has hooks for adding to the
     unified Quagga.conf file.
     """
-    _name = "OSPFv3"
-    _startup = ()
-    _shutdown = ("killall ospf6d",)
-    _validate = ("pidof ospf6d",)
-    _ipv4_routing = True
-    _ipv6_routing = True
+
+    name = "OSPFv3"
+    startup = ()
+    shutdown = ("killall ospf6d",)
+    validate = ("pidof ospf6d",)
+    ipv4_routing = True
+    ipv6_routing = True
 
     @staticmethod
     def minmtu(ifc):
@@ -397,7 +398,7 @@ class Ospfv3(QuaggaService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ipv6 ospf6 network point-to-point\n"
         return ""
 
@@ -405,9 +406,10 @@ class Ospfv3(QuaggaService):
     def generatequaggaconfig(cls, node):
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
+        cfg += "  instance-id 65\n"
         cfg += "  router-id %s\n" % rtrid
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "  interface %s area 0.0.0.0\n" % ifc.name
         cfg += "!\n"
@@ -416,19 +418,6 @@ class Ospfv3(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-
-        # return cfg + """\
-
-
-# ipv6 ospf6 hello-interval 2
-#  ipv6 ospf6 dead-interval 6
-#  ipv6 ospf6 retransmit-interval 5
-# """
 
 
 class Ospfv3mdr(Ospfv3):
@@ -438,24 +427,26 @@ class Ospfv3mdr(Ospfv3):
     configuration file but has hooks for adding to the
     unified Quagga.conf file.
     """
-    _name = "OSPFv3MDR"
-    _ipv4_routing = True
+
+    name = "OSPFv3MDR"
+    ipv4_routing = True
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
-        # Uncomment the following line to use Address Family Translation for IPv4
-        cfg += "  ipv6 ospf6 instance-id 65\n"
-        if ifc.net is not None and nodeutils.is_node(ifc.net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
-            return cfg + """\
+        if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNet)):
+            return (
+                cfg
+                + """\
   ipv6 ospf6 hello-interval 2
   ipv6 ospf6 dead-interval 6
   ipv6 ospf6 retransmit-interval 5
   ipv6 ospf6 network manet-designated-router
-  ipv6 ospf6 diffhellos
+  ipv6 ospf6 twohoprefresh 3
   ipv6 ospf6 adjacencyconnectivity uniconnected
   ipv6 ospf6 lsafullness mincostlsa
 """
+            )
         else:
             return cfg
 
@@ -466,20 +457,21 @@ class Bgp(QuaggaService):
     Peers must be manually configured, with a full mesh for those
     having the same AS number.
     """
-    _name = "BGP"
-    _startup = ()
-    _shutdown = ("killall bgpd",)
-    _validate = ("pidof bgpd",)
-    _custom_needed = True
-    _ipv4_routing = True
-    _ipv6_routing = True
+
+    name = "BGP"
+    startup = ()
+    shutdown = ("killall bgpd",)
+    validate = ("pidof bgpd",)
+    custom_needed = True
+    ipv4_routing = True
+    ipv6_routing = True
 
     @classmethod
     def generatequaggaconfig(cls, node):
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
-        cfg += "router bgp %s\n" % node.objid
+        cfg += "router bgp %s\n" % node.id
         rtrid = cls.routerid(node)
         cfg += "  bgp router-id %s\n" % rtrid
         cfg += "  redistribute connected\n"
@@ -491,11 +483,12 @@ class Rip(QuaggaService):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
-    _name = "RIP"
-    _startup = ()
-    _shutdown = ("killall ripd",)
-    _validate = ("pidof ripd",)
-    _ipv4_routing = True
+
+    name = "RIP"
+    startup = ()
+    shutdown = ("killall ripd",)
+    validate = ("pidof ripd",)
+    ipv4_routing = True
 
     @classmethod
     def generatequaggaconfig(cls, node):
@@ -514,11 +507,12 @@ class Ripng(QuaggaService):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
-    _name = "RIPNG"
-    _startup = ()
-    _shutdown = ("killall ripngd",)
-    _validate = ("pidof ripngd",)
-    _ipv6_routing = True
+
+    name = "RIPNG"
+    startup = ()
+    shutdown = ("killall ripngd",)
+    validate = ("pidof ripngd",)
+    ipv6_routing = True
 
     @classmethod
     def generatequaggaconfig(cls, node):
@@ -538,11 +532,12 @@ class Babel(QuaggaService):
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
-    _name = "Babel"
-    _startup = ()
-    _shutdown = ("killall babeld",)
-    _validate = ("pidof babeld",)
-    _ipv6_routing = True
+
+    name = "Babel"
+    startup = ()
+    shutdown = ("killall babeld",)
+    validate = ("pidof babeld",)
+    ipv6_routing = True
 
     @classmethod
     def generatequaggaconfig(cls, node):
@@ -556,8 +551,7 @@ class Babel(QuaggaService):
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
-        type = "wired"
-        if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS.value:
+        if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS:
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"
@@ -567,28 +561,29 @@ class Xpimd(QuaggaService):
     """
     PIM multicast routing based on XORP.
     """
-    _name = 'Xpimd'
-    _startup = ()
-    _shutdown = ('killall xpimd',)
-    _validate = ('pidof xpimd',)
-    _ipv4_routing = True
+
+    name = "Xpimd"
+    startup = ()
+    shutdown = ("killall xpimd",)
+    validate = ("pidof xpimd",)
+    ipv4_routing = True
 
     @classmethod
     def generatequaggaconfig(cls, node):
-        ifname = 'eth0'
+        ifname = "eth0"
         for ifc in node.netifs():
-            if ifc.name != 'lo':
+            if ifc.name != "lo":
                 ifname = ifc.name
                 break
-        cfg = 'router mfea\n!\n'
-        cfg += 'router igmp\n!\n'
-        cfg += 'router pim\n'
-        cfg += '  !ip pim rp-address 10.0.0.1\n'
-        cfg += '  ip pim bsr-candidate %s\n' % ifname
-        cfg += '  ip pim rp-candidate %s\n' % ifname
-        cfg += '  !ip pim spt-threshold interval 10 bytes 80000\n'
+        cfg = "router mfea\n!\n"
+        cfg += "router igmp\n!\n"
+        cfg += "router pim\n"
+        cfg += "  !ip pim rp-address 10.0.0.1\n"
+        cfg += "  ip pim bsr-candidate %s\n" % ifname
+        cfg += "  ip pim rp-candidate %s\n" % ifname
+        cfg += "  !ip pim spt-threshold interval 10 bytes 80000\n"
         return cfg
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
-        return '  ip mfea\n  ip igmp\n  ip pim\n'
+        return "  ip mfea\n  ip igmp\n  ip pim\n"

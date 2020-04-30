@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.1, core-dev@nrl.navy.mil)
+AC_INIT(core, 6.3.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -14,7 +14,7 @@ AM_INIT_AUTOMAKE([tar-ustar])
 # define variables used for packaging and date display
 PACKAGE_DATE=m4_esyscmd_s([date +%Y%m%d])
 PACKAGE_VENDOR="CORE Developers"
-PACKAGE_MAINTAINERS="$PACKAGE_VENDOR <$PACKAGE_BUGREPORT>"
+PACKAGE_MAINTAINERS="$PACKAGE_VENDOR"
 
 # core specific variables
 CORE_LIB_DIR="\${prefix}/lib/core"
@@ -36,19 +36,43 @@ AC_ARG_WITH([guiconfdir],
 	    [AS_HELP_STRING([--with-guiconfdir=dir],
 			    [specify GUI configuration directory])],
 	    [CORE_GUI_CONF_DIR="$with_guiconfdir"],
-	    [CORE_GUI_CONF_DIR="\${HOME}/.core"])
+	    [CORE_GUI_CONF_DIR="\$\${HOME}/.core"])
 AC_SUBST(CORE_GUI_CONF_DIR)
 AC_ARG_ENABLE([gui],
 	       [AS_HELP_STRING([--enable-gui[=ARG]],
 		[build and install the GUI (default is yes)])],
 		[], [enable_gui=yes])
 AC_SUBST(enable_gui)
+AC_ARG_ENABLE([docs],
+	       [AS_HELP_STRING([--enable-docs[=ARG]],
+		[build python documentation (default is no)])],
+		[], [enable_docs=no])
+AC_SUBST(enable_docs)
+
+AC_ARG_ENABLE([python],
+	       [AS_HELP_STRING([--enable-python[=ARG]],
+		[build and install the python bindings (default is yes)])],
+		[], [enable_python=yes])
+AC_SUBST(enable_python)
+if test "x$enable_python" = "xyes" ; then
+  want_python=yes
+else
+  want_python=no
+fi
+
 AC_ARG_ENABLE([daemon],
 	       [AS_HELP_STRING([--enable-daemon[=ARG]],
 		[build and install the daemon with Python modules
 		 (default is yes)])],
 		[], [enable_daemon=yes])
 AC_SUBST(enable_daemon)
+
+AC_ARG_ENABLE([vnodedonly],
+	       [AS_HELP_STRING([--enable-vnodedonly[=ARG]],
+		[only try to build vnoded and vcmd container utils
+		 (default is no)])],
+		[enable_vnodedonly=yes], [enable_vnodedonly=no])
+AC_SUBST(enable_vnodedonly)
 
 SEARCHPATH="/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/sbin:/usr/local/bin"
 
@@ -66,7 +90,7 @@ AC_PROG_SED
 
 want_python=no
 want_linux_netns=no
-if test "x$enable_daemon" = "xyes"; then	
+if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
@@ -91,44 +115,63 @@ if test "x$enable_daemon" = "xyes"; then
   AC_FUNC_REALLOC
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
-  AM_PATH_PYTHON(2.7)
+  AM_PATH_PYTHON(3.6)
+  AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
-  AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
-  if test "x$brctl_path" = "xno" ; then
-    AC_MSG_ERROR([Could not locate brctl (from bridge-utils package).])
-  fi
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
+  if test "x$sysctl_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate sysctl (from procps package).])
+  fi
+
   AC_CHECK_PROG(ebtables_path, ebtables, $as_dir, no, $SEARCHPATH)
   if test "x$ebtables_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate ebtables (from ebtables package).])
   fi
+
   AC_CHECK_PROG(ip_path, ip, $as_dir, no, $SEARCHPATH)
   if test "x$ip_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate ip (from iproute package).])
   fi
+
   AC_CHECK_PROG(tc_path, tc, $as_dir, no, $SEARCHPATH)
   if test "x$tc_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate tc (from iproute package).])
   fi
+
+  AC_CHECK_PROG(ethtool_path, ethtool, $as_dir, no, $SEARCHPATH)
+  if test "x$ethtool_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate ethtool (from package ethtool)])
+  fi
+
   AC_CHECK_PROG(mount_path, mount, $as_dir, no, $SEARCHPATH)
+  if test "x$mount_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate mount (from package mount)])
+  fi
+
   AC_CHECK_PROG(umount_path, umount, $as_dir, no, $SEARCHPATH)
+  if test "x$umount_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate umount (from package mount)])
+  fi
+
   AC_CHECK_PROG(convert, convert, yes, no, $SEARCHPATH)
   if test "x$convert" = "xno" ; then
     AC_MSG_WARN([Could not locate ImageMagick convert.])
   fi
+
   AC_CHECK_PROG(ovs_vs_path, ovs-vsctl, $as_dir, no, $SEARCHPATH)
   if test "x$ovs_vs_path" = "xno" ; then
-    AC_MSG_WARN([Could not locate ovs-vsctl cannot use OVS nodes])
+    AC_MSG_WARN([Could not locate ovs-vsctl cannot use OVS mode])
   fi
+
   AC_CHECK_PROG(ovs_of_path, ovs-ofctl, $as_dir, no, $SEARCHPATH)
   if test "x$ovs_of_path" = "xno" ; then
-    AC_MSG_WARN([Could not locate ovs-ofctl cannot use OVS nodes])
+    AC_MSG_WARN([Could not locate ovs-ofctl cannot use OVS mode])
   fi
 
   CFLAGS_save=$CFLAGS
   CPPFLAGS_save=$CPPFLAGS
   if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
   fi
   CFLAGS="-I$PYTHON_INCLUDE_DIR"
   CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
@@ -136,6 +179,10 @@ if test "x$enable_daemon" = "xyes"; then
     AC_MSG_ERROR([Python bindings require Python development headers (try installing your 'python-devel' or 'python-dev' package)]))
   CFLAGS=$CFLAGS_save
   CPPFLAGS=$CPPFLAGS_save
+fi
+
+if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
+  want_linux_netns=yes
   PKG_CHECK_MODULES(libev, libev,
     AC_MSG_RESULT([found libev using pkgconfig OK])
     AC_SUBST(libev_CFLAGS)
@@ -148,35 +195,30 @@ if test "x$enable_daemon" = "xyes"; then
 	 AC_MSG_ERROR([Python bindings require libev (try installing your 'libev-devel' or 'libev-dev' package)])))
 fi
 
-AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
+want_docs=no
+if [test "x$want_python" = "xyes" && test "x$enable_docs" = "xyes"] ; then
+  AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
 
-if test "x$help2man" = "xno" ; then
+  if test "x$help2man" = "xno" ; then
     AC_MSG_WARN([Could not locate help2man.])
     want_docs_missing="$want_docs_missing help2man"
+  fi
+
+  if test "x$want_docs_missing" = "x" ; then
+    want_docs=yes
+  else
+    AC_MSG_ERROR([Could not find required helper utilities (${want_docs_missing}) so the CORE documentation will not be built.])
+    want_docs=no
+  fi
+
+  # check for sphinx required during make
+  AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
+  if test "x$sphinxapi_path" = "xno" ; then
+    AC_MSG_ERROR(["Could not locate sphinx-apidoc, install python3 -m pip install sphinx"])
+    want_docs=no
+  fi
+  AS_IF([$PYTHON -c "import sphinx_rtd_theme" &> /dev/null], [], [AC_MSG_ERROR([doc dependency missing, please install python3 -m pip install sphinx-rtd-theme])])
 fi
-
-if test "x$want_docs_missing" = "x" ; then
-  want_docs=yes
-else
-  AC_MSG_WARN([Could not find required helper utilities (${want_docs_missing}) so the CORE documentation will not be built.])
-  want_docs=no
-fi
-
-# check for sphinx required during make
-AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
-if test "x$sphinxapi_path" = "xno" ; then
-    AC_MSG_ERROR(["Could not location sphinx-apidoc, from the python-sphinx package"])
-fi
-
-#AC_PATH_PROGS(tcl_path, [tclsh tclsh8.5 tclsh8.4], no)
-#if test "x$tcl_path" = "xno" ; then
-#    AC_MSG_ERROR([Could not locate tclsh. Please install Tcl/Tk.])
-#fi
-
-#AC_PATH_PROGS(wish_path, [wish wish8.5 wish8.4], no)
-#if test "x$wish_path" = "xno" ; then
-#    AC_MSG_ERROR([Could not locate wish. Please install Tcl/Tk.])
-#fi
 
 AC_ARG_WITH([startup],
 	    [AS_HELP_STRING([--with-startup=option],
@@ -194,6 +236,7 @@ AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
 AM_CONDITIONAL(WANT_INITD, test x$with_startup = xinitd)
 AM_CONDITIONAL(WANT_SYSTEMD, test x$with_startup = xsystemd)
+AM_CONDITIONAL(WANT_VNODEDONLY, test x$enable_vnodedonly = xyes)
 
 if test $cross_compiling = no; then
   AM_MISSING_PROG(HELP2MAN, help2man)
@@ -207,17 +250,14 @@ AC_CONFIG_FILES([Makefile
 		gui/Makefile
 		gui/icons/Makefile
 		scripts/Makefile
-		scripts/perf/Makefile
-		doc/Makefile
-		doc/conf.py
-		doc/man/Makefile
-		doc/figures/Makefile
+		man/Makefile
+		docs/Makefile
 		daemon/Makefile
 		daemon/doc/Makefile
 		daemon/doc/conf.py
+		daemon/proto/Makefile
 		netns/Makefile
-		netns/version.h
-		ns3/Makefile],)
+		netns/version.h],)
 AC_OUTPUT
 
 # Summary text
@@ -228,8 +268,8 @@ ${PACKAGE_STRING} Configuration:
 Build:
   Host System Type:           ${host}
   C Compiler and flags:       ${CC} ${CFLAGS}
-  Prefix:             	      ${prefix}
-  Exec Prefix:		      ${exec_prefix}
+  Prefix:                     ${prefix}
+  Exec Prefix:                ${exec_prefix}
 
 GUI:
   GUI path:                   ${CORE_LIB_DIR}
@@ -238,14 +278,14 @@ GUI:
 Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
-  Python modules:             ${pythondir}
+  Python:                     ${PYTHON}
   Logs:                       ${CORE_STATE_DIR}/log
 
-Startup:		      ${with_startup}
+Startup:                      ${with_startup}
 
 Features to build:
   Build GUI:                  ${enable_gui}
-  Build Daemon:		      ${enable_daemon}
+  Build Daemon:               ${enable_daemon}
   Documentation:              ${want_docs}
 
 ------------------------------------------------------------------------"

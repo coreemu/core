@@ -1,5 +1,8 @@
-from core import logger
-from core.enumerations import ConfigDataTypes
+import logging
+from typing import Dict, List
+
+from core.config import Configuration
+from core.emulator.enumerations import ConfigDataTypes
 
 manifest = None
 try:
@@ -8,54 +11,50 @@ except ImportError:
     try:
         from emanesh import manifest
     except ImportError:
-        logger.warn("compatible emane python bindings not installed")
+        logging.debug("compatible emane python bindings not installed")
 
 
-def _type_value(config_type):
+def _type_value(config_type: str) -> ConfigDataTypes:
     """
     Convert emane configuration type to core configuration value.
 
-    :param str config_type: emane configuration type
-    :return:
+    :param config_type: emane configuration type
+    :return: core config type
     """
     config_type = config_type.upper()
     if config_type == "DOUBLE":
         config_type = "FLOAT"
     elif config_type == "INETADDR":
         config_type = "STRING"
-    return ConfigDataTypes[config_type].value
+    return ConfigDataTypes[config_type]
 
 
-def _get_possible(config_type, config_regex):
+def _get_possible(config_type: str, config_regex: str) -> List[str]:
     """
     Retrieve possible config value options based on emane regexes.
 
-    :param str config_type: emane configuration type
-    :param str config_regex: emane configuration regex
+    :param config_type: emane configuration type
+    :param config_regex: emane configuration regex
     :return: a string listing comma delimited values, if needed, empty string otherwise
-    :rtype: str
     """
     if config_type == "bool":
-        return "On,Off"
+        return ["On", "Off"]
 
     if config_type == "string" and config_regex:
         possible = config_regex[2:-2]
-        possible = possible.replace("|", ",")
-        return possible
+        return possible.split("|")
 
-    return ""
+    return []
 
 
-def _get_default(config_type_name, config_value):
+def _get_default(config_type_name: str, config_value: List[str]) -> str:
     """
     Convert default configuration values to one used by core.
 
-    :param str config_type_name: emane configuration type name
-    :param list config_value: emane configuration value list
+    :param config_type_name: emane configuration type name
+    :param config_value: emane configuration value list
     :return: default core config value
-    :rtype: str
     """
-
     config_default = ""
 
     if config_type_name == "bool":
@@ -71,14 +70,13 @@ def _get_default(config_type_name, config_value):
     return config_default
 
 
-def parse(manifest_path, defaults):
+def parse(manifest_path: str, defaults: Dict[str, str]) -> List[Configuration]:
     """
     Parses a valid emane manifest file and converts the provided configuration values into ones used by core.
 
-    :param str manifest_path: absolute manifest file path
-    :param dict defaults: used to override default values for configurations
+    :param manifest_path: absolute manifest file path
+    :param defaults: used to override default values for configurations
     :return: list of core configuration values
-    :rtype: list
     """
 
     # no results when emane bindings are not present
@@ -114,9 +112,15 @@ def parse(manifest_path, defaults):
         # define description and account for gui quirks
         config_descriptions = config_name
         if config_name.endswith("uri"):
-            config_descriptions = "%s file" % config_descriptions
+            config_descriptions = f"{config_descriptions} file"
 
-        config_tuple = (config_name, config_type_value, config_default, possible, config_descriptions)
-        configurations.append(config_tuple)
+        configuration = Configuration(
+            _id=config_name,
+            _type=config_type_value,
+            default=config_default,
+            options=possible,
+            label=config_descriptions,
+        )
+        configurations.append(configuration)
 
     return configurations

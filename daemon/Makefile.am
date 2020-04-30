@@ -11,11 +11,13 @@ SETUPPY	= setup.py
 SETUPPYFLAGS = -v
 
 if WANT_DOCS
-  SUBDIRS = doc
+DOCS = doc
 endif
 
+SUBDIRS = proto $(DOCS)
+
 SCRIPT_FILES := $(notdir $(wildcard scripts/*))
-MAN_FILES := $(notdir $(wildcard ../doc/man/*.1))
+MAN_FILES := $(notdir $(wildcard ../man/*.1))
 
 # Python package build
 noinst_SCRIPTS = build
@@ -27,7 +29,6 @@ install-exec-hook:
 	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
 		--root=/$(DESTDIR) \
 		--prefix=$(prefix) \
-		--install-lib=$(pythondir) \
 		--single-version-externally-managed
 
 # Python package uninstall

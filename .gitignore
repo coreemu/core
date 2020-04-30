@@ -8,7 +8,7 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
-config
+/config
 config.h
 config.h.in
 config.log
@@ -17,8 +17,15 @@ configure
 debian
 stamp-h1
 
+# generated protobuf files
+*_pb2.py
+*_pb2_grpc.py
+
 # python build directory
 dist
+
+# vscode
+.vscode
 
 # intellij
 *.iml
@@ -43,3 +50,13 @@ coverage.xml
 
 # ignore swap files
 *.swp
+
+# ignore built input files
+netns/setup.py
+daemon/setup.py
+
+# ignore corefx build
+corefx/target
+
+# python
+__pycache__

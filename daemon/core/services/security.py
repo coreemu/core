@@ -3,23 +3,23 @@ security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 """
 
+import logging
+
 from core import constants
-from core import logger
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class VPNClient(CoreService):
-    _name = "VPNClient"
-    _group = "Security"
-    _configs = ('vpnclient.sh',)
-    _startindex = 60
-    _startup = ('sh vpnclient.sh',)
-    _shutdown = ("killall openvpn",)
-    _validate = ("pidof openvpn",)
-    _custom_needed = True
+    name = "VPNClient"
+    group = "Security"
+    configs = ("vpnclient.sh",)
+    startup = ("sh vpnclient.sh",)
+    shutdown = ("killall openvpn",)
+    validate = ("pidof openvpn",)
+    custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the client.conf and vpnclient.sh file contents to
         """
@@ -30,23 +30,24 @@ class VPNClient(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening VPN client configuration template (%s)", fname)
+            logging.exception(
+                "Error opening VPN client configuration template (%s)", fname
+            )
 
         return cfg
 
 
 class VPNServer(CoreService):
-    _name = "VPNServer"
-    _group = "Security"
-    _configs = ('vpnserver.sh',)
-    _startindex = 50
-    _startup = ('sh vpnserver.sh',)
-    _shutdown = ("killall openvpn",)
-    _validate = ("pidof openvpn",)
-    _custom_needed = True
+    name = "VPNServer"
+    group = "Security"
+    configs = ("vpnserver.sh",)
+    startup = ("sh vpnserver.sh",)
+    shutdown = ("killall openvpn",)
+    validate = ("pidof openvpn",)
+    custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the sample server.conf and vpnserver.sh file contents to
         GUI for user customization.
@@ -58,22 +59,23 @@ class VPNServer(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening VPN server configuration template (%s)", fname)
+            logging.exception(
+                "Error opening VPN server configuration template (%s)", fname
+            )
 
         return cfg
 
 
 class IPsec(CoreService):
-    _name = "IPsec"
-    _group = "Security"
-    _configs = ('ipsec.sh',)
-    _startindex = 60
-    _startup = ('sh ipsec.sh',)
-    _shutdown = ("killall racoon",)
-    _custom_needed = True
+    name = "IPsec"
+    group = "Security"
+    configs = ("ipsec.sh",)
+    startup = ("sh ipsec.sh",)
+    shutdown = ("killall racoon",)
+    custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the ipsec.conf and racoon.conf file contents to
         GUI for user customization.
@@ -82,25 +84,23 @@ class IPsec(CoreService):
         cfg += "# set up static tunnel mode security assocation for service "
         cfg += "(security.py)\n"
         fname = "%s/examples/services/sampleIPsec" % constants.CORE_DATA_DIR
-
         try:
-            cfg += open(fname, "rb").read()
+            with open(fname, "r") as f:
+                cfg += f.read()
         except IOError:
-            logger.exception("Error opening IPsec configuration template (%s)", fname)
-
+            logging.exception("Error opening IPsec configuration template (%s)", fname)
         return cfg
 
 
 class Firewall(CoreService):
-    _name = "Firewall"
-    _group = "Security"
-    _configs = ('firewall.sh',)
-    _startindex = 20
-    _startup = ('sh firewall.sh',)
-    _custom_needed = True
+    name = "Firewall"
+    group = "Security"
+    configs = ("firewall.sh",)
+    startup = ("sh firewall.sh",)
+    custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the firewall rule examples to GUI for user customization.
         """
@@ -111,6 +111,57 @@ class Firewall(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening Firewall configuration template (%s)", fname)
+            logging.exception(
+                "Error opening Firewall configuration template (%s)", fname
+            )
 
+        return cfg
+
+
+class Nat(CoreService):
+    """
+    IPv4 source NAT service.
+    """
+
+    name = "NAT"
+    executables = ("iptables",)
+    group = "Security"
+    configs = ("nat.sh",)
+    startup = ("sh nat.sh",)
+    custom_needed = False
+
+    @classmethod
+    def generateifcnatrule(cls, ifc, line_prefix=""):
+        """
+        Generate a NAT line for one interface.
+        """
+        cfg = line_prefix + "iptables -t nat -A POSTROUTING -o "
+        cfg += ifc.name + " -j MASQUERADE\n"
+
+        cfg += line_prefix + "iptables -A FORWARD -i " + ifc.name
+        cfg += " -m state --state RELATED,ESTABLISHED -j ACCEPT\n"
+
+        cfg += line_prefix + "iptables -A FORWARD -i "
+        cfg += ifc.name + " -j DROP\n"
+        return cfg
+
+    @classmethod
+    def generate_config(cls, node, filename):
+        """
+        NAT out the first interface
+        """
+        cfg = "#!/bin/sh\n"
+        cfg += "# generated by security.py\n"
+        cfg += "# NAT out the first interface by default\n"
+        have_nat = False
+        for ifc in node.netifs():
+            if hasattr(ifc, "control") and ifc.control is True:
+                continue
+            if have_nat:
+                cfg += cls.generateifcnatrule(ifc, line_prefix="#")
+            else:
+                have_nat = True
+                cfg += "# NAT out the " + ifc.name + " interface\n"
+                cfg += cls.generateifcnatrule(ifc)
+                cfg += "\n"
         return cfg

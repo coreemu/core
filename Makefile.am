@@ -1,14 +1,9 @@
 # CORE
-# (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz  <jeffrey.m.ahrenholz@boeing.com>
-#
 # Top-level Makefile for CORE project.
 #
 
 if WANT_DOCS
-  DOCS = doc
+  DOCS = docs man
 endif
 
 if WANT_GUI
@@ -20,7 +15,7 @@ if WANT_DAEMON
 endif
 
 if WANT_NETNS
-  NETNS = netns ns3
+  NETNS = netns
 endif
 
 # keep docs last due to dependencies on binaries
@@ -33,7 +28,7 @@ EXTRA_DIST = bootstrap.sh \
 	     LICENSE \
 	     README.md \
 	     ASSIGNMENT_OF_COPYRIGHT.pdf \
-	     Changelog \
+	     CHANGELOG.md \
 	     .version \
 	     .version.date
 
@@ -49,80 +44,111 @@ DISTCLEANFILES = aclocal.m4 \
 MAINTAINERCLEANFILES = .version	\
 		       .version.date
 
-define fpm-python =
-fpm -s python -t $1 \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--vendor "$(PACKAGE_VENDOR)" \
-	$2
-endef
-
-define fpm-gui =
-fpm -s dir -t $1 -n core-gui \
+define fpm-rpm =
+fpm -s dir -t rpm -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
 	--license "BSD" \
-	--description "Common Open Research Emulator GUI front-end" \
-	--url http://www.nrl.navy.mil/itd/ncs/products/core \
+	--description "Common Open Research Emulator" \
+	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core-gui_VERSION_ARCH.$1 \
+	-p core_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
-	-d "bash" \
+	--rpm-init scripts/core-daemon \
+	--config-files "/etc/core" \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
-	$2 \
-	-C $(DESTDIR)
-endef
-
-define fpm-daemon-rpm =
-fpm -s python -t rpm \
-	-p NAME_sysv_VERSION_ARCH.rpm \
-	--rpm-init scripts/core-daemon \
-	--python-install-bin $(bindir) \
-	--python-install-data $(prefix) \
-	--python-install-lib $(pythondir) \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--vendor "$(PACKAGE_VENDOR)" \
 	-d "procps-ng" \
 	-d "bash >= 3.0" \
-	-d "bridge-utils" \
 	-d "ebtables" \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "python >= 2.7, python < 3.0" \
-	netns/setup.py daemon/setup.py
+	-d "python3 >= 3.6" \
+	-d "python3-tkinter" \
+	-C $(DESTDIR)
 endef
 
-define fpm-daemon-deb =
-fpm -s python -t deb \
-	-p NAME_$1_VERSION_ARCH.deb \
-	--python-install-bin $(bindir) \
-	--python-install-data $(prefix) \
-	--python-install-lib $(pythondir) \
-	$2 $3 \
+define fpm-deb =
+fpm -s dir -t deb -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator" \
+	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_VERSION_ARCH.deb \
+	-v $(PACKAGE_VERSION) \
+	--deb-systemd scripts/core-daemon.service \
+	--deb-no-default-config-files \
+	--config-files "/etc/core" \
+	-d "ethtool" \
+	-d "tcl" \
+	-d "tk" \
+	-d "libtk-img" \
 	-d "procps" \
 	-d "libc6 >= 2.14" \
 	-d "bash >= 3.0" \
-	-d "bridge-utils" \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "python (>= 2.7), python (<< 3.0)" \
-	--deb-recommends quagga \
-	netns/setup.py daemon/setup.py
+	-d "python3 >= 3.6" \
+	-d "python3-tk" \
+	-C $(DESTDIR)
+endef
+
+define fpm-distributed-deb =
+fpm -s dir -t deb -n core-distributed \
+	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator Distributed Package" \
+	--url https://github.com/coreemu/core \
+	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_distributed_VERSION_ARCH.deb \
+	-v $(PACKAGE_VERSION) \
+	-d "ethtool" \
+	-d "procps" \
+	-d "libc6 >= 2.14" \
+	-d "bash >= 3.0" \
+	-d "ebtables" \
+	-d "iproute2" \
+	-d "libev4" \
+	-d "openssh-server" \
+	-d "xterm" \
+	-C $(DESTDIR)
+endef
+
+define fpm-distributed-rpm =
+fpm -s dir -t rpm -n core-distributed \
+	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator Distributed Package" \
+	--url https://github.com/coreemu/core \
+	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_distributed_VERSION_ARCH.rpm \
+	-v $(PACKAGE_VERSION) \
+	-d "ethtool" \
+	-d "procps-ng" \
+	-d "bash >= 3.0" \
+	-d "ebtables" \
+	-d "iproute" \
+	-d "libev" \
+	-d "net-tools" \
+	-d "openssh-server" \
+	-d "xterm" \
+	-C $(DESTDIR)
 endef
 
 .PHONY: fpm
 fpm: clean-local-fpm
-	$(MAKE) -C gui install DESTDIR=$(DESTDIR)
-	$(call fpm-gui,rpm)
-	$(call fpm-gui,deb,-d "libtk-img")
-	$(call fpm-python,rpm,ns3/setup.py)
-	$(call fpm-python,deb,ns3/setup.py)
-	$(call fpm-daemon-rpm)
-	$(call fpm-daemon-deb,sysv,--deb-init,scripts/core-daemon)
-	$(call fpm-daemon-deb,systemd,--deb-systemd,scripts/core-daemon.service)
+	$(MAKE) install DESTDIR=$(DESTDIR)
+	$(call fpm-deb)
+	$(call fpm-rpm)
+
+.PHONY: fpm-distributed
+fpm-distributed: clean-local-fpm
+	$(MAKE) -C netns install DESTDIR=$(DESTDIR)
+	$(call fpm-distributed-deb)
+	$(call fpm-distributed-rpm)
 
 .PHONY: clean-local-fpm
 clean-local-fpm:
@@ -141,8 +167,6 @@ define change-files =
 $(info creating file $1 from $1.in)
 @$(SED) -e 's,[@]sbindir[@],$(sbindir),g' \
 	-e 's,[@]bindir[@],$(bindir),g' \
-	-e 's,[@]pythondir[@],$(pythondir),g' \
-	-e 's,[@]PYTHON[@],$(PYTHON),g' \
 	-e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
 	-e 's,[@]PACKAGE_DATE[@],$(PACKAGE_DATE),g' \
 	-e 's,[@]CORE_LIB_DIR[@],$(CORE_LIB_DIR),g' \
@@ -150,15 +174,6 @@ $(info creating file $1 from $1.in)
 	-e 's,[@]CORE_DATA_DIR[@],$(CORE_DATA_DIR),g' \
 	-e 's,[@]CORE_CONF_DIR[@],$(CORE_CONF_DIR),g' \
 	-e 's,[@]CORE_GUI_CONF_DIR[@],$(CORE_GUI_CONF_DIR),g' \
-	-e 's,[@]brctl_path[@],$(brctl_path),g' \
-	-e 's,[@]sysctl_path[@],$(sysctl_path),g' \
-	-e 's,[@]ip_path[@],$(ip_path),g' \
-	-e 's,[@]tc_path[@],$(tc_path),g' \
-	-e 's,[@]ebtables_path[@],$(ebtables_path),g' \
-	-e 's,[@]mount_path[@],$(mount_path),g' \
-	-e 's,[@]umount_path[@],$(umount_path),g' \
-	-e 's,[@]ovs_vs_path[@],$(ovs_vs_path),g' \
-	-e 's,[@]ovs_of_path[@],$(ovs_of_path),g' \
 	< $1.in > $1
 endef
 
@@ -170,27 +185,18 @@ change-files:
 	$(call change-files,scripts/core-daemon.service)
 	$(call change-files,scripts/core-daemon)
 	$(call change-files,daemon/core/constants.py)
+	$(call change-files,netns/setup.py)
+	$(call change-files,daemon/setup.py)
 
-CORE_DOC_HTML = core-html-$(PACKAGE_VERSION)
-CORE_DOC_PDF = core-manual-$(PACKAGE_VERSION)
 CORE_DOC_SRC = core-python-$(PACKAGE_VERSION)
 .PHONY: doc
 doc: doc-clean
-	$(MAKE) -C doc html
-	mv doc/_build/html doc/$(CORE_DOC_HTML)
-	tar -C doc -czf $(CORE_DOC_HTML).tgz $(CORE_DOC_HTML)
-	$(MAKE) -C doc latexpdf
-	mv doc/_build/latex/CORE.pdf $(CORE_DOC_PDF).pdf
 	$(MAKE) -C daemon/doc html
 	mv daemon/doc/_build/html daemon/doc/$(CORE_DOC_SRC)
 	tar -C daemon/doc -czf $(CORE_DOC_SRC).tgz $(CORE_DOC_SRC)
 
 .PHONY: doc-clean
 doc-clean:
-	-rm -rf doc/_build
-	-rm -rf doc/$(CORE_DOC_HTML)
 	-rm -rf daemon/doc/_build
 	-rm -rf daemon/doc/$(CORE_DOC_SRC)
-	-rm -f $(CORE_DOC_HTML).tgz
 	-rm -f $(CORE_DOC_SRC).tgz
-	-rm -f $(CORE_DOC_PDF).pdf

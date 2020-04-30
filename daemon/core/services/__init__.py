@@ -6,7 +6,7 @@ __all__ is automatically loaded by the main core module.
 """
 import os
 
-from core.service import ServiceManager
+from core.services.coreservices import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -15,6 +15,6 @@ def load():
     """
     Loads all services from the modules that reside under core.services.
 
-    :return: nothing
+    :return: list of services that failed to load
     """
-    ServiceManager.add_services(_PATH)
+    return ServiceManager.add_services(_PATH)

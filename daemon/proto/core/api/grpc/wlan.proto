@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package wlan;
+
+import "core/api/grpc/common.proto";
+
+message WlanConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message GetWlanConfigsRequest {
+    int32 session_id = 1;
+}
+
+message GetWlanConfigsResponse {
+    map<int32, common.MappedConfig> configs = 1;
+}
+
+message GetWlanConfigRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetWlanConfigResponse {
+    map<string, common.ConfigOption> config = 1;
+}
+
+message SetWlanConfigRequest {
+    int32 session_id = 1;
+    WlanConfig wlan_config = 2;
+}
+
+message SetWlanConfigResponse {
+    bool result = 1;
+}

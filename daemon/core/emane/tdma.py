@@ -2,14 +2,13 @@
 tdma.py: EMANE TDMA model bindings for CORE
 """
 
+import logging
 import os
 
-from core import constants
-from core import logger
-from core.emane import emanemanifest
+from core import constants, utils
+from core.config import Configuration
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
-from core.misc import utils
+from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneTdmaModel(emanemodel.EmaneModel):
@@ -18,36 +17,50 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
 
     # mac configuration
     mac_library = "tdmaeventschedulerradiomodel"
-    mac_xml = "/usr/share/emane/manifest/tdmaeventschedulerradiomodel.xml"
-    mac_defaults = {
-        "pcrcurveuri": "/usr/share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
-    }
-    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_xml = "tdmaeventschedulerradiomodel.xml"
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
-    default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
-    mac_config.insert(
-        0,
-        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file (core)")
+    default_schedule = os.path.join(
+        constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml"
     )
     config_ignore = {schedule_name}
 
-    def post_startup(self, emane_manager):
+    @classmethod
+    def load(cls, emane_prefix: str) -> None:
+        cls.mac_defaults["pcrcurveuri"] = os.path.join(
+            emane_prefix,
+            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
+        )
+        super().load(emane_prefix)
+        cls.mac_config.insert(
+            0,
+            Configuration(
+                _id=cls.schedule_name,
+                _type=ConfigDataTypes.STRING,
+                default=cls.default_schedule,
+                label="TDMA schedule file (core)",
+            ),
+        )
+
+    def post_startup(self) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
         :return: nothing
         """
         # get configured schedule
-        values = emane_manager.getconfig(self.object_id, self.name, self.getdefaultvalues())[1]
-        if values is None:
+        config = self.session.emane.get_configs(node_id=self.id, config_type=self.name)
+        if not config:
             return
-        schedule = self.valueof(self.schedule_name, values)
+        schedule = config[self.schedule_name]
 
-        event_device = emane_manager.event_device
+        # get the set event device
+        event_device = self.session.emane.event_device
 
         # initiate tdma schedule
-        logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
-        utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])
+        logging.info(
+            "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
+        )
+        args = f"emaneevent-tdmaschedule -i {event_device} {schedule}"
+        utils.cmd(args)

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package common;
+
+message ConfigOption {
+    string label = 1;
+    string name = 2;
+    string value = 3;
+    int32 type = 4;
+    repeated string select = 5;
+    string group = 6;
+}
+
+message MappedConfig {
+    map<string, common.ConfigOption> config = 1;
+}
