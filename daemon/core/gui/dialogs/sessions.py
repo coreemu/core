@@ -72,12 +72,15 @@ class SessionsDialog(Dialog):
             show="headings",
             selectmode=tk.BROWSE,
         )
+        style = ttk.Style()
+        heading_size = int(self.app.guiconfig["scale"] * 10)
+        style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
         self.tree.grid(sticky="nsew")
-        self.tree.column("id", stretch=tk.YES)
+        self.tree.column("id", stretch=tk.YES, anchor="center")
         self.tree.heading("id", text="ID")
-        self.tree.column("state", stretch=tk.YES)
+        self.tree.column("state", stretch=tk.YES, anchor="center")
         self.tree.heading("state", text="State")
-        self.tree.column("nodes", stretch=tk.YES)
+        self.tree.column("nodes", stretch=tk.YES, anchor="center")
         self.tree.heading("nodes", text="Node Count")
 
         for index, session in enumerate(self.sessions):
@@ -213,3 +216,5 @@ class SessionsDialog(Dialog):
     def on_closing(self) -> None:
         if self.is_start_app and messagebox.askokcancel("Exit", "Quit?", parent=self):
             self.click_exit()
+        if not self.is_start_app:
+            self.destroy()

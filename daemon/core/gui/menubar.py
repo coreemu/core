@@ -11,6 +11,7 @@ from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
 from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
 from core.gui.dialogs.executepython import ExecutePythonDialog
+from core.gui.dialogs.find import FindDialog
 from core.gui.dialogs.hooks import HooksDialog
 from core.gui.dialogs.ipdialog import IpConfigDialog
 from core.gui.dialogs.macdialog import MacConfigDialog
@@ -114,6 +115,7 @@ class Menubar(tk.Menu):
         Create edit menu
         """
         menu = tk.Menu(self)
+        menu.add_command(label="Find", accelerator="Ctrl+F", command=self.click_find)
         menu.add_command(label="Preferences", command=self.click_preferences)
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
@@ -125,6 +127,7 @@ class Menubar(tk.Menu):
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
         self.add_cascade(label="Edit", menu=menu)
+        self.app.master.bind_all("<Control-f>", self.click_find)
         self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
@@ -396,6 +399,10 @@ class Menubar(tk.Menu):
         self.prompt_save_running_session()
         self.core.create_new_session()
         self.core.xml_file = None
+
+    def click_find(self, _event: tk.Event = None) -> None:
+        dialog = FindDialog(self.app, self.app)
+        dialog.show()
 
     def click_preferences(self) -> None:
         dialog = PreferencesDialog(self.app, self.app)
