@@ -1,29 +1,22 @@
 import pytest
 
-from core.conf import ConfigurableManager
-from core.conf import ConfigurableOptions
-from core.conf import Configuration
-from core.conf import ModelManager
+from core.config import (
+    ConfigurableManager,
+    ConfigurableOptions,
+    Configuration,
+    ModelManager,
+)
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.enumerations import ConfigDataTypes
-from core.enumerations import NodeTypes
-from core.mobility import BasicRangeModel
+from core.emulator.enumerations import ConfigDataTypes, NodeTypes
+from core.location.mobility import BasicRangeModel
 
 
 class TestConfigurableOptions(ConfigurableOptions):
     name_one = "value1"
     name_two = "value2"
     options = [
-        Configuration(
-            _id=name_one,
-            _type=ConfigDataTypes.STRING,
-            label=name_one
-        ),
-        Configuration(
-            _id=name_two,
-            _type=ConfigDataTypes.STRING,
-            label=name_two
-        )
+        Configuration(_id=name_one, _type=ConfigDataTypes.STRING, label=name_one),
+        Configuration(_id=name_two, _type=ConfigDataTypes.STRING, label=name_two),
     ]
 
 
@@ -160,7 +153,7 @@ class TestConf:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # then
-        assert session.mobility.get_model_config(wlan_node.objid, BasicRangeModel.name)
+        assert session.mobility.get_model_config(wlan_node.id, BasicRangeModel.name)
 
     def test_model_set_error(self, session):
         # given

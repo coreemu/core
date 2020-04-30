@@ -97,14 +97,14 @@ Limitations:
    depending on how many nodes you have.
 """
 
-from core import logger
-from core.service import CoreService
-from core.service import ServiceManager
+import logging
+
+from core.services.coreservices import CoreService, ServiceManager
 
 try:
     from docker import Client
 except ImportError:
-    logger.warn("missing python docker bindings")
+    logging.debug("missing python docker bindings")
 
 
 class DockerService(CoreService):
@@ -154,7 +154,7 @@ done
 
     @classmethod
     def on_load(cls):
-        logger.debug("loading custom docker services")
+        logging.debug("loading custom docker services")
 
         if "Client" in globals():
             client = Client(version="1.10")

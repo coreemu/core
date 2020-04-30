@@ -2,7 +2,7 @@
 ucarp.py: defines high-availability IP address controlled by ucarp
 """
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 UCARP_ETC = "/usr/local/etc/ucarp"
 
@@ -12,7 +12,11 @@ class Ucarp(CoreService):
     group = "Utility"
     dirs = (UCARP_ETC,)
     configs = (
-        UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
+        UCARP_ETC + "/default.sh",
+        UCARP_ETC + "/default-up.sh",
+        UCARP_ETC + "/default-down.sh",
+        "ucarpboot.sh",
+    )
     startup = ("sh ucarpboot.sh",)
     shutdown = ("killall ucarp",)
     validate = ("pidof ucarp",)
@@ -39,7 +43,7 @@ class Ucarp(CoreService):
         Returns configuration file text.
         """
         try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
+            ucarp_bin = node.session.cfg["ucarp_bin"]
         except KeyError:
             ucarp_bin = "/usr/sbin/ucarp"
 
@@ -100,19 +104,18 @@ STOP_SCRIPT=${UCARP_CFGDIR}/default-down.sh
 UCARP_OPTS="$OPTIONS -b $UCARP_BASE -k $SKEW -i $INTERFACE -v $INSTANCE_ID -p $PASSWORD -u $START_SCRIPT -d $STOP_SCRIPT -a $VIRTUAL_ADDRESS -s $SOURCE_ADDRESS -f $FACILITY $XPARAM"
 
 ${UCARP_EXEC} -B ${UCARP_OPTS}
-""" % (ucarp_bin, UCARP_ETC)
+""" % (
+            ucarp_bin,
+            UCARP_ETC,
+        )
 
     @classmethod
     def generateUcarpBoot(cls, node):
         """
         Generate a shell script used to boot the Ucarp daemons.
         """
-
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
-        return """\
+        return (
+            """\
 #!/bin/sh
 # Location of the UCARP config directory
 UCARP_CFGDIR=%s
@@ -122,18 +125,15 @@ chmod a+x ${UCARP_CFGDIR}/*.sh
 # Start the default ucarp daemon configuration
 ${UCARP_CFGDIR}/default.sh
 
-""" % UCARP_ETC
+"""
+            % UCARP_ETC
+        )
 
     @classmethod
     def generateVipUp(cls, node):
         """
         Generate a shell script used to start the virtual ip
         """
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
-
         return """\
 #!/bin/bash
 
@@ -143,7 +143,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr add ${IP}/${NET} dev "$1"
@@ -156,10 +156,6 @@ fi
         """
         Generate a shell script used to stop the virtual ip
         """
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
         return """\
 #!/bin/bash
 
@@ -169,7 +165,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr del ${IP}/${NET} dev "$1"

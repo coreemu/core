@@ -1,69 +1,90 @@
 import os
 import socket
+from typing import TYPE_CHECKING, List, Tuple
 
+import netaddr
 from lxml import etree
 
-from core import constants
-from core import logger
-from core.coreobj import PyCoreNode
-from core.enumerations import NodeTypes
-from core.misc import utils, nodeutils, ipaddress
+from core import utils
+from core.constants import IP_BIN
+from core.emane.nodes import EmaneNet
+from core.nodes.base import CoreNodeBase, NodeBase
+from core.nodes.interface import CoreInterface
+
+if TYPE_CHECKING:
+    from core.emulator.session import Session
 
 
-def add_type(parent_element, name):
+def add_type(parent_element: etree.Element, name: str) -> None:
     type_element = etree.SubElement(parent_element, "type")
     type_element.text = name
 
 
-def add_address(parent_element, address_type, address, interface_name=None):
+def add_address(
+    parent_element: etree.Element,
+    address_type: str,
+    address: str,
+    interface_name: str = None,
+) -> None:
     address_element = etree.SubElement(parent_element, "address", type=address_type)
     address_element.text = address
     if interface_name is not None:
         address_element.set("iface", interface_name)
 
 
-def add_mapping(parent_element, maptype, mapref):
+def add_mapping(parent_element: etree.Element, maptype: str, mapref: str) -> None:
     etree.SubElement(parent_element, "mapping", type=maptype, ref=mapref)
 
 
-def add_emane_interface(host_element, netif, platform_name="p1", transport_name="t1"):
+def add_emane_interface(
+    host_element: etree.Element,
+    netif: CoreInterface,
+    platform_name: str = "p1",
+    transport_name: str = "t1",
+) -> etree.Element:
     nem_id = netif.net.nemidmap[netif]
     host_id = host_element.get("id")
 
     # platform data
-    platform_id = "%s/%s" % (host_id, platform_name)
-    platform_element = etree.SubElement(host_element, "emanePlatform", id=platform_id, name=platform_name)
+    platform_id = f"{host_id}/{platform_name}"
+    platform_element = etree.SubElement(
+        host_element, "emanePlatform", id=platform_id, name=platform_name
+    )
 
     # transport data
-    transport_id = "%s/%s" % (host_id, transport_name)
-    etree.SubElement(platform_element, "transport", id=transport_id, name=transport_name)
+    transport_id = f"{host_id}/{transport_name}"
+    etree.SubElement(
+        platform_element, "transport", id=transport_id, name=transport_name
+    )
 
     # nem data
-    nem_name = "nem%s" % nem_id
-    nem_element_id = "%s/%s" % (host_id, nem_name)
-    nem_element = etree.SubElement(platform_element, "nem", id=nem_element_id, name=nem_name)
+    nem_name = f"nem{nem_id}"
+    nem_element_id = f"{host_id}/{nem_name}"
+    nem_element = etree.SubElement(
+        platform_element, "nem", id=nem_element_id, name=nem_name
+    )
     nem_id_element = etree.SubElement(nem_element, "parameter", name="nemid")
     nem_id_element.text = str(nem_id)
 
     return platform_element
 
 
-def get_address_type(address):
-    addr, slash, prefixlen = address.partition("/")
-    if ipaddress.is_ipv4_address(addr):
+def get_address_type(address: str) -> str:
+    addr, _slash, _prefixlen = address.partition("/")
+    if netaddr.valid_ipv4(addr):
         address_type = "IPv4"
-    elif ipaddress.is_ipv6_address(addr):
+    elif netaddr.valid_ipv6(addr):
         address_type = "IPv6"
     else:
         raise NotImplementedError
     return address_type
 
 
-def get_ipv4_addresses(hostname):
+def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
     if hostname == "localhost":
         addresses = []
-        args = [constants.IP_BIN, "-o", "-f", "inet", "addr", "show"]
-        output = utils.check_cmd(args)
+        args = f"{IP_BIN} -o -f inet address show"
+        output = utils.cmd(args)
         for line in output.split(os.linesep):
             split = line.split()
             if not split:
@@ -78,38 +99,37 @@ def get_ipv4_addresses(hostname):
         raise NotImplementedError
 
 
-class CoreXmlDeployment(object):
-    def __init__(self, session, scenario):
+class CoreXmlDeployment:
+    def __init__(self, session: "Session", scenario: etree.Element) -> None:
         self.session = session
         self.scenario = scenario
-        self.root = etree.SubElement(scenario, "container", id="TestBed", name="TestBed")
+        self.root = etree.SubElement(
+            scenario, "container", id="TestBed", name="TestBed"
+        )
         self.add_deployment()
 
-    def find_device(self, name):
-        device = self.scenario.find("devices/device[@name='%s']" % name)
-        logger.info("specific found scenario device: %s", device)
+    def find_device(self, name: str) -> etree.Element:
+        device = self.scenario.find(f"devices/device[@name='{name}']")
         return device
 
-    def find_interface(self, device, name):
-        interface = self.scenario.find("devices/device[@name='%s']/interfaces/interface[@name='%s']" % (
-            device.name, name))
-        logger.info("specific found scenario interface: %s", interface)
+    def find_interface(self, device: NodeBase, name: str) -> etree.Element:
+        interface = self.scenario.find(
+            f"devices/device[@name='{device.name}']/interfaces/interface[@name='{name}']"
+        )
         return interface
 
-    def add_deployment(self):
+    def add_deployment(self) -> None:
         physical_host = self.add_physical_host(socket.gethostname())
 
-        # TODO: handle other servers
-        #   servers = self.session.broker.getservernames()
-        #   servers.remove("localhost")
-
-        for node in self.session.objects.itervalues():
-            if isinstance(node, PyCoreNode):
+        for node_id in self.session.nodes:
+            node = self.session.nodes[node_id]
+            if isinstance(node, CoreNodeBase):
                 self.add_virtual_host(physical_host, node)
 
-    def add_physical_host(self, name):
+    def add_physical_host(self, name: str) -> etree.Element:
         # add host
-        host_id = "%s/%s" % (self.root.get("id"), name)
+        root_id = self.root.get("id")
+        host_id = f"{root_id}/{name}"
         host_element = etree.SubElement(self.root, "testHost", id=host_id, name=name)
 
         # add type element
@@ -121,27 +141,23 @@ class CoreXmlDeployment(object):
 
         return host_element
 
-    def add_virtual_host(self, physical_host, node):
-        assert isinstance(node, PyCoreNode)
+    def add_virtual_host(self, physical_host: etree.Element, node: NodeBase) -> None:
+        if not isinstance(node, CoreNodeBase):
+            raise TypeError(f"invalid node type: {node}")
 
         # create virtual host element
-        host_id = "%s/%s" % (physical_host.get("id"), node.name)
-        host_element = etree.SubElement(physical_host, "testHost", id=host_id, name=node.name)
-
-        # TODO: need to inject mapping into device element?
-        self.find_device(node.name)
-        # device = self.find_device(self.root.base_element, obj.name)
-        # if device is None:
-        #     logger.warn("corresponding XML device not found for %s", obj.name)
-        #     return
-        # add_mapping(device, "testHost", host_id)
+        phys_id = physical_host.get("id")
+        host_id = f"{phys_id}/{node.name}"
+        host_element = etree.SubElement(
+            physical_host, "testHost", id=host_id, name=node.name
+        )
 
         # add host type
         add_type(host_element, "virtual")
 
         for netif in node.netifs():
             emane_element = None
-            if nodeutils.is_node(netif.net, NodeTypes.EMANE):
+            if isinstance(netif.net, EmaneNet):
                 emane_element = add_emane_interface(host_element, netif)
 
             parent_element = host_element
@@ -151,7 +167,3 @@ class CoreXmlDeployment(object):
             for address in netif.addrlist:
                 address_type = get_address_type(address)
                 add_address(parent_element, address_type, address, netif.name)
-
-                # TODO: need to inject mapping in interface?
-                # interface = self.find_interface(device, netif.name)
-                # add_mapping(interface, "nem", nem.getAttribute("id"))

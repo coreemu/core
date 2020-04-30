@@ -5,17 +5,21 @@ messages and instantiates emulated nodes and networks within the kernel. Various
 message handlers are defined and some support for sending messages.
 """
 
-import ConfigParser
-import optparse
+import argparse
+import logging
+import os
 import sys
+import threading
 import time
+from configparser import ConfigParser
 
 from core import constants
-from core import enumerations
-from core import logger
-from core.corehandlers import CoreHandler
-from core.coreserver import CoreServer
-from core.misc.utils import close_onexec
+from core.api.grpc.server import CoreGrpcServer
+from core.api.tlv.corehandlers import CoreHandler, CoreUdpHandler
+from core.api.tlv.coreserver import CoreServer, CoreUdpServer
+from core.api.tlv.enumerations import CORE_API_PORT
+from core.constants import CORE_CONF_DIR, COREDPY_VERSION
+from core.utils import close_onexec, load_logging_config
 
 
 def banner():
@@ -24,15 +28,28 @@ def banner():
 
     :return: nothing
     """
-    logger.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
+    logging.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
-def cored(cfg, use_ovs):
+def start_udp(mainserver, server_address):
+    """
+    Start a thread running a UDP server on the same host,port for
+        connectionless requests.
+
+    :param CoreServer mainserver: main core tcp server to piggy back off of
+    :param server_address:
+    :return: CoreUdpServer
+    """
+    mainserver.udpserver = CoreUdpServer(server_address, CoreUdpHandler, mainserver)
+    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start, daemon=True)
+    mainserver.udpthread.start()
+
+
+def cored(cfg):
     """
     Start the CoreServer object and enter the server loop.
 
     :param dict cfg: core configuration
-    :param bool use_ovs: flag to determine if ovs nodes should be used
     :return: nothing
     """
     host = cfg["listenaddr"]
@@ -41,16 +58,27 @@ def cored(cfg, use_ovs):
         host = "localhost"
 
     try:
-        server = CoreServer((host, port), CoreHandler, cfg)
-        if use_ovs:
-            from core.netns.openvswitch import OVS_NODES
-            server.coreemu.update_nodes(OVS_NODES)
+        address = (host, port)
+        server = CoreServer(address, CoreHandler, cfg)
     except:
-        logger.exception("error starting main server on:  %s:%s", host, port)
+        logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
 
+    # initialize grpc api
+    grpc_server = CoreGrpcServer(server.coreemu)
+    address_config = cfg["grpcaddress"]
+    port_config = cfg["grpcport"]
+    grpc_address = f"{address_config}:{port_config}"
+    grpc_thread = threading.Thread(target=grpc_server.listen, args=(grpc_address,), daemon=True)
+    grpc_thread.start()
+
+    # start udp server
+    start_udp(server, address)
+
+    # close handlers
     close_onexec(server.fileno())
-    logger.info("server started, listening on: %s:%s", host, port)
+
+    logging.info("CORE TLV API TCP/UDP listening on: %s:%s", host, port)
     server.serve_forever()
 
 
@@ -63,45 +91,55 @@ def get_merged_config(filename):
     :rtype: dict
     """
     # these are the defaults used in the config file
+    default_log = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
+    default_grpc_port = "50051"
+    default_threads = "1"
+    default_address = "localhost"
     defaults = {
-        "port": "%d" % enumerations.CORE_API_PORT,
-        "listenaddr": "localhost",
-        "xmlfilever": "1.0",
-        "numthreads": "1",
+        "port": str(CORE_API_PORT),
+        "listenaddr": default_address,
+        "numthreads": default_threads,
+        "grpcport": default_grpc_port,
+        "grpcaddress": default_address,
+        "logfile": default_log
     }
 
-    usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
-               "CORE daemon v.%s instantiates Linux network namespace " \
-               "nodes." % constants.COREDPY_VERSION
-    parser = optparse.OptionParser(usage=usagestr)
-    parser.add_option("-f", "--configfile", dest="configfile", type="string",
-                      help="read config from specified file; default = %s" % filename)
-    parser.add_option("-p", "--port", dest="port", type=int,
-                      help="port number to listen on; default = %s" % defaults["port"])
-    parser.add_option("-t", "--numthreads", dest="numthreads", type=int,
-                      help="number of server threads; default = %s" % defaults["numthreads"])
+    parser = argparse.ArgumentParser(
+        description=f"CORE daemon v.{COREDPY_VERSION} instantiates Linux network namespace nodes.")
+    parser.add_argument("-f", "--configfile", dest="configfile",
+                        help=f"read config from specified file; default = {filename}")
+    parser.add_argument("-p", "--port", dest="port", type=int,
+                        help=f"port number to listen on; default = {CORE_API_PORT}")
+    parser.add_argument("-n", "--numthreads", dest="numthreads", type=int,
+                        help=f"number of server threads; default = {default_threads}")
+    parser.add_argument("--ovs", action="store_true", help="enable experimental ovs mode, default is false")
+    parser.add_argument("--grpc-port", dest="grpcport",
+                        help=f"grpc port to listen on; default {default_grpc_port}")
+    parser.add_argument("--grpc-address", dest="grpcaddress",
+                        help=f"grpc address to listen on; default {default_address}")
+    parser.add_argument("-l", "--logfile", help=f"core logging configuration; default {default_log}")
 
     # parse command line options
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
     # read the config file
-    if options.configfile is not None:
-        filename = options.configfile
-    del options.configfile
-    cfg = ConfigParser.SafeConfigParser(defaults)
+    if args.configfile is not None:
+        filename = args.configfile
+    del args.configfile
+    cfg = ConfigParser(defaults)
     cfg.read(filename)
 
     section = "core-daemon"
     if not cfg.has_section(section):
         cfg.add_section(section)
 
-    # merge command line with config file
-    for opt in options.__dict__:
-        val = options.__dict__[opt]
+    # merge argparse with configparser
+    for opt in vars(args):
+        val = getattr(args, opt)
         if val is not None:
-            cfg.set(section, opt, val.__str__())
+            cfg.set(section, opt, str(val))
 
-    return dict(cfg.items(section)), args
+    return dict(cfg.items(section))
 
 
 def main():
@@ -111,21 +149,17 @@ def main():
     :return: nothing
     """
     # get a configuration merged from config file and command-line arguments
-    cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
-    for a in args:
-        logger.error("ignoring command line argument: %s", a)
+    cfg = get_merged_config(f"{CORE_CONF_DIR}/core.conf")
+
+    # load logging configuration
+    load_logging_config(cfg["logfile"])
 
     banner()
 
-    # check if ovs flag was provided
-    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
-
     try:
-        cored(cfg, use_ovs)
+        cored(cfg)
     except KeyboardInterrupt:
-        logger.info("keyboard interrupt, stopping core daemon")
-
-    sys.exit(0)
+        logging.info("keyboard interrupt, stopping core daemon")
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 import os
 
 import pytest
+from mock import MagicMock
 
-from core.service import CoreService
-from core.service import ServiceDependencies
-from core.service import ServiceManager
+from core.errors import CoreCommandError
+from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")
@@ -55,10 +55,10 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service_file(node.objid, SERVICE_ONE, file_name, "# test")
+        session.services.set_service_file(node.id, SERVICE_ONE, file_name, "# test")
 
         # then
-        service = session.services.get_service(node.objid, SERVICE_ONE)
+        service = session.services.get_service(node.id, SERVICE_ONE)
         all_files = session.services.all_files(service)
         assert service
         assert all_files and len(all_files) == 1
@@ -69,8 +69,8 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service(node.objid, SERVICE_ONE)
-        session.services.set_service(node.objid, SERVICE_TWO)
+        session.services.set_service(node.id, SERVICE_ONE)
+        session.services.set_service(node.id, SERVICE_TWO)
 
         # then
         all_configs = session.services.all_configs()
@@ -90,7 +90,7 @@ class TestServices:
         assert node.services
         assert len(node.services) == total_service + 2
 
-    def test_service_file(self, session):
+    def test_service_file(self, request, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -102,7 +102,8 @@ class TestServices:
         session.services.create_service_files(node, my_service)
 
         # then
-        assert os.path.exists(file_path)
+        if not request.config.getoption("mock"):
+            assert os.path.exists(file_path)
 
     def test_service_validate(self, session):
         # given
@@ -123,6 +124,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.validate_service(node, my_service)
@@ -149,6 +151,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.startup_service(node, my_service, wait=True)
@@ -175,6 +178,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.stop_service(node, my_service)
@@ -189,8 +193,8 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service(node.objid, my_service.name)
-        custom_my_service = session.services.get_service(node.objid, my_service.name)
+        session.services.set_service(node.id, my_service.name)
+        custom_my_service = session.services.get_service(node.id, my_service.name)
         custom_my_service.startup = ("sh custom.sh",)
 
         # then
@@ -205,25 +209,18 @@ class TestServices:
         file_name = my_service.configs[0]
         file_data_one = "# custom file one"
         file_data_two = "# custom file two"
-        session.services.set_service_file(node_one.objid, my_service.name, file_name, file_data_one)
-        session.services.set_service_file(node_two.objid, my_service.name, file_name, file_data_two)
+        session.services.set_service_file(
+            node_one.id, my_service.name, file_name, file_data_one
+        )
+        session.services.set_service_file(
+            node_two.id, my_service.name, file_name, file_data_two
+        )
 
         # when
-        custom_service_one = session.services.get_service(node_one.objid, my_service.name)
+        custom_service_one = session.services.get_service(node_one.id, my_service.name)
         session.services.create_service_files(node_one, custom_service_one)
-        custom_service_two = session.services.get_service(node_two.objid, my_service.name)
+        custom_service_two = session.services.get_service(node_two.id, my_service.name)
         session.services.create_service_files(node_two, custom_service_two)
-
-        # then
-        file_path_one = node_one.hostfilename(file_name)
-        assert os.path.exists(file_path_one)
-        with open(file_path_one, "r") as custom_file:
-            assert custom_file.read() == file_data_one
-
-        file_path_two = node_two.hostfilename(file_name)
-        assert os.path.exists(file_path_two)
-        with open(file_path_two, "r") as custom_file:
-            assert custom_file.read() == file_data_two
 
     def test_service_import(self):
         """
@@ -240,10 +237,14 @@ class TestServices:
         node = session.add_node()
 
         # when
-        no_service = session.services.get_service(node.objid, SERVICE_ONE)
-        default_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
-        session.services.set_service(node.objid, SERVICE_ONE)
-        custom_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
+        no_service = session.services.get_service(node.id, SERVICE_ONE)
+        default_service = session.services.get_service(
+            node.id, SERVICE_ONE, default_service=True
+        )
+        session.services.set_service(node.id, SERVICE_ONE)
+        custom_service = session.services.get_service(
+            node.id, SERVICE_ONE, default_service=True
+        )
 
         # then
         assert no_service is None
@@ -252,13 +253,7 @@ class TestServices:
 
     def test_services_dependencies(self):
         # given
-        services = [
-            ServiceA,
-            ServiceB,
-            ServiceC,
-            ServiceD,
-            ServiceF
-        ]
+        services = [ServiceA, ServiceB, ServiceC, ServiceD, ServiceF]
 
         # when
         boot_paths = ServiceDependencies(services).boot_paths()
@@ -274,7 +269,7 @@ class TestServices:
             ServiceC,
             ServiceD,
             ServiceF,
-            ServiceBadDependency
+            ServiceBadDependency,
         ]
 
         # when, then
@@ -285,13 +280,7 @@ class TestServices:
         # given
         service_d = ServiceD()
         service_d.dependencies = ("C",)
-        services = [
-            ServiceA,
-            ServiceB,
-            ServiceC,
-            service_d,
-            ServiceF
-        ]
+        services = [ServiceA, ServiceB, ServiceC, service_d, ServiceF]
 
         # when, then
         with pytest.raises(ValueError):

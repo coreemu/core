@@ -1,10 +1,10 @@
 """
 EMANE Bypass model for CORE
 """
-from core.conf import ConfigGroup
-from core.conf import Configuration
+
+from core.config import Configuration
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(emanemodel.EmaneModel):
@@ -20,8 +20,7 @@ class EmaneBypassModel(emanemodel.EmaneModel):
             _id="none",
             _type=ConfigDataTypes.BOOL,
             default="0",
-            options=["True", "False"],
-            label="There are no parameters for the bypass model."
+            label="There are no parameters for the bypass model.",
         )
     ]
 
@@ -29,9 +28,7 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     phy_library = "bypassphylayer"
     phy_config = []
 
-    # override config groups
     @classmethod
-    def config_groups(cls):
-        return [
-            ConfigGroup("Bypass Parameters", 1, 1),
-        ]
+    def load(cls, emane_prefix: str) -> None:
+        # ignore default logic
+        pass

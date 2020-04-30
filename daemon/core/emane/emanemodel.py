@@ -1,14 +1,16 @@
 """
 Defines Emane Models used within CORE.
 """
+import logging
 import os
+from typing import Dict, List
 
-from core import logger
-from core.conf import ConfigGroup
-from core.conf import Configuration
+from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
-from core.enumerations import ConfigDataTypes
-from core.mobility import WirelessModel
+from core.emulator.enumerations import ConfigDataTypes
+from core.errors import CoreError
+from core.location.mobility import WirelessModel
+from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
 
@@ -18,6 +20,7 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+
     # default mac configuration settings
     mac_library = None
     mac_xml = None
@@ -26,44 +29,74 @@ class EmaneModel(WirelessModel):
 
     # default phy configuration settings, using the universal model
     phy_library = None
-    phy_xml = "/usr/share/emane/manifest/emanephy.xml"
-    phy_defaults = {
-        "subid": "1",
-        "propagationmodel": "2ray",
-        "noisemode": "none"
-    }
-    phy_config = emanemanifest.parse(phy_xml, phy_defaults)
+    phy_xml = "emanephy.xml"
+    phy_defaults = {"subid": "1", "propagationmodel": "2ray", "noisemode": "none"}
+    phy_config = []
 
     # support for external configurations
     external_config = [
         Configuration("external", ConfigDataTypes.BOOL, default="0"),
-        Configuration("platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"),
-        Configuration("transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002")
+        Configuration(
+            "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
+        ),
+        Configuration(
+            "transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002"
+        ),
     ]
 
     config_ignore = set()
 
     @classmethod
-    def configurations(cls):
+    def load(cls, emane_prefix: str) -> None:
+        """
+        Called after being loaded within the EmaneManager. Provides configured emane_prefix for
+        parsing xml files.
+
+        :param emane_prefix: configured emane prefix path
+        :return: nothing
+        """
+        manifest_path = "share/emane/manifest"
+        # load mac configuration
+        mac_xml_path = os.path.join(emane_prefix, manifest_path, cls.mac_xml)
+        cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
+
+        # load phy configuration
+        phy_xml_path = os.path.join(emane_prefix, manifest_path, cls.phy_xml)
+        cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
+    @classmethod
+    def configurations(cls) -> List[Configuration]:
+        """
+        Returns the combination all all configurations (mac, phy, and external).
+
+        :return: all configurations
+        """
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
-    def config_groups(cls):
+    def config_groups(cls) -> List[ConfigGroup]:
+        """
+        Returns the defined configuration groups.
+
+        :return: list of configuration groups.
+        """
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
         return [
             ConfigGroup("MAC Parameters", 1, mac_len),
             ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
-            ConfigGroup("External Parameters", phy_len + 1, config_len)
+            ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
-    def build_xml_files(self, config, interface=None):
+    def build_xml_files(
+        self, config: Dict[str, str], interface: CoreInterface = None
+    ) -> None:
         """
-        Builds xml files for this emane model. Creates a nem.xml file that points to both mac.xml and phy.xml
-        definitions.
+        Builds xml files for this emane model. Creates a nem.xml file that points to
+        both mac.xml and phy.xml definitions.
 
-        :param dict config: emane model configuration for the node and interface
+        :param config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
@@ -71,59 +104,77 @@ class EmaneModel(WirelessModel):
         mac_name = emanexml.mac_file_name(self, interface)
         phy_name = emanexml.phy_file_name(self, interface)
 
+        # remote server for file
+        server = None
+        if interface is not None:
+            server = interface.node.server
+
         # check if this is external
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_name = emanexml.transport_file_name(self.object_id, transport_type)
+        transport_name = emanexml.transport_file_name(self.id, transport_type)
 
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
-        emanexml.create_nem_xml(self, config, nem_file, transport_name, mac_name, phy_name)
+        emanexml.create_nem_xml(
+            self, config, nem_file, transport_name, mac_name, phy_name, server
+        )
 
         # create mac xml file
         mac_file = os.path.join(self.session.session_dir, mac_name)
-        emanexml.create_mac_xml(self, config, mac_file)
+        emanexml.create_mac_xml(self, config, mac_file, server)
 
         # create phy xml file
         phy_file = os.path.join(self.session.session_dir, phy_name)
-        emanexml.create_phy_xml(self, config, phy_file)
+        emanexml.create_phy_xml(self, config, phy_file, server)
 
-    def post_startup(self):
+    def post_startup(self) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 
         :return: nothing
         """
-        logger.info("emane model(%s) has no post setup tasks", self.name)
+        logging.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved, moved_netifs):
+    def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
-        :param bool moved: were nodes moved
-        :param list moved_netifs: interfaces that were moved
-        :return:
+        :param moved: were nodes moved
+        :param moved_netifs: interfaces that were moved
+        :return: nothing
         """
         try:
-            wlan = self.session.get_object(self.object_id)
+            wlan = self.session.get_node(self.id)
             wlan.setnempositions(moved_netifs)
-        except KeyError:
-            logger.exception("error during update")
+        except CoreError:
+            logging.exception("error during update")
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(
+        self,
+        netif: CoreInterface,
+        bw: float = None,
+        delay: float = None,
+        loss: float = None,
+        duplicate: float = None,
+        jitter: float = None,
+        netif2: CoreInterface = None,
+    ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param core.netns.vif.Veth netif: interface one
+        :param netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
-        :param core.netns.vif.Veth netif2: interface two
+        :param netif2: interface two
         :return: nothing
         """
-        logger.warn("emane model(%s) does not support link configuration", self.name)
+        logging.warning(
+            "emane model(%s) does not support link configuration", self.name
+        )
