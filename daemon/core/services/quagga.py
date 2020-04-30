@@ -260,7 +260,7 @@ class QuaggaService(CoreService):
                 if netaddr.valid_ipv4(a):
                     return a
         # raise ValueError,  "no IPv4 address found for router ID"
-        return "0.0.0.0"
+        return "0.0.0.%d" % node.id
 
     @staticmethod
     def rj45check(ifc):
@@ -348,7 +348,19 @@ class Ospfv2(QuaggaService):
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
-        return cls.mtucheck(ifc)
+        cfg = cls.mtucheck(ifc)
+        # external RJ45 connections will use default OSPF timers
+        if cls.rj45check(ifc):
+            return cfg
+        cfg += cls.ptpcheck(ifc)
+        return (
+            cfg
+            + """\
+  ip ospf hello-interval 2
+  ip ospf dead-interval 6
+  ip ospf retransmit-interval 5
+"""
+        )
 
 
 class Ospfv3(QuaggaService):
