@@ -936,11 +936,6 @@ class CanvasGraph(tk.Canvas):
             node.service_file_configs = deepcopy(canvas_node.service_file_configs)
             node.config_service_configs = deepcopy(canvas_node.config_service_configs)
 
-            # add new node to modified_service_nodes set if that set contains the
-            # to_copy node
-            if self.core.service_been_modified(core_node.id):
-                self.core.modified_service_nodes.add(copy.id)
-
             copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
