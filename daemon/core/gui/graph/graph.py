@@ -133,6 +133,15 @@ class CanvasGraph(tk.Canvas):
         # hide context
         self.hide_context()
 
+        # reset view options to default state
+        self.show_node_labels.set(True)
+        self.show_link_labels.set(True)
+        self.show_grid.set(True)
+        self.show_annotations.set(True)
+        self.show_interface_names.set(False)
+        self.show_ip4s.set(True)
+        self.show_ip6s.set(True)
+
         # delete any existing drawn items
         for tag in tags.COMPONENT_TAGS:
             self.delete(tag)

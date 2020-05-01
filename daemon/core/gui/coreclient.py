@@ -614,7 +614,7 @@ class CoreClient:
         Open core xml
         """
         try:
-            response = self.client.open_xml(file_path)
+            response = self._client.open_xml(file_path)
             logging.info("open xml file %s, response: %s", file_path, response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
