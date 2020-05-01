@@ -85,7 +85,6 @@ class CoreClient:
         self.handling_events = None
         self.xml_dir = None
         self.xml_file = None
-        self.modified_service_nodes = set()
 
     @property
     def client(self):
@@ -112,7 +111,6 @@ class CoreClient:
         self.links.clear()
         self.hooks.clear()
         self.emane_config = None
-        self.modified_service_nodes.clear()
         for mobility_player in self.mobility_players.values():
             mobility_player.handle_close()
         self.mobility_players.clear()
@@ -616,7 +614,7 @@ class CoreClient:
         Open core xml
         """
         try:
-            response = self.client.open_xml(file_path)
+            response = self._client.open_xml(file_path)
             logging.info("open xml file %s, response: %s", file_path, response)
             self.join_session(response.session_id)
         except grpc.RpcError as e:
@@ -815,6 +813,11 @@ class CoreClient:
         if NodeUtils.is_custom(node_type, model):
             services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
             node.services[:] = services
+        # assign default services to CORE node
+        else:
+            services = self.default_services.get(model, None)
+            if services:
+                node.services[:] = services
         logging.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
@@ -837,7 +840,6 @@ class CoreClient:
                 logging.error("unknown node: %s", node_id)
                 continue
             del self.canvas_nodes[node_id]
-            self.modified_service_nodes.discard(node_id)
             for edge in canvas_node.edges:
                 if edge in edges:
                     continue
@@ -1055,9 +1057,6 @@ class CoreClient:
             config,
         )
         return dict(config)
-
-    def service_been_modified(self, node_id: int) -> bool:
-        return node_id in self.modified_service_nodes
 
     def execute_script(self, script):
         response = self.client.execute_script(script)

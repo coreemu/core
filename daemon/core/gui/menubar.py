@@ -387,12 +387,8 @@ class Menubar(tk.Menu):
         if self.core.is_runtime():
             result = messagebox.askyesnocancel("Exit", "Stop the running session?")
         if result:
-            callback = None
-            if quit_app:
-                callback = self.app.quit
-            task = BackgroundTask(self.app, self.core.delete_session, callback)
-            task.start()
-        elif quit_app:
+            self.core.delete_session()
+        if quit_app:
             self.app.quit()
 
     def click_new(self) -> None:

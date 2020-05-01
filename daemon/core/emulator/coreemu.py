@@ -128,5 +128,4 @@ class CoreEmu:
             result = True
         else:
             logging.error("session to delete did not exist: %s", _id)
-
         return result

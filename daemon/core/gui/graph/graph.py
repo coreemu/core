@@ -133,6 +133,15 @@ class CanvasGraph(tk.Canvas):
         # hide context
         self.hide_context()
 
+        # reset view options to default state
+        self.show_node_labels.set(True)
+        self.show_link_labels.set(True)
+        self.show_grid.set(True)
+        self.show_annotations.set(True)
+        self.show_interface_names.set(False)
+        self.show_ip4s.set(True)
+        self.show_ip6s.set(True)
+
         # delete any existing drawn items
         for tag in tags.COMPONENT_TAGS:
             self.delete(tag)
@@ -935,11 +944,6 @@ class CanvasGraph(tk.Canvas):
             node.service_configs = deepcopy(canvas_node.service_configs)
             node.service_file_configs = deepcopy(canvas_node.service_file_configs)
             node.config_service_configs = deepcopy(canvas_node.config_service_configs)
-
-            # add new node to modified_service_nodes set if that set contains the
-            # to_copy node
-            if self.core.service_been_modified(core_node.id):
-                self.core.modified_service_nodes.add(copy.id)
 
             copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
