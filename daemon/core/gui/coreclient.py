@@ -830,6 +830,7 @@ class CoreClient:
         such as link, configurations, interfaces
         """
         edges = set()
+        removed_links = []
         for canvas_node in canvas_nodes:
             node_id = canvas_node.core_node.id
             if node_id not in self.canvas_nodes:
@@ -841,11 +842,14 @@ class CoreClient:
                 if edge in edges:
                     continue
                 edges.add(edge)
-                self.links.pop(edge.token, None)
+                edge = self.links.pop(edge.token, None)
+                if edge is not None:
+                    removed_links.append(edge.link)
+        self.interfaces_manager.removed(removed_links)
 
     def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
         node = canvas_node.core_node
-        ip4, ip6 = self.interfaces_manager.get_ips(node.id)
+        ip4, ip6 = self.interfaces_manager.get_ips(node)
         ip4_mask = self.interfaces_manager.ip4_mask
         ip6_mask = self.interfaces_manager.ip6_mask
         interface_id = len(canvas_node.interfaces)
