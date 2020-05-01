@@ -283,6 +283,9 @@ class CoreClient:
             response = self.client.get_emane_config(self.session_id)
             self.emane_config = response.config
 
+            # update interface manager
+            self.interfaces_manager.joined(session.links)
+
             # draw session
             self.app.canvas.reset_and_redraw(session)
 
