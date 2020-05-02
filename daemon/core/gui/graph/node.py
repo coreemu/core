@@ -258,7 +258,6 @@ class CanvasNode:
 
     def click_unlink(self, edge: CanvasEdge) -> None:
         self.canvas.delete_edge(edge)
-        self.app.core.deleted_graph_edges([edge])
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()

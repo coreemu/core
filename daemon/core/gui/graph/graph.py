@@ -563,6 +563,7 @@ class CanvasGraph(tk.Canvas):
         dst_wireless = NodeUtils.is_wireless_node(dst_node.core_node.type)
         if dst_wireless:
             src_node.delete_antenna()
+        self.core.deleted_graph_edges([edge])
 
     def zoom(self, event: tk.Event, factor: float = None):
         if not factor:

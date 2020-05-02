@@ -377,14 +377,13 @@ class CanvasEdge(Edge):
         context = tk.Menu(self.canvas)
         themes.style_menu(context)
         context.add_command(label="Configure", command=self.configure)
-        context.add_command(label="Delete")
-        context.add_command(label="Split")
-        context.add_command(label="Merge")
+        context.add_command(label="Delete", command=self.click_delete)
         if self.canvas.app.core.is_runtime():
             context.entryconfigure(1, state="disabled")
-            context.entryconfigure(2, state="disabled")
-            context.entryconfigure(3, state="disabled")
         context.post(event.x_root, event.y_root)
+
+    def click_delete(self):
+        self.canvas.delete_edge(self)
 
     def configure(self) -> None:
         dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)

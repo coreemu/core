@@ -50,7 +50,9 @@ class Application(tk.Frame):
         text_scale = self.app_scale if self.app_scale < 1 else math.sqrt(self.app_scale)
         themes.scale_fonts(self.fonts_size, self.app_scale)
         self.icon_text_font = font.Font(family="TkIconFont", size=int(12 * text_scale))
-        self.edge_font = font.Font(family="TkDefaultFont", size=int(8 * text_scale))
+        self.edge_font = font.Font(
+            family="TkDefaultFont", size=int(8 * text_scale), weight=font.BOLD
+        )
 
     def setup_theme(self):
         themes.load(self.style)
