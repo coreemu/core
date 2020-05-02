@@ -33,7 +33,7 @@ def get_float(var: tk.StringVar) -> Union[float, None]:
 
 class LinkConfigurationDialog(Dialog):
     def __init__(self, master: "CanvasGraph", app: "Application", edge: "CanvasEdge"):
-        super().__init__(master, app, "Link Configuration", modal=True)
+        super().__init__(master, app, "Link Configuration")
         self.app = app
         self.edge = edge
         self.is_symmetric = edge.link.options.unidirectional is False

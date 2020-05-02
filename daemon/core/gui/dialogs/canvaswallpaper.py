@@ -21,7 +21,7 @@ class CanvasWallpaperDialog(Dialog):
         """
         create an instance of CanvasWallpaper object
         """
-        super().__init__(master, app, "Canvas Background", modal=True)
+        super().__init__(master, app, "Canvas Background")
         self.canvas = self.app.canvas
         self.scale_option = tk.IntVar(value=self.canvas.scale_option.get())
         self.adjust_to_dim = tk.BooleanVar(value=self.canvas.adjust_to_dim.get())

@@ -100,9 +100,7 @@ class NodeConfigDialog(Dialog):
         """
         create an instance of node configuration
         """
-        super().__init__(
-            master, app, f"{canvas_node.core_node.name} Configuration", modal=True
-        )
+        super().__init__(master, app, f"{canvas_node.core_node.name} Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.image = canvas_node.image

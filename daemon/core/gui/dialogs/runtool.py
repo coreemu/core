@@ -9,7 +9,7 @@ from core.gui.widgets import CodeText, ListboxScroll
 
 class RunToolDialog(Dialog):
     def __init__(self, master, app) -> None:
-        super().__init__(master, app, "Run Tool", modal=True)
+        super().__init__(master, app, "Run Tool")
         self.cmd = tk.StringVar(value="ps ax")
         self.app = app
         self.result = None

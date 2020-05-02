@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 class ErrorDialog(Dialog):
     def __init__(self, master, app: "Application", title: str, details: str) -> None:
-        super().__init__(master, app, "CORE Exception", modal=True)
+        super().__init__(master, app, "CORE Exception")
         self.title = title
         self.details = details
         self.error_message = None

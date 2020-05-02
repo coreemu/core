@@ -9,7 +9,7 @@ from core.gui.themes import FRAME_PAD, PADX
 
 class ExecutePythonDialog(Dialog):
     def __init__(self, master, app):
-        super().__init__(master, app, "Execute Python Script", modal=True)
+        super().__init__(master, app, "Execute Python Script")
         self.app = app
         self.with_options = tk.IntVar(value=0)
         self.options = tk.StringVar(value="")

@@ -19,7 +19,7 @@ class SizeAndScaleDialog(Dialog):
         """
         create an instance for size and scale object
         """
-        super().__init__(master, app, "Canvas Size and Scale", modal=True)
+        super().__init__(master, app, "Canvas Size and Scale")
         self.canvas = self.app.canvas
         self.validation = app.validation
         self.section_font = font.Font(weight="bold")

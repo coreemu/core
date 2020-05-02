@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 class GlobalEmaneDialog(Dialog):
     def __init__(self, master: Any, app: "Application"):
-        super().__init__(master, app, "EMANE Configuration", modal=True)
+        super().__init__(master, app, "EMANE Configuration")
         self.config_frame = None
         self.draw()
 
@@ -60,10 +60,7 @@ class EmaneModelDialog(Dialog):
         interface: int = None,
     ):
         super().__init__(
-            master,
-            app,
-            f"{canvas_node.core_node.name} {model} Configuration",
-            modal=True,
+            master, app, f"{canvas_node.core_node.name} {model} Configuration"
         )
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
@@ -117,7 +114,7 @@ class EmaneConfigDialog(Dialog):
         self, master: "Application", app: "Application", canvas_node: "CanvasNode"
     ):
         super().__init__(
-            master, app, f"{canvas_node.core_node.name} EMANE Configuration", modal=True
+            master, app, f"{canvas_node.core_node.name} EMANE Configuration"
         )
         self.app = app
         self.canvas_node = canvas_node

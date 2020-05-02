@@ -17,7 +17,7 @@ DEFAULT_PORT = 50051
 
 class ServersDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "CORE Servers", modal=True)
+        super().__init__(master, app, "CORE Servers")
         self.name = tk.StringVar(value=DEFAULT_NAME)
         self.address = tk.StringVar(value=DEFAULT_ADDRESS)
         self.port = tk.IntVar(value=DEFAULT_PORT)

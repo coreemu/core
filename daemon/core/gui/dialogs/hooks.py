@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class HookDialog(Dialog):
     def __init__(self, master: Any, app: "Application"):
-        super().__init__(master, app, "Hook", modal=True)
+        super().__init__(master, app, "Hook")
         self.name = tk.StringVar()
         self.codetext = None
         self.hook = core_pb2.Hook()
@@ -89,7 +89,7 @@ class HookDialog(Dialog):
 
 class HooksDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Hooks", modal=True)
+        super().__init__(master, app, "Hooks")
         self.listbox = None
         self.edit_button = None
         self.delete_button = None

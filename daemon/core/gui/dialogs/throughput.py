@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class ThroughputDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Throughput Config", modal=False)
+        super().__init__(master, app, "Throughput Config")
         self.app = app
         self.canvas = app.canvas
         self.show_throughput = tk.IntVar(value=1)

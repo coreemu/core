@@ -8,7 +8,7 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 
 class FindDialog(Dialog):
     def __init__(self, master, app) -> None:
-        super().__init__(master, app, "Find", modal=True)
+        super().__init__(master, app, "Find", modal=False)
 
         self.find_text = tk.StringVar(value="")
         self.tree = None

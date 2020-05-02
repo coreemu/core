@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class CopyServiceConfigDialog(Dialog):
     def __init__(self, master: Any, app: "Application", node_id: int):
-        super().__init__(master, app, f"Copy services to node {node_id}", modal=True)
+        super().__init__(master, app, f"Copy services to node {node_id}")
         self.parent = master
         self.app = app
         self.node_id = node_id
@@ -177,7 +177,7 @@ class ViewConfigDialog(Dialog):
         data: str,
         filename: str = None,
     ):
-        super().__init__(master, app, f"n{node_id} config data", modal=True)
+        super().__init__(master, app, f"n{node_id} config data")
         self.data = data
         self.service_data = None
         self.filepath = tk.StringVar(value=f"/tmp/services.tmp-n{node_id}-{filename}")

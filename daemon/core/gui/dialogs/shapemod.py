@@ -25,7 +25,7 @@ class ShapeDialog(Dialog):
             title = "Add Shape"
         else:
             title = "Add Text"
-        super().__init__(master, app, title, modal=True)
+        super().__init__(master, app, title)
         self.canvas = app.canvas
         self.fill = None
         self.border = None

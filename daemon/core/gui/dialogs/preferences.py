@@ -17,7 +17,7 @@ SCALE_INTERVAL = 0.01
 
 class PreferencesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Preferences", modal=True)
+        super().__init__(master, app, "Preferences")
         self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
         preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])

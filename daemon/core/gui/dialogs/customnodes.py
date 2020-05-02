@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 class ServicesSelectDialog(Dialog):
     def __init__(self, master: Any, app: "Application", current_services: Set[str]):
-        super().__init__(master, app, "Node Services", modal=True)
+        super().__init__(master, app, "Node Services")
         self.groups = None
         self.services = None
         self.current = None
@@ -101,7 +101,7 @@ class ServicesSelectDialog(Dialog):
 
 class CustomNodesDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Custom Nodes", modal=True)
+        super().__init__(master, app, "Custom Nodes")
         self.edit_button = None
         self.delete_button = None
         self.nodes_list = None

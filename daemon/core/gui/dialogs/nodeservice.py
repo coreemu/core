@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 class NodeServiceDialog(Dialog):
     def __init__(self, master: Any, app: "Application", canvas_node: "CanvasNode"):
         title = f"{canvas_node.core_node.name} Services"
-        super().__init__(master, app, title, modal=True)
+        super().__init__(master, app, title)
         self.app = app
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id

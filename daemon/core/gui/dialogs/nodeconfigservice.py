@@ -25,7 +25,7 @@ class NodeConfigServiceDialog(Dialog):
         services: Set[str] = None,
     ):
         title = f"{canvas_node.core_node.name} Config Services"
-        super().__init__(master, app, title, modal=True)
+        super().__init__(master, app, title)
         self.app = app
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id

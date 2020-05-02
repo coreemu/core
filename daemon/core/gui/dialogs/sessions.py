@@ -20,7 +20,7 @@ class SessionsDialog(Dialog):
     def __init__(
         self, master: "Application", app: "Application", is_start_app: bool = False
     ) -> None:
-        super().__init__(master, app, "Sessions", modal=True)
+        super().__init__(master, app, "Sessions")
         self.is_start_app = is_start_app
         self.selected_session = None
         self.selected_id = None

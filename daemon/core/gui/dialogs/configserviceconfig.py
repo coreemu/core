@@ -29,7 +29,7 @@ class ConfigServiceConfigDialog(Dialog):
         node_id: int,
     ):
         title = f"{service_name} Config Service"
-        super().__init__(master, app, title, modal=True)
+        super().__init__(master, app, title)
         self.master = master
         self.app = app
         self.core = app.core

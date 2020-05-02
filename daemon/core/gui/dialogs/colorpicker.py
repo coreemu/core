@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 class ColorPickerDialog(Dialog):
     def __init__(self, master: Any, app: "Application", initcolor: str = "#000000"):
-        super().__init__(master, app, "color picker", modal=True)
+        super().__init__(master, app, "color picker")
         self.red_entry = None
         self.blue_entry = None
         self.green_entry = None

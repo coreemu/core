@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class AlertsDialog(Dialog):
     def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Alerts", modal=True)
+        super().__init__(master, app, "Alerts")
         self.app = app
         self.tree = None
         self.codetext = None
@@ -125,7 +125,7 @@ class AlertsDialog(Dialog):
 
 class DaemonLog(Dialog):
     def __init__(self, master: tk.Widget, app: "Application"):
-        super().__init__(master, app, "core-daemon log", modal=True)
+        super().__init__(master, app, "core-daemon log")
         self.columnconfigure(0, weight=1)
         self.path = tk.StringVar(value="/var/log/core-daemon.log")
         self.draw()
