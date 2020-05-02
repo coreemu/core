@@ -437,8 +437,7 @@ def random_mac() -> str:
     """
     value = random.randint(0, 0xFFFFFF)
     value |= 0x00163E << 24
-    mac = netaddr.EUI(value)
-    mac.dialect = netaddr.mac_unix_expanded
+    mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
 
 
@@ -450,8 +449,7 @@ def validate_mac(value: str) -> str:
     :return: unix formatted mac
     """
     try:
-        mac = netaddr.EUI(value)
-        mac.dialect = netaddr.mac_unix_expanded
+        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
         return str(mac)
     except netaddr.AddrFormatError as e:
         raise CoreError(f"invalid mac address {value}: {e}")

@@ -52,7 +52,7 @@ class InterfaceManager:
         self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
         self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
         mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
-        self.mac = EUI(mac)
+        self.mac = EUI(mac, dialect=netaddr.mac_unix_expanded)
         self.current_mac = None
         self.current_subnets = None
         self.used_subnets = {}
@@ -64,13 +64,11 @@ class InterfaceManager:
 
     def reset_mac(self) -> None:
         self.current_mac = self.mac
-        self.current_mac.dialect = netaddr.mac_unix_expanded
 
     def next_mac(self) -> str:
         mac = str(self.current_mac)
         value = self.current_mac.value + 1
-        self.current_mac = EUI(value)
-        self.current_mac.dialect = netaddr.mac_unix_expanded
+        self.current_mac = EUI(value, dialect=netaddr.mac_unix_expanded)
         return mac
 
     def next_subnets(self) -> Subnets:

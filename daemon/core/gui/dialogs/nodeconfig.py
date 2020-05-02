@@ -354,8 +354,7 @@ class NodeConfigDialog(Dialog):
                 error = True
                 break
             elif not auto_mac:
-                mac = netaddr.EUI(mac)
-                mac.dialect = netaddr.mac_unix_expanded
+                mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
                 interface.mac = str(mac)
 
         # redraw
