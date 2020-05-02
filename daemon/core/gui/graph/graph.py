@@ -998,6 +998,7 @@ class CanvasGraph(tk.Canvas):
                 width=self.itemcget(edge.id, "width"),
                 fill=self.itemcget(edge.id, "fill"),
             )
+        self.tag_raise(tags.NODE)
 
     def scale_graph(self):
         for nid, canvas_node in self.nodes.items():
