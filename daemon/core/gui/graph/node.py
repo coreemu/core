@@ -1,3 +1,4 @@
+import functools
 import logging
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -15,6 +16,7 @@ from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
+from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
@@ -230,6 +232,18 @@ class CanvasNode:
                     label="Link To Selected", command=self.wireless_link_selected
                 )
                 context.add_command(label="Select Members", state=tk.DISABLED)
+            unlink_menu = tk.Menu(context)
+            for edge in self.edges:
+                other_id = edge.src
+                if self.id == other_id:
+                    other_id = edge.dst
+                other_node = self.canvas.nodes[other_id]
+                func_unlink = functools.partial(self.click_unlink, edge)
+                unlink_menu.add_command(
+                    label=other_node.core_node.name, command=func_unlink
+                )
+            themes.style_menu(unlink_menu)
+            context.add_cascade(label="Unlink", menu=unlink_menu)
             edit_menu = tk.Menu(context)
             themes.style_menu(edit_menu)
             edit_menu.add_command(label="Cut", command=self.click_cut)
@@ -241,6 +255,10 @@ class CanvasNode:
     def click_cut(self) -> None:
         self.canvas_copy()
         self.canvas_delete()
+
+    def click_unlink(self, edge: CanvasEdge) -> None:
+        self.canvas.delete_edge(edge)
+        self.app.core.deleted_graph_edges([edge])
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()

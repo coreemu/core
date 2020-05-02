@@ -517,15 +517,13 @@ class CanvasGraph(tk.Canvas):
                 canvas_node.delete()
                 nodes.append(canvas_node)
                 is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
-
                 # delete related edges
                 for edge in canvas_node.edges:
                     if edge in edges:
                         continue
                     edges.add(edge)
-                    self.edges.pop(edge.token, None)
+                    del self.edges[edge.token]
                     edge.delete()
-
                     # update node connected to edge being deleted
                     other_id = edge.src
                     other_interface = edge.src_interface
@@ -534,10 +532,8 @@ class CanvasGraph(tk.Canvas):
                         other_interface = edge.dst_interface
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
-                    try:
+                    if other_interface in other_node.interfaces:
                         other_node.interfaces.remove(other_interface)
-                    except ValueError:
-                        pass
                     if is_wireless:
                         other_node.delete_antenna()
 
@@ -547,7 +543,26 @@ class CanvasGraph(tk.Canvas):
                 shape.delete()
 
         self.selection.clear()
-        self.core.delete_graph_nodes(nodes)
+        self.core.deleted_graph_nodes(nodes)
+        self.core.deleted_graph_edges(edges)
+
+    def delete_edge(self, edge: CanvasEdge):
+        edge.delete()
+        del self.edges[edge.token]
+        src_node = self.nodes[edge.src]
+        src_node.edges.discard(edge)
+        if edge.src_interface in src_node.interfaces:
+            src_node.interfaces.remove(edge.src_interface)
+        dst_node = self.nodes[edge.dst]
+        dst_node.edges.discard(edge)
+        if edge.dst_interface in dst_node.interfaces:
+            dst_node.interfaces.remove(edge.dst_interface)
+        src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
+        if src_wireless:
+            dst_node.delete_antenna()
+        dst_wireless = NodeUtils.is_wireless_node(dst_node.core_node.type)
+        if dst_wireless:
+            src_node.delete_antenna()
 
     def zoom(self, event: tk.Event, factor: float = None):
         if not factor:

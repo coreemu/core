@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 from tkinter import messagebox
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, Iterable, List
 
 import grpc
 
@@ -830,27 +830,21 @@ class CoreClient:
         )
         return node
 
-    def delete_graph_nodes(self, canvas_nodes: List[core_pb2.Node]):
+    def deleted_graph_nodes(self, canvas_nodes: List[core_pb2.Node]):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
         """
-        edges = set()
-        removed_links = []
         for canvas_node in canvas_nodes:
             node_id = canvas_node.core_node.id
-            if node_id not in self.canvas_nodes:
-                logging.error("unknown node: %s", node_id)
-                continue
             del self.canvas_nodes[node_id]
-            for edge in canvas_node.edges:
-                if edge in edges:
-                    continue
-                edges.add(edge)
-                edge = self.links.pop(edge.token, None)
-                if edge is not None:
-                    removed_links.append(edge.link)
-        self.interfaces_manager.removed(removed_links)
+
+    def deleted_graph_edges(self, edges: Iterable[CanvasEdge]) -> None:
+        links = []
+        for edge in edges:
+            del self.links[edge.token]
+            links.append(edge.link)
+        self.interfaces_manager.removed(links)
 
     def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
         node = canvas_node.core_node
