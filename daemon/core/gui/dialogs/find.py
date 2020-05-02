@@ -9,7 +9,6 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 class FindDialog(Dialog):
     def __init__(self, master, app) -> None:
         super().__init__(master, app, "Find", modal=False)
-
         self.find_text = tk.StringVar(value="")
         self.tree = None
         self.draw()
@@ -18,13 +17,11 @@ class FindDialog(Dialog):
 
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
-        self.top.rowconfigure(0, weight=1)
-        self.top.rowconfigure(1, weight=5)
-        self.top.rowconfigure(2, weight=1)
+        self.top.rowconfigure(1, weight=1)
 
         # Find node frame
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Find:")
         label.grid()
@@ -35,7 +32,7 @@ class FindDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew", padx=PADX, pady=PADY)
+        frame.grid(sticky="nsew", pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("nodeid", "name", "location", "detail"),
@@ -54,26 +51,23 @@ class FindDialog(Dialog):
         self.tree.heading("location", text="Location")
         self.tree.column("detail", stretch=tk.YES, anchor="center")
         self.tree.heading("detail", text="Detail")
-
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
-
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
         yscrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=yscrollbar.set)
-
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
         xscrollbar.grid(row=1, sticky="ew")
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
         # button frame
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Find", command=self.find_node)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.close_dialog)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky="ew")
 
     def clear_treeview_items(self) -> None:
         """
