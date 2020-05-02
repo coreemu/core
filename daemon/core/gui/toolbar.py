@@ -263,7 +263,6 @@ class Toolbar(ttk.Frame):
         Start session handler redraw buttons, send node and link messages to grpc
         server.
         """
-        self.app.canvas.hide_context()
         self.app.menubar.change_menubar_item_state(is_runtime=True)
         self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
@@ -453,7 +452,6 @@ class Toolbar(ttk.Frame):
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
         logging.info("Click stop button")
-        self.app.canvas.hide_context()
         self.app.menubar.change_menubar_item_state(is_runtime=False)
         self.app.statusbar.progress_bar.start(5)
         self.time = time.perf_counter()

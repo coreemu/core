@@ -58,7 +58,6 @@ class CanvasGraph(tk.Canvas):
         self.select_box = None
         self.selected = None
         self.node_draw = None
-        self.context = None
         self.nodes = {}
         self.edges = {}
         self.shapes = {}
@@ -130,9 +129,6 @@ class CanvasGraph(tk.Canvas):
         client.
         :param session: session to draw
         """
-        # hide context
-        self.hide_context()
-
         # reset view options to default state
         self.show_node_labels.set(True)
         self.show_link_labels.set(True)
@@ -166,7 +162,6 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<ButtonRelease-3>", self.click_context)
         self.bind("<Delete>", self.press_delete)
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
@@ -175,11 +170,6 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
-
-    def hide_context(self, event=None):
-        if self.context:
-            self.context.unpost()
-            self.context = None
 
     def get_actual_coords(self, x: float, y: float) -> [float, float]:
         actual_x = (x - self.offset[0]) / self.ratio
@@ -396,41 +386,35 @@ class CanvasGraph(tk.Canvas):
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             return
-
-        if self.context:
-            self.hide_context()
+        if self.mode == GraphMode.ANNOTATION:
+            self.focus_set()
+            if self.shape_drawing:
+                shape = self.shapes[self.selected]
+                shape.shape_complete(x, y)
+                self.shape_drawing = False
+        elif self.mode == GraphMode.SELECT:
+            self.focus_set()
+            if self.select_box:
+                x0, y0, x1, y1 = self.coords(self.select_box.id)
+                inside = [
+                    x
+                    for x in self.find_enclosed(x0, y0, x1, y1)
+                    if "node" in self.gettags(x) or "shape" in self.gettags(x)
+                ]
+                for i in inside:
+                    self.select_object(i, True)
+                self.select_box.disappear()
+                self.select_box = None
         else:
-            if self.mode == GraphMode.ANNOTATION:
-                self.focus_set()
-                if self.shape_drawing:
-                    shape = self.shapes[self.selected]
-                    shape.shape_complete(x, y)
-                    self.shape_drawing = False
-            elif self.mode == GraphMode.SELECT:
-                self.focus_set()
-                if self.select_box:
-                    x0, y0, x1, y1 = self.coords(self.select_box.id)
-                    inside = [
-                        x
-                        for x in self.find_enclosed(x0, y0, x1, y1)
-                        if "node" in self.gettags(x) or "shape" in self.gettags(x)
-                    ]
-                    for i in inside:
-                        self.select_object(i, True)
-                    self.select_box.disappear()
-                    self.select_box = None
-            else:
-                self.focus_set()
-                self.selected = self.get_selected(event)
-                logging.debug(
-                    f"click release selected({self.selected}) mode({self.mode})"
-                )
-                if self.mode == GraphMode.EDGE:
-                    self.handle_edge_release(event)
-                elif self.mode == GraphMode.NODE:
-                    self.add_node(x, y)
-                elif self.mode == GraphMode.PICKNODE:
-                    self.mode = GraphMode.NODE
+            self.focus_set()
+            self.selected = self.get_selected(event)
+            logging.debug(f"click release selected({self.selected}) mode({self.mode})")
+            if self.mode == GraphMode.EDGE:
+                self.handle_edge_release(event)
+            elif self.mode == GraphMode.NODE:
+                self.add_node(x, y)
+            elif self.mode == GraphMode.PICKNODE:
+                self.mode = GraphMode.NODE
         self.selected = None
 
     def handle_edge_release(self, _event: tk.Event):
@@ -716,19 +700,6 @@ class CanvasGraph(tk.Canvas):
         else:
             if self.select_box and self.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
-
-    def click_context(self, event: tk.Event):
-        logging.info("context: %s", self.context)
-        if not self.context:
-            selected = self.get_selected(event)
-            canvas_node = self.nodes.get(selected)
-            if canvas_node:
-                logging.debug("node context: %s", selected)
-                self.context = canvas_node.create_context()
-                self.context.bind("<Unmap>", self.hide_context)
-                self.context.post(event.x_root, event.y_root)
-        else:
-            self.hide_context()
 
     def press_delete(self, _event: tk.Event):
         """
