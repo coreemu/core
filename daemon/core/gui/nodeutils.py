@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
 
-from core.api.grpc.core_pb2 import NodeType
+from core.api.grpc.core_pb2 import Node, NodeType
 from core.gui.images import ImageEnum, Images, TypeToImage
 
 if TYPE_CHECKING:
@@ -64,7 +64,12 @@ class NodeUtils:
     RJ45_NODES = {NodeType.RJ45}
     IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
+    ROUTER_NODES = {"router", "mdr"}
     ANTENNA_ICON = None
+
+    @classmethod
+    def is_router_node(cls, node: Node) -> bool:
+        return cls.is_model_node(node.type) and node.model in cls.ROUTER_NODES
 
     @classmethod
     def is_ignore_node(cls, node_type: NodeType) -> bool:
