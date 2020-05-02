@@ -238,7 +238,6 @@ class CanvasNode:
                 self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
-                self.context.add_command(label="Select Members", state=tk.DISABLED)
             unlink_menu = tk.Menu(self.context)
             for edge in self.edges:
                 other_id = edge.src
