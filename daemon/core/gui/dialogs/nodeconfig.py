@@ -122,6 +122,10 @@ class NodeConfigDialog(Dialog):
         self.top.columnconfigure(0, weight=1)
         row = 0
 
+        # field states
+        state = tk.DISABLED if self.app.core.is_runtime() else tk.NORMAL
+        combo_state = tk.DISABLED if self.app.core.is_runtime() else "readonly"
+
         # field frame
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -148,6 +152,7 @@ class NodeConfigDialog(Dialog):
             textvariable=self.name,
             validate="key",
             validatecommand=(self.app.validation.name, "%P"),
+            state=state,
         )
         entry.bind(
             "<FocusOut>", lambda event: self.app.validation.focus_out(event, "noname")
@@ -163,7 +168,7 @@ class NodeConfigDialog(Dialog):
                 frame,
                 textvariable=self.type,
                 values=list(NodeUtils.NODE_MODELS),
-                state="readonly",
+                state=combo_state,
             )
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
@@ -172,7 +177,7 @@ class NodeConfigDialog(Dialog):
         if NodeUtils.is_image_node(self.node.type):
             label = ttk.Label(frame, text="Image")
             label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
-            entry = ttk.Entry(frame, textvariable=self.container_image)
+            entry = ttk.Entry(frame, textvariable=self.container_image, state=state)
             entry.grid(row=row, column=1, sticky="ew")
             row += 1
 
@@ -185,7 +190,7 @@ class NodeConfigDialog(Dialog):
             servers = ["localhost"]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
-                frame, textvariable=self.server, values=servers, state="readonly"
+                frame, textvariable=self.server, values=servers, state=combo_state
             )
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
@@ -194,6 +199,7 @@ class NodeConfigDialog(Dialog):
             response = self.app.core.client.get_interfaces()
             logging.debug("host machine available interfaces: %s", response)
             interfaces = ListboxScroll(frame)
+            interfaces.listbox.config(state=state)
             interfaces.grid(
                 row=row, column=0, columnspan=2, sticky="ew", padx=PADX, pady=PADY
             )
@@ -213,7 +219,7 @@ class NodeConfigDialog(Dialog):
         notebook = ttk.Notebook(self.top)
         notebook.grid(sticky="nsew", pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
-
+        state = tk.DISABLED if self.app.core.is_runtime() else tk.NORMAL
         for interface in self.canvas_node.interfaces:
             logging.info("interface: %s", interface)
             tab = ttk.Frame(notebook, padding=FRAME_PAD)
@@ -237,16 +243,15 @@ class NodeConfigDialog(Dialog):
             label = ttk.Label(tab, text="MAC")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             auto_set = not interface.mac
-            if auto_set:
-                state = tk.DISABLED
-            else:
-                state = tk.NORMAL
+            mac_state = tk.DISABLED if auto_set else tk.NORMAL
             is_auto = tk.BooleanVar(value=auto_set)
-            checkbutton = ttk.Checkbutton(tab, text="Auto?", variable=is_auto)
+            checkbutton = ttk.Checkbutton(
+                tab, text="Auto?", variable=is_auto, state=state
+            )
             checkbutton.var = is_auto
             checkbutton.grid(row=row, column=1, padx=PADX)
             mac = tk.StringVar(value=interface.mac)
-            entry = ttk.Entry(tab, textvariable=mac, state=state)
+            entry = ttk.Entry(tab, textvariable=mac, state=mac_state)
             entry.grid(row=row, column=2, sticky="ew")
             func = partial(mac_auto, is_auto, entry, mac)
             checkbutton.config(command=func)
@@ -258,7 +263,7 @@ class NodeConfigDialog(Dialog):
             if interface.ip4:
                 ip4_net = f"{interface.ip4}/{interface.ip4mask}"
             ip4 = tk.StringVar(value=ip4_net)
-            entry = ttk.Entry(tab, textvariable=ip4)
+            entry = ttk.Entry(tab, textvariable=ip4, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
             row += 1
 
@@ -268,7 +273,7 @@ class NodeConfigDialog(Dialog):
             if interface.ip6:
                 ip6_net = f"{interface.ip6}/{interface.ip6mask}"
             ip6 = tk.StringVar(value=ip6_net)
-            entry = ttk.Entry(tab, textvariable=ip6)
+            entry = ttk.Entry(tab, textvariable=ip6, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
 
             self.interfaces[interface.id] = InterfaceData(is_auto, mac, ip4, ip6)
