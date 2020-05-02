@@ -268,9 +268,16 @@ class CanvasEdge(Edge):
         self.throughput = None
         self.draw(src_pos, dst_pos)
         self.set_binding()
+        self.context = tk.Menu(self.canvas)
+        self.create_context()
+
+    def create_context(self):
+        themes.style_menu(self.context)
+        self.context.add_command(label="Configure", command=self.click_configure)
+        self.context.add_command(label="Delete", command=self.click_delete)
 
     def set_binding(self) -> None:
-        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.create_context)
+        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
 
     def set_link(self, link) -> None:
         self.link = link
@@ -373,18 +380,14 @@ class CanvasEdge(Edge):
         self.middle_label = None
         self.canvas.itemconfig(self.id, fill=self.color, width=self.scaled_width())
 
-    def create_context(self, event: tk.Event) -> None:
-        context = tk.Menu(self.canvas)
-        themes.style_menu(context)
-        context.add_command(label="Configure", command=self.configure)
-        context.add_command(label="Delete", command=self.click_delete)
-        if self.canvas.app.core.is_runtime():
-            context.entryconfigure(1, state="disabled")
-        context.post(event.x_root, event.y_root)
+    def show_context(self, event: tk.Event) -> None:
+        state = tk.DISABLED if self.canvas.core.is_runtime() else tk.NORMAL
+        self.context.entryconfigure(1, state=state)
+        self.context.tk_popup(event.x_root, event.y_root)
 
     def click_delete(self):
         self.canvas.delete_edge(self)
 
-    def configure(self) -> None:
+    def click_configure(self) -> None:
         dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
         dialog.show()
