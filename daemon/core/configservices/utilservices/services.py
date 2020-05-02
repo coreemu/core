@@ -4,7 +4,6 @@ import netaddr
 
 from core import utils
 from core.configservice.base import ConfigService, ConfigServiceMode
-from core.nodes.base import CoreNode
 
 GROUP_NAME = "Utility"
 
@@ -26,18 +25,14 @@ class DefaultRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         # only add default routes for linked routing nodes
         routes = []
-        for other_node in self.node.session.nodes.values():
-            if not isinstance(other_node, CoreNode):
-                continue
-            if other_node.type not in ["router", "mdr"]:
-                continue
-            commonnets = self.node.commonnets(other_node)
-            if commonnets:
-                _, _, router_eth = commonnets[0]
-                for x in router_eth.addrlist:
-                    addr, prefix = x.split("/")
-                    routes.append(addr)
-                break
+        netifs = self.node.netifs(sort=True)
+        if netifs:
+            netif = netifs[0]
+            for x in netif.addrlist:
+                net = netaddr.IPNetwork(x).cidr
+                if net.size > 1:
+                    router = net[1]
+                    routes.append(str(router))
         return dict(routes=routes)
 
 
