@@ -115,8 +115,8 @@ class Menubar(tk.Menu):
         Create edit menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="Find", accelerator="Ctrl+F", command=self.click_find)
         menu.add_command(label="Preferences", command=self.click_preferences)
+        menu.add_separator()
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
         menu.add_separator()
@@ -127,7 +127,6 @@ class Menubar(tk.Menu):
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
         self.add_cascade(label="Edit", menu=menu)
-        self.app.master.bind_all("<Control-f>", self.click_find)
         self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
@@ -190,6 +189,8 @@ class Menubar(tk.Menu):
         Create tools menu
         """
         menu = tk.Menu(self)
+        menu.add_command(label="Find", accelerator="Ctrl+F", command=self.click_find)
+        self.app.master.bind_all("<Control-f>", self.click_find)
         menu.add_command(label="Auto Grid", command=self.click_autogrid)
         menu.add_command(label="IP Addresses", command=self.click_ip_config)
         menu.add_command(label="MAC Addresses", command=self.click_mac_config)

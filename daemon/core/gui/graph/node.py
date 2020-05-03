@@ -198,9 +198,6 @@ class CanvasNode:
         is_emane = self.core_node.type == NodeType.EMANE
         if self.app.core.is_runtime():
             self.context.add_command(label="Configure", command=self.show_config)
-            if NodeUtils.is_container_node(self.core_node.type):
-                self.context.add_command(label="Services", state=tk.DISABLED)
-                self.context.add_command(label="Config Services", state=tk.DISABLED)
             if is_wlan:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
@@ -209,13 +206,6 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
-            self.context.add_command(label="Select Adjacent", state=tk.DISABLED)
-            if NodeUtils.is_container_node(self.core_node.type):
-                self.context.add_command(label="Shell Window", state=tk.DISABLED)
-                self.context.add_command(label="Tcpdump", state=tk.DISABLED)
-                self.context.add_command(label="Tshark", state=tk.DISABLED)
-                self.context.add_command(label="Wireshark", state=tk.DISABLED)
-                self.context.add_command(label="View Log", state=tk.DISABLED)
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
