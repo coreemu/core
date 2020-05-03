@@ -1,5 +1,4 @@
 import logging
-import time
 import tkinter as tk
 from enum import Enum
 from functools import partial
@@ -10,11 +9,12 @@ from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
 from core.gui.dialogs.runtool import RunToolDialog
+from core.gui.errors import show_error
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import NodeDraw, NodeUtils
-from core.gui.task import BackgroundTask
+from core.gui.task import ProgressTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
 
@@ -47,7 +47,6 @@ class Toolbar(ttk.Frame):
         """
         super().__init__(master, **kwargs)
         self.app = app
-        self.time = None
 
         # design buttons
         self.play_button = None
@@ -263,22 +262,18 @@ class Toolbar(ttk.Frame):
         server.
         """
         self.app.menubar.change_menubar_item_state(is_runtime=True)
-        self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
-        self.time = time.perf_counter()
-        task = BackgroundTask(self, self.app.core.start_session, self.start_callback)
-        task.start()
+        task = ProgressTask(self.app.core.start_session, self.start_callback)
+        self.app.progress_task(task)
 
     def start_callback(self, response: core_pb2.StartSessionResponse):
-        self.app.statusbar.progress_bar.stop()
-        total = time.perf_counter() - self.time
-        message = f"Start ran for {total:.3f} seconds"
-        self.app.statusbar.set_status(message)
-        self.time = None
         if response.result:
             self.set_runtime()
             self.app.core.set_metadata()
             self.app.core.show_mobility_players()
+        else:
+            message = "\n".join(response.exceptions)
+            show_error(self.app, "Start Session Error", message)
 
     def set_runtime(self):
         self.runtime_frame.tkraise()
@@ -450,19 +445,13 @@ class Toolbar(ttk.Frame):
         """
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
-        logging.info("Click stop button")
+        logging.info("clicked stop button")
         self.app.menubar.change_menubar_item_state(is_runtime=False)
-        self.app.statusbar.progress_bar.start(5)
-        self.time = time.perf_counter()
-        task = BackgroundTask(self, self.app.core.stop_session, self.stop_callback)
-        task.start()
+        task = ProgressTask(self.app.core.stop_session, self.stop_callback)
+        self.app.progress_task(task)
 
     def stop_callback(self, response: core_pb2.StopSessionResponse):
-        self.app.statusbar.progress_bar.stop()
         self.set_design()
-        total = time.perf_counter() - self.time
-        message = f"Stopped in {total:.3f} seconds"
-        self.app.statusbar.set_status(message)
         self.app.canvas.stopped_session()
 
     def update_annotation(

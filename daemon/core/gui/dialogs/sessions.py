@@ -9,7 +9,7 @@ from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
-from core.gui.task import BackgroundTask
+from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
 
 if TYPE_CHECKING:
@@ -183,12 +183,11 @@ class SessionsDialog(Dialog):
         self.join_session(self.selected_session)
 
     def join_session(self, session_id: int) -> None:
+        self.destroy()
         if self.app.core.xml_file:
             self.app.core.xml_file = None
-        self.app.statusbar.progress_bar.start(5)
-        task = BackgroundTask(self.app, self.app.core.join_session, args=(session_id,))
-        task.start()
-        self.destroy()
+        task = ProgressTask(self.app.core.join_session, args=(session_id,))
+        self.app.progress_task(task)
 
     def double_click_join(self, _event: tk.Event) -> None:
         item = self.tree.selection()
@@ -201,7 +200,6 @@ class SessionsDialog(Dialog):
         if not self.selected_session:
             return
         logging.debug("delete session: %s", self.selected_session)
-        # self.app.core.delete_session(self.selected_id, self.top)
         self.tree.delete(self.selected_id)
         self.app.core.delete_session(self.selected_session)
         if self.selected_session == self.app.core.session_id:

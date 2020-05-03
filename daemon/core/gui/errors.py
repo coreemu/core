@@ -43,7 +43,12 @@ class ErrorDialog(Dialog):
         button.grid(sticky="ew")
 
 
-def show_grpc_error(e: grpc.RpcError, master, app: "Application"):
+def show_exception(app: "Application", title: str, exception: Exception) -> None:
+    dialog = ErrorDialog(app, app, title, str(exception))
+    dialog.show()
+
+
+def show_grpc_error(e: grpc.RpcError, master, app: "Application") -> None:
     title = [x.capitalize() for x in e.code().name.lower().split("_")]
     title = " ".join(title)
     title = f"GRPC {title}"
@@ -51,8 +56,6 @@ def show_grpc_error(e: grpc.RpcError, master, app: "Application"):
     dialog.show()
 
 
-def show_grpc_response_exceptions(class_name, exceptions, master, app: "Application"):
-    title = f"Exceptions from {class_name}"
-    detail = "\n".join([str(x) for x in exceptions])
-    dialog = ErrorDialog(master, app, title, detail)
+def show_error(app: "Application", title: str, message: str) -> None:
+    dialog = ErrorDialog(app, app, title, message)
     dialog.show()

@@ -297,7 +297,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 for service_exception in boot_exception.args:
                     exceptions.append(str(service_exception))
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
-
         return core_pb2.StartSessionResponse(result=True)
 
     def StopSession(

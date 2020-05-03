@@ -1,6 +1,8 @@
 import math
+import time
 import tkinter as tk
 from tkinter import font, ttk
+from tkinter.ttk import Progressbar
 
 from core.gui import appconfig, themes
 from core.gui.coreclient import CoreClient
@@ -9,6 +11,7 @@ from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
+from core.gui.task import ProgressTask
 from core.gui.toolbar import Toolbar
 from core.gui.validation import InputValidation
 
@@ -29,6 +32,8 @@ class Application(ttk.Frame):
         self.canvas = None
         self.statusbar = None
         self.validation = None
+        self.progress = None
+        self.time = None
 
         # fonts
         self.fonts_size = None
@@ -93,6 +98,7 @@ class Application(ttk.Frame):
         self.right_frame.grid(row=0, column=1, sticky="nsew")
         self.draw_canvas()
         self.draw_status()
+        self.progress = Progressbar(self.right_frame, mode="indeterminate")
         self.menubar = Menubar(self.master, self)
 
     def draw_canvas(self):
@@ -117,6 +123,21 @@ class Application(ttk.Frame):
         self.statusbar = StatusBar(self.right_frame, self)
         self.statusbar.grid(sticky="ew")
 
+    def progress_task(self, task: ProgressTask) -> None:
+        self.progress.grid(sticky="ew")
+        self.progress.start()
+        self.time = time.perf_counter()
+        task.app = self
+        task.start()
+
+    def progress_task_complete(self) -> None:
+        self.progress.stop()
+        self.progress.grid_forget()
+        total = time.perf_counter() - self.time
+        self.time = None
+        message = f"Task ran for {total:.3f} seconds"
+        self.statusbar.set_status(message)
+
     def on_closing(self):
         self.menubar.prompt_save_running_session(True)
 
@@ -124,7 +145,6 @@ class Application(ttk.Frame):
         appconfig.save(self.guiconfig)
 
     def joined_session_update(self):
-        self.statusbar.progress_bar.stop()
         if self.core.is_runtime():
             self.toolbar.set_runtime()
         else:

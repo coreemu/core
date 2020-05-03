@@ -18,7 +18,6 @@ class StatusBar(ttk.Frame):
         self.app = app
         self.status = None
         self.statusvar = tk.StringVar()
-        self.progress_bar = None
         self.zoom = None
         self.cpu_usage = None
         self.memory = None
@@ -28,19 +27,14 @@ class StatusBar(ttk.Frame):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=5)
+        self.columnconfigure(0, weight=7)
+        self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
-        self.columnconfigure(4, weight=1)
 
         frame = ttk.Frame(self, borderwidth=1, relief=tk.RIDGE)
         frame.grid(row=0, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
-        self.progress_bar = ttk.Progressbar(
-            frame, orient="horizontal", mode="indeterminate"
-        )
-        self.progress_bar.grid(sticky="ew")
 
         self.status = ttk.Label(
             self,
@@ -49,7 +43,7 @@ class StatusBar(ttk.Frame):
             borderwidth=1,
             relief=tk.RIDGE,
         )
-        self.status.grid(row=0, column=1, sticky="ew")
+        self.status.grid(row=0, column=0, sticky="ew")
 
         self.zoom = ttk.Label(
             self,
@@ -58,17 +52,17 @@ class StatusBar(ttk.Frame):
             borderwidth=1,
             relief=tk.RIDGE,
         )
-        self.zoom.grid(row=0, column=2, sticky="ew")
+        self.zoom.grid(row=0, column=1, sticky="ew")
 
         self.cpu_usage = ttk.Label(
             self, text="CPU TBD", anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
         )
-        self.cpu_usage.grid(row=0, column=3, sticky="ew")
+        self.cpu_usage.grid(row=0, column=2, sticky="ew")
 
         self.alerts_button = ttk.Button(
             self, text="Alerts", command=self.click_alerts, style=Styles.green_alert
         )
-        self.alerts_button.grid(row=0, column=4, sticky="ew")
+        self.alerts_button.grid(row=0, column=3, sticky="ew")
 
     def click_alerts(self):
         dialog = AlertsDialog(self.app, self.app)

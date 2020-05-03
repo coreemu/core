@@ -22,7 +22,7 @@ from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.nodeutils import ICON_SIZE
-from core.gui.task import BackgroundTask
+from core.gui.task import ProgressTask
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -340,9 +340,8 @@ class Menubar(tk.Menu):
         self.core.xml_file = filename
         self.core.xml_dir = str(os.path.dirname(filename))
         self.prompt_save_running_session()
-        self.app.statusbar.progress_bar.start(5)
-        task = BackgroundTask(self.app, self.core.open_xml, args=(filename,))
-        task.start()
+        task = ProgressTask(self.core.open_xml, args=(filename,))
+        self.app.progress_task(task)
 
     def execute_python(self):
         dialog = ExecutePythonDialog(self.app, self.app)
