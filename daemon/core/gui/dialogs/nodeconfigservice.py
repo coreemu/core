@@ -4,7 +4,7 @@ core node services
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Any, Set
+from typing import TYPE_CHECKING, Set
 
 from core.gui.dialogs.configserviceconfig import ConfigServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 class NodeConfigServiceDialog(Dialog):
     def __init__(
         self,
-        master: Any,
+        master: tk.Widget,
         app: "Application",
         canvas_node: "CanvasNode",
         services: Set[str] = None,

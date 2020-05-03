@@ -298,11 +298,11 @@ class CanvasNode:
         dialog.show()
 
     def show_services(self):
-        dialog = NodeServiceDialog(self.app.master, self.app, self)
+        dialog = NodeServiceDialog(self.app, self.app, self)
         dialog.show()
 
     def show_config_services(self):
-        dialog = NodeConfigServiceDialog(self.app.master, self.app, self)
+        dialog = NodeConfigServiceDialog(self.app, self.app, self)
         dialog.show()
 
     def has_emane_link(self, interface_id: int) -> core_pb2.Node:

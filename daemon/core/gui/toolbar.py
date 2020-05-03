@@ -41,13 +41,12 @@ class Toolbar(ttk.Frame):
     Core toolbar class
     """
 
-    def __init__(self, master: "Application", app: "Application", **kwargs):
+    def __init__(self, master: tk.Widget, app: "Application", **kwargs):
         """
         Create a CoreToolbar instance
         """
         super().__init__(master, **kwargs)
         self.app = app
-        self.master = app.master
         self.time = None
 
         # design buttons

@@ -47,10 +47,15 @@ class ShowVar(BooleanVar):
 
 class CanvasGraph(tk.Canvas):
     def __init__(
-        self, master: "Application", core: "CoreClient", width: int, height: int
+        self,
+        master: tk.Widget,
+        app: "Application",
+        core: "CoreClient",
+        width: int,
+        height: int,
     ):
         super().__init__(master, highlightthickness=0, background="#cccccc")
-        self.app = master
+        self.app = app
         self.core = core
         self.mode = GraphMode.SELECT
         self.annotation_type = None
@@ -67,7 +72,7 @@ class CanvasGraph(tk.Canvas):
         self.wireless_network = {}
 
         self.drawing_edge = None
-        self.grid = None
+        self.rect = None
         self.shape_drawing = False
         self.default_dimensions = (width, height)
         self.current_dimensions = self.default_dimensions
@@ -107,12 +112,12 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
 
     def draw_canvas(self, dimensions: Tuple[int, int] = None):
-        if self.grid is not None:
-            self.delete(self.grid)
+        if self.rect is not None:
+            self.delete(self.rect)
         if not dimensions:
             dimensions = self.default_dimensions
         self.current_dimensions = dimensions
-        self.grid = self.create_rectangle(
+        self.rect = self.create_rectangle(
             0,
             0,
             *dimensions,
@@ -182,7 +187,7 @@ class CanvasGraph(tk.Canvas):
         return scaled_x, scaled_y
 
     def inside_canvas(self, x: float, y: float) -> [bool, bool]:
-        x1, y1, x2, y2 = self.bbox(self.grid)
+        x1, y1, x2, y2 = self.bbox(self.rect)
         valid_x = x1 <= x <= x2
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
@@ -219,7 +224,7 @@ class CanvasGraph(tk.Canvas):
         for i in range(0, height, 27):
             self.create_line(0, i, width, i, dash=(2, 4), tags=tags.GRIDLINE)
         self.tag_lower(tags.GRIDLINE)
-        self.tag_lower(self.grid)
+        self.tag_lower(self.rect)
 
     def add_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
@@ -293,7 +298,7 @@ class CanvasGraph(tk.Canvas):
                 )
             x = core_node.position.x
             y = core_node.position.y
-            node = CanvasNode(self.master, x, y, core_node, image)
+            node = CanvasNode(self.app, x, y, core_node, image)
             self.nodes[node.id] = node
             self.core.canvas_nodes[core_node.id] = node
 
@@ -732,7 +737,7 @@ class CanvasGraph(tk.Canvas):
                 self.node_draw.image = Images.get_custom(
                     self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
                 )
-            node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
+            node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
             return node
@@ -741,7 +746,7 @@ class CanvasGraph(tk.Canvas):
         """
         retrieve canvas width and height in pixels
         """
-        x0, y0, x1, y1 = self.coords(self.grid)
+        x0, y0, x1, y1 = self.coords(self.rect)
         canvas_w = abs(x0 - x1)
         canvas_h = abs(y0 - y1)
         return canvas_w, canvas_h
@@ -756,7 +761,7 @@ class CanvasGraph(tk.Canvas):
         self, image: ImageTk.PhotoImage, x: float = None, y: float = None
     ):
         if x is None and y is None:
-            x1, y1, x2, y2 = self.bbox(self.grid)
+            x1, y1, x2, y2 = self.bbox(self.rect)
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
         self.wallpaper_id = self.create_image((x, y), image=image, tags=tags.WALLPAPER)
@@ -778,7 +783,7 @@ class CanvasGraph(tk.Canvas):
         image = ImageTk.PhotoImage(cropped)
 
         # draw on canvas
-        x1, y1, _, _ = self.bbox(self.grid)
+        x1, y1, _, _ = self.bbox(self.rect)
         x = (cropx / 2) + x1
         y = (cropy / 2) + y1
         self.draw_wallpaper(image, x, y)
@@ -920,7 +925,7 @@ class CanvasGraph(tk.Canvas):
             copy = self.core.create_node(
                 actual_x, actual_y, core_node.type, core_node.model
             )
-            node = CanvasNode(self.master, scaled_x, scaled_y, copy, canvas_node.image)
+            node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
 
             # copy configurations and services
             node.core_node.services[:] = canvas_node.core_node.services

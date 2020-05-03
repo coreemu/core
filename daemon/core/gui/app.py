@@ -16,7 +16,7 @@ WIDTH = 1000
 HEIGHT = 800
 
 
-class Application(tk.Frame):
+class Application(ttk.Frame):
     def __init__(self, proxy: bool):
         super().__init__(master=None)
         # load node icons
@@ -25,6 +25,7 @@ class Application(tk.Frame):
         # widgets
         self.menubar = None
         self.toolbar = None
+        self.right_frame = None
         self.canvas = None
         self.statusbar = None
         self.validation = None
@@ -66,8 +67,8 @@ class Application(tk.Frame):
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
-        self.pack(fill=tk.BOTH, expand=True)
         self.validation = InputValidation(self)
+        self.master.option_add("*tearOff", tk.FALSE)
 
     def center(self):
         screen_width = self.master.winfo_screenwidth()
@@ -79,9 +80,17 @@ class Application(tk.Frame):
         )
 
     def draw(self):
-        self.master.option_add("*tearOff", tk.FALSE)
+        self.master.rowconfigure(0, weight=1)
+        self.master.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.grid(sticky="nsew")
         self.toolbar = Toolbar(self, self)
-        self.toolbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
+        self.toolbar.grid(sticky="ns")
+        self.right_frame = ttk.Frame(self)
+        self.right_frame.columnconfigure(0, weight=1)
+        self.right_frame.rowconfigure(0, weight=1)
+        self.right_frame.grid(row=0, column=1, sticky="nsew")
         self.draw_canvas()
         self.draw_status()
         self.menubar = Menubar(self.master, self)
@@ -89,20 +98,24 @@ class Application(tk.Frame):
     def draw_canvas(self):
         width = self.guiconfig["preferences"]["width"]
         height = self.guiconfig["preferences"]["height"]
-        self.canvas = CanvasGraph(self, self.core, width, height)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        canvas_frame = ttk.Frame(self.right_frame)
+        canvas_frame.rowconfigure(0, weight=1)
+        canvas_frame.columnconfigure(0, weight=1)
+        canvas_frame.grid(sticky="nsew", pady=1)
+        self.canvas = CanvasGraph(canvas_frame, self, self.core, width, height)
+        self.canvas.grid(sticky="nsew")
+        scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
+        scroll_y.grid(row=0, column=1, sticky="ns")
         scroll_x = ttk.Scrollbar(
-            self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
+            canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview
         )
-        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
-        scroll_y = ttk.Scrollbar(self.canvas, command=self.canvas.yview)
-        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_x.grid(row=1, column=0, sticky="ew")
         self.canvas.configure(xscrollcommand=scroll_x.set)
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
     def draw_status(self):
-        self.statusbar = StatusBar(master=self, app=self)
-        self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.statusbar = StatusBar(self.right_frame, self)
+        self.statusbar.grid(sticky="ew")
 
     def on_closing(self):
         self.menubar.prompt_save_running_session(True)
