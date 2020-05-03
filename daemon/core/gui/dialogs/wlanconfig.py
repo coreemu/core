@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import grpc
 
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
@@ -21,7 +20,7 @@ class WlanConfigDialog(Dialog):
         self, master: "Application", app: "Application", canvas_node: "CanvasNode"
     ):
         super().__init__(
-            master, app, f"{canvas_node.core_node.name} Wlan Configuration"
+            master, app, f"{canvas_node.core_node.name} WLAN Configuration"
         )
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
@@ -38,7 +37,7 @@ class WlanConfigDialog(Dialog):
             self.init_draw_range()
             self.draw()
         except grpc.RpcError as e:
-            show_grpc_error(e, self.app, self.app)
+            self.app.show_grpc_exception("WLAN Config Error", e)
             self.has_error = True
             self.destroy()
 

@@ -9,7 +9,6 @@ from core.api.grpc import core_pb2
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
 from core.gui.dialogs.runtool import RunToolDialog
-from core.gui.errors import show_error
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum, Images
@@ -273,7 +272,7 @@ class Toolbar(ttk.Frame):
             self.app.core.show_mobility_players()
         else:
             message = "\n".join(response.exceptions)
-            show_error(self.app, "Start Session Error", message)
+            self.app.show_error("Start Session Error", message)
 
     def set_runtime(self):
         self.runtime_frame.tkraise()

@@ -10,7 +10,6 @@ import grpc
 
 from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
@@ -116,8 +115,8 @@ class ConfigServiceConfigDialog(Dialog):
                 self.modified_files.add(file)
                 self.temp_service_files[file] = data
         except grpc.RpcError as e:
+            self.app.show_grpc_exception("Get Config Service Error", e)
             self.has_error = True
-            show_grpc_error(e, self.app, self.app)
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -323,22 +322,17 @@ class ConfigServiceConfigDialog(Dialog):
             self.destroy()
             return
 
-        try:
-            service_config = self.canvas_node.config_service_configs.setdefault(
-                self.service_name, {}
-            )
-            if self.config_frame:
-                self.config_frame.parse_config()
-                service_config["config"] = {
-                    x.name: x.value for x in self.config.values()
-                }
-            templates_config = service_config.setdefault("templates", {})
-            for file in self.modified_files:
-                templates_config[file] = self.temp_service_files[file]
-            all_current = current_listbox.get(0, tk.END)
-            current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
-        except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+        service_config = self.canvas_node.config_service_configs.setdefault(
+            self.service_name, {}
+        )
+        if self.config_frame:
+            self.config_frame.parse_config()
+            service_config["config"] = {x.name: x.value for x in self.config.values()}
+        templates_config = service_config.setdefault("templates", {})
+        for file in self.modified_files:
+            templates_config[file] = self.temp_service_files[file]
+        all_current = current_listbox.get(0, tk.END)
+        current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         self.destroy()
 
     def handle_template_changed(self, event: tk.Event):

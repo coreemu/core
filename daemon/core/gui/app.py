@@ -1,11 +1,15 @@
+import logging
 import math
 import time
 import tkinter as tk
 from tkinter import font, ttk
 from tkinter.ttk import Progressbar
 
+import grpc
+
 from core.gui import appconfig, themes
 from core.gui.coreclient import CoreClient
+from core.gui.dialogs.error import ErrorDialog
 from core.gui.graph.graph import CanvasGraph
 from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
@@ -137,6 +141,18 @@ class Application(ttk.Frame):
         self.time = None
         message = f"Task ran for {total:.3f} seconds"
         self.statusbar.set_status(message)
+
+    def show_grpc_exception(self, title: str, e: grpc.RpcError) -> None:
+        logging.exception("app grpc exception", exc_info=e)
+        message = e.details()
+        self.show_error(title, message)
+
+    def show_exception(self, title: str, e: Exception) -> None:
+        logging.exception("app exception", exc_info=e)
+        self.show_error(title, str(e))
+
+    def show_error(self, title: str, message: str) -> None:
+        self.after(0, lambda: ErrorDialog(self, self, title, message).show())
 
     def on_closing(self):
         self.menubar.prompt_save_running_session(True)

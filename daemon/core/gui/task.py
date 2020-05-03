@@ -2,8 +2,6 @@ import logging
 import threading
 from typing import Any, Callable, Tuple
 
-from core.gui.errors import show_exception
-
 
 class ProgressTask:
     def __init__(
@@ -33,7 +31,6 @@ class ProgressTask:
                 self.app.after(0, self.callback, *values)
         except Exception as e:
             logging.exception("progress task exception")
-            args = (self.app, "Task Error", e)
-            self.app.after(0, show_exception, *args)
+            self.app.show_exception("Task Error", e)
         finally:
             self.app.after(0, self.app.progress_task_complete)

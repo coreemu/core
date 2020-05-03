@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import grpc
 
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
@@ -33,8 +32,8 @@ class MobilityConfigDialog(Dialog):
                 self.config = self.app.core.get_mobility_config(self.node.id)
             self.draw()
         except grpc.RpcError as e:
+            self.app.show_grpc_exception("Get Mobility Config Error", e)
             self.has_error = True
-            show_grpc_error(e, self.app, self.app)
             self.destroy()
 
     def draw(self):

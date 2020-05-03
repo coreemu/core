@@ -7,7 +7,6 @@ import grpc
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
@@ -37,7 +36,7 @@ class SessionsDialog(Dialog):
             logging.info("sessions: %s", response)
             return response.sessions
         except grpc.RpcError as e:
-            show_grpc_error(e, self.app, self.app)
+            self.app.show_grpc_exception("Get Sessions Error", e)
             self.destroy()
 
     def draw(self) -> None:

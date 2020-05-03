@@ -14,7 +14,6 @@ from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
-from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.tooltip import CanvasTooltip
@@ -180,7 +179,7 @@ class CanvasNode:
                 output = self.app.core.run(self.core_node.id)
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
-                show_grpc_error(e, self.app, self.app)
+                self.app.show_grpc_exception("Observer Error", e)
 
     def on_leave(self, event: tk.Event):
         self.tooltip.on_leave(event)

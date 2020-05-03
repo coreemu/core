@@ -6,7 +6,6 @@ import grpc
 
 from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 
@@ -154,7 +153,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.START
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)
 
     def click_pause(self):
         self.set_pause()
@@ -164,7 +163,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.PAUSE
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)
 
     def click_stop(self):
         self.set_stop()
@@ -174,4 +173,4 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.STOP
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)

@@ -9,7 +9,6 @@ import grpc
 from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
@@ -119,8 +118,8 @@ class ServiceConfigDialog(Dialog):
             for file, data in file_configs.items():
                 self.temp_service_files[file] = data
         except grpc.RpcError as e:
+            self.app.show_grpc_exception("Get Node Service Error", e)
             self.has_error = True
-            show_grpc_error(e, self.master, self.app)
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
@@ -484,7 +483,7 @@ class ServiceConfigDialog(Dialog):
                 )
             self.current_service_color("green")
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Save Service Config Error", e)
         self.destroy()
 
     def display_service_file_data(self, event: tk.Event):
