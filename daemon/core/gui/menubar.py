@@ -31,9 +31,9 @@ MAX_FILES = 3
 OBSERVERS = {
     "List Processes": "ps",
     "Show Interfaces": "ip address",
-    "IPV4 Routes": "ip -4 ro",
-    "IPV6 Routes": "ip -6 ro",
-    "Listening Sockets": "netstat -tuwnl",
+    "IPV4 Routes": "ip -4 route",
+    "IPV6 Routes": "ip -6 route",
+    "Listening Sockets": "ss -tuwnl",
     "IPv4 MFC Entries": "ip -4 mroute show",
     "IPv6 MFC Entries": "ip -6 mroute show",
     "Firewall Rules": "iptables -L",
