@@ -111,12 +111,15 @@ class CoreClient:
         self.links.clear()
         self.hooks.clear()
         self.emane_config = None
-        for mobility_player in self.mobility_players.values():
-            mobility_player.handle_close()
+        self.close_mobility_players()
         self.mobility_players.clear()
         # clear streams
         self.cancel_throughputs()
         self.cancel_events()
+
+    def close_mobility_players(self):
+        for mobility_player in self.mobility_players.values():
+            mobility_player.close()
 
     def set_observer(self, value: str):
         self.observer = value

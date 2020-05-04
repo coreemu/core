@@ -37,7 +37,7 @@ class MobilityPlayer:
         self.dialog = MobilityPlayerDialog(
             self.master, self.app, self.canvas_node, self.config
         )
-        self.dialog.protocol("WM_DELETE_WINDOW", self.handle_close)
+        self.dialog.protocol("WM_DELETE_WINDOW", self.close)
         if self.state == MobilityAction.START:
             self.set_play()
         elif self.state == MobilityAction.PAUSE:
@@ -46,7 +46,7 @@ class MobilityPlayer:
             self.set_stop()
         self.dialog.show()
 
-    def handle_close(self):
+    def close(self):
         if self.dialog:
             self.dialog.destroy()
             self.dialog = None

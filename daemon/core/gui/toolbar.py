@@ -448,6 +448,7 @@ class Toolbar(ttk.Frame):
         """
         logging.info("clicked stop button")
         self.app.menubar.change_menubar_item_state(is_runtime=False)
+        self.app.core.close_mobility_players()
         task = ProgressTask(
             self.app, "Stop", self.app.core.stop_session, self.stop_callback
         )
