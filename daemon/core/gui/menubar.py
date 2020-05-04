@@ -10,6 +10,7 @@ from core.gui.appconfig import XMLS_PATH
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
 from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
+from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.executepython import ExecutePythonDialog
 from core.gui.dialogs.find import FindDialog
 from core.gui.dialogs.hooks import HooksDialog
@@ -116,6 +117,7 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(label="Preferences", command=self.click_preferences)
+        menu.add_command(label="Custom Nodes", command=self.click_custom_nodes)
         menu.add_separator()
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
@@ -495,4 +497,8 @@ class Menubar(tk.Menu):
 
     def click_ip_config(self) -> None:
         dialog = IpConfigDialog(self.app, self.app)
+        dialog.show()
+
+    def click_custom_nodes(self) -> None:
+        dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()

@@ -6,7 +6,6 @@ from tkinter import ttk
 from typing import TYPE_CHECKING, Callable
 
 from core.api.grpc import core_pb2
-from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.marker import MarkerDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph.enums import GraphMode
@@ -193,12 +192,6 @@ class Toolbar(ttk.Frame):
                 node_draw.image_file,
             )
             self.create_picker_button(image, func, self.node_picker, name)
-        # draw edit node
-        # image = icon(ImageEnum.EDITNODE, PICKER_SIZE)
-        image = self.get_icon(ImageEnum.EDITNODE, PICKER_SIZE)
-        self.create_picker_button(
-            image, self.click_edit_node, self.node_picker, "Custom"
-        )
         self.design_select(self.node_button)
         self.node_button.after(
             0, lambda: self.show_picker(self.node_button, self.node_picker)
@@ -288,11 +281,6 @@ class Toolbar(ttk.Frame):
         logging.debug("Click LINK button")
         self.design_select(self.link_button)
         self.app.canvas.mode = GraphMode.EDGE
-
-    def click_edit_node(self):
-        self.hide_pickers()
-        dialog = CustomNodesDialog(self.app, self.app)
-        dialog.show()
 
     def update_button(
         self,
@@ -488,9 +476,6 @@ class Toolbar(ttk.Frame):
             self.marker_tool.destroy()
         self.marker_tool = MarkerDialog(self.app, self.app)
         self.marker_tool.show()
-
-    def click_two_node_button(self):
-        logging.debug("Click TWONODE button")
 
     def scale_button(self, button, image_enum):
         image = icon(image_enum, int(TOOLBAR_SIZE * self.app.app_scale))

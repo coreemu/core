@@ -137,11 +137,11 @@ class CustomNodesDialog(Dialog):
         frame.grid(row=0, column=2, sticky="nsew")
         frame.columnconfigure(0, weight=1)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(sticky="ew")
+        entry.grid(sticky="ew", pady=PADY)
         self.image_button = ttk.Button(
             frame, text="Icon", compound=tk.LEFT, command=self.click_icon
         )
-        self.image_button.grid(sticky="ew")
+        self.image_button.grid(sticky="ew", pady=PADY)
         button = ttk.Button(frame, text="Services", command=self.click_services)
         button.grid(sticky="ew")
 
