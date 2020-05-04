@@ -185,8 +185,10 @@ class SessionsDialog(Dialog):
         self.destroy()
         if self.app.core.xml_file:
             self.app.core.xml_file = None
-        task = ProgressTask(self.app.core.join_session, args=(session_id,))
-        self.app.progress_task(task)
+        task = ProgressTask(
+            self.app, "Join", self.app.core.join_session, args=(session_id,)
+        )
+        task.start()
 
     def double_click_join(self, _event: tk.Event) -> None:
         item = self.tree.selection()

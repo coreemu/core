@@ -340,8 +340,8 @@ class Menubar(tk.Menu):
         self.core.xml_file = filename
         self.core.xml_dir = str(os.path.dirname(filename))
         self.prompt_save_running_session()
-        task = ProgressTask(self.core.open_xml, args=(filename,))
-        self.app.progress_task(task)
+        task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(filename,))
+        task.start()
 
     def execute_python(self):
         dialog = ExecutePythonDialog(self.app, self.app)

@@ -262,8 +262,10 @@ class Toolbar(ttk.Frame):
         """
         self.app.menubar.change_menubar_item_state(is_runtime=True)
         self.app.canvas.mode = GraphMode.SELECT
-        task = ProgressTask(self.app.core.start_session, self.start_callback)
-        self.app.progress_task(task)
+        task = ProgressTask(
+            self.app, "Start", self.app.core.start_session, self.start_callback
+        )
+        task.start()
 
     def start_callback(self, response: core_pb2.StartSessionResponse):
         if response.result:
@@ -446,8 +448,10 @@ class Toolbar(ttk.Frame):
         """
         logging.info("clicked stop button")
         self.app.menubar.change_menubar_item_state(is_runtime=False)
-        task = ProgressTask(self.app.core.stop_session, self.stop_callback)
-        self.app.progress_task(task)
+        task = ProgressTask(
+            self.app, "Stop", self.app.core.stop_session, self.stop_callback
+        )
+        task.start()
 
     def stop_callback(self, response: core_pb2.StopSessionResponse):
         self.set_design()

@@ -1,6 +1,5 @@
 import logging
 import math
-import time
 import tkinter as tk
 from tkinter import font, ttk
 from tkinter.ttk import Progressbar
@@ -15,7 +14,6 @@ from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
-from core.gui.task import ProgressTask
 from core.gui.toolbar import Toolbar
 from core.gui.validation import InputValidation
 
@@ -37,7 +35,6 @@ class Application(ttk.Frame):
         self.statusbar = None
         self.validation = None
         self.progress = None
-        self.time = None
 
         # fonts
         self.fonts_size = None
@@ -126,21 +123,6 @@ class Application(ttk.Frame):
     def draw_status(self):
         self.statusbar = StatusBar(self.right_frame, self)
         self.statusbar.grid(sticky="ew")
-
-    def progress_task(self, task: ProgressTask) -> None:
-        self.progress.grid(sticky="ew")
-        self.progress.start()
-        self.time = time.perf_counter()
-        task.app = self
-        task.start()
-
-    def progress_task_complete(self) -> None:
-        self.progress.stop()
-        self.progress.grid_forget()
-        total = time.perf_counter() - self.time
-        self.time = None
-        message = f"Task ran for {total:.3f} seconds"
-        self.statusbar.set_status(message)
 
     def show_grpc_exception(self, title: str, e: grpc.RpcError) -> None:
         logging.exception("app grpc exception", exc_info=e)
