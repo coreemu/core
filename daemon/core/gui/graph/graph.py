@@ -723,24 +723,26 @@ class CanvasGraph(tk.Canvas):
             dialog = ShapeDialog(self.app, shape)
             dialog.show()
 
-    def add_node(self, x: float, y: float) -> CanvasNode:
-        if self.selected is None or self.selected in self.shapes:
-            actual_x, actual_y = self.get_actual_coords(x, y)
-            core_node = self.core.create_node(
-                actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
+    def add_node(self, x: float, y: float) -> None:
+        if self.selected is not None and self.selected not in self.shapes:
+            return
+        actual_x, actual_y = self.get_actual_coords(x, y)
+        core_node = self.core.create_node(
+            actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
+        )
+        if not core_node:
+            return
+        try:
+            self.node_draw.image = Images.get(
+                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
             )
-            try:
-                self.node_draw.image = Images.get(
-                    self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
-                )
-            except AttributeError:
-                self.node_draw.image = Images.get_custom(
-                    self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
-                )
-            node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
-            self.core.canvas_nodes[core_node.id] = node
-            self.nodes[node.id] = node
-            return node
+        except AttributeError:
+            self.node_draw.image = Images.get_custom(
+                self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
+            )
+        node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
+        self.core.canvas_nodes[core_node.id] = node
+        self.nodes[node.id] = node
 
     def width_and_height(self):
         """
@@ -925,6 +927,8 @@ class CanvasGraph(tk.Canvas):
             copy = self.core.create_node(
                 actual_x, actual_y, core_node.type, core_node.model
             )
+            if not copy:
+                continue
             node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
 
             # copy configurations and services

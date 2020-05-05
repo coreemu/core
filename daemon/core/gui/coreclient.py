@@ -6,7 +6,7 @@ import logging
 import os
 from pathlib import Path
 from tkinter import messagebox
-from typing import TYPE_CHECKING, Dict, Iterable, List
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional
 
 import grpc
 
@@ -16,6 +16,7 @@ from core.api.grpc.mobility_pb2 import MobilityConfig
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
 from core.api.grpc.wlan_pb2 import WlanConfig
 from core.gui import appconfig
+from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
@@ -552,7 +553,7 @@ class CoreClient:
                 continue
             if canvas_node.mobility_config:
                 mobility_player = MobilityPlayer(
-                    self.app, self.app, canvas_node, canvas_node.mobility_config
+                    self.app, canvas_node, canvas_node.mobility_config
                 )
                 node_id = canvas_node.core_node.id
                 self.mobility_players[node_id] = mobility_player
@@ -785,7 +786,7 @@ class CoreClient:
 
     def create_node(
         self, x: float, y: float, node_type: core_pb2.NodeType, model: str
-    ) -> core_pb2.Node:
+    ) -> Optional[core_pb2.Node]:
         """
         Add node, with information filled in, to grpc manager
         """
@@ -796,6 +797,10 @@ class CoreClient:
             image = "ubuntu:latest"
         emane = None
         if node_type == core_pb2.NodeType.EMANE:
+            if not self.emane_models:
+                dialog = EmaneInstallDialog(self.app)
+                dialog.show()
+                return
             emane = self.emane_models[0]
             name = f"EMANE{node_id}"
         elif node_type == core_pb2.NodeType.WIRELESS_LAN:
@@ -818,7 +823,7 @@ class CoreClient:
             node.services[:] = services
         # assign default services to CORE node
         else:
-            services = self.default_services.get(model, None)
+            services = self.default_services.get(model)
             if services:
                 node.services[:] = services
         logging.info(
