@@ -46,7 +46,7 @@ class SessionOptionsDialog(Dialog):
         button = ttk.Button(frame, text="Save", command=self.save)
         button.grid(row=0, column=0, padx=PADX, sticky="ew")
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, padx=PADX, sticky="ew")
+        button.grid(row=0, column=1, sticky="ew")
 
     def save(self):
         config = self.config_frame.parse_config()
