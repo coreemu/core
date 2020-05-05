@@ -4,7 +4,7 @@ copy service config dialog
 
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Tuple
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
@@ -15,10 +15,9 @@ if TYPE_CHECKING:
 
 
 class CopyServiceConfigDialog(Dialog):
-    def __init__(self, master: Any, app: "Application", node_id: int):
-        super().__init__(master, app, f"Copy services to node {node_id}")
+    def __init__(self, master: tk.BaseWidget, app: "Application", node_id: int):
+        super().__init__(app, f"Copy services to node {node_id}", master=master)
         self.parent = master
-        self.app = app
         self.node_id = node_id
         self.service_configs = app.core.service_configs
         self.file_configs = app.core.file_configs
@@ -171,13 +170,13 @@ class CopyServiceConfigDialog(Dialog):
 class ViewConfigDialog(Dialog):
     def __init__(
         self,
-        master: Any,
+        master: tk.BaseWidget,
         app: "Application",
         node_id: int,
         data: str,
         filename: str = None,
     ):
-        super().__init__(master, app, f"n{node_id} config data")
+        super().__init__(app, f"n{node_id} config data", master=master)
         self.data = data
         self.service_data = None
         self.filepath = tk.StringVar(value=f"/tmp/services.tmp-n{node_id}-{filename}")

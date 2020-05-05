@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 
 
 class IpConfigDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application") -> None:
-        super().__init__(master, app, "IP Configuration")
+    def __init__(self, app: "Application") -> None:
+        super().__init__(app, "IP Configuration")
         ip_config = self.app.guiconfig.setdefault("ips")
         self.ip4 = ip_config.setdefault("ip4", appconfig.DEFAULT_IP4)
         self.ip6 = ip_config.setdefault("ip6", appconfig.DEFAULT_IP6)

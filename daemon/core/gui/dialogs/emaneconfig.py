@@ -4,7 +4,7 @@ emane configuration
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import grpc
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 
 class GlobalEmaneDialog(Dialog):
-    def __init__(self, master: Any, app: "Application"):
-        super().__init__(master, app, "EMANE Configuration")
+    def __init__(self, master: tk.BaseWidget, app: "Application"):
+        super().__init__(app, "EMANE Configuration", master=master)
         self.config_frame = None
         self.draw()
 
@@ -52,14 +52,14 @@ class GlobalEmaneDialog(Dialog):
 class EmaneModelDialog(Dialog):
     def __init__(
         self,
-        master: Any,
+        master: tk.BaseWidget,
         app: "Application",
         canvas_node: "CanvasNode",
         model: str,
         interface: int = None,
     ):
         super().__init__(
-            master, app, f"{canvas_node.core_node.name} {model} Configuration"
+            app, f"{canvas_node.core_node.name} {model} Configuration", master=master
         )
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
@@ -109,13 +109,8 @@ class EmaneModelDialog(Dialog):
 
 
 class EmaneConfigDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
-    ):
-        super().__init__(
-            master, app, f"{canvas_node.core_node.name} EMANE Configuration"
-        )
-        self.app = app
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+        super().__init__(app, f"{canvas_node.core_node.name} EMANE Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.radiovar = tk.IntVar()

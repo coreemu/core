@@ -1,17 +1,20 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class RunToolDialog(Dialog):
-    def __init__(self, master, app) -> None:
-        super().__init__(master, app, "Run Tool")
+    def __init__(self, app: "Application") -> None:
+        super().__init__(app, "Run Tool")
         self.cmd = tk.StringVar(value="ps ax")
-        self.app = app
         self.result = None
         self.node_list = None
         self.executable_nodes = {}

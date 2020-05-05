@@ -265,16 +265,16 @@ class CanvasNode:
         self.canvas.copy()
 
     def show_config(self):
-        dialog = NodeConfigDialog(self.app, self.app, self)
+        dialog = NodeConfigDialog(self.app, self)
         dialog.show()
 
     def show_wlan_config(self):
-        dialog = WlanConfigDialog(self.app, self.app, self)
+        dialog = WlanConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
     def show_mobility_config(self):
-        dialog = MobilityConfigDialog(self.app, self.app, self)
+        dialog = MobilityConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
@@ -283,15 +283,15 @@ class CanvasNode:
         mobility_player.show()
 
     def show_emane_config(self):
-        dialog = EmaneConfigDialog(self.app, self.app, self)
+        dialog = EmaneConfigDialog(self.app, self)
         dialog.show()
 
     def show_services(self):
-        dialog = NodeServiceDialog(self.app, self.app, self)
+        dialog = NodeServiceDialog(self.app, self)
         dialog.show()
 
     def show_config_services(self):
-        dialog = NodeConfigServiceDialog(self.app, self.app, self)
+        dialog = NodeConfigServiceDialog(self.app, self)
         dialog.show()
 
     def has_emane_link(self, interface_id: int) -> core_pb2.Node:

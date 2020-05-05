@@ -4,7 +4,7 @@ Service configuration dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, List
 
 import grpc
 
@@ -21,16 +21,14 @@ if TYPE_CHECKING:
 class ConfigServiceConfigDialog(Dialog):
     def __init__(
         self,
-        master: Any,
+        master: tk.BaseWidget,
         app: "Application",
         service_name: str,
         canvas_node: "CanvasNode",
         node_id: int,
     ):
         title = f"{service_name} Config Service"
-        super().__init__(master, app, title)
-        self.master = master
-        self.app = app
+        super().__init__(app, title, master=master)
         self.core = app.core
         self.canvas_node = canvas_node
         self.node_id = node_id

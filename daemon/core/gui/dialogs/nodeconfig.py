@@ -94,13 +94,11 @@ class InterfaceData:
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
-    ):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
         """
         create an instance of node configuration
         """
-        super().__init__(master, app, f"{canvas_node.core_node.name} Configuration")
+        super().__init__(app, f"{canvas_node.core_node.name} Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.image = canvas_node.image

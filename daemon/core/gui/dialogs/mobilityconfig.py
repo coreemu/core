@@ -16,12 +16,8 @@ if TYPE_CHECKING:
 
 
 class MobilityConfigDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
-    ):
-        super().__init__(
-            master, app, f"{canvas_node.core_node.name} Mobility Configuration"
-        )
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+        super().__init__(app, f"{canvas_node.core_node.name} Mobility Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None

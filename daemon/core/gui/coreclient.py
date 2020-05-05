@@ -467,11 +467,11 @@ class CoreClient:
             if len(sessions) == 0:
                 self.create_new_session()
             else:
-                dialog = SessionsDialog(self.app, self.app, True)
+                dialog = SessionsDialog(self.app, True)
                 dialog.show()
         except grpc.RpcError as e:
             logging.exception("core setup error")
-            dialog = ErrorDialog(self.app, self.app, "Setup Error", e.details())
+            dialog = ErrorDialog(self.app, "Setup Error", e.details())
             dialog.show()
             self.app.close()
 

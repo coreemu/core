@@ -389,5 +389,5 @@ class CanvasEdge(Edge):
         self.canvas.delete_edge(self)
 
     def click_configure(self) -> None:
-        dialog = LinkConfigurationDialog(self.canvas, self.canvas.app, self)
+        dialog = LinkConfigurationDialog(self.canvas.app, self)
         dialog.show()

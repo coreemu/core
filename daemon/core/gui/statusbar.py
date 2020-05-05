@@ -65,7 +65,7 @@ class StatusBar(ttk.Frame):
         self.alerts_button.grid(row=0, column=3, sticky="ew")
 
     def click_alerts(self):
-        dialog = AlertsDialog(self.app, self.app)
+        dialog = AlertsDialog(self.app)
         dialog.show()
 
     def set_status(self, message: str):

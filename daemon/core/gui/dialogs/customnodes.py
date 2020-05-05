@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Set
+from typing import TYPE_CHECKING, Set
 
 from core.gui import nodeutils
 from core.gui.appconfig import ICONS_PATH
@@ -17,8 +17,10 @@ if TYPE_CHECKING:
 
 
 class ServicesSelectDialog(Dialog):
-    def __init__(self, master: Any, app: "Application", current_services: Set[str]):
-        super().__init__(master, app, "Node Services")
+    def __init__(
+        self, master: tk.BaseWidget, app: "Application", current_services: Set[str]
+    ):
+        super().__init__(app, "Node Services", master=master)
         self.groups = None
         self.services = None
         self.current = None
@@ -100,8 +102,8 @@ class ServicesSelectDialog(Dialog):
 
 
 class CustomNodesDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Custom Nodes")
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Custom Nodes")
         self.edit_button = None
         self.delete_button = None
         self.nodes_list = None

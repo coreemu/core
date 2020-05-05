@@ -345,8 +345,8 @@ class Menubar(tk.Menu):
         task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(filename,))
         task.start()
 
-    def execute_python(self):
-        dialog = ExecutePythonDialog(self.app, self.app)
+    def execute_python(self) -> None:
+        dialog = ExecutePythonDialog(self.app)
         dialog.show()
 
     def add_recent_file_to_gui_config(self, file_path) -> None:
@@ -399,19 +399,19 @@ class Menubar(tk.Menu):
         self.core.xml_file = None
 
     def click_find(self, _event: tk.Event = None) -> None:
-        dialog = FindDialog(self.app, self.app)
+        dialog = FindDialog(self.app)
         dialog.show()
 
     def click_preferences(self) -> None:
-        dialog = PreferencesDialog(self.app, self.app)
+        dialog = PreferencesDialog(self.app)
         dialog.show()
 
     def click_canvas_size_and_scale(self) -> None:
-        dialog = SizeAndScaleDialog(self.app, self.app)
+        dialog = SizeAndScaleDialog(self.app)
         dialog.show()
 
     def click_canvas_wallpaper(self) -> None:
-        dialog = CanvasWallpaperDialog(self.app, self.app)
+        dialog = CanvasWallpaperDialog(self.app)
         dialog.show()
 
     def click_core_github(self) -> None:
@@ -421,7 +421,7 @@ class Menubar(tk.Menu):
         webbrowser.open_new("http://coreemu.github.io/core/")
 
     def click_about(self) -> None:
-        dialog = AboutDialog(self.app, self.app)
+        dialog = AboutDialog(self.app)
         dialog.show()
 
     def click_throughput(self) -> None:
@@ -431,7 +431,7 @@ class Menubar(tk.Menu):
             self.core.cancel_throughputs()
 
     def click_config_throughput(self) -> None:
-        dialog = ThroughputDialog(self.app, self.app)
+        dialog = ThroughputDialog(self.app)
         dialog.show()
 
     def click_copy(self, _event: tk.Event = None) -> None:
@@ -449,27 +449,27 @@ class Menubar(tk.Menu):
 
     def click_session_options(self) -> None:
         logging.debug("Click options")
-        dialog = SessionOptionsDialog(self.app, self.app)
+        dialog = SessionOptionsDialog(self.app)
         if not dialog.has_error:
             dialog.show()
 
     def click_sessions(self) -> None:
         logging.debug("Click change sessions")
-        dialog = SessionsDialog(self.app, self.app)
+        dialog = SessionsDialog(self.app)
         dialog.show()
 
     def click_hooks(self) -> None:
         logging.debug("Click hooks")
-        dialog = HooksDialog(self.app, self.app)
+        dialog = HooksDialog(self.app)
         dialog.show()
 
     def click_servers(self) -> None:
         logging.debug("Click emulation servers")
-        dialog = ServersDialog(self.app, self.app)
+        dialog = ServersDialog(self.app)
         dialog.show()
 
     def click_edit_observer_widgets(self) -> None:
-        dialog = ObserverDialog(self.app, self.app)
+        dialog = ObserverDialog(self.app)
         dialog.show()
 
     def click_autogrid(self) -> None:
@@ -492,13 +492,13 @@ class Menubar(tk.Menu):
             edge.draw_labels()
 
     def click_mac_config(self) -> None:
-        dialog = MacConfigDialog(self.app, self.app)
+        dialog = MacConfigDialog(self.app)
         dialog.show()
 
     def click_ip_config(self) -> None:
-        dialog = IpConfigDialog(self.app, self.app)
+        dialog = IpConfigDialog(self.app)
         dialog.show()
 
     def click_custom_nodes(self) -> None:
-        dialog = CustomNodesDialog(self.app, self.app)
+        dialog = CustomNodesDialog(self.app)
         dialog.show()

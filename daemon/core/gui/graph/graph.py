@@ -720,7 +720,7 @@ class CanvasGraph(tk.Canvas):
         selected = self.get_selected(event)
         if selected is not None and selected in self.shapes:
             shape = self.shapes[selected]
-            dialog = ShapeDialog(self.app, self.app, shape)
+            dialog = ShapeDialog(self.app, shape)
             dialog.show()
 
     def add_node(self, x: float, y: float) -> CanvasNode:

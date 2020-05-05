@@ -1,16 +1,19 @@
 import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
+from typing import TYPE_CHECKING
 
 from core.gui.appconfig import SCRIPT_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class ExecutePythonDialog(Dialog):
-    def __init__(self, master, app):
-        super().__init__(master, app, "Execute Python Script")
-        self.app = app
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Execute Python Script")
         self.with_options = tk.IntVar(value=0)
         self.options = tk.StringVar(value="")
         self.option_entry = None

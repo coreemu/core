@@ -148,7 +148,7 @@ class Shape:
     def shape_complete(self, x: float, y: float):
         for component in tags.ABOVE_SHAPE:
             self.canvas.tag_raise(component)
-        s = ShapeDialog(self.app, self.app, self)
+        s = ShapeDialog(self.app, self)
         s.show()
 
     def disappear(self):

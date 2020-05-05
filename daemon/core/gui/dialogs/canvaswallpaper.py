@@ -17,11 +17,11 @@ if TYPE_CHECKING:
 
 
 class CanvasWallpaperDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
+    def __init__(self, app: "Application"):
         """
         create an instance of CanvasWallpaper object
         """
-        super().__init__(master, app, "Canvas Background")
+        super().__init__(app, "Canvas Background")
         self.canvas = self.app.canvas
         self.scale_option = tk.IntVar(value=self.canvas.scale_option.get())
         self.adjust_to_dim = tk.BooleanVar(value=self.canvas.adjust_to_dim.get())

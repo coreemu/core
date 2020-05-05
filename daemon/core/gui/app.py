@@ -134,7 +134,7 @@ class Application(ttk.Frame):
         self.show_error(title, str(e))
 
     def show_error(self, title: str, message: str) -> None:
-        self.after(0, lambda: ErrorDialog(self, self, title, message).show())
+        self.after(0, lambda: ErrorDialog(self, title, message).show())
 
     def on_closing(self):
         self.menubar.prompt_save_running_session(True)

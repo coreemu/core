@@ -14,9 +14,8 @@ if TYPE_CHECKING:
 
 
 class ThroughputDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Throughput Config")
-        self.app = app
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Throughput Config")
         self.canvas = app.canvas
         self.show_throughput = tk.IntVar(value=1)
         self.exponential_weight = tk.IntVar(value=1)

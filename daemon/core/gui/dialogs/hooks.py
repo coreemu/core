@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 
 class HookDialog(Dialog):
-    def __init__(self, master: Any, app: "Application"):
-        super().__init__(master, app, "Hook")
+    def __init__(self, master: tk.BaseWidget, app: "Application"):
+        super().__init__(app, "Hook", master=master)
         self.name = tk.StringVar()
         self.codetext = None
         self.hook = core_pb2.Hook()
@@ -88,8 +88,8 @@ class HookDialog(Dialog):
 
 
 class HooksDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Hooks")
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Hooks")
         self.listbox = None
         self.edit_button = None
         self.delete_button = None

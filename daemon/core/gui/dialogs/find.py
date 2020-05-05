@@ -1,14 +1,18 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+if TYPE_CHECKING:
+    from core.gui.app import Application
+
 
 class FindDialog(Dialog):
-    def __init__(self, master, app) -> None:
-        super().__init__(master, app, "Find", modal=False)
+    def __init__(self, app: "Application") -> None:
+        super().__init__(app, "Find", modal=False)
         self.find_text = tk.StringVar(value="")
         self.tree = None
         self.draw()
@@ -90,7 +94,8 @@ class FindDialog(Dialog):
             if not node_name or node_name == name:
                 pos_x = round(node.core_node.position.x, 1)
                 pos_y = round(node.core_node.position.y, 1)
-                # TODO I am not sure what to insert for Detail column, leaving in blank for now
+                # TODO: I am not sure what to insert for Detail column
+                #  leaving it blank for now
                 self.tree.insert(
                     "",
                     tk.END,

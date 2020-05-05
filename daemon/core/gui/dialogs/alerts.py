@@ -15,9 +15,8 @@ if TYPE_CHECKING:
 
 
 class AlertsDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Alerts")
-        self.app = app
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Alerts")
         self.tree = None
         self.codetext = None
         self.alarm_map = {}
@@ -93,26 +92,16 @@ class AlertsDialog(Dialog):
         frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)
-        frame.columnconfigure(3, weight=1)
         button = ttk.Button(frame, text="Reset", command=self.reset_alerts)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
-        button = ttk.Button(frame, text="Daemon Log", command=self.daemon_log)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
-        button = ttk.Button(frame, text="Node Log")
-        button.grid(row=0, column=2, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Close", command=self.destroy)
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=1, sticky="ew")
 
     def reset_alerts(self):
         self.codetext.text.delete("1.0", tk.END)
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.app.statusbar.core_alarms.clear()
-
-    def daemon_log(self):
-        dialog = DaemonLog(self, self.app)
-        dialog.show()
 
     def click_select(self, event: tk.Event):
         current = self.tree.selection()[0]
@@ -121,33 +110,3 @@ class AlertsDialog(Dialog):
         self.codetext.text.delete("1.0", "end")
         self.codetext.text.insert("1.0", alarm.exception_event.text)
         self.codetext.text.config(state=tk.DISABLED)
-
-
-class DaemonLog(Dialog):
-    def __init__(self, master: tk.Widget, app: "Application"):
-        super().__init__(master, app, "core-daemon log")
-        self.columnconfigure(0, weight=1)
-        self.path = tk.StringVar(value="/var/log/core-daemon.log")
-        self.draw()
-
-    def draw(self):
-        self.top.columnconfigure(0, weight=1)
-        self.top.rowconfigure(1, weight=1)
-        frame = ttk.Frame(self.top)
-        frame.grid(row=0, column=0, sticky="ew", pady=PADY)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=9)
-        label = ttk.Label(frame, text="File", anchor="w")
-        label.grid(row=0, column=0, sticky="ew")
-        entry = ttk.Entry(frame, textvariable=self.path, state="disabled")
-        entry.grid(row=0, column=1, sticky="ew")
-        try:
-            file = open("/var/log/core-daemon.log", "r")
-            log = file.readlines()
-        except FileNotFoundError:
-            log = "Log file not found"
-        codetext = CodeText(self.top)
-        codetext.text.insert("1.0", log)
-        codetext.text.see("end")
-        codetext.text.config(state=tk.DISABLED)
-        codetext.grid(row=1, column=0, sticky="nsew")

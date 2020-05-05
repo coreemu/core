@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class MacConfigDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application") -> None:
-        super().__init__(master, app, "MAC Configuration")
+    def __init__(self, app: "Application") -> None:
+        super().__init__(app, "MAC Configuration")
         mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
         self.mac_var = tk.StringVar(value=mac)
         self.draw()

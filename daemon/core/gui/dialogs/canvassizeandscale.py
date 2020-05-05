@@ -15,11 +15,11 @@ PIXEL_SCALE = 100
 
 
 class SizeAndScaleDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
+    def __init__(self, app: "Application"):
         """
         create an instance for size and scale object
         """
-        super().__init__(master, app, "Canvas Size and Scale")
+        super().__init__(app, "Canvas Size and Scale")
         self.canvas = self.app.canvas
         self.validation = app.validation
         self.section_font = font.Font(weight="bold")

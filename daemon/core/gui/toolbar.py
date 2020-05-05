@@ -459,12 +459,12 @@ class Toolbar(ttk.Frame):
         if is_marker(shape_type):
             if self.marker_tool:
                 self.marker_tool.destroy()
-            self.marker_tool = MarkerDialog(self.app, self.app)
+            self.marker_tool = MarkerDialog(self.app)
             self.marker_tool.show()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
-        dialog = RunToolDialog(self.app, self.app)
+        dialog = RunToolDialog(self.app)
         dialog.show()
 
     def click_marker_button(self):
@@ -474,7 +474,7 @@ class Toolbar(ttk.Frame):
         self.app.canvas.annotation_type = ShapeType.MARKER
         if self.marker_tool:
             self.marker_tool.destroy()
-        self.marker_tool = MarkerDialog(self.app, self.app)
+        self.marker_tool = MarkerDialog(self.app)
         self.marker_tool.show()
 
     def scale_button(self, button, image_enum):
