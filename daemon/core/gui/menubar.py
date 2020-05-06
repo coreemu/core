@@ -13,6 +13,7 @@ from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
 from core.gui.dialogs.customnodes import CustomNodesDialog
 from core.gui.dialogs.executepython import ExecutePythonDialog
 from core.gui.dialogs.find import FindDialog
+from core.gui.dialogs.graphs import GraphBarDialog, GraphLineDialog, GraphScatterDialog
 from core.gui.dialogs.hooks import HooksDialog
 from core.gui.dialogs.ipdialog import IpConfigDialog
 from core.gui.dialogs.macdialog import MacConfigDialog
@@ -75,6 +76,7 @@ class Menubar(tk.Menu):
         self.draw_widgets_menu()
         self.draw_session_menu()
         self.draw_help_menu()
+        self.draw_experiments()
 
     def draw_file_menu(self) -> None:
         """
@@ -289,6 +291,13 @@ class Menubar(tk.Menu):
         menu.add_command(label="About", command=self.click_about)
         self.add_cascade(label="Help", menu=menu)
 
+    def draw_experiments(self) -> None:
+        menu = tk.Menu(self)
+        menu.add_command(label="Bar Graph", command=self.click_bar_graph)
+        menu.add_command(label="Line Graph", command=self.click_line_graph)
+        menu.add_command(label="Scatter Graph", command=self.click_scatter_graph)
+        self.add_cascade(label="Experiments", menu=menu)
+
     def open_recent_files(self, filename: str) -> None:
         if os.path.isfile(filename):
             logging.debug("Open recent file %s", filename)
@@ -501,4 +510,16 @@ class Menubar(tk.Menu):
 
     def click_custom_nodes(self) -> None:
         dialog = CustomNodesDialog(self.app)
+        dialog.show()
+
+    def click_bar_graph(self) -> None:
+        dialog = GraphBarDialog(self.app, "Bar Graph")
+        dialog.show()
+
+    def click_line_graph(self) -> None:
+        dialog = GraphLineDialog(self.app, "Bar Graph", live=True)
+        dialog.show()
+
+    def click_scatter_graph(self) -> None:
+        dialog = GraphScatterDialog(self.app, "Bar Graph")
         dialog.show()

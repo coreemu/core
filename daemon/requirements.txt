@@ -8,6 +8,7 @@ invoke==1.4.1
 lxml==4.5.0
 Mako==1.1.1
 MarkupSafe==1.1.1
+matplotlib==3.2.1
 netaddr==0.7.19
 paramiko==2.7.1
 Pillow==7.0.0

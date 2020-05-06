@@ -40,6 +40,7 @@ setup(
         "invoke",
         "lxml",
         "mako",
+        "matplotlib",
         "netaddr",
         "pillow",
         "protobuf",
