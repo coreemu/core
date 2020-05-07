@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Dict
 
 from core.api.grpc import common_pb2, core_pb2
 from core.gui import themes
-from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.themes import FRAME_PAD, PADX, PADY, Colors
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -223,6 +223,22 @@ class CheckboxList(FrameScroll):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
+        checkbox.grid(sticky="w")
+
+    def add_with_color(self, name: str, checked: bool, color: str):
+        var = tk.BooleanVar(value=checked)
+        func = partial(self.clicked, name, var)
+        checkbox = tk.Checkbutton(
+            self.frame,
+            text=name,
+            variable=var,
+            command=func,
+            background=color,
+            foreground="white",
+            selectcolor="black",
+            activebackground=Colors.selectbg,
+            highlightbackground=Colors.frame,
+        )
         checkbox.grid(sticky="w")
 
 

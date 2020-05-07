@@ -10,6 +10,7 @@ from core.api.grpc.core_pb2 import NodeType
 from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
+from core.gui.dialogs.multinodeserviceconfig import MultipleNodeServiceDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
@@ -212,6 +213,10 @@ class CanvasNode:
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
                 )
+                self.context.add_command(
+                    label="Multiple Node Service Configuration",
+                    command=self.multiple_node_service_config,
+                )
             if is_emane:
                 self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -292,6 +297,11 @@ class CanvasNode:
 
     def show_config_services(self):
         dialog = NodeConfigServiceDialog(self.app, self)
+        dialog.show()
+
+    def multiple_node_service_config(self):
+        print("multiple nodes services config ")
+        dialog = MultipleNodeServiceDialog(self.app)
         dialog.show()
 
     def has_emane_link(self, interface_id: int) -> core_pb2.Node:

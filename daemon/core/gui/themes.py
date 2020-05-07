@@ -31,6 +31,8 @@ class Colors:
     white = "white"
     black = "black"
     listboxbg = "#f2f1f0"
+    common_services = "#008000"
+    noncommon_services = "#b38f00"
 
 
 def load(style: ttk.Style):
