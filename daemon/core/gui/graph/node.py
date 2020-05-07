@@ -213,10 +213,11 @@ class CanvasNode:
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
                 )
-                self.context.add_command(
-                    label="Multiple Node Service Configuration",
-                    command=self.multiple_node_service_config,
-                )
+                if self.app.canvas.selection:
+                    self.context.add_command(
+                        label="Multiple Node Service Configuration",
+                        command=self.multiple_node_service_config,
+                    )
             if is_emane:
                 self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -300,7 +301,6 @@ class CanvasNode:
         dialog.show()
 
     def multiple_node_service_config(self):
-        print("multiple nodes services config ")
         dialog = MultipleNodeServiceDialog(self.app)
         dialog.show()
 
