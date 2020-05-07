@@ -70,7 +70,7 @@ class MultipleNodeServiceDialog(Dialog):
 
         return common_services, non_common_services
 
-    def populate_node_list(self):
+    def populate_node_list(self) -> None:
         self.nodes.listbox.delete(0, tk.END)
         for canvas_id, canvas_node in self.canvas.nodes.items():
             core_node = canvas_node.core_node
@@ -187,7 +187,7 @@ class MultipleNodeServiceDialog(Dialog):
                     color = Colors.noncommon_services
                 self.services.add_with_color(name, checked, color)
 
-    def service_clicked(self, name: str, var: tk.IntVar):
+    def service_clicked(self, name: str, var: tk.IntVar) -> None:
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
@@ -196,7 +196,7 @@ class MultipleNodeServiceDialog(Dialog):
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
 
-    def turn_off(self):
+    def turn_off(self) -> None:
         if not self.current_services:
             return
         for service in self.current_services:
@@ -206,7 +206,7 @@ class MultipleNodeServiceDialog(Dialog):
         self.handle_group_change()
         self.custom_nodes = self.custom_nodes.union(set(self.selected_nodes.keys()))
 
-    def turn_on(self):
+    def turn_on(self) -> None:
         if not self.current_services:
             return
         for service in self.current_services:
@@ -216,14 +216,14 @@ class MultipleNodeServiceDialog(Dialog):
         self.handle_group_change()
         self.custom_nodes = self.custom_nodes.union(set(self.selected_nodes.keys()))
 
-    def save_config(self):
+    def save_config(self) -> None:
         for node_id in self.custom_nodes:
             self.app.core.canvas_nodes[node_id].core_node.services[:] = self.all_nodes[
                 node_id
             ]
         self.destroy()
 
-    def default_config(self):
+    def default_config(self) -> None:
         self.current_services.clear()
         self.all_nodes.clear()
         self.custom_nodes.clear()
