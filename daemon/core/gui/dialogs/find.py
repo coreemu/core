@@ -45,7 +45,7 @@ class FindDialog(Dialog):
         )
         self.tree.grid(sticky="nsew", pady=PADY)
         style = ttk.Style()
-        heading_size = int(self.app.guiconfig["scale"] * 10)
+        heading_size = int(self.app.guiconfig.scale * 10)
         style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
         self.tree.column("nodeid", stretch=tk.YES, anchor="center")
         self.tree.heading("nodeid", text="Node ID")
@@ -124,7 +124,7 @@ class FindDialog(Dialog):
             canvas_node = self.app.core.canvas_nodes[node_id]
 
             x0, y0, x1, y1 = self.app.canvas.bbox(canvas_node.id)
-            dist = 5 * self.app.guiconfig["scale"]
+            dist = 5 * self.app.guiconfig.scale
             self.app.canvas.create_oval(
                 x0 - dist,
                 y0 - dist,
@@ -132,7 +132,7 @@ class FindDialog(Dialog):
                 y1 + dist,
                 tags="find",
                 outline="red",
-                width=3.0 * self.app.guiconfig["scale"],
+                width=3.0 * self.app.guiconfig.scale,
             )
 
             _x, _y, _, _ = self.app.canvas.bbox(canvas_node.id)

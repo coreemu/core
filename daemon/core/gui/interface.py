@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple
 import netaddr
 from netaddr import EUI, IPNetwork
 
-from core.gui import appconfig
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
@@ -44,14 +43,13 @@ class Subnets:
 class InterfaceManager:
     def __init__(self, app: "Application") -> None:
         self.app = app
-        ip_config = self.app.guiconfig.get("ips", {})
-        ip4 = ip_config.get("ip4", appconfig.DEFAULT_IP4)
-        ip6 = ip_config.get("ip6", appconfig.DEFAULT_IP6)
+        ip4 = self.app.guiconfig.ips.ip4
+        ip6 = self.app.guiconfig.ips.ip6
         self.ip4_mask = 24
         self.ip6_mask = 64
         self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
         self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
-        mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
+        mac = self.app.guiconfig.mac
         self.mac = EUI(mac, dialect=netaddr.mac_unix_expanded)
         self.current_mac = None
         self.current_subnets = None

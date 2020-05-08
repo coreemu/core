@@ -5,7 +5,7 @@ from tkinter import ttk
 from typing import TYPE_CHECKING, Set
 
 from core.gui import nodeutils
-from core.gui.appconfig import ICONS_PATH
+from core.gui.appconfig import ICONS_PATH, CustomNode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import Images
 from core.gui.nodeutils import NodeDraw
@@ -201,17 +201,12 @@ class CustomNodesDialog(Dialog):
             self.services.update(dialog.current_services)
 
     def click_save(self):
-        self.app.guiconfig["nodes"].clear()
-        for name in sorted(self.app.core.custom_nodes):
+        self.app.guiconfig.nodes.clear()
+        for name in self.app.core.custom_nodes:
             node_draw = self.app.core.custom_nodes[name]
-            self.app.guiconfig["nodes"].append(
-                {
-                    "name": name,
-                    "image": node_draw.image_file,
-                    "services": list(node_draw.services),
-                }
-            )
-        logging.info("saving custom nodes: %s", self.app.guiconfig["nodes"])
+            custom_node = CustomNode(name, node_draw.image_file, node_draw.services)
+            self.app.guiconfig.nodes.append(custom_node)
+        logging.info("saving custom nodes: %s", self.app.guiconfig.nodes)
         self.app.save_config()
         self.destroy()
 
@@ -219,7 +214,8 @@ class CustomNodesDialog(Dialog):
         name = self.name.get()
         if name not in self.app.core.custom_nodes:
             image_file = Path(self.image_file).stem
-            node_draw = NodeDraw.from_custom(name, image_file, set(self.services))
+            custom_node = CustomNode(name, image_file, list(self.services))
+            node_draw = NodeDraw.from_custom(custom_node)
             logging.info(
                 "created new custom node (%s), image file (%s), services: (%s)",
                 name,

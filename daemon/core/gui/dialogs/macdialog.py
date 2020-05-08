@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import netaddr
 
-from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 
@@ -15,7 +14,7 @@ if TYPE_CHECKING:
 class MacConfigDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "MAC Configuration")
-        mac = self.app.guiconfig.get("mac", appconfig.DEFAULT_MAC)
+        mac = self.app.guiconfig.mac
         self.mac_var = tk.StringVar(value=mac)
         self.draw()
 
@@ -57,6 +56,6 @@ class MacConfigDialog(Dialog):
             messagebox.showerror("MAC Error", f"{mac} is an invalid mac")
         else:
             self.app.core.interfaces_manager.mac = netaddr.EUI(mac)
-            self.app.guiconfig["mac"] = mac
+            self.app.guiconfig.mac = mac
             self.app.save_config()
             self.destroy()

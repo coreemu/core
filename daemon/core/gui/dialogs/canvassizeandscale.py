@@ -241,16 +241,16 @@ class SizeAndScaleDialog(Dialog):
         location.alt = self.alt.get()
         location.scale = self.scale.get()
         if self.save_default.get():
-            location_config = self.app.guiconfig["location"]
-            location_config["x"] = location.x
-            location_config["y"] = location.y
-            location_config["z"] = location.z
-            location_config["lat"] = location.lat
-            location_config["lon"] = location.lon
-            location_config["alt"] = location.alt
-            location_config["scale"] = location.scale
-            preferences = self.app.guiconfig["preferences"]
-            preferences["width"] = width
-            preferences["height"] = height
+            location_config = self.app.guiconfig.location
+            location_config.x = location.x
+            location_config.y = location.y
+            location_config.z = location.z
+            location_config.lat = location.lat
+            location_config.lon = location.lon
+            location_config.alt = location.alt
+            location_config.scale = location.scale
+            preferences = self.app.guiconfig.preferences
+            preferences.width = width
+            preferences.height = height
             self.app.save_config()
         self.destroy()

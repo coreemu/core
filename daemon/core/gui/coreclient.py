@@ -34,19 +34,6 @@ if TYPE_CHECKING:
 GUI_SOURCE = "gui"
 
 
-class CoreServer:
-    def __init__(self, name: str, address: str, port: int):
-        self.name = name
-        self.address = address
-        self.port = port
-
-
-class Observer:
-    def __init__(self, name: str, cmd: str):
-        self.name = name
-        self.cmd = cmd
-
-
 class CoreClient:
     def __init__(self, app: "Application", proxy: bool):
         """
@@ -126,22 +113,17 @@ class CoreClient:
         self.observer = value
 
     def read_config(self):
-        # read distributed server
-        for config in self.app.guiconfig.get("servers", []):
-            server = CoreServer(config["name"], config["address"], config["port"])
+        # read distributed servers
+        for server in self.app.guiconfig.servers:
             self.servers[server.name] = server
 
         # read custom nodes
-        for config in self.app.guiconfig.get("nodes", []):
-            name = config["name"]
-            image_file = config["image"]
-            services = set(config["services"])
-            node_draw = NodeDraw.from_custom(name, image_file, services)
-            self.custom_nodes[name] = node_draw
+        for custom_node in self.app.guiconfig.nodes:
+            node_draw = NodeDraw.from_custom(custom_node)
+            self.custom_nodes[custom_node.name] = node_draw
 
         # read observers
-        for config in self.app.guiconfig.get("observers", []):
-            observer = Observer(config["name"], config["cmd"])
+        for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event: core_pb2.Event):
@@ -367,8 +349,8 @@ class CoreClient:
             self.app.canvas.adjust_to_dim.set(fit_image)
             wallpaper_style = canvas_config.get("wallpaper-style", 1)
             self.app.canvas.scale_option.set(wallpaper_style)
-            width = self.app.guiconfig["preferences"]["width"]
-            height = self.app.guiconfig["preferences"]["height"]
+            width = self.app.guiconfig.preferences.width
+            height = self.app.guiconfig.preferences.height
             dimensions = canvas_config.get("dimensions", [width, height])
             self.app.canvas.redraw_canvas(dimensions)
             wallpaper = canvas_config.get("wallpaper")
@@ -418,15 +400,15 @@ class CoreClient:
         try:
             response = self.client.create_session()
             logging.info("created session: %s", response)
-            location_config = self.app.guiconfig["location"]
+            location_config = self.app.guiconfig.location
             self.location = core_pb2.SessionLocation(
-                x=location_config["x"],
-                y=location_config["y"],
-                z=location_config["z"],
-                lat=location_config["lat"],
-                lon=location_config["lon"],
-                alt=location_config["alt"],
-                scale=location_config["scale"],
+                x=location_config.x,
+                y=location_config.y,
+                z=location_config.z,
+                lat=location_config.lat,
+                lon=location_config.lon,
+                alt=location_config.alt,
+                scale=location_config.scale,
             )
             self.join_session(response.session_id, query_location=False)
         except grpc.RpcError as e:
@@ -585,7 +567,7 @@ class CoreClient:
 
     def launch_terminal(self, node_id: int):
         try:
-            terminal = self.app.guiconfig["preferences"]["terminal"]
+            terminal = self.app.guiconfig.preferences.terminal
             if not terminal:
                 messagebox.showerror(
                     "Terminal Error",

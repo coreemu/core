@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
-from core.gui.coreclient import CoreServer
+from core.gui.appconfig import CoreServer
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll
@@ -20,7 +20,6 @@ class ServersDialog(Dialog):
         super().__init__(app, "CORE Servers")
         self.name = tk.StringVar(value=DEFAULT_NAME)
         self.address = tk.StringVar(value=DEFAULT_ADDRESS)
-        self.port = tk.IntVar(value=DEFAULT_PORT)
         self.servers = None
         self.selected_index = None
         self.selected = None
@@ -54,30 +53,16 @@ class ServersDialog(Dialog):
         frame.grid(pady=PADY, sticky="ew")
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
-        frame.columnconfigure(5, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w", padx=PADX, pady=PADY)
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew")
 
         label = ttk.Label(frame, text="Address")
-        label.grid(row=0, column=2, sticky="w", padx=PADX, pady=PADY)
+        label.grid(row=0, column=2, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.address)
         entry.grid(row=0, column=3, sticky="ew")
-
-        label = ttk.Label(frame, text="Port")
-        label.grid(row=0, column=4, sticky="w", padx=PADX, pady=PADY)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.port,
-            validate="key",
-            validatecommand=(self.app.validation.positive_int, "%P"),
-        )
-        entry.bind(
-            "<FocusOut>", lambda event: self.app.validation.focus_out(event, "50051")
-        )
-        entry.grid(row=0, column=5, sticky="ew")
 
     def draw_servers_buttons(self):
         frame = ttk.Frame(self.top)
@@ -113,13 +98,9 @@ class ServersDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save_configuration(self):
-        servers = []
-        for name in sorted(self.app.core.servers):
-            server = self.app.core.servers[name]
-            servers.append(
-                {"name": server.name, "address": server.address, "port": server.port}
-            )
-        self.app.guiconfig["servers"] = servers
+        self.app.guiconfig.servers.clear()
+        for server in self.app.core.servers.values():
+            self.app.guiconfig.servers.append(server)
         self.app.save_config()
         self.destroy()
 
@@ -127,8 +108,7 @@ class ServersDialog(Dialog):
         name = self.name.get()
         if name not in self.app.core.servers:
             address = self.address.get()
-            port = self.port.get()
-            server = CoreServer(name, address, port)
+            server = CoreServer(name, address)
             self.app.core.servers[name] = server
             self.servers.insert(tk.END, name)
 
@@ -140,7 +120,6 @@ class ServersDialog(Dialog):
             server = self.app.core.servers.pop(previous_name)
             server.name = name
             server.address = self.address.get()
-            server.port = self.port.get()
             self.app.core.servers[name] = server
             self.servers.delete(self.selected_index)
             self.servers.insert(self.selected_index, name)
@@ -154,7 +133,6 @@ class ServersDialog(Dialog):
             self.selected_index = None
             self.name.set(DEFAULT_NAME)
             self.address.set(DEFAULT_ADDRESS)
-            self.port.set(DEFAULT_PORT)
             self.servers.selection_clear(0, tk.END)
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
@@ -167,7 +145,6 @@ class ServersDialog(Dialog):
             server = self.app.core.servers[self.selected]
             self.name.set(server.name)
             self.address.set(server.address)
-            self.port.set(server.port)
             self.save_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)
         else:

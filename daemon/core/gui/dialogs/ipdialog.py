@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 
 import netaddr
 
-from core.gui import appconfig
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll
@@ -16,11 +15,10 @@ if TYPE_CHECKING:
 class IpConfigDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "IP Configuration")
-        ip_config = self.app.guiconfig.setdefault("ips")
-        self.ip4 = ip_config.setdefault("ip4", appconfig.DEFAULT_IP4)
-        self.ip6 = ip_config.setdefault("ip6", appconfig.DEFAULT_IP6)
-        self.ip4s = ip_config.setdefault("ip4s", appconfig.DEFAULT_IP4S)
-        self.ip6s = ip_config.setdefault("ip6s", appconfig.DEFAULT_IP6S)
+        self.ip4 = self.app.guiconfig.ips.ip4
+        self.ip6 = self.app.guiconfig.ips.ip6
+        self.ip4s = self.app.guiconfig.ips.ip4s
+        self.ip6s = self.app.guiconfig.ips.ip6s
         self.ip4_entry = None
         self.ip4_listbox = None
         self.ip6_entry = None
@@ -143,11 +141,11 @@ class IpConfigDialog(Dialog):
         for index in range(self.ip6_listbox.listbox.size()):
             ip6 = self.ip6_listbox.listbox.get(index)
             ip6s.append(ip6)
-        ip_config = self.app.guiconfig["ips"]
-        ip_config["ip4"] = self.ip4
-        ip_config["ip6"] = self.ip6
-        ip_config["ip4s"] = ip4s
-        ip_config["ip6s"] = ip6s
+        ip_config = self.app.guiconfig.ips
+        ip_config.ip4 = self.ip4
+        ip_config.ip6 = self.ip6
+        ip_config.ip4s = ip4s
+        ip_config.ip6s = ip6s
         self.app.core.interfaces_manager.update_ips(self.ip4, self.ip6)
         self.app.save_config()
         self.destroy()

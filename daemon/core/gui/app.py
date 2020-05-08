@@ -43,7 +43,7 @@ class Application(ttk.Frame):
 
         # setup
         self.guiconfig = appconfig.read()
-        self.app_scale = self.guiconfig["scale"]
+        self.app_scale = self.guiconfig.scale
         self.setup_scaling()
         self.style = ttk.Style()
         self.setup_theme()
@@ -65,7 +65,7 @@ class Application(ttk.Frame):
         themes.load(self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", themes.theme_change_menu)
         self.master.bind("<<ThemeChanged>>", themes.theme_change)
-        self.style.theme_use(self.guiconfig["preferences"]["theme"])
+        self.style.theme_use(self.guiconfig.preferences.theme)
 
     def setup_app(self):
         self.master.title("CORE")
@@ -103,8 +103,8 @@ class Application(ttk.Frame):
         self.menubar = Menubar(self.master, self)
 
     def draw_canvas(self):
-        width = self.guiconfig["preferences"]["width"]
-        height = self.guiconfig["preferences"]["height"]
+        width = self.guiconfig.preferences.width
+        height = self.guiconfig.preferences.height
         canvas_frame = ttk.Frame(self.right_frame)
         canvas_frame.rowconfigure(0, weight=1)
         canvas_frame.columnconfigure(0, weight=1)
