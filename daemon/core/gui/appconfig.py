@@ -7,14 +7,14 @@ import yaml
 
 from core.gui import themes
 
-HOME_PATH = Path.home().joinpath(".coretk")
+HOME_PATH = Path.home().joinpath(".coregui")
 BACKGROUNDS_PATH = HOME_PATH.joinpath("backgrounds")
 CUSTOM_EMANE_PATH = HOME_PATH.joinpath("custom_emane")
 CUSTOM_SERVICE_PATH = HOME_PATH.joinpath("custom_services")
 ICONS_PATH = HOME_PATH.joinpath("icons")
 MOBILITY_PATH = HOME_PATH.joinpath("mobility")
 XMLS_PATH = HOME_PATH.joinpath("xmls")
-CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
+CONFIG_PATH = HOME_PATH.joinpath("config.yaml")
 LOG_PATH = HOME_PATH.joinpath("gui.log")
 SCRIPT_PATH = HOME_PATH.joinpath("scripts")
 
