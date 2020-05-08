@@ -5,7 +5,6 @@ from typing import List, Optional
 
 import yaml
 
-# gui home paths
 from core.gui import themes
 
 HOME_PATH = Path.home().joinpath(".coretk")
