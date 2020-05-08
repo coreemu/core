@@ -1002,10 +1002,10 @@ class CanvasGraph(tk.Canvas):
             if NodeUtils.is_custom(
                 canvas_node.core_node.type, canvas_node.core_node.model
             ):
-                for custom_node in self.app.guiconfig["nodes"]:
-                    if custom_node["name"] == canvas_node.core_node.model:
+                for custom_node in self.app.guiconfig.nodes:
+                    if custom_node.name == canvas_node.core_node.model:
                         img = Images.get_custom(
-                            custom_node["image"], int(ICON_SIZE * self.app.app_scale)
+                            custom_node.image, int(ICON_SIZE * self.app.app_scale)
                         )
             else:
                 image_enum = TypeToImage.get(

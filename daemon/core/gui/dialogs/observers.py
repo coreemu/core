@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING
 
-from core.gui.coreclient import Observer
+from core.gui.appconfig import Observer
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ListboxScroll
@@ -89,11 +89,9 @@ class ObserverDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save_config(self):
-        observers = []
-        for name in sorted(self.app.core.custom_observers):
-            observer = self.app.core.custom_observers[name]
-            observers.append({"name": observer.name, "cmd": observer.cmd})
-        self.app.guiconfig["observers"] = observers
+        self.app.guiconfig.observers.clear()
+        for observer in self.app.core.custom_observers.values():
+            self.app.guiconfig.observers.append(observer)
         self.app.save_config()
         self.destroy()
 

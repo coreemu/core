@@ -19,11 +19,11 @@ class PreferencesDialog(Dialog):
     def __init__(self, app: "Application"):
         super().__init__(app, "Preferences")
         self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
-        preferences = self.app.guiconfig["preferences"]
-        self.editor = tk.StringVar(value=preferences["editor"])
-        self.theme = tk.StringVar(value=preferences["theme"])
-        self.terminal = tk.StringVar(value=preferences["terminal"])
-        self.gui3d = tk.StringVar(value=preferences["gui3d"])
+        preferences = self.app.guiconfig.preferences
+        self.editor = tk.StringVar(value=preferences.editor)
+        self.theme = tk.StringVar(value=preferences.theme)
+        self.terminal = tk.StringVar(value=preferences.terminal)
+        self.gui3d = tk.StringVar(value=preferences.gui3d)
         self.draw()
 
     def draw(self):
@@ -110,15 +110,14 @@ class PreferencesDialog(Dialog):
         self.app.style.theme_use(theme)
 
     def click_save(self):
-        preferences = self.app.guiconfig["preferences"]
-        preferences["terminal"] = self.terminal.get()
-        preferences["editor"] = self.editor.get()
-        preferences["gui3d"] = self.gui3d.get()
-        preferences["theme"] = self.theme.get()
+        preferences = self.app.guiconfig.preferences
+        preferences.terminal = self.terminal.get()
+        preferences.editor = self.editor.get()
+        preferences.gui3d = self.gui3d.get()
+        preferences.theme = self.theme.get()
         self.gui_scale.set(round(self.gui_scale.get(), 2))
         app_scale = self.gui_scale.get()
-        self.app.guiconfig["scale"] = app_scale
-
+        self.app.guiconfig.scale = app_scale
         self.app.save_config()
         self.scale_adjust()
         self.destroy()

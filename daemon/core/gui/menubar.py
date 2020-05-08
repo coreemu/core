@@ -93,7 +93,7 @@ class Menubar(tk.Menu):
         )
         self.app.bind_all("<Control-o>", self.click_open_xml)
         self.recent_menu = tk.Menu(menu)
-        for i in self.app.guiconfig["recentfiles"]:
+        for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
                 label=i, command=partial(self.open_recent_files, i)
             )
@@ -298,7 +298,7 @@ class Menubar(tk.Menu):
 
     def update_recent_files(self) -> None:
         self.recent_menu.delete(0, tk.END)
-        for i in self.app.guiconfig["recentfiles"]:
+        for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
                 label=i, command=partial(self.open_recent_files, i)
             )
@@ -350,7 +350,7 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def add_recent_file_to_gui_config(self, file_path) -> None:
-        recent_files = self.app.guiconfig["recentfiles"]
+        recent_files = self.app.guiconfig.recentfiles
         num_files = len(recent_files)
         if num_files == 0:
             recent_files.insert(0, file_path)

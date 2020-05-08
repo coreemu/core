@@ -70,7 +70,7 @@ class SessionsDialog(Dialog):
             selectmode=tk.BROWSE,
         )
         style = ttk.Style()
-        heading_size = int(self.app.guiconfig["scale"] * 10)
+        heading_size = int(self.app.guiconfig.scale * 10)
         style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
         self.tree.grid(sticky="nsew")
         self.tree.column("id", stretch=tk.YES, anchor="center")
