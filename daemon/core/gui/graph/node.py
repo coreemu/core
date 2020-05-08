@@ -312,12 +312,10 @@ class CanvasNode:
         return result
 
     def wireless_link_selected(self):
-        for canvas_nid in [
-            x for x in self.canvas.selection if "node" in self.canvas.gettags(x)
-        ]:
-            core_node = self.canvas.nodes[canvas_nid].core_node
-            if core_node.type == core_pb2.NodeType.DEFAULT and core_node.model == "mdr":
-                self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
+        nodes = [x for x in self.canvas.selection if x in self.canvas.nodes]
+        for node_id in nodes:
+            canvas_node = self.canvas.nodes[node_id]
+            self.canvas.create_edge(self, canvas_node)
         self.canvas.clear_selection()
 
     def scale_antennas(self):
