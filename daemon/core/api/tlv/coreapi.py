@@ -13,7 +13,7 @@ from enum import Enum
 import netaddr
 
 from core.api.tlv import structutils
-from core.emulator.enumerations import (
+from core.api.tlv.enumerations import (
     ConfigTlvs,
     EventTlvs,
     ExceptionTlvs,
@@ -21,12 +21,11 @@ from core.emulator.enumerations import (
     FileTlvs,
     InterfaceTlvs,
     LinkTlvs,
-    MessageFlags,
     MessageTypes,
     NodeTlvs,
-    RegisterTlvs,
     SessionTlvs,
 )
+from core.emulator.enumerations import MessageFlags, RegisterTlvs
 
 
 class CoreTlvData:
@@ -351,8 +350,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         """
         # only use 48 bits
         value = binascii.hexlify(value[2:]).decode()
-        mac = netaddr.EUI(value)
-        mac.dialect = netaddr.mac_unix
+        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
         return str(mac)
 
 

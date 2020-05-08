@@ -34,14 +34,16 @@ setup(
     version="@PACKAGE_VERSION@",
     packages=find_packages(),
     install_requires=[
+        'dataclasses;python_version=="3.6"',
         "fabric",
         "grpcio",
-        "netaddr",
         "invoke",
         "lxml",
         "mako",
+        "netaddr",
         "pillow",
         "protobuf",
+        "pyproj",
         "pyyaml",
     ],
     tests_require=[

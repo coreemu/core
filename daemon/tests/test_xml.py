@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import pytest
 
 from core.emulator.emudata import LinkOptions, NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
@@ -20,7 +20,8 @@ class TestXml:
         # create hook
         file_name = "runtime_hook.sh"
         data = "#!/bin/sh\necho hello"
-        session.set_hook("hook:4", file_name, None, data)
+        state = EventTypes.RUNTIME_STATE
+        session.add_hook(state, file_name, None, data)
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -38,7 +39,7 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session._hooks.get(4)
+        runtime_hooks = session._hooks.get(state)
         assert runtime_hooks
         runtime_hook = runtime_hooks[0]
         assert file_name == runtime_hook[0]
@@ -269,7 +270,7 @@ class TestXml:
         switch_two = session.get_node(n2_id)
         assert switch_one
         assert switch_two
-        assert len(switch_one.all_link_data(0) + switch_two.all_link_data(0)) == 1
+        assert len(switch_one.all_link_data() + switch_two.all_link_data()) == 1
 
     def test_link_options(self, session, tmpdir, ip_prefixes):
         """
@@ -329,7 +330,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data(0)
+            links += node.all_link_data()
         link = links[0]
         assert link_options.per == link.per
         assert link_options.bandwidth == link.bandwidth
@@ -396,7 +397,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data(0)
+            links += node.all_link_data()
         link = links[0]
         assert link_options.per == link.per
         assert link_options.bandwidth == link.bandwidth
@@ -478,7 +479,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data(0)
+            links += node.all_link_data()
         assert len(links) == 2
         link_one = links[0]
         link_two = links[1]

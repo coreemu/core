@@ -3,11 +3,10 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Any, Set
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
-from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
@@ -17,39 +16,15 @@ if TYPE_CHECKING:
 
 
 class NodeServiceDialog(Dialog):
-    def __init__(
-        self,
-        master: Any,
-        app: "Application",
-        canvas_node: "CanvasNode",
-        services: Set[str] = None,
-    ):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
         title = f"{canvas_node.core_node.name} Services"
-        super().__init__(master, app, title, modal=True)
-        self.app = app
+        super().__init__(app, title)
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id
         self.groups = None
         self.services = None
         self.current = None
-        if services is None:
-            services = canvas_node.core_node.services
-            model = canvas_node.core_node.model
-            if len(services) == 0:
-                # not custom node type and node's services haven't been modified before
-                if not NodeUtils.is_custom(
-                    canvas_node.core_node.model
-                ) and not self.app.core.service_been_modified(self.node_id):
-                    services = set(self.app.core.default_services[model])
-                # services of default type nodes were modified to be empty
-                elif canvas_node.core_node.id in self.app.core.modified_service_nodes:
-                    services = set()
-                else:
-                    services = set(
-                        NodeUtils.get_custom_node_services(self.app.guiconfig, model)
-                    )
-            else:
-                services = set(services)
+        services = set(canvas_node.core_node.services)
         self.current_services = services
         self.draw()
 
@@ -103,7 +78,7 @@ class NodeServiceDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.click_remove)
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
-        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
         # trigger group change
@@ -135,10 +110,11 @@ class NodeServiceDialog(Dialog):
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
             dialog = ServiceConfigDialog(
-                master=self,
-                app=self.app,
-                service_name=self.current.listbox.get(current_selection[0]),
-                node_id=self.node_id,
+                self,
+                self.app,
+                self.current.listbox.get(current_selection[0]),
+                self.canvas_node,
+                self.node_id,
             )
 
             # if error occurred when creating ServiceConfigDialog, don't show the dialog
@@ -148,25 +124,12 @@ class NodeServiceDialog(Dialog):
                 dialog.destroy()
         else:
             messagebox.showinfo(
-                "Node service configuration", "Select a service to configure"
+                "Service Configuration", "Select a service to configure", parent=self
             )
 
     def click_save(self):
-        # if node is custom type or current services are not the default services then set core node services and add node to modified services node set
-        if (
-            self.canvas_node.core_node.model not in self.app.core.default_services
-            or self.current_services
-            != self.app.core.default_services[self.canvas_node.core_node.model]
-        ):
-            self.canvas_node.core_node.services[:] = self.current_services
-            self.app.core.modified_service_nodes.add(self.canvas_node.core_node.id)
-        else:
-            if len(self.canvas_node.core_node.services) > 0:
-                self.canvas_node.core_node.services[:] = []
-        self.destroy()
-
-    def click_cancel(self):
-        self.current_services = None
+        core_node = self.canvas_node.core_node
+        core_node.services[:] = self.current_services
         self.destroy()
 
     def click_remove(self):
@@ -181,14 +144,6 @@ class NodeServiceDialog(Dialog):
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        service_configs = self.app.core.service_configs
-        file_configs = self.app.core.file_configs
-        if self.node_id in service_configs and service in service_configs[self.node_id]:
-            return True
-        if (
-            self.node_id in file_configs
-            and service in file_configs[self.node_id]
-            and file_configs[self.node_id][service]
-        ):
-            return True
-        return False
+        has_service_config = service in self.canvas_node.service_configs
+        has_file_config = service in self.canvas_node.service_file_configs
+        return has_service_config or has_file_config

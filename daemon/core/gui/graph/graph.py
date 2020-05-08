@@ -1,19 +1,27 @@
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING, List, Tuple
+from copy import deepcopy
+from tkinter import BooleanVar
+from typing import TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
-from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
+from core.gui.graph.edges import (
+    EDGE_WIDTH,
+    CanvasEdge,
+    CanvasWirelessEdge,
+    arc_edges,
+    create_edge_token,
+)
 from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import ImageEnum, Images
-from core.gui.nodeutils import EdgeUtils, NodeUtils
+from core.gui.images import ImageEnum, Images, TypeToImage
+from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -24,12 +32,30 @@ ZOOM_OUT = 0.9
 ICON_SIZE = 48
 
 
+class ShowVar(BooleanVar):
+    def __init__(self, canvas: "CanvasGraph", tag: str, value: bool) -> None:
+        super().__init__(value=value)
+        self.canvas = canvas
+        self.tag = tag
+
+    def state(self) -> str:
+        return tk.NORMAL if self.get() else tk.HIDDEN
+
+    def click_handler(self):
+        self.canvas.itemconfigure(self.tag, state=self.state())
+
+
 class CanvasGraph(tk.Canvas):
     def __init__(
-        self, master: "Application", core: "CoreClient", width: int, height: int
+        self,
+        master: tk.Widget,
+        app: "Application",
+        core: "CoreClient",
+        width: int,
+        height: int,
     ):
         super().__init__(master, highlightthickness=0, background="#cccccc")
-        self.app = master
+        self.app = app
         self.core = core
         self.mode = GraphMode.SELECT
         self.annotation_type = None
@@ -37,13 +63,16 @@ class CanvasGraph(tk.Canvas):
         self.select_box = None
         self.selected = None
         self.node_draw = None
-        self.context = None
         self.nodes = {}
         self.edges = {}
         self.shapes = {}
         self.wireless_edges = {}
+
+        # map wireless/EMANE node to the set of MDRs connected to that node
+        self.wireless_network = {}
+
         self.drawing_edge = None
-        self.grid = None
+        self.rect = None
         self.shape_drawing = False
         self.default_dimensions = (width, height)
         self.current_dimensions = self.default_dimensions
@@ -59,13 +88,21 @@ class CanvasGraph(tk.Canvas):
         self.wallpaper_drawn = None
         self.wallpaper_file = ""
         self.scale_option = tk.IntVar(value=1)
-        self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
 
         # throughput related
         self.throughput_threshold = 250.0
         self.throughput_width = 10
         self.throughput_color = "#FF0000"
+
+        # drawing related
+        self.show_node_labels = ShowVar(self, tags.NODE_LABEL, value=True)
+        self.show_link_labels = ShowVar(self, tags.LINK_LABEL, value=True)
+        self.show_grid = ShowVar(self, tags.GRIDLINE, value=True)
+        self.show_annotations = ShowVar(self, tags.ANNOTATION, value=True)
+        self.show_interface_names = BooleanVar(value=False)
+        self.show_ip4s = BooleanVar(value=True)
+        self.show_ip6s = BooleanVar(value=True)
 
         # bindings
         self.setup_bindings()
@@ -75,12 +112,12 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
 
     def draw_canvas(self, dimensions: Tuple[int, int] = None):
-        if self.grid is not None:
-            self.delete(self.grid)
+        if self.rect is not None:
+            self.delete(self.rect)
         if not dimensions:
             dimensions = self.default_dimensions
         self.current_dimensions = dimensions
-        self.grid = self.create_rectangle(
+        self.rect = self.create_rectangle(
             0,
             0,
             *dimensions,
@@ -97,8 +134,14 @@ class CanvasGraph(tk.Canvas):
         client.
         :param session: session to draw
         """
-        # hide context
-        self.hide_context()
+        # reset view options to default state
+        self.show_node_labels.set(True)
+        self.show_link_labels.set(True)
+        self.show_grid.set(True)
+        self.show_annotations.set(True)
+        self.show_interface_names.set(False)
+        self.show_ip4s.set(True)
+        self.show_ip6s.set(True)
 
         # delete any existing drawn items
         for tag in tags.COMPONENT_TAGS:
@@ -113,6 +156,7 @@ class CanvasGraph(tk.Canvas):
         self.edges.clear()
         self.shapes.clear()
         self.wireless_edges.clear()
+        self.wireless_network.clear()
         self.drawing_edge = None
         self.draw_session(session)
 
@@ -123,7 +167,6 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<ButtonRelease-3>", self.click_context)
         self.bind("<Delete>", self.press_delete)
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
@@ -132,11 +175,6 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
-
-    def hide_context(self, event=None):
-        if self.context:
-            self.context.unpost()
-            self.context = None
 
     def get_actual_coords(self, x: float, y: float) -> [float, float]:
         actual_x = (x - self.offset[0]) / self.ratio
@@ -149,7 +187,7 @@ class CanvasGraph(tk.Canvas):
         return scaled_x, scaled_y
 
     def inside_canvas(self, x: float, y: float) -> [bool, bool]:
-        x1, y1, x2, y2 = self.bbox(self.grid)
+        x1, y1, x2, y2 = self.bbox(self.rect)
         valid_x = x1 <= x <= x2
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
@@ -186,29 +224,59 @@ class CanvasGraph(tk.Canvas):
         for i in range(0, height, 27):
             self.create_line(0, i, width, i, dash=(2, 4), tags=tags.GRIDLINE)
         self.tag_lower(tags.GRIDLINE)
-        self.tag_lower(self.grid)
+        self.tag_lower(self.rect)
 
-    def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
-        """
-        add a wireless edge between 2 canvas nodes
-        """
-        token = EdgeUtils.get_token(src.id, dst.id)
-        x1, y1 = self.coords(src.id)
-        x2, y2 = self.coords(dst.id)
-        position = (x1, y1, x2, y2)
-        edge = CanvasWirelessEdge(token, position, src.id, dst.id, self)
+    def add_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        network_id = link.network_id if link.network_id else None
+        token = create_edge_token(src.id, dst.id, network_id)
+        if token in self.wireless_edges:
+            logging.warning("ignoring link that already exists: %s", link)
+            return
+        src_pos = self.coords(src.id)
+        dst_pos = self.coords(dst.id)
+        edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token)
+        if link.label:
+            edge.middle_label_text(link.label)
+        if link.color:
+            edge.color = link.color
         self.wireless_edges[token] = edge
         src.wireless_edges.add(edge)
         dst.wireless_edges.add(edge)
         self.tag_raise(src.id)
         self.tag_raise(dst.id)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
 
-    def delete_wireless_edge(self, src: CanvasNode, dst: CanvasNode):
-        token = EdgeUtils.get_token(src.id, dst.id)
+    def delete_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        network_id = link.network_id if link.network_id else None
+        token = create_edge_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            return
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
         dst.wireless_edges.remove(edge)
+        # update arcs when there are multiple links
+        common_edges = list(src.wireless_edges & dst.wireless_edges)
+        arc_edges(common_edges)
+
+    def update_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: core_pb2.Link
+    ) -> None:
+        if not link.label:
+            return
+        network_id = link.network_id if link.network_id else None
+        token = create_edge_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            self.add_wireless_edge(src, dst, link)
+        else:
+            edge = self.wireless_edges[token]
+            edge.middle_label_text(link.label)
 
     def draw_session(self, session: core_pb2.Session):
         """
@@ -220,13 +288,17 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(core_node, self.app.guiconfig)
+            image = NodeUtils.node_image(
+                core_node, self.app.guiconfig, self.app.app_scale
+            )
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(ImageEnum.EDITNODE, ICON_SIZE)
+                image = Images.get(
+                    ImageEnum.EDITNODE, int(ICON_SIZE * self.app.app_scale)
+                )
             x = core_node.position.x
             y = core_node.position.y
-            node = CanvasNode(self.master, x, y, core_node, image)
+            node = CanvasNode(self.app, x, y, core_node, image)
             self.nodes[node.id] = node
             self.core.canvas_nodes[core_node.id] = node
 
@@ -237,20 +309,15 @@ class CanvasGraph(tk.Canvas):
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
-            token = EdgeUtils.get_token(canvas_node_one.id, canvas_node_two.id)
+            token = create_edge_token(canvas_node_one.id, canvas_node_two.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
-                self.add_wireless_edge(canvas_node_one, canvas_node_two)
+                self.add_wireless_edge(canvas_node_one, canvas_node_two, link)
             else:
                 if token not in self.edges:
-                    edge = CanvasEdge(
-                        node_one.position.x,
-                        node_one.position.y,
-                        node_two.position.x,
-                        node_two.position.y,
-                        canvas_node_one.id,
-                        self,
-                    )
+                    src_pos = (node_one.position.x, node_one.position.y)
+                    dst_pos = (node_two.position.x, node_two.position.y)
+                    edge = CanvasEdge(self, canvas_node_one.id, src_pos, dst_pos)
                     edge.token = token
                     edge.dst = canvas_node_two.id
                     edge.set_link(link)
@@ -324,44 +391,38 @@ class CanvasGraph(tk.Canvas):
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             return
-
-        if self.context:
-            self.hide_context()
+        if self.mode == GraphMode.ANNOTATION:
+            self.focus_set()
+            if self.shape_drawing:
+                shape = self.shapes[self.selected]
+                shape.shape_complete(x, y)
+                self.shape_drawing = False
+        elif self.mode == GraphMode.SELECT:
+            self.focus_set()
+            if self.select_box:
+                x0, y0, x1, y1 = self.coords(self.select_box.id)
+                inside = [
+                    x
+                    for x in self.find_enclosed(x0, y0, x1, y1)
+                    if "node" in self.gettags(x) or "shape" in self.gettags(x)
+                ]
+                for i in inside:
+                    self.select_object(i, True)
+                self.select_box.disappear()
+                self.select_box = None
         else:
-            if self.mode == GraphMode.ANNOTATION:
-                self.focus_set()
-                if self.shape_drawing:
-                    shape = self.shapes[self.selected]
-                    shape.shape_complete(x, y)
-                    self.shape_drawing = False
-            elif self.mode == GraphMode.SELECT:
-                self.focus_set()
-                if self.select_box:
-                    x0, y0, x1, y1 = self.coords(self.select_box.id)
-                    inside = [
-                        x
-                        for x in self.find_enclosed(x0, y0, x1, y1)
-                        if "node" in self.gettags(x) or "shape" in self.gettags(x)
-                    ]
-                    for i in inside:
-                        self.select_object(i, True)
-                    self.select_box.disappear()
-                    self.select_box = None
-            else:
-                self.focus_set()
-                self.selected = self.get_selected(event)
-                logging.debug(
-                    f"click release selected({self.selected}) mode({self.mode})"
-                )
-                if self.mode == GraphMode.EDGE:
-                    self.handle_edge_release(event)
-                elif self.mode == GraphMode.NODE:
-                    self.add_node(x, y)
-                elif self.mode == GraphMode.PICKNODE:
-                    self.mode = GraphMode.NODE
+            self.focus_set()
+            self.selected = self.get_selected(event)
+            logging.debug(f"click release selected({self.selected}) mode({self.mode})")
+            if self.mode == GraphMode.EDGE:
+                self.handle_edge_release(event)
+            elif self.mode == GraphMode.NODE:
+                self.add_node(x, y)
+            elif self.mode == GraphMode.PICKNODE:
+                self.mode = GraphMode.NODE
         self.selected = None
 
-    def handle_edge_release(self, event: tk.Event):
+    def handle_edge_release(self, _event: tk.Event):
         edge = self.drawing_edge
         self.drawing_edge = None
 
@@ -382,7 +443,7 @@ class CanvasGraph(tk.Canvas):
             return
 
         # ignore repeated edges
-        token = EdgeUtils.get_token(edge.src, self.selected)
+        token = create_edge_token(edge.src, self.selected)
         if token in self.edges:
             edge.delete()
             return
@@ -431,7 +492,7 @@ class CanvasGraph(tk.Canvas):
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selection_objects(self) -> List[CanvasNode]:
+    def delete_selected_objects(self) -> None:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -445,15 +506,13 @@ class CanvasGraph(tk.Canvas):
                 canvas_node.delete()
                 nodes.append(canvas_node)
                 is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
-
                 # delete related edges
                 for edge in canvas_node.edges:
                     if edge in edges:
                         continue
                     edges.add(edge)
-                    self.edges.pop(edge.token, None)
+                    del self.edges[edge.token]
                     edge.delete()
-
                     # update node connected to edge being deleted
                     other_id = edge.src
                     other_interface = edge.src_interface
@@ -462,10 +521,8 @@ class CanvasGraph(tk.Canvas):
                         other_interface = edge.dst_interface
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
-                    try:
+                    if other_interface in other_node.interfaces:
                         other_node.interfaces.remove(other_interface)
-                    except ValueError:
-                        pass
                     if is_wireless:
                         other_node.delete_antenna()
 
@@ -475,7 +532,27 @@ class CanvasGraph(tk.Canvas):
                 shape.delete()
 
         self.selection.clear()
-        return nodes
+        self.core.deleted_graph_nodes(nodes)
+        self.core.deleted_graph_edges(edges)
+
+    def delete_edge(self, edge: CanvasEdge):
+        edge.delete()
+        del self.edges[edge.token]
+        src_node = self.nodes[edge.src]
+        src_node.edges.discard(edge)
+        if edge.src_interface in src_node.interfaces:
+            src_node.interfaces.remove(edge.src_interface)
+        dst_node = self.nodes[edge.dst]
+        dst_node.edges.discard(edge)
+        if edge.dst_interface in dst_node.interfaces:
+            dst_node.interfaces.remove(edge.dst_interface)
+        src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
+        if src_wireless:
+            dst_node.delete_antenna()
+        dst_wireless = NodeUtils.is_wireless_node(dst_node.core_node.type)
+        if dst_wireless:
+            src_node.delete_antenna()
+        self.core.deleted_graph_edges([edge])
 
     def zoom(self, event: tk.Event, factor: float = None):
         if not factor:
@@ -511,11 +588,10 @@ class CanvasGraph(tk.Canvas):
         logging.debug("click press offset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
-            x, y = self.coords(selected)
-            self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
+            pos = self.coords(selected)
+            self.drawing_edge = CanvasEdge(self, selected, pos, pos)
 
         if self.mode == GraphMode.ANNOTATION:
-
             if is_marker(self.annotation_type):
                 r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
@@ -525,7 +601,8 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags="marker",
+                    tags=(tags.MARKER, tags.ANNOTATION),
+                    state=self.show_annotations.state(),
                 )
                 return
             if selected is None:
@@ -594,8 +671,7 @@ class CanvasGraph(tk.Canvas):
         self.cursor = x, y
 
         if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
-            x1, y1, _, _ = self.coords(self.drawing_edge.id)
-            self.coords(self.drawing_edge.id, x1, y1, x, y)
+            self.drawing_edge.move_dst(self.cursor)
         if self.mode == GraphMode.ANNOTATION:
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
@@ -609,7 +685,7 @@ class CanvasGraph(tk.Canvas):
                     y + r,
                     fill=self.app.toolbar.marker_tool.color,
                     outline="",
-                    tags="marker",
+                    tags=(tags.MARKER, tags.ANNOTATION),
                 )
             return
 
@@ -630,49 +706,49 @@ class CanvasGraph(tk.Canvas):
             if self.select_box and self.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
 
-    def click_context(self, event: tk.Event):
-        if not self.context:
-            selected = self.get_selected(event)
-            canvas_node = self.nodes.get(selected)
-            if canvas_node:
-                logging.debug("node context: %s", selected)
-                self.context = canvas_node.create_context()
-                self.context.bind("<Leave>", self.hide_context)
-                self.context.post(event.x_root, event.y_root)
-        # else:
-        #     self.hide_context()
-
-    def press_delete(self, event: tk.Event):
+    def press_delete(self, _event: tk.Event):
         """
         delete selected nodes and any data that relates to it
         """
         logging.debug("press delete key")
-        nodes = self.delete_selection_objects()
-        self.core.delete_graph_nodes(nodes)
+        if not self.app.core.is_runtime():
+            self.delete_selected_objects()
+        else:
+            logging.info("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
         if selected is not None and selected in self.shapes:
             shape = self.shapes[selected]
-            dialog = ShapeDialog(self.app, self.app, shape)
+            dialog = ShapeDialog(self.app, shape)
             dialog.show()
 
-    def add_node(self, x: float, y: float) -> CanvasNode:
-        if self.selected is None or self.selected in self.shapes:
-            actual_x, actual_y = self.get_actual_coords(x, y)
-            core_node = self.core.create_node(
-                actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
+    def add_node(self, x: float, y: float) -> None:
+        if self.selected is not None and self.selected not in self.shapes:
+            return
+        actual_x, actual_y = self.get_actual_coords(x, y)
+        core_node = self.core.create_node(
+            actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
+        )
+        if not core_node:
+            return
+        try:
+            self.node_draw.image = Images.get(
+                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
             )
-            node = CanvasNode(self.master, x, y, core_node, self.node_draw.image)
-            self.core.canvas_nodes[core_node.id] = node
-            self.nodes[node.id] = node
-            return node
+        except AttributeError:
+            self.node_draw.image = Images.get_custom(
+                self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
+            )
+        node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
+        self.core.canvas_nodes[core_node.id] = node
+        self.nodes[node.id] = node
 
     def width_and_height(self):
         """
         retrieve canvas width and height in pixels
         """
-        x0, y0, x1, y1 = self.coords(self.grid)
+        x0, y0, x1, y1 = self.coords(self.rect)
         canvas_w = abs(x0 - x1)
         canvas_h = abs(y0 - y1)
         return canvas_w, canvas_h
@@ -687,7 +763,7 @@ class CanvasGraph(tk.Canvas):
         self, image: ImageTk.PhotoImage, x: float = None, y: float = None
     ):
         if x is None and y is None:
-            x1, y1, x2, y2 = self.bbox(self.grid)
+            x1, y1, x2, y2 = self.bbox(self.rect)
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
         self.wallpaper_id = self.create_image((x, y), image=image, tags=tags.WALLPAPER)
@@ -709,7 +785,7 @@ class CanvasGraph(tk.Canvas):
         image = ImageTk.PhotoImage(cropped)
 
         # draw on canvas
-        x1, y1, _, _ = self.bbox(self.grid)
+        x1, y1, _, _ = self.bbox(self.rect)
         x = (cropx / 2) + x1
         y = (cropy / 2) + y1
         self.draw_wallpaper(image, x, y)
@@ -772,7 +848,7 @@ class CanvasGraph(tk.Canvas):
         # redraw gridlines to new canvas size
         self.delete(tags.GRIDLINE)
         self.draw_grid()
-        self.update_grid()
+        self.app.canvas.show_grid.click_handler()
 
     def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
@@ -794,13 +870,6 @@ class CanvasGraph(tk.Canvas):
         for component in tags.ABOVE_WALLPAPER_TAGS:
             self.tag_raise(component)
 
-    def update_grid(self):
-        logging.debug("updating grid show grid: %s", self.show_grid.get())
-        if self.show_grid.get():
-            self.itemconfig(tags.GRIDLINE, state=tk.NORMAL)
-        else:
-            self.itemconfig(tags.GRIDLINE, state=tk.HIDDEN)
-
     def set_wallpaper(self, filename: str):
         logging.debug("setting wallpaper: %s", filename)
         if filename:
@@ -821,11 +890,10 @@ class CanvasGraph(tk.Canvas):
         """
         create an edge between source node and destination node
         """
-        if (source.id, dest.id) not in self.edges:
-            pos0 = source.core_node.position
-            x0 = pos0.x
-            y0 = pos0.y
-            edge = CanvasEdge(x0, y0, x0, y0, source.id, self)
+        token = create_edge_token(source.id, dest.id)
+        if token not in self.edges:
+            pos = (source.core_node.position.x, source.core_node.position.y)
+            edge = CanvasEdge(self, source.id, pos, pos)
             edge.complete(dest.id)
             self.edges[edge.token] = edge
             self.nodes[source.id].edges.add(edge)
@@ -833,54 +901,69 @@ class CanvasGraph(tk.Canvas):
             self.core.create_link(edge, source, dest)
 
     def copy(self):
+        if self.core.is_runtime():
+            logging.info("copy is disabled during runtime state")
+            return
         if self.selection:
-            logging.debug("to copy %s nodes", len(self.selection))
-            self.to_copy = self.selection.keys()
+            logging.info("to copy nodes: %s", self.selection)
+            self.to_copy.clear()
+            for node_id in self.selection.keys():
+                canvas_node = self.nodes[node_id]
+                self.to_copy.append(canvas_node)
 
     def paste(self):
+        if self.core.is_runtime():
+            logging.info("paste is disabled during runtime state")
+            return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
         to_copy_edges = []
-        for canvas_nid in self.to_copy:
-            core_node = self.nodes[canvas_nid].core_node
+        for canvas_node in self.to_copy:
+            core_node = canvas_node.core_node
             actual_x = core_node.position.x + 50
             actual_y = core_node.position.y + 50
             scaled_x, scaled_y = self.get_scaled_coords(actual_x, actual_y)
-
             copy = self.core.create_node(
                 actual_x, actual_y, core_node.type, core_node.model
             )
-            node = CanvasNode(
-                self.master, scaled_x, scaled_y, copy, self.nodes[canvas_nid].image
-            )
+            if not copy:
+                continue
+            node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
 
-            # add new node to modified_service_nodes set if that set contains the to_copy node
-            if self.app.core.service_been_modified(core_node.id):
-                self.app.core.modified_service_nodes.add(copy.id)
+            # copy configurations and services
+            node.core_node.services[:] = canvas_node.core_node.services
+            node.core_node.config_services[:] = canvas_node.core_node.config_services
+            node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
+            node.wlan_config = deepcopy(canvas_node.wlan_config)
+            node.mobility_config = deepcopy(canvas_node.mobility_config)
+            node.service_configs = deepcopy(canvas_node.service_configs)
+            node.service_file_configs = deepcopy(canvas_node.service_file_configs)
+            node.config_service_configs = deepcopy(canvas_node.config_service_configs)
 
-            copy_map[canvas_nid] = node.id
+            copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
-            self.core.copy_node_config(core_node.id, copy.id)
-
-            edges = self.nodes[canvas_nid].edges
-            for edge in edges:
+            for edge in canvas_node.edges:
                 if edge.src not in self.to_copy or edge.dst not in self.to_copy:
-                    if canvas_nid == edge.src:
-                        self.create_edge(node, self.nodes[edge.dst])
-                    elif canvas_nid == edge.dst:
-                        self.create_edge(self.nodes[edge.src], node)
+                    if canvas_node.id == edge.src:
+                        dst_node = self.nodes[edge.dst]
+                        self.create_edge(node, dst_node)
+                    elif canvas_node.id == edge.dst:
+                        src_node = self.nodes[edge.src]
+                        self.create_edge(src_node, node)
                 else:
                     to_copy_edges.append(edge)
+
         # copy link and link config
         for edge in to_copy_edges:
-            source_node_copy = self.nodes[copy_map[edge.token[0]]]
-            dest_node_copy = self.nodes[copy_map[edge.token[1]]]
-            self.create_edge(source_node_copy, dest_node_copy)
-            copy_edge = self.edges[
-                EdgeUtils.get_token(source_node_copy.id, dest_node_copy.id)
-            ]
+            src_node_id = copy_map[edge.token[0]]
+            dst_node_id = copy_map[edge.token[1]]
+            src_node_copy = self.nodes[src_node_id]
+            dst_node_copy = self.nodes[dst_node_id]
+            self.create_edge(src_node_copy, dst_node_copy)
+            token = create_edge_token(src_node_copy.id, dst_node_copy.id)
+            copy_edge = self.edges[token]
             copy_link = copy_edge.link
             options = edge.link.options
             copy_link.options.CopyFrom(options)
@@ -911,3 +994,29 @@ class CanvasGraph(tk.Canvas):
                 width=self.itemcget(edge.id, "width"),
                 fill=self.itemcget(edge.id, "fill"),
             )
+        self.tag_raise(tags.NODE)
+
+    def scale_graph(self):
+        for nid, canvas_node in self.nodes.items():
+            img = None
+            if NodeUtils.is_custom(
+                canvas_node.core_node.type, canvas_node.core_node.model
+            ):
+                for custom_node in self.app.guiconfig["nodes"]:
+                    if custom_node["name"] == canvas_node.core_node.model:
+                        img = Images.get_custom(
+                            custom_node["image"], int(ICON_SIZE * self.app.app_scale)
+                        )
+            else:
+                image_enum = TypeToImage.get(
+                    canvas_node.core_node.type, canvas_node.core_node.model
+                )
+                img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+
+            self.itemconfig(nid, image=img)
+            canvas_node.image = img
+            canvas_node.scale_text()
+            canvas_node.scale_antennas()
+
+            for edge_id in self.find_withtag(tags.EDGE):
+                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))

@@ -15,6 +15,7 @@ from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
@@ -28,7 +29,6 @@ from core.xml import emanexml
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
-
 try:
     from emane.events import EventService
     from emane.events import LocationEvent
@@ -39,6 +39,9 @@ except ImportError:
         from emanesh.events import LocationEvent
         from emanesh.events.eventserviceexception import EventServiceException
     except ImportError:
+        EventService = None
+        LocationEvent = None
+        EventServiceException = None
         logging.debug("compatible emane python bindings not installed")
 
 EMANE_MODELS = [
@@ -60,7 +63,7 @@ class EmaneManager(ModelManager):
     """
 
     name = "emane"
-    config_type = RegisterTlvs.EMULATION_SERVER.value
+    config_type = RegisterTlvs.EMULATION_SERVER
     SUCCESS, NOT_NEEDED, NOT_READY = (0, 1, 2)
     EVENTCFGVAR = "LIBEMANEEVENTSERVICECONFIG"
     DEFAULT_LOG_LEVEL = 3
@@ -89,6 +92,9 @@ class EmaneManager(ModelManager):
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
+
+        # link  monitor
+        self.link_monitor = EmaneLinkMonitor(self)
 
         self.service = None
         self.eventchannel = None
@@ -276,6 +282,10 @@ class EmaneManager(ModelManager):
                 logging.debug("no emane nodes in session")
                 return EmaneManager.NOT_NEEDED
 
+        # check if bindings were installed
+        if EventService is None:
+            raise CoreError("EMANE python bindings are not installed")
+
         # control network bridge required for EMANE 0.9.2
         # - needs to exist when eventservice binds to it (initeventservice)
         otadev = self.get_config("otamanagerdevice")
@@ -328,7 +338,6 @@ class EmaneManager(ModelManager):
         nems = []
         with self._emane_node_lock:
             self.buildxml()
-            self.initeventservice()
             self.starteventmonitor()
 
             if self.numnems() > 0:
@@ -350,8 +359,12 @@ class EmaneManager(ModelManager):
                         f.write(f"{nodename} {ifname} {nemid}\n")
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
-
+        if self.links_enabled():
+            self.link_monitor.start()
         return EmaneManager.SUCCESS
+
+    def links_enabled(self) -> bool:
+        return self.get_config("link_enabled") == "1"
 
     def poststartup(self) -> None:
         """
@@ -370,8 +383,7 @@ class EmaneManager(ModelManager):
                 )
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
-                    x, y, z = netif.node.position.get()
-                    emane_node.setnemposition(netif, x, y, z)
+                    netif.setposition()
 
     def reset(self) -> None:
         """
@@ -395,7 +407,9 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             if not self._emane_nets:
                 return
-            logging.info("stopping EMANE daemons.")
+            logging.info("stopping EMANE daemons")
+            if self.links_enabled():
+                self.link_monitor.stop()
             self.deinstallnetifs()
             self.stopdaemons()
             self.stopeventmonitor()
@@ -683,8 +697,9 @@ class EmaneManager(ModelManager):
             )
             return
         self.doeventloop = True
-        self.eventmonthread = threading.Thread(target=self.eventmonitorloop)
-        self.eventmonthread.daemon = True
+        self.eventmonthread = threading.Thread(
+            target=self.eventmonitorloop, daemon=True
+        )
         self.eventmonthread.start()
 
     def stopeventmonitor(self) -> None:
@@ -698,8 +713,6 @@ class EmaneManager(ModelManager):
             self.initeventservice(shutdown=True)
 
         if self.eventmonthread is not None:
-            # TODO: fix this
-            self.eventmonthread._Thread__stop()
             self.eventmonthread.join()
             self.eventmonthread = None
 
@@ -773,7 +786,7 @@ class EmaneManager(ModelManager):
         x = int(x)
         y = int(y)
         z = int(z)
-        logging.info(
+        logging.debug(
             "location event NEM %s (%s, %s, %s) -> (%s, %s, %s)",
             nemid,
             lat,
@@ -808,8 +821,8 @@ class EmaneManager(ModelManager):
 
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
-        self.session.broadcast_node(node_data)
+        node.position.set_geo(lon, lat, alt)
+        self.session.broadcast_node(node)
         return True
 
     def emanerunning(self, node: CoreNode) -> bool:
@@ -837,13 +850,43 @@ class EmaneGlobalModel:
 
     def __init__(self, session: "Session") -> None:
         self.session = session
-        self.nem_config = [
+        self.core_config = [
+            Configuration(
+                _id="platform_id_start",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Starting Platform ID",
+            ),
             Configuration(
                 _id="nem_id_start",
                 _type=ConfigDataTypes.INT32,
                 default="1",
-                label="Starting NEM ID (core)",
-            )
+                label="Starting NEM ID",
+            ),
+            Configuration(
+                _id="link_enabled",
+                _type=ConfigDataTypes.BOOL,
+                default="1",
+                label="Enable Links?",
+            ),
+            Configuration(
+                _id="loss_threshold",
+                _type=ConfigDataTypes.INT32,
+                default="30",
+                label="Link Loss Threshold (%)",
+            ),
+            Configuration(
+                _id="link_interval",
+                _type=ConfigDataTypes.INT32,
+                default="1",
+                label="Link Check Interval (sec)",
+            ),
+            Configuration(
+                _id="link_timeout",
+                _type=ConfigDataTypes.INT32,
+                default="4",
+                label="Link Timeout (sec)",
+            ),
         ]
         self.emulator_config = None
         self.parse_config()
@@ -860,25 +903,16 @@ class EmaneGlobalModel:
             "otamanagergroup": "224.1.2.8:45702",
         }
         self.emulator_config = emanemanifest.parse(emulator_xml, emulator_defaults)
-        self.emulator_config.insert(
-            0,
-            Configuration(
-                _id="platform_id_start",
-                _type=ConfigDataTypes.INT32,
-                default="1",
-                label="Starting Platform ID (core)",
-            ),
-        )
 
     def configurations(self) -> List[Configuration]:
-        return self.emulator_config + self.nem_config
+        return self.emulator_config + self.core_config
 
     def config_groups(self) -> List[ConfigGroup]:
         emulator_len = len(self.emulator_config)
         config_len = len(self.configurations())
         return [
             ConfigGroup("Platform Attributes", 1, emulator_len),
-            ConfigGroup("NEM Parameters", emulator_len + 1, config_len),
+            ConfigGroup("CORE Configuration", emulator_len + 1, config_len),
         ]
 
     def default_values(self) -> Dict[str, str]:

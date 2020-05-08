@@ -13,6 +13,7 @@ import logging.config
 import os
 import random
 import shlex
+import shutil
 import sys
 from subprocess import PIPE, STDOUT, Popen
 from typing import (
@@ -151,16 +152,9 @@ def which(command: str, required: bool) -> str:
     :return: command location or None
     :raises ValueError: when not found and required
     """
-    found_path = None
-    for path in os.environ["PATH"].split(os.pathsep):
-        command_path = os.path.join(path, command)
-        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
-            found_path = command_path
-            break
-
+    found_path = shutil.which(command)
     if found_path is None and required:
         raise ValueError(f"failed to find required executable({command}) in path")
-
     return found_path
 
 
@@ -443,8 +437,7 @@ def random_mac() -> str:
     """
     value = random.randint(0, 0xFFFFFF)
     value |= 0x00163E << 24
-    mac = netaddr.EUI(value)
-    mac.dialect = netaddr.mac_unix
+    mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
 
 
@@ -456,8 +449,7 @@ def validate_mac(value: str) -> str:
     :return: unix formatted mac
     """
     try:
-        mac = netaddr.EUI(value)
-        mac.dialect = netaddr.mac_unix_expanded
+        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
         return str(mac)
     except netaddr.AddrFormatError as e:
         raise CoreError(f"invalid mac address {value}: {e}")

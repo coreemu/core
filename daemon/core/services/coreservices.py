@@ -315,7 +315,7 @@ class CoreServices:
     """
 
     name = "services"
-    config_type = RegisterTlvs.UTILITY.value
+    config_type = RegisterTlvs.UTILITY
 
     def __init__(self, session: "Session") -> None:
         """
@@ -409,7 +409,6 @@ class CoreServices:
                 "using default services for node(%s) type(%s)", node.name, node_type
             )
             services = self.default_services.get(node_type, [])
-
         logging.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)
@@ -630,14 +629,16 @@ class CoreServices:
                 self.session.exception(
                     ExceptionLevels.ERROR,
                     "services",
-                    node.id,
                     f"error stopping service {service.name}: {e.stderr}",
+                    node.id,
                 )
                 logging.exception("error running stop command %s", args)
                 status = -1
         return status
 
-    def get_service_file(self, node: CoreNode, service_name: str, filename: str) -> str:
+    def get_service_file(
+        self, node: CoreNode, service_name: str, filename: str
+    ) -> FileData:
         """
         Send a File Message when the GUI has requested a service file.
         The file data is either auto-generated or comes from an existing config.
@@ -645,7 +646,7 @@ class CoreServices:
         :param node: node to get service file from
         :param service_name: service to get file from
         :param filename: file name to retrieve
-        :return: file message for node
+        :return: file data
         """
         # get service to get file from
         service = self.get_service(node.id, service_name, default_service=True)
@@ -672,7 +673,7 @@ class CoreServices:
 
         filetypestr = "service:%s" % service.name
         return FileData(
-            message_type=MessageFlags.ADD.value,
+            message_type=MessageFlags.ADD,
             node=node.id,
             name=filename,
             type=filetypestr,

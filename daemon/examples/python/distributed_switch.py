@@ -1,9 +1,28 @@
+"""
+Example for scripting a standalone distributed switch session that does not
+interact with the GUI.
+"""
+
+import argparse
 import logging
 
-import distributed_parser
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
+
+
+def parse(name):
+    parser = argparse.ArgumentParser(description=f"Run {name} example")
+    parser.add_argument(
+        "-a",
+        "--address",
+        help="local address that distributed servers will use for gre tunneling",
+    )
+    parser.add_argument(
+        "-s", "--server", help="distributed server to use for creating nodes"
+    )
+    options = parser.parse_args()
+    return options
 
 
 def main(args):
@@ -48,5 +67,5 @@ def main(args):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    args = distributed_parser.parse(__file__)
+    args = parse(__file__)
     main(args)

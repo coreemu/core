@@ -3,7 +3,7 @@ from queue import Empty, Queue
 from typing import Iterable
 
 from core.api.grpc import core_pb2
-from core.api.grpc.grpcutils import convert_value
+from core.api.grpc.grpcutils import convert_link
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -23,14 +23,12 @@ def handle_node_event(event: NodeData) -> core_pb2.NodeEvent:
     :return: node event that contains node id, name, model, position, and services
     """
     position = core_pb2.Position(x=event.x_position, y=event.y_position)
-    services = event.services or ""
-    services = services.split("|")
     node_proto = core_pb2.Node(
         id=event.id,
         name=event.name,
         model=event.model,
         position=position,
-        services=services,
+        services=event.services,
     )
     return core_pb2.NodeEvent(node=node_proto, source=event.source)
 
@@ -42,52 +40,8 @@ def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
     :param event: link data
     :return: link event that has message type and link information
     """
-    interface_one = None
-    if event.interface1_id is not None:
-        interface_one = core_pb2.Interface(
-            id=event.interface1_id,
-            name=event.interface1_name,
-            mac=convert_value(event.interface1_mac),
-            ip4=convert_value(event.interface1_ip4),
-            ip4mask=event.interface1_ip4_mask,
-            ip6=convert_value(event.interface1_ip6),
-            ip6mask=event.interface1_ip6_mask,
-        )
-
-    interface_two = None
-    if event.interface2_id is not None:
-        interface_two = core_pb2.Interface(
-            id=event.interface2_id,
-            name=event.interface2_name,
-            mac=convert_value(event.interface2_mac),
-            ip4=convert_value(event.interface2_ip4),
-            ip4mask=event.interface2_ip4_mask,
-            ip6=convert_value(event.interface2_ip6),
-            ip6mask=event.interface2_ip6_mask,
-        )
-
-    options = core_pb2.LinkOptions(
-        opaque=event.opaque,
-        jitter=event.jitter,
-        key=event.key,
-        mburst=event.mburst,
-        mer=event.mer,
-        per=event.per,
-        bandwidth=event.bandwidth,
-        burst=event.burst,
-        delay=event.delay,
-        dup=event.dup,
-        unidirectional=event.unidirectional,
-    )
-    link = core_pb2.Link(
-        type=event.link_type,
-        node_one_id=event.node1_id,
-        node_two_id=event.node2_id,
-        interface_one=interface_one,
-        interface_two=interface_two,
-        options=options,
-    )
-    return core_pb2.LinkEvent(message_type=event.message_type, link=link)
+    link = convert_link(event)
+    return core_pb2.LinkEvent(message_type=event.message_type.value, link=link)
 
 
 def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
@@ -102,7 +56,7 @@ def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
         event_time = float(event_time)
     return core_pb2.SessionEvent(
         node_id=event.node,
-        event=event.event_type,
+        event=event.event_type.value,
         name=event.name,
         data=event.data,
         time=event_time,
@@ -158,7 +112,7 @@ def handle_file_event(event: FileData) -> core_pb2.FileEvent:
     :return: file event
     """
     return core_pb2.FileEvent(
-        message_type=event.message_type,
+        message_type=event.message_type.value,
         node_id=event.node,
         name=event.name,
         mode=event.mode,

@@ -16,6 +16,7 @@ MOBILITY_PATH = HOME_PATH.joinpath("mobility")
 XMLS_PATH = HOME_PATH.joinpath("xmls")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 LOG_PATH = HOME_PATH.joinpath("gui.log")
+SCRIPT_PATH = HOME_PATH.joinpath("scripts")
 
 # local paths
 DATA_PATH = Path(__file__).parent.joinpath("data")
@@ -25,18 +26,22 @@ LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
 LOCAL_MOBILITY_PATH = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
-TERMINALS = [
-    "$TERM",
-    "gnome-terminal --window --",
-    "lxterminal -e",
-    "konsole -e",
-    "xterm -e",
-    "aterm -e",
-    "eterm -e",
-    "rxvt -e",
-    "xfce4-terminal -x",
-]
+TERMINALS = {
+    "xterm": "xterm -e",
+    "aterm": "aterm -e",
+    "eterm": "eterm -e",
+    "rxvt": "rxvt -e",
+    "konsole": "konsole -e",
+    "lxterminal": "lxterminal -e",
+    "xfce4-terminal": "xfce4-terminal -x",
+    "gnome-terminal": "gnome-terminal --window --",
+}
 EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
+DEFAULT_IP4S = ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
+DEFAULT_IP4 = DEFAULT_IP4S[0]
+DEFAULT_IP6S = ["2001::", "2002::", "a::"]
+DEFAULT_IP6 = DEFAULT_IP6S[0]
+DEFAULT_MAC = "00:00:00:aa:00:00"
 
 
 class IndentDumper(yaml.Dumper):
@@ -50,6 +55,14 @@ def copy_files(current_path, new_path):
         shutil.copy(current_file, new_file)
 
 
+def find_terminal():
+    for term in sorted(TERMINALS):
+        cmd = TERMINALS[term]
+        if shutil.which(term):
+            return cmd
+    return None
+
+
 def check_directory():
     if HOME_PATH.exists():
         return
@@ -60,16 +73,14 @@ def check_directory():
     ICONS_PATH.mkdir()
     MOBILITY_PATH.mkdir()
     XMLS_PATH.mkdir()
+    SCRIPT_PATH.mkdir()
 
     copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
     copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)
     copy_files(LOCAL_XMLS_PATH, XMLS_PATH)
     copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
 
-    if "TERM" in os.environ:
-        terminal = TERMINALS[0]
-    else:
-        terminal = TERMINALS[1]
+    terminal = find_terminal()
     if "EDITOR" in os.environ:
         editor = EDITORS[0]
     else:
@@ -92,10 +103,18 @@ def check_directory():
             "alt": 2.0,
             "scale": 150.0,
         },
-        "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
+        "servers": [],
         "nodes": [],
         "recentfiles": [],
-        "observers": [{"name": "hello", "cmd": "echo hello"}],
+        "observers": [],
+        "scale": 1.0,
+        "ips": {
+            "ip4": DEFAULT_IP4,
+            "ip6": DEFAULT_IP6,
+            "ip4s": DEFAULT_IP4S,
+            "ip6s": DEFAULT_IP6S,
+        },
+        "mac": DEFAULT_MAC,
     }
     save(config)
 

@@ -36,7 +36,7 @@ class MobilityManager(ModelManager):
     """
 
     name = "MobilityManager"
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
 
     def __init__(self, session: "Session") -> None:
         """
@@ -121,10 +121,7 @@ class MobilityManager(ModelManager):
                 logging.warning("Ignoring event for unknown model '%s'", model)
                 continue
 
-            if cls.config_type in [
-                RegisterTlvs.WIRELESS.value,
-                RegisterTlvs.MOBILITY.value,
-            ]:
+            if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
@@ -142,17 +139,11 @@ class MobilityManager(ModelManager):
                 )
                 continue
 
-            if (
-                event_type == EventTypes.STOP.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 model.stop(move_initial=True)
-            if (
-                event_type == EventTypes.START.value
-                or event_type == EventTypes.RESTART.value
-            ):
+            if event_type in [EventTypes.START, EventTypes.RESTART]:
                 model.start()
-            if event_type == EventTypes.PAUSE.value:
+            if event_type == EventTypes.PAUSE:
                 model.pause()
 
     def sendevent(self, model: "WayPointMobility") -> None:
@@ -163,13 +154,13 @@ class MobilityManager(ModelManager):
         :param model: mobility model to send event for
         :return: nothing
         """
-        event_type = EventTypes.NONE.value
+        event_type = EventTypes.NONE
         if model.state == model.STATE_STOPPED:
-            event_type = EventTypes.STOP.value
+            event_type = EventTypes.STOP
         elif model.state == model.STATE_RUNNING:
-            event_type = EventTypes.START.value
+            event_type = EventTypes.START
         elif model.state == model.STATE_PAUSED:
-            event_type = EventTypes.PAUSE.value
+            event_type = EventTypes.PAUSE
 
         start_time = int(model.lasttime - model.timezero)
         end_time = int(model.endtime)
@@ -212,7 +203,7 @@ class WirelessModel(ConfigurableOptions):
     Used for managing arbitrary configuration parameters.
     """
 
-    config_type = RegisterTlvs.WIRELESS.value
+    config_type = RegisterTlvs.WIRELESS
     bitmap = None
     position_callback = None
 
@@ -226,7 +217,7 @@ class WirelessModel(ConfigurableOptions):
         self.session = session
         self.id = _id
 
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
         """
         May be used if the model can populate the GUI with wireless (green)
         link lines.
@@ -311,38 +302,30 @@ class BasicRangeModel(WirelessModel):
         self.wlan = session.get_node(_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
-
         self.range = 0
         self.bw = None
         self.delay = None
         self.loss = None
         self.jitter = None
 
-    def values_from_config(self, config: Dict[str, str]) -> None:
+    def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
         """
-        Values to convert to link parameters.
+        Convenience for updating value to use from a provided configuration.
 
-        :param config: values to convert
-        :return: nothing
+        :param current_value: current config value to use when one is not provided
+        :param config: config to get values from
+        :param name: name of config value to get
+        :return: current config value when not provided, new value otherwise
         """
-        self.range = int(float(config["range"]))
-        logging.debug(
-            "basic range model configured for WLAN %d using range %d",
-            self.wlan.id,
-            self.range,
-        )
-        self.bw = int(config["bandwidth"])
-        if self.bw == 0:
-            self.bw = None
-        self.delay = int(config["delay"])
-        if self.delay == 0:
-            self.delay = None
-        self.loss = int(float(config["error"]))
-        if self.loss == 0:
-            self.loss = None
-        self.jitter = int(config["jitter"])
-        if self.jitter == 0:
-            self.jitter = None
+        value = config.get(name)
+        if value is not None:
+            if value == "":
+                value = None
+            else:
+                value = int(float(value))
+        else:
+            value = current_value
+        return value
 
     def setlinkparams(self) -> None:
         """
@@ -370,20 +353,16 @@ class BasicRangeModel(WirelessModel):
         with self._netifslock:
             return self._netifs[netif]
 
-    def set_position(
-        self, netif: CoreInterface, x: float = None, y: float = None, z: float = None
-    ) -> None:
+    def set_position(self, netif: CoreInterface) -> None:
         """
         A node has moved; given an interface, a new (x,y,z) position has
         been set; calculate the new distance between other nodes and link or
         unlink node pairs based on the configured range.
 
         :param netif: network interface to set position for
-        :param x: x position
-        :param y: y position
-        :param z: z position
         :return: nothing
         """
+        x, y, z = netif.node.position.get()
         self._netifslock.acquire()
         self._netifs[netif] = (x, y, z)
         if x is None or y is None:
@@ -485,12 +464,21 @@ class BasicRangeModel(WirelessModel):
         :param config: values to update configuration
         :return: nothing
         """
-        self.values_from_config(config)
+        self.range = self._get_config(self.range, config, "range")
+        if self.range is None:
+            self.range = 0
+        logging.debug("wlan %s set range to %s", self.wlan.name, self.range)
+        self.bw = self._get_config(self.bw, config, "bandwidth")
+        self.delay = self._get_config(self.delay, config, "delay")
+        self.loss = self._get_config(self.loss, config, "error")
+        self.jitter = self._get_config(self.jitter, config, "jitter")
         self.setlinkparams()
-        return True
 
     def create_link_data(
-        self, interface1: CoreInterface, interface2: CoreInterface, message_type: int
+        self,
+        interface1: CoreInterface,
+        interface2: CoreInterface,
+        message_type: MessageFlags,
     ) -> LinkData:
         """
         Create a wireless link/unlink data message.
@@ -500,12 +488,14 @@ class BasicRangeModel(WirelessModel):
         :param message_type: link message type
         :return: link data
         """
+        color = self.session.get_link_color(self.wlan.id)
         return LinkData(
             message_type=message_type,
             node1_id=interface1.node.id,
             node2_id=interface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS.value,
+            link_type=LinkTypes.WIRELESS,
+            color=color,
         )
 
     def sendlinkmsg(
@@ -520,14 +510,14 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         if unlink:
-            message_type = MessageFlags.DELETE.value
+            message_type = MessageFlags.DELETE
         else:
-            message_type = MessageFlags.ADD.value
+            message_type = MessageFlags.ADD
 
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Return a list of wireless link messages for when the GUI reconnects.
 
@@ -582,7 +572,7 @@ class WayPointMobility(WirelessModel):
     """
 
     name = "waypoint"
-    config_type = RegisterTlvs.MOBILITY.value
+    config_type = RegisterTlvs.MOBILITY
 
     STATE_STOPPED = 0
     STATE_RUNNING = 1
@@ -800,7 +790,7 @@ class WayPointMobility(WirelessModel):
         """
         self.queue_copy = list(self.queue)
 
-    def loopwaypoints(self) -> None:
+    def loopwaypoints(self) -> bool:
         """
         Restore backup copy of waypoints when looping.
 
@@ -822,8 +812,7 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0)
-        self.session.broadcast_node(node_data)
+        self.session.broadcast_node(node)
 
     def setendtime(self) -> None:
         """

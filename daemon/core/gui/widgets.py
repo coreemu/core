@@ -181,7 +181,6 @@ class ConfigFrame(ttk.Notebook):
                     option.value = "0"
             else:
                 option.value = config_value
-
         return {x: self.config[x].value for x in self.config}
 
     def set_values(self, config: Dict[str, str]) -> None:
@@ -204,7 +203,10 @@ class ListboxScroll(ttk.Frame):
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.listbox = tk.Listbox(
-            self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
+            self,
+            selectmode=tk.BROWSE,
+            yscrollcommand=self.scrollbar.set,
+            exportselection=False,
         )
         themes.style_listbox(self.listbox)
         self.listbox.grid(row=0, column=0, sticky="nsew")

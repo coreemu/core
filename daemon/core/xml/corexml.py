@@ -8,13 +8,15 @@ import core.nodes.physical
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
+from core.errors import CoreXmlError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
-from core.nodes.network import CtrlNet
+from core.nodes.docker import DockerNode
+from core.nodes.lxd import LxcNode
+from core.nodes.network import CtrlNet, WlanNode
 from core.services.coreservices import CoreService
 
 if TYPE_CHECKING:
-    from core.emane.emanemanager import EmaneGlobalModel
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
 
@@ -67,23 +69,17 @@ def create_interface_data(interface_element: etree.Element) -> InterfaceData:
     return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
 
 
-def create_emane_config(
-    node_id: int, emane_config: "EmaneGlobalModel", config: Dict[str, str]
-) -> etree.Element:
-    emane_configuration = etree.Element("emane_configuration")
-    add_attribute(emane_configuration, "node", node_id)
-    add_attribute(emane_configuration, "model", "emane")
-
+def create_emane_config(session: "Session") -> etree.Element:
+    emane_configuration = etree.Element("emane_global_configuration")
+    config = session.emane.get_configs()
     emulator_element = etree.SubElement(emane_configuration, "emulator")
-    for emulator_config in emane_config.emulator_config:
+    for emulator_config in session.emane.emane_config.emulator_config:
         value = config[emulator_config.id]
         add_configuration(emulator_element, emulator_config.id, value)
-
-    nem_element = etree.SubElement(emane_configuration, "nem")
-    for nem_config in emane_config.nem_config:
-        value = config[nem_config.id]
-        add_configuration(nem_element, nem_config.id, value)
-
+    core_element = etree.SubElement(emane_configuration, "core")
+    for core_config in session.emane.emane_config.core_config:
+        value = config[core_config.id]
+        add_configuration(core_element, core_config.id, value)
     return emane_configuration
 
 
@@ -167,14 +163,12 @@ class ServiceElement:
             self.element.append(directories)
 
     def add_files(self) -> None:
-        # get custom files
         file_elements = etree.Element("files")
         for file_name in self.service.config_data:
             data = self.service.config_data[file_name]
             file_element = etree.SubElement(file_elements, "file")
             add_attribute(file_element, "name", file_name)
-            file_element.text = data
-
+            file_element.text = etree.CDATA(data)
         if file_elements.getchildren():
             self.element.append(file_elements)
 
@@ -213,7 +207,20 @@ class DeviceElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
+        self.add_class()
         self.add_services()
+
+    def add_class(self) -> None:
+        clazz = ""
+        image = ""
+        if isinstance(self.node, DockerNode):
+            clazz = "docker"
+            image = self.node.image
+        elif isinstance(self.node, LxcNode):
+            clazz = "lxc"
+            image = self.node.image
+        add_attribute(self.element, "class", clazz)
+        add_attribute(self.element, "image", image)
 
     def add_services(self) -> None:
         service_elements = etree.Element("services")
@@ -245,7 +252,7 @@ class NetworkElement(NodeElement):
 
     def add_type(self) -> None:
         if self.node.apitype:
-            node_type = NodeTypes(self.node.apitype).name
+            node_type = self.node.apitype.name
         else:
             node_type = self.node.__class__.__name__
         add_attribute(self.element, "type", node_type)
@@ -309,7 +316,7 @@ class CoreXmlWriter:
             for file_name, data in self.session._hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
-                add_attribute(hook, "state", state)
+                add_attribute(hook, "state", state.value)
                 hook.text = data
 
         if hooks.getchildren():
@@ -345,6 +352,9 @@ class CoreXmlWriter:
             self.scenario.append(metadata_elements)
 
     def write_emane_configs(self) -> None:
+        emane_global_configuration = create_emane_config(self.session)
+        self.scenario.append(emane_global_configuration)
+
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
@@ -356,17 +366,9 @@ class CoreXmlWriter:
                 logging.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
-                if model_name == -1:
-                    emane_configuration = create_emane_config(
-                        node_id, self.session.emane.emane_config, config
-                    )
-                else:
-                    model = self.session.emane.models[model_name]
-                    emane_configuration = create_emane_model_config(
-                        node_id, model, config
-                    )
+                model = self.session.emane.models[model_name]
+                emane_configuration = create_emane_model_config(node_id, model, config)
                 emane_configurations.append(emane_configuration)
-
         if emane_configurations.getchildren():
             self.scenario.append(emane_configurations)
 
@@ -461,7 +463,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data(0))
+            links.extend(node.all_link_data())
 
         return links
 
@@ -557,26 +559,31 @@ class CoreXmlWriter:
             )
             link_element.append(interface_two)
 
-        # check for options
-        options = etree.Element("options")
-        add_attribute(options, "delay", link_data.delay)
-        add_attribute(options, "bandwidth", link_data.bandwidth)
-        add_attribute(options, "per", link_data.per)
-        add_attribute(options, "dup", link_data.dup)
-        add_attribute(options, "jitter", link_data.jitter)
-        add_attribute(options, "mer", link_data.mer)
-        add_attribute(options, "burst", link_data.burst)
-        add_attribute(options, "mburst", link_data.mburst)
-        add_attribute(options, "type", link_data.link_type)
-        add_attribute(options, "gui_attributes", link_data.gui_attributes)
-        add_attribute(options, "unidirectional", link_data.unidirectional)
-        add_attribute(options, "emulation_id", link_data.emulation_id)
-        add_attribute(options, "network_id", link_data.network_id)
-        add_attribute(options, "key", link_data.key)
-        add_attribute(options, "opaque", link_data.opaque)
-        add_attribute(options, "session", link_data.session)
-        if options.items():
-            link_element.append(options)
+        # check for options, don't write for emane/wlan links
+        node_one = self.session.get_node(link_data.node1_id)
+        node_two = self.session.get_node(link_data.node2_id)
+        is_node_one_wireless = isinstance(node_one, (WlanNode, EmaneNet))
+        is_node_two_wireless = isinstance(node_two, (WlanNode, EmaneNet))
+        if not any([is_node_one_wireless, is_node_two_wireless]):
+            options = etree.Element("options")
+            add_attribute(options, "delay", link_data.delay)
+            add_attribute(options, "bandwidth", link_data.bandwidth)
+            add_attribute(options, "per", link_data.per)
+            add_attribute(options, "dup", link_data.dup)
+            add_attribute(options, "jitter", link_data.jitter)
+            add_attribute(options, "mer", link_data.mer)
+            add_attribute(options, "burst", link_data.burst)
+            add_attribute(options, "mburst", link_data.mburst)
+            add_attribute(options, "type", link_data.link_type)
+            add_attribute(options, "gui_attributes", link_data.gui_attributes)
+            add_attribute(options, "unidirectional", link_data.unidirectional)
+            add_attribute(options, "emulation_id", link_data.emulation_id)
+            add_attribute(options, "network_id", link_data.network_id)
+            add_attribute(options, "key", link_data.key)
+            add_attribute(options, "opaque", link_data.opaque)
+            add_attribute(options, "session", link_data.session)
+            if options.items():
+                link_element.append(options)
 
         return link_element
 
@@ -598,8 +605,9 @@ class CoreXmlReader:
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
-        self.read_emane_configs()
+        self.read_emane_global_config()
         self.read_nodes()
+        self.read_emane_configs()
         self.read_configservice_configs()
         self.read_links()
 
@@ -635,14 +643,14 @@ class CoreXmlReader:
         session_options = self.scenario.find("session_options")
         if session_options is None:
             return
-
-        configs = {}
-        for config in session_options.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        logging.info("reading session options: %s", configs)
-        self.session.options.set_configs(configs)
+        xml_config = {}
+        for configuration in session_options.iterchildren():
+            name = configuration.get("name")
+            value = configuration.get("value")
+            xml_config[name] = value
+        logging.info("reading session options: %s", xml_config)
+        config = self.session.options.get_configs()
+        config.update(xml_config)
 
     def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")
@@ -651,13 +659,11 @@ class CoreXmlReader:
 
         for hook in session_hooks.iterchildren():
             name = hook.get("name")
-            state = hook.get("state")
+            state = get_int(hook, "state")
+            state = EventTypes(state)
             data = hook.text
-            hook_type = f"hook:{state}"
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.set_hook(
-                hook_type, file_name=name, source_name=None, data=data
-            )
+            self.session.add_hook(state, name, None, data)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")
@@ -727,6 +733,23 @@ class CoreXmlReader:
                     files.add(name)
                 service.configs = tuple(files)
 
+    def read_emane_global_config(self) -> None:
+        emane_global_configuration = self.scenario.find("emane_global_configuration")
+        if emane_global_configuration is None:
+            return
+        emulator_configuration = emane_global_configuration.find("emulator")
+        configs = {}
+        for config in emulator_configuration.iterchildren():
+            name = config.get("name")
+            value = config.get("value")
+            configs[name] = value
+        core_configuration = emane_global_configuration.find("core")
+        for config in core_configuration.iterchildren():
+            name = config.get("name")
+            value = config.get("value")
+            configs[name] = value
+        self.session.emane.set_configs(config=configs)
+
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")
         if emane_configurations is None:
@@ -737,6 +760,18 @@ class CoreXmlReader:
             model_name = emane_configuration.get("model")
             configs = {}
 
+            # validate node and model
+            node = self.session.nodes.get(node_id)
+            if not node:
+                raise CoreXmlError(f"node for emane config doesn't exist: {node_id}")
+            if not isinstance(node, EmaneNet):
+                raise CoreXmlError(f"invalid node for emane config: {node.name}")
+            model = self.session.emane.models.get(model_name)
+            if not model:
+                raise CoreXmlError(f"invalid emane model: {model_name}")
+            node.setmodel(model, {})
+
+            # read and set emane model configuration
             mac_configuration = emane_configuration.find("mac")
             for config in mac_configuration.iterchildren():
                 name = config.get("name")
@@ -796,8 +831,16 @@ class CoreXmlReader:
         name = device_element.get("name")
         model = device_element.get("type")
         icon = device_element.get("icon")
-        options = NodeOptions(name, model)
+        clazz = device_element.get("class")
+        image = device_element.get("image")
+        options = NodeOptions(name, model, image)
         options.icon = icon
+
+        node_type = NodeTypes.DEFAULT
+        if clazz == "docker":
+            node_type = NodeTypes.DOCKER
+        elif clazz == "lxc":
+            node_type = NodeTypes.LXC
 
         service_elements = device_element.find("services")
         if service_elements is not None:
@@ -823,7 +866,7 @@ class CoreXmlReader:
                 options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_id=node_id, options=options)
+        self.session.add_node(_type=node_type, _id=node_id, options=options)
 
     def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")

@@ -1,4 +1,3 @@
-import logging
 from typing import Any, Dict
 
 import netaddr
@@ -24,16 +23,17 @@ class DefaultRouteService(ConfigService):
     modes = {}
 
     def data(self) -> Dict[str, Any]:
-        addresses = []
-        for netif in self.node.netifs():
-            if getattr(netif, "control", False):
-                continue
-            for addr in netif.addrlist:
-                logging.info("default route address: %s", addr)
-                net = netaddr.IPNetwork(addr)
-                if net[1] != net[-2]:
-                    addresses.append(net[1])
-        return dict(addresses=addresses)
+        # only add default routes for linked routing nodes
+        routes = []
+        netifs = self.node.netifs(sort=True)
+        if netifs:
+            netif = netifs[0]
+            for x in netif.addrlist:
+                net = netaddr.IPNetwork(x).cidr
+                if net.size > 1:
+                    router = net[1]
+                    routes.append(str(router))
+        return dict(routes=routes)
 
 
 class DefaultMulticastRouteService(ConfigService):

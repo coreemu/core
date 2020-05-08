@@ -14,7 +14,7 @@ from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes import client
 from core.nodes.interface import CoreInterface, TunTap, Veth
@@ -192,20 +192,12 @@ class NodeBase:
         return ifindex
 
     def data(
-        self,
-        message_type: int,
-        lat: float = None,
-        lon: float = None,
-        alt: float = None,
-        source: str = None,
-    ) -> NodeData:
+        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
+    ) -> Optional[NodeData]:
         """
         Build a data object for this node.
 
         :param message_type: purpose for the data object we are creating
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
         :param source: source of node data
         :return: node data object
         """
@@ -217,12 +209,10 @@ class NodeBase:
         server = None
         if self.server is not None:
             server = self.server.name
-
-        services = self.services
-        if services is not None:
-            services = "|".join([service.name for service in services])
-
-        node_data = NodeData(
+        services = None
+        if self.services is not None:
+            services = [service.name for service in self.services]
+        return NodeData(
             message_type=message_type,
             id=self.id,
             node_type=self.apitype,
@@ -233,18 +223,16 @@ class NodeBase:
             opaque=self.opaque,
             x_position=x,
             y_position=y,
-            latitude=lat,
-            longitude=lon,
-            altitude=alt,
+            latitude=self.position.lat,
+            longitude=self.position.lon,
+            altitude=self.position.alt,
             model=model,
             server=server,
             services=services,
             source=source,
         )
 
-        return node_data
-
-    def all_link_data(self, flags: int) -> List:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE Link data for this object. There is no default
         method for PyCoreObjs as PyCoreNodes do not implement this but
@@ -422,7 +410,7 @@ class CoreNodeBase(NodeBase):
         changed = super().setposition(x, y, z)
         if changed:
             for netif in self.netifs(sort=True):
-                netif.setposition(x, y, z)
+                netif.setposition()
 
     def commonnets(
         self, obj: "CoreNodeBase", want_ctrl: bool = False
@@ -472,7 +460,7 @@ class CoreNode(CoreNodeBase):
     Provides standard core node logic.
     """
 
-    apitype = NodeTypes.DEFAULT.value
+    apitype = NodeTypes.DEFAULT
     valid_address_types = {"inet", "inet6", "inet6link"}
 
     def __init__(
@@ -982,7 +970,7 @@ class CoreNetworkBase(NodeBase):
     Base class for networks
     """
 
-    linktype = LinkTypes.WIRED.value
+    linktype = LinkTypes.WIRED
     is_emane = False
 
     def __init__(
@@ -1069,7 +1057,7 @@ class CoreNetworkBase(NodeBase):
         with self._linked_lock:
             del self._linked[netif]
 
-    def all_link_data(self, flags: int) -> List[LinkData]:
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.
@@ -1124,6 +1112,7 @@ class CoreNetworkBase(NodeBase):
                 link_type=self.linktype,
                 unidirectional=unidirectional,
                 interface2_id=linked_node.getifindex(netif),
+                interface2_name=netif.name,
                 interface2_mac=netif.hwaddr,
                 interface2_ip4=interface2_ip4,
                 interface2_ip4_mask=interface2_ip4_mask,
@@ -1143,7 +1132,7 @@ class CoreNetworkBase(NodeBase):
 
             netif.swapparams("_params_up")
             link_data = LinkData(
-                message_type=0,
+                message_type=MessageFlags.NONE,
                 node1_id=linked_node.id,
                 node2_id=self.id,
                 link_type=self.linktype,
@@ -1173,11 +1162,13 @@ class Position:
         :param x: x position
         :param y: y position
         :param z: z position
-        :return:
         """
         self.x = x
         self.y = y
         self.z = z
+        self.lon = None
+        self.lat = None
+        self.alt = None
 
     def set(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
@@ -1202,3 +1193,24 @@ class Position:
         :return: x,y,z position tuple
         """
         return self.x, self.y, self.z
+
+    def set_geo(self, lon: float, lat: float, alt: float) -> None:
+        """
+        Set geo position lon, lat, alt.
+
+        :param lon: longitude value
+        :param lat: latitude value
+        :param alt: altitude value
+        :return: nothing
+        """
+        self.lon = lon
+        self.lat = lat
+        self.alt = alt
+
+    def get_geo(self) -> Tuple[float, float, float]:
+        """
+        Retrieve current geo position lon, lat, alt.
+
+        :return: lon, lat, alt position tuple
+        """
+        return self.lon, self.lat, self.alt

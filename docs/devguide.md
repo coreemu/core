@@ -5,8 +5,9 @@
 
 ## Repository Overview
 
-The CORE source consists of several different programming languages for historical reasons.
-Current development focuses on the Python modules and daemon. Here is a brief description of the source directories.
+The CORE source consists of several different programming languages for
+historical reasons. Current development focuses on the Python modules and
+daemon. Here is a brief description of the source directories.
 
 | Directory | Description |
 |---|---|
@@ -14,89 +15,47 @@ Current development focuses on the Python modules and daemon. Here is a brief de
 |docs|Markdown Documentation currently hosted on GitHub|
 |gui|Tcl/Tk GUI|
 |man|Template files for creating man pages for various CORE command line utilities|
-|netns|Python C extension modules for creating CORE containers|
+|netns|C program for creating CORE containers|
 |scripts|Template files used for running CORE as a service|
 
 ## Getting started
 
-Overview for setting up the pipenv environment, building core, installing the GUI and netns, then running
-the core-daemon for development based on Ubuntu 18.04.
+To setup CORE for develop we will leverage to automated install script.
 
-### Install Dependencies
-
-```shell
-sudo apt install -y automake pkg-config gcc libev-dev ebtables gawk \
-        python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool libtool libreadline-dev autoconf
-```
-
-### Install OSPF MDR
-
-```shell
-cd ~/Documents
-git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
-cd ospf-mdr
-./bootstrap.sh
-./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
-    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
-    --localstatedir=/var/run/quagga
-make
-sudo make install
-```
-
-### Clone CORE Repo
+## Clone CORE Repo
 
 ```shell
 cd ~/Documents
 git clone https://github.com/coreemu/core.git
 cd core
+git checkout develop
 ```
 
-### Build CORE
+## Install the Development Environment
+
+This command will automatically install system dependencies, clone and build OSPF-MDR,
+build CORE, setup the CORE pipenv environment, and install pre-commit hooks.
+
+This script is currently compatible with Ubuntu and CentOS, tested on Ubuntu 18.04 and
+CentOS 7.6. The script also currently defaults to using python3.6, but a different
+version of python can be targeted if python3.6 is not available on your system.
 
 ```shell
-./bootstrap.sh
-./configure
-make -j8
+# default dev install using python3.6
+./install.sh -d
+
+# providing a newer python version for ubuntu
+./install.sh -d -v 3.7
+
+# providing a newer python version for centos
+./install.sh -d -v 37
 ```
 
-### Install netns and GUI
+### pre-commit
 
-Install legacy GUI if desired and mandatory netns executables.
-
-```shell
-# install GUI
-cd $REPO/gui
-sudo make install
-
-# install netns scripts
-cd $REPO/netns
-sudo make install
-```
-
-### Setup Python Environment
-
-To leverage the dev environment you need python 3.6+.
-
-```shell
-# change to daemon directory
-cd $REPO/daemon
-
-# install pipenv
-sudo python3 -m pip install pipenv
-
-# setup a virtual environment and install all required development dependencies
-python3 -m pipenv install --dev
-```
-
-### Setup pre-commit
-
-Install pre-commit hooks to help automate running tool checks against code. Once installed every time a commit is made
-python utilities will be ran to check validity of code, potentially failing and backing out the commit. This allows
-one to review changes being made by tools ro the fix the issue noted. Then add the changes and commit again.
-
-```shell
-python3 -m pipenv run pre-commit install
-```
+pre-commit hooks help automate running tools to check modified code. Every time a commit is made
+python utilities will be ran to check validity of code, potentially failing and backing out the commit.
+These changes are currently mandated as part of the current CI, so add the changes and commit again.
 
 ### Adding EMANE to Pipenv
 
@@ -121,16 +80,16 @@ make -j8
 python3 -m pipenv pip install $EMANEREPO/src/python
 ```
 
-### Running CORE
+## Running CORE
 
-This will run the core-daemon server using the configuration files within the repo.
+Commands below can be used to run the core-daemon, the new core gui, and tests.
 
 ```shell
 # runs for daemon
 sudo python3 -m pipenv run core
 
 # runs coretk gui
-python3 -m pipenv run coretk
+python3 -m pipenv run core-pygui
 
 # runs mocked unit tests
 python3 -m pipenv run test-mock

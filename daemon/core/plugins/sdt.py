@@ -4,22 +4,15 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-from typing import TYPE_CHECKING, Any, Optional
+import threading
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
 from core import constants
-from core.api.tlv.coreapi import CoreLinkMessage, CoreMessage, CoreNodeMessage
 from core.constants import CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import (
-    EventTypes,
-    LinkTlvs,
-    LinkTypes,
-    MessageFlags,
-    NodeTlvs,
-    NodeTypes,
-)
+from core.emulator.enumerations import EventTypes, MessageFlags
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
 from core.nodes.network import WlanNode
@@ -28,19 +21,18 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 
-# TODO: A named tuple may be more appropriate, than abusing a class dict like this
-class Bunch:
-    """
-    Helper class for recording a collection of attributes.
-    """
+def get_link_id(node_one: int, node_two: int, network_id: int) -> str:
+    link_id = f"{node_one}-{node_two}"
+    if network_id is not None:
+        link_id = f"{link_id}-{network_id}"
+    return link_id
 
-    def __init__(self, **kwargs: Any) -> None:
-        """
-        Create a Bunch instance.
 
-        :param kwargs: keyword arguments
-        """
-        self.__dict__.update(kwargs)
+CORE_LAYER = "CORE"
+NODE_LAYER = "CORE::Nodes"
+LINK_LAYER = "CORE::Links"
+CORE_LAYERS = [CORE_LAYER, LINK_LAYER, NODE_LAYER]
+DEFAULT_LINK_COLOR = "red"
 
 
 class Sdt:
@@ -74,59 +66,15 @@ class Sdt:
         :param session: session this manager is tied to
         """
         self.session = session
+        self.lock = threading.Lock()
         self.sock = None
         self.connected = False
-        self.showerror = True
         self.url = self.DEFAULT_SDT_URL
-        # node information for remote nodes not in session._objs
-        # local nodes also appear here since their obj may not exist yet
-        self.remotes = {}
-
-        # add handler for node updates
+        self.address = None
+        self.protocol = None
+        self.network_layers = set()
         self.session.node_handlers.append(self.handle_node_update)
-
-        # add handler for link updates
         self.session.link_handlers.append(self.handle_link_update)
-
-    def handle_node_update(self, node_data: NodeData) -> None:
-        """
-        Handler for node updates, specifically for updating their location.
-
-        :param node_data: node data being updated
-        :return: nothing
-        """
-        x = node_data.x_position
-        y = node_data.y_position
-        lat = node_data.latitude
-        lon = node_data.longitude
-        alt = node_data.altitude
-
-        if all([lat, lon, alt]):
-            self.updatenodegeo(
-                node_data.id,
-                node_data.latitude,
-                node_data.longitude,
-                node_data.altitude,
-            )
-
-        if node_data.message_type == 0:
-            # TODO: z is not currently supported by node messages
-            self.updatenode(node_data.id, 0, x, y, 0)
-
-    def handle_link_update(self, link_data: LinkData) -> None:
-        """
-        Handler for link updates, checking for wireless link/unlink messages.
-
-        :param link_data: link data being updated
-        :return: nothing
-        """
-        if link_data.link_type == LinkTypes.WIRELESS.value:
-            self.updatelink(
-                link_data.node1_id,
-                link_data.node2_id,
-                link_data.message_type,
-                wireless=True,
-            )
 
     def is_enabled(self) -> bool:
         """
@@ -144,14 +92,12 @@ class Sdt:
 
         :return: nothing
         """
-        url = self.session.options.get_config("stdurl")
-        if not url:
-            url = self.DEFAULT_SDT_URL
+        url = self.session.options.get_config("stdurl", default=self.DEFAULT_SDT_URL)
         self.url = urlparse(url)
         self.address = (self.url.hostname, self.url.port)
         self.protocol = self.url.scheme
 
-    def connect(self, flags: int = 0) -> bool:
+    def connect(self) -> bool:
         """
         Connect to the SDT address/port if enabled.
 
@@ -161,7 +107,7 @@ class Sdt:
             return False
         if self.connected:
             return True
-        if self.session.state == EventTypes.SHUTDOWN_STATE.value:
+        if self.session.state == EventTypes.SHUTDOWN_STATE:
             return False
 
         self.seturl()
@@ -183,9 +129,8 @@ class Sdt:
 
         self.connected = True
         # refresh all objects in SDT3D when connecting after session start
-        if not flags & MessageFlags.ADD.value and not self.sendobjs():
+        if not self.sendobjs():
             return False
-
         return True
 
     def initialize(self) -> bool:
@@ -227,8 +172,12 @@ class Sdt:
         :return: nothing
         """
         self.cmd("clear all")
+        for layer in self.network_layers:
+            self.cmd(f"delete layer,{layer}")
+        for layer in CORE_LAYERS[::-1]:
+            self.cmd(f"delete layer,{layer}")
         self.disconnect()
-        self.showerror = True
+        self.network_layers.clear()
 
     def cmd(self, cmdstr: str) -> bool:
         """
@@ -241,8 +190,10 @@ class Sdt:
         """
         if self.sock is None:
             return False
+
         try:
             cmd = f"{cmdstr}\n".encode()
+            logging.debug("sdt cmd: %s", cmd)
             self.sock.sendall(cmd)
             return True
         except IOError:
@@ -250,91 +201,6 @@ class Sdt:
             self.sock = None
             self.connected = False
             return False
-
-    def updatenode(
-        self,
-        nodenum: int,
-        flags: int,
-        x: Optional[float],
-        y: Optional[float],
-        z: Optional[float],
-        name: str = None,
-        node_type: str = None,
-        icon: str = None,
-    ) -> None:
-        """
-        Node is updated from a Node Message or mobility script.
-
-        :param nodenum: node id to update
-        :param flags: update flags
-        :param x: x position
-        :param y: y position
-        :param z: z position
-        :param name: node name
-        :param node_type: node type
-        :param icon: node icon
-        :return: nothing
-        """
-        if not self.connect():
-            return
-        if flags & MessageFlags.DELETE.value:
-            self.cmd(f"delete node,{nodenum}")
-            return
-        if x is None or y is None:
-            return
-        lat, lon, alt = self.session.location.getgeo(x, y, z)
-        pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-        if flags & MessageFlags.ADD.value:
-            if icon is not None:
-                node_type = name
-                icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
-                icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
-                self.cmd(f"sprite {node_type} image {icon}")
-            self.cmd(f'node {nodenum} type {node_type} label on,"{name}" {pos}')
-        else:
-            self.cmd(f"node {nodenum} {pos}")
-
-    def updatenodegeo(self, nodenum: int, lat: float, lon: float, alt: float) -> None:
-        """
-        Node is updated upon receiving an EMANE Location Event.
-
-        :param nodenum: node id to update geospatial for
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
-        :return: nothing
-        """
-
-        # TODO: received Node Message with lat/long/alt.
-        if not self.connect():
-            return
-        pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-        self.cmd(f"node {nodenum} {pos}")
-
-    def updatelink(
-        self, node1num: int, node2num: int, flags: int, wireless: bool = False
-    ) -> None:
-        """
-        Link is updated from a Link Message or by a wireless model.
-
-        :param node1num: node one id
-        :param node2num: node two id
-        :param flags: link flags
-        :param wireless: flag to check if wireless or not
-        :return: nothing
-        """
-        if node1num is None or node2num is None:
-            return
-        if not self.connect():
-            return
-        if flags & MessageFlags.DELETE.value:
-            self.cmd(f"delete link,{node1num},{node2num}")
-        elif flags & MessageFlags.ADD.value:
-            if wireless:
-                attr = " line green,2"
-            else:
-                attr = " line red,2"
-            self.cmd(f"link {node1num},{node2num}{attr}")
 
     def sendobjs(self) -> None:
         """
@@ -345,6 +211,10 @@ class Sdt:
         :return: nothing
         """
         nets = []
+        # create layers
+        for layer in CORE_LAYERS:
+            self.cmd(f"layer {layer}")
+
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
@@ -352,171 +222,223 @@ class Sdt:
                     nets.append(node)
                 if not isinstance(node, NodeBase):
                     continue
-                (x, y, z) = node.getposition()
-                if x is None or y is None:
-                    continue
-                self.updatenode(
-                    node.id,
-                    MessageFlags.ADD.value,
-                    x,
-                    y,
-                    z,
-                    node.name,
-                    node.type,
-                    node.icon,
-                )
-            for nodenum in sorted(self.remotes.keys()):
-                r = self.remotes[nodenum]
-                x, y, z = r.pos
-                self.updatenode(
-                    nodenum, MessageFlags.ADD.value, x, y, z, r.name, r.type, r.icon
-                )
+                self.add_node(node)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD.value)
+                all_links = net.all_link_data(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
-                    wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
                     if is_wireless and link_data.node1_id == net.id:
                         continue
+                    self.handle_link_update(link_data)
 
-                    self.updatelink(
-                        link_data.node1_id,
-                        link_data.node2_id,
-                        MessageFlags.ADD.value,
-                        wireless_link,
-                    )
-
-            for n1num in sorted(self.remotes.keys()):
-                r = self.remotes[n1num]
-                for n2num, wireless_link in r.links:
-                    self.updatelink(n1num, n2num, MessageFlags.ADD.value, wireless_link)
-
-    def handle_distributed(self, message: CoreMessage) -> None:
+    def get_node_position(self, node: NodeBase) -> Optional[str]:
         """
-        Broker handler for processing CORE API messages as they are
-        received. This is used to snoop the Node messages and update
-        node positions.
+        Convenience to generate an SDT position string, given a node.
 
-        :param message: message to handle
+        :param node:
+        :return:
+        """
+        x, y, z = node.position.get()
+        if x is None or y is None:
+            return None
+        lat, lon, alt = self.session.location.getgeo(x, y, z)
+        return f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
+
+    def add_node(self, node: NodeBase) -> None:
+        """
+        Handle adding a node in SDT.
+
+        :param node: node to add
         :return: nothing
         """
-        if isinstance(message, CoreLinkMessage):
-            self.handlelinkmsg(message)
-        elif isinstance(message, CoreNodeMessage):
-            self.handlenodemsg(message)
+        logging.debug("sdt add node: %s - %s", node.id, node.name)
+        if not self.connect():
+            return
+        pos = self.get_node_position(node)
+        if not pos:
+            return
+        node_type = node.type
+        if node_type is None:
+            node_type = type(node).type
+        icon = node.icon
+        if icon:
+            node_type = node.name
+            icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
+            icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
+            self.cmd(f"sprite {node_type} image {icon}")
+        self.cmd(
+            f'node {node.id} nodeLayer "{NODE_LAYER}" '
+            f'type {node_type} label on,"{node.name}" {pos}'
+        )
 
-    def handlenodemsg(self, msg: CoreNodeMessage) -> None:
+    def edit_node(self, node: NodeBase, lon: float, lat: float, alt: float) -> None:
         """
-        Process a Node Message to add/delete or move a node on
-        the SDT display. Node properties are found in a session or
-        self.remotes for remote nodes (or those not yet instantiated).
+        Handle updating a node in SDT.
 
-        :param msg: node message to handle
+        :param node: node to update
+        :param lon: node longitude
+        :param lat: node latitude
+        :param alt: node altitude
         :return: nothing
         """
-        # for distributed sessions to work properly, the SDT option should be
-        # enabled prior to starting the session
-        if not self.is_enabled():
+        logging.debug("sdt update node: %s - %s", node.id, node.name)
+        if not self.connect():
             return
-        # node.(_id, type, icon, name) are used.
-        nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
-        if not nodenum:
-            return
-        x = msg.get_tlv(NodeTlvs.X_POSITION.value)
-        y = msg.get_tlv(NodeTlvs.Y_POSITION.value)
-        z = None
-        name = msg.get_tlv(NodeTlvs.NAME.value)
 
-        nodetype = msg.get_tlv(NodeTlvs.TYPE.value)
-        model = msg.get_tlv(NodeTlvs.MODEL.value)
-        icon = msg.get_tlv(NodeTlvs.ICON.value)
-
-        net = False
-        if nodetype == NodeTypes.DEFAULT.value or nodetype == NodeTypes.PHYSICAL.value:
-            if model is None:
-                model = "router"
-            nodetype = model
-        elif nodetype is not None:
-            nodetype = NodeTypes(nodetype)
-            nodetype = self.session.get_node_class(nodetype).type
-            net = True
+        if all([lat is not None, lon is not None, alt is not None]):
+            pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
+            self.cmd(f"node {node.id} {pos}")
         else:
-            nodetype = None
+            pos = self.get_node_position(node)
+            if not pos:
+                return
+            self.cmd(f"node {node.id} {pos}")
 
+    def delete_node(self, node_id: int) -> None:
+        """
+        Handle deleting a node in SDT.
+
+        :param node_id: node id to delete
+        :return: nothing
+        """
+        logging.debug("sdt delete node: %s", node_id)
+        if not self.connect():
+            return
+        self.cmd(f"delete node,{node_id}")
+
+    def handle_node_update(self, node_data: NodeData) -> None:
+        """
+        Handler for node updates, specifically for updating their location.
+
+        :param node_data: node data being updated
+        :return: nothing
+        """
+        logging.debug("sdt handle node update: %s - %s", node_data.id, node_data.name)
+        if not self.connect():
+            return
+
+        # delete node
+        if node_data.message_type == MessageFlags.DELETE:
+            self.cmd(f"delete node,{node_data.id}")
+        else:
+            x = node_data.x_position
+            y = node_data.y_position
+            lat = node_data.latitude
+            lon = node_data.longitude
+            alt = node_data.altitude
+            if all([lat is not None, lon is not None, alt is not None]):
+                pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
+                self.cmd(f"node {node_data.id} {pos}")
+            elif node_data.message_type == 0:
+                lat, lon, alt = self.session.location.getgeo(x, y, 0)
+                pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
+                self.cmd(f"node {node_data.id} {pos}")
+
+    def wireless_net_check(self, node_id: int) -> bool:
+        """
+        Determines if a node is either a wireless node type.
+
+        :param node_id: node id to check
+        :return: True is a wireless node type, False otherwise
+        """
+        result = False
         try:
-            node = self.session.get_node(nodenum)
+            node = self.session.get_node(node_id)
+            result = isinstance(node, (WlanNode, EmaneNet))
         except CoreError:
-            node = None
-        if node:
-            self.updatenode(
-                node.id, msg.flags, x, y, z, node.name, node.type, node.icon
-            )
-        else:
-            if nodenum in self.remotes:
-                remote = self.remotes[nodenum]
-                if name is None:
-                    name = remote.name
-                if nodetype is None:
-                    nodetype = remote.type
-                if icon is None:
-                    icon = remote.icon
-            else:
-                remote = Bunch(
-                    _id=nodenum,
-                    type=nodetype,
-                    icon=icon,
-                    name=name,
-                    net=net,
-                    links=set(),
-                )
-                self.remotes[nodenum] = remote
-            remote.pos = (x, y, z)
-            self.updatenode(nodenum, msg.flags, x, y, z, name, nodetype, icon)
+            pass
+        return result
 
-    def handlelinkmsg(self, msg: CoreLinkMessage) -> None:
+    def add_link(
+        self, node_one: int, node_two: int, network_id: int = None, label: str = None
+    ) -> None:
         """
-        Process a Link Message to add/remove links on the SDT display.
-        Links are recorded in the remotes[nodenum1].links set for updating
-        the SDT display at a later time.
+        Handle adding a link in SDT.
 
-        :param msg: link message to handle
+        :param node_one: node one id
+        :param node_two: node two id
+        :param network_id: network link is associated with, None otherwise
+        :param label: label for link
         :return: nothing
         """
-        if not self.is_enabled():
+        logging.debug("sdt add link: %s, %s, %s", node_one, node_two, network_id)
+        if not self.connect():
             return
-        nodenum1 = msg.get_tlv(LinkTlvs.N1_NUMBER.value)
-        nodenum2 = msg.get_tlv(LinkTlvs.N2_NUMBER.value)
-        link_msg_type = msg.get_tlv(LinkTlvs.TYPE.value)
-        # this filters out links to WLAN and EMANE nodes which are not drawn
-        if self.wlancheck(nodenum1):
+        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
             return
-        wl = link_msg_type == LinkTypes.WIRELESS.value
-        if nodenum1 in self.remotes:
-            r = self.remotes[nodenum1]
-            if msg.flags & MessageFlags.DELETE.value:
-                if (nodenum2, wl) in r.links:
-                    r.links.remove((nodenum2, wl))
-            else:
-                r.links.add((nodenum2, wl))
-        self.updatelink(nodenum1, nodenum2, msg.flags, wireless=wl)
+        color = DEFAULT_LINK_COLOR
+        if network_id:
+            color = self.session.get_link_color(network_id)
+        line = f"{color},2"
+        link_id = get_link_id(node_one, node_two, network_id)
+        layer = LINK_LAYER
+        if network_id:
+            node = self.session.nodes.get(network_id)
+            if node:
+                network_name = node.name
+                layer = f"{layer}::{network_name}"
+                self.network_layers.add(layer)
+        link_label = ""
+        if label:
+            link_label = f'linklabel on,"{label}"'
+        self.cmd(
+            f"link {node_one},{node_two},{link_id} linkLayer {layer} line {line} "
+            f"{link_label}"
+        )
 
-    def wlancheck(self, nodenum: int) -> bool:
+    def delete_link(self, node_one: int, node_two: int, network_id: int = None) -> None:
         """
-        Helper returns True if a node number corresponds to a WLAN or EMANE node.
+        Handle deleting a link in SDT.
 
-        :param nodenum: node id to check
-        :return: True if node is wlan or emane, False otherwise
+        :param node_one: node one id
+        :param node_two: node two id
+        :param network_id: network link is associated with, None otherwise
+        :return: nothing
         """
-        if nodenum in self.remotes:
-            node_type = self.remotes[nodenum].type
-            if node_type in ("wlan", "emane"):
-                return True
-        else:
-            try:
-                n = self.session.get_node(nodenum)
-            except CoreError:
-                return False
-            if isinstance(n, (WlanNode, EmaneNet)):
-                return True
-        return False
+        logging.debug("sdt delete link: %s, %s, %s", node_one, node_two, network_id)
+        if not self.connect():
+            return
+        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
+            return
+        link_id = get_link_id(node_one, node_two, network_id)
+        self.cmd(f"delete link,{node_one},{node_two},{link_id}")
+
+    def edit_link(
+        self, node_one: int, node_two: int, network_id: int, label: str
+    ) -> None:
+        """
+        Handle editing a link in SDT.
+
+        :param node_one: node one id
+        :param node_two: node two id
+        :param network_id: network link is associated with, None otherwise
+        :param label: label to update
+        :return: nothing
+        """
+        logging.debug("sdt edit link: %s, %s, %s", node_one, node_two, network_id)
+        if not self.connect():
+            return
+        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
+            return
+        link_id = get_link_id(node_one, node_two, network_id)
+        link_label = f'linklabel on,"{label}"'
+        self.cmd(f"link {node_one},{node_two},{link_id} {link_label}")
+
+    def handle_link_update(self, link_data: LinkData) -> None:
+        """
+        Handle link broadcast messages and push changes to SDT.
+
+        :param link_data: link data to handle
+        :return: nothing
+        """
+        node_one = link_data.node1_id
+        node_two = link_data.node2_id
+        network_id = link_data.network_id
+        label = link_data.label
+        if link_data.message_type == MessageFlags.ADD:
+            self.add_link(node_one, node_two, network_id, label)
+        elif link_data.message_type == MessageFlags.DELETE:
+            self.delete_link(node_one, node_two, network_id)
+        elif link_data.message_type == MessageFlags.NONE and label:
+            self.edit_link(node_one, node_two, network_id, label)

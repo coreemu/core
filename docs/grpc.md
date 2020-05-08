@@ -4,7 +4,8 @@ gRPC is the main API for interfacing with CORE.
 
 ## HTTP Proxy
 
-Since gRPC is HTTP2 based, proxy configurations can cause issue. Clear out your proxy when running if needed.
+Since gRPC is HTTP2 based, proxy configurations can cause issue. Clear out your
+proxy when running if needed.
 
 ## Python Client
 
@@ -14,7 +15,6 @@ Below is a small example using it.
 
 ```python
 import logging
-from builtins import range
 
 from core.api.grpc import client, core_pb2
 

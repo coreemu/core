@@ -84,12 +84,11 @@ class IPsec(CoreService):
         cfg += "# set up static tunnel mode security assocation for service "
         cfg += "(security.py)\n"
         fname = "%s/examples/services/sampleIPsec" % constants.CORE_DATA_DIR
-
         try:
-            cfg += open(fname, "rb").read()
+            with open(fname, "r") as f:
+                cfg += f.read()
         except IOError:
             logging.exception("Error opening IPsec configuration template (%s)", fname)
-
         return cfg
 
 

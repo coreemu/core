@@ -264,7 +264,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     network.
     """
 
-    apitype = NodeTypes.RJ45.value
+    apitype = NodeTypes.RJ45
     type = "rj45"
 
     def __init__(
@@ -517,7 +517,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         if self.old_up:
             self.net_client.device_up(self.localname)
 
-    def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
+    def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
         """
         Uses setposition from both parent classes.
 
@@ -526,9 +526,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param z: z position
         :return: True if position changed, False otherwise
         """
-        result = CoreNodeBase.setposition(self, x, y, z)
-        CoreInterface.setposition(self, x, y, z)
-        return result
+        CoreNodeBase.setposition(self, x, y, z)
+        CoreInterface.setposition(self)
 
     def termcmdstring(self, sh: str) -> str:
         """

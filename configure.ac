@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 6.1.0)
+AC_INIT(core, 6.3.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -43,6 +43,11 @@ AC_ARG_ENABLE([gui],
 		[build and install the GUI (default is yes)])],
 		[], [enable_gui=yes])
 AC_SUBST(enable_gui)
+AC_ARG_ENABLE([docs],
+	       [AS_HELP_STRING([--enable-docs[=ARG]],
+		[build python documentation (default is no)])],
+		[], [enable_docs=no])
+AC_SUBST(enable_docs)
 
 AC_ARG_ENABLE([python],
 	       [AS_HELP_STRING([--enable-python[=ARG]],
@@ -191,8 +196,7 @@ if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; 
 fi
 
 want_docs=no
-if test "x$enable_docs" = "xyes" ; then
-
+if [test "x$want_python" = "xyes" && test "x$enable_docs" = "xyes"] ; then
   AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
 
   if test "x$help2man" = "xno" ; then
@@ -210,20 +214,11 @@ if test "x$enable_docs" = "xyes" ; then
   # check for sphinx required during make
   AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
   if test "x$sphinxapi_path" = "xno" ; then
-    AC_MSG_ERROR(["Could not location sphinx-apidoc, from the python-sphinx package"])
+    AC_MSG_ERROR(["Could not locate sphinx-apidoc, install python3 -m pip install sphinx"])
     want_docs=no
   fi
+  AS_IF([$PYTHON -c "import sphinx_rtd_theme" &> /dev/null], [], [AC_MSG_ERROR([doc dependency missing, please install python3 -m pip install sphinx-rtd-theme])])
 fi
-
-#AC_PATH_PROGS(tcl_path, [tclsh tclsh8.5 tclsh8.4], no)
-#if test "x$tcl_path" = "xno" ; then
-#    AC_MSG_ERROR([Could not locate tclsh. Please install Tcl/Tk.])
-#fi
-
-#AC_PATH_PROGS(wish_path, [wish wish8.5 wish8.4], no)
-#if test "x$wish_path" = "xno" ; then
-#    AC_MSG_ERROR([Could not locate wish. Please install Tcl/Tk.])
-#fi
 
 AC_ARG_WITH([startup],
 	    [AS_HELP_STRING([--with-startup=option],

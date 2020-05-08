@@ -1,14 +1,45 @@
 import logging
 import os
 import tkinter as tk
+import webbrowser
 from functools import partial
+from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING
 
-import core.gui.menuaction as action
-from core.gui.coreclient import OBSERVERS
+from core.gui.appconfig import XMLS_PATH
+from core.gui.dialogs.about import AboutDialog
+from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
+from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
+from core.gui.dialogs.customnodes import CustomNodesDialog
+from core.gui.dialogs.executepython import ExecutePythonDialog
+from core.gui.dialogs.find import FindDialog
+from core.gui.dialogs.hooks import HooksDialog
+from core.gui.dialogs.ipdialog import IpConfigDialog
+from core.gui.dialogs.macdialog import MacConfigDialog
+from core.gui.dialogs.observers import ObserverDialog
+from core.gui.dialogs.preferences import PreferencesDialog
+from core.gui.dialogs.servers import ServersDialog
+from core.gui.dialogs.sessionoptions import SessionOptionsDialog
+from core.gui.dialogs.sessions import SessionsDialog
+from core.gui.dialogs.throughput import ThroughputDialog
+from core.gui.nodeutils import ICON_SIZE
+from core.gui.task import ProgressTask
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+
+MAX_FILES = 3
+OBSERVERS = {
+    "List Processes": "ps",
+    "Show Interfaces": "ip address",
+    "IPV4 Routes": "ip -4 route",
+    "IPV6 Routes": "ip -6 route",
+    "Listening Sockets": "ss -tuwnl",
+    "IPv4 MFC Entries": "ip -4 mroute show",
+    "IPv6 MFC Entries": "ip -6 mroute show",
+    "Firewall Rules": "iptables -L",
+    "IPSec Policies": "setkey -DP",
+}
 
 
 class Menubar(tk.Menu):
@@ -16,18 +47,23 @@ class Menubar(tk.Menu):
     Core menubar
     """
 
-    def __init__(self, master: tk.Tk, app: "Application", cnf={}, **kwargs):
+    def __init__(self, master: tk.Tk, app: "Application", **kwargs) -> None:
         """
         Create a CoreMenubar instance
         """
-        super().__init__(master, cnf, **kwargs)
+        super().__init__(master, **kwargs)
         self.master.config(menu=self)
         self.app = app
-        self.menuaction = action.MenuAction(app, master)
+        self.core = app.core
+        self.canvas = app.canvas
         self.recent_menu = None
+        self.edit_menu = None
+        self.observers_menu = None
+        self.observers_var = tk.StringVar(value=tk.NONE)
+        self.observers_custom_index = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         """
         Create core menubar and bind the hot keys to their matching command
         """
@@ -40,402 +76,429 @@ class Menubar(tk.Menu):
         self.draw_session_menu()
         self.draw_help_menu()
 
-    def draw_file_menu(self):
+    def draw_file_menu(self) -> None:
         """
         Create file menu
         """
         menu = tk.Menu(self)
         menu.add_command(
-            label="New Session",
-            accelerator="Ctrl+N",
-            command=self.app.core.create_new_session,
+            label="New Session", accelerator="Ctrl+N", command=self.click_new
         )
-        self.app.bind_all("<Control-n>", lambda e: self.app.core.create_new_session())
+        self.app.bind_all("<Control-n>", lambda e: self.click_new())
+        menu.add_command(label="Save", accelerator="Ctrl+S", command=self.click_save)
+        self.app.bind_all("<Control-s>", self.click_save)
+        menu.add_command(label="Save As...", command=self.click_save_xml)
         menu.add_command(
-            label="Open...", command=self.menuaction.file_open_xml, accelerator="Ctrl+O"
+            label="Open...", command=self.click_open_xml, accelerator="Ctrl+O"
         )
-        self.app.bind_all("<Control-o>", self.menuaction.file_open_xml)
-        menu.add_command(label="Save", accelerator="Ctrl+S", command=self.save)
-        menu.add_command(label="Reload", underline=0, state=tk.DISABLED)
-        self.app.bind_all("<Control-s>", self.save)
-
+        self.app.bind_all("<Control-o>", self.click_open_xml)
         self.recent_menu = tk.Menu(menu)
         for i in self.app.guiconfig["recentfiles"]:
             self.recent_menu.add_command(
                 label=i, command=partial(self.open_recent_files, i)
             )
-        menu.add_cascade(label="Recent files", menu=self.recent_menu)
+        menu.add_cascade(label="Recent Files", menu=self.recent_menu)
         menu.add_separator()
-        menu.add_command(label="Export Python script...", state=tk.DISABLED)
-        menu.add_command(label="Execute XML or Python script...", state=tk.DISABLED)
-        menu.add_command(
-            label="Execute Python script with options...", state=tk.DISABLED
-        )
-        menu.add_separator()
-        menu.add_command(label="Open current file in editor...", state=tk.DISABLED)
-        menu.add_command(label="Print...", underline=0, state=tk.DISABLED)
-        menu.add_command(label="Save screenshot...", state=tk.DISABLED)
+        menu.add_command(label="Execute Python Script...", command=self.execute_python)
         menu.add_separator()
         menu.add_command(
-            label="Quit", accelerator="Ctrl+Q", command=self.menuaction.on_quit
+            label="Quit",
+            accelerator="Ctrl+Q",
+            command=lambda: self.prompt_save_running_session(True),
         )
-        self.app.bind_all("<Control-q>", self.menuaction.on_quit)
+        self.app.bind_all(
+            "<Control-q>", lambda _: self.prompt_save_running_session(True)
+        )
         self.add_cascade(label="File", menu=menu)
 
-    def draw_edit_menu(self):
+    def draw_edit_menu(self) -> None:
         """
         Create edit menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="Preferences", command=self.menuaction.gui_preferences)
+        menu.add_command(label="Preferences", command=self.click_preferences)
+        menu.add_command(label="Custom Nodes", command=self.click_custom_nodes)
+        menu.add_separator()
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
         menu.add_separator()
-        menu.add_command(label="Cut", accelerator="Ctrl+X", state=tk.DISABLED)
+        menu.add_command(label="Cut", accelerator="Ctrl+X", command=self.click_cut)
+        menu.add_command(label="Copy", accelerator="Ctrl+C", command=self.click_copy)
+        menu.add_command(label="Paste", accelerator="Ctrl+V", command=self.click_paste)
         menu.add_command(
-            label="Copy", accelerator="Ctrl+C", command=self.menuaction.copy
+            label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
-        menu.add_command(
-            label="Paste", accelerator="Ctrl+V", command=self.menuaction.paste
-        )
-        menu.add_separator()
-        menu.add_command(label="Select all", accelerator="Ctrl+A", state=tk.DISABLED)
-        menu.add_command(
-            label="Select Adjacent", accelerator="Ctrl+J", state=tk.DISABLED
-        )
-        menu.add_separator()
-        menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
-        menu.add_command(label="Clear marker", state=tk.DISABLED)
         self.add_cascade(label="Edit", menu=menu)
+        self.app.master.bind_all("<Control-x>", self.click_cut)
+        self.app.master.bind_all("<Control-c>", self.click_copy)
+        self.app.master.bind_all("<Control-v>", self.click_paste)
+        self.app.master.bind_all("<Control-d>", self.click_delete)
+        self.edit_menu = menu
 
-        self.app.master.bind_all("<Control-c>", self.menuaction.copy)
-        self.app.master.bind_all("<Control-v>", self.menuaction.paste)
-
-    def draw_canvas_menu(self):
+    def draw_canvas_menu(self) -> None:
         """
         Create canvas menu
         """
         menu = tk.Menu(self)
-        menu.add_command(
-            label="Size/scale...", command=self.menuaction.canvas_size_and_scale
-        )
-        menu.add_command(
-            label="Wallpaper...", command=self.menuaction.canvas_set_wallpaper
-        )
-        menu.add_separator()
-        menu.add_command(label="New", state=tk.DISABLED)
-        menu.add_command(label="Manage...", state=tk.DISABLED)
-        menu.add_command(label="Delete", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Previous", accelerator="PgUp", state=tk.DISABLED)
-        menu.add_command(label="Next", accelerator="PgDown", state=tk.DISABLED)
-        menu.add_command(label="First", accelerator="Home", state=tk.DISABLED)
-        menu.add_command(label="Last", accelerator="End", state=tk.DISABLED)
+        menu.add_command(label="Size / Scale", command=self.click_canvas_size_and_scale)
+        menu.add_command(label="Wallpaper", command=self.click_canvas_wallpaper)
         self.add_cascade(label="Canvas", menu=menu)
 
-    def draw_view_menu(self):
+    def draw_view_menu(self) -> None:
         """
         Create view menu
         """
-        view_menu = tk.Menu(self)
-        self.create_show_menu(view_menu)
-        view_menu.add_command(label="Show hidden nodes", state=tk.DISABLED)
-        view_menu.add_command(label="Locked", state=tk.DISABLED)
-        view_menu.add_command(label="3D GUI...", state=tk.DISABLED)
-        view_menu.add_separator()
-        view_menu.add_command(label="Zoom in", accelerator="+", state=tk.DISABLED)
-        view_menu.add_command(label="Zoom out", accelerator="-", state=tk.DISABLED)
-        self.add_cascade(label="View", menu=view_menu)
+        menu = tk.Menu(self)
+        menu.add_checkbutton(
+            label="Interface Names",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_interface_names,
+        )
+        menu.add_checkbutton(
+            label="IPv4 Addresses",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_ip4s,
+        )
+        menu.add_checkbutton(
+            label="IPv6 Addresses",
+            command=self.click_edge_label_change,
+            variable=self.canvas.show_ip6s,
+        )
+        menu.add_checkbutton(
+            label="Node Labels",
+            command=self.canvas.show_node_labels.click_handler,
+            variable=self.canvas.show_node_labels,
+        )
+        menu.add_checkbutton(
+            label="Link Labels",
+            command=self.canvas.show_link_labels.click_handler,
+            variable=self.canvas.show_link_labels,
+        )
+        menu.add_checkbutton(
+            label="Annotations",
+            command=self.canvas.show_annotations.click_handler,
+            variable=self.canvas.show_annotations,
+        )
+        menu.add_checkbutton(
+            label="Canvas Grid",
+            command=self.canvas.show_grid.click_handler,
+            variable=self.canvas.show_grid,
+        )
+        self.add_cascade(label="View", menu=menu)
 
-    def create_show_menu(self, view_menu: tk.Menu):
-        """
-        Create the menu items in View/Show
-        """
-        menu = tk.Menu(view_menu)
-        menu.add_command(label="All", state=tk.DISABLED)
-        menu.add_command(label="None", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Interface Names", state=tk.DISABLED)
-        menu.add_command(label="IPv4 Addresses", state=tk.DISABLED)
-        menu.add_command(label="IPv6 Addresses", state=tk.DISABLED)
-        menu.add_command(label="Node Labels", state=tk.DISABLED)
-        menu.add_command(label="Annotations", state=tk.DISABLED)
-        menu.add_command(label="Grid", state=tk.DISABLED)
-        menu.add_command(label="API Messages", state=tk.DISABLED)
-        view_menu.add_cascade(label="Show", menu=menu)
-
-    def create_experimental_menu(self, tools_menu: tk.Menu):
-        """
-        Create experimental menu item and the sub menu items inside
-        """
-        menu = tk.Menu(tools_menu)
-        menu.add_command(label="Plugins...", state=tk.DISABLED)
-        menu.add_command(label="ns2immunes converter...", state=tk.DISABLED)
-        menu.add_command(label="Topology partitioning...", state=tk.DISABLED)
-        tools_menu.add_cascade(label="Experimental", menu=menu)
-
-    def create_random_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create random menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # list of number of random nodes to create
-        nums = [1, 5, 10, 15, 20, 30, 40, 50, 75, 100]
-        for i in nums:
-            label = f"R({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Random", menu=menu)
-
-    def create_grid_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create grid menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # list of number of nodes to create
-        nums = [1, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100]
-        for i in nums:
-            label = f"G({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Grid", menu=menu)
-
-    def create_connected_grid_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create connected grid menu items and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(1, 11, 1):
-            submenu = tk.Menu(menu)
-            for j in range(1, 11, 1):
-                label = f"{i} X {j}"
-                submenu.add_command(label=label, state=tk.DISABLED)
-            label = str(i) + " X N"
-            menu.add_cascade(label=label, menu=submenu)
-        topology_generator_menu.add_cascade(label="Connected Grid", menu=menu)
-
-    def create_chain_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create chain menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        # number of nodes to create
-        nums = list(range(2, 25, 1)) + [32, 64, 128]
-        for i in nums:
-            label = f"P({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Chain", menu=menu)
-
-    def create_star_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create star menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 26, 1):
-            label = f"C({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Star", menu=menu)
-
-    def create_cycle_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create cycle menu item and the sub items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 25, 1):
-            label = f"C({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Cycle", menu=menu)
-
-    def create_wheel_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create wheel menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(4, 26, 1):
-            label = f"W({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Wheel", menu=menu)
-
-    def create_cube_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create cube menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(2, 7, 1):
-            label = f"Q({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Cube", menu=menu)
-
-    def create_clique_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create clique menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        for i in range(3, 25, 1):
-            label = f"K({i})"
-            menu.add_command(label=label, state=tk.DISABLED)
-        topology_generator_menu.add_cascade(label="Clique", menu=menu)
-
-    def create_bipartite_menu(self, topology_generator_menu: tk.Menu):
-        """
-        Create bipartite menu item and the sub menu items inside
-        """
-        menu = tk.Menu(topology_generator_menu)
-        temp = 24
-        for i in range(1, 13, 1):
-            submenu = tk.Menu(menu)
-            for j in range(i, temp, 1):
-                label = f"K({i} X {j})"
-                submenu.add_command(label=label, state=tk.DISABLED)
-            label = f"K({i})"
-            menu.add_cascade(label=label, menu=submenu)
-            temp = temp - 1
-        topology_generator_menu.add_cascade(label="Bipartite", menu=menu)
-
-    def create_topology_generator_menu(self, tools_menu: tk.Menu):
-        """
-        Create topology menu item and its sub menu items
-        """
-        menu = tk.Menu(tools_menu)
-        self.create_random_menu(menu)
-        self.create_grid_menu(menu)
-        self.create_connected_grid_menu(menu)
-        self.create_chain_menu(menu)
-        self.create_star_menu(menu)
-        self.create_cycle_menu(menu)
-        self.create_wheel_menu(menu)
-        self.create_cube_menu(menu)
-        self.create_clique_menu(menu)
-        self.create_bipartite_menu(menu)
-        tools_menu.add_cascade(label="Topology generator", menu=menu)
-
-    def draw_tools_menu(self):
+    def draw_tools_menu(self) -> None:
         """
         Create tools menu
         """
         menu = tk.Menu(self)
-        menu.add_command(label="Auto rearrange all", state=tk.DISABLED)
-        menu.add_command(label="Auto rearrange selected", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Align to grid", state=tk.DISABLED)
-        menu.add_separator()
-        menu.add_command(label="Traffic...", state=tk.DISABLED)
-        menu.add_command(label="IP addresses...", state=tk.DISABLED)
-        menu.add_command(label="MAC addresses...", state=tk.DISABLED)
-        menu.add_command(label="Build hosts file...", state=tk.DISABLED)
-        menu.add_command(label="Renumber nodes...", state=tk.DISABLED)
-        self.create_experimental_menu(menu)
-        self.create_topology_generator_menu(menu)
-        menu.add_command(label="Debugger...", state=tk.DISABLED)
+        menu.add_command(label="Find", accelerator="Ctrl+F", command=self.click_find)
+        self.app.master.bind_all("<Control-f>", self.click_find)
+        menu.add_command(label="Auto Grid", command=self.click_autogrid)
+        menu.add_command(label="IP Addresses", command=self.click_ip_config)
+        menu.add_command(label="MAC Addresses", command=self.click_mac_config)
         self.add_cascade(label="Tools", menu=menu)
 
-    def create_observer_widgets_menu(self, widget_menu: tk.Menu):
+    def create_observer_widgets_menu(self, widget_menu: tk.Menu) -> None:
         """
         Create observer widget menu item and create the sub menu items inside
         """
-        var = tk.StringVar(value="none")
-        menu = tk.Menu(widget_menu)
-        menu.var = var
-        menu.add_command(
-            label="Edit Observers", command=self.menuaction.edit_observer_widgets
+        self.observers_menu = tk.Menu(widget_menu)
+        self.observers_menu.add_command(
+            label="Edit Observers", command=self.click_edit_observer_widgets
         )
-        menu.add_separator()
-        menu.add_radiobutton(
+        self.observers_menu.add_separator()
+        self.observers_menu.add_radiobutton(
             label="None",
-            variable=var,
+            variable=self.observers_var,
             value="none",
-            command=lambda: self.app.core.set_observer(None),
+            command=lambda: self.core.set_observer(None),
         )
         for name in sorted(OBSERVERS):
             cmd = OBSERVERS[name]
-            menu.add_radiobutton(
+            self.observers_menu.add_radiobutton(
                 label=name,
-                variable=var,
+                variable=self.observers_var,
                 value=name,
-                command=partial(self.app.core.set_observer, cmd),
+                command=partial(self.core.set_observer, cmd),
             )
-        for name in sorted(self.app.core.custom_observers):
-            observer = self.app.core.custom_observers[name]
-            menu.add_radiobutton(
-                label=name,
-                variable=var,
-                value=name,
-                command=partial(self.app.core.set_observer, observer.cmd),
-            )
-        widget_menu.add_cascade(label="Observer Widgets", menu=menu)
+        self.observers_custom_index = self.observers_menu.index(tk.END) + 1
+        self.draw_custom_observers()
+        widget_menu.add_cascade(label="Observer Widgets", menu=self.observers_menu)
 
-    def create_adjacency_menu(self, widget_menu: tk.Menu):
+    def draw_custom_observers(self) -> None:
+        current_observers_index = self.observers_menu.index(tk.END) + 1
+        if self.observers_custom_index < current_observers_index:
+            self.observers_menu.delete(self.observers_custom_index, tk.END)
+        for name in sorted(self.core.custom_observers):
+            observer = self.core.custom_observers[name]
+            self.observers_menu.add_radiobutton(
+                label=name,
+                variable=self.observers_var,
+                value=name,
+                command=partial(self.core.set_observer, observer.cmd),
+            )
+
+    def create_adjacency_menu(self, widget_menu: tk.Menu) -> None:
         """
         Create adjacency menu item and the sub menu items inside
         """
         menu = tk.Menu(widget_menu)
-        menu.add_command(label="OSPFv2", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3", state=tk.DISABLED)
-        menu.add_command(label="OSLR", state=tk.DISABLED)
-        menu.add_command(label="OSLRv2", state=tk.DISABLED)
+        menu.add_command(label="Configure Adjacency", state=tk.DISABLED)
+        menu.add_command(label="Enable OSPFv2?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSPFv3?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSLR?", state=tk.DISABLED)
+        menu.add_command(label="Enable OSLRv2?", state=tk.DISABLED)
         widget_menu.add_cascade(label="Adjacency", menu=menu)
 
-    def draw_widgets_menu(self):
+    def create_throughput_menu(self, widget_menu: tk.Menu) -> None:
+        menu = tk.Menu(widget_menu)
+        menu.add_command(
+            label="Configure Throughput", command=self.click_config_throughput
+        )
+        menu.add_checkbutton(label="Enable Throughput?", command=self.click_throughput)
+        widget_menu.add_cascade(label="Throughput", menu=menu)
+
+    def draw_widgets_menu(self) -> None:
         """
         Create widget menu
         """
         menu = tk.Menu(self)
         self.create_observer_widgets_menu(menu)
         self.create_adjacency_menu(menu)
-        menu.add_checkbutton(label="Throughput", command=self.menuaction.throughput)
-        menu.add_separator()
-        menu.add_command(label="Configure Adjacency...", state=tk.DISABLED)
-        menu.add_command(
-            label="Configure Throughput...", command=self.menuaction.config_throughput
-        )
+        self.create_throughput_menu(menu)
         self.add_cascade(label="Widgets", menu=menu)
 
-    def draw_session_menu(self):
+    def draw_session_menu(self) -> None:
         """
         Create session menu
         """
         menu = tk.Menu(self)
-        menu.add_command(
-            label="Sessions...", command=self.menuaction.session_change_sessions
-        )
-        menu.add_separator()
-        menu.add_command(label="Options...", command=self.menuaction.session_options)
-        menu.add_command(label="Servers...", command=self.menuaction.session_servers)
-        menu.add_command(label="Hooks...", command=self.menuaction.session_hooks)
-        menu.add_command(label="Reset Nodes", state=tk.DISABLED)
-        menu.add_command(label="Comments...", state=tk.DISABLED)
+        menu.add_command(label="Sessions", command=self.click_sessions)
+        menu.add_command(label="Servers", command=self.click_servers)
+        menu.add_command(label="Options", command=self.click_session_options)
+        menu.add_command(label="Hooks", command=self.click_hooks)
         self.add_cascade(label="Session", menu=menu)
 
-    def draw_help_menu(self):
+    def draw_help_menu(self) -> None:
         """
         Create help menu
         """
         menu = tk.Menu(self)
-        menu.add_command(
-            label="Core GitHub (www)", command=self.menuaction.help_core_github
-        )
-        menu.add_command(
-            label="Core Documentation (www)",
-            command=self.menuaction.help_core_documentation,
-        )
-        menu.add_command(label="About", command=self.menuaction.show_about)
+        menu.add_command(label="Core GitHub (www)", command=self.click_core_github)
+        menu.add_command(label="Core Documentation (www)", command=self.click_core_doc)
+        menu.add_command(label="About", command=self.click_about)
         self.add_cascade(label="Help", menu=menu)
 
-    def open_recent_files(self, filename: str):
+    def open_recent_files(self, filename: str) -> None:
         if os.path.isfile(filename):
             logging.debug("Open recent file %s", filename)
-            self.menuaction.open_xml_task(filename)
+            self.open_xml_task(filename)
         else:
             logging.warning("File does not exist %s", filename)
 
-    def update_recent_files(self):
+    def update_recent_files(self) -> None:
         self.recent_menu.delete(0, tk.END)
         for i in self.app.guiconfig["recentfiles"]:
             self.recent_menu.add_command(
                 label=i, command=partial(self.open_recent_files, i)
             )
 
-    def save(self, event=None):
-        xml_file = self.app.core.xml_file
+    def click_save(self, _event=None) -> None:
+        xml_file = self.core.xml_file
         if xml_file:
-            self.app.core.save_xml(xml_file)
+            self.core.save_xml(xml_file)
         else:
-            self.menuaction.file_save_as_xml()
+            self.click_save_xml()
+
+    def click_save_xml(self, _event: tk.Event = None) -> None:
+        init_dir = self.core.xml_dir
+        if not init_dir:
+            init_dir = str(XMLS_PATH)
+        file_path = filedialog.asksaveasfilename(
+            initialdir=init_dir,
+            title="Save As",
+            filetypes=(("XML files", "*.xml"), ("All files", "*")),
+            defaultextension=".xml",
+        )
+        if file_path:
+            self.add_recent_file_to_gui_config(file_path)
+            self.core.save_xml(file_path)
+            self.core.xml_file = file_path
+
+    def click_open_xml(self, _event: tk.Event = None) -> None:
+        init_dir = self.core.xml_dir
+        if not init_dir:
+            init_dir = str(XMLS_PATH)
+        file_path = filedialog.askopenfilename(
+            initialdir=init_dir,
+            title="Open",
+            filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
+        )
+        if file_path:
+            self.open_xml_task(file_path)
+
+    def open_xml_task(self, filename: str) -> None:
+        self.add_recent_file_to_gui_config(filename)
+        self.core.xml_file = filename
+        self.core.xml_dir = str(os.path.dirname(filename))
+        self.prompt_save_running_session()
+        task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(filename,))
+        task.start()
+
+    def execute_python(self) -> None:
+        dialog = ExecutePythonDialog(self.app)
+        dialog.show()
+
+    def add_recent_file_to_gui_config(self, file_path) -> None:
+        recent_files = self.app.guiconfig["recentfiles"]
+        num_files = len(recent_files)
+        if num_files == 0:
+            recent_files.insert(0, file_path)
+        elif 0 < num_files <= MAX_FILES:
+            if file_path in recent_files:
+                recent_files.remove(file_path)
+                recent_files.insert(0, file_path)
+            else:
+                if num_files == MAX_FILES:
+                    recent_files.pop()
+                recent_files.insert(0, file_path)
+        else:
+            logging.error("unexpected number of recent files")
+        self.app.save_config()
+        self.app.menubar.update_recent_files()
+
+    def change_menubar_item_state(self, is_runtime: bool) -> None:
+        labels = {"Copy", "Paste", "Delete", "Cut"}
+        for i in range(self.edit_menu.index(tk.END) + 1):
+            try:
+                label = self.edit_menu.entrycget(i, "label")
+                if label not in labels:
+                    continue
+                state = tk.DISABLED if is_runtime else tk.NORMAL
+                self.edit_menu.entryconfig(i, state=state)
+            except tk.TclError:
+                pass
+
+    def prompt_save_running_session(self, quit_app: bool = False) -> None:
+        """
+        Prompt use to stop running session before application is closed
+
+        :param quit_app: True to quit app, False otherwise
+        """
+        result = True
+        if self.core.is_runtime():
+            result = messagebox.askyesnocancel("Exit", "Stop the running session?")
+        if result:
+            self.core.delete_session()
+        if quit_app:
+            self.app.quit()
+
+    def click_new(self) -> None:
+        self.prompt_save_running_session()
+        self.core.create_new_session()
+        self.core.xml_file = None
+
+    def click_find(self, _event: tk.Event = None) -> None:
+        dialog = FindDialog(self.app)
+        dialog.show()
+
+    def click_preferences(self) -> None:
+        dialog = PreferencesDialog(self.app)
+        dialog.show()
+
+    def click_canvas_size_and_scale(self) -> None:
+        dialog = SizeAndScaleDialog(self.app)
+        dialog.show()
+
+    def click_canvas_wallpaper(self) -> None:
+        dialog = CanvasWallpaperDialog(self.app)
+        dialog.show()
+
+    def click_core_github(self) -> None:
+        webbrowser.open_new("https://github.com/coreemu/core")
+
+    def click_core_doc(self) -> None:
+        webbrowser.open_new("http://coreemu.github.io/core/")
+
+    def click_about(self) -> None:
+        dialog = AboutDialog(self.app)
+        dialog.show()
+
+    def click_throughput(self) -> None:
+        if not self.core.handling_throughputs:
+            self.core.enable_throughputs()
+        else:
+            self.core.cancel_throughputs()
+
+    def click_config_throughput(self) -> None:
+        dialog = ThroughputDialog(self.app)
+        dialog.show()
+
+    def click_copy(self, _event: tk.Event = None) -> None:
+        self.canvas.copy()
+
+    def click_paste(self, _event: tk.Event = None) -> None:
+        self.canvas.paste()
+
+    def click_delete(self, _event: tk.Event = None) -> None:
+        self.canvas.delete_selected_objects()
+
+    def click_cut(self, _event: tk.Event = None) -> None:
+        self.canvas.copy()
+        self.canvas.delete_selected_objects()
+
+    def click_session_options(self) -> None:
+        logging.debug("Click options")
+        dialog = SessionOptionsDialog(self.app)
+        if not dialog.has_error:
+            dialog.show()
+
+    def click_sessions(self) -> None:
+        logging.debug("Click change sessions")
+        dialog = SessionsDialog(self.app)
+        dialog.show()
+
+    def click_hooks(self) -> None:
+        logging.debug("Click hooks")
+        dialog = HooksDialog(self.app)
+        dialog.show()
+
+    def click_servers(self) -> None:
+        logging.debug("Click emulation servers")
+        dialog = ServersDialog(self.app)
+        dialog.show()
+
+    def click_edit_observer_widgets(self) -> None:
+        dialog = ObserverDialog(self.app)
+        dialog.show()
+
+    def click_autogrid(self) -> None:
+        width, height = self.canvas.current_dimensions
+        padding = (ICON_SIZE / 2) + 10
+        layout_size = padding + ICON_SIZE
+        col_count = width // layout_size
+        logging.info(
+            "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
+        )
+        for i, node in enumerate(self.canvas.nodes.values()):
+            col = i % col_count
+            row = i // col_count
+            x = (col * layout_size) + padding
+            y = (row * layout_size) + padding
+            node.move(x, y)
+
+    def click_edge_label_change(self) -> None:
+        for edge in self.canvas.edges.values():
+            edge.draw_labels()
+
+    def click_mac_config(self) -> None:
+        dialog = MacConfigDialog(self.app)
+        dialog.show()
+
+    def click_ip_config(self) -> None:
+        dialog = IpConfigDialog(self.app)
+        dialog.show()
+
+    def click_custom_nodes(self) -> None:
+        dialog = CustomNodesDialog(self.app)
+        dialog.show()
