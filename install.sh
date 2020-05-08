@@ -138,6 +138,8 @@ else
   uninstall_core
   echo "pulling latest code"
   git pull
+  echo "installing python dependencies"
+  install_python_depencencies
   echo "building CORE"
   case ${os} in
   "ubuntu")
