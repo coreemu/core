@@ -24,7 +24,6 @@ shutdown commands, and meta-data associated with a node.
 | Service Group | Services |
 |---|---|
 |[BIRD](services/bird.md)|BGP, OSPF, RADV, RIP, Static|
-|[Docker](services/docker.md)|Docker|
 |[EMANE](services/emane.md)|Transport Service|
 |[FRR](services/frr.md)|BABEL, BGP, OSPFv2, OSPFv3, PIMD, RIP, RIPNG, Zebra|
 |[NRL](services/nrl.md)|arouted, MGEN Sink, MGEN Actor, NHDP, OLSR, OLSRORG, OLSRv2, SMF|
