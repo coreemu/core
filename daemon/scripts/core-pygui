@@ -9,7 +9,7 @@ from core.gui.images import Images
 
 if __name__ == "__main__":
     # parse flags
-    parser = argparse.ArgumentParser(description=f"CORE Python Tk GUI")
+    parser = argparse.ArgumentParser(description=f"CORE Python GUI")
     parser.add_argument("-l", "--level", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO",
                         help="logging level")
     parser.add_argument("-p", "--proxy", action="store_true", help="enable proxy")
