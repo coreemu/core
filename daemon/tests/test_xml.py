@@ -17,10 +17,15 @@ class TestXml:
         :param session: session for test
         :param tmpdir: tmpdir to create data in
         """
-        # create hook
+        # create hooks
         file_name = "runtime_hook.sh"
         data = "#!/bin/sh\necho hello"
         state = EventTypes.RUNTIME_STATE
+        session.add_hook(state, file_name, None, data)
+
+        file_name = "instantiation_hook.sh"
+        data = "#!/bin/sh\necho hello"
+        state = EventTypes.INSTANTIATION_STATE
         session.add_hook(state, file_name, None, data)
 
         # save xml

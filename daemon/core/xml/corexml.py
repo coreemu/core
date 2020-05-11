@@ -312,7 +312,7 @@ class CoreXmlWriter:
     def write_session_hooks(self) -> None:
         # hook scripts
         hooks = etree.Element("session_hooks")
-        for state in sorted(self.session._hooks.keys()):
+        for state in sorted(self.session._hooks, key=lambda x: x.value):
             for file_name, data in self.session._hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
