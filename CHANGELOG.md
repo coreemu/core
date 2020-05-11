@@ -1,3 +1,33 @@
+## 2020-05-11 CORE 6.4.0
+* Enhancements
+    * updates to core-route-monitor, allow specific session, configurable settings, and properly
+      listen on all interfaces
+    * install.sh now has a "-r" option to help with reinstalling from current branch and installing
+      current python dependencies
+    * \#202 - enable OSPFv2 fast convergence
+    * \#178 - added comments to OVS service
+* Python GUI Enhancements
+    * added initial documentation to help support usage
+    * supports drawing multiple links for wireless connections
+    * supports differentiating wireless networks with different colored links
+    * implemented unlink in node context menu to delete links to other nodes
+    * implemented node run tool dialog
+    * implemented find node dialog
+    * implemented address configuration dialog
+    * implemented mac configuration dialog
+    * updated link address creation to more closely mimic prior behavior
+    * updated configuration to use yaml class based configs
+    * implemented auto grid layout for nodes
+    * fixed drawn wlan ranges during configuration
+* Bugfixes
+    * no longer writes link option data for WLAN/EMANE links in XML
+    * avoid configuring links for WLAN/EMANE link options in XML, due to them being written to XML prior
+    * updates to allow building python docs again
+    * \#431 - peer to peer node uplink link data was not using an enum properly due to code changes
+    * \#432 - loading XML was not setting EMANE nodes model
+    * \#435 - loading XML was not maintaining existing session options
+    * \#448 - fixed issue sorting hooks being saved to XML
+
 ## 2020-04-13 CORE 6.3.0
 * Features
     * \#424 - added FRR IS-IS service
