@@ -183,7 +183,7 @@ class SizeAndScaleDialog(Dialog):
             frame,
             textvariable=self.lat,
             validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
+            validatecommand=(self.validation.float, "%P"),
         )
         entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
@@ -194,7 +194,7 @@ class SizeAndScaleDialog(Dialog):
             frame,
             textvariable=self.lon,
             validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
+            validatecommand=(self.validation.float, "%P"),
         )
         entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
@@ -205,7 +205,7 @@ class SizeAndScaleDialog(Dialog):
             frame,
             textvariable=self.alt,
             validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
+            validatecommand=(self.validation.float, "%P"),
         )
         entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
         entry.grid(row=0, column=5, sticky="ew")

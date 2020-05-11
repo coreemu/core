@@ -20,6 +20,7 @@ class InputValidation:
         self.master = app.master
         self.positive_int = None
         self.positive_float = None
+        self.float = None
         self.app_scale = None
         self.name = None
         self.ip4 = None
@@ -30,6 +31,7 @@ class InputValidation:
     def register(self):
         self.positive_int = self.master.register(self.check_positive_int)
         self.positive_float = self.master.register(self.check_positive_float)
+        self.float = self.master.register(self.check_float)
         self.app_scale = self.master.register(self.check_scale_value)
         self.name = self.master.register(self.check_node_name)
         self.ip4 = self.master.register(self.check_ip4)
@@ -60,6 +62,16 @@ class InputValidation:
             if int_value >= 0:
                 return True
             return False
+        except ValueError:
+            return False
+
+    @classmethod
+    def check_float(cls, s: str) -> bool:
+        if len(s) == 0:
+            return True
+        try:
+            float(s)
+            return True
         except ValueError:
             return False
 
