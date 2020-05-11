@@ -147,8 +147,13 @@ class InterfaceManager:
         return str(ip4), str(ip6)
 
     def get_subnets(self, interface: "core_pb2.Interface") -> Subnets:
-        ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
-        ip6_subnet = IPNetwork(f"{interface.ip6}/{interface.ip6mask}").cidr
+        logging.info("get subnets for interface: %s", interface)
+        ip4_subnet = self.ip4_subnets
+        if interface.ip4:
+            ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
+        ip6_subnet = self.ip6_subnets
+        if interface.ip6:
+            ip6_subnet = IPNetwork(f"{interface.ip6}/{interface.ip6mask}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 
