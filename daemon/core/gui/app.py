@@ -15,7 +15,6 @@ from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
 from core.gui.toolbar import Toolbar
-from core.gui.validation import InputValidation
 
 WIDTH = 1000
 HEIGHT = 800
@@ -33,7 +32,6 @@ class Application(ttk.Frame):
         self.right_frame = None
         self.canvas = None
         self.statusbar = None
-        self.validation = None
         self.progress = None
 
         # fonts
@@ -73,7 +71,6 @@ class Application(ttk.Frame):
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
-        self.validation = InputValidation(self)
         self.master.option_add("*tearOff", tk.FALSE)
 
     def center(self):

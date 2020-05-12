@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import netaddr
 
-from core.gui import nodeutils
+from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.emaneconfig import EmaneModelDialog
@@ -143,16 +143,7 @@ class NodeConfigDialog(Dialog):
         # name field
         label = ttk.Label(frame, text="Name")
         label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.name,
-            validate="key",
-            validatecommand=(self.app.validation.name, "%P"),
-            state=state,
-        )
-        entry.bind(
-            "<FocusOut>", lambda event: self.app.validation.focus_out(event, "noname")
-        )
+        entry = validation.NodeNameEntry(frame, textvariable=self.name, state=state)
         entry.grid(row=row, column=1, sticky="ew")
         row += 1
 

@@ -6,6 +6,7 @@ from tkinter import ttk
 from typing import TYPE_CHECKING, Union
 
 from core.api.grpc import core_pb2
+from core.gui import validation
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
@@ -120,95 +121,65 @@ class LinkConfigurationDialog(Dialog):
 
         label = ttk.Label(frame, text="Bandwidth (bps)")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.bandwidth,
-            validate="key",
-            validatecommand=(self.app.validation.positive_int, "%P"),
+        entry = validation.PositiveIntEntry(
+            frame, empty_enabled=False, textvariable=self.bandwidth
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
         if not self.is_symmetric:
-            entry = ttk.Entry(
-                frame,
-                textvariable=self.down_bandwidth,
-                validate="key",
-                validatecommand=(self.app.validation.positive_int, "%P"),
+            entry = validation.PositiveIntEntry(
+                frame, empty_enabled=False, textvariable=self.down_bandwidth
             )
             entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Delay (us)")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.delay,
-            validate="key",
-            validatecommand=(self.app.validation.positive_int, "%P"),
+        entry = validation.PositiveIntEntry(
+            frame, empty_enabled=False, textvariable=self.delay
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
         if not self.is_symmetric:
-            entry = ttk.Entry(
-                frame,
-                textvariable=self.down_delay,
-                validate="key",
-                validatecommand=(self.app.validation.positive_int, "%P"),
+            entry = validation.PositiveIntEntry(
+                frame, empty_enabled=False, textvariable=self.down_delay
             )
             entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Jitter (us)")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.jitter,
-            validate="key",
-            validatecommand=(self.app.validation.positive_int, "%P"),
+        entry = validation.PositiveIntEntry(
+            frame, empty_enabled=False, textvariable=self.jitter
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
         if not self.is_symmetric:
-            entry = ttk.Entry(
-                frame,
-                textvariable=self.down_jitter,
-                validate="key",
-                validatecommand=(self.app.validation.positive_int, "%P"),
+            entry = validation.PositiveIntEntry(
+                frame, empty_enabled=False, textvariable=self.down_jitter
             )
             entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Loss (%)")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.loss,
-            validate="key",
-            validatecommand=(self.app.validation.positive_float, "%P"),
+        entry = validation.PositiveFloatEntry(
+            frame, empty_enabled=False, textvariable=self.loss
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
         if not self.is_symmetric:
-            entry = ttk.Entry(
-                frame,
-                textvariable=self.down_loss,
-                validate="key",
-                validatecommand=(self.app.validation.positive_float, "%P"),
+            entry = validation.PositiveFloatEntry(
+                frame, empty_enabled=False, textvariable=self.down_loss
             )
             entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Duplicate (%)")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.duplicate,
-            validate="key",
-            validatecommand=(self.app.validation.positive_int, "%P"),
+        entry = validation.PositiveIntEntry(
+            frame, empty_enabled=False, textvariable=self.duplicate
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
         if not self.is_symmetric:
-            entry = ttk.Entry(
-                frame,
-                textvariable=self.down_duplicate,
-                validate="key",
-                validatecommand=(self.app.validation.positive_int, "%P"),
+            entry = validation.PositiveIntEntry(
+                frame, empty_enabled=False, textvariable=self.down_duplicate
             )
             entry.grid(row=row, column=2, sticky="ew", pady=PADY)
         row = row + 1
@@ -229,11 +200,8 @@ class LinkConfigurationDialog(Dialog):
 
         label = ttk.Label(frame, text="Width")
         label.grid(row=row, column=0, sticky="ew")
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.width,
-            validate="key",
-            validatecommand=(self.app.validation.positive_float, "%P"),
+        entry = validation.PositiveFloatEntry(
+            frame, empty_enabled=False, textvariable=self.width
         )
         entry.grid(row=row, column=1, sticky="ew", pady=PADY)
 
