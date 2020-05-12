@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import font, ttk
 from typing import TYPE_CHECKING
 
+from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
@@ -21,7 +22,6 @@ class SizeAndScaleDialog(Dialog):
         """
         super().__init__(app, "Canvas Size and Scale")
         self.canvas = self.app.canvas
-        self.validation = app.validation
         self.section_font = font.Font(weight="bold")
         width, height = self.canvas.current_dimensions
         self.pixel_width = tk.IntVar(value=width)
@@ -59,23 +59,11 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.pixel_width,
-            validate="key",
-            validatecommand=(self.validation.positive_int, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_width)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.pixel_height,
-            validate="key",
-            validatecommand=(self.validation.positive_int, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_height)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
@@ -87,23 +75,11 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.meters_width,
-            validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveFloatEntry(frame, textvariable=self.meters_width)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.meters_height,
-            validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveFloatEntry(frame, textvariable=self.meters_height)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
@@ -118,13 +94,7 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text=f"{PIXEL_SCALE} Pixels =")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.scale,
-            validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveFloatEntry(frame, textvariable=self.scale)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
@@ -148,24 +118,12 @@ class SizeAndScaleDialog(Dialog):
 
         label = ttk.Label(frame, text="X")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.x,
-            validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveFloatEntry(frame, textvariable=self.x)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Y")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.y,
-            validate="key",
-            validatecommand=(self.validation.positive_float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.PositiveFloatEntry(frame, textvariable=self.y)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
 
         label = ttk.Label(label_frame, text="Translates To")
@@ -179,35 +137,17 @@ class SizeAndScaleDialog(Dialog):
 
         label = ttk.Label(frame, text="Lat")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.lat,
-            validate="key",
-            validatecommand=(self.validation.float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.FloatEntry(frame, textvariable=self.lat)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Lon")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.lon,
-            validate="key",
-            validatecommand=(self.validation.float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.FloatEntry(frame, textvariable=self.lon)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Alt")
         label.grid(row=0, column=4, sticky="w", padx=PADX)
-        entry = ttk.Entry(
-            frame,
-            textvariable=self.alt,
-            validate="key",
-            validatecommand=(self.validation.float, "%P"),
-        )
-        entry.bind("<FocusOut>", lambda event: self.validation.focus_out(event, "0"))
+        entry = validation.FloatEntry(frame, textvariable=self.alt)
         entry.grid(row=0, column=5, sticky="ew")
 
     def draw_save_as_default(self):

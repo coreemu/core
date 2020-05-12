@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
-from core.gui import appconfig
+from core.gui import appconfig, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
@@ -80,12 +80,8 @@ class PreferencesDialog(Dialog):
             variable=self.gui_scale,
         )
         scale.grid(row=0, column=0, sticky="ew")
-        entry = ttk.Entry(
-            scale_frame,
-            textvariable=self.gui_scale,
-            width=4,
-            validate="key",
-            validatecommand=(self.app.validation.app_scale, "%P"),
+        entry = validation.AppScaleEntry(
+            scale_frame, textvariable=self.gui_scale, width=4
         )
         entry.grid(row=0, column=1)
 

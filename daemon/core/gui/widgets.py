@@ -6,7 +6,7 @@ from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Dict
 
 from core.api.grpc import common_pb2, core_pb2
-from core.gui import themes
+from core.gui import themes, validation
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
@@ -127,43 +127,16 @@ class ConfigFrame(ttk.Notebook):
                         button = ttk.Button(file_frame, text="...", command=func)
                         button.grid(row=0, column=1)
                     else:
-                        if "controlnet" in option.name and "script" not in option.name:
-                            entry = ttk.Entry(
-                                tab.frame,
-                                textvariable=value,
-                                validate="key",
-                                validatecommand=(self.app.validation.ip4, "%P"),
-                            )
-                            entry.grid(row=index, column=1, sticky="ew")
-                        else:
-                            entry = ttk.Entry(tab.frame, textvariable=value)
-                            entry.grid(row=index, column=1, sticky="ew")
+                        entry = ttk.Entry(tab.frame, textvariable=value)
+                        entry.grid(row=index, column=1, sticky="ew")
 
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = ttk.Entry(
-                        tab.frame,
-                        textvariable=value,
-                        validate="key",
-                        validatecommand=(self.app.validation.positive_int, "%P"),
-                    )
-                    entry.bind(
-                        "<FocusOut>",
-                        lambda event: self.app.validation.focus_out(event, "0"),
-                    )
+                    entry = validation.PositiveIntEntry(tab.frame, textvariable=value)
                     entry.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = ttk.Entry(
-                        tab.frame,
-                        textvariable=value,
-                        validate="key",
-                        validatecommand=(self.app.validation.positive_float, "%P"),
-                    )
-                    entry.bind(
-                        "<FocusOut>",
-                        lambda event: self.app.validation.focus_out(event, "0"),
-                    )
+                    entry = validation.PositiveFloatEntry(tab.frame, textvariable=value)
                     entry.grid(row=index, column=1, sticky="ew")
                 else:
                     logging.error("unhandled config option type: %s", option.type)

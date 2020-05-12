@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
+from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
 
 if TYPE_CHECKING:
@@ -50,13 +51,7 @@ class ColorPickerDialog(Dialog):
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="R: ")
         label.grid(row=0, column=0)
-        self.red_entry = ttk.Entry(
-            frame,
-            width=4,
-            textvariable=self.red,
-            validate="key",
-            validatecommand=(self.app.validation.rgb, "%P"),
-        )
+        self.red_entry = validation.RgbEntry(frame, width=4, textvariable=self.red)
         self.red_entry.grid(row=0, column=1, sticky="nsew")
         scale = ttk.Scale(
             frame,
@@ -82,20 +77,13 @@ class ColorPickerDialog(Dialog):
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="G: ")
         label.grid(row=0, column=0)
-        self.green_entry = ttk.Entry(
-            frame,
-            width=4,
-            textvariable=self.green,
-            validate="key",
-            validatecommand=(self.app.validation.rgb, "%P"),
-        )
+        self.green_entry = validation.RgbEntry(frame, width=4, textvariable=self.green)
         self.green_entry.grid(row=0, column=1, sticky="nsew")
         scale = ttk.Scale(
             frame,
             from_=0,
             to=255,
             value=0,
-            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.green_scale,
             command=lambda x: self.scale_callback(self.green_scale, self.green),
@@ -114,13 +102,7 @@ class ColorPickerDialog(Dialog):
         frame.columnconfigure(3, weight=2)
         label = ttk.Label(frame, text="B: ")
         label.grid(row=0, column=0)
-        self.blue_entry = ttk.Entry(
-            frame,
-            width=4,
-            textvariable=self.blue,
-            validate="key",
-            validatecommand=(self.app.validation.rgb, "%P"),
-        )
+        self.blue_entry = validation.RgbEntry(frame, width=4, textvariable=self.blue)
         self.blue_entry.grid(row=0, column=1, sticky="nsew")
         scale = ttk.Scale(
             frame,
@@ -144,12 +126,7 @@ class ColorPickerDialog(Dialog):
         frame.columnconfigure(0, weight=1)
         label = ttk.Label(frame, text="Selection: ")
         label.grid(row=0, column=0, sticky="nsew")
-        self.hex_entry = ttk.Entry(
-            frame,
-            textvariable=self.hex,
-            validate="key",
-            validatecommand=(self.app.validation.hex, "%P"),
-        )
+        self.hex_entry = validation.HexEntry(frame, textvariable=self.hex)
         self.hex_entry.grid(row=1, column=0, sticky="nsew")
         self.display = tk.Frame(frame, background=self.color, width=100, height=100)
         self.display.grid(row=2, column=0)
