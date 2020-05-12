@@ -21,8 +21,8 @@ HEIGHT = 800
 
 
 class Application(ttk.Frame):
-    def __init__(self, proxy: bool):
-        super().__init__(master=None)
+    def __init__(self, proxy: bool) -> None:
+        super().__init__()
         # load node icons
         NodeUtils.setup()
 
@@ -50,7 +50,7 @@ class Application(ttk.Frame):
         self.draw()
         self.core.setup()
 
-    def setup_scaling(self):
+    def setup_scaling(self) -> None:
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}
         text_scale = self.app_scale if self.app_scale < 1 else math.sqrt(self.app_scale)
         themes.scale_fonts(self.fonts_size, self.app_scale)
@@ -59,21 +59,37 @@ class Application(ttk.Frame):
             family="TkDefaultFont", size=int(8 * text_scale), weight=font.BOLD
         )
 
-    def setup_theme(self):
+    def setup_theme(self) -> None:
         themes.load(self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", themes.theme_change_menu)
         self.master.bind("<<ThemeChanged>>", themes.theme_change)
         self.style.theme_use(self.guiconfig.preferences.theme)
 
-    def setup_app(self):
+    def setup_app(self) -> None:
         self.master.title("CORE")
         self.center()
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.master.option_add("*tearOff", tk.FALSE)
+        self.setup_file_dialogs()
 
-    def center(self):
+    def setup_file_dialogs(self) -> None:
+        """
+        Hack code that needs to initialize a bad dialog so that we can apply,
+        global settings for dialogs to not show hidden files by default and display
+        the hidden file toggle.
+
+        :return: nothing
+        """
+        try:
+            self.master.tk.call("tk_getOpenFile", "-foobar")
+        except tk.TclError:
+            pass
+        self.master.tk.call("set", "::tk::dialog::file::showHiddenBtn", "1")
+        self.master.tk.call("set", "::tk::dialog::file::showHiddenVar", "0")
+
+    def center(self) -> None:
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
         x = int((screen_width / 2) - (WIDTH * self.app_scale / 2))
@@ -82,7 +98,7 @@ class Application(ttk.Frame):
             f"{int(WIDTH * self.app_scale)}x{int(HEIGHT * self.app_scale)}+{x}+{y}"
         )
 
-    def draw(self):
+    def draw(self) -> None:
         self.master.rowconfigure(0, weight=1)
         self.master.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
@@ -99,7 +115,7 @@ class Application(ttk.Frame):
         self.progress = Progressbar(self.right_frame, mode="indeterminate")
         self.menubar = Menubar(self.master, self)
 
-    def draw_canvas(self):
+    def draw_canvas(self) -> None:
         width = self.guiconfig.preferences.width
         height = self.guiconfig.preferences.height
         canvas_frame = ttk.Frame(self.right_frame)
@@ -117,7 +133,7 @@ class Application(ttk.Frame):
         self.canvas.configure(xscrollcommand=scroll_x.set)
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
-    def draw_status(self):
+    def draw_status(self) -> None:
         self.statusbar = StatusBar(self.right_frame, self)
         self.statusbar.grid(sticky="ew")
 
@@ -133,17 +149,17 @@ class Application(ttk.Frame):
     def show_error(self, title: str, message: str) -> None:
         self.after(0, lambda: ErrorDialog(self, title, message).show())
 
-    def on_closing(self):
+    def on_closing(self) -> None:
         self.menubar.prompt_save_running_session(True)
 
-    def save_config(self):
+    def save_config(self) -> None:
         appconfig.save(self.guiconfig)
 
-    def joined_session_update(self):
+    def joined_session_update(self) -> None:
         if self.core.is_runtime():
             self.toolbar.set_runtime()
         else:
             self.toolbar.set_design()
 
-    def close(self):
+    def close(self) -> None:
         self.master.destroy()
