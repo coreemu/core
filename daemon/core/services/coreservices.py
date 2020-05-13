@@ -409,7 +409,6 @@ class CoreServices:
                 "using default services for node(%s) type(%s)", node.name, node_type
             )
             services = self.default_services.get(node_type, [])
-
         logging.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)

@@ -89,7 +89,7 @@ Commands below can be used to run the core-daemon, the new core gui, and tests.
 sudo python3 -m pipenv run core
 
 # runs coretk gui
-python3 -m pipenv run coretk
+python3 -m pipenv run core-pygui
 
 # runs mocked unit tests
 python3 -m pipenv run test-mock

@@ -297,7 +297,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 for service_exception in boot_exception.args:
                     exceptions.append(str(service_exception))
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
-
         return core_pb2.StartSessionResponse(result=True)
 
     def StopSession(
@@ -543,7 +542,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 continue
             node_proto = grpcutils.get_node_proto(session, node)
             nodes.append(node_proto)
-            node_links = get_links(session, node)
+            node_links = get_links(node)
             links.extend(node_links)
 
         session_proto = core_pb2.Session(
@@ -788,7 +787,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node links: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        links = get_links(session, node)
+        links = get_links(node)
         return core_pb2.GetNodeLinksResponse(links=links)
 
     def AddLink(
@@ -1031,8 +1030,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve all the default services of all node types in a session
 
-        :param request:
-            get-default-service request
+        :param request: get-default-service request
         :param context: context object
         :return: get-service-defaults response about all the available default services
         """
@@ -1050,8 +1048,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> SetServiceDefaultsResponse:
         """
         Set new default services to the session after whipping out the old ones
-        :param request: set-service-defaults
-            request
+
+        :param request: set-service-defaults request
         :param context: context object
         :return: set-service-defaults response
         """
@@ -1494,12 +1492,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 flag = MessageFlags.ADD
             else:
                 flag = MessageFlags.DELETE
+            color = session.get_link_color(emane_one.id)
             link = LinkData(
                 message_type=flag,
                 link_type=LinkTypes.WIRELESS,
                 node1_id=node_one.id,
                 node2_id=node_two.id,
                 network_id=emane_one.id,
+                color=color,
             )
             session.broadcast_link(link)
             return EmaneLinkResponse(result=True)

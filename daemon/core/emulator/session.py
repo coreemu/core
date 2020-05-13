@@ -76,6 +76,7 @@ NODES = {
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
 CTRL_NET_ID = 9001
+LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
 
 
 class Session:
@@ -105,6 +106,7 @@ class Session:
         self.thumbnail = None
         self.user = None
         self.event_loop = EventLoop()
+        self.link_colors = {}
 
         # dict of nodes: all nodes and nets
         self.node_id_gen = IdGen()
@@ -355,7 +357,9 @@ class Session:
                     )
                     interface = create_interface(node_one, net_one, interface_one)
                     node_one_interface = interface
-                    link_config(net_one, interface, link_options)
+                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
+                    if not wireless_net:
+                        link_config(net_one, interface, link_options)
 
                 # network to node
                 if node_two and net_one:
@@ -366,7 +370,8 @@ class Session:
                     )
                     interface = create_interface(node_two, net_one, interface_two)
                     node_two_interface = interface
-                    if not link_options.unidirectional:
+                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
+                    if not link_options.unidirectional and not wireless_net:
                         link_config(net_one, interface, link_options)
 
                 # network to network
@@ -693,6 +698,7 @@ class Session:
         # generate name if not provided
         if not options:
             options = NodeOptions()
+            options.set_position(0, 0)
         name = options.name
         if not name:
             name = f"{node_class.__name__}{_id}"
@@ -807,9 +813,7 @@ class Session:
             node.setposition(x, y, None)
             node.position.set_geo(lon, lat, alt)
             self.broadcast_node(node)
-        else:
-            if has_empty_position:
-                x, y = 0, 0
+        elif not has_empty_position:
             node.setposition(x, y, None)
 
     def start_mobility(self, node_ids: List[int] = None) -> None:
@@ -927,6 +931,7 @@ class Session:
         self.location.reset()
         self.services.reset()
         self.mobility.config_reset()
+        self.link_colors.clear()
 
     def start_events(self) -> None:
         """
@@ -1956,3 +1961,17 @@ class Session:
         else:
             node = self.get_node(node_id)
             node.cmd(data, wait=False)
+
+    def get_link_color(self, network_id: int) -> str:
+        """
+        Assign a color for links associated with a network.
+
+        :param network_id: network to get a link color for
+        :return: link color
+        """
+        color = self.link_colors.get(network_id)
+        if not color:
+            index = len(self.link_colors) % len(LINK_COLORS)
+            color = LINK_COLORS[index]
+            self.link_colors[network_id] = color
+        return color

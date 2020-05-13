@@ -1,7 +1,8 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, List, Optional, Set
 
-from core.api.grpc.core_pb2 import NodeType
+from core.api.grpc.core_pb2 import Node, NodeType
+from core.gui.appconfig import CustomNode, GuiConfig
 from core.gui.images import ImageEnum, Images, TypeToImage
 
 if TYPE_CHECKING:
@@ -41,16 +42,16 @@ class NodeDraw:
         return node_draw
 
     @classmethod
-    def from_custom(cls, name: str, image_file: str, services: Set[str]):
+    def from_custom(cls, custom_node: CustomNode):
         node_draw = NodeDraw()
         node_draw.custom = True
-        node_draw.image_file = image_file
-        node_draw.image = Images.get_custom(image_file, ICON_SIZE)
+        node_draw.image_file = custom_node.image
+        node_draw.image = Images.get_custom(custom_node.image, ICON_SIZE)
         node_draw.node_type = NodeType.DEFAULT
-        node_draw.services = services
-        node_draw.label = name
-        node_draw.model = name
-        node_draw.tooltip = name
+        node_draw.services = custom_node.services
+        node_draw.label = custom_node.name
+        node_draw.model = custom_node.name
+        node_draw.tooltip = custom_node.name
         return node_draw
 
 
@@ -64,7 +65,12 @@ class NodeUtils:
     RJ45_NODES = {NodeType.RJ45}
     IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
+    ROUTER_NODES = {"router", "mdr"}
     ANTENNA_ICON = None
+
+    @classmethod
+    def is_router_node(cls, node: Node) -> bool:
+        return cls.is_model_node(node.type) and node.model in cls.ROUTER_NODES
 
     @classmethod
     def is_ignore_node(cls, node_type: NodeType) -> bool:
@@ -92,11 +98,7 @@ class NodeUtils:
 
     @classmethod
     def node_icon(
-        cls,
-        node_type: NodeType,
-        model: str,
-        gui_config: Dict[str, List[Dict[str, str]]],
-        scale=1.0,
+        cls, node_type: NodeType, model: str, gui_config: GuiConfig, scale=1.0
     ) -> "ImageTk.PhotoImage":
 
         image_enum = TypeToImage.get(node_type, model)
@@ -109,10 +111,7 @@ class NodeUtils:
 
     @classmethod
     def node_image(
-        cls,
-        core_node: "core_pb2.Node",
-        gui_config: Dict[str, List[Dict[str, str]]],
-        scale=1.0,
+        cls, core_node: "core_pb2.Node", gui_config: GuiConfig, scale=1.0
     ) -> "ImageTk.PhotoImage":
         image = cls.node_icon(core_node.type, core_node.model, gui_config, scale)
         if core_node.icon:
@@ -127,20 +126,17 @@ class NodeUtils:
         return node_type == NodeType.DEFAULT and model not in cls.NODE_MODELS
 
     @classmethod
-    def get_custom_node_services(
-        cls, gui_config: Dict[str, List[Dict[str, str]]], name: str
-    ) -> List[str]:
-        for m in gui_config["nodes"]:
-            if m["name"] == name:
-                return m["services"]
+    def get_custom_node_services(cls, gui_config: GuiConfig, name: str) -> List[str]:
+        for custom_node in gui_config.nodes:
+            if custom_node.name == name:
+                return custom_node.services
         return []
 
     @classmethod
-    def get_image_file(cls, gui_config, name: str) -> Union[str, None]:
-        if "nodes" in gui_config:
-            for m in gui_config["nodes"]:
-                if m["name"] == name:
-                    return m["image"]
+    def get_image_file(cls, gui_config: GuiConfig, name: str) -> Optional[str]:
+        for custom_node in gui_config.nodes:
+            if custom_node.name == name:
+                return custom_node.image
         return None
 
     @classmethod
@@ -172,9 +168,3 @@ class NodeUtils:
             cls.NETWORK_NODES.append(node_draw)
             cls.NODE_ICONS[(node_type, None)] = node_draw.image
         cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
-
-
-class EdgeUtils:
-    @classmethod
-    def get_token(cls, src: int, dst: int) -> Tuple[int, ...]:
-        return tuple(sorted([src, dst]))

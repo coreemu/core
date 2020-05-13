@@ -1,12 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 import grpc
 
 from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import PADX, PADY
 
@@ -18,14 +17,7 @@ ICON_SIZE = 16
 
 
 class MobilityPlayer:
-    def __init__(
-        self,
-        master: "Application",
-        app: "Application",
-        canvas_node: "CanvasNode",
-        config,
-    ):
-        self.master = master
+    def __init__(self, app: "Application", canvas_node: "CanvasNode", config):
         self.app = app
         self.canvas_node = canvas_node
         self.config = config
@@ -35,10 +27,8 @@ class MobilityPlayer:
     def show(self):
         if self.dialog:
             self.dialog.destroy()
-        self.dialog = MobilityPlayerDialog(
-            self.master, self.app, self.canvas_node, self.config
-        )
-        self.dialog.protocol("WM_DELETE_WINDOW", self.handle_close)
+        self.dialog = MobilityPlayerDialog(self.app, self.canvas_node, self.config)
+        self.dialog.protocol("WM_DELETE_WINDOW", self.close)
         if self.state == MobilityAction.START:
             self.set_play()
         elif self.state == MobilityAction.PAUSE:
@@ -47,9 +37,10 @@ class MobilityPlayer:
             self.set_stop()
         self.dialog.show()
 
-    def handle_close(self):
-        self.dialog.destroy()
-        self.dialog = None
+    def close(self):
+        if self.dialog:
+            self.dialog.destroy()
+            self.dialog = None
 
     def set_play(self):
         self.state = MobilityAction.START
@@ -68,11 +59,9 @@ class MobilityPlayer:
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(
-        self, master: Any, app: "Application", canvas_node: "CanvasNode", config
-    ):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode", config):
         super().__init__(
-            master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
+            app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )
         self.resizable(False, False)
         self.geometry("")
@@ -153,7 +142,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.START
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)
 
     def click_pause(self):
         self.set_pause()
@@ -163,7 +152,7 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.PAUSE
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)
 
     def click_stop(self):
         self.set_stop()
@@ -173,4 +162,4 @@ class MobilityPlayerDialog(Dialog):
                 session_id, self.node.id, MobilityAction.STOP
             )
         except grpc.RpcError as e:
-            show_grpc_error(e, self.top, self.app)
+            self.app.show_grpc_exception("Mobility Error", e)

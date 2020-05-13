@@ -3,169 +3,114 @@ input validation
 """
 import re
 import tkinter as tk
-from typing import TYPE_CHECKING
-
-import netaddr
-from netaddr import IPNetwork
-
-if TYPE_CHECKING:
-    from core.gui.app import Application
+from tkinter import ttk
 
 SMALLEST_SCALE = 0.5
 LARGEST_SCALE = 5.0
+HEX_REGEX = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
 
 
-class InputValidation:
-    def __init__(self, app: "Application"):
-        self.master = app.master
-        self.positive_int = None
-        self.positive_float = None
-        self.app_scale = None
-        self.name = None
-        self.ip4 = None
-        self.rgb = None
-        self.hex = None
-        self.register()
+class ValidationEntry(ttk.Entry):
+    empty = None
 
-    def register(self):
-        self.positive_int = self.master.register(self.check_positive_int)
-        self.positive_float = self.master.register(self.check_positive_float)
-        self.app_scale = self.master.register(self.check_scale_value)
-        self.name = self.master.register(self.check_node_name)
-        self.ip4 = self.master.register(self.check_ip4)
-        self.rgb = self.master.register(self.check_rbg)
-        self.hex = self.master.register(self.check_hex)
+    def __init__(self, master=None, widget=None, empty_enabled=True, **kwargs) -> None:
+        super().__init__(master, widget, **kwargs)
+        cmd = self.register(self.is_valid)
+        self.configure(validate="key", validatecommand=(cmd, "%P"))
+        if self.empty is not None and empty_enabled:
+            self.bind("<FocusOut>", self.focus_out)
 
-    @classmethod
-    def ip_focus_out(cls, event: tk.Event):
-        value = event.widget.get()
-        try:
-            IPNetwork(value)
-        except netaddr.core.AddrFormatError:
-            event.widget.delete(0, tk.END)
-            event.widget.insert(tk.END, "invalid")
+    def is_valid(self, s: str) -> bool:
+        raise NotImplementedError
 
-    @classmethod
-    def focus_out(cls, event: tk.Event, default: str):
-        value = event.widget.get()
-        if value == "":
-            event.widget.insert(tk.END, default)
+    def focus_out(self, _event: tk.Event) -> None:
+        value = self.get()
+        if not value:
+            self.insert(tk.END, self.empty)
 
-    @classmethod
-    def check_positive_int(cls, s: str) -> bool:
-        if len(s) == 0:
-            return True
-        try:
-            int_value = int(s)
-            if int_value >= 0:
-                return True
-            return False
-        except ValueError:
-            return False
 
-    @classmethod
-    def check_positive_float(cls, s: str) -> bool:
-        if len(s) == 0:
-            return True
-        try:
-            float_value = float(s)
-            if float_value >= 0.0:
-                return True
-            return False
-        except ValueError:
-            return False
+class PositiveIntEntry(ValidationEntry):
+    empty = "0"
 
-    @classmethod
-    def check_node_name(cls, s: str) -> bool:
-        if len(s) < 0:
-            return False
-        if len(s) == 0:
-            return True
-        for char in s:
-            if not char.isalnum() and char != "_":
-                return False
-        return True
-
-    @classmethod
-    def check_canvas_int(cls, s: str) -> bool:
-        if len(s) == 0:
-            return True
-        try:
-            int_value = int(s)
-            if int_value >= 0:
-                return True
-            return False
-        except ValueError:
-            return False
-
-    @classmethod
-    def check_canvas_float(cls, s: str) -> bool:
+    def is_valid(self, s: str) -> bool:
         if not s:
             return True
         try:
-            float_value = float(s)
-            if float_value >= 0.0:
-                return True
-            return False
+            value = int(s)
+            return value >= 0
         except ValueError:
             return False
 
-    @classmethod
-    def check_scale_value(cls, s: str) -> bool:
+
+class PositiveFloatEntry(ValidationEntry):
+    empty = "0.0"
+
+    def is_valid(self, s: str) -> bool:
         if not s:
             return True
         try:
-            float_value = float(s)
-            if SMALLEST_SCALE <= float_value <= LARGEST_SCALE or float_value == 0:
-                return True
-            return False
+            value = float(s)
+            return value >= 0.0
         except ValueError:
             return False
 
-    @classmethod
-    def check_ip4(cls, s: str) -> bool:
+
+class FloatEntry(ValidationEntry):
+    empty = "0.0"
+
+    def is_valid(self, s: str) -> bool:
         if not s:
             return True
-        pat = re.compile("^([0-9]+[.])*[0-9]*$")
-        if pat.match(s) is not None:
-            _32bits = s.split(".")
-            if len(_32bits) > 4:
-                return False
-            for _8bits in _32bits:
-                if (
-                    (_8bits and int(_8bits) > 255)
-                    or len(_8bits) > 3
-                    or (_8bits.startswith("0") and len(_8bits) > 1)
-                ):
-                    return False
+        try:
+            float(s)
             return True
-        else:
+        except ValueError:
             return False
 
-    @classmethod
-    def check_rbg(cls, s: str) -> bool:
+
+class RgbEntry(ValidationEntry):
+    def is_valid(self, s: str) -> bool:
         if not s:
             return True
         if s.startswith("0") and len(s) >= 2:
             return False
         try:
             value = int(s)
-            if 0 <= value <= 255:
-                return True
-            else:
-                return False
+            return 0 <= value <= 255
         except ValueError:
             return False
 
-    @classmethod
-    def check_hex(cls, s: str) -> bool:
+
+class HexEntry(ValidationEntry):
+    def is_valid(self, s: str) -> bool:
         if not s:
             return True
-        pat = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
-        if pat.match(s):
-            if 0 <= len(s) <= 7:
-                return True
-            else:
-                return False
+        if HEX_REGEX.match(s):
+            return 0 <= len(s) <= 7
         else:
+            return False
+
+
+class NodeNameEntry(ValidationEntry):
+    empty = "noname"
+
+    def is_valid(self, s: str) -> bool:
+        if len(s) < 0:
+            return False
+        if len(s) == 0:
+            return True
+        for x in s:
+            if not x.isalnum() and x != "_":
+                return False
+        return True
+
+
+class AppScaleEntry(ValidationEntry):
+    def is_valid(self, s: str) -> bool:
+        if not s:
+            return True
+        try:
+            float_value = float(s)
+            return SMALLEST_SCALE <= float_value <= LARGEST_SCALE or float_value == 0
+        except ValueError:
             return False

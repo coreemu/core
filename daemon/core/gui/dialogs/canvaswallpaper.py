@@ -17,14 +17,13 @@ if TYPE_CHECKING:
 
 
 class CanvasWallpaperDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
+    def __init__(self, app: "Application"):
         """
         create an instance of CanvasWallpaper object
         """
-        super().__init__(master, app, "Canvas Background", modal=True)
+        super().__init__(app, "Canvas Background")
         self.canvas = self.app.canvas
         self.scale_option = tk.IntVar(value=self.canvas.scale_option.get())
-        self.show_grid = tk.BooleanVar(value=self.canvas.show_grid.get())
         self.adjust_to_dim = tk.BooleanVar(value=self.canvas.adjust_to_dim.get())
         self.filename = tk.StringVar(value=self.canvas.wallpaper_file)
         self.image_label = None
@@ -104,11 +103,6 @@ class CanvasWallpaperDialog(Dialog):
 
     def draw_additional_options(self):
         checkbutton = ttk.Checkbutton(
-            self.top, text="Show grid", variable=self.show_grid
-        )
-        checkbutton.grid(sticky="ew", padx=PADX)
-
-        checkbutton = ttk.Checkbutton(
             self.top,
             text="Adjust canvas size to image dimensions",
             variable=self.adjust_to_dim,
@@ -163,17 +157,13 @@ class CanvasWallpaperDialog(Dialog):
 
     def click_apply(self):
         self.canvas.scale_option.set(self.scale_option.get())
-        self.canvas.show_grid.set(self.show_grid.get())
         self.canvas.adjust_to_dim.set(self.adjust_to_dim.get())
-        self.canvas.update_grid()
-
+        self.canvas.show_grid.click_handler()
         filename = self.filename.get()
         if not filename:
             filename = None
-
         try:
             self.canvas.set_wallpaper(filename)
         except FileNotFoundError:
             logging.error("invalid background: %s", filename)
-
         self.destroy()

@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING
 
-from core.gui.coreclient import Observer
+from core.gui.appconfig import Observer
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ListboxScroll
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 
 
 class ObserverDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Observer Widgets", modal=True)
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Observer Widgets")
         self.observers = None
         self.save_button = None
         self.delete_button = None
@@ -89,11 +89,9 @@ class ObserverDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save_config(self):
-        observers = []
-        for name in sorted(self.app.core.custom_observers):
-            observer = self.app.core.custom_observers[name]
-            observers.append({"name": observer.name, "cmd": observer.cmd})
-        self.app.guiconfig["observers"] = observers
+        self.app.guiconfig.observers.clear()
+        for observer in self.app.core.custom_observers.values():
+            self.app.guiconfig.observers.append(observer)
         self.app.save_config()
         self.destroy()
 
@@ -104,6 +102,11 @@ class ObserverDialog(Dialog):
             observer = Observer(name, cmd)
             self.app.core.custom_observers[name] = observer
             self.observers.insert(tk.END, name)
+            self.name.set("")
+            self.cmd.set("")
+            self.app.menubar.draw_custom_observers()
+        else:
+            messagebox.showerror("Observer Error", f"{name} already exists")
 
     def click_save(self):
         name = self.name.get()
@@ -129,6 +132,7 @@ class ObserverDialog(Dialog):
             self.observers.selection_clear(0, tk.END)
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
+            self.app.menubar.draw_custom_observers()
 
     def handle_observer_change(self, event: tk.Event):
         selection = self.observers.curselection()

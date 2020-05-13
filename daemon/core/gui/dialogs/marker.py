@@ -17,11 +17,8 @@ MARKER_THICKNESS = [3, 5, 8, 10]
 
 
 class MarkerDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", initcolor: str = "#000000"
-    ):
-        super().__init__(master, app, "Marker Tool", modal=False)
-        self.app = app
+    def __init__(self, app: "Application", initcolor: str = "#000000"):
+        super().__init__(app, "Marker Tool", modal=False)
         self.color = initcolor
         self.radius = MARKER_THICKNESS[0]
         self.marker_thickness = tk.IntVar(value=MARKER_THICKNESS[0])

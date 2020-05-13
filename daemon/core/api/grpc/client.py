@@ -493,7 +493,6 @@ class CoreGrpcClient:
         """
         request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
-        logging.info("STREAM TYPE: %s", type(stream))
         start_streamer(stream, handler)
         return stream
 

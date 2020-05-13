@@ -350,8 +350,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         """
         # only use 48 bits
         value = binascii.hexlify(value[2:]).decode()
-        mac = netaddr.EUI(value)
-        mac.dialect = netaddr.mac_unix
+        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
         return str(mac)
 
 

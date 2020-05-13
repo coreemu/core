@@ -10,7 +10,7 @@
 # extra cruft to remove
 DISTCLEANFILES	= conf.py Makefile Makefile.in stamp-vti *.rst
 
-all:	index.rst
+all: html
 
 # auto-generated Python documentation using Sphinx
 index.rst:

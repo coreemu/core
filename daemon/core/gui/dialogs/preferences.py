@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
-from core.gui import appconfig
+from core.gui import appconfig, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
@@ -16,14 +16,14 @@ SCALE_INTERVAL = 0.01
 
 
 class PreferencesDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "Preferences", modal=True)
+    def __init__(self, app: "Application"):
+        super().__init__(app, "Preferences")
         self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
-        preferences = self.app.guiconfig["preferences"]
-        self.editor = tk.StringVar(value=preferences["editor"])
-        self.theme = tk.StringVar(value=preferences["theme"])
-        self.terminal = tk.StringVar(value=preferences["terminal"])
-        self.gui3d = tk.StringVar(value=preferences["gui3d"])
+        preferences = self.app.guiconfig.preferences
+        self.editor = tk.StringVar(value=preferences.editor)
+        self.theme = tk.StringVar(value=preferences.theme)
+        self.terminal = tk.StringVar(value=preferences.terminal)
+        self.gui3d = tk.StringVar(value=preferences.gui3d)
         self.draw()
 
     def draw(self):
@@ -80,12 +80,8 @@ class PreferencesDialog(Dialog):
             variable=self.gui_scale,
         )
         scale.grid(row=0, column=0, sticky="ew")
-        entry = ttk.Entry(
-            scale_frame,
-            textvariable=self.gui_scale,
-            width=4,
-            validate="key",
-            validatecommand=(self.app.validation.app_scale, "%P"),
+        entry = validation.AppScaleEntry(
+            scale_frame, textvariable=self.gui_scale, width=4
         )
         entry.grid(row=0, column=1)
 
@@ -110,15 +106,14 @@ class PreferencesDialog(Dialog):
         self.app.style.theme_use(theme)
 
     def click_save(self):
-        preferences = self.app.guiconfig["preferences"]
-        preferences["terminal"] = self.terminal.get()
-        preferences["editor"] = self.editor.get()
-        preferences["gui3d"] = self.gui3d.get()
-        preferences["theme"] = self.theme.get()
+        preferences = self.app.guiconfig.preferences
+        preferences.terminal = self.terminal.get()
+        preferences.editor = self.editor.get()
+        preferences.gui3d = self.gui3d.get()
+        preferences.theme = self.theme.get()
         self.gui_scale.set(round(self.gui_scale.get(), 2))
         app_scale = self.gui_scale.get()
-        self.app.guiconfig["scale"] = app_scale
-
+        self.app.guiconfig.scale = app_scale
         self.app.save_config()
         self.scale_adjust()
         self.destroy()

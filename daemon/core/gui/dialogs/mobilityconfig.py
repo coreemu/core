@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 import grpc
 
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
@@ -17,25 +16,20 @@ if TYPE_CHECKING:
 
 
 class MobilityConfigDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
-    ):
-        super().__init__(
-            master,
-            app,
-            f"{canvas_node.core_node.name} Mobility Configuration",
-            modal=True,
-        )
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+        super().__init__(app, f"{canvas_node.core_node.name} Mobility Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None
         self.has_error = False
         try:
-            self.config = self.app.core.get_mobility_config(self.node.id)
+            self.config = self.canvas_node.mobility_config
+            if not self.config:
+                self.config = self.app.core.get_mobility_config(self.node.id)
             self.draw()
         except grpc.RpcError as e:
+            self.app.show_grpc_exception("Get Mobility Config Error", e)
             self.has_error = True
-            show_grpc_error(e, self.app, self.app)
             self.destroy()
 
     def draw(self):
@@ -60,5 +54,5 @@ class MobilityConfigDialog(Dialog):
 
     def click_apply(self):
         self.config_frame.parse_config()
-        self.app.core.mobility_configs[self.node.id] = self.config
+        self.canvas_node.mobility_config = self.config
         self.destroy()

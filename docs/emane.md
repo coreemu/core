@@ -50,10 +50,27 @@ can also subscribe to EMANE location events and move the nodes on the canvas
 as they are moved in the EMANE emulation. This would occur when an Emulation
 Script Generator, for example, is running a mobility script.
 
+## EMANE Installation
+
+EMANE can be installed from deb or RPM packages or from source. See the
+[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
+
+Here are quick instructions for installing all EMANE packages for Ubuntu 18.04:
+```shell
+# install dependencies
+sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
+wget https://adjacentlink.com/downloads/emane/emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
+tar xzf emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
+# install base emane packages
+sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/emane*.deb
+# install python3 bindings
+sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/python3*.deb
+```
+
 ## EMANE Configuration
 
-The CORE configuration file */etc/core/core.conf* has options specific to
-EMANE. An example emane section from the *core.conf* file is shown below:
+The CORE configuration file **/etc/core/core.conf** has options specific to
+EMANE. An example emane section from the **core.conf** file is shown below:
 
 ```shell
 # EMANE configuration
@@ -64,40 +81,28 @@ emane_event_monitor = False
 # EMANE log level range [0,4] default: 2
 emane_log_level = 2
 emane_realtime = True
-```
-
-EMANE can be installed from deb or RPM packages or from source. See the
-[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
-
-Here are quick instructions for installing all EMANE packages:
-
-```shell
-# install dependencies
-sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-wget https://adjacentlink.com/downloads/emane/emane-1.2.1-release-1.ubuntu-16_04.amd64.tar.gz
-tar xzf emane-1.2.1-release-1.ubuntu-16_04.amd64.tar.gz
-sudo dpkg -i emane-1.2.1-release-1/deb/ubuntu-16_04/amd64/*.deb
+# prefix used for emane installation
+# emane_prefix = /usr
 ```
 
 If you have an EMANE event generator (e.g. mobility or pathloss scripts) and
 want to have CORE subscribe to EMANE location events, set the following line
-in the */etc/core/core.conf* configuration file:
+in the **core.conf** configuration file.
+
+> **NOTE:** Do not set this option to True if you want to manually drag nodes around
+on the canvas to update their location in EMANE.
 
 ```shell
 emane_event_monitor = True
 ```
 
-Do not set the above option to True if you want to manually drag nodes around
-on the canvas to update their location in EMANE.
-
 Another common issue is if installing EMANE from source, the default configure
-prefix will place the DTD files in */usr/local/share/emane/dtd* while CORE
-expects them in */usr/share/emane/dtd*.
+prefix will place the DTD files in **/usr/local/share/emane/dtd** while CORE
+expects them in **/usr/share/emane/dtd**.
 
-A symbolic link will fix this:
-
+Update the EMANE prefix configuration to resolve this problem.
 ```shell
-sudo ln -s /usr/local/share/emane /usr/share/emane
+emane_prefix = /usr/local
 ```
 
 ## Custom EMANE Models

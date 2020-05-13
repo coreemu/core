@@ -35,8 +35,8 @@ THE POSSIBILITY OF SUCH DAMAGE.\
 
 
 class AboutDialog(Dialog):
-    def __init__(self, master: "Application", app: "Application"):
-        super().__init__(master, app, "About CORE", modal=True)
+    def __init__(self, app: "Application"):
+        super().__init__(app, "About CORE")
         self.draw()
 
     def draw(self):

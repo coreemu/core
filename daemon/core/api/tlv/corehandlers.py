@@ -367,14 +367,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.NETWORK_ID, link_data.network_id),
                 (LinkTlvs.KEY, link_data.key),
                 (LinkTlvs.INTERFACE1_NUMBER, link_data.interface1_id),
-                (LinkTlvs.INTERFACE1_NAME, link_data.interface1_name),
                 (LinkTlvs.INTERFACE1_IP4, link_data.interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, link_data.interface1_ip4_mask),
                 (LinkTlvs.INTERFACE1_MAC, link_data.interface1_mac),
                 (LinkTlvs.INTERFACE1_IP6, link_data.interface1_ip6),
                 (LinkTlvs.INTERFACE1_IP6_MASK, link_data.interface1_ip6_mask),
                 (LinkTlvs.INTERFACE2_NUMBER, link_data.interface2_id),
-                (LinkTlvs.INTERFACE2_NAME, link_data.interface2_name),
                 (LinkTlvs.INTERFACE2_IP4, link_data.interface2_ip4),
                 (LinkTlvs.INTERFACE2_IP4_MASK, link_data.interface2_ip4_mask),
                 (LinkTlvs.INTERFACE2_MAC, link_data.interface2_mac),
@@ -2062,7 +2060,7 @@ class CoreUdpHandler(CoreHandler):
         if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
             return
 
-        clients = self.tcp_handler.session_clients[self.session.id]
+        clients = self.tcp_handler.session_clients.get(self.session.id, [])
         for client in clients:
             try:
                 client.sendall(message.raw_message)

@@ -11,8 +11,14 @@ if TYPE_CHECKING:
 
 class Dialog(tk.Toplevel):
     def __init__(
-        self, master: tk.Widget, app: "Application", title: str, modal: bool = False
+        self,
+        app: "Application",
+        title: str,
+        modal: bool = True,
+        master: tk.BaseWidget = None,
     ):
+        if master is None:
+            master = app
         super().__init__(master)
         self.withdraw()
         self.app = app

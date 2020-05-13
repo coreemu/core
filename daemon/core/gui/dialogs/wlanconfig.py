@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import grpc
 
 from core.gui.dialogs.dialog import Dialog
-from core.gui.errors import show_grpc_error
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
@@ -17,12 +16,8 @@ RANGE_WIDTH = 3
 
 
 class WlanConfigDialog(Dialog):
-    def __init__(
-        self, master: "Application", app: "Application", canvas_node: "CanvasNode"
-    ):
-        super().__init__(
-            master, app, f"{canvas_node.core_node.name} Wlan Configuration", modal=True
-        )
+    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+        super().__init__(app, f"{canvas_node.core_node.name} WLAN Configuration")
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.config_frame = None
@@ -32,11 +27,13 @@ class WlanConfigDialog(Dialog):
         self.ranges = {}
         self.positive_int = self.app.master.register(self.validate_and_update)
         try:
-            self.config = self.app.core.get_wlan_config(self.node.id)
+            self.config = self.canvas_node.wlan_config
+            if not self.config:
+                self.config = self.app.core.get_wlan_config(self.node.id)
             self.init_draw_range()
             self.draw()
         except grpc.RpcError as e:
-            show_grpc_error(e, self.app, self.app)
+            self.app.show_grpc_exception("WLAN Config Error", e)
             self.has_error = True
             self.destroy()
 
@@ -83,7 +80,7 @@ class WlanConfigDialog(Dialog):
         retrieve user's wlan configuration and store the new configuration values
         """
         config = self.config_frame.parse_config()
-        self.app.core.wlan_configs[self.node.id] = self.config
+        self.canvas_node.wlan_config = self.config
         if self.app.core.is_runtime():
             session_id = self.app.core.session_id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)
@@ -102,7 +99,7 @@ class WlanConfigDialog(Dialog):
         if len(s) == 0:
             return True
         try:
-            int_value = int(s)
+            int_value = int(s) / 2
             if int_value >= 0:
                 net_range = int_value * self.canvas.ratio
                 if self.canvas_node.id in self.canvas.wireless_network:

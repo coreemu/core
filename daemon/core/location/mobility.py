@@ -488,12 +488,14 @@ class BasicRangeModel(WirelessModel):
         :param message_type: link message type
         :return: link data
         """
+        color = self.session.get_link_color(self.wlan.id)
         return LinkData(
             message_type=message_type,
             node1_id=interface1.node.id,
             node2_id=interface2.node.id,
             network_id=self.wlan.id,
             link_type=LinkTypes.WIRELESS,
+            color=color,
         )
 
     def sendlinkmsg(

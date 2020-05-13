@@ -22,3 +22,11 @@ class CoreError(Exception):
     """
 
     pass
+
+
+class CoreXmlError(Exception):
+    """
+    Used when there was an error parsing a CORE xml file.
+    """
+
+    pass

@@ -23,6 +23,7 @@ networking scenarios, security studies, and increasing the size of physical test
 |[Architecture](architecture.md)|Overview of the architecture|
 |[Installation](install.md)|How to install CORE and its requirements|
 |[GUI](gui.md)|How to use the GUI|
+|[(BETA) Python GUI](pygui.md)|How to use the BETA python based GUI|
 |[Distributed](distributed.md)|Details for running CORE across multiple servers|
 |[Python Scripting](scripting.md)|How to write python scripts for creating a CORE session|
 |[gRPC API](grpc.md)|How to enable and use the gRPC API|

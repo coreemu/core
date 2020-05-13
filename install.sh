@@ -5,6 +5,7 @@ set -e
 
 ubuntu_py=3.6
 centos_py=36
+reinstall=
 
 function install_python_depencencies() {
   sudo python3 -m pip install -r daemon/requirements.txt
@@ -33,6 +34,12 @@ function install_core() {
   sudo make install
 }
 
+function uninstall_core() {
+  sudo make uninstall
+  make clean
+  ./bootstrap.sh clean
+}
+
 function install_dev_core() {
   cd gui
   sudo make install
@@ -51,7 +58,7 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # parse arguments
-while getopts "dv:" opt; do
+while getopts "drv:" opt; do
   case ${opt} in
   d)
     dev=1
@@ -60,64 +67,91 @@ while getopts "dv:" opt; do
     ubuntu_py=${OPTARG}
     centos_py=${OPTARG}
     ;;
+  r)
+    reinstall=1
+    ;;
   \?)
-    echo "script usage: $(basename $0) [-d] [-v python version]" >&2
+    echo "script usage: $(basename $0) [-d] [-r] [-v python version]" >&2
     exit 1
     ;;
   esac
 done
 shift $((OPTIND - 1))
 
-# check install was found
-case ${os} in
-"ubuntu")
-  echo "Installing CORE for Ubuntu"
-  echo "installing core system dependencies"
-  sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
-    python${ubuntu_py} python${ubuntu_py}-dev python3-pip python3-tk tk libtk-img ethtool autoconf
-  python3 -m pip install grpcio-tools
-  echo "installing ospf-mdr system dependencies"
-  sudo apt install -y libtool gawk libreadline-dev
-  install_ospf_mdr
-  if [[ -z ${dev} ]]; then
-    echo "normal install"
-    install_python_depencencies
+# check if we are reinstalling or installing
+if [ -z "${reinstall}" ]; then
+  echo "installing CORE for ${os}"
+  case ${os} in
+  "ubuntu")
+    echo "installing core system dependencies"
+    sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
+      python${ubuntu_py} python${ubuntu_py}-dev python3-pip python3-tk tk libtk-img ethtool autoconf
+    python3 -m pip install grpcio-tools
+    echo "installing ospf-mdr system dependencies"
+    sudo apt install -y libtool gawk libreadline-dev
+    install_ospf_mdr
+    if [[ -z ${dev} ]]; then
+      echo "normal install"
+      install_python_depencencies
+      build_core
+      install_core
+    else
+      echo "dev install"
+      python3 -m pip install pipenv
+      build_core
+      install_dev_core
+      python3 -m pipenv sync --dev
+      python3 -m pipenv run pre-commit install
+    fi
+    ;;
+  "centos")
+    echo "installing core system dependencies"
+    sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
+      python${centos_py} python${centos_py}-devel python3-pip python3-tkinter tk ethtool autoconf
+    sudo python3 -m pip install grpcio-tools
+    echo "installing ospf-mdr system dependencies"
+    sudo yum install -y libtool gawk readline-devel
+    install_ospf_mdr
+    if [[ -z ${dev} ]]; then
+      echo "normal install"
+      install_python_depencencies
+      build_core --prefix=/usr
+      install_core
+    else
+      echo "dev install"
+      sudo python3 -m pip install pipenv
+      build_core --prefix=/usr
+      install_dev_core
+      sudo python3 -m pipenv sync --dev
+      python3 -m pipenv sync --dev
+      python3 -m pipenv run pre-commit install
+    fi
+    ;;
+  *)
+    echo "unknown OS ID ${os} cannot install"
+    ;;
+  esac
+else
+  branch=$(git symbolic-ref --short HEAD)
+  echo "reinstalling CORE on ${os} with latest ${branch}"
+  echo "uninstalling CORE"
+  uninstall_core
+  echo "pulling latest code"
+  git pull
+  echo "installing python dependencies"
+  install_python_depencencies
+  echo "building CORE"
+  case ${os} in
+  "ubuntu")
     build_core
-    install_core
-  else
-    echo "dev install"
-    python3 -m pip install pipenv
-    build_core
-    install_dev_core
-    python3 -m pipenv sync --dev
-    python3 -m pipenv run pre-commit install
-  fi
-  ;;
-"centos")
-  echo "Installing CORE for CentOS"
-  echo "installing core system dependencies"
-  sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
-    python${centos_py} python${centos_py}-devel python3-pip python3-tkinter tk ethtool autoconf
-  sudo python3 -m pip install grpcio-tools
-  echo "installing ospf-mdr system dependencies"
-  sudo yum install -y libtool gawk readline-devel
-  install_ospf_mdr
-  if [[ -z ${dev} ]]; then
-    echo "normal install"
-    install_python_depencencies
+    ;;
+  "centos")
     build_core --prefix=/usr
-    install_core
-  else
-    echo "dev install"
-    sudo python3 -m pip install pipenv
-    build_core --prefix=/usr
-    install_dev_core
-    sudo python3 -m pipenv sync --dev
-    python3 -m pipenv sync --dev
-    python3 -m pipenv run pre-commit install
-  fi
-  ;;
-*)
-  echo "unknown OS ID ${os} cannot install"
-  ;;
-esac
+    ;;
+  *)
+    echo "unknown OS ID ${os} cannot reinstall"
+    ;;
+  esac
+  echo "installing CORE"
+  install_core
+fi

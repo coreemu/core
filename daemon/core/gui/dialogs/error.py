@@ -1,8 +1,6 @@
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
-import grpc
-
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
@@ -13,8 +11,8 @@ if TYPE_CHECKING:
 
 
 class ErrorDialog(Dialog):
-    def __init__(self, master, app: "Application", title: str, details: str) -> None:
-        super().__init__(master, app, "CORE Exception", modal=True)
+    def __init__(self, app: "Application", title: str, details: str) -> None:
+        super().__init__(app, "CORE Exception")
         self.title = title
         self.details = details
         self.error_message = None
@@ -41,18 +39,3 @@ class ErrorDialog(Dialog):
 
         button = ttk.Button(self.top, text="Close", command=lambda: self.destroy())
         button.grid(sticky="ew")
-
-
-def show_grpc_error(e: grpc.RpcError, master, app: "Application"):
-    title = [x.capitalize() for x in e.code().name.lower().split("_")]
-    title = " ".join(title)
-    title = f"GRPC {title}"
-    dialog = ErrorDialog(master, app, title, e.details())
-    dialog.show()
-
-
-def show_grpc_response_exceptions(class_name, exceptions, master, app: "Application"):
-    title = f"Exceptions from {class_name}"
-    detail = "\n".join([str(x) for x in exceptions])
-    dialog = ErrorDialog(master, app, title, detail)
-    dialog.show()

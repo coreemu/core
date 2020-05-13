@@ -6,6 +6,11 @@
 ## Overview
 
 This section will describe how to install CORE from source or from a pre-built package.
+CORE has been vetted on Ubuntu 18 and CentOS 7.6. Other versions and distributions
+can work, assuming you can get the required packages and versions similar to those
+noted below for the tested distributions.
+
+> **NOTE:** iproute2 4.5+ is a requirement for bridge related commands
 
 ## Required Hardware
 

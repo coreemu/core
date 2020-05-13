@@ -129,3 +129,4 @@ class LinkData:
     interface2_ip6: str = None
     interface2_ip6_mask: int = None
     opaque: str = None
+    color: str = None

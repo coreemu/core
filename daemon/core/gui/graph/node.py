@@ -1,3 +1,4 @@
+import functools
 import logging
 import tkinter as tk
 from typing import TYPE_CHECKING
@@ -13,8 +14,8 @@ from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
-from core.gui.errors import show_grpc_error
 from core.gui.graph import tags
+from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
@@ -47,9 +48,10 @@ class CanvasNode:
             x,
             label_y,
             text=self.core_node.name,
-            tags=tags.NODE_NAME,
+            tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
+            state=self.canvas.show_node_labels.state(),
         )
         self.tooltip = CanvasTooltip(self.canvas)
         self.edges = set()
@@ -57,12 +59,22 @@ class CanvasNode:
         self.wireless_edges = set()
         self.antennas = []
         self.antenna_images = {}
+        # possible configurations
+        self.emane_model_configs = {}
+        self.wlan_config = {}
+        self.mobility_config = {}
+        self.service_configs = {}
+        self.service_file_configs = {}
+        self.config_service_configs = {}
         self.setup_bindings()
+        self.context = tk.Menu(self.canvas)
+        themes.style_menu(self.context)
 
     def setup_bindings(self):
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
+        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
 
     def delete(self):
         logging.debug("Delete canvas node for %s", self.core_node)
@@ -130,7 +142,7 @@ class CanvasNode:
     def motion(self, x_offset: int, y_offset: int, update: bool = True):
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
-        x, y = self.canvas.coords(self.id)
+        pos = self.canvas.coords(self.id)
 
         # check new position
         bbox = self.canvas.bbox(self.id)
@@ -148,22 +160,12 @@ class CanvasNode:
 
         # move edges
         for edge in self.edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if edge.src == self.id:
-                self.canvas.coords(edge.id, x, y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, x, y)
-            edge.update_labels()
-
+            edge.move_node(self.id, pos)
         for edge in self.wireless_edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if edge.src == self.id:
-                self.canvas.coords(edge.id, x, y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, x, y)
+            edge.move_node(self.id, pos)
 
         # set actual coords for node and update core is running
-        real_x, real_y = self.canvas.get_actual_coords(x, y)
+        real_x, real_y = self.canvas.get_actual_coords(*pos)
         self.core_node.position.x = real_x
         self.core_node.position.y = real_y
         if self.app.core.is_runtime() and update:
@@ -177,7 +179,7 @@ class CanvasNode:
                 output = self.app.core.run(self.core_node.id)
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
-                show_grpc_error(e, self.app, self.app)
+                self.app.show_grpc_exception("Observer Error", e)
 
     def on_leave(self, event: tk.Event):
         self.tooltip.on_leave(event)
@@ -188,59 +190,69 @@ class CanvasNode:
         else:
             self.show_config()
 
-    def create_context(self) -> tk.Menu:
+    def show_context(self, event: tk.Event) -> None:
+        # clear existing menu
+        self.context.delete(0, tk.END)
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
-        context = tk.Menu(self.canvas)
-        themes.style_menu(context)
         if self.app.core.is_runtime():
-            context.add_command(label="Configure", command=self.show_config)
-            if NodeUtils.is_container_node(self.core_node.type):
-                context.add_command(label="Services", state=tk.DISABLED)
-                context.add_command(label="Config Services", state=tk.DISABLED)
+            self.context.add_command(label="Configure", command=self.show_config)
             if is_wlan:
-                context.add_command(label="WLAN Config", command=self.show_wlan_config)
+                self.context.add_command(
+                    label="WLAN Config", command=self.show_wlan_config
+                )
             if is_wlan and self.core_node.id in self.app.core.mobility_players:
-                context.add_command(
+                self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
-            context.add_command(label="Select Adjacent", state=tk.DISABLED)
-            context.add_command(label="Hide", state=tk.DISABLED)
-            if NodeUtils.is_container_node(self.core_node.type):
-                context.add_command(label="Shell Window", state=tk.DISABLED)
-                context.add_command(label="Tcpdump", state=tk.DISABLED)
-                context.add_command(label="Tshark", state=tk.DISABLED)
-                context.add_command(label="Wireshark", state=tk.DISABLED)
-                context.add_command(label="View Log", state=tk.DISABLED)
         else:
-            context.add_command(label="Configure", command=self.show_config)
+            self.context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
-                context.add_command(label="Services", command=self.show_services)
-                context.add_command(
+                self.context.add_command(label="Services", command=self.show_services)
+                self.context.add_command(
                     label="Config Services", command=self.show_config_services
                 )
             if is_emane:
-                context.add_command(
+                self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
                 )
             if is_wlan:
-                context.add_command(label="WLAN Config", command=self.show_wlan_config)
-                context.add_command(
+                self.context.add_command(
+                    label="WLAN Config", command=self.show_wlan_config
+                )
+                self.context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )
             if NodeUtils.is_wireless_node(self.core_node.type):
-                context.add_command(
+                self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
-                context.add_command(label="Select Members", state=tk.DISABLED)
-            edit_menu = tk.Menu(context)
+            unlink_menu = tk.Menu(self.context)
+            for edge in self.edges:
+                other_id = edge.src
+                if self.id == other_id:
+                    other_id = edge.dst
+                other_node = self.canvas.nodes[other_id]
+                func_unlink = functools.partial(self.click_unlink, edge)
+                unlink_menu.add_command(
+                    label=other_node.core_node.name, command=func_unlink
+                )
+            themes.style_menu(unlink_menu)
+            self.context.add_cascade(label="Unlink", menu=unlink_menu)
+            edit_menu = tk.Menu(self.context)
             themes.style_menu(edit_menu)
-            edit_menu.add_command(label="Cut", state=tk.DISABLED)
+            edit_menu.add_command(label="Cut", command=self.click_cut)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
-            edit_menu.add_command(label="Hide", state=tk.DISABLED)
-            context.add_cascade(label="Edit", menu=edit_menu)
-        return context
+            self.context.add_cascade(label="Edit", menu=edit_menu)
+        self.context.tk_popup(event.x_root, event.y_root)
+
+    def click_cut(self) -> None:
+        self.canvas_copy()
+        self.canvas_delete()
+
+    def click_unlink(self, edge: CanvasEdge) -> None:
+        self.canvas.delete_edge(edge)
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
@@ -253,40 +265,33 @@ class CanvasNode:
         self.canvas.copy()
 
     def show_config(self):
-        self.canvas.context = None
-        dialog = NodeConfigDialog(self.app, self.app, self)
+        dialog = NodeConfigDialog(self.app, self)
         dialog.show()
 
     def show_wlan_config(self):
-        self.canvas.context = None
-        dialog = WlanConfigDialog(self.app, self.app, self)
+        dialog = WlanConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
     def show_mobility_config(self):
-        self.canvas.context = None
-        dialog = MobilityConfigDialog(self.app, self.app, self)
+        dialog = MobilityConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
     def show_mobility_player(self):
-        self.canvas.context = None
         mobility_player = self.app.core.mobility_players[self.core_node.id]
         mobility_player.show()
 
     def show_emane_config(self):
-        self.canvas.context = None
-        dialog = EmaneConfigDialog(self.app, self.app, self)
+        dialog = EmaneConfigDialog(self.app, self)
         dialog.show()
 
     def show_services(self):
-        self.canvas.context = None
-        dialog = NodeServiceDialog(self.app.master, self.app, self)
+        dialog = NodeServiceDialog(self.app, self)
         dialog.show()
 
     def show_config_services(self):
-        self.canvas.context = None
-        dialog = NodeConfigServiceDialog(self.app.master, self.app, self)
+        dialog = NodeConfigServiceDialog(self.app, self)
         dialog.show()
 
     def has_emane_link(self, interface_id: int) -> core_pb2.Node:
@@ -307,13 +312,10 @@ class CanvasNode:
         return result
 
     def wireless_link_selected(self):
-        self.canvas.context = None
-        for canvas_nid in [
-            x for x in self.canvas.selection if "node" in self.canvas.gettags(x)
-        ]:
-            core_node = self.canvas.nodes[canvas_nid].core_node
-            if core_node.type == core_pb2.NodeType.DEFAULT and core_node.model == "mdr":
-                self.canvas.create_edge(self, self.canvas.nodes[canvas_nid])
+        nodes = [x for x in self.canvas.selection if x in self.canvas.nodes]
+        for node_id in nodes:
+            canvas_node = self.canvas.nodes[node_id]
+            self.canvas.create_edge(self, canvas_node)
         self.canvas.clear_selection()
 
     def scale_antennas(self):

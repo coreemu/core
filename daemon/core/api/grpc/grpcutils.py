@@ -13,7 +13,7 @@ from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
-from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.base import NodeBase
 from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
@@ -263,17 +263,16 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
     )
 
 
-def get_links(session: Session, node: NodeBase):
+def get_links(node: NodeBase):
     """
-    Retrieve a list of links for grpc to use
+    Retrieve a list of links for grpc to use.
 
-    :param session: node's section
     :param node: node to get links from
-    :return: [core.api.grpc.core_pb2.Link]
+    :return: protobuf links
     """
     links = []
     for link_data in node.all_link_data():
-        link = convert_link(session, link_data)
+        link = convert_link(link_data)
         links.append(link)
     return links
 
@@ -307,48 +306,35 @@ def parse_emane_model_id(_id: int) -> Tuple[int, int]:
     return node_id, interface
 
 
-def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
+def convert_link(link_data: LinkData) -> core_pb2.Link:
     """
-    Convert link_data into core protobuf Link
+    Convert link_data into core protobuf link.
 
-    :param session:
-    :param link_data:
+    :param link_data: link to convert
     :return: core protobuf Link
     """
     interface_one = None
     if link_data.interface1_id is not None:
-        node = session.get_node(link_data.node1_id)
-        interface_name = None
-        if not isinstance(node, CoreNetworkBase):
-            interface = node.netif(link_data.interface1_id)
-            interface_name = interface.name
         interface_one = core_pb2.Interface(
             id=link_data.interface1_id,
-            name=interface_name,
+            name=link_data.interface1_name,
             mac=convert_value(link_data.interface1_mac),
             ip4=convert_value(link_data.interface1_ip4),
             ip4mask=link_data.interface1_ip4_mask,
             ip6=convert_value(link_data.interface1_ip6),
             ip6mask=link_data.interface1_ip6_mask,
         )
-
     interface_two = None
     if link_data.interface2_id is not None:
-        node = session.get_node(link_data.node2_id)
-        interface_name = None
-        if not isinstance(node, CoreNetworkBase):
-            interface = node.netif(link_data.interface2_id)
-            interface_name = interface.name
         interface_two = core_pb2.Interface(
             id=link_data.interface2_id,
-            name=interface_name,
+            name=link_data.interface2_name,
             mac=convert_value(link_data.interface2_mac),
             ip4=convert_value(link_data.interface2_ip4),
             ip4mask=link_data.interface2_ip4_mask,
             ip6=convert_value(link_data.interface2_ip6),
             ip6mask=link_data.interface2_ip6_mask,
         )
-
     options = core_pb2.LinkOptions(
         opaque=link_data.opaque,
         jitter=link_data.jitter,
@@ -362,7 +348,6 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
         dup=link_data.dup,
         unidirectional=link_data.unidirectional,
     )
-
     return core_pb2.Link(
         type=link_data.link_type.value,
         node_one_id=link_data.node1_id,
@@ -370,6 +355,9 @@ def convert_link(session: Session, link_data: LinkData) -> core_pb2.Link:
         interface_one=interface_one,
         interface_two=interface_two,
         options=options,
+        network_id=link_data.network_id,
+        label=link_data.label,
+        color=link_data.color,
     )
 
 
