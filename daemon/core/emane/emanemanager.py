@@ -836,7 +836,6 @@ class EmaneManager(ModelManager):
             result = True
         except CoreCommandError:
             result = False
-
         return result
 
 

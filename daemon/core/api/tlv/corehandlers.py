@@ -880,12 +880,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         except CoreCommandError as e:
                             res = e.stderr
                             status = e.returncode
-                    logging.info(
-                        "done exec cmd=%s with status=%d res=(%d bytes)",
-                        command,
-                        status,
-                        len(res),
-                    )
+                    logging.info("done exec cmd=%s with status=%d", command, status)
                     if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(
                             ExecuteTlvs.RESULT.value, res

@@ -19,7 +19,7 @@ def print_available_tlvs(t, tlv_class):
     """
     print(f"TLVs available for {t} message:")
     for tlv in sorted([tlv for tlv in tlv_class.tlv_type_map], key=lambda x: x.name):
-        print(tlv.name)
+        print(tlv.name.lower())
 
 
 def print_examples(name):
@@ -27,26 +27,26 @@ def print_examples(name):
     Print example usage of this script.
     """
     examples = [
-        ("NODE NUMBER=3 X_POSITION=125 Y_POSITION=525",
+        ("node number=3 x_position=125 y_position=525",
          "move node number 3 to x,y=(125,525)"),
-        ("NODE NUMBER=4 ICON=/usr/local/share/core/icons/normal/router_red.gif",
+        ("node number=4 icon=/usr/local/share/core/icons/normal/router_red.gif",
          "change node number 4\"s icon to red"),
-        ("NODE flags=ADD NUMBER=5 TYPE=0 NAME=\"n5\" X_POSITION=500 Y_POSITION=500",
+        ("node flags=add number=5 type=0 name=\"n5\" x_position=500 y_position=500",
          "add a new router node n5"),
-        ("LINK N1_NUMBER=2 N2_NUMBER=3 DELAY=15000",
+        ("link n1_number=2 n2_number=3 delay=15000",
          "set a 15ms delay on the link between n2 and n3"),
-        ("LINK N1_NUMBER=2 N2_NUMBER=3 GUI_ATTRIBUTES=\"color=blue\"",
+        ("link n1_number=2 n2_number=3 gui_attributes=\"color=blue\"",
          "change the color of the link between n2 and n3"),
-        ("LINK flags=ADD N1_NUMBER=4 N2_NUMBER=5 INTERFACE1_IP4=\"10.0.3.2\" "
-         "INTERFACE1_IP4_MASK=24 INTERFACE2_IP4=\"10.0.3.1\" INTERFACE2_IP4_MASK=24",
+        ("link flags=add n1_number=4 n2_number=5 interface1_ip4=\"10.0.3.2\" "
+         "interface1_ip4_mask=24 interface2_ip4=\"10.0.3.1\" interface2_ip4_mask=24",
          "link node n5 with n4 using the given interface addresses"),
-        ("EXECUTE flags=STRING,TEXT NODE=1 NUMBER=1000 COMMAND=\"uname -a\" -l",
+        ("execute flags=string,text node=1 number=1000 command=\"uname -a\" -l",
          "run a command on node 1 and wait for the result"),
-        ("EXECUTE NODE=2 NUMBER=1001 COMMAND=\"killall ospfd\"",
+        ("execute node=2 number=1001 command=\"killall ospfd\"",
          "run a command on node 2 and ignore the result"),
-        ("FILE flags=ADD NODE=1 NAME=\"/var/log/test.log\" DATA=\"Hello World.\"",
+        ("file flags=add node=1 name=\"/var/log/test.log\" data=\"hello world.\"",
          "write a test.log file on node 1 with the given contents"),
-        ("FILE flags=ADD NODE=2 NAME=\"test.log\" SOURCE_NAME=\"./test.log\"",
+        ("file flags=add node=2 name=\"test.log\" source_name=\"./test.log\"",
          "move a test.log file from host to node 2"),
     ]
     print(f"Example {name} invocations:")
@@ -151,8 +151,8 @@ def main():
     """
     Parse command-line arguments to build and send a CORE message.
     """
-    types = [message_type.name for message_type in MessageTypes]
-    flags = [flag.name for flag in MessageFlags]
+    types = [message_type.name.lower() for message_type in MessageTypes]
+    flags = [flag.name.lower() for flag in MessageFlags]
     types_usage = " ".join(types)
     flags_usage = " ".join(flags)
     usagestr = (
@@ -174,7 +174,6 @@ def main():
         tlvs=False,
         tcp=default_tcp
     )
-
     parser.add_option("-H", dest="examples", action="store_true",
                       help="show example usage help message and exit")
     parser.add_option("-p", "--port", dest="port", type=int,
@@ -207,9 +206,10 @@ def main():
 
     # given a message type t, determine the message and TLV classes
     t = args.pop(0)
+    t = t.lower()
     if t not in types:
         usage(f"Unknown message type requested: {t}")
-    message_type = MessageTypes[t]
+    message_type = MessageTypes[t.upper()]
     msg_cls = coreapi.CLASS_MAP[message_type.value]
     tlv_cls = msg_cls.tlv_class
 
@@ -225,26 +225,23 @@ def main():
         typevalue = a.split("=")
         if len(typevalue) < 2:
             usage(f"Use \"type=value\" syntax instead of \"{a}\".")
-        tlv_typestr = typevalue[0]
+        tlv_typestr = typevalue[0].lower()
         tlv_valstr = "=".join(typevalue[1:])
         if tlv_typestr == "flags":
             flagstr = tlv_valstr
             continue
-
-        tlv_name = tlv_typestr
         try:
-            tlv_type = tlv_cls.tlv_type_map[tlv_name]
+            tlv_type = tlv_cls.tlv_type_map[tlv_typestr.upper()]
             tlvdata += tlv_cls.pack_string(tlv_type.value, tlv_valstr)
         except KeyError:
-            usage(f"Unknown TLV: \"{tlv_name}\"")
+            usage(f"Unknown TLV: \"{tlv_typestr}\"")
 
     flags = 0
     for f in flagstr.split(","):
         if f == "":
             continue
-
         try:
-            flag_enum = MessageFlags[f]
+            flag_enum = MessageFlags[f.upper()]
             n = flag_enum.value
             flags |= n
         except KeyError:

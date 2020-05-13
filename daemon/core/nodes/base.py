@@ -522,7 +522,6 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"kill -0 {self.pid}")
         except CoreCommandError:
             return False
-
         return True
 
     def startup(self) -> None:

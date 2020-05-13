@@ -231,14 +231,17 @@ def cmd(
         p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
+            stdout = stdout.decode("utf-8").strip()
+            stderr = stderr.decode("utf-8").strip()
             status = p.wait()
             if status != 0:
                 raise CoreCommandError(status, args, stdout, stderr)
-            return stdout.decode("utf-8").strip()
+            return stdout
         else:
             return ""
-    except OSError:
-        raise CoreCommandError(-1, args)
+    except OSError as e:
+        logging.error("cmd error: %s", e.strerror)
+        raise CoreCommandError(1, args, "", e.strerror)
 
 
 def file_munge(pathname: str, header: str, text: str) -> None:

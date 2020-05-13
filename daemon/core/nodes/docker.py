@@ -35,7 +35,7 @@ class DockerClient:
         output = self.run(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(-1, args, f"docker({self.name}) not present")
+            raise CoreCommandError(1, args, f"docker({self.name}) not present")
         return data[0]
 
     def is_alive(self) -> bool:
