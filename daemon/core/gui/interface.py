@@ -147,7 +147,6 @@ class InterfaceManager:
         return str(ip4), str(ip6)
 
     def get_subnets(self, interface: "core_pb2.Interface") -> Subnets:
-        logging.info("get subnets for interface: %s", interface)
         ip4_subnet = self.ip4_subnets
         if interface.ip4:
             ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
