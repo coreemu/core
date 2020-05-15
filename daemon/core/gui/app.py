@@ -113,16 +113,15 @@ class Application(ttk.Frame):
         self.draw_canvas()
         self.draw_status()
         self.progress = Progressbar(self.right_frame, mode="indeterminate")
-        self.menubar = Menubar(self.master, self)
+        self.menubar = Menubar(self)
+        self.master.config(menu=self.menubar)
 
     def draw_canvas(self) -> None:
-        width = self.guiconfig.preferences.width
-        height = self.guiconfig.preferences.height
         canvas_frame = ttk.Frame(self.right_frame)
         canvas_frame.rowconfigure(0, weight=1)
         canvas_frame.columnconfigure(0, weight=1)
         canvas_frame.grid(sticky="nsew", pady=1)
-        self.canvas = CanvasGraph(canvas_frame, self, self.core, width, height)
+        self.canvas = CanvasGraph(canvas_frame, self, self.core)
         self.canvas.grid(sticky="nsew")
         scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
         scroll_y.grid(row=0, column=1, sticky="ns")

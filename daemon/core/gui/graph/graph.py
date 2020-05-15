@@ -41,19 +41,12 @@ class ShowVar(BooleanVar):
     def state(self) -> str:
         return tk.NORMAL if self.get() else tk.HIDDEN
 
-    def click_handler(self):
+    def click_handler(self) -> None:
         self.canvas.itemconfigure(self.tag, state=self.state())
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(
-        self,
-        master: tk.Widget,
-        app: "Application",
-        core: "CoreClient",
-        width: int,
-        height: int,
-    ):
+    def __init__(self, master: tk.Widget, app: "Application", core: "CoreClient"):
         super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app = app
         self.core = core
@@ -74,6 +67,8 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge = None
         self.rect = None
         self.shape_drawing = False
+        width = self.app.guiconfig.preferences.width
+        height = self.app.guiconfig.preferences.height
         self.default_dimensions = (width, height)
         self.current_dimensions = self.default_dimensions
         self.ratio = 1.0
@@ -571,10 +566,10 @@ class CanvasGraph(tk.Canvas):
             self.offset[0] * factor + event.x * (1 - factor),
             self.offset[1] * factor + event.y * (1 - factor),
         )
-        logging.info("ratio: %s", self.ratio)
-        logging.info("offset: %s", self.offset)
-        self.app.statusbar.zoom.config(text="%s" % (int(self.ratio * 100)) + "%")
-
+        logging.debug("ratio: %s", self.ratio)
+        logging.debug("offset: %s", self.offset)
+        zoom_label = f"{self.ratio * 100:.0f}%"
+        self.app.statusbar.zoom.config(text=zoom_label)
         if self.wallpaper:
             self.redraw_wallpaper()
 
@@ -720,7 +715,7 @@ class CanvasGraph(tk.Canvas):
         if not self.app.core.is_runtime():
             self.delete_selected_objects()
         else:
-            logging.info("node deletion is disabled during runtime state")
+            logging.debug("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
@@ -836,10 +831,10 @@ class CanvasGraph(tk.Canvas):
         self.draw_wallpaper(image)
 
     def redraw_canvas(self, dimensions: Tuple[int, int] = None):
-        logging.info("redrawing canvas to dimensions: %s", dimensions)
+        logging.debug("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
-        logging.info("resetting scaling: %s %s", self.ratio, self.offset)
+        logging.debug("resetting scaling: %s %s", self.ratio, self.offset)
         factor = 1 / self.ratio
         self.scale(tk.ALL, self.offset[0], self.offset[1], factor, factor)
         self.move(tk.ALL, -self.offset[0], -self.offset[1])
@@ -858,11 +853,11 @@ class CanvasGraph(tk.Canvas):
 
     def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
-            logging.info("drawing wallpaper to canvas dimensions")
+            logging.debug("drawing wallpaper to canvas dimensions")
             self.resize_to_wallpaper()
         else:
             option = ScaleOption(self.scale_option.get())
-            logging.info("drawing canvas using scaling option: %s", option)
+            logging.debug("drawing canvas using scaling option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
             elif option == ScaleOption.CENTERED:
@@ -908,10 +903,10 @@ class CanvasGraph(tk.Canvas):
 
     def copy(self):
         if self.core.is_runtime():
-            logging.info("copy is disabled during runtime state")
+            logging.debug("copy is disabled during runtime state")
             return
         if self.selection:
-            logging.info("to copy nodes: %s", self.selection)
+            logging.debug("to copy nodes: %s", self.selection)
             self.to_copy.clear()
             for node_id in self.selection.keys():
                 canvas_node = self.nodes[node_id]
@@ -919,7 +914,7 @@ class CanvasGraph(tk.Canvas):
 
     def paste(self):
         if self.core.is_runtime():
-            logging.info("paste is disabled during runtime state")
+            logging.debug("paste is disabled during runtime state")
             return
         # maps original node canvas id to copy node canvas id
         copy_map = {}

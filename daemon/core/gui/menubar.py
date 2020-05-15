@@ -47,12 +47,11 @@ class Menubar(tk.Menu):
     Core menubar
     """
 
-    def __init__(self, master: tk.Tk, app: "Application", **kwargs) -> None:
+    def __init__(self, app: "Application") -> None:
         """
         Create a CoreMenubar instance
         """
-        super().__init__(master, **kwargs)
-        self.master.config(menu=self)
+        super().__init__(app)
         self.app = app
         self.core = app.core
         self.canvas = app.canvas
