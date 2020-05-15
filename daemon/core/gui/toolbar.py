@@ -42,11 +42,11 @@ class Toolbar(ttk.Frame):
     Core toolbar class
     """
 
-    def __init__(self, master: tk.Widget, app: "Application", **kwargs) -> None:
+    def __init__(self, app: "Application") -> None:
         """
         Create a CoreToolbar instance
         """
-        super().__init__(master, **kwargs)
+        super().__init__(app)
         self.app = app
 
         # design buttons

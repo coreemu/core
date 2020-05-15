@@ -104,7 +104,7 @@ class Application(ttk.Frame):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.grid(sticky="nsew")
-        self.toolbar = Toolbar(self, self)
+        self.toolbar = Toolbar(self)
         self.toolbar.grid(sticky="ns")
         self.right_frame = ttk.Frame(self)
         self.right_frame.columnconfigure(0, weight=1)
