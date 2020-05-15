@@ -4,10 +4,9 @@ Incorporate grpc into python tkinter GUI
 import json
 import logging
 import os
-from functools import partial
 from pathlib import Path
 from tkinter import messagebox
-from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional
 
 import grpc
 
@@ -85,7 +84,7 @@ class CoreClient:
                 self.cancel_events()
                 self._client.create_session(self.session_id)
                 self.handling_events = self._client.events(
-                    self.session_id, self.handle_stream(self.handle_events)
+                    self.session_id, self.handle_events
                 )
                 if throughputs_enabled:
                     self.enable_throughputs()
@@ -127,9 +126,6 @@ class CoreClient:
         for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
 
-    def handle_stream(self, func: Callable) -> Callable:
-        return partial(self.app.after, 0, func)
-
     def handle_events(self, event: core_pb2.Event):
         if event.session_id != self.session_id:
             logging.warning(
@@ -140,7 +136,7 @@ class CoreClient:
             return
 
         if event.HasField("link_event"):
-            self.handle_link_event(event.link_event)
+            self.app.after(0, self.handle_link_event, event.link_event)
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
             session_event = event.session_event
@@ -159,7 +155,7 @@ class CoreClient:
             else:
                 logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
-            self.handle_node_event(event.node_event)
+            self.app.after(0, self.handle_node_event, event.node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
         elif event.HasField("exception_event"):
@@ -203,7 +199,7 @@ class CoreClient:
 
     def enable_throughputs(self):
         self.handling_throughputs = self.client.throughputs(
-            self.session_id, self.handle_stream(self.handle_throughputs)
+            self.session_id, self.handle_throughputs
         )
 
     def cancel_throughputs(self):
@@ -225,7 +221,7 @@ class CoreClient:
             )
             return
         logging.debug("handling throughputs event: %s", event)
-        self.app.canvas.set_throughputs(event)
+        self.app.after(0, self.app.canvas.set_throughputs, event)
 
     def handle_exception_event(self, event: core_pb2.ExceptionEvent):
         logging.info("exception event: %s", event)
