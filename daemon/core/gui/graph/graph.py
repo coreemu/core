@@ -327,9 +327,15 @@ class CanvasGraph(tk.Canvas):
                     self.edges[edge.token] = edge
                     self.core.links[edge.token] = edge
                     if link.HasField("interface_one"):
+                        self.core.interface_to_edge[
+                            (node_one.id, link.interface_one.id)
+                        ] = token
                         canvas_node_one.interfaces.append(link.interface_one)
                         edge.src_interface = link.interface_one
                     if link.HasField("interface_two"):
+                        self.core.interface_to_edge[
+                            (node_two.id, link.interface_two.id)
+                        ] = edge.token
                         canvas_node_two.interfaces.append(link.interface_two)
                         edge.dst_interface = link.interface_two
                 elif link.options.unidirectional:
