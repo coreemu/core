@@ -12,7 +12,7 @@ from core.gui.dialogs.marker import MarkerDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.nodeutils import NodeDraw, NodeUtils
 from core.gui.task import ProgressTask
 from core.gui.themes import Styles
@@ -35,6 +35,46 @@ def enable_buttons(frame: ttk.Frame, enabled: bool) -> None:
     state = tk.NORMAL if enabled else tk.DISABLED
     for child in frame.winfo_children():
         child.configure(state=state)
+
+
+class PickerFrame(ttk.Frame):
+    def __init__(self, app: "Application", button: ttk.Button) -> None:
+        super().__init__(app)
+        self.app = app
+        self.button = button
+
+    def create_button(self, label: str, image_enum: ImageEnum, func: Callable) -> None:
+        bar_image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+        image = self.app.get_icon(image_enum, PICKER_SIZE)
+        self._create_button(label, image, bar_image, func)
+
+    def create_custom_button(self, label: str, image_file: str, func: Callable) -> None:
+        bar_image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
+        image = self.app.get_custom_icon(image_file, PICKER_SIZE)
+        self._create_button(label, image, bar_image, func)
+
+    def _create_button(
+        self, label: str, image: PhotoImage, bar_image: PhotoImage, func: Callable
+    ) -> None:
+        button = ttk.Button(
+            self, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
+        )
+        button.image = image
+        button.bind("<ButtonRelease-1>", lambda e: func(bar_image))
+        button.grid(pady=1)
+
+    def show(self) -> None:
+        self.button.after(0, self._show)
+
+    def _show(self) -> None:
+        x = self.button.winfo_width() + 1
+        y = self.button.winfo_rooty() - self.app.winfo_rooty() - 1
+        self.place(x=x, y=y)
+        self.app.bind_all("<ButtonRelease-1>", lambda e: self.destroy())
+        self.wait_visibility()
+        self.grab_set()
+        self.wait_window()
+        self.app.unbind_all("<ButtonRelease-1>")
 
 
 class ButtonBar(ttk.Frame):
@@ -90,9 +130,7 @@ class Toolbar(ttk.Frame):
         # frames
         self.design_frame = None
         self.runtime_frame = None
-        self.node_picker = None
-        self.network_picker = None
-        self.annotation_picker = None
+        self.picker = None
 
         # dialog
         self.marker_tool = None
@@ -161,70 +199,23 @@ class Toolbar(ttk.Frame):
 
     def draw_node_picker(self) -> None:
         self.design_frame.select_radio(self.node_button)
-        self.hide_pickers()
-        self.node_picker = ttk.Frame(self.master)
+        self.picker = PickerFrame(self.app, self.node_button)
         # draw default nodes
         for node_draw in NodeUtils.NODES:
-            toolbar_image = self.app.get_icon(node_draw.image_enum, TOOLBAR_SIZE)
-            image = self.app.get_icon(node_draw.image_enum, PICKER_SIZE)
             func = partial(
-                self.update_button,
-                self.node_button,
-                toolbar_image,
-                node_draw,
-                NodeTypeEnum.NODE,
-                node_draw.image_enum,
+                self.update_button, self.node_button, node_draw, NodeTypeEnum.NODE
             )
-            self.create_picker_button(image, func, self.node_picker, node_draw.label)
+            self.picker.create_button(node_draw.label, node_draw.image_enum, func)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
-            toolbar_image = Images.get_custom(
-                node_draw.image_file, int(TOOLBAR_SIZE * self.app.app_scale)
-            )
-            image = Images.get_custom(
-                node_draw.image_file, int(PICKER_SIZE * self.app.app_scale)
-            )
             func = partial(
-                self.update_button,
-                self.node_button,
-                toolbar_image,
-                node_draw,
-                NodeTypeEnum,
-                node_draw.image_file,
+                self.update_button, self.node_button, node_draw, NodeTypeEnum.NODE
             )
-            self.create_picker_button(image, func, self.node_picker, name)
-        self.node_button.after(
-            0, lambda: self.show_picker(self.node_button, self.node_picker)
-        )
-
-    def show_picker(self, button: ttk.Button, picker: ttk.Frame) -> None:
-        x = self.winfo_width() + 1
-        y = button.winfo_rooty() - picker.master.winfo_rooty() - 1
-        picker.place(x=x, y=y)
-        self.app.bind_all("<ButtonRelease-1>", lambda e: self.hide_pickers())
-        picker.wait_visibility()
-        picker.grab_set()
-        self.wait_window(picker)
-        self.app.unbind_all("<ButtonRelease-1>")
-
-    def create_picker_button(
-        self, image: PhotoImage, func: Callable, frame: ttk.Frame, label: str
-    ) -> None:
-        """
-        Create button and put it on the frame
-
-        :param image: button image
-        :param func: the command that is executed when button is clicked
-        :param frame: frame that contains the button
-        :param label: button label
-        """
-        button = ttk.Button(
-            frame, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
-        )
-        button.image = image
-        button.bind("<ButtonRelease-1>", lambda e: func())
-        button.grid(pady=1)
+            self.picker.create_custom_button(
+                node_draw.label, node_draw.image_file, func
+            )
+        self.picker.show()
 
     def click_selection(self) -> None:
         self.design_frame.select_radio(self.select_button)
@@ -274,68 +265,39 @@ class Toolbar(ttk.Frame):
     def update_button(
         self,
         button: ttk.Button,
-        image: PhotoImage,
         node_draw: NodeDraw,
-        type_enum,
-        image_enum,
+        type_enum: NodeTypeEnum,
+        image: PhotoImage,
     ) -> None:
         logging.debug("update button(%s): %s", button, node_draw)
-        self.hide_pickers()
         button.configure(image=image)
         button.image = image
         self.app.canvas.mode = GraphMode.NODE
         self.app.canvas.node_draw = node_draw
         if type_enum == NodeTypeEnum.NODE:
-            self.node_enum = image_enum
+            self.node_enum = node_draw.image_enum
         elif type_enum == NodeTypeEnum.NETWORK:
-            self.network_enum = image_enum
-
-    def hide_pickers(self) -> None:
-        logging.debug("hiding pickers")
-        if self.node_picker:
-            self.node_picker.destroy()
-            self.node_picker = None
-        if self.network_picker:
-            self.network_picker.destroy()
-            self.network_picker = None
-        if self.annotation_picker:
-            self.annotation_picker.destroy()
-            self.annotation_picker = None
+            self.network_enum = node_draw.image_enum
 
     def draw_network_picker(self) -> None:
         """
         Draw the options for link-layer button.
         """
         self.design_frame.select_radio(self.network_button)
-        self.hide_pickers()
-        self.network_picker = ttk.Frame(self.master)
+        self.picker = PickerFrame(self.app, self.network_button)
         for node_draw in NodeUtils.NETWORK_NODES:
-            toolbar_image = self.app.get_icon(node_draw.image_enum, TOOLBAR_SIZE)
-            image = self.app.get_icon(node_draw.image_enum, PICKER_SIZE)
-            self.create_picker_button(
-                image,
-                partial(
-                    self.update_button,
-                    self.network_button,
-                    toolbar_image,
-                    node_draw,
-                    NodeTypeEnum.NETWORK,
-                    node_draw.image_enum,
-                ),
-                self.network_picker,
-                node_draw.label,
+            func = partial(
+                self.update_button, self.network_button, node_draw, NodeTypeEnum.NETWORK
             )
-        self.network_button.after(
-            0, lambda: self.show_picker(self.network_button, self.network_picker)
-        )
+            self.picker.create_button(node_draw.label, node_draw.image_enum, func)
+        self.picker.show()
 
     def draw_annotation_picker(self) -> None:
         """
         Draw the options for marker button.
         """
         self.design_frame.select_radio(self.annotation_button)
-        self.hide_pickers()
-        self.annotation_picker = ttk.Frame(self.master)
+        self.picker = PickerFrame(self.app, self.annotation_button)
         nodes = [
             (ImageEnum.MARKER, ShapeType.MARKER),
             (ImageEnum.OVAL, ShapeType.OVAL),
@@ -343,17 +305,10 @@ class Toolbar(ttk.Frame):
             (ImageEnum.TEXT, ShapeType.TEXT),
         ]
         for image_enum, shape_type in nodes:
-            toolbar_image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
-            image = self.app.get_icon(image_enum, PICKER_SIZE)
-            self.create_picker_button(
-                image,
-                partial(self.update_annotation, toolbar_image, shape_type, image_enum),
-                self.annotation_picker,
-                shape_type.value,
-            )
-        self.annotation_button.after(
-            0, lambda: self.show_picker(self.annotation_button, self.annotation_picker)
-        )
+            label = shape_type.value
+            func = partial(self.update_annotation, shape_type, image_enum)
+            self.picker.create_button(label, image_enum, func)
+        self.picker.show()
 
     def create_observe_button(self) -> None:
         image = self.app.get_icon(ImageEnum.OBSERVE, TOOLBAR_SIZE)
@@ -398,10 +353,9 @@ class Toolbar(ttk.Frame):
         self.app.canvas.stopped_session()
 
     def update_annotation(
-        self, image: PhotoImage, shape_type: ShapeType, image_enum
+        self, shape_type: ShapeType, image_enum: ImageEnum, image: PhotoImage
     ) -> None:
-        logging.debug("clicked annotation: ")
-        self.hide_pickers()
+        logging.debug("clicked annotation")
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
         self.app.canvas.mode = GraphMode.ANNOTATION

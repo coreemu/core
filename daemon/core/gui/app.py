@@ -149,6 +149,8 @@ class Application(ttk.Frame):
         self.after(0, lambda: ErrorDialog(self, title, message).show())
 
     def on_closing(self) -> None:
+        if self.toolbar.picker:
+            self.toolbar.picker.destroy()
         self.menubar.prompt_save_running_session(True)
 
     def save_config(self) -> None:
@@ -162,6 +164,9 @@ class Application(ttk.Frame):
 
     def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
         return Images.get(image_enum, int(width * self.app_scale))
+
+    def get_custom_icon(self, image_file: str, width: int) -> PhotoImage:
+        return Images.get_custom(image_file, int(width * self.app_scale))
 
     def close(self) -> None:
         self.master.destroy()
