@@ -1,7 +1,7 @@
 import logging
 import math
 import tkinter as tk
-from tkinter import font, ttk
+from tkinter import PhotoImage, font, ttk
 from tkinter.ttk import Progressbar
 
 import grpc
@@ -159,6 +159,9 @@ class Application(ttk.Frame):
             self.toolbar.set_runtime()
         else:
             self.toolbar.set_design()
+
+    def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
+        return Images.get(image_enum, int(width * self.app_scale))
 
     def close(self) -> None:
         self.master.destroy()
