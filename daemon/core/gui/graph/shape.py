@@ -146,8 +146,7 @@ class Shape:
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
     def shape_complete(self, x: float, y: float):
-        for component in tags.ABOVE_SHAPE:
-            self.canvas.tag_raise(component)
+        self.canvas.organize()
         s = ShapeDialog(self.app, self)
         s.show()
 

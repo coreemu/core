@@ -20,7 +20,6 @@ from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
-from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import AnnotationData, Shape
@@ -389,9 +388,7 @@ class CoreClient:
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
-
-        for tag in tags.ABOVE_WALLPAPER_TAGS:
-            self.app.canvas.tag_raise(tag)
+        self.app.canvas.organize()
 
     def create_new_session(self):
         """

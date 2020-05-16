@@ -139,7 +139,7 @@ class CanvasGraph(tk.Canvas):
         self.show_ip6s.set(True)
 
         # delete any existing drawn items
-        for tag in tags.COMPONENT_TAGS:
+        for tag in tags.RESET_TAGS:
             self.delete(tag)
 
         # set the private variables to default value
@@ -591,6 +591,7 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.EDGE and is_node:
             pos = self.coords(selected)
             self.drawing_edge = CanvasEdge(self, selected, pos, pos)
+            self.organize()
 
         if self.mode == GraphMode.ANNOTATION:
             if is_marker(self.annotation_type):
@@ -866,10 +867,11 @@ class CanvasGraph(tk.Canvas):
                 self.wallpaper_scaled()
             elif option == ScaleOption.TILED:
                 logging.warning("tiled background not implemented yet")
+        self.organize()
 
-        # raise items above wallpaper
-        for component in tags.ABOVE_WALLPAPER_TAGS:
-            self.tag_raise(component)
+    def organize(self) -> None:
+        for tag in tags.ORGANIZE_TAGS:
+            self.tag_raise(tag)
 
     def set_wallpaper(self, filename: str):
         logging.debug("setting wallpaper: %s", filename)
