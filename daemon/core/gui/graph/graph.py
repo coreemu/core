@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
 ICON_SIZE = 48
+MOVE_NODE_MODES = {GraphMode.NODE, GraphMode.SELECT}
+MOVE_SHAPE_MODES = {GraphMode.ANNOTATION, GraphMode.SELECT}
 
 
 class ShowVar(BooleanVar):
@@ -653,9 +655,6 @@ class CanvasGraph(tk.Canvas):
             self.select_object(selected, choose_multiple=True)
 
     def click_motion(self, event: tk.Event):
-        """
-        Redraw drawing edge according to the current position of the mouse
-        """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             if self.select_box:
@@ -677,6 +676,7 @@ class CanvasGraph(tk.Canvas):
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
+                return
             elif is_marker(self.annotation_type):
                 r = self.app.toolbar.marker_tool.radius
                 self.create_oval(
@@ -688,7 +688,7 @@ class CanvasGraph(tk.Canvas):
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
                 )
-            return
+                return
 
         if self.mode == GraphMode.EDGE:
             return
@@ -696,11 +696,11 @@ class CanvasGraph(tk.Canvas):
         # move selected objects
         if self.selection:
             for selected_id in self.selection:
-                if selected_id in self.shapes:
+                if self.mode in MOVE_SHAPE_MODES and selected_id in self.shapes:
                     shape = self.shapes[selected_id]
                     shape.motion(x_offset, y_offset)
 
-                if selected_id in self.nodes:
+                if self.mode in MOVE_NODE_MODES and selected_id in self.nodes:
                     node = self.nodes[selected_id]
                     node.motion(x_offset, y_offset, update=self.core.is_runtime())
         else:
