@@ -138,6 +138,7 @@ class Toolbar(ttk.Frame):
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method
         self.node_enum = None
+        self.node_file = None
         self.network_enum = None
         self.annotation_enum = None
 
@@ -275,7 +276,12 @@ class Toolbar(ttk.Frame):
         self.app.canvas.mode = GraphMode.NODE
         self.app.canvas.node_draw = node_draw
         if type_enum == NodeTypeEnum.NODE:
-            self.node_enum = node_draw.image_enum
+            if node_draw.image_enum:
+                self.node_enum = node_draw.image_enum
+                self.node_file = None
+            elif node_draw.image_file:
+                self.node_file = node_draw.image_file
+                self.node_enum = None
         elif type_enum == NodeTypeEnum.NETWORK:
             self.network_enum = node_draw.image_enum
 
@@ -381,16 +387,26 @@ class Toolbar(ttk.Frame):
         self.marker_tool = MarkerDialog(self.app)
         self.marker_tool.show()
 
-    def scale_button(self, button, image_enum) -> None:
-        image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
-        button.config(image=image)
-        button.image = image
+    def scale_button(
+        self, button: ttk.Button, image_enum: ImageEnum = None, image_file: str = None
+    ) -> None:
+        image = None
+        if image_enum:
+            image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+        elif image_file:
+            image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
+        if image:
+            button.config(image=image)
+            button.image = image
 
     def scale(self) -> None:
         self.scale_button(self.play_button, ImageEnum.START)
         self.scale_button(self.select_button, ImageEnum.SELECT)
         self.scale_button(self.link_button, ImageEnum.LINK)
-        self.scale_button(self.node_button, self.node_enum)
+        if self.node_enum:
+            self.scale_button(self.node_button, self.node_enum)
+        if self.node_file:
+            self.scale_button(self.node_button, image_file=self.node_file)
         self.scale_button(self.network_button, self.network_enum)
         self.scale_button(self.annotation_button, self.annotation_enum)
         self.scale_button(self.runtime_select_button, ImageEnum.SELECT)
