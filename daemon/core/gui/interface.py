@@ -105,12 +105,11 @@ class InterfaceManager:
         for interface in interfaces:
             subnets = self.get_subnets(interface)
             if subnets not in remaining_subnets:
-                if self.current_subnets == subnets:
-                    self.current_subnets = None
                 self.used_subnets.pop(subnets.key(), None)
             else:
                 index = get_index(interface)
                 subnets.used_indexes.discard(index)
+        self.current_subnets = None
 
     def joined(self, links: List["core_pb2.Link"]) -> None:
         interfaces = []

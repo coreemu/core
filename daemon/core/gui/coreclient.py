@@ -330,6 +330,9 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Join Session Error", e)
 
+        # organize canvas
+        self.app.canvas.organize()
+
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
 
@@ -388,7 +391,6 @@ class CoreClient:
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
-        self.app.canvas.organize()
 
     def create_new_session(self):
         """
@@ -835,7 +837,7 @@ class CoreClient:
         ip4, ip6 = self.interfaces_manager.get_ips(node)
         ip4_mask = self.interfaces_manager.ip4_mask
         ip6_mask = self.interfaces_manager.ip6_mask
-        interface_id = len(canvas_node.interfaces)
+        interface_id = canvas_node.next_interface_id()
         name = f"eth{interface_id}"
         interface = core_pb2.Interface(
             id=interface_id,
@@ -845,7 +847,8 @@ class CoreClient:
             ip6=ip6,
             ip6mask=ip6_mask,
         )
-        logging.debug(
+        canvas_node.interfaces[interface.id] = interface
+        logging.info(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
             interface.name,
@@ -870,11 +873,13 @@ class CoreClient:
         src_interface = None
         if NodeUtils.is_container_node(src_node.type):
             src_interface = self.create_interface(canvas_src_node)
+            edge.src_interface = src_interface
             self.interface_to_edge[(src_node.id, src_interface.id)] = edge.token
 
         dst_interface = None
         if NodeUtils.is_container_node(dst_node.type):
             dst_interface = self.create_interface(canvas_dst_node)
+            edge.dst_interface = dst_interface
             self.interface_to_edge[(dst_node.id, dst_interface.id)] = edge.token
 
         link = core_pb2.Link(
@@ -884,12 +889,6 @@ class CoreClient:
             interface_one=src_interface,
             interface_two=dst_interface,
         )
-        if src_interface:
-            edge.src_interface = link.interface_one
-            canvas_src_node.interfaces.append(link.interface_one)
-        if dst_interface:
-            edge.dst_interface = link.interface_two
-            canvas_dst_node.interfaces.append(link.interface_two)
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)

@@ -322,25 +322,24 @@ class CanvasGraph(tk.Canvas):
                     self.edges[edge.token] = edge
                     self.core.links[edge.token] = edge
                     if link.HasField("interface_one"):
+                        interface_one = link.interface_one
                         self.core.interface_to_edge[
-                            (node_one.id, link.interface_one.id)
+                            (node_one.id, interface_one.id)
                         ] = token
-                        canvas_node_one.interfaces.append(link.interface_one)
-                        edge.src_interface = link.interface_one
+                        canvas_node_one.interfaces[interface_one.id] = interface_one
+                        edge.src_interface = interface_one
                     if link.HasField("interface_two"):
+                        interface_two = link.interface_two
                         self.core.interface_to_edge[
-                            (node_two.id, link.interface_two.id)
+                            (node_two.id, interface_two.id)
                         ] = edge.token
-                        canvas_node_two.interfaces.append(link.interface_two)
-                        edge.dst_interface = link.interface_two
+                        canvas_node_two.interfaces[interface_two.id] = interface_two
+                        edge.dst_interface = interface_two
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
                 else:
                     logging.error("duplicate link received: %s", link)
-
-        # raise the nodes so they on top of the links
-        self.tag_raise(tags.NODE)
 
     def stopped_session(self):
         # clear wireless edges
@@ -522,8 +521,8 @@ class CanvasGraph(tk.Canvas):
                         other_interface = edge.dst_interface
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
-                    if other_interface in other_node.interfaces:
-                        other_node.interfaces.remove(other_interface)
+                    if other_interface:
+                        del other_node.interfaces[other_interface.id]
                     if is_wireless:
                         other_node.delete_antenna()
 
@@ -541,12 +540,12 @@ class CanvasGraph(tk.Canvas):
         del self.edges[edge.token]
         src_node = self.nodes[edge.src]
         src_node.edges.discard(edge)
-        if edge.src_interface in src_node.interfaces:
-            src_node.interfaces.remove(edge.src_interface)
+        if edge.src_interface:
+            del src_node.interfaces[edge.src_interface.id]
         dst_node = self.nodes[edge.dst]
         dst_node.edges.discard(edge)
-        if edge.dst_interface in dst_node.interfaces:
-            dst_node.interfaces.remove(edge.dst_interface)
+        if edge.dst_interface:
+            del dst_node.interfaces[edge.dst_interface.id]
         src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
         if src_wireless:
             dst_node.delete_antenna()

@@ -55,7 +55,7 @@ class CanvasNode:
         )
         self.tooltip = CanvasTooltip(self.canvas)
         self.edges = set()
-        self.interfaces = []
+        self.interfaces = {}
         self.wireless_edges = set()
         self.antennas = []
         self.antenna_images = {}
@@ -69,6 +69,12 @@ class CanvasNode:
         self.setup_bindings()
         self.context = tk.Menu(self.canvas)
         themes.style_menu(self.context)
+
+    def next_interface_id(self) -> int:
+        i = 0
+        while i in self.interfaces:
+            i += 1
+        return i
 
     def setup_bindings(self):
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
