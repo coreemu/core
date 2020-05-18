@@ -22,6 +22,7 @@ class NodeDraw:
         self.node_type: core_pb2.NodeType = None
         self.model: Optional[str] = None
         self.services: Set[str] = set()
+        self.label = None
 
     @classmethod
     def from_setup(

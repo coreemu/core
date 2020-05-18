@@ -596,13 +596,13 @@ class CanvasGraph(tk.Canvas):
 
         if self.mode == GraphMode.ANNOTATION:
             if is_marker(self.annotation_type):
-                r = self.app.toolbar.marker_tool.radius
+                r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
                     y - r,
                     x + r,
                     y + r,
-                    fill=self.app.toolbar.marker_tool.color,
+                    fill=self.app.toolbar.marker_frame.color,
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
                     state=self.show_annotations.state(),
@@ -678,13 +678,13 @@ class CanvasGraph(tk.Canvas):
                 shape.shape_motion(x, y)
                 return
             elif is_marker(self.annotation_type):
-                r = self.app.toolbar.marker_tool.radius
+                r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
                     y - r,
                     x + r,
                     y + r,
-                    fill=self.app.toolbar.marker_tool.color,
+                    fill=self.app.toolbar.marker_frame.color,
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
                 )
