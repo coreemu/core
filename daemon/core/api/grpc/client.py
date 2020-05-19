@@ -88,6 +88,8 @@ from core.api.grpc.wlan_pb2 import (
     GetWlanConfigsResponse,
     SetWlanConfigRequest,
     SetWlanConfigResponse,
+    SetWlanLinkRequest,
+    SetWlanLinkResponse,
     WlanConfig,
 )
 
@@ -1203,6 +1205,18 @@ class CoreGrpcClient:
     def execute_script(self, script: str) -> ExecuteScriptResponse:
         request = ExecuteScriptRequest(script=script)
         return self.stub.ExecuteScript(request)
+
+    def set_wlan_link(
+        self, session_id: int, wlan: int, node_one: int, node_two: int, linked: bool
+    ) -> SetWlanLinkResponse:
+        request = SetWlanLinkRequest(
+            session_id=session_id,
+            wlan=wlan,
+            node_one=node_one,
+            node_two=node_two,
+            linked=linked,
+        )
+        return self.stub.SetWlanLink(request)
 
     def connect(self) -> None:
         """

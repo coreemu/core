@@ -509,11 +509,7 @@ class BasicRangeModel(WirelessModel):
         :param unlink: unlink or not
         :return: nothing
         """
-        if unlink:
-            message_type = MessageFlags.DELETE
-        else:
-            message_type = MessageFlags.ADD
-
+        message_type = MessageFlags.DELETE if unlink else MessageFlags.ADD
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
 

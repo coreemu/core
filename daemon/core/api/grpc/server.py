@@ -102,6 +102,8 @@ from core.api.grpc.wlan_pb2 import (
     GetWlanConfigsResponse,
     SetWlanConfigRequest,
     SetWlanConfigResponse,
+    SetWlanLinkRequest,
+    SetWlanLinkResponse,
 )
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import LinkData
@@ -111,6 +113,7 @@ from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNodeBase, NodeBase
+from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -177,7 +180,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         :param session: session that has the node
         :param node_id: node id
-        :param context:
+        :param context: request
         :return: node object that satisfies. If node not found then raise an exception.
         :raises Exception: raises grpc exception when node does not exist
         """
@@ -1684,3 +1687,35 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if new_sessions:
             new_session = new_sessions[0]
         return ExecuteScriptResponse(session_id=new_session)
+
+    def SetWlanLink(
+        self, request: SetWlanLinkRequest, context: ServicerContext
+    ) -> SetWlanLinkResponse:
+        session = self.get_session(request.session_id, context)
+        wlan = self.get_node(session, request.wlan, context)
+        if not isinstance(wlan, WlanNode):
+            context.abort(
+                grpc.StatusCode.NOT_FOUND, f"wlan id {request.wlan} is not a wlan node"
+            )
+        if not isinstance(wlan.model, BasicRangeModel):
+            context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                f"wlan node {request.wlan} does not using BasicRangeModel",
+            )
+        n1 = self.get_node(session, request.node_one, context)
+        n2 = self.get_node(session, request.node_two, context)
+        n1_netif, n2_netif = None, None
+        for net, netif1, netif2 in n1.commonnets(n2):
+            if net == wlan:
+                n1_netif = netif1
+                n2_netif = netif2
+                break
+        if n1_netif and n2_netif:
+            if request.linked:
+                wlan.link(n1_netif, n2_netif)
+            else:
+                wlan.unlink(n1_netif, n2_netif)
+            wlan.model.sendlinkmsg(n1_netif, n2_netif, unlink=not request.linked)
+            return SetWlanLinkResponse(result=True)
+        else:
+            return SetWlanLinkResponse(result=False)
