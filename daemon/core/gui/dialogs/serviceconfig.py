@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
 
+ICON_SIZE = 16
+
 
 class ServiceConfigDialog(Dialog):
     def __init__(
@@ -51,10 +53,8 @@ class ServiceConfigDialog(Dialog):
         self.directory_entry = None
         self.default_directories = []
         self.temp_directories = []
-        self.documentnew_img = Images.get(
-            ImageEnum.DOCUMENTNEW, int(16 * app.app_scale)
-        )
-        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, int(16 * app.app_scale))
+        self.documentnew_img = self.app.get_icon(ImageEnum.DOCUMENTNEW, ICON_SIZE)
+        self.editdelete_img = self.app.get_icon(ImageEnum.EDITDELETE, ICON_SIZE)
         self.notebook = None
         self.metadata_entry = None
         self.filename_combobox = None

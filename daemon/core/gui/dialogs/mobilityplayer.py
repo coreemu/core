@@ -6,7 +6,7 @@ import grpc
 
 from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.themes import PADX, PADY
 
 if TYPE_CHECKING:
@@ -89,17 +89,17 @@ class MobilityPlayerDialog(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
-        image = Images.get(ImageEnum.START, width=int(ICON_SIZE * self.app.app_scale))
+        image = self.app.get_icon(ImageEnum.START, ICON_SIZE)
         self.play_button = ttk.Button(frame, image=image, command=self.click_play)
         self.play_button.image = image
         self.play_button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
-        image = Images.get(ImageEnum.PAUSE, width=int(ICON_SIZE * self.app.app_scale))
+        image = self.app.get_icon(ImageEnum.PAUSE, ICON_SIZE)
         self.pause_button = ttk.Button(frame, image=image, command=self.click_pause)
         self.pause_button.image = image
         self.pause_button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
-        image = Images.get(ImageEnum.STOP, width=int(ICON_SIZE * self.app.app_scale))
+        image = self.app.get_icon(ImageEnum.STOP, ICON_SIZE)
         self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
         self.stop_button.image = image
         self.stop_button.grid(row=0, column=2, sticky="ew", padx=PADX)

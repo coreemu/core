@@ -466,7 +466,7 @@ class Toolbar(ttk.Frame):
         self.scale_button(self.select_button, ImageEnum.SELECT)
         self.scale_button(self.link_button, ImageEnum.LINK)
         if self.current_node.image_enum:
-            self.scale_button(self.node_button, self.current_node)
+            self.scale_button(self.node_button, self.current_node.image_enum)
         else:
             self.scale_button(self.node_button, image_file=self.current_node.image_file)
         self.scale_button(self.network_button, self.current_network.image_enum)

@@ -20,7 +20,7 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import ImageEnum, Images, TypeToImage
+from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
@@ -290,9 +290,7 @@ class CanvasGraph(tk.Canvas):
             )
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(
-                    ImageEnum.EDITNODE, int(ICON_SIZE * self.app.app_scale)
-                )
+                image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.app, x, y, core_node, image)
@@ -734,13 +732,11 @@ class CanvasGraph(tk.Canvas):
         if not core_node:
             return
         try:
-            self.node_draw.image = Images.get(
-                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
-            )
+            image_enum = self.node_draw.image_enum
+            self.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)
         except AttributeError:
-            self.node_draw.image = Images.get_custom(
-                self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
-            )
+            image_file = self.node_draw.image_file
+            self.node_draw.image = self.app.get_custom_icon(image_file, ICON_SIZE)
         node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
         self.core.canvas_nodes[core_node.id] = node
         self.nodes[node.id] = node
@@ -1006,14 +1002,12 @@ class CanvasGraph(tk.Canvas):
             ):
                 for custom_node in self.app.guiconfig.nodes:
                     if custom_node.name == canvas_node.core_node.model:
-                        img = Images.get_custom(
-                            custom_node.image, int(ICON_SIZE * self.app.app_scale)
-                        )
+                        img = self.app.get_custom_icon(custom_node.image, ICON_SIZE)
             else:
                 image_enum = TypeToImage.get(
                     canvas_node.core_node.type, canvas_node.core_node.model
                 )
-                img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+                img = self.app.get_icon(image_enum, ICON_SIZE)
 
             self.itemconfig(nid, image=img)
             canvas_node.image = img

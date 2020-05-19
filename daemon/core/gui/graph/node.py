@@ -17,7 +17,7 @@ from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
 
 if TYPE_CHECKING:
@@ -91,7 +91,7 @@ class CanvasNode:
     def add_antenna(self):
         x, y = self.canvas.coords(self.id)
         offset = len(self.antennas) * 8 * self.app.app_scale
-        img = Images.get(ImageEnum.ANTENNA, int(ANTENNA_SIZE * self.app.app_scale))
+        img = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
         antenna_id = self.canvas.create_image(
             x - 16 + offset,
             y - int(23 * self.app.app_scale),
@@ -327,9 +327,7 @@ class CanvasNode:
     def scale_antennas(self):
         for i in range(len(self.antennas)):
             antenna_id = self.antennas[i]
-            image = Images.get(
-                ImageEnum.ANTENNA, int(ANTENNA_SIZE * self.app.app_scale)
-            )
+            image = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
             self.canvas.itemconfig(antenna_id, image=image)
             self.antenna_images[antenna_id] = image
             node_x, node_y = self.canvas.coords(self.id)
