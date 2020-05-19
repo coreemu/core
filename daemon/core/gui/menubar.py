@@ -23,23 +23,13 @@ from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.nodeutils import ICON_SIZE
+from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 
 if TYPE_CHECKING:
     from core.gui.app import Application
 
 MAX_FILES = 3
-OBSERVERS = {
-    "List Processes": "ps",
-    "Show Interfaces": "ip address",
-    "IPV4 Routes": "ip -4 route",
-    "IPV6 Routes": "ip -6 route",
-    "Listening Sockets": "ss -tuwnl",
-    "IPv4 MFC Entries": "ip -4 mroute show",
-    "IPv6 MFC Entries": "ip -6 mroute show",
-    "Firewall Rules": "iptables -L",
-    "IPSec Policies": "setkey -DP",
-}
 
 
 class Menubar(tk.Menu):
@@ -58,8 +48,6 @@ class Menubar(tk.Menu):
         self.recent_menu = None
         self.edit_menu = None
         self.observers_menu = None
-        self.observers_var = tk.StringVar(value=tk.NONE)
-        self.observers_custom_index = None
         self.draw()
 
     def draw(self) -> None:
@@ -201,41 +189,8 @@ class Menubar(tk.Menu):
         """
         Create observer widget menu item and create the sub menu items inside
         """
-        self.observers_menu = tk.Menu(widget_menu)
-        self.observers_menu.add_command(
-            label="Edit Observers", command=self.click_edit_observer_widgets
-        )
-        self.observers_menu.add_separator()
-        self.observers_menu.add_radiobutton(
-            label="None",
-            variable=self.observers_var,
-            value="none",
-            command=lambda: self.core.set_observer(None),
-        )
-        for name in sorted(OBSERVERS):
-            cmd = OBSERVERS[name]
-            self.observers_menu.add_radiobutton(
-                label=name,
-                variable=self.observers_var,
-                value=name,
-                command=partial(self.core.set_observer, cmd),
-            )
-        self.observers_custom_index = self.observers_menu.index(tk.END) + 1
-        self.draw_custom_observers()
+        self.observers_menu = ObserversMenu(widget_menu, self.app)
         widget_menu.add_cascade(label="Observer Widgets", menu=self.observers_menu)
-
-    def draw_custom_observers(self) -> None:
-        current_observers_index = self.observers_menu.index(tk.END) + 1
-        if self.observers_custom_index < current_observers_index:
-            self.observers_menu.delete(self.observers_custom_index, tk.END)
-        for name in sorted(self.core.custom_observers):
-            observer = self.core.custom_observers[name]
-            self.observers_menu.add_radiobutton(
-                label=name,
-                variable=self.observers_var,
-                value=name,
-                command=partial(self.core.set_observer, observer.cmd),
-            )
 
     def create_adjacency_menu(self, widget_menu: tk.Menu) -> None:
         """

@@ -104,7 +104,8 @@ class ObserverDialog(Dialog):
             self.observers.insert(tk.END, name)
             self.name.set("")
             self.cmd.set("")
-            self.app.menubar.draw_custom_observers()
+            self.app.menubar.observers_menu.draw_custom()
+            self.app.toolbar.observers_menu.draw_custom()
         else:
             messagebox.showerror("Observer Error", f"{name} already exists")
 
@@ -132,7 +133,8 @@ class ObserverDialog(Dialog):
             self.observers.selection_clear(0, tk.END)
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
-            self.app.menubar.draw_custom_observers()
+            self.app.menubar.observers_menu.draw_custom()
+            self.app.toolbar.observers_menu.draw_custom()
 
     def handle_observer_change(self, event: tk.Event):
         selection = self.observers.curselection()

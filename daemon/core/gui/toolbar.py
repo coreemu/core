@@ -15,6 +15,7 @@ from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum
 from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
@@ -184,6 +185,9 @@ class Toolbar(ttk.Frame):
         self.marker_frame = None
         self.picker = None
 
+        # observers
+        self.observers_menu = None
+
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method
         self.current_node = NodeUtils.NODES[0]
@@ -244,6 +248,7 @@ class Toolbar(ttk.Frame):
         self.runtime_select_button = self.runtime_frame.create_button(
             ImageEnum.SELECT, self.click_runtime_selection, "Selection Tool", radio=True
         )
+        self.create_observe_button()
         self.runtime_marker_button = self.runtime_frame.create_button(
             ImageEnum.MARKER, self.click_marker_button, "Marker Tool", radio=True
         )
@@ -381,25 +386,10 @@ class Toolbar(ttk.Frame):
         menu_button = ttk.Menubutton(
             self.runtime_frame, image=image, direction=tk.RIGHT
         )
+        menu_button.image = image
         menu_button.grid(sticky="ew")
-        menu = tk.Menu(menu_button, tearoff=0)
-        menu_button["menu"] = menu
-        menu.add_command(label="None")
-        menu.add_command(label="processes")
-        menu.add_command(label="ifconfig")
-        menu.add_command(label="IPv4 routes")
-        menu.add_command(label="IPv6 routes")
-        menu.add_command(label="OSPFv2 neighbors")
-        menu.add_command(label="OSPFv3 neighbors")
-        menu.add_command(label="Listening sockets")
-        menu.add_command(label="IPv4 MFC entries")
-        menu.add_command(label="IPv6 MFC entries")
-        menu.add_command(label="firewall rules")
-        menu.add_command(label="IPSec policies")
-        menu.add_command(label="docker logs")
-        menu.add_command(label="OSPFv3 MDR level")
-        menu.add_command(label="PIM neighbors")
-        menu.add_command(label="Edit...")
+        self.observers_menu = ObserversMenu(menu_button, self.app)
+        menu_button["menu"] = self.observers_menu
 
     def click_stop(self) -> None:
         """
