@@ -7,6 +7,7 @@ from typing import Dict, List
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
@@ -148,7 +149,7 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         try:
-            wlan = self.session.get_node(self.id)
+            wlan = self.session.get_node(self.id, EmaneNet)
             wlan.setnempositions(moved_netifs)
         except CoreError:
             logging.exception("error during update")

@@ -3,6 +3,7 @@ import pytest
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreError
+from core.nodes.base import CoreNode
 
 MODELS = ["router", "host", "PC", "mdr"]
 NET_TYPES = [NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.WIRELESS_LAN]
@@ -45,7 +46,7 @@ class TestNodes:
 
         # then
         with pytest.raises(CoreError):
-            session.get_node(node.id)
+            session.get_node(node.id, CoreNode)
 
     def test_node_sethwaddr(self, session):
         # given

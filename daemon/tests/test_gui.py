@@ -24,6 +24,8 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode, NodeBase
+from core.nodes.network import SwitchNode
 
 
 def dict_to_str(values):
@@ -57,8 +59,7 @@ class TestGui:
         )
 
         coretlv.handle_message(message)
-
-        assert coretlv.session.get_node(node_id) is not None
+        assert coretlv.session.get_node(node_id, NodeBase) is not None
 
     def test_node_update(self, coretlv):
         node_id = 1
@@ -76,7 +77,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        node = coretlv.session.get_node(node_id)
+        node = coretlv.session.get_node(node_id, NodeBase)
         assert node is not None
         assert node.position.x == x
         assert node.position.y == y
@@ -91,7 +92,7 @@ class TestGui:
         coretlv.handle_message(message)
 
         with pytest.raises(CoreError):
-            coretlv.session.get_node(node_id)
+            coretlv.session.get_node(node_id, NodeBase)
 
     def test_link_add_node_to_net(self, coretlv):
         node_one = 1
@@ -113,7 +114,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
@@ -137,7 +138,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
@@ -189,7 +190,7 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
@@ -207,7 +208,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
@@ -275,7 +276,7 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
@@ -289,7 +290,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
@@ -311,7 +312,7 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
@@ -325,7 +326,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch)
+        switch_node = coretlv.session.get_node(switch, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
@@ -556,8 +557,7 @@ class TestGui:
         )
 
         coretlv.handle_message(message)
-
-        assert coretlv.session.get_node(node.id)
+        assert coretlv.session.get_node(node.id, NodeBase)
 
     @pytest.mark.parametrize(
         "state",
@@ -619,7 +619,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        assert coretlv.coreemu.sessions[1].get_node(node.id)
+        assert coretlv.coreemu.sessions[1].get_node(node.id, CoreNode)
 
     def test_register_python(self, coretlv, tmpdir):
         xml_file = tmpdir.join("test.py")

@@ -19,6 +19,7 @@ from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import CoreNode
 from core.xml.corexml import CoreXmlWriter
 
 
@@ -355,7 +356,7 @@ class TestGrpc:
 
         # then
         assert response.node_id is not None
-        assert session.get_node(response.node_id) is not None
+        assert session.get_node(response.node_id, CoreNode) is not None
 
     def test_get_node(self, grpc_server):
         # given
@@ -402,7 +403,7 @@ class TestGrpc:
         assert response.result is expected
         if expected is True:
             with pytest.raises(CoreError):
-                assert session.get_node(node.id)
+                assert session.get_node(node.id, CoreNode)
 
     def test_node_command(self, request, grpc_server):
         if request.config.getoption("mock"):

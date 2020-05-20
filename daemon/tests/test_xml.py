@@ -6,6 +6,8 @@ from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode, WlanNode
 from core.services.utility import SshService
 
 
@@ -91,16 +93,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
 
     def test_xml_ptp_services(self, session, tmpdir, ip_prefixes):
         """
@@ -152,9 +154,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -163,8 +165,8 @@ class TestXml:
         service = session.services.get_service(node_one.id, SshService.name)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
         assert service.config_data.get(service_file) == file_data
 
     def test_xml_mobility(self, session, tmpdir, ip_prefixes):
@@ -212,9 +214,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -223,9 +225,9 @@ class TestXml:
         value = str(session.mobility.get_config("test", wlan_id, BasicRangeModel.name))
 
         # verify nodes and configuration were restored
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
-        assert session.get_node(wlan_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(wlan_id, WlanNode)
         assert value == "1"
 
     def test_network_to_network(self, session, tmpdir):
@@ -263,16 +265,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, SwitchNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, SwitchNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        switch_one = session.get_node(n1_id)
-        switch_two = session.get_node(n2_id)
+        switch_one = session.get_node(n1_id, SwitchNode)
+        switch_two = session.get_node(n2_id, SwitchNode)
         assert switch_one
         assert switch_two
         assert len(switch_one.all_link_data() + switch_two.all_link_data()) == 1
@@ -322,16 +324,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, SwitchNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, SwitchNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
@@ -389,16 +391,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
@@ -471,16 +473,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]

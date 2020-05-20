@@ -11,6 +11,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
+from core.nodes.base import CoreNode
 
 NODES = 2
 EMANE_DELAY = 10
@@ -51,8 +52,8 @@ def main():
     time.sleep(EMANE_DELAY)
 
     # get nodes to run example
-    first_node = session.get_node(1)
-    last_node = session.get_node(NODES)
+    first_node = session.get_node(1, CoreNode)
+    last_node = session.get_node(NODES, CoreNode)
     address = prefixes.ip4_address(first_node)
     logging.info("node %s pinging %s", last_node.name, address)
     output = last_node.cmd(f"ping -c 3 {address}")

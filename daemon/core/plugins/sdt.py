@@ -344,7 +344,7 @@ class Sdt:
         """
         result = False
         try:
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, NodeBase)
             result = isinstance(node, (WlanNode, EmaneNet))
         except CoreError:
             pass

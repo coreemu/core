@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
@@ -77,6 +77,7 @@ NODES = {
 NODES_TYPE = {NODES[x]: x for x in NODES}
 CTRL_NET_ID = 9001
 LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
+NT = TypeVar("NT", bound=NodeBase)
 
 
 class Session:
@@ -194,7 +195,7 @@ class Session:
     def _link_nodes(
         self, node_one_id: int, node_two_id: int
     ) -> Tuple[
-        CoreNode, CoreNode, CoreNetworkBase, CoreNetworkBase, Tuple[GreTap, GreTap]
+        Optional[NodeBase], Optional[NodeBase], CoreNetworkBase, CoreNetworkBase, GreTap
     ]:
         """
         Convenience method for retrieving nodes within link data.
@@ -212,8 +213,8 @@ class Session:
         net_two = None
 
         # retrieve node one
-        node_one = self.get_node(node_one_id)
-        node_two = self.get_node(node_two_id)
+        node_one = self.get_node(node_one_id, NodeBase)
+        node_two = self.get_node(node_two_id, NodeBase)
 
         # both node ids are provided
         tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
@@ -225,6 +226,7 @@ class Session:
             else:
                 node_two = None
         # physical node connected via gre tap tunnel
+        # TODO: double check this cases type
         elif tunnel:
             if tunnel.remotenum == node_one_id:
                 node_one = None
@@ -777,7 +779,7 @@ class Session:
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
-        node = self.get_node(node_id)
+        node = self.get_node(node_id, NodeBase)
 
         # set node position and broadcast it
         self.set_node_position(node, options)
@@ -908,9 +910,7 @@ class Session:
         :param data: file data
         :return: nothing
         """
-
-        node = self.get_node(node_id)
-
+        node = self.get_node(node_id, CoreNodeBase)
         if source_name is not None:
             node.addfile(source_name, file_name)
         elif data is not None:
@@ -1381,17 +1381,23 @@ class Session:
             self.nodes[node.id] = node
         return node
 
-    def get_node(self, _id: int) -> NodeBase:
+    def get_node(self, _id: int, _class: Type[NT]) -> NT:
         """
         Get a session node.
 
         :param _id: node id to retrieve
+        :param _class: expected node class
         :return: node for the given id
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
             raise CoreError(f"unknown node id {_id}")
-        return self.nodes[_id]
+        node = self.nodes[_id]
+        if not isinstance(node, _class):
+            actual = node.__class__.__name__
+            expected = _class.__name__
+            raise CoreError(f"node class({actual}) is not expected({expected})")
+        return node
 
     def delete_node(self, _id: int) -> bool:
         """
@@ -1709,10 +1715,7 @@ class Session:
         :return: control net
         :raises CoreError: when control net is not found
         """
-        node = self.get_node(CTRL_NET_ID + net_index)
-        if not isinstance(node, CtrlNet):
-            raise CoreError("node is not a valid CtrlNet: %s", node.name)
-        return node
+        return self.get_node(CTRL_NET_ID + net_index, CtrlNet)
 
     def add_remove_control_net(
         self, net_index: int, remove: bool = False, conf_required: bool = True
@@ -1959,7 +1962,7 @@ class Session:
         if not node_id:
             utils.mute_detach(data)
         else:
-            node = self.get_node(node_id)
+            node = self.get_node(node_id, CoreNodeBase)
             node.cmd(data, wait=False)
 
     def get_link_color(self, network_id: int) -> str:

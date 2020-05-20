@@ -244,7 +244,7 @@ class DistributedController:
         )
         return key & 0xFFFFFFFF
 
-    def get_tunnel(self, n1_id: int, n2_id: int) -> Tuple[GreTap, GreTap]:
+    def get_tunnel(self, n1_id: int, n2_id: int) -> GreTap:
         """
         Return the GreTap between two nodes if it exists.
 

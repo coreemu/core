@@ -9,11 +9,13 @@ import pytest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
+from core.nodes.base import CoreNode
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
@@ -133,9 +135,9 @@ class TestEmane:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -146,7 +148,7 @@ class TestEmane:
         )
 
         # verify nodes and configuration were restored
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
-        assert session.get_node(emane_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(emane_id, EmaneNet)
         assert value == config_value

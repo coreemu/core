@@ -296,7 +296,6 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         self.localname = name
         self.old_up = False
         self.old_addrs = []
-
         if start:
             self.startup()
 

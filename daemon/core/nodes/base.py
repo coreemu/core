@@ -433,6 +433,28 @@ class CoreNodeBase(NodeBase):
                     common.append((netif1.net, netif1, netif2))
         return common
 
+    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+        """
+        Create a node file with a given mode.
+
+        :param filename: name of file to create
+        :param contents: contents of file
+        :param mode: mode for file
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    def addfile(self, srcname: str, filename: str) -> None:
+        """
+        Add a file.
+
+        :param srcname: source file name
+        :param filename: file name to add
+        :return: nothing
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
+
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
         Runs a command within a node container.

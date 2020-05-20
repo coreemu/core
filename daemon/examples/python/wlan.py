@@ -9,6 +9,7 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode
 
 NODES = 2
 
@@ -40,8 +41,8 @@ def main():
     session.instantiate()
 
     # get nodes for example run
-    first_node = session.get_node(1)
-    last_node = session.get_node(NODES)
+    first_node = session.get_node(1, CoreNode)
+    last_node = session.get_node(NODES, CoreNode)
     address = prefixes.ip4_address(first_node)
     logging.info("node %s pinging %s", last_node.name, address)
     output = last_node.cmd(f"ping -c 3 {address}")

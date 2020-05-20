@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Type, TypeVar
+from typing import Type
 
 import grpc
 from grpc import ServicerContext
@@ -109,7 +109,7 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.data import LinkData
 from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
-from core.emulator.session import Session
+from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
@@ -118,7 +118,6 @@ from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 _INTERFACE_REGEX = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
-T = TypeVar("T")
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -174,36 +173,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return session
 
     def get_node(
-        self,
-        session: Session,
-        node_id: int,
-        context: ServicerContext,
-        node_class: Type[T],
-    ) -> T:
+        self, session: Session, node_id: int, context: ServicerContext, _class: Type[NT]
+    ) -> NT:
         """
         Retrieve node given session and node id
 
         :param session: session that has the node
         :param node_id: node id
         :param context: request
-        :param node_class: type of node we are expecting
+        :param _class: type of node we are expecting
         :return: node object that satisfies. If node not found then raise an exception.
         :raises Exception: raises grpc exception when node does not exist
         """
         try:
-            node = session.get_node(node_id)
-            if isinstance(node, node_class):
-                return node
-            else:
-                actual = node.__class__.__name__
-                expected = node_class.__name__
-                context.abort(
-                    grpc.StatusCode.NOT_FOUND,
-                    f"node({node_id}) class({actual}) "
-                    f"was not expected class({expected})",
-                )
-        except CoreError:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
+            return session.get_node(node_id, _class)
+        except CoreError as e:
+            context.abort(grpc.StatusCode.NOT_FOUND, str(e))
 
     def validate_service(
         self, name: str, context: ServicerContext
