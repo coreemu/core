@@ -129,7 +129,7 @@ service CoreApi {
     }
     rpc SetWlanConfig (wlan.SetWlanConfigRequest) returns (wlan.SetWlanConfigResponse) {
     }
-    rpc SetWlanLink (wlan.SetWlanLinkRequest) returns (wlan.SetWlanLinkResponse) {
+    rpc WlanLink (wlan.WlanLinkRequest) returns (wlan.WlanLinkResponse) {
     }
 
     // emane rpc
