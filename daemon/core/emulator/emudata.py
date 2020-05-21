@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import netaddr
 
@@ -21,7 +21,7 @@ class IdGen:
 
 
 def link_config(
-    network: CoreNetworkBase,
+    node: Union[CoreNetworkBase, PhysicalNode],
     interface: CoreInterface,
     link_options: LinkOptions,
     devname: str = None,
@@ -30,7 +30,7 @@ def link_config(
     """
     Convenience method for configuring a link,
 
-    :param network: network to configure link for
+    :param node: network to configure link for
     :param interface: interface to configure
     :param link_options: data to configure link with
     :param devname: device name, default is None
@@ -49,10 +49,10 @@ def link_config(
 
     # hacky check here, because physical and emane nodes do not conform to the same
     # linkconfig interface
-    if not isinstance(network, (EmaneNet, PhysicalNode)):
+    if not isinstance(node, (EmaneNet, PhysicalNode)):
         config["devname"] = devname
 
-    network.linkconfig(**config)
+    node.linkconfig(**config)
 
 
 class NodeOptions:

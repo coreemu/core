@@ -232,7 +232,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         # add all hooks
         for hook in request.hooks:
             state = EventTypes(hook.state)
-            session.add_hook(state, hook.file, None, hook.data)
+            session.add_hook(state, hook.file, hook.data)
 
         # create nodes
         _, exceptions = grpcutils.create_nodes(session, request.nodes)
@@ -918,7 +918,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         hook = request.hook
         state = EventTypes(hook.state)
-        session.add_hook(state, hook.file, None, hook.data)
+        session.add_hook(state, hook.file, hook.data)
         return core_pb2.AddHookResponse(result=True)
 
     def GetMobilityConfigs(

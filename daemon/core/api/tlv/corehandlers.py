@@ -1501,7 +1501,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         return ()
                     state = int(state)
                     state = EventTypes(state)
-                    self.session.add_hook(state, file_name, source_name, data)
+                    self.session.add_hook(state, file_name, data, source_name)
                     return ()
 
             # writing a file to the host

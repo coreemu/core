@@ -450,7 +450,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         file_name = "test"
         file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE, file_name, None, file_data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, file_data)
 
         # then
         with client.context_connect():

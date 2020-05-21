@@ -196,7 +196,11 @@ class Session:
     def _link_nodes(
         self, node_one_id: int, node_two_id: int
     ) -> Tuple[
-        Optional[NodeBase], Optional[NodeBase], CoreNetworkBase, CoreNetworkBase, GreTap
+        Optional[CoreNode],
+        Optional[CoreNode],
+        Optional[CoreNetworkBase],
+        Optional[CoreNetworkBase],
+        GreTap,
     ]:
         """
         Convenience method for retrieving nodes within link data.
@@ -856,19 +860,19 @@ class Session:
         CoreXmlWriter(self).write(file_name)
 
     def add_hook(
-        self, state: EventTypes, file_name: str, source_name: str, data: str
+        self, state: EventTypes, file_name: str, data: str, source_name: str = None
     ) -> None:
         """
         Store a hook from a received file message.
 
         :param state: when to run hook
         :param file_name: file name for hook
-        :param source_name: source name
         :param data: hook data
+        :param source_name: source name
         :return: nothing
         """
         logging.info(
-            "setting state hook: %s - %s from %s", state, file_name, source_name
+            "setting state hook: %s - %s source(%s)", state, file_name, source_name
         )
         hook = file_name, data
         state_hooks = self._hooks.setdefault(state, [])

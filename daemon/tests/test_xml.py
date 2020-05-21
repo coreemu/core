@@ -23,12 +23,12 @@ class TestXml:
         file_name = "runtime_hook.sh"
         data = "#!/bin/sh\necho hello"
         state = EventTypes.RUNTIME_STATE
-        session.add_hook(state, file_name, None, data)
+        session.add_hook(state, file_name, data)
 
         file_name = "instantiation_hook.sh"
         data = "#!/bin/sh\necho hello"
         state = EventTypes.INSTANTIATION_STATE
-        session.add_hook(state, file_name, None, data)
+        session.add_hook(state, file_name, data)
 
         # save xml
         xml_file = tmpdir.join("session.xml")

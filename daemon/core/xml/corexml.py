@@ -662,7 +662,7 @@ class CoreXmlReader:
             state = EventTypes(state)
             data = hook.text
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.add_hook(state, name, None, data)
+            self.session.add_hook(state, name, data)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")

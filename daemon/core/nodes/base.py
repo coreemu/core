@@ -413,14 +413,14 @@ class CoreNodeBase(NodeBase):
                 netif.setposition()
 
     def commonnets(
-        self, obj: "CoreNodeBase", want_ctrl: bool = False
-    ) -> List[Tuple[NodeBase, CoreInterface, CoreInterface]]:
+        self, node: "CoreNodeBase", want_ctrl: bool = False
+    ) -> List[Tuple["CoreNetworkBase", CoreInterface, CoreInterface]]:
         """
         Given another node or net object, return common networks between
         this node and that object. A list of tuples is returned, with each tuple
         consisting of (network, interface1, interface2).
 
-        :param obj: object to get common network with
+        :param node: node to get common network with
         :param want_ctrl: flag set to determine if control network are wanted
         :return: tuples of common networks
         """
@@ -428,7 +428,7 @@ class CoreNodeBase(NodeBase):
         for netif1 in self.netifs():
             if not want_ctrl and hasattr(netif1, "control"):
                 continue
-            for netif2 in obj.netifs():
+            for netif2 in node.netifs():
                 if netif1.net == netif2.net:
                     common.append((netif1.net, netif1, netif2))
         return common
@@ -1041,7 +1041,7 @@ class CoreNetworkBase(NodeBase):
         """
         pass
 
-    def getlinknetif(self, net: "CoreNetworkBase") -> CoreInterface:
+    def getlinknetif(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
         """
         Return the interface of that links this net with another net.
 
@@ -1049,7 +1049,7 @@ class CoreNetworkBase(NodeBase):
         :return: interface the provided network is linked to
         """
         for netif in self.netifs():
-            if hasattr(netif, "othernet") and netif.othernet == net:
+            if getattr(netif, "othernet", None) == net:
                 return netif
         return None
 
