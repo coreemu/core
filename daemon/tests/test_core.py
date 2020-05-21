@@ -8,13 +8,15 @@ import threading
 import pytest
 
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import MessageFlags, NodeTypes
+from core.emulator.enumerations import MessageFlags
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import CoreNode
+from core.nodes.network import HubNode, PtpNet, SwitchNode, WlanNode
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
+_WIRED = [PtpNet, HubNode, SwitchNode]
 
 
 def ping(from_node, to_node, ip_prefixes):
@@ -39,11 +41,11 @@ class TestCore:
         """
 
         # create net node
-        net_node = session.add_node(_type=net_type)
+        net_node = session.add_node(net_type)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to net node
         for node in [node_one, node_two]:
@@ -66,11 +68,11 @@ class TestCore:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -99,11 +101,11 @@ class TestCore:
         """
 
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -143,14 +145,14 @@ class TestCore:
         """
 
         # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(options=options)
-        node_two = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         # link nodes
         for node in [node_one, node_two]:
@@ -173,14 +175,14 @@ class TestCore:
         """
 
         # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(options=options)
-        node_two = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         # link nodes
         for node in [node_one, node_two]:

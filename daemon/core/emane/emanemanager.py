@@ -21,7 +21,7 @@ from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
 from core.xml import emanexml
@@ -801,8 +801,8 @@ class EmaneManager(ModelManager):
         zbit_check = z.bit_length() > 16 or z < 0
         if any([xbit_check, ybit_check, zbit_check]):
             logging.error(
-                "Unable to build node location message, received lat/long/alt exceeds coordinate "
-                "space: NEM %s (%d, %d, %d)",
+                "Unable to build node location message, received lat/long/alt "
+                "exceeds coordinate space: NEM %s (%d, %d, %d)",
                 nemid,
                 x,
                 y,
@@ -812,7 +812,7 @@ class EmaneManager(ModelManager):
 
         # generate a node message for this location update
         try:
-            node = self.session.get_node(n)
+            node = self.session.get_node(n, NodeBase)
         except CoreError:
             logging.exception(
                 "location event NEM %s has no corresponding node %s", nemid, n

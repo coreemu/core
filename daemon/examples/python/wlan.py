@@ -7,8 +7,10 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode
+from core.nodes.network import WlanNode
 
 NODES = 2
 
@@ -25,14 +27,14 @@ def main():
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create wlan network node
-    wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN, _id=100)
+    wlan = session.add_node(WlanNode, _id=100)
     session.mobility.set_model(wlan, BasicRangeModel)
 
     # create nodes, must set a position for wlan basic range model
     options = NodeOptions(model="mdr")
     options.set_position(0, 0)
     for _ in range(NODES):
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface_one=interface)
 
@@ -40,8 +42,8 @@ def main():
     session.instantiate()
 
     # get nodes for example run
-    first_node = session.get_node(1)
-    last_node = session.get_node(NODES)
+    first_node = session.get_node(1, CoreNode)
+    last_node = session.get_node(NODES, CoreNode)
     address = prefixes.ip4_address(first_node)
     logging.info("node %s pinging %s", last_node.name, address)
     output = last_node.cmd(f"ping -c 3 {address}")

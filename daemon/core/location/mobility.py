@@ -24,6 +24,7 @@ from core.emulator.enumerations import (
 from core.errors import CoreError
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
+from core.nodes.network import WlanNode
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -75,7 +76,7 @@ class MobilityManager(ModelManager):
             )
 
             try:
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, WlanNode)
             except CoreError:
                 logging.warning(
                     "skipping mobility configuration for unknown node: %s", node_id
@@ -103,9 +104,8 @@ class MobilityManager(ModelManager):
         event_type = event_data.event_type
         node_id = event_data.node
         name = event_data.name
-
         try:
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, WlanNode)
         except CoreError:
             logging.exception(
                 "Ignoring event for model '%s', unknown node '%s'", name, node_id
@@ -190,7 +190,7 @@ class MobilityManager(ModelManager):
         """
         for node_id in self.nodes():
             try:
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, WlanNode)
             except CoreError:
                 continue
             if node.model:
@@ -299,7 +299,7 @@ class BasicRangeModel(WirelessModel):
         """
         super().__init__(session, _id)
         self.session = session
-        self.wlan = session.get_node(_id)
+        self.wlan = session.get_node(_id, WlanNode)
         self._netifs = {}
         self._netifslock = threading.Lock()
         self.range = 0
@@ -590,7 +590,7 @@ class WayPointMobility(WirelessModel):
         self.initial = {}
         self.lasttime = None
         self.endtime = None
-        self.wlan = session.get_node(_id)
+        self.wlan = session.get_node(_id, WlanNode)
         # these are really set in child class via confmatrix
         self.loop = False
         self.refresh_ms = 50

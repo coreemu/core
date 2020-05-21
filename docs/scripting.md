@@ -28,35 +28,54 @@ connections.
 Here are the basic elements of a CORE Python script:
 
 ```python
+"""
+This is a standalone script to run a small switch based scenario and will not
+interact with the GUI.
+"""
+
+import logging
+
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import NodeTypes
+from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode
 
-# ip generator for example
-prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
+NODES = 2
 
-# create emulator instance for creating sessions and utility methods
-coreemu = CoreEmu()
-session = coreemu.create_session()
 
-# must be in configuration state for nodes to start, when using "node_add" below
-session.set_state(EventTypes.CONFIGURATION_STATE)
+def main():
+    # ip generator for example
+    prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
-# create switch network node
-switch = session.add_node(_type=NodeTypes.SWITCH)
+    # create emulator instance for creating sessions and utility methods
+    coreemu = CoreEmu()
+    session = coreemu.create_session()
 
-# create nodes
-for _ in range(2):
-    node = session.add_node()
-    interface = prefixes.create_interface(node)
-    session.add_link(node.id, switch.id, interface_one=interface)
+    # must be in configuration state for nodes to start, when using "node_add" below
+    session.set_state(EventTypes.CONFIGURATION_STATE)
 
-# instantiate session
-session.instantiate()
+    # create switch network node
+    switch = session.add_node(SwitchNode, _id=100)
 
-# shutdown session
-coreemu.shutdown()
+    # create nodes
+    for _ in range(NODES):
+        node = session.add_node(CoreNode)
+        interface = prefixes.create_interface(node)
+        session.add_link(node.id, switch.id, interface_one=interface)
+
+    # instantiate session
+    session.instantiate()
+
+    # run any desired logic here
+
+    # shutdown session
+    coreemu.shutdown()
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    main()
 ```
 
 The above script creates a CORE session having two nodes connected with a
@@ -136,7 +155,7 @@ session = coreemu.create_session()
 session.set_location(47.57917, -122.13232, 2.00000, 1.0)
 options = NodeOptions()
 options.set_position(80, 50)
-emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+emane_network = session.add_node(EmaneNet, options=options)
 
 # set custom emane model config
 config = {}

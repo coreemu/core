@@ -1,5 +1,6 @@
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.nodes.base import CoreNode
+from core.nodes.network import HubNode
 
 
 class TestDistributed:
@@ -12,7 +13,7 @@ class TestDistributed:
         session.distributed.add_server(server_name, host)
         options = NodeOptions()
         options.server = server_name
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
         session.instantiate()
 
         # then
@@ -30,7 +31,7 @@ class TestDistributed:
         session.distributed.add_server(server_name, host)
         options = NodeOptions()
         options.server = server_name
-        node = session.add_node(_type=NodeTypes.HUB, options=options)
+        node = session.add_node(HubNode, options=options)
         session.instantiate()
 
         # then

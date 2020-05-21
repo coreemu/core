@@ -10,6 +10,7 @@ from lxml import etree
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
+from core.emane.nodes import EmaneNet
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -137,7 +138,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_node(self.id)
+        emane_node = self.session.get_node(self.id, EmaneNet)
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw

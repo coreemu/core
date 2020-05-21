@@ -41,6 +41,7 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
 
@@ -681,10 +682,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
-        node_type = None
+        _class = CoreNode
         node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
         if node_type_value is not None:
             node_type = NodeTypes(node_type_value)
+            _class = self.session.get_node_class(node_type)
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
@@ -719,7 +721,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, options)
+            node = self.session.add_node(_class, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
@@ -836,7 +838,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             return ()
 
         try:
-            node = self.session.get_node(node_num)
+            node = self.session.get_node(node_num, CoreNodeBase)
 
             # build common TLV items for reply
             tlv_data = b""
@@ -1228,7 +1230,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if not node_id:
                     return replies
 
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, CoreNodeBase)
                 if node is None:
                     logging.warning(
                         "request to configure service for unknown node %s", node_id
@@ -1373,7 +1375,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
             if self.session.state == EventTypes.RUNTIME_STATE and parsed_config:
                 try:
-                    node = self.session.get_node(node_id)
+                    node = self.session.get_node(node_id, WlanNode)
                     if object_name == BasicRangeModel.name:
                         node.updatemodel(parsed_config)
                 except CoreError:
@@ -1553,7 +1555,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("handling event %s at %s", event_type.name, time.ctime())
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, NodeBase)
 
                 # configure mobility models for WLAN added during runtime
                 if event_type == EventTypes.INSTANTIATION_STATE and isinstance(
@@ -1647,7 +1649,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         name = event_data.name
 
         try:
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, CoreNodeBase)
         except CoreError:
             logging.warning(
                 "ignoring event for service '%s', unknown node '%s'", name, node_id
@@ -1883,7 +1885,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             data_types = tuple(
                 repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys))
             )
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, CoreNodeBase)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
                 message_type=0,

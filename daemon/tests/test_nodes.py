@@ -1,11 +1,12 @@
 import pytest
 
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
 from core.errors import CoreError
+from core.nodes.base import CoreNode
+from core.nodes.network import HubNode, SwitchNode, WlanNode
 
 MODELS = ["router", "host", "PC", "mdr"]
-NET_TYPES = [NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.WIRELESS_LAN]
+NET_TYPES = [SwitchNode, HubNode, WlanNode]
 
 
 class TestNodes:
@@ -15,7 +16,7 @@ class TestNodes:
         options = NodeOptions(model=model)
 
         # when
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
 
         # then
         assert node
@@ -24,7 +25,7 @@ class TestNodes:
 
     def test_node_update(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         position_value = 100
         update_options = NodeOptions()
         update_options.set_position(x=position_value, y=position_value)
@@ -38,18 +39,18 @@ class TestNodes:
 
     def test_node_delete(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         session.delete_node(node.id)
 
         # then
         with pytest.raises(CoreError):
-            session.get_node(node.id)
+            session.get_node(node.id, CoreNode)
 
     def test_node_sethwaddr(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         index = node.newnetif()
         interface = node.netif(index)
         mac = "aa:aa:aa:ff:ff:ff"
@@ -62,7 +63,7 @@ class TestNodes:
 
     def test_node_sethwaddr_exception(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         index = node.newnetif()
         node.netif(index)
         mac = "aa:aa:aa:ff:ff:fff"
@@ -73,7 +74,7 @@ class TestNodes:
 
     def test_node_addaddr(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         index = node.newnetif()
         interface = node.netif(index)
         addr = "192.168.0.1/24"
@@ -86,7 +87,7 @@ class TestNodes:
 
     def test_node_addaddr_exception(self, session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         index = node.newnetif()
         node.netif(index)
         addr = "256.168.0.1/24"
@@ -100,7 +101,7 @@ class TestNodes:
         # given
 
         # when
-        node = session.add_node(_type=net_type)
+        node = session.add_node(net_type)
 
         # then
         assert node

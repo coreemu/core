@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
@@ -75,8 +75,10 @@ NODES = {
     NodeTypes.LXC: LxcNode,
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
+CONTAINER_NODES = {DockerNode, LxcNode}
 CTRL_NET_ID = 9001
 LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
+NT = TypeVar("NT", bound=NodeBase)
 
 
 class Session:
@@ -194,7 +196,7 @@ class Session:
     def _link_nodes(
         self, node_one_id: int, node_two_id: int
     ) -> Tuple[
-        CoreNode, CoreNode, CoreNetworkBase, CoreNetworkBase, Tuple[GreTap, GreTap]
+        Optional[NodeBase], Optional[NodeBase], CoreNetworkBase, CoreNetworkBase, GreTap
     ]:
         """
         Convenience method for retrieving nodes within link data.
@@ -212,8 +214,8 @@ class Session:
         net_two = None
 
         # retrieve node one
-        node_one = self.get_node(node_one_id)
-        node_two = self.get_node(node_two_id)
+        node_one = self.get_node(node_one_id, NodeBase)
+        node_two = self.get_node(node_two_id, NodeBase)
 
         # both node ids are provided
         tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
@@ -225,6 +227,7 @@ class Session:
             else:
                 node_two = None
         # physical node connected via gre tap tunnel
+        # TODO: double check this cases type
         elif tunnel:
             if tunnel.remotenum == node_one_id:
                 node_one = None
@@ -346,7 +349,7 @@ class Session:
                         node_two.name,
                     )
                     start = self.state.should_start()
-                    net_one = self.create_node(cls=PtpNet, start=start)
+                    net_one = self.create_node(_class=PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -660,32 +663,21 @@ class Session:
                 node_two.lock.release()
 
     def add_node(
-        self,
-        _type: NodeTypes = NodeTypes.DEFAULT,
-        _id: int = None,
-        options: NodeOptions = None,
-        _cls: Type[NodeBase] = None,
-    ) -> NodeBase:
+        self, _class: Type[NT], _id: int = None, options: NodeOptions = None
+    ) -> NT:
         """
         Add a node to the session, based on the provided node data.
 
-        :param _type: type of node to create
+        :param _class: node class to create
         :param _id: id for node, defaults to None for generated id
         :param options: data to create node with
-        :param _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
-        # validate node type, get class, or throw error
-        if _cls is None:
-            node_class = self.get_node_class(_type)
-        else:
-            node_class = _cls
-
         # set node start based on current session state, override and check when rj45
         start = self.state.should_start()
         enable_rj45 = self.options.get_config("enablerj45") == "1"
-        if _type == NodeTypes.RJ45 and not enable_rj45:
+        if _class == Rj45Node and not enable_rj45:
             start = False
 
         # determine node id
@@ -701,7 +693,7 @@ class Session:
             options.set_position(0, 0)
         name = options.name
         if not name:
-            name = f"{node_class.__name__}{_id}"
+            name = f"{_class.__name__}{_id}"
 
         # verify distributed server
         server = self.distributed.servers.get(options.server)
@@ -711,24 +703,15 @@ class Session:
         # create node
         logging.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
-            node_class.__name__,
+            _class.__name__,
             _id,
             name,
             start,
         )
-        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
-            node = self.create_node(
-                cls=node_class,
-                _id=_id,
-                name=name,
-                start=start,
-                image=options.image,
-                server=server,
-            )
-        else:
-            node = self.create_node(
-                cls=node_class, _id=_id, name=name, start=start, server=server
-            )
+        kwargs = dict(_id=_id, name=name, start=start, server=server)
+        if _class in CONTAINER_NODES:
+            kwargs["image"] = options.image
+        node = self.create_node(_class, **kwargs)
 
         # set node attributes
         node.icon = options.icon
@@ -777,7 +760,7 @@ class Session:
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
-        node = self.get_node(node_id)
+        node = self.get_node(node_id, NodeBase)
 
         # set node position and broadcast it
         self.set_node_position(node, options)
@@ -908,9 +891,7 @@ class Session:
         :param data: file data
         :return: nothing
         """
-
-        node = self.get_node(node_id)
-
+        node = self.get_node(node_id, CoreNodeBase)
         if source_name is not None:
             node.addfile(source_name, file_name)
         elif data is not None:
@@ -1363,17 +1344,17 @@ class Session:
                     break
         return node_id
 
-    def create_node(self, cls: Type[NodeBase], *args: Any, **kwargs: Any) -> NodeBase:
+    def create_node(self, _class: Type[NT], *args: Any, **kwargs: Any) -> NT:
         """
         Create an emulation node.
 
-        :param cls: node class to create
+        :param _class: node class to create
         :param args: list of arguments for the class to create
         :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
-        node = cls(self, *args, **kwargs)
+        node = _class(self, *args, **kwargs)
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
@@ -1381,17 +1362,23 @@ class Session:
             self.nodes[node.id] = node
         return node
 
-    def get_node(self, _id: int) -> NodeBase:
+    def get_node(self, _id: int, _class: Type[NT]) -> NT:
         """
         Get a session node.
 
         :param _id: node id to retrieve
+        :param _class: expected node class
         :return: node for the given id
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
             raise CoreError(f"unknown node id {_id}")
-        return self.nodes[_id]
+        node = self.nodes[_id]
+        if not isinstance(node, _class):
+            actual = node.__class__.__name__
+            expected = _class.__name__
+            raise CoreError(f"node class({actual}) is not expected({expected})")
+        return node
 
     def delete_node(self, _id: int) -> bool:
         """
@@ -1709,10 +1696,7 @@ class Session:
         :return: control net
         :raises CoreError: when control net is not found
         """
-        node = self.get_node(CTRL_NET_ID + net_index)
-        if not isinstance(node, CtrlNet):
-            raise CoreError("node is not a valid CtrlNet: %s", node.name)
-        return node
+        return self.get_node(CTRL_NET_ID + net_index, CtrlNet)
 
     def add_remove_control_net(
         self, net_index: int, remove: bool = False, conf_required: bool = True
@@ -1788,7 +1772,7 @@ class Session:
             server_interface,
         )
         control_net = self.create_node(
-            cls=CtrlNet,
+            _class=CtrlNet,
             _id=_id,
             prefix=prefix,
             assign_address=True,
@@ -1959,7 +1943,7 @@ class Session:
         if not node_id:
             utils.mute_detach(data)
         else:
-            node = self.get_node(node_id)
+            node = self.get_node(node_id, CoreNodeBase)
             node.cmd(data, wait=False)
 
     def get_link_color(self, network_id: int) -> str:
