@@ -1695,10 +1695,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> WlanLinkResponse:
         session = self.get_session(request.session_id, context)
         wlan = self.get_node(session, request.wlan, context, WlanNode)
-        if not isinstance(wlan, WlanNode):
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, f"wlan id {request.wlan} is not a wlan node"
-            )
         if not isinstance(wlan.model, BasicRangeModel):
             context.abort(
                 grpc.StatusCode.NOT_FOUND,
