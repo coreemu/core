@@ -7,8 +7,9 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode
 
 NODES = 2
 
@@ -25,11 +26,11 @@ def main():
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create switch network node
-    switch = session.add_node(_type=NodeTypes.SWITCH, _id=100)
+    switch = session.add_node(SwitchNode, _id=100)
 
     # create nodes
     for _ in range(NODES):
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface_one=interface)
 

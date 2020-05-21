@@ -4,6 +4,7 @@ import pytest
 from mock import MagicMock
 
 from core.errors import CoreCommandError
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
@@ -52,7 +53,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         file_name = "myservice.sh"
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         session.services.set_service_file(node.id, SERVICE_ONE, file_name, "# test")
@@ -66,7 +67,7 @@ class TestServices:
     def test_service_all_configs(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         session.services.set_service(node.id, SERVICE_ONE)
@@ -80,7 +81,7 @@ class TestServices:
     def test_service_add_services(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         total_service = len(node.services)
 
         # when
@@ -94,7 +95,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         file_name = my_service.configs[0]
         file_path = node.hostfilename(file_name)
 
@@ -109,7 +110,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
 
         # when
@@ -122,7 +123,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
         node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
@@ -136,7 +137,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
 
         # when
@@ -149,7 +150,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
         node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
@@ -163,7 +164,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
 
         # when
@@ -176,7 +177,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         session.services.create_service_files(node, my_service)
         node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
@@ -190,7 +191,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         session.services.set_service(node.id, my_service.name)
@@ -204,8 +205,8 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
         file_name = my_service.configs[0]
         file_data_one = "# custom file one"
         file_data_two = "# custom file two"
@@ -234,7 +235,7 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         no_service = session.services.get_service(node.id, SERVICE_ONE)

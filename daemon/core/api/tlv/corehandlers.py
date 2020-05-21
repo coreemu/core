@@ -41,7 +41,7 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
-from core.nodes.base import CoreNodeBase, NodeBase
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
 
@@ -682,10 +682,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
-        node_type = None
+        _class = CoreNode
         node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
         if node_type_value is not None:
             node_type = NodeTypes(node_type_value)
+            _class = self.session.get_node_class(node_type)
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
@@ -720,7 +721,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, options)
+            node = self.session.add_node(_class, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True

@@ -8,9 +8,10 @@ import logging
 import time
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 
 NODES = 2
@@ -33,13 +34,13 @@ def main():
     session.set_location(47.57917, -122.13232, 2.00000, 1.0)
     options = NodeOptions()
     options.set_position(80, 50)
-    emane_network = session.add_node(_type=NodeTypes.EMANE, options=options, _id=100)
+    emane_network = session.add_node(EmaneNet, options=options, _id=100)
     session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
     # create nodes
     options = NodeOptions(model="mdr")
     for i in range(NODES):
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, emane_network.id, interface_one=interface)

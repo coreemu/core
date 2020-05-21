@@ -25,7 +25,7 @@ from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, Regi
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import SwitchNode
+from core.nodes.network import SwitchNode, WlanNode
 
 
 def dict_to_str(values):
@@ -63,7 +63,7 @@ class TestGui:
 
     def test_node_update(self, coretlv):
         node_id = 1
-        coretlv.session.add_node(_id=node_id)
+        coretlv.session.add_node(CoreNode, _id=node_id)
         x = 50
         y = 100
         message = coreapi.CoreNodeMessage.create(
@@ -84,7 +84,7 @@ class TestGui:
 
     def test_node_delete(self, coretlv):
         node_id = 1
-        coretlv.session.add_node(_id=node_id)
+        coretlv.session.add_node(CoreNode, _id=node_id)
         message = coreapi.CoreNodeMessage.create(
             MessageFlags.DELETE.value, [(NodeTlvs.NUMBER, node_id)]
         )
@@ -96,9 +96,9 @@ class TestGui:
 
     def test_link_add_node_to_net(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
-        coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        coretlv.session.add_node(SwitchNode, _id=switch)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
@@ -120,9 +120,9 @@ class TestGui:
 
     def test_link_add_net_to_node(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
-        coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        coretlv.session.add_node(SwitchNode, _id=switch)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
@@ -144,9 +144,9 @@ class TestGui:
 
     def test_link_add_node_to_node(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         node_two = 2
-        coretlv.session.add_node(_id=node_two)
+        coretlv.session.add_node(CoreNode, _id=node_two)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         interface_two = str(ip_prefix[node_two])
@@ -174,9 +174,9 @@ class TestGui:
 
     def test_link_update(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
-        coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        coretlv.session.add_node(SwitchNode, _id=switch)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
@@ -216,9 +216,9 @@ class TestGui:
 
     def test_link_delete_node_to_node(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         node_two = 2
-        coretlv.session.add_node(_id=node_two)
+        coretlv.session.add_node(CoreNode, _id=node_two)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         interface_two = str(ip_prefix[node_two])
@@ -260,9 +260,9 @@ class TestGui:
 
     def test_link_delete_node_to_net(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
-        coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        coretlv.session.add_node(SwitchNode, _id=switch)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
@@ -296,9 +296,9 @@ class TestGui:
 
     def test_link_delete_net_to_node(self, coretlv):
         node_one = 1
-        coretlv.session.add_node(_id=node_one)
+        coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
-        coretlv.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        coretlv.session.add_node(SwitchNode, _id=switch)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
         interface_one = str(ip_prefix[node_one])
         message = coreapi.CoreLinkMessage.create(
@@ -396,7 +396,7 @@ class TestGui:
         assert file_data == data
 
     def test_file_service_file_set(self, coretlv):
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         file_name = "defaultroute.sh"
         file_data = "echo hello"
@@ -419,7 +419,7 @@ class TestGui:
 
     def test_file_node_file_copy(self, request, coretlv):
         file_name = "/var/log/test/node.log"
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         node.makenodedir()
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
@@ -441,7 +441,7 @@ class TestGui:
 
     def test_exec_node_tty(self, coretlv):
         coretlv.dispatch_replies = mock.MagicMock()
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TTY.value,
             [
@@ -462,7 +462,7 @@ class TestGui:
             pytest.skip("mocking calls")
 
         coretlv.dispatch_replies = mock.MagicMock()
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         cmd = "echo hello"
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TEXT.value | MessageFlags.LOCAL.value,
@@ -481,7 +481,7 @@ class TestGui:
 
     def test_exec_node_command(self, coretlv):
         coretlv.dispatch_replies = mock.MagicMock()
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         cmd = "echo hello"
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TEXT.value,
@@ -516,7 +516,7 @@ class TestGui:
 
     def test_event_schedule(self, coretlv):
         coretlv.session.add_event = mock.MagicMock()
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreEventMessage.create(
             MessageFlags.ADD.value,
             [
@@ -535,7 +535,7 @@ class TestGui:
     def test_event_save_xml(self, coretlv, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
-        coretlv.session.add_node()
+        coretlv.session.add_node(CoreNode)
         message = coreapi.CoreEventMessage.create(
             0,
             [(EventTlvs.TYPE, EventTypes.FILE_SAVE.value), (EventTlvs.NAME, file_path)],
@@ -548,7 +548,7 @@ class TestGui:
     def test_event_open_xml(self, coretlv, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         coretlv.session.save_xml(file_path)
         coretlv.session.delete_node(node.id)
         message = coreapi.CoreEventMessage.create(
@@ -571,7 +571,7 @@ class TestGui:
     )
     def test_event_service(self, coretlv, state):
         coretlv.session.broadcast_event = mock.MagicMock()
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreEventMessage.create(
             0,
             [
@@ -609,7 +609,7 @@ class TestGui:
     def test_register_xml(self, coretlv, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         coretlv.session.save_xml(file_path)
         coretlv.session.delete_node(node.id)
         message = coreapi.CoreRegMessage.create(
@@ -625,9 +625,10 @@ class TestGui:
         xml_file = tmpdir.join("test.py")
         file_path = xml_file.strpath
         with open(file_path, "w") as f:
+            f.write("from core.nodes.base import CoreNode\n")
             f.write("coreemu = globals()['coreemu']\n")
             f.write(f"session = coreemu.sessions[{coretlv.session.id}]\n")
-            f.write("session.add_node()\n")
+            f.write("session.add_node(CoreNode)\n")
         message = coreapi.CoreRegMessage.create(
             0, [(RegisterTlvs.EXECUTE_SERVER, file_path)]
         )
@@ -773,7 +774,7 @@ class TestGui:
         coretlv.handle_broadcast_config.assert_called_once()
 
     def test_config_services_request_specific(self, coretlv):
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -790,7 +791,7 @@ class TestGui:
         coretlv.handle_broadcast_config.assert_called_once()
 
     def test_config_services_request_specific_file(self, coretlv):
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -807,7 +808,7 @@ class TestGui:
         coretlv.session.broadcast_file.assert_called_once()
 
     def test_config_services_reset(self, coretlv):
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         coretlv.session.services.set_service(node.id, service)
         message = coreapi.CoreConfMessage.create(
@@ -824,7 +825,7 @@ class TestGui:
         assert coretlv.session.services.get_service(node.id, service) is None
 
     def test_config_services_set(self, coretlv):
-        node = coretlv.session.add_node()
+        node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         values = {"meta": "metadata"}
         message = coreapi.CoreConfMessage.create(
@@ -844,7 +845,7 @@ class TestGui:
         assert coretlv.session.services.get_service(node.id, service) is not None
 
     def test_config_mobility_reset(self, coretlv):
-        wlan = coretlv.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -860,7 +861,7 @@ class TestGui:
         assert len(coretlv.session.mobility.node_configurations) == 0
 
     def test_config_mobility_model_request(self, coretlv):
-        wlan = coretlv.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -876,7 +877,7 @@ class TestGui:
         coretlv.handle_broadcast_config.assert_called_once()
 
     def test_config_mobility_model_update(self, coretlv):
-        wlan = coretlv.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = coretlv.session.add_node(WlanNode)
         config_key = "range"
         config_value = "1000"
         values = {config_key: config_value}
@@ -898,7 +899,7 @@ class TestGui:
         assert config[config_key] == config_value
 
     def test_config_emane_model_request(self, coretlv):
-        wlan = coretlv.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -914,7 +915,7 @@ class TestGui:
         coretlv.handle_broadcast_config.assert_called_once()
 
     def test_config_emane_model_update(self, coretlv):
-        wlan = coretlv.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = coretlv.session.add_node(WlanNode)
         config_key = "distance"
         config_value = "50051"
         values = {config_key: config_value}

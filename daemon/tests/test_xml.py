@@ -3,11 +3,11 @@ from xml.etree import ElementTree
 import pytest
 
 from core.emulator.emudata import LinkOptions, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
-from core.nodes.network import SwitchNode, WlanNode
+from core.nodes.network import PtpNet, SwitchNode, WlanNode
 from core.services.utility import SshService
 
 
@@ -61,11 +61,11 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -113,12 +113,12 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
         options = NodeOptions(model="host")
-        node_one = session.add_node(options=options)
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -178,14 +178,14 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel, {"test": "1"})
 
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(options=options)
-        node_two = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         # link nodes
         for node in [node_one, node_two]:
@@ -238,8 +238,8 @@ class TestXml:
         :param tmpdir: tmpdir to create data in
         """
         # create nodes
-        switch_one = session.add_node(_type=NodeTypes.SWITCH)
-        switch_two = session.add_node(_type=NodeTypes.SWITCH)
+        switch_one = session.add_node(SwitchNode)
+        switch_two = session.add_node(SwitchNode)
 
         # link nodes
         session.add_link(switch_one.id, switch_two.id)
@@ -288,9 +288,9 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node()
+        node_one = session.add_node(CoreNode)
         interface_one = ip_prefixes.create_interface(node_one)
-        switch = session.add_node(_type=NodeTypes.SWITCH)
+        switch = session.add_node(SwitchNode)
 
         # create link
         link_options = LinkOptions()
@@ -354,9 +354,9 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node()
+        node_one = session.add_node(CoreNode)
         interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node()
+        node_two = session.add_node(CoreNode)
         interface_two = ip_prefixes.create_interface(node_two)
 
         # create link
@@ -421,9 +421,9 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node()
+        node_one = session.add_node(CoreNode)
         interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node()
+        node_two = session.add_node(CoreNode)
         interface_two = ip_prefixes.create_interface(node_two)
 
         # create link

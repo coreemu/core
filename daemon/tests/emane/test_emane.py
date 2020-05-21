@@ -13,7 +13,6 @@ from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
@@ -52,7 +51,7 @@ class TestEmane:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions()
         options.set_position(80, 50)
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        emane_network = session.add_node(EmaneNet, options=options)
         session.emane.set_model(emane_network, model)
 
         # configure tdma
@@ -66,9 +65,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -94,7 +93,7 @@ class TestEmane:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions()
         options.set_position(80, 50)
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        emane_network = session.add_node(EmaneNet, options=options)
         config_key = "txpower"
         config_value = "10"
         session.emane.set_model(
@@ -104,9 +103,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)

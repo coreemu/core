@@ -7,8 +7,9 @@ from core.config import (
     ModelManager,
 )
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import ConfigDataTypes, NodeTypes
+from core.emulator.enumerations import ConfigDataTypes
 from core.location.mobility import BasicRangeModel
+from core.nodes.network import WlanNode
 
 
 class TestConfigurableOptions(ConfigurableOptions):
@@ -147,7 +148,7 @@ class TestConf:
 
     def test_model_set(self, session):
         # given
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
 
         # when
         session.mobility.set_model(wlan_node, BasicRangeModel)
@@ -157,7 +158,7 @@ class TestConf:
 
     def test_model_set_error(self, session):
         # given
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
 
         # when / then
         with pytest.raises(ValueError):
@@ -165,7 +166,7 @@ class TestConf:
 
     def test_get_models(self, session):
         # given
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # when

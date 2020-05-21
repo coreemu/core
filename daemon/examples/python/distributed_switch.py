@@ -8,7 +8,9 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode
 
 
 def parse(name):
@@ -43,11 +45,11 @@ def main(args):
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create local node, switch, and remote nodes
-    node_one = session.add_node()
-    switch = session.add_node(_type=NodeTypes.SWITCH)
+    node_one = session.add_node(CoreNode)
+    switch = session.add_node(SwitchNode)
     options = NodeOptions()
     options.server = server_name
-    node_two = session.add_node(options=options)
+    node_two = session.add_node(CoreNode, options=options)
 
     # create node interfaces and link
     interface_one = prefixes.create_interface(node_one)

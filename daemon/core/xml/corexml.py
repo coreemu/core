@@ -840,6 +840,7 @@ class CoreXmlReader:
             node_type = NodeTypes.DOCKER
         elif clazz == "lxc":
             node_type = NodeTypes.LXC
+        _class = self.session.get_node_class(node_type)
 
         service_elements = device_element.find("services")
         if service_elements is not None:
@@ -865,12 +866,13 @@ class CoreXmlReader:
                 options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_type=node_type, _id=node_id, options=options)
+        self.session.add_node(_class, node_id, options)
 
     def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
+        _class = self.session.get_node_class(node_type)
         icon = network_element.get("icon")
         options = NodeOptions(name)
         options.icon = icon
@@ -891,7 +893,7 @@ class CoreXmlReader:
         logging.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        self.session.add_node(_type=node_type, _id=node_id, options=options)
+        self.session.add_node(_class, node_id, options)
 
     def read_configservice_configs(self) -> None:
         configservice_configs = self.scenario.find("configservice_configurations")

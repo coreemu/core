@@ -123,7 +123,8 @@ def create_nodes(
     funcs = []
     for node_proto in node_protos:
         _type, _id, options = add_node_data(node_proto)
-        args = (_type, _id, options)
+        _class = session.get_node_class(_type)
+        args = (_class, _id, options)
         funcs.append((session.add_node, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)

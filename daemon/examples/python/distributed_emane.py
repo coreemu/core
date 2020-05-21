@@ -7,9 +7,11 @@ import argparse
 import logging
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
 
 
 def parse(name):
@@ -50,11 +52,11 @@ def main(args):
     # create local node, switch, and remote nodes
     options = NodeOptions(model="mdr")
     options.set_position(0, 0)
-    node_one = session.add_node(options=options)
-    emane_net = session.add_node(_type=NodeTypes.EMANE)
+    node_one = session.add_node(CoreNode, options=options)
+    emane_net = session.add_node(EmaneNet)
     session.emane.set_model(emane_net, EmaneIeee80211abgModel)
     options.server = server_name
-    node_two = session.add_node(options=options)
+    node_two = session.add_node(CoreNode, options=options)
 
     # create node interfaces and link
     interface_one = prefixes.create_interface(node_one)

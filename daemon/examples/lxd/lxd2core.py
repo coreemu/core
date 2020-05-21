@@ -2,7 +2,9 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
+from core.nodes.lxd import LxcNode
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -15,11 +17,11 @@ if __name__ == "__main__":
         options = NodeOptions(image="ubuntu")
 
         # create node one
-        node_one = session.add_node(_type=NodeTypes.LXC, options=options)
+        node_one = session.add_node(LxcNode, options=options)
         interface_one = prefixes.create_interface(node_one)
 
         # create node two
-        node_two = session.add_node()
+        node_two = session.add_node(CoreNode)
         interface_two = prefixes.create_interface(node_two)
 
         # add link

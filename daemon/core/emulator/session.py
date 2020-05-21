@@ -75,6 +75,7 @@ NODES = {
     NodeTypes.LXC: LxcNode,
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
+CONTAINER_NODES = {DockerNode, LxcNode}
 CTRL_NET_ID = 9001
 LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
 NT = TypeVar("NT", bound=NodeBase)
@@ -348,7 +349,7 @@ class Session:
                         node_two.name,
                     )
                     start = self.state.should_start()
-                    net_one = self.create_node(cls=PtpNet, start=start)
+                    net_one = self.create_node(_class=PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -662,32 +663,21 @@ class Session:
                 node_two.lock.release()
 
     def add_node(
-        self,
-        _type: NodeTypes = NodeTypes.DEFAULT,
-        _id: int = None,
-        options: NodeOptions = None,
-        _cls: Type[NodeBase] = None,
-    ) -> NodeBase:
+        self, _class: Type[NT], _id: int = None, options: NodeOptions = None
+    ) -> NT:
         """
         Add a node to the session, based on the provided node data.
 
-        :param _type: type of node to create
+        :param _class: node class to create
         :param _id: id for node, defaults to None for generated id
         :param options: data to create node with
-        :param _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
-        # validate node type, get class, or throw error
-        if _cls is None:
-            node_class = self.get_node_class(_type)
-        else:
-            node_class = _cls
-
         # set node start based on current session state, override and check when rj45
         start = self.state.should_start()
         enable_rj45 = self.options.get_config("enablerj45") == "1"
-        if _type == NodeTypes.RJ45 and not enable_rj45:
+        if _class == Rj45Node and not enable_rj45:
             start = False
 
         # determine node id
@@ -703,7 +693,7 @@ class Session:
             options.set_position(0, 0)
         name = options.name
         if not name:
-            name = f"{node_class.__name__}{_id}"
+            name = f"{_class.__name__}{_id}"
 
         # verify distributed server
         server = self.distributed.servers.get(options.server)
@@ -713,24 +703,15 @@ class Session:
         # create node
         logging.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
-            node_class.__name__,
+            _class.__name__,
             _id,
             name,
             start,
         )
-        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
-            node = self.create_node(
-                cls=node_class,
-                _id=_id,
-                name=name,
-                start=start,
-                image=options.image,
-                server=server,
-            )
-        else:
-            node = self.create_node(
-                cls=node_class, _id=_id, name=name, start=start, server=server
-            )
+        kwargs = dict(_id=_id, name=name, start=start, server=server)
+        if _class in CONTAINER_NODES:
+            kwargs["image"] = options.image
+        node = self.create_node(_class, **kwargs)
 
         # set node attributes
         node.icon = options.icon
@@ -1363,17 +1344,17 @@ class Session:
                     break
         return node_id
 
-    def create_node(self, cls: Type[NodeBase], *args: Any, **kwargs: Any) -> NodeBase:
+    def create_node(self, _class: Type[NT], *args: Any, **kwargs: Any) -> NT:
         """
         Create an emulation node.
 
-        :param cls: node class to create
+        :param _class: node class to create
         :param args: list of arguments for the class to create
         :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
-        node = cls(self, *args, **kwargs)
+        node = _class(self, *args, **kwargs)
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
@@ -1791,7 +1772,7 @@ class Session:
             server_interface,
         )
         control_net = self.create_node(
-            cls=CtrlNet,
+            _class=CtrlNet,
             _id=_id,
             prefix=prefix,
             assign_address=True,
