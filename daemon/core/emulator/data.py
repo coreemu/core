@@ -38,7 +38,7 @@ class EventData:
     event_type: EventTypes = None
     name: str = None
     data: str = None
-    time: float = None
+    time: str = None
     session: int = None
 
 
