@@ -24,8 +24,9 @@ class DockerClient:
 
     def create_container(self) -> str:
         self.run(
-            f"docker run -td --init --net=none --hostname {self.name} --name {self.name} "
-            f"--sysctl net.ipv6.conf.all.disable_ipv6=0 {self.image} /bin/bash"
+            f"docker run -td --init --net=none --hostname {self.name} "
+            f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+            f"--privileged {self.image} /bin/bash"
         )
         self.pid = self.get_pid()
         return self.pid
@@ -53,11 +54,7 @@ class DockerClient:
         return utils.cmd(f"docker exec {self.name} {cmd}", wait=wait, shell=shell)
 
     def create_ns_cmd(self, cmd: str) -> str:
-        return f"nsenter -t {self.pid} -u -i -p -n {cmd}"
-
-    def ns_cmd(self, cmd: str, wait: bool) -> str:
-        args = f"nsenter -t {self.pid} -u -i -p -n {cmd}"
-        return utils.cmd(args, wait=wait)
+        return f"nsenter -t {self.pid} -a {cmd}"
 
     def get_pid(self) -> str:
         args = f"docker inspect -f '{{{{.State.Pid}}}}' {self.name}"
