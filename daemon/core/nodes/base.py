@@ -491,7 +491,6 @@ class CoreNode(CoreNodeBase):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        bootsh: str = "boot.sh",
         start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
@@ -502,7 +501,6 @@ class CoreNode(CoreNodeBase):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param bootsh: boot shell to use
         :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
@@ -516,11 +514,8 @@ class CoreNode(CoreNodeBase):
         self.pid = None
         self.lock = threading.RLock()
         self._mounts = []
-        self.bootsh = bootsh
-
         use_ovs = session.options.get_config("ovs") == "True"
         self.node_net_client = self.create_node_net_client(use_ovs)
-
         if start:
             self.startup()
 
