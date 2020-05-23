@@ -280,12 +280,10 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             will run on, default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
-        CoreInterface.__init__(self, session, self, name, mtu, server)
+        CoreInterface.__init__(self, session, self, name, name, mtu, server)
         self.lock = threading.RLock()
         self.ifindex = None
-        # the following are PyCoreNetIf attributes
         self.transport_type = "raw"
-        self.localname = name
         self.old_up = False
         self.old_addrs = []
         if start:

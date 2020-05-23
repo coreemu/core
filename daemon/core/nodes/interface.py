@@ -27,6 +27,7 @@ class CoreInterface:
         session: "Session",
         node: "CoreNode",
         name: str,
+        localname: str,
         mtu: int,
         server: "DistributedServer" = None,
     ) -> None:
@@ -36,6 +37,7 @@ class CoreInterface:
         :param session: core session instance
         :param node: node for interface
         :param name: interface name
+        :param localname: interface local name
         :param mtu: mtu value
         :param server: remote server node
             will run on, default is None for localhost
@@ -43,6 +45,8 @@ class CoreInterface:
         self.session = session
         self.node = node
         self.name = name
+        self.localname = localname
+        self.up = False
         if not isinstance(mtu, int):
             raise ValueError
         self.mtu = mtu
@@ -258,9 +262,7 @@ class Veth(CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        super().__init__(session, node, name, mtu, server)
-        self.localname = localname
-        self.up = False
+        super().__init__(session, node, name, localname, mtu, server)
         if start:
             self.startup()
 
@@ -326,9 +328,7 @@ class TunTap(CoreInterface):
             will run on, default is None for localhost
         :param start: start flag
         """
-        super().__init__(session, node, name, mtu, server)
-        self.localname = localname
-        self.up = False
+        super().__init__(session, node, name, localname, mtu, server)
         self.transport_type = "virtual"
         if start:
             self.startup()
@@ -509,22 +509,17 @@ class GreTap(CoreInterface):
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        super().__init__(session, node, name, mtu, server)
         if _id is None:
-            # from PyCoreObj
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF
         self.id = _id
-        sessionid = self.session.short_session_id()
-        # interface name on the local host machine
-        self.localname = f"gt.{self.id}.{sessionid}"
+        sessionid = session.short_session_id()
+        localname = f"gt.{self.id}.{sessionid}"
+        super().__init__(session, node, name, localname, mtu, server)
         self.transport_type = "raw"
         if not start:
-            self.up = False
             return
-
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
-
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True

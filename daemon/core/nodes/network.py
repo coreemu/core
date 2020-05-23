@@ -284,7 +284,6 @@ class CoreNetwork(CoreNetworkBase):
         self.name = name
         sessionid = self.session.short_session_id()
         self.brname = f"b.{self.id}.{sessionid}"
-        self.up = False
         self.has_ebtables_chain = False
         if start:
             self.startup()
@@ -561,7 +560,7 @@ class CoreNetwork(CoreNetworkBase):
 
         netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
-        if net.up:
+        if net.up and net.brname:
             # this is similar to net.attach() but uses netif.name instead of localname
             netif.net_client.create_interface(net.brname, netif.name)
         i = net.newifindex()

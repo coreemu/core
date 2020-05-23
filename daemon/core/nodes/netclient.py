@@ -243,7 +243,7 @@ class LinuxNetClient:
 
     def create_interface(self, bridge_name: str, interface_name: str) -> None:
         """
-        Create an interface associated with a Linux bridge.
+        Assign interface master to a Linux bridge.
 
         :param bridge_name: bridge name
         :param interface_name: interface name

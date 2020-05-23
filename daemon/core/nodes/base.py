@@ -65,17 +65,15 @@ class NodeBase:
             name = f"o{self.id}"
         self.name = name
         self.server = server
-
         self.type = None
         self.services = None
-        # ifindex is key, CoreInterface instance is value
         self._netif = {}
         self.ifindex = 0
         self.canvas = None
         self.icon = None
         self.opaque = None
         self.position = Position()
-
+        self.up = False
         use_ovs = session.options.get_config("ovs") == "True"
         self.net_client = get_net_client(use_ovs, self.host_cmd)
 
@@ -272,7 +270,6 @@ class CoreNodeBase(NodeBase):
         self.config_services = {}
         self.nodedir = None
         self.tmpnodedir = False
-        self.up = False
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
@@ -1008,6 +1005,7 @@ class CoreNetworkBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
+        self.brname = None
         self._linked = {}
         self._linked_lock = threading.Lock()
 

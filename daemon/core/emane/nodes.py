@@ -48,7 +48,6 @@ class EmaneNet(CoreNetworkBase):
     ) -> None:
         super().__init__(session, _id, name, start, server)
         self.conf = ""
-        self.up = False
         self.nemidmap = {}
         self.model = None
         self.mobility = None
