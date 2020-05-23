@@ -151,16 +151,13 @@ class PhysicalNode(CoreNodeBase):
         duplicate: float = None,
         jitter: float = None,
         netif2: CoreInterface = None,
-        devname: str = None,
     ) -> None:
         """
         Apply tc queing disciplines using linkconfig.
         """
         linux_bridge = CoreNetwork(session=self.session, start=False)
         linux_bridge.up = True
-        linux_bridge.linkconfig(
-            netif, bw, delay, loss, duplicate, jitter, netif2, devname
-        )
+        linux_bridge.linkconfig(netif, bw, delay, loss, duplicate, jitter, netif2)
         del linux_bridge
 
     def newifindex(self) -> int:

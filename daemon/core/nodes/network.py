@@ -448,7 +448,6 @@ class CoreNetwork(CoreNetworkBase):
         duplicate: float = None,
         jitter: float = None,
         netif2: float = None,
-        devname: str = None,
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
@@ -460,11 +459,9 @@ class CoreNetwork(CoreNetworkBase):
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
         :param netif2: interface two
-        :param devname: device name
         :return: nothing
         """
-        if devname is None:
-            devname = netif.localname
+        devname = netif.localname
         tc = f"{TC_BIN} qdisc replace dev {devname}"
         parent = "root"
         changed = False

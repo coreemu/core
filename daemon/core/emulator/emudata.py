@@ -23,7 +23,6 @@ def link_config(
     node: Union[CoreNetworkBase, PhysicalNode],
     interface: CoreInterface,
     link_options: LinkOptions,
-    devname: str = None,
     interface_two: CoreInterface = None,
 ) -> None:
     """
@@ -32,7 +31,6 @@ def link_config(
     :param node: network to configure link for
     :param interface: interface to configure
     :param link_options: data to configure link with
-    :param devname: device name, default is None
     :param interface_two: other interface associated, default is None
     :return: nothing
     """
@@ -44,7 +42,6 @@ def link_config(
         link_options.dup,
         link_options.jitter,
         interface_two,
-        devname,
     )
 
 

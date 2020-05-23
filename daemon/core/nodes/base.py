@@ -1174,7 +1174,6 @@ class CoreNetworkBase(NodeBase):
         duplicate: float = None,
         jitter: float = None,
         netif2: float = None,
-        devname: str = None,
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
@@ -1186,7 +1185,6 @@ class CoreNetworkBase(NodeBase):
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
         :param netif2: interface two
-        :param devname: device name
         :return: nothing
         """
         raise NotImplementedError

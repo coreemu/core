@@ -394,9 +394,7 @@ class Session:
 
                     if not link_options.unidirectional:
                         interface.swapparams("_params_up")
-                        link_config(
-                            net_two, interface, link_options, devname=interface.name
-                        )
+                        link_config(net_two, interface, link_options)
                         interface.swapparams("_params_up")
 
                 # a tunnel node was found for the nodes
@@ -606,9 +604,7 @@ class Session:
 
                         if upstream:
                             interface.swapparams("_params_up")
-                            link_config(
-                                net_one, interface, link_options, devname=interface.name
-                            )
+                            link_config(net_one, interface, link_options)
                             interface.swapparams("_params_up")
                         else:
                             link_config(net_one, interface, link_options)
@@ -618,12 +614,7 @@ class Session:
                                 link_config(net_two, interface, link_options)
                             else:
                                 interface.swapparams("_params_up")
-                                link_config(
-                                    net_two,
-                                    interface,
-                                    link_options,
-                                    devname=interface.name,
-                                )
+                                link_config(net_two, interface, link_options)
                                 interface.swapparams("_params_up")
                     else:
                         raise CoreError("modify link for unknown nodes")
@@ -647,18 +638,10 @@ class Session:
                         ):
                             continue
 
-                        link_config(
-                            net_one,
-                            interface_one,
-                            link_options,
-                            interface_two=interface_two,
-                        )
+                        link_config(net_one, interface_one, link_options, interface_two)
                         if not link_options.unidirectional:
                             link_config(
-                                net_one,
-                                interface_two,
-                                link_options,
-                                interface_two=interface_one,
+                                net_one, interface_two, link_options, interface_one
                             )
         finally:
             if node_one:
