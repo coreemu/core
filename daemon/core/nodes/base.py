@@ -1165,6 +1165,32 @@ class CoreNetworkBase(NodeBase):
 
         return all_links
 
+    def linkconfig(
+        self,
+        netif: CoreInterface,
+        bw: float = None,
+        delay: float = None,
+        loss: float = None,
+        duplicate: float = None,
+        jitter: float = None,
+        netif2: float = None,
+        devname: str = None,
+    ) -> None:
+        """
+        Configure link parameters by applying tc queuing disciplines on the interface.
+
+        :param netif: interface one
+        :param bw: bandwidth to set to
+        :param delay: packet delay to set to
+        :param loss: packet loss to set to
+        :param duplicate: duplicate percentage to set to
+        :param jitter: jitter to set to
+        :param netif2: interface two
+        :param devname: device name
+        :return: nothing
+        """
+        raise NotImplementedError
+
 
 class Position:
     """

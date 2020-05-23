@@ -151,6 +151,7 @@ class PhysicalNode(CoreNodeBase):
         duplicate: float = None,
         jitter: float = None,
         netif2: CoreInterface = None,
+        devname: str = None,
     ) -> None:
         """
         Apply tc queing disciplines using linkconfig.
@@ -158,13 +159,7 @@ class PhysicalNode(CoreNodeBase):
         linux_bridge = CoreNetwork(session=self.session, start=False)
         linux_bridge.up = True
         linux_bridge.linkconfig(
-            netif,
-            bw=bw,
-            delay=delay,
-            loss=loss,
-            duplicate=duplicate,
-            jitter=jitter,
-            netif2=netif2,
+            netif, bw, delay, loss, duplicate, jitter, netif2, devname
         )
         del linux_bridge
 

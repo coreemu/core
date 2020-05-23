@@ -62,6 +62,7 @@ class EmaneNet(CoreNetworkBase):
         duplicate: float = None,
         jitter: float = None,
         netif2: CoreInterface = None,
+        devname: str = None,
     ) -> None:
         """
         The CommEffect model supports link configuration.
@@ -69,13 +70,7 @@ class EmaneNet(CoreNetworkBase):
         if not self.model:
             return
         self.model.linkconfig(
-            netif=netif,
-            bw=bw,
-            delay=delay,
-            loss=loss,
-            duplicate=duplicate,
-            jitter=jitter,
-            netif2=netif2,
+            netif, bw, delay, loss, duplicate, jitter, netif2, devname
         )
 
     def config(self, conf: str) -> None:

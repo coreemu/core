@@ -163,6 +163,7 @@ class EmaneModel(WirelessModel):
         duplicate: float = None,
         jitter: float = None,
         netif2: CoreInterface = None,
+        devname: str = None,
     ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
@@ -174,6 +175,7 @@ class EmaneModel(WirelessModel):
         :param duplicate: duplicate percentage to set to
         :param jitter: jitter to set to
         :param netif2: interface two
+        :param devname: device name
         :return: nothing
         """
         logging.warning(

@@ -121,6 +121,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         duplicate: float = None,
         jitter: float = None,
         netif2: CoreInterface = None,
+        devname: str = None,
     ) -> None:
         """
         Generate CommEffect events when a Link Message is received having

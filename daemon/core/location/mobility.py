@@ -335,12 +335,7 @@ class BasicRangeModel(WirelessModel):
         with self._netifslock:
             for netif in self._netifs:
                 self.wlan.linkconfig(
-                    netif,
-                    bw=self.bw,
-                    delay=self.delay,
-                    loss=self.loss,
-                    duplicate=None,
-                    jitter=self.jitter,
+                    netif, self.bw, self.delay, self.loss, jitter=self.jitter
                 )
 
     def get_position(self, netif: CoreInterface) -> Tuple[float, float, float]:

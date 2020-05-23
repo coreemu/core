@@ -4,7 +4,6 @@ import netaddr
 
 from core import utils
 from core.api.grpc.core_pb2 import LinkOptions
-from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
@@ -37,22 +36,16 @@ def link_config(
     :param interface_two: other interface associated, default is None
     :return: nothing
     """
-    config = {
-        "netif": interface,
-        "bw": link_options.bandwidth,
-        "delay": link_options.delay,
-        "loss": link_options.per,
-        "duplicate": link_options.dup,
-        "jitter": link_options.jitter,
-        "netif2": interface_two,
-    }
-
-    # hacky check here, because physical and emane nodes do not conform to the same
-    # linkconfig interface
-    if not isinstance(node, (EmaneNet, PhysicalNode)):
-        config["devname"] = devname
-
-    node.linkconfig(**config)
+    node.linkconfig(
+        interface,
+        link_options.bandwidth,
+        link_options.delay,
+        link_options.per,
+        link_options.dup,
+        link_options.jitter,
+        interface_two,
+        devname,
+    )
 
 
 class NodeOptions:
