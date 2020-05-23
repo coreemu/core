@@ -467,11 +467,10 @@ class CoreNetwork(CoreNetworkBase):
         changed = False
         if netif.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
-            if bw is not None:
-                burst = max(2 * netif.mtu, bw / 1000)
-                # max IP payload
-                limit = 0xFFFF
-                tbf = f"tbf rate {bw} burst {burst} limit {limit}"
+            burst = max(2 * netif.mtu, int(bw / 1000))
+            # max IP payload
+            limit = 0xFFFF
+            tbf = f"tbf rate {bw} burst {burst} limit {limit}"
             if bw > 0:
                 if self.up:
                     cmd = f"{tc} {parent} handle 1: {tbf}"
