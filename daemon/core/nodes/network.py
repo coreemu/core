@@ -580,7 +580,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: interface the provided network is linked to
         """
         for netif in self.netifs():
-            if hasattr(netif, "othernet") and netif.othernet == net:
+            if netif.othernet == net:
                 return netif
         return None
 

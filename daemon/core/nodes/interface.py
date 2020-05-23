@@ -51,6 +51,7 @@ class CoreInterface:
             raise ValueError
         self.mtu = mtu
         self.net = None
+        self.othernet = None
         self._params = {}
         self.addrlist = []
         self.hwaddr = None

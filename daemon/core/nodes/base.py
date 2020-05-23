@@ -1086,11 +1086,11 @@ class CoreNetworkBase(NodeBase):
         for netif in self.netifs(sort=True):
             if not hasattr(netif, "node"):
                 continue
-            linked_node = netif.node
             uni = False
+            linked_node = netif.node
             if linked_node is None:
                 # two layer-2 switches/hubs linked together via linknet()
-                if not hasattr(netif, "othernet"):
+                if not netif.othernet:
                     continue
                 linked_node = netif.othernet
                 if linked_node.id == self.id:
