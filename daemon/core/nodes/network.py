@@ -21,7 +21,7 @@ from core.nodes.netclient import get_net_client
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel
+    from core.location.mobility import WirelessModel, WayPointMobility
 
     WirelessModelType = Type[WirelessModel]
 
@@ -36,26 +36,26 @@ class EbtablesQueue:
     """
 
     # update rate is every 300ms
-    rate = 0.3
+    rate: float = 0.3
     # ebtables
-    atomic_file = "/tmp/pycore.ebtables.atomic"
+    atomic_file: str = "/tmp/pycore.ebtables.atomic"
 
     def __init__(self) -> None:
         """
         Initialize the helper class, but don't start the update thread
         until a WLAN is instantiated.
         """
-        self.doupdateloop = False
-        self.updatethread = None
+        self.doupdateloop: bool = False
+        self.updatethread: Optional[threading.Thread] = None
         # this lock protects cmds and updates lists
-        self.updatelock = threading.Lock()
+        self.updatelock: threading.Lock = threading.Lock()
         # list of pending ebtables commands
-        self.cmds = []
+        self.cmds: List[str] = []
         # list of WLANs requiring update
-        self.updates = []
+        self.updates: List["CoreNetwork"] = []
         # timestamps of last WLAN update; this keeps track of WLANs that are
         # using this queue
-        self.last_update_time = {}
+        self.last_update_time: Dict["CoreNetwork", float] = {}
 
     def startupdateloop(self, wlan: "CoreNetwork") -> None:
         """
@@ -65,10 +65,8 @@ class EbtablesQueue:
         """
         with self.updatelock:
             self.last_update_time[wlan] = time.monotonic()
-
         if self.doupdateloop:
             return
-
         self.doupdateloop = True
         self.updatethread = threading.Thread(target=self.updateloop, daemon=True)
         self.updatethread.start()
@@ -86,10 +84,8 @@ class EbtablesQueue:
                 logging.exception(
                     "error deleting last update time for wlan, ignored before: %s", wlan
                 )
-
         if len(self.last_update_time) > 0:
             return
-
         self.doupdateloop = False
         if self.updatethread:
             self.updatethread.join()
@@ -233,7 +229,7 @@ class EbtablesQueue:
 
 # a global object because all WLANs share the same queue
 # cannot have multiple threads invoking the ebtables commnd
-ebq = EbtablesQueue()
+ebq: EbtablesQueue = EbtablesQueue()
 
 
 def ebtablescmds(call: Callable[..., str], cmds: List[str]) -> None:
@@ -254,7 +250,7 @@ class CoreNetwork(CoreNetworkBase):
     Provides linux bridge network functionality for core nodes.
     """
 
-    policy = "DROP"
+    policy: str = "DROP"
 
     def __init__(
         self,
@@ -281,10 +277,10 @@ class CoreNetwork(CoreNetworkBase):
             name = str(self.id)
         if policy is not None:
             self.policy = policy
-        self.name = name
+        self.name: Optional[str] = name
         sessionid = self.session.short_session_id()
-        self.brname = f"b.{self.id}.{sessionid}"
-        self.has_ebtables_chain = False
+        self.brname: str = f"b.{self.id}.{sessionid}"
+        self.has_ebtables_chain: bool = False
         if start:
             self.startup()
             ebq.startupdateloop(self)
@@ -633,17 +629,16 @@ class GreTapBridge(CoreNetwork):
             will run on, default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
-        self.grekey = key
-        if self.grekey is None:
-            self.grekey = self.session.id ^ self.id
-        self.localnum = None
-        self.remotenum = None
-        self.remoteip = remoteip
-        self.localip = localip
-        self.ttl = ttl
-        if remoteip is None:
-            self.gretap = None
-        else:
+        if key is None:
+            key = self.session.id ^ self.id
+        self.grekey: int = key
+        self.localnum: Optional[int] = None
+        self.remotenum: Optional[int] = None
+        self.remoteip: Optional[str] = remoteip
+        self.localip: Optional[str] = localip
+        self.ttl: int = ttl
+        self.gretap: Optional[GreTap] = None
+        if remoteip is not None:
             self.gretap = GreTap(
                 node=self,
                 session=session,
@@ -718,10 +713,10 @@ class CtrlNet(CoreNetwork):
     Control network functionality.
     """
 
-    policy = "ACCEPT"
+    policy: str = "ACCEPT"
     # base control interface index
-    CTRLIF_IDX_BASE = 99
-    DEFAULT_PREFIX_LIST = [
+    CTRLIF_IDX_BASE: int = 99
+    DEFAULT_PREFIX_LIST: List[str] = [
         "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
         "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
         "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
@@ -731,15 +726,15 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session: "Session",
+        prefix: str,
         _id: int = None,
         name: str = None,
-        prefix: str = None,
         hostid: int = None,
         start: bool = True,
         server: "DistributedServer" = None,
         assign_address: bool = True,
         updown_script: str = None,
-        serverintf: CoreInterface = None,
+        serverintf: str = None,
     ) -> None:
         """
         Creates a CtrlNet instance.
@@ -757,11 +752,11 @@ class CtrlNet(CoreNetwork):
         :param serverintf: server interface
         :return:
         """
-        self.prefix = netaddr.IPNetwork(prefix).cidr
-        self.hostid = hostid
-        self.assign_address = assign_address
-        self.updown_script = updown_script
-        self.serverintf = serverintf
+        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(prefix).cidr
+        self.hostid: Optional[int] = hostid
+        self.assign_address: bool = assign_address
+        self.updown_script: Optional[str] = updown_script
+        self.serverintf: Optional[str] = serverintf
         super().__init__(session, _id, name, start, server)
 
     def add_addresses(self, index: int) -> None:
@@ -858,7 +853,7 @@ class PtpNet(CoreNetwork):
     Peer to peer network node.
     """
 
-    policy = "ACCEPT"
+    policy: str = "ACCEPT"
 
     def attach(self, netif: CoreInterface) -> None:
         """
@@ -988,9 +983,9 @@ class SwitchNode(CoreNetwork):
     Provides switch functionality within a core node.
     """
 
-    apitype = NodeTypes.SWITCH
-    policy = "ACCEPT"
-    type = "lanswitch"
+    apitype: NodeTypes = NodeTypes.SWITCH
+    policy: str = "ACCEPT"
+    type: str = "lanswitch"
 
 
 class HubNode(CoreNetwork):
@@ -999,9 +994,9 @@ class HubNode(CoreNetwork):
     ports by turning off MAC address learning.
     """
 
-    apitype = NodeTypes.HUB
-    policy = "ACCEPT"
-    type = "hub"
+    apitype: NodeTypes = NodeTypes.HUB
+    policy: str = "ACCEPT"
+    type: str = "hub"
 
     def startup(self) -> None:
         """
@@ -1018,10 +1013,10 @@ class WlanNode(CoreNetwork):
     Provides wireless lan functionality within a core node.
     """
 
-    apitype = NodeTypes.WIRELESS_LAN
-    linktype = LinkTypes.WIRED
-    policy = "DROP"
-    type = "wlan"
+    apitype: NodeTypes = NodeTypes.WIRELESS_LAN
+    linktype: LinkTypes = LinkTypes.WIRED
+    policy: str = "DROP"
+    type: str = "wlan"
 
     def __init__(
         self,
@@ -1045,8 +1040,8 @@ class WlanNode(CoreNetwork):
         """
         super().__init__(session, _id, name, start, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
-        self.model = None
-        self.mobility = None
+        self.model: Optional[WirelessModel] = None
+        self.mobility: Optional[WayPointMobility] = None
 
     def startup(self) -> None:
         """
@@ -1122,6 +1117,6 @@ class TunnelNode(GreTapBridge):
     Provides tunnel functionality in a core node.
     """
 
-    apitype = NodeTypes.TUNNEL
-    policy = "ACCEPT"
-    type = "tunnel"
+    apitype: NodeTypes = NodeTypes.TUNNEL
+    policy: str = "ACCEPT"
+    type: str = "tunnel"

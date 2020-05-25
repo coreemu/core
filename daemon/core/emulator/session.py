@@ -1759,10 +1759,9 @@ class Session:
             server_interface,
         )
         control_net = self.create_node(
-            _class=CtrlNet,
+            CtrlNet,
+            prefix,
             _id=_id,
-            prefix=prefix,
-            assign_address=True,
             updown_script=updown_script,
             serverintf=server_interface,
         )
