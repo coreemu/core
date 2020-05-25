@@ -5,7 +5,7 @@ PhysicalNode class for including real systems in the emulated network.
 import logging
 import os
 import threading
-from typing import IO, TYPE_CHECKING, List, Optional
+from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class PhysicalNode(CoreNodeBase):
     def __init__(
         self,
-        session,
+        session: "Session",
         _id: int = None,
         name: str = None,
         nodedir: str = None,
@@ -33,10 +33,10 @@ class PhysicalNode(CoreNodeBase):
         super().__init__(session, _id, name, start, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
-        self.nodedir = nodedir
-        self.up = start
-        self.lock = threading.RLock()
-        self._mounts = []
+        self.nodedir: Optional[str] = nodedir
+        self.up: bool = start
+        self.lock: threading.RLock = threading.RLock()
+        self._mounts: List[Tuple[str, str]] = []
         if start:
             self.startup()
 
@@ -112,7 +112,7 @@ class PhysicalNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.net_client.delete_address(interface.name, str(addr))
+            self.net_client.delete_address(interface.name, addr)
 
     def adoptnetif(
         self, netif: CoreInterface, ifindex: int, hwaddr: str, addrlist: List[str]
@@ -256,8 +256,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     network.
     """
 
-    apitype = NodeTypes.RJ45
-    type = "rj45"
+    apitype: NodeTypes = NodeTypes.RJ45
+    type: str = "rj45"
 
     def __init__(
         self,
@@ -281,11 +281,11 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
         CoreInterface.__init__(self, session, self, name, name, mtu, server)
-        self.lock = threading.RLock()
-        self.ifindex = None
-        self.transport_type = "raw"
-        self.old_up = False
-        self.old_addrs = []
+        self.lock: threading.RLock = threading.RLock()
+        self.ifindex: Optional[int] = None
+        self.transport_type: str = "raw"
+        self.old_up: bool = False
+        self.old_addrs: List[str] = []
         if start:
             self.startup()
 
