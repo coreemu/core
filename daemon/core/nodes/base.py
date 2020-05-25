@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import threading
+from threading import RLock
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 import netaddr
@@ -16,7 +17,7 @@ from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
-from core.nodes import client
+from core.nodes.client import VnodeClient
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
@@ -24,7 +25,9 @@ if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
     from core.configservice.base import ConfigService
+    from core.services.coreservices import CoreService
 
+    CoreServices = List[CoreService]
     ConfigServiceType = Type[ConfigService]
 
 _DEFAULT_MTU = 1500
@@ -35,7 +38,7 @@ class NodeBase:
     Base class for CORE nodes (nodes and networks)
     """
 
-    apitype = None
+    apitype: Optional[NodeTypes] = None
 
     # TODO: appears start has no usage, verify and remove
     def __init__(
@@ -57,25 +60,25 @@ class NodeBase:
             will run on, default is None for localhost
         """
 
-        self.session = session
+        self.session: "Session" = session
         if _id is None:
             _id = session.get_node_id()
-        self.id = _id
+        self.id: int = _id
         if name is None:
             name = f"o{self.id}"
-        self.name = name
-        self.server = server
-        self.type = None
-        self.services = None
-        self._netif = {}
-        self.ifindex = 0
-        self.canvas = None
-        self.icon = None
-        self.opaque = None
-        self.position = Position()
-        self.up = False
+        self.name: str = name
+        self.server: "DistributedServer" = server
+        self.type: Optional[str] = None
+        self.services: CoreServices = []
+        self._netif: Dict[int, CoreInterface] = {}
+        self.ifindex: int = 0
+        self.canvas: Optional[int] = None
+        self.icon: Optional[str] = None
+        self.opaque: Optional[str] = None
+        self.position: Position = Position()
+        self.up: bool = False
         use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
 
     def startup(self) -> None:
         """
@@ -207,9 +210,7 @@ class NodeBase:
         server = None
         if self.server is not None:
             server = self.server.name
-        services = None
-        if self.services is not None:
-            services = [service.name for service in self.services]
+        services = [service.name for service in self.services]
         return NodeData(
             message_type=message_type,
             id=self.id,
@@ -266,10 +267,9 @@ class CoreNodeBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
-        self.services = []
-        self.config_services = {}
-        self.nodedir = None
-        self.tmpnodedir = False
+        self.config_services: Dict[str, "ConfigService"] = {}
+        self.nodedir: Optional[str] = None
+        self.tmpnodedir: bool = False
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
@@ -298,7 +298,7 @@ class CoreNodeBase(NodeBase):
 
     def start_config_services(self) -> None:
         """
-        Determins startup paths and starts configuration services, based on their
+        Determines startup paths and starts configuration services, based on their
         dependency chains.
 
         :return: nothing
@@ -330,7 +330,6 @@ class CoreNodeBase(NodeBase):
         preserve = self.session.options.get_config("preservedir") == "1"
         if preserve:
             return
-
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.nodedir}")
 
@@ -503,16 +502,16 @@ class CoreNode(CoreNodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
-        self.nodedir = nodedir
-        self.ctrlchnlname = os.path.abspath(
+        self.nodedir: Optional[str] = nodedir
+        self.ctrlchnlname: str = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
         )
-        self.client = None
-        self.pid = None
-        self.lock = threading.RLock()
-        self._mounts = []
+        self.client: Optional[VnodeClient] = None
+        self.pid: Optional[int] = None
+        self.lock: RLock = RLock()
+        self._mounts: List[Tuple[str, str]] = []
         use_ovs = session.options.get_config("ovs") == "True"
-        self.node_net_client = self.create_node_net_client(use_ovs)
+        self.node_net_client: LinuxNetClient = self.create_node_net_client(use_ovs)
         if start:
             self.startup()
 
@@ -567,7 +566,7 @@ class CoreNode(CoreNodeBase):
             logging.debug("node(%s) pid: %s", self.name, self.pid)
 
             # create vnode client
-            self.client = client.VnodeClient(self.name, self.ctrlchnlname)
+            self.client = VnodeClient(self.name, self.ctrlchnlname)
 
             # bring up the loopback interface
             logging.debug("bringing up loopback interface")
@@ -1201,12 +1200,12 @@ class Position:
         :param y: y position
         :param z: z position
         """
-        self.x = x
-        self.y = y
-        self.z = z
-        self.lon = None
-        self.lat = None
-        self.alt = None
+        self.x: float = x
+        self.y: float = y
+        self.z: float = z
+        self.lon: Optional[float] = None
+        self.lat: Optional[float] = None
+        self.alt: Optional[float] = None
 
     def set(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
