@@ -3,6 +3,7 @@ import os
 import pytest
 from mock import MagicMock
 
+from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
@@ -49,7 +50,7 @@ class ServiceCycleDependency(CoreService):
 
 
 class TestServices:
-    def test_service_all_files(self, session):
+    def test_service_all_files(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         file_name = "myservice.sh"
@@ -64,7 +65,7 @@ class TestServices:
         assert service
         assert all_files and len(all_files) == 1
 
-    def test_service_all_configs(self, session):
+    def test_service_all_configs(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         node = session.add_node(CoreNode)
@@ -78,7 +79,7 @@ class TestServices:
         assert all_configs
         assert len(all_configs) == 2
 
-    def test_service_add_services(self, session):
+    def test_service_add_services(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         node = session.add_node(CoreNode)
@@ -91,7 +92,7 @@ class TestServices:
         assert node.services
         assert len(node.services) == total_service + 2
 
-    def test_service_file(self, request, session):
+    def test_service_file(self, request, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -106,7 +107,7 @@ class TestServices:
         if not request.config.getoption("mock"):
             assert os.path.exists(file_path)
 
-    def test_service_validate(self, session):
+    def test_service_validate(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -119,7 +120,7 @@ class TestServices:
         # then
         assert not status
 
-    def test_service_validate_error(self, session):
+    def test_service_validate_error(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
@@ -133,7 +134,7 @@ class TestServices:
         # then
         assert status
 
-    def test_service_startup(self, session):
+    def test_service_startup(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -146,7 +147,7 @@ class TestServices:
         # then
         assert not status
 
-    def test_service_startup_error(self, session):
+    def test_service_startup_error(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
@@ -160,7 +161,7 @@ class TestServices:
         # then
         assert status
 
-    def test_service_stop(self, session):
+    def test_service_stop(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -173,7 +174,7 @@ class TestServices:
         # then
         assert not status
 
-    def test_service_stop_error(self, session):
+    def test_service_stop_error(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_TWO)
@@ -187,7 +188,7 @@ class TestServices:
         # then
         assert status
 
-    def test_service_custom_startup(self, session):
+    def test_service_custom_startup(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -201,7 +202,7 @@ class TestServices:
         # then
         assert my_service.startup != custom_my_service.startup
 
-    def test_service_set_file(self, session):
+    def test_service_set_file(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -231,7 +232,7 @@ class TestServices:
         assert ServiceManager.get(SERVICE_ONE)
         assert ServiceManager.get(SERVICE_TWO)
 
-    def test_service_setget(self, session):
+    def test_service_setget(self, session: Session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)

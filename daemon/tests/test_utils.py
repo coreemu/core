@@ -34,12 +34,12 @@ class TestUtils:
             ("2001::/64", "2001::/64"),
         ],
     )
-    def test_validate_ip(self, data, expected):
+    def test_validate_ip(self, data: str, expected: str):
         value = utils.validate_ip(data)
         assert value == expected
 
     @pytest.mark.parametrize("data", ["256", "1270.0.0.1", "127.0.0.0.1"])
-    def test_validate_ip_exception(self, data):
+    def test_validate_ip_exception(self, data: str):
         with pytest.raises(CoreError):
             utils.validate_ip("")
 
@@ -50,14 +50,14 @@ class TestUtils:
             ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
         ],
     )
-    def test_validate_mac(self, data, expected):
+    def test_validate_mac(self, data: str, expected: str):
         value = utils.validate_mac(data)
         assert value == expected
 
     @pytest.mark.parametrize(
         "data", ["AAA:AA:AA:FF:FF:FF", "AA:AA:AA:FF:FF", "AA/AA/AA/FF/FF/FF"]
     )
-    def test_validate_mac_exception(self, data):
+    def test_validate_mac_exception(self, data: str):
         with pytest.raises(CoreError):
             utils.validate_mac(data)
 

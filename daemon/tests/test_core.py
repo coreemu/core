@@ -7,8 +7,9 @@ import threading
 
 import pytest
 
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import MessageFlags
+from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode
@@ -59,7 +60,7 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_vnode_client(self, request, session, ip_prefixes):
+    def test_vnode_client(self, request, session: Session, ip_prefixes: IpPrefixes):
         """
         Test vnode client methods.
 
@@ -92,7 +93,7 @@ class TestCore:
         if not request.config.getoption("mock"):
             assert client.check_cmd("echo hello") == "hello"
 
-    def test_netif(self, session, ip_prefixes):
+    def test_netif(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test netif methods.
 
@@ -123,8 +124,8 @@ class TestCore:
         assert node_two.commonnets(node_one)
 
         # check we can retrieve netif index
-        assert node_one.getifindex(0)
-        assert node_two.getifindex(0)
+        assert node_one.ifname(0)
+        assert node_two.ifname(0)
 
         # check interface parameters
         interface = node_one.netif(0)
@@ -136,7 +137,7 @@ class TestCore:
         node_one.delnetif(0)
         assert not node_one.netif(0)
 
-    def test_wlan_ping(self, session, ip_prefixes):
+    def test_wlan_ping(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test basic wlan network.
 
@@ -166,7 +167,7 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_mobility(self, session, ip_prefixes):
+    def test_mobility(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test basic wlan network.
 

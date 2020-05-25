@@ -8,6 +8,7 @@ from core.config import (
 )
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.session import Session
 from core.location.mobility import BasicRangeModel
 from core.nodes.network import WlanNode
 
@@ -41,7 +42,7 @@ class TestConf:
     def test_nodes(self):
         # given
         config_manager = ConfigurableManager()
-        test_config = {1: 2}
+        test_config = {"1": "2"}
         node_id = 1
         config_manager.set_configs(test_config)
         config_manager.set_configs(test_config, node_id=node_id)
@@ -56,7 +57,7 @@ class TestConf:
     def test_config_reset_all(self):
         # given
         config_manager = ConfigurableManager()
-        test_config = {1: 2}
+        test_config = {"1": "2"}
         node_id = 1
         config_manager.set_configs(test_config)
         config_manager.set_configs(test_config, node_id=node_id)
@@ -70,7 +71,7 @@ class TestConf:
     def test_config_reset_node(self):
         # given
         config_manager = ConfigurableManager()
-        test_config = {1: 2}
+        test_config = {"1": "2"}
         node_id = 1
         config_manager.set_configs(test_config)
         config_manager.set_configs(test_config, node_id=node_id)
@@ -85,7 +86,7 @@ class TestConf:
     def test_configs_setget(self):
         # given
         config_manager = ConfigurableManager()
-        test_config = {1: 2}
+        test_config = {"1": "2"}
         node_id = 1
         config_manager.set_configs(test_config)
         config_manager.set_configs(test_config, node_id=node_id)
@@ -146,7 +147,7 @@ class TestConf:
         with pytest.raises(ValueError):
             manager.get_model_config(1, bad_name)
 
-    def test_model_set(self, session):
+    def test_model_set(self, session: Session):
         # given
         wlan_node = session.add_node(WlanNode)
 
@@ -156,7 +157,7 @@ class TestConf:
         # then
         assert session.mobility.get_model_config(wlan_node.id, BasicRangeModel.name)
 
-    def test_model_set_error(self, session):
+    def test_model_set_error(self, session: Session):
         # given
         wlan_node = session.add_node(WlanNode)
 
@@ -164,7 +165,7 @@ class TestConf:
         with pytest.raises(ValueError):
             session.mobility.set_model(wlan_node, EmaneIeee80211abgModel)
 
-    def test_get_models(self, session):
+    def test_get_models(self, session: Session):
         # given
         wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)

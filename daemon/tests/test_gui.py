@@ -3,6 +3,7 @@ Tests for testing tlv message handling.
 """
 import os
 import time
+from typing import Optional
 
 import mock
 import netaddr
@@ -10,6 +11,7 @@ import pytest
 from mock import MagicMock
 
 from core.api.tlv import coreapi
+from core.api.tlv.corehandlers import CoreHandler
 from core.api.tlv.enumerations import (
     ConfigFlags,
     ConfigTlvs,
@@ -28,7 +30,7 @@ from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import SwitchNode, WlanNode
 
 
-def dict_to_str(values):
+def dict_to_str(values) -> str:
     return "|".join(f"{x}={values[x]}" for x in values)
 
 
@@ -44,7 +46,9 @@ class TestGui:
             (NodeTypes.TUNNEL, None),
         ],
     )
-    def test_node_add(self, coretlv, node_type, model):
+    def test_node_add(
+        self, coretlv: CoreHandler, node_type: NodeTypes, model: Optional[str]
+    ):
         node_id = 1
         message = coreapi.CoreNodeMessage.create(
             MessageFlags.ADD.value,
@@ -61,7 +65,7 @@ class TestGui:
         coretlv.handle_message(message)
         assert coretlv.session.get_node(node_id, NodeBase) is not None
 
-    def test_node_update(self, coretlv):
+    def test_node_update(self, coretlv: CoreHandler):
         node_id = 1
         coretlv.session.add_node(CoreNode, _id=node_id)
         x = 50
@@ -82,7 +86,7 @@ class TestGui:
         assert node.position.x == x
         assert node.position.y == y
 
-    def test_node_delete(self, coretlv):
+    def test_node_delete(self, coretlv: CoreHandler):
         node_id = 1
         coretlv.session.add_node(CoreNode, _id=node_id)
         message = coreapi.CoreNodeMessage.create(
@@ -94,7 +98,7 @@ class TestGui:
         with pytest.raises(CoreError):
             coretlv.session.get_node(node_id, NodeBase)
 
-    def test_link_add_node_to_net(self, coretlv):
+    def test_link_add_node_to_net(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
@@ -118,7 +122,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
-    def test_link_add_net_to_node(self, coretlv):
+    def test_link_add_net_to_node(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
@@ -142,7 +146,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
-    def test_link_add_node_to_node(self, coretlv):
+    def test_link_add_node_to_node(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         node_two = 2
@@ -172,7 +176,7 @@ class TestGui:
             all_links += node.all_link_data()
         assert len(all_links) == 1
 
-    def test_link_update(self, coretlv):
+    def test_link_update(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
@@ -214,7 +218,7 @@ class TestGui:
         link = all_links[0]
         assert link.bandwidth == bandwidth
 
-    def test_link_delete_node_to_node(self, coretlv):
+    def test_link_delete_node_to_node(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         node_two = 2
@@ -258,7 +262,7 @@ class TestGui:
             all_links += node.all_link_data()
         assert len(all_links) == 0
 
-    def test_link_delete_node_to_net(self, coretlv):
+    def test_link_delete_node_to_net(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
@@ -294,7 +298,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
-    def test_link_delete_net_to_node(self, coretlv):
+    def test_link_delete_net_to_node(self, coretlv: CoreHandler):
         node_one = 1
         coretlv.session.add_node(CoreNode, _id=node_one)
         switch = 2
@@ -330,7 +334,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
-    def test_session_update(self, coretlv):
+    def test_session_update(self, coretlv: CoreHandler):
         session_id = coretlv.session.id
         name = "test"
         message = coreapi.CoreSessionMessage.create(
@@ -341,7 +345,7 @@ class TestGui:
 
         assert coretlv.session.name == name
 
-    def test_session_query(self, coretlv):
+    def test_session_query(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()
         message = coreapi.CoreSessionMessage.create(MessageFlags.STRING.value, [])
 
@@ -351,7 +355,7 @@ class TestGui:
         replies = args[0]
         assert len(replies) == 1
 
-    def test_session_join(self, coretlv):
+    def test_session_join(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()
         session_id = coretlv.session.id
         message = coreapi.CoreSessionMessage.create(
@@ -362,7 +366,7 @@ class TestGui:
 
         assert coretlv.session.id == session_id
 
-    def test_session_delete(self, coretlv):
+    def test_session_delete(self, coretlv: CoreHandler):
         assert len(coretlv.coreemu.sessions) == 1
         session_id = coretlv.session.id
         message = coreapi.CoreSessionMessage.create(
@@ -373,7 +377,7 @@ class TestGui:
 
         assert len(coretlv.coreemu.sessions) == 0
 
-    def test_file_hook_add(self, coretlv):
+    def test_file_hook_add(self, coretlv: CoreHandler):
         state = EventTypes.DATACOLLECT_STATE
         assert coretlv.session._hooks.get(state) is None
         file_name = "test.sh"
@@ -395,7 +399,7 @@ class TestGui:
         assert file_name == name
         assert file_data == data
 
-    def test_file_service_file_set(self, coretlv):
+    def test_file_service_file_set(self, coretlv: CoreHandler):
         node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         file_name = "defaultroute.sh"
@@ -417,7 +421,7 @@ class TestGui:
         )
         assert file_data == service_file.data
 
-    def test_file_node_file_copy(self, request, coretlv):
+    def test_file_node_file_copy(self, request, coretlv: CoreHandler):
         file_name = "/var/log/test/node.log"
         node = coretlv.session.add_node(CoreNode)
         node.makenodedir()
@@ -439,7 +443,7 @@ class TestGui:
             create_path = os.path.join(node.nodedir, created_directory, basename)
             assert os.path.exists(create_path)
 
-    def test_exec_node_tty(self, coretlv):
+    def test_exec_node_tty(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()
         node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreExecMessage.create(
@@ -457,7 +461,7 @@ class TestGui:
         replies = args[0]
         assert len(replies) == 1
 
-    def test_exec_local_command(self, request, coretlv):
+    def test_exec_local_command(self, request, coretlv: CoreHandler):
         if request.config.getoption("mock"):
             pytest.skip("mocking calls")
 
@@ -479,7 +483,7 @@ class TestGui:
         replies = args[0]
         assert len(replies) == 1
 
-    def test_exec_node_command(self, coretlv):
+    def test_exec_node_command(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()
         node = coretlv.session.add_node(CoreNode)
         cmd = "echo hello"
@@ -514,7 +518,7 @@ class TestGui:
 
         assert coretlv.session.state == state
 
-    def test_event_schedule(self, coretlv):
+    def test_event_schedule(self, coretlv: CoreHandler):
         coretlv.session.add_event = mock.MagicMock()
         node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreEventMessage.create(
@@ -602,7 +606,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-    def test_register_gui(self, coretlv):
+    def test_register_gui(self, coretlv: CoreHandler):
         message = coreapi.CoreRegMessage.create(0, [(RegisterTlvs.GUI, "gui")])
         coretlv.handle_message(message)
 
@@ -638,7 +642,7 @@ class TestGui:
 
         assert len(coretlv.session.nodes) == 1
 
-    def test_config_all(self, coretlv):
+    def test_config_all(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             MessageFlags.ADD.value,
             [(ConfigTlvs.OBJECT, "all"), (ConfigTlvs.TYPE, ConfigFlags.RESET.value)],
@@ -649,7 +653,7 @@ class TestGui:
 
         assert coretlv.session.location.refxyz == (0, 0, 0)
 
-    def test_config_options_request(self, coretlv):
+    def test_config_options_request(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -663,7 +667,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_options_update(self, coretlv):
+    def test_config_options_update(self, coretlv: CoreHandler):
         test_key = "test"
         test_value = "test"
         values = {test_key: test_value}
@@ -680,7 +684,7 @@ class TestGui:
 
         assert coretlv.session.options.get_config(test_key) == test_value
 
-    def test_config_location_reset(self, coretlv):
+    def test_config_location_reset(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -694,7 +698,7 @@ class TestGui:
 
         assert coretlv.session.location.refxyz == (0, 0, 0)
 
-    def test_config_location_update(self, coretlv):
+    def test_config_location_update(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -710,7 +714,7 @@ class TestGui:
         assert coretlv.session.location.refgeo == (70, 50, 0)
         assert coretlv.session.location.refscale == 0.5
 
-    def test_config_metadata_request(self, coretlv):
+    def test_config_metadata_request(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -724,7 +728,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_metadata_update(self, coretlv):
+    def test_config_metadata_update(self, coretlv: CoreHandler):
         test_key = "test"
         test_value = "test"
         values = {test_key: test_value}
@@ -741,7 +745,7 @@ class TestGui:
 
         assert coretlv.session.metadata[test_key] == test_value
 
-    def test_config_broker_request(self, coretlv):
+    def test_config_broker_request(self, coretlv: CoreHandler):
         server = "test"
         host = "10.0.0.1"
         port = 50000
@@ -759,7 +763,7 @@ class TestGui:
 
         coretlv.session.distributed.add_server.assert_called_once_with(server, host)
 
-    def test_config_services_request_all(self, coretlv):
+    def test_config_services_request_all(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -773,7 +777,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_services_request_specific(self, coretlv):
+    def test_config_services_request_specific(self, coretlv: CoreHandler):
         node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreConfMessage.create(
             0,
@@ -790,7 +794,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_services_request_specific_file(self, coretlv):
+    def test_config_services_request_specific_file(self, coretlv: CoreHandler):
         node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreConfMessage.create(
             0,
@@ -807,7 +811,7 @@ class TestGui:
 
         coretlv.session.broadcast_file.assert_called_once()
 
-    def test_config_services_reset(self, coretlv):
+    def test_config_services_reset(self, coretlv: CoreHandler):
         node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         coretlv.session.services.set_service(node.id, service)
@@ -824,7 +828,7 @@ class TestGui:
 
         assert coretlv.session.services.get_service(node.id, service) is None
 
-    def test_config_services_set(self, coretlv):
+    def test_config_services_set(self, coretlv: CoreHandler):
         node = coretlv.session.add_node(CoreNode)
         service = "DefaultRoute"
         values = {"meta": "metadata"}
@@ -844,7 +848,7 @@ class TestGui:
 
         assert coretlv.session.services.get_service(node.id, service) is not None
 
-    def test_config_mobility_reset(self, coretlv):
+    def test_config_mobility_reset(self, coretlv: CoreHandler):
         wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
@@ -860,7 +864,7 @@ class TestGui:
 
         assert len(coretlv.session.mobility.node_configurations) == 0
 
-    def test_config_mobility_model_request(self, coretlv):
+    def test_config_mobility_model_request(self, coretlv: CoreHandler):
         wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
@@ -876,7 +880,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_mobility_model_update(self, coretlv):
+    def test_config_mobility_model_update(self, coretlv: CoreHandler):
         wlan = coretlv.session.add_node(WlanNode)
         config_key = "range"
         config_value = "1000"
@@ -898,7 +902,7 @@ class TestGui:
         )
         assert config[config_key] == config_value
 
-    def test_config_emane_model_request(self, coretlv):
+    def test_config_emane_model_request(self, coretlv: CoreHandler):
         wlan = coretlv.session.add_node(WlanNode)
         message = coreapi.CoreConfMessage.create(
             0,
@@ -914,7 +918,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_emane_model_update(self, coretlv):
+    def test_config_emane_model_update(self, coretlv: CoreHandler):
         wlan = coretlv.session.add_node(WlanNode)
         config_key = "distance"
         config_value = "50051"
@@ -936,7 +940,7 @@ class TestGui:
         )
         assert config[config_key] == config_value
 
-    def test_config_emane_request(self, coretlv):
+    def test_config_emane_request(self, coretlv: CoreHandler):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -950,7 +954,7 @@ class TestGui:
 
         coretlv.handle_broadcast_config.assert_called_once()
 
-    def test_config_emane_update(self, coretlv):
+    def test_config_emane_update(self, coretlv: CoreHandler):
         config_key = "eventservicedevice"
         config_value = "eth4"
         values = {config_key: config_value}

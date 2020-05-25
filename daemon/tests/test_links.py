@@ -1,9 +1,14 @@
-from core.emulator.emudata import LinkOptions
+from typing import Tuple
+
+from core.emulator.emudata import IpPrefixes, LinkOptions
+from core.emulator.session import Session
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
 
 
-def create_ptp_network(session, ip_prefixes):
+def create_ptp_network(
+    session: Session, ip_prefixes: IpPrefixes
+) -> Tuple[CoreNode, CoreNode]:
     # create nodes
     node_one = session.add_node(CoreNode)
     node_two = session.add_node(CoreNode)
@@ -20,7 +25,7 @@ def create_ptp_network(session, ip_prefixes):
 
 
 class TestLinks:
-    def test_ptp(self, session, ip_prefixes):
+    def test_ptp(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         node_one = session.add_node(CoreNode)
         node_two = session.add_node(CoreNode)
@@ -34,7 +39,7 @@ class TestLinks:
         assert node_one.netif(interface_one.id)
         assert node_two.netif(interface_two.id)
 
-    def test_node_to_net(self, session, ip_prefixes):
+    def test_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         node_one = session.add_node(CoreNode)
         node_two = session.add_node(SwitchNode)
@@ -47,7 +52,7 @@ class TestLinks:
         assert node_two.all_link_data()
         assert node_one.netif(interface_one.id)
 
-    def test_net_to_node(self, session, ip_prefixes):
+    def test_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         node_one = session.add_node(SwitchNode)
         node_two = session.add_node(CoreNode)
@@ -71,7 +76,7 @@ class TestLinks:
         # then
         assert node_one.all_link_data()
 
-    def test_link_update(self, session, ip_prefixes):
+    def test_link_update(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         delay = 50
         bandwidth = 5000000
@@ -110,7 +115,7 @@ class TestLinks:
         assert interface_one.getparam("duplicate") == dup
         assert interface_one.getparam("jitter") == jitter
 
-    def test_link_delete(self, session, ip_prefixes):
+    def test_link_delete(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         node_one = session.add_node(CoreNode)
         node_two = session.add_node(CoreNode)

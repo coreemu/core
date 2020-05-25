@@ -1,6 +1,7 @@
 import pytest
 
 from core.emulator.emudata import NodeOptions
+from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
 from core.nodes.network import HubNode, SwitchNode, WlanNode
@@ -11,7 +12,7 @@ NET_TYPES = [SwitchNode, HubNode, WlanNode]
 
 class TestNodes:
     @pytest.mark.parametrize("model", MODELS)
-    def test_node_add(self, session, model):
+    def test_node_add(self, session: Session, model: str):
         # given
         options = NodeOptions(model=model)
 
@@ -23,7 +24,7 @@ class TestNodes:
         assert node.alive()
         assert node.up
 
-    def test_node_update(self, session):
+    def test_node_update(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         position_value = 100
@@ -37,7 +38,7 @@ class TestNodes:
         assert node.position.x == position_value
         assert node.position.y == position_value
 
-    def test_node_delete(self, session):
+    def test_node_delete(self, session: Session):
         # given
         node = session.add_node(CoreNode)
 
@@ -48,7 +49,7 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id, CoreNode)
 
-    def test_node_sethwaddr(self, session):
+    def test_node_sethwaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         index = node.newnetif()
@@ -61,7 +62,7 @@ class TestNodes:
         # then
         assert interface.hwaddr == mac
 
-    def test_node_sethwaddr_exception(self, session):
+    def test_node_sethwaddr_exception(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         index = node.newnetif()
@@ -72,7 +73,7 @@ class TestNodes:
         with pytest.raises(CoreError):
             node.sethwaddr(index, mac)
 
-    def test_node_addaddr(self, session):
+    def test_node_addaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         index = node.newnetif()

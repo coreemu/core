@@ -39,7 +39,7 @@ class ServiceDependencies:
     that all services will be booted and that all dependencies exist within the services provided.
     """
 
-    def __init__(self, services: List["CoreService"]) -> None:
+    def __init__(self, services: List[Type["CoreService"]]) -> None:
         # helpers to check validity
         self.dependents = {}
         self.booted = set()

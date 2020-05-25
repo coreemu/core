@@ -1,9 +1,11 @@
+from tempfile import TemporaryFile
 from xml.etree import ElementTree
 
 import pytest
 
-from core.emulator.emudata import LinkOptions, NodeOptions
+from core.emulator.emudata import IpPrefixes, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes
+from core.emulator.session import Session
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
@@ -12,7 +14,7 @@ from core.services.utility import SshService
 
 
 class TestXml:
-    def test_xml_hooks(self, session, tmpdir):
+    def test_xml_hooks(self, session: Session, tmpdir: TemporaryFile):
         """
         Test save/load hooks in xml.
 
@@ -52,7 +54,9 @@ class TestXml:
         assert file_name == runtime_hook[0]
         assert data == runtime_hook[1]
 
-    def test_xml_ptp(self, session, tmpdir, ip_prefixes):
+    def test_xml_ptp(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for a ptp network.
 
@@ -104,7 +108,9 @@ class TestXml:
         assert session.get_node(n1_id, CoreNode)
         assert session.get_node(n2_id, CoreNode)
 
-    def test_xml_ptp_services(self, session, tmpdir, ip_prefixes):
+    def test_xml_ptp_services(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for a ptp neetwork.
 
@@ -169,7 +175,9 @@ class TestXml:
         assert session.get_node(n2_id, CoreNode)
         assert service.config_data.get(service_file) == file_data
 
-    def test_xml_mobility(self, session, tmpdir, ip_prefixes):
+    def test_xml_mobility(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for mobility.
 
@@ -230,7 +238,7 @@ class TestXml:
         assert session.get_node(wlan_id, WlanNode)
         assert value == "1"
 
-    def test_network_to_network(self, session, tmpdir):
+    def test_network_to_network(self, session: Session, tmpdir: TemporaryFile):
         """
         Test xml generation when dealing with network to network nodes.
 
@@ -279,7 +287,9 @@ class TestXml:
         assert switch_two
         assert len(switch_one.all_link_data() + switch_two.all_link_data()) == 1
 
-    def test_link_options(self, session, tmpdir, ip_prefixes):
+    def test_link_options(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for a ptp network.
 
@@ -345,7 +355,9 @@ class TestXml:
         assert link_options.delay == link.delay
         assert link_options.dup == link.dup
 
-    def test_link_options_ptp(self, session, tmpdir, ip_prefixes):
+    def test_link_options_ptp(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for a ptp network.
 
@@ -412,7 +424,9 @@ class TestXml:
         assert link_options.delay == link.delay
         assert link_options.dup == link.dup
 
-    def test_link_options_bidirectional(self, session, tmpdir, ip_prefixes):
+    def test_link_options_bidirectional(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for a ptp network.
 
