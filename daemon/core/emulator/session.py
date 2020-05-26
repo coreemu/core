@@ -353,7 +353,7 @@ class Session:
                         node_two.name,
                     )
                     start = self.state.should_start()
-                    net_one = self.create_node(_class=PtpNet, start=start)
+                    net_one = self.create_node(PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
