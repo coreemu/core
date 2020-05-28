@@ -23,11 +23,13 @@ def handle_node_event(event: NodeData) -> core_pb2.NodeEvent:
     :return: node event that contains node id, name, model, position, and services
     """
     position = core_pb2.Position(x=event.x_position, y=event.y_position)
+    geo = core_pb2.Geo(lat=event.latitude, lon=event.longitude, alt=event.altitude)
     node_proto = core_pb2.Node(
         id=event.id,
         name=event.name,
         model=event.model,
         position=position,
+        geo=geo,
         services=event.services,
     )
     return core_pb2.NodeEvent(node=node_proto, source=event.source)

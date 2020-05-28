@@ -1002,11 +1002,18 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node(CoreNode)
+        node.position.lat = 10.0
+        node.position.lon = 20.0
+        node.position.alt = 5.0
         queue = Queue()
 
         def handle_event(event_data):
             assert event_data.session_id == session.id
             assert event_data.HasField("node_event")
+            event_node = event_data.node_event.node
+            assert event_node.geo.lat == node.position.lat
+            assert event_node.geo.lon == node.position.lon
+            assert event_node.geo.alt == node.position.alt
             queue.put(event_data)
 
         # then
