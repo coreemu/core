@@ -6,8 +6,9 @@ share the same MAC+PHY model.
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
+from core.emulator.data import LinkData
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface
 
@@ -236,3 +237,32 @@ class EmaneNet(CoreNetworkBase):
                 nemid, lon, lat, alt = position
                 event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)
+
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+        logging.info("gathering emane links: %s", self.id)
+        links = super().all_link_data(flags)
+        # gather current emane links
+        nem_ids = set(self.nemidmap.values())
+        logging.info("known nems: %s", nem_ids)
+        emane_manager = self.session.emane
+        emane_links = emane_manager.link_monitor.links
+        considered = set()
+        for link_key in emane_links:
+            considered_key = tuple(sorted(link_key))
+            if considered_key in considered:
+                continue
+            considered.add(considered_key)
+            logging.info("considering emane link: %s", considered_key)
+            nem1, nem2 = considered_key
+            # ignore links not related to this node
+            if nem1 not in nem_ids and nem2 not in nem_ids:
+                logging.info("ignore emane link not within network: %s", (nem1, nem2))
+                continue
+            # ignore incomplete links
+            if (nem2, nem1) not in emane_links:
+                logging.info("ignore emane link not complete: %s", (nem1, nem2))
+                continue
+            link = emane_manager.get_nem_link(nem1, nem2)
+            if link:
+                links.append(link)
+        return links

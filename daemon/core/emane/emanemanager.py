@@ -6,7 +6,7 @@ import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Dict, List, Set, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 from core import utils
 from core.config import ConfigGroup, Configuration, ModelManager
@@ -19,7 +19,13 @@ from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
+from core.emulator.data import LinkData
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    LinkTypes,
+    MessageFlags,
+    RegisterTlvs,
+)
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
@@ -458,7 +464,7 @@ class EmaneManager(ModelManager):
             model_class = self.models[model_name]
             emane_node.setmodel(model_class, config)
 
-    def nemlookup(self, nemid) -> Tuple[EmaneNet, CoreInterface]:
+    def nemlookup(self, nemid) -> Tuple[Optional[EmaneNet], Optional[CoreInterface]]:
         """
         Look for the given numerical NEM ID and return the first matching
         EMANE network and NEM interface.
@@ -475,6 +481,29 @@ class EmaneManager(ModelManager):
                 emane_node = None
 
         return emane_node, netif
+
+    def get_nem_link(
+        self, nem1: int, nem2: int, flags: MessageFlags = MessageFlags.NONE
+    ) -> Optional[LinkData]:
+        emane1, netif = self.nemlookup(nem1)
+        if not emane1 or not netif:
+            logging.error("invalid nem: %s", nem1)
+            return None
+        node1 = netif.node
+        emane2, netif = self.nemlookup(nem2)
+        if not emane2 or not netif:
+            logging.error("invalid nem: %s", nem2)
+            return None
+        node2 = netif.node
+        color = self.session.get_link_color(emane1.id)
+        return LinkData(
+            message_type=flags,
+            node1_id=node1.id,
+            node2_id=node2.id,
+            network_id=emane1.id,
+            link_type=LinkTypes.WIRELESS,
+            color=color,
+        )
 
     def numnems(self) -> int:
         """

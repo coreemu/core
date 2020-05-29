@@ -285,26 +285,11 @@ class EmaneLinkMonitor:
 
     def send_link(self, message_type: MessageFlags, link_id: Tuple[int, int]) -> None:
         nem_one, nem_two = link_id
-        emane_one, netif = self.emane_manager.nemlookup(nem_one)
-        if not emane_one or not netif:
-            logging.error("invalid nem: %s", nem_one)
-            return
-        node_one = netif.node
-        emane_two, netif = self.emane_manager.nemlookup(nem_two)
-        if not emane_two or not netif:
-            logging.error("invalid nem: %s", nem_two)
-            return
-        node_two = netif.node
-        logging.debug(
-            "%s emane link from %s(%s) to %s(%s)",
-            message_type.name,
-            node_one.name,
-            nem_one,
-            node_two.name,
-            nem_two,
-        )
-        label = self.get_link_label(link_id)
-        self.send_message(message_type, label, node_one.id, node_two.id, emane_one.id)
+        link = self.emane_manager.get_nem_link(nem_one, nem_two, message_type)
+        if link:
+            label = self.get_link_label(link_id)
+            link.label = label
+            self.emane_manager.session.broadcast_link(link)
 
     def send_message(
         self,
