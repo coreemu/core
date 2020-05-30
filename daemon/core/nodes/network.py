@@ -12,7 +12,13 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import (
+    LinkTypes,
+    MessageFlags,
+    NetworkPolicy,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
@@ -204,21 +210,21 @@ class EbtablesQueue:
                 wlan.has_ebtables_chain = True
                 self.cmds.extend(
                     [
-                        f"-N {wlan.brname} -P {wlan.policy}",
+                        f"-N {wlan.brname} -P {wlan.policy.value}",
                         f"-A FORWARD --logical-in {wlan.brname} -j {wlan.brname}",
                     ]
                 )
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
-                    if wlan.policy == "DROP" and linked:
+                    if wlan.policy == NetworkPolicy.DROP and linked:
                         self.cmds.extend(
                             [
                                 f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j ACCEPT",
                                 f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j ACCEPT",
                             ]
                         )
-                    elif wlan.policy == "ACCEPT" and not linked:
+                    elif wlan.policy == NetworkPolicy.ACCEPT and not linked:
                         self.cmds.extend(
                             [
                                 f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j DROP",
@@ -250,7 +256,7 @@ class CoreNetwork(CoreNetworkBase):
     Provides linux bridge network functionality for core nodes.
     """
 
-    policy: str = "DROP"
+    policy: NetworkPolicy = NetworkPolicy.DROP
 
     def __init__(
         self,
@@ -259,7 +265,7 @@ class CoreNetwork(CoreNetworkBase):
         name: str = None,
         start: bool = True,
         server: "DistributedServer" = None,
-        policy: str = None,
+        policy: NetworkPolicy = None,
     ) -> None:
         """
         Creates a LxBrNet instance.
@@ -392,12 +398,12 @@ class CoreNetwork(CoreNetworkBase):
         try:
             linked = self._linked[netif1][netif2]
         except KeyError:
-            if self.policy == "ACCEPT":
+            if self.policy == NetworkPolicy.ACCEPT:
                 linked = True
-            elif self.policy == "DROP":
+            elif self.policy == NetworkPolicy.DROP:
                 linked = False
             else:
-                raise Exception(f"unknown policy: {self.policy}")
+                raise Exception(f"unknown policy: {self.policy.value}")
             self._linked[netif1][netif2] = linked
 
         return linked
@@ -605,7 +611,7 @@ class GreTapBridge(CoreNetwork):
         remoteip: str = None,
         _id: int = None,
         name: str = None,
-        policy: str = "ACCEPT",
+        policy: NetworkPolicy = NetworkPolicy.ACCEPT,
         localip: str = None,
         ttl: int = 255,
         key: int = None,
@@ -712,7 +718,7 @@ class CtrlNet(CoreNetwork):
     Control network functionality.
     """
 
-    policy: str = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
     # base control interface index
     CTRLIF_IDX_BASE: int = 99
     DEFAULT_PREFIX_LIST: List[str] = [
@@ -852,7 +858,7 @@ class PtpNet(CoreNetwork):
     Peer to peer network node.
     """
 
-    policy: str = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
 
     def attach(self, netif: CoreInterface) -> None:
         """
@@ -983,7 +989,7 @@ class SwitchNode(CoreNetwork):
     """
 
     apitype: NodeTypes = NodeTypes.SWITCH
-    policy: str = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
     type: str = "lanswitch"
 
 
@@ -994,7 +1000,7 @@ class HubNode(CoreNetwork):
     """
 
     apitype: NodeTypes = NodeTypes.HUB
-    policy: str = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
     type: str = "hub"
 
     def startup(self) -> None:
@@ -1014,7 +1020,7 @@ class WlanNode(CoreNetwork):
 
     apitype: NodeTypes = NodeTypes.WIRELESS_LAN
     linktype: LinkTypes = LinkTypes.WIRED
-    policy: str = "DROP"
+    policy: NetworkPolicy = NetworkPolicy.DROP
     type: str = "wlan"
 
     def __init__(
@@ -1024,7 +1030,7 @@ class WlanNode(CoreNetwork):
         name: str = None,
         start: bool = True,
         server: "DistributedServer" = None,
-        policy: str = None,
+        policy: NetworkPolicy = None,
     ) -> None:
         """
         Create a WlanNode instance.
@@ -1117,5 +1123,5 @@ class TunnelNode(GreTapBridge):
     """
 
     apitype: NodeTypes = NodeTypes.TUNNEL
-    policy: str = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
     type: str = "tunnel"
