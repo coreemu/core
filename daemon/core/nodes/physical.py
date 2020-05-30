@@ -250,7 +250,7 @@ class PhysicalNode(CoreNodeBase):
         return self.host_cmd(args, wait=wait)
 
 
-class Rj45Node(CoreNodeBase, CoreInterface):
+class Rj45Node(CoreNodeBase):
     """
     RJ45Node is a physical interface on the host linked to the emulated
     network.
@@ -279,13 +279,13 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param server: remote server node
             will run on, default is None for localhost
         """
-        CoreNodeBase.__init__(self, session, _id, name, start, server)
-        CoreInterface.__init__(self, session, self, name, name, mtu, server)
+        super().__init__(session, _id, name, start, server)
+        self.interface = CoreInterface(session, self, name, name, mtu, server)
+        self.interface.transport_type = "raw"
         self.lock: threading.RLock = threading.RLock()
         self.ifindex: Optional[int] = None
-        self.transport_type: str = "raw"
         self.old_up: bool = False
-        self.old_addrs: List[str] = []
+        self.old_addrs: List[Tuple[str, Optional[str]]] = []
         if start:
             self.startup()
 
@@ -298,7 +298,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         # interface will also be marked up during net.attach()
         self.savestate()
-        self.net_client.device_up(self.localname)
+        self.net_client.device_up(self.interface.localname)
         self.up = True
 
     def shutdown(self) -> None:
@@ -310,37 +310,15 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         if not self.up:
             return
-
+        localname = self.interface.localname
+        self.net_client.device_down(localname)
+        self.net_client.device_flush(localname)
         try:
-            self.net_client.device_down(self.localname)
-            self.net_client.device_flush(self.localname)
-            self.net_client.delete_tc(self.localname)
+            self.net_client.delete_tc(localname)
         except CoreCommandError:
-            logging.exception("error shutting down")
-
+            pass
         self.up = False
         self.restorestate()
-
-    # TODO: issue in that both classes inherited from provide the same method with
-    #  different signatures
-    def attachnet(self, net: CoreNetworkBase) -> None:
-        """
-        Attach a network.
-
-        :param net: network to attach
-        :return: nothing
-        """
-        CoreInterface.attachnet(self, net)
-
-    # TODO: issue in that both classes inherited from provide the same method with
-    #  different signatures
-    def detachnet(self) -> None:
-        """
-        Detach a network.
-
-        :return: nothing
-        """
-        CoreInterface.detachnet(self)
 
     def newnetif(
         self,
@@ -366,22 +344,15 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         with self.lock:
             if ifindex is None:
                 ifindex = 0
-
-            if self.net is not None:
+            if self.interface.net is not None:
                 raise ValueError("RJ45 nodes support at most 1 network interface")
-
-            self._netif[ifindex] = self
-            # PyCoreNetIf.node is self
-            self.node = self
+            self._netif[ifindex] = self.interface
             self.ifindex = ifindex
-
             if net is not None:
-                self.attachnet(net)
-
+                self.interface.attachnet(net)
             if addrlist:
                 for addr in utils.make_tuple(addrlist):
                     self.addaddr(addr)
-
             return ifindex
 
     def delnetif(self, ifindex: int) -> None:
@@ -393,9 +364,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         if ifindex is None:
             ifindex = 0
-
         self._netif.pop(ifindex)
-
         if ifindex == self.ifindex:
             self.shutdown()
         else:
@@ -413,15 +382,12 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param net: network to retrieve
         :return: a network interface
         """
-        if net is not None and net == self.net:
-            return self
-
+        if net is not None and net == self.interface.net:
+            return self.interface
         if ifindex is None:
             ifindex = 0
-
         if ifindex == self.ifindex:
-            return self
-
+            return self.interface
         return None
 
     def getifindex(self, netif: CoreInterface) -> Optional[int]:
@@ -432,7 +398,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             index for
         :return: interface index, None otherwise
         """
-        if netif != self:
+        if netif != self.interface:
             return None
         return self.ifindex
 
@@ -447,7 +413,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         addr = utils.validate_ip(addr)
         if self.up:
             self.net_client.create_address(self.name, addr)
-        CoreInterface.addaddr(self, addr)
+        self.interface.addaddr(addr)
 
     def deladdr(self, addr: str) -> None:
         """
@@ -458,8 +424,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            self.net_client.delete_address(self.name, str(addr))
-        CoreInterface.deladdr(self, addr)
+            self.net_client.delete_address(self.name, addr)
+        self.interface.deladdr(addr)
 
     def savestate(self) -> None:
         """
@@ -470,14 +436,14 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         self.old_up = False
-        self.old_addrs = []
-        output = self.net_client.device_show(self.localname)
+        self.old_addrs: List[Tuple[str, Optional[str]]] = []
+        localname = self.interface.localname
+        output = self.net_client.address_show(localname)
         for line in output.split("\n"):
             items = line.split()
             if len(items) < 2:
                 continue
-
-            if items[1] == f"{self.localname}:":
+            if items[1] == f"{localname}:":
                 flags = items[2][1:-1].split(",")
                 if "UP" in flags:
                     self.old_up = True
@@ -487,6 +453,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
                 if items[1][:4] == "fe80":
                     continue
                 self.old_addrs.append((items[1], None))
+        logging.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
 
     def restorestate(self) -> None:
         """
@@ -495,16 +462,12 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
+        localname = self.interface.localname
+        logging.info("restoring rj45 state: %s", localname)
         for addr in self.old_addrs:
-            if addr[1] is None:
-                self.net_client.create_address(self.localname, addr[0])
-            else:
-                self.net_client.create_address(
-                    self.localname, addr[0], broadcast=addr[1]
-                )
-
+            self.net_client.create_address(localname, addr[0], addr[1])
         if self.old_up:
-            self.net_client.device_up(self.localname)
+            self.net_client.device_up(localname)
 
     def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
         """
@@ -515,8 +478,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param z: z position
         :return: True if position changed, False otherwise
         """
-        CoreNodeBase.setposition(self, x, y, z)
-        CoreInterface.setposition(self)
+        super().setposition(x, y, z)
+        self.interface.setposition()
 
     def termcmdstring(self, sh: str) -> str:
         """

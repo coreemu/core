@@ -71,12 +71,21 @@ class LinuxNetClient:
 
     def device_show(self, device: str) -> str:
         """
-        Show information for a device.
+        Show link information for a device.
 
         :param device: device to get information for
         :return: device information
         """
         return self.run(f"{IP_BIN} link show {device}")
+
+    def address_show(self, device: str) -> str:
+        """
+        Show address information for a device.
+
+        :param device: device name
+        :return: address information
+        """
+        return self.run(f"{IP_BIN} address show {device}")
 
     def get_mac(self, device: str) -> str:
         """
@@ -114,7 +123,8 @@ class LinuxNetClient:
         :return: nothing
         """
         self.run(
-            f"[ -e /sys/class/net/{device} ] && {IP_BIN} -6 address flush dev {device} || true",
+            f"[ -e /sys/class/net/{device} ] && "
+            f"{IP_BIN} address flush dev {device} || true",
             shell=True,
         )
 
