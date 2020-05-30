@@ -10,7 +10,7 @@ from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import CoreInterface, Veth
@@ -281,7 +281,7 @@ class Rj45Node(CoreNodeBase):
         """
         super().__init__(session, _id, name, start, server)
         self.interface = CoreInterface(session, self, name, name, mtu, server)
-        self.interface.transport_type = "raw"
+        self.interface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
         self.ifindex: Optional[int] = None
         self.old_up: bool = False

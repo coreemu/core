@@ -117,3 +117,8 @@ class ExceptionLevels(Enum):
     ERROR = 2
     WARNING = 3
     NOTICE = 4
+
+
+class TransportType(Enum):
+    RAW = "raw"
+    VIRTUAL = "virtual"
