@@ -2,17 +2,20 @@
 Unit tests for testing CORE EMANE networks.
 """
 import os
+from tempfile import TemporaryFile
 from xml.etree import ElementTree
 
 import pytest
 
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
+from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
@@ -38,7 +41,7 @@ def ping(from_node, to_node, ip_prefixes, count=3):
 
 class TestEmane:
     @pytest.mark.parametrize("model", _EMANE_MODELS)
-    def test_models(self, session, model, ip_prefixes):
+    def test_models(self, session: Session, model: EmaneModel, ip_prefixes: IpPrefixes):
         """
         Test emane models within a basic network.
 
@@ -81,7 +84,9 @@ class TestEmane:
         status = ping(node_one, node_two, ip_prefixes, count=5)
         assert not status
 
-    def test_xml_emane(self, session, tmpdir, ip_prefixes):
+    def test_xml_emane(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for emane.
 

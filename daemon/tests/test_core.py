@@ -4,6 +4,7 @@ Unit tests for testing basic CORE networks.
 
 import os
 import threading
+from typing import Type
 
 import pytest
 
@@ -12,7 +13,7 @@ from core.emulator.enumerations import MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import HubNode, PtpNet, SwitchNode, WlanNode
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
@@ -32,7 +33,9 @@ def ping(from_node, to_node, ip_prefixes):
 
 class TestCore:
     @pytest.mark.parametrize("net_type", _WIRED)
-    def test_wired_ping(self, session, net_type, ip_prefixes):
+    def test_wired_ping(
+        self, session: Session, net_type: Type[NodeBase], ip_prefixes: IpPrefixes
+    ):
         """
         Test ptp node network.
 
