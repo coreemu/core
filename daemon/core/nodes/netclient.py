@@ -251,7 +251,7 @@ class LinuxNetClient:
         self.device_down(name)
         self.run(f"{IP_BIN} link delete {name} type bridge")
 
-    def create_interface(self, bridge_name: str, interface_name: str) -> None:
+    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
         """
         Assign interface master to a Linux bridge.
 
@@ -330,7 +330,7 @@ class OvsNetClient(LinuxNetClient):
         self.device_down(name)
         self.run(f"{OVS_BIN} del-br {name}")
 
-    def create_interface(self, bridge_name: str, interface_name: str) -> None:
+    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
         """
         Create an interface associated with a network bridge.
 

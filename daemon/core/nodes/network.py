@@ -360,7 +360,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         if self.up:
-            netif.net_client.create_interface(self.brname, netif.localname)
+            netif.net_client.set_interface_master(self.brname, netif.localname)
         super().attach(netif)
 
     def detach(self, netif: CoreInterface) -> None:
@@ -557,8 +557,7 @@ class CoreNetwork(CoreNetworkBase):
         netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
         if net.up and net.brname:
-            # this is similar to net.attach() but uses netif.name instead of localname
-            netif.net_client.create_interface(net.brname, netif.name)
+            netif.net_client.set_interface_master(net.brname, netif.name)
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -807,7 +806,7 @@ class CtrlNet(CoreNetwork):
             self.host_cmd(f"{self.updown_script} {self.brname} startup")
 
         if self.serverintf:
-            self.net_client.create_interface(self.brname, self.serverintf)
+            self.net_client.set_interface_master(self.brname, self.serverintf)
 
     def shutdown(self) -> None:
         """
