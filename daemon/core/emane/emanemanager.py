@@ -30,6 +30,7 @@ from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
+from core.nodes.physical import Rj45Node
 from core.xml import emanexml
 
 if TYPE_CHECKING:
@@ -596,7 +597,7 @@ class EmaneManager(ModelManager):
 
         run_emane_on_host = False
         for node in self.getnodes():
-            if hasattr(node, "transport_type") and node.transport_type == "raw":
+            if isinstance(node, Rj45Node):
                 run_emane_on_host = True
                 continue
             path = self.session.session_dir
@@ -655,7 +656,7 @@ class EmaneManager(ModelManager):
         kill_transortd = "killall -q emanetransportd"
         stop_emane_on_host = False
         for node in self.getnodes():
-            if hasattr(node, "transport_type") and node.transport_type == "raw":
+            if isinstance(node, Rj45Node):
                 stop_emane_on_host = True
                 continue
 

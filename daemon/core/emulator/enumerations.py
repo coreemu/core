@@ -122,3 +122,8 @@ class ExceptionLevels(Enum):
 class NetworkPolicy(Enum):
     ACCEPT = "ACCEPT"
     DROP = "DROP"
+
+
+class TransportType(Enum):
+    RAW = "raw"
+    VIRTUAL = "virtual"
