@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from core.emulator.data import LinkData
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import (
+    LinkTypes,
+    MessageFlags,
+    NodeTypes,
+    RegisterTlvs,
+    TransportType,
+)
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface
 
@@ -173,7 +179,7 @@ class EmaneNet(CoreNetworkBase):
         emanetransportd terminates.
         """
         for netif in self.netifs():
-            if "virtual" in netif.transport_type.lower():
+            if netif.transport_type == TransportType.VIRTUAL:
                 netif.shutdown()
             netif.poshook = None
 

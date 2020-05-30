@@ -8,7 +8,7 @@ from typing import Dict, List
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emane.nodes import EmaneNet
-from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigDataTypes, TransportType
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.nodes.interface import CoreInterface
@@ -111,9 +111,9 @@ class EmaneModel(WirelessModel):
             server = interface.node.server
 
         # check if this is external
-        transport_type = "virtual"
-        if interface and interface.transport_type == "raw":
-            transport_type = "raw"
+        transport_type = TransportType.VIRTUAL
+        if interface and interface.transport_type == TransportType.RAW:
+            transport_type = TransportType.RAW
         transport_name = emanexml.transport_file_name(self.id, transport_type)
 
         # create nem xml file

@@ -11,6 +11,7 @@ from lxml import etree
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
 from core.emane.nodes import EmaneNet
+from core.emulator.enumerations import TransportType
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -79,9 +80,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
-        transport_type = "virtual"
-        if interface and interface.transport_type == "raw":
-            transport_type = "raw"
+        transport_type = TransportType.VIRTUAL
+        if interface and interface.transport_type == TransportType.RAW:
+            transport_type = TransportType.RAW
         transport_file = emanexml.transport_file_name(self.id, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
 
