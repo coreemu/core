@@ -202,6 +202,7 @@ class EmaneNet(CoreNetworkBase):
         lat, lon, alt = self.session.location.getgeo(x, y, z)
         if node.position.alt is not None:
             alt = node.position.alt
+        node.position.set_geo(lon, lat, alt)
         # altitude must be an integer or warning is printed
         alt = int(round(alt))
         return nemid, lon, lat, alt

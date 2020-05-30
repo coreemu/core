@@ -235,6 +235,9 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
     position = core_pb2.Position(
         x=node.position.x, y=node.position.y, z=node.position.z
     )
+    geo = core_pb2.Geo(
+        lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
+    )
     services = getattr(node, "services", [])
     if services is None:
         services = []
@@ -255,6 +258,7 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
         model=model,
         type=node_type.value,
         position=position,
+        geo=geo,
         services=services,
         icon=node.icon,
         image=image,
