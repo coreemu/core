@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "core"
+version = "6.4.0"
+description = ""
+authors = []
+
+[tool.poetry.dependencies]
+python = "^3.6"
+dataclasses = { version = "*", python = "3.6" }
+fabric = "*"
+grpcio = "*"
+invoke = "*"
+lxml = "*"
+mako = "*"
+netaddr = "*"
+pillow = "*"
+protobuf = "*"
+pyproj = "*"
+pyyaml = "*"
+
+[tool.poetry.dev-dependencies]
+black = "==19.3b0"
+flake8 = "*"
+grpcio-tools = "*"
+isort = "*"
+mock = "*"
+pre-commit = "*"
+pytest = "*"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+
