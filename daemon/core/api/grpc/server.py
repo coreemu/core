@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Type
+from typing import Iterable, Type
 
 import grpc
 from grpc import ServicerContext
@@ -39,6 +39,8 @@ from core.api.grpc.core_pb2 import ExecuteScriptResponse
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
+    EmanePathlossesRequest,
+    EmanePathlossesResponse,
     GetEmaneConfigRequest,
     GetEmaneConfigResponse,
     GetEmaneEventChannelRequest,
@@ -1751,3 +1753,17 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             wlan.model.sendlinkmsg(n1_netif, n2_netif, unlink=not request.linked)
             result = True
         return WlanLinkResponse(result=result)
+
+    def EmanePathlosses(
+        self,
+        request_iterator: Iterable[EmanePathlossesRequest],
+        context: ServicerContext,
+    ) -> EmanePathlossesResponse:
+        for request in request_iterator:
+            session = self.get_session(request.session_id, context)
+            n1 = self.get_node(session, request.node_one, context, CoreNode)
+            nem1 = grpcutils.get_nem_id(n1, request.interface_one_id, context)
+            n2 = self.get_node(session, request.node_two, context, CoreNode)
+            nem2 = grpcutils.get_nem_id(n2, request.interface_two_id, context)
+            session.emane.publish_pathloss(nem1, nem2, request.rx_one, request.rx_two)
+        return EmanePathlossesResponse()

@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 try:
-    from emane.events import EventService
+    from emane.events import EventService, PathlossEvent
     from emane.events import LocationEvent
     from emane.events.eventserviceexception import EventServiceException
 except ImportError:
@@ -48,6 +48,7 @@ except ImportError:
     except ImportError:
         EventService = None
         LocationEvent = None
+        PathlossEvent = None
         EventServiceException = None
         logging.debug("compatible emane python bindings not installed")
 
@@ -867,6 +868,21 @@ class EmaneManager(ModelManager):
         except CoreCommandError:
             result = False
         return result
+
+    def publish_pathloss(self, nem1: int, nem2: int, rx1: float, rx2: float) -> None:
+        """
+        Publish pathloss events between provided nems, using provided rx power.
+        :param nem1: interface one for pathloss
+        :param nem2: interface two for pathloss
+        :param rx1: received power from nem2 to nem1
+        :param rx2: received power from nem1 to nem2
+        :return: nothing
+        """
+        event = PathlossEvent()
+        event.append(nem1, forward=rx1)
+        event.append(nem2, forward=rx2)
+        self.service.publish(nem1, event)
+        self.service.publish(nem2, event)
 
 
 class EmaneGlobalModel:

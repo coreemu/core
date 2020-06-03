@@ -149,6 +149,8 @@ service CoreApi {
     }
     rpc GetEmaneEventChannel (emane.GetEmaneEventChannelRequest) returns (emane.GetEmaneEventChannelResponse) {
     }
+    rpc EmanePathlosses (stream emane.EmanePathlossesRequest) returns (emane.EmanePathlossesResponse) {
+    }
 
     // xml rpc
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {

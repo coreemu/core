@@ -31,6 +31,8 @@ from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
     EmaneModelConfig,
+    EmanePathlossesRequest,
+    EmanePathlossesResponse,
     GetEmaneConfigRequest,
     GetEmaneConfigResponse,
     GetEmaneEventChannelRequest,
@@ -1228,6 +1230,17 @@ class CoreGrpcClient:
             linked=linked,
         )
         return self.stub.WlanLink(request)
+
+    def emane_pathlosses(
+        self, pathloss_iter: Iterable[EmanePathlossesRequest]
+    ) -> EmanePathlossesResponse:
+        """
+        Stream EMANE pathloss events.
+
+        :param pathloss_iter: iterator for sending EMANE pathloss events
+        :return: EMANE pathloss response
+        """
+        return self.stub.EmanePathlosses(pathloss_iter)
 
     def connect(self) -> None:
         """
