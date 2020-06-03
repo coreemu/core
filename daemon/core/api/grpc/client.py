@@ -5,7 +5,7 @@ gRpc client for interfacing with CORE, when gRPC mode is enabled.
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, List
+from typing import Any, Callable, Dict, Generator, Iterable, List
 
 import grpc
 import netaddr
@@ -570,6 +570,17 @@ class CoreGrpcClient:
             geo=geo,
         )
         return self.stub.EditNode(request)
+
+    def move_nodes(
+        self, move_iterator: Iterable[core_pb2.MoveNodesRequest]
+    ) -> core_pb2.MoveNodesResponse:
+        """
+        Stream node movements using the provided iterator.
+
+        :param move_iterator: iterator for generating node movements
+        :return: move nodes response
+        """
+        return self.stub.MoveNodes(move_iterator)
 
     def delete_node(self, session_id: int, node_id: int) -> core_pb2.DeleteNodeResponse:
         """

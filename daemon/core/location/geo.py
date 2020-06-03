@@ -31,7 +31,7 @@ class GeoLocation:
             CRS_WGS84, CRS_PROJ, always_xy=True
         )
         self.to_geo = pyproj.Transformer.from_crs(CRS_PROJ, CRS_WGS84, always_xy=True)
-        self.refproj = (0.0, 0.0)
+        self.refproj = (0.0, 0.0, 0.0)
         self.refgeo = (0.0, 0.0, 0.0)
         self.refxyz = (0.0, 0.0, 0.0)
         self.refscale = 1.0
@@ -58,7 +58,7 @@ class GeoLocation:
         self.refxyz = (0.0, 0.0, 0.0)
         self.refgeo = (0.0, 0.0, 0.0)
         self.refscale = 1.0
-        self.refproj = self.to_pixels.transform(self.refgeo[0], self.refgeo[1])
+        self.refproj = self.to_pixels.transform(*self.refgeo)
 
     def pixels2meters(self, value: float) -> float:
         """

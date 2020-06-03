@@ -18,7 +18,7 @@ from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import ConfigFlags
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData
+from core.emulator.data import EventData, NodeData
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
@@ -1170,3 +1170,71 @@ class TestGrpc:
 
             # then
             queue.get(timeout=5)
+
+    def test_move_nodes(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        x, y = 10.0, 15.0
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest(
+                session_id=session.id,
+                node_id=node.id,
+                position=core_pb2.Position(x=x, y=y),
+            )
+
+        # then
+        with client.context_connect():
+            client.move_nodes(move_iter())
+
+        # assert
+        assert node.position.x == x
+        assert node.position.y == y
+
+    def test_move_nodes_geo(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        lon, lat, alt = 10.0, 15.0, 5.0
+        queue = Queue()
+
+        def node_handler(node_data: NodeData):
+            assert node_data.longitude == lon
+            assert node_data.latitude == lat
+            assert node_data.altitude == alt
+            queue.put(node_data)
+
+        session.node_handlers.append(node_handler)
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest(
+                session_id=session.id,
+                node_id=node.id,
+                geo=core_pb2.Geo(lon=lon, lat=lat, alt=alt),
+            )
+
+        # then
+        with client.context_connect():
+            client.move_nodes(move_iter())
+
+        # assert
+        assert node.position.lon == lon
+        assert node.position.lat == lat
+        assert node.position.alt == alt
+        assert queue.get(timeout=5)
+
+    def test_move_nodes_exception(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        grpc_server.coreemu.create_session()
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest()
+
+        # then
+        with pytest.raises(grpc.RpcError):
+            with client.context_connect():
+                client.move_nodes(move_iter())
