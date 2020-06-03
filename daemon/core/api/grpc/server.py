@@ -695,7 +695,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
 
     def MoveNodes(
-        self, request_iterator, context: ServicerContext
+        self,
+        request_iterator: Iterable[core_pb2.MoveNodesRequest],
+        context: ServicerContext,
     ) -> core_pb2.MoveNodesResponse:
         """
         Stream node movements

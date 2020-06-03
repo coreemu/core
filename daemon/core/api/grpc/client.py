@@ -1232,15 +1232,15 @@ class CoreGrpcClient:
         return self.stub.WlanLink(request)
 
     def emane_pathlosses(
-        self, pathloss_iter: Iterable[EmanePathlossesRequest]
+        self, pathloss_iterator: Iterable[EmanePathlossesRequest]
     ) -> EmanePathlossesResponse:
         """
         Stream EMANE pathloss events.
 
-        :param pathloss_iter: iterator for sending EMANE pathloss events
+        :param pathloss_iterator: iterator for sending EMANE pathloss events
         :return: EMANE pathloss response
         """
-        return self.stub.EmanePathlosses(pathloss_iter)
+        return self.stub.EmanePathlosses(pathloss_iterator)
 
     def connect(self) -> None:
         """
