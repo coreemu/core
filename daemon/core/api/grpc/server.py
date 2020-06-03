@@ -692,6 +692,40 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_proto = grpcutils.get_node_proto(session, node)
         return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
 
+    def MoveNodes(
+        self, request_iterator, context: ServicerContext
+    ) -> core_pb2.MoveNodesResponse:
+        """
+        Stream node movements
+
+        :param request_iterator: move nodes request iterator
+        :param context: context object
+        :return: move nodes response
+        """
+        for request in request_iterator:
+            if not request.WhichOneof("move_type"):
+                raise CoreError("move nodes must provide a move type")
+            session = self.get_session(request.session_id, context)
+            node = self.get_node(session, request.node_id, context, NodeBase)
+            options = NodeOptions()
+            has_geo = request.HasField("geo")
+            if has_geo:
+                logging.info("has geo")
+                lat = request.geo.lat
+                lon = request.geo.lon
+                alt = request.geo.alt
+                options.set_location(lat, lon, alt)
+            else:
+                x = request.position.x
+                y = request.position.y
+                logging.info("has pos: %s,%s", x, y)
+                options.set_position(x, y)
+            session.edit_node(node.id, options)
+            source = request.source if request.source else None
+            if not has_geo:
+                session.broadcast_node(node, source=source)
+        return core_pb2.MoveNodesResponse()
+
     def EditNode(
         self, request: core_pb2.EditNodeRequest, context: ServicerContext
     ) -> core_pb2.EditNodeResponse:
