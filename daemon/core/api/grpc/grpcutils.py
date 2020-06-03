@@ -2,7 +2,9 @@ import logging
 import time
 from typing import Any, Dict, List, Tuple, Type
 
+import grpc
 import netaddr
+from grpc import ServicerContext
 
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
@@ -13,7 +15,7 @@ from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
-from core.nodes.base import NodeBase
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
@@ -478,3 +480,23 @@ def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
         ip6=ip6,
         ip6mask=ip6mask,
     )
+
+
+def get_nem_id(node: CoreNode, netif_id: int, context: ServicerContext) -> int:
+    """
+    Get nem id for a given node and interface id.
+
+    :param node: node to get nem id for
+    :param netif_id: id of interface on node to get nem id for
+    :param context: request context
+    :return: nem id
+    """
+    netif = node.netif(netif_id)
+    if not netif:
+        message = f"{node.name} missing interface {netif_id}"
+        context.abort(grpc.StatusCode.NOT_FOUND, message)
+    net = netif.net
+    if not isinstance(net, EmaneNet):
+        message = f"{node.name} interface {netif_id} is not an EMANE network"
+        context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+    return net.getnemid(netif)
