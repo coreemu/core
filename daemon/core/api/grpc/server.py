@@ -796,10 +796,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context, CoreNode)
         try:
-            output = node.cmd(request.command)
+            output = node.cmd(request.command, request.wait, request.shell)
+            return_code = 0
         except CoreCommandError as e:
             output = e.stderr
-        return core_pb2.NodeCommandResponse(output=output)
+            return_code = e.returncode
+        return core_pb2.NodeCommandResponse(output=output, return_code=return_code)
 
     def GetNodeTerminal(
         self, request: core_pb2.GetNodeTerminalRequest, context: ServicerContext

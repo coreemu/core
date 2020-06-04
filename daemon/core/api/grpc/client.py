@@ -597,7 +597,12 @@ class CoreGrpcClient:
         return self.stub.DeleteNode(request)
 
     def node_command(
-        self, session_id: int, node_id: int, command: str
+        self,
+        session_id: int,
+        node_id: int,
+        command: str,
+        wait: bool = True,
+        shell: bool = False,
     ) -> core_pb2.NodeCommandResponse:
         """
         Send command to a node and get the output.
@@ -605,11 +610,17 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node_id: node id
         :param command: command to run on node
+        :param wait: wait for command to complete
+        :param shell: send shell command
         :return: response with command combined stdout/stderr
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.NodeCommandRequest(
-            session_id=session_id, node_id=node_id, command=command
+            session_id=session_id,
+            node_id=node_id,
+            command=command,
+            wait=wait,
+            shell=shell,
         )
         return self.stub.NodeCommand(request)
 

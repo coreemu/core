@@ -467,10 +467,13 @@ message NodeCommandRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     string command = 3;
+    bool wait = 4;
+    bool shell = 5;
 }
 
 message NodeCommandResponse {
     string output = 1;
+    int32 return_code = 2;
 }
 
 message GetNodeLinksRequest {
