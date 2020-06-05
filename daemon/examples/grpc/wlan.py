@@ -1,5 +1,5 @@
 """
-Example using gRPC API to create a simple switch network.
+Example using gRPC API to create a simple wlan network.
 """
 
 import logging
@@ -31,12 +31,24 @@ def main():
         response = core.set_session_state(session_id, SessionState.CONFIGURATION)
         logging.info("set session state: %s", response)
 
-        # create switch node
+        # create wlan node
         position = Position(x=200, y=200)
-        switch = Node(type=NodeType.SWITCH, position=position)
-        response = core.add_node(session_id, switch)
-        logging.info("created switch: %s", response)
-        switch_id = response.node_id
+        wlan = Node(type=NodeType.WIRELESS_LAN, position=position)
+        response = core.add_node(session_id, wlan)
+        logging.info("created wlan: %s", response)
+        wlan_id = response.node_id
+
+        # change/configure wlan if desired
+        # NOTE: error = loss, and named this way for legacy purposes for now
+        config = {
+            "bandwidth": "54000000",
+            "range": "500",
+            "jitter": "0",
+            "delay": "5000",
+            "error": "0",
+        }
+        response = core.set_wlan_config(session_id, wlan_id, config)
+        logging.info("set wlan config: %s", response)
 
         # create node one
         position = Position(x=100, y=100)
@@ -54,10 +66,10 @@ def main():
 
         # links nodes to switch
         interface_one = interface_helper.create_interface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, switch_id, interface_one)
+        response = core.add_link(session_id, node1_id, wlan_id, interface_one)
         logging.info("created link: %s", response)
         interface_one = interface_helper.create_interface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, switch_id, interface_one)
+        response = core.add_link(session_id, node2_id, wlan_id, interface_one)
         logging.info("created link: %s", response)
 
         # change session state

@@ -1100,7 +1100,7 @@ class CoreGrpcClient:
         session_id: int,
         node_id: int,
         model: str,
-        config: Dict[str, str],
+        config: Dict[str, str] = None,
         interface_id: int = -1,
     ) -> SetEmaneModelConfigResponse:
         """
