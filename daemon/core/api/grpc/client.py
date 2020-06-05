@@ -1,5 +1,5 @@
 """
-gRpc client for interfacing with CORE, when gRPC mode is enabled.
+gRpc client for interfacing with CORE.
 """
 
 import logging
@@ -289,6 +289,7 @@ class CoreGrpcClient:
 
         :param session_id: id of session
         :return: stop session response
+        :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.StopSessionRequest(session_id=session_id)
         return self.stub.StopSession(request)
@@ -581,6 +582,7 @@ class CoreGrpcClient:
 
         :param move_iterator: iterator for generating node movements
         :return: move nodes response
+        :raises grpc.RpcError: when session or nodes do not exist
         """
         return self.stub.MoveNodes(move_iterator)
 
@@ -1122,9 +1124,9 @@ class CoreGrpcClient:
 
     def get_emane_model_configs(self, session_id: int) -> GetEmaneModelConfigsResponse:
         """
-        Get all emane model configurations for a session.
+        Get all EMANE model configurations for a session.
 
-        :param session_id: session id
+        :param session_id: session to get emane model configs
         :return: response with a dictionary of node/interface ids to configurations
         :raises grpc.RpcError: when session doesn't exist
         """
@@ -1135,9 +1137,10 @@ class CoreGrpcClient:
         """
         Save the current scenario to an XML file.
 
-        :param session_id: session id
+        :param session_id: session to save xml file for
         :param file_path: local path to save scenario XML file to
         :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SaveXmlRequest(session_id=session_id)
         response = self.stub.SaveXml(request)
@@ -1163,11 +1166,12 @@ class CoreGrpcClient:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 
-        :param session_id: session id
-        :param nem_one:
-        :param nem_two:
+        :param session_id: session to emane link
+        :param nem_one: first nem for emane link
+        :param nem_two: second nem for emane link
         :param linked: True to link, False to unlink
-        :return: core_pb2.EmaneLinkResponse
+        :return: get emane link response
+        :raises grpc.RpcError: when session or nodes related to nems do not exist
         """
         request = EmaneLinkRequest(
             session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
@@ -1179,30 +1183,57 @@ class CoreGrpcClient:
         Retrieves a list of interfaces available on the host machine that are not
         a part of a CORE session.
 
-        :return: core_pb2.GetInterfacesResponse
+        :return: get interfaces response
         """
         request = core_pb2.GetInterfacesRequest()
         return self.stub.GetInterfaces(request)
 
     def get_config_services(self) -> GetConfigServicesResponse:
+        """
+        Retrieve all known config services.
+
+        :return: get config services response
+        """
         request = GetConfigServicesRequest()
         return self.stub.GetConfigServices(request)
 
     def get_config_service_defaults(
         self, name: str
     ) -> GetConfigServiceDefaultsResponse:
+        """
+        Retrieves config service default values.
+
+        :param name: name of service to get defaults for
+        :return: get config service defaults
+        """
         request = GetConfigServiceDefaultsRequest(name=name)
         return self.stub.GetConfigServiceDefaults(request)
 
     def get_node_config_service_configs(
         self, session_id: int
     ) -> GetNodeConfigServiceConfigsResponse:
+        """
+        Retrieves all node config service configurations for a session.
+
+        :param session_id: session to get config service configurations for
+        :return: get node config service configs response
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = GetNodeConfigServiceConfigsRequest(session_id=session_id)
         return self.stub.GetNodeConfigServiceConfigs(request)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str
     ) -> GetNodeConfigServiceResponse:
+        """
+        Retrieves information for a specific config service on a node.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to get service information from
+        :param name: name of service
+        :return: get node config service response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = GetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name
         )
@@ -1211,28 +1242,70 @@ class CoreGrpcClient:
     def get_node_config_services(
         self, session_id: int, node_id: int
     ) -> GetNodeConfigServicesResponse:
+        """
+        Retrieves the config services currently assigned to a node.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to get config services for
+        :return: get node config services response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = GetNodeConfigServicesRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNodeConfigServices(request)
 
     def set_node_config_service(
         self, session_id: int, node_id: int, name: str, config: Dict[str, str]
     ) -> SetNodeConfigServiceResponse:
+        """
+        Assigns a config service to a node with the provided configuration.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to assign config service to
+        :param name: name of service
+        :param config: service configuration
+        :return: set node config service response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = SetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name, config=config
         )
         return self.stub.SetNodeConfigService(request)
 
     def get_emane_event_channel(self, session_id: int) -> GetEmaneEventChannelResponse:
+        """
+        Retrieves the current emane event channel being used for a session.
+
+        :param session_id: session to get emane event channel for
+        :return: emane event channel response
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = GetEmaneEventChannelRequest(session_id=session_id)
         return self.stub.GetEmaneEventChannel(request)
 
     def execute_script(self, script: str) -> ExecuteScriptResponse:
+        """
+        Executes a python script given context of the current CoreEmu object.
+
+        :param script: script to execute
+        :return: execute script response
+        """
         request = ExecuteScriptRequest(script=script)
         return self.stub.ExecuteScript(request)
 
     def wlan_link(
         self, session_id: int, wlan: int, node_one: int, node_two: int, linked: bool
     ) -> WlanLinkResponse:
+        """
+        Links/unlinks nodes on the same WLAN.
+
+        :param session_id: session id containing wlan and nodes
+        :param wlan: wlan nodes must belong to
+        :param node_one: first node of pair to link/unlink
+        :param node_two: second node of pair to link/unlin
+        :param linked: True to link, False to unlink
+        :return: wlan link response
+        :raises grpc.RpcError: when session or one of the nodes do not exist
+        """
         request = WlanLinkRequest(
             session_id=session_id,
             wlan=wlan,
@@ -1248,8 +1321,10 @@ class CoreGrpcClient:
         """
         Stream EMANE pathloss events.
 
-        :param pathloss_iterator: iterator for sending EMANE pathloss events
-        :return: EMANE pathloss response
+        :param pathloss_iterator: iterator for sending emane pathloss events
+        :return: emane pathloss response
+        :raises grpc.RpcError: when a pathloss event session or one of the nodes do not
+            exist
         """
         return self.stub.EmanePathlosses(pathloss_iterator)
 
