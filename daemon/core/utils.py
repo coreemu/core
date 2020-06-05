@@ -228,7 +228,8 @@ def cmd(
     if shell is False:
         args = shlex.split(args)
     try:
-        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
+        output = PIPE if wait else DEVNULL
+        p = Popen(args, stdout=output, stderr=output, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
             stdout = stdout.decode("utf-8").strip()
