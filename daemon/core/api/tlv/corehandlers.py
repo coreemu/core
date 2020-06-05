@@ -79,15 +79,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self._sessions_lock = threading.Lock()
 
         self.handler_threads = []
-        num_threads = int(server.config["numthreads"])
-        if num_threads < 1:
-            raise ValueError(f"invalid number of threads: {num_threads}")
-
-        logging.debug("launching core server handler threads: %s", num_threads)
-        for _ in range(num_threads):
-            thread = threading.Thread(target=self.handler_thread)
-            self.handler_threads.append(thread)
-            thread.start()
+        thread = threading.Thread(target=self.handler_thread, daemon=True)
+        thread.start()
+        self.handler_threads.append(thread)
 
         self.session = None
         self.coreemu = server.coreemu
