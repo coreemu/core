@@ -1,7 +1,6 @@
 """
 Clients for dealing with bridge/interface commands.
 """
-import json
 from typing import Callable
 
 import netaddr
@@ -279,12 +278,13 @@ class LinuxNetClient:
         :param _id: node id to check bridges for
         :return: True if there are existing bridges, False otherwise
         """
-        output = self.run(f"{IP_BIN} -j link show type bridge")
-        bridges = json.loads(output)
-        for bridge in bridges:
-            name = bridge.get("ifname")
-            if not name:
+        output = self.run(f"{IP_BIN} -o link show type bridge")
+        lines = output.split("\n")
+        for line in lines:
+            values = line.split(":")
+            if not len(values) >= 2:
                 continue
+            name = values[1]
             fields = name.split(".")
             if len(fields) != 3:
                 continue
