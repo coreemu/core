@@ -348,11 +348,7 @@ be entered into the text box.
 
 > **NOTE:** When you press the Start button to instantiate your topology, the
    interface assigned to the RJ45 will be connected to the CORE topology. The
-   interface can no longer be used by the system. For example, if there was an
-   IP address assigned to the physical interface before execution, the address
-   will be removed and control given over to CORE. No IP address is needed; the
-   interface is put into promiscuous mode so it will receive all packets and
-   send them into the emulated world.
+   interface can no longer be used by the system.
 
 Multiple RJ45 nodes can be used within CORE and assigned to the same physical
 interface if 802.1x VLANs are used. This allows for more RJ45 nodes than
