@@ -66,7 +66,15 @@ def create_interface_data(interface_element: etree.Element) -> InterfaceData:
     ip4_mask = get_int(interface_element, "ip4_mask")
     ip6 = interface_element.get("ip6")
     ip6_mask = get_int(interface_element, "ip6_mask")
-    return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
+    return InterfaceData(
+        id=interface_id,
+        name=name,
+        mac=mac,
+        ip4=ip4,
+        ip4_mask=ip4_mask,
+        ip6=ip6,
+        ip6_mask=ip6_mask,
+    )
 
 
 def create_emane_config(session: "Session") -> etree.Element:
