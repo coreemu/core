@@ -12,8 +12,7 @@ class TestDistributed:
 
         # when
         session.distributed.add_server(server_name, host)
-        options = NodeOptions()
-        options.server = server_name
+        options = NodeOptions(server=server_name)
         node = session.add_node(CoreNode, options=options)
         session.instantiate()
 
@@ -30,8 +29,7 @@ class TestDistributed:
 
         # when
         session.distributed.add_server(server_name, host)
-        options = NodeOptions()
-        options.server = server_name
+        options = NodeOptions(server=server_name)
         node = session.add_node(HubNode, options=options)
         session.instantiate()
 

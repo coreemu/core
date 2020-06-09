@@ -31,17 +31,19 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     """
     _id = node_proto.id
     _type = NodeTypes(node_proto.type)
-    options = NodeOptions(name=node_proto.name, model=node_proto.model)
-    options.icon = node_proto.icon
-    options.opaque = node_proto.opaque
-    options.image = node_proto.image
-    options.services = node_proto.services
-    options.config_services = node_proto.config_services
+    options = NodeOptions(
+        name=node_proto.name,
+        model=node_proto.model,
+        icon=node_proto.icon,
+        opaque=node_proto.opaque,
+        image=node_proto.image,
+        services=node_proto.services,
+        config_services=node_proto.config_services,
+    )
     if node_proto.emane:
         options.emane = node_proto.emane
     if node_proto.server:
         options.server = node_proto.server
-
     position = node_proto.position
     options.set_position(position.x, position.y)
     if node_proto.HasField("geo"):

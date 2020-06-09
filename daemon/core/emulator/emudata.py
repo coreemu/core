@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import List, Union
+from dataclasses import dataclass, field
+from typing import List, Optional, Union
 
 import netaddr
 
@@ -37,36 +37,28 @@ def link_config(
     )
 
 
+@dataclass
 class NodeOptions:
     """
     Options for creating and updating nodes within core.
     """
 
-    def __init__(self, name: str = None, model: str = "PC", image: str = None) -> None:
-        """
-        Create a NodeOptions object.
-
-        :param name: name of node, defaults to node class name postfix with its id
-        :param model: defines services for default and physical nodes, defaults to
-            "router"
-        :param image: image to use for docker nodes
-        """
-        self.name = name
-        self.model = model
-        self.canvas = None
-        self.icon = None
-        self.opaque = None
-        self.services = []
-        self.config_services = []
-        self.x = None
-        self.y = None
-        self.lat = None
-        self.lon = None
-        self.alt = None
-        self.emulation_id = None
-        self.server = None
-        self.image = image
-        self.emane = None
+    name: str = None
+    model: Optional[str] = "PC"
+    canvas: int = None
+    icon: str = None
+    opaque: str = None
+    services: List[str] = field(default_factory=list)
+    config_services: List[str] = field(default_factory=list)
+    x: float = None
+    y: float = None
+    lat: float = None
+    lon: float = None
+    alt: float = None
+    emulation_id: int = None
+    server: str = None
+    image: str = None
+    emane: str = None
 
     def set_position(self, x: float, y: float) -> None:
         """

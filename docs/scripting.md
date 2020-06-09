@@ -136,8 +136,7 @@ coreemu = CoreEmu()
 session = coreemu.create_session()
 
 # create node with custom services
-options = NodeOptions()
-options.services = ["ServiceName"]
+options = NodeOptions(services=["ServiceName"])
 node = session.add_node(options=options)
 
 # set custom file data
@@ -157,7 +156,6 @@ options = NodeOptions()
 options.set_position(80, 50)
 emane_network = session.add_node(EmaneNet, options=options)
 
-# set custom emane model config
-config = {}
-session.emane.set_model(emane_network, EmaneIeee80211abgModel, config)
+# set custom emane model config defaults
+session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 ```

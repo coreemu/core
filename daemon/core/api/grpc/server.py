@@ -743,8 +743,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context, NodeBase)
-        options = NodeOptions()
-        options.icon = request.icon
+        options = NodeOptions(icon=request.icon)
         if request.HasField("position"):
             x = request.position.x
             y = request.position.y
