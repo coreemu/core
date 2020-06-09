@@ -299,7 +299,7 @@ class Session:
         node_two_id: int,
         interface_one: InterfaceData = None,
         interface_two: InterfaceData = None,
-        link_options: LinkOptions = None,
+        options: LinkOptions = None,
     ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
@@ -310,12 +310,12 @@ class Session:
             data, defaults to none
         :param interface_two: node two interface
             data, defaults to none
-        :param link_options: data for creating link,
+        :param options: data for creating link,
             defaults to no options
         :return: tuple of created core interfaces, depending on link
         """
-        if not link_options:
-            link_options = LinkOptions()
+        if not options:
+            options = LinkOptions()
 
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, tunnel = self._link_nodes(
@@ -332,7 +332,7 @@ class Session:
 
         try:
             # wireless link
-            if link_options.type == LinkTypes.WIRELESS:
+            if options.type == LinkTypes.WIRELESS:
                 objects = [node_one, node_two, net_one, net_two]
                 self._link_wireless(objects, connect=True)
             # wired link
@@ -358,7 +358,7 @@ class Session:
                     node_one_interface = node_one.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not wireless_net:
-                        net_one.linkconfig(node_one_interface, link_options)
+                        net_one.linkconfig(node_one_interface, options)
 
                 # network to node
                 if node_two and net_one:
@@ -370,8 +370,8 @@ class Session:
                     ifindex = node_two.newnetif(net_one, interface_two)
                     node_two_interface = node_two.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not link_options.unidirectional and not wireless_net:
-                        net_one.linkconfig(node_two_interface, link_options)
+                    if not options.unidirectional and not wireless_net:
+                        net_one.linkconfig(node_two_interface, options)
 
                 # network to network
                 if net_one and net_two:
@@ -382,10 +382,10 @@ class Session:
                     )
                     interface = net_one.linknet(net_two)
                     node_one_interface = interface
-                    net_one.linkconfig(interface, link_options)
-                    if not link_options.unidirectional:
+                    net_one.linkconfig(interface, options)
+                    if not options.unidirectional:
                         interface.swapparams("_params_up")
-                        net_two.linkconfig(interface, link_options)
+                        net_two.linkconfig(interface, options)
                         interface.swapparams("_params_up")
 
                 # a tunnel node was found for the nodes
@@ -396,7 +396,7 @@ class Session:
                     addresses.extend(interface_two.get_addresses())
 
                 # tunnel node logic
-                key = link_options.key
+                key = options.key
                 if key and isinstance(net_one, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
@@ -416,14 +416,14 @@ class Session:
                         node_one.adoptnetif(
                             tunnel, interface_one.id, interface_one.mac, addresses
                         )
-                        node_one.linkconfig(tunnel, link_options)
+                        node_one.linkconfig(tunnel, options)
                     elif node_two and isinstance(node_two, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(
                             tunnel, interface_two.id, interface_two.mac, addresses
                         )
-                        node_two.linkconfig(tunnel, link_options)
+                        node_two.linkconfig(tunnel, options)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -547,7 +547,7 @@ class Session:
         node_two_id: int,
         interface_one_id: int = None,
         interface_two_id: int = None,
-        link_options: LinkOptions = None,
+        options: LinkOptions = None,
     ) -> None:
         """
         Update link information between nodes.
@@ -556,13 +556,13 @@ class Session:
         :param node_two_id: node two id
         :param interface_one_id: interface id for node one
         :param interface_two_id: interface id for node two
-        :param link_options: data to update link with
+        :param options: data to update link with
         :return: nothing
         :raises core.CoreError: when updating a wireless type link, when there is a unknown
             link between networks
         """
-        if not link_options:
-            link_options = LinkOptions()
+        if not options:
+            options = LinkOptions()
 
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
@@ -576,7 +576,7 @@ class Session:
 
         try:
             # wireless link
-            if link_options.type == LinkTypes.WIRELESS:
+            if options.type == LinkTypes.WIRELESS:
                 raise CoreError("cannot update wireless link")
             else:
                 if not node_one and not node_two:
@@ -594,28 +594,28 @@ class Session:
 
                         if upstream:
                             interface.swapparams("_params_up")
-                            net_one.linkconfig(interface, link_options)
+                            net_one.linkconfig(interface, options)
                             interface.swapparams("_params_up")
                         else:
-                            net_one.linkconfig(interface, link_options)
+                            net_one.linkconfig(interface, options)
 
-                        if not link_options.unidirectional:
+                        if not options.unidirectional:
                             if upstream:
-                                net_two.linkconfig(interface, link_options)
+                                net_two.linkconfig(interface, options)
                             else:
                                 interface.swapparams("_params_up")
-                                net_two.linkconfig(interface, link_options)
+                                net_two.linkconfig(interface, options)
                                 interface.swapparams("_params_up")
                     else:
                         raise CoreError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
                     interface = node_two.netif(interface_two_id)
-                    net_one.linkconfig(interface, link_options)
+                    net_one.linkconfig(interface, options)
                 elif not node_two:
                     # node2 = layer 2node, node1 = layer3 node
                     interface = node_one.netif(interface_one_id)
-                    net_one.linkconfig(interface, link_options)
+                    net_one.linkconfig(interface, options)
                 else:
                     common_networks = node_one.commonnets(node_two)
                     if not common_networks:
@@ -628,11 +628,9 @@ class Session:
                         ):
                             continue
 
-                        net_one.linkconfig(interface_one, link_options, interface_two)
-                        if not link_options.unidirectional:
-                            net_one.linkconfig(
-                                interface_two, link_options, interface_one
-                            )
+                        net_one.linkconfig(interface_one, options, interface_two)
+                        if not options.unidirectional:
+                            net_one.linkconfig(interface_two, options, interface_one)
         finally:
             if node_one:
                 node_one.lock.release()

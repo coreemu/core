@@ -309,9 +309,7 @@ class TestXml:
         link_options.jitter = 10
         link_options.delay = 30
         link_options.dup = 5
-        session.add_link(
-            node_one.id, switch.id, interface_one, link_options=link_options
-        )
+        session.add_link(node_one.id, switch.id, interface_one, options=link_options)
 
         # instantiate session
         session.instantiate()

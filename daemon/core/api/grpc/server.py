@@ -854,7 +854,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_two_id = request.link.node_two_id
         interface_one, interface_two, options = grpcutils.add_link_data(request.link)
         node_one_interface, node_two_interface = session.add_link(
-            node_one_id, node_two_id, interface_one, interface_two, link_options=options
+            node_one_id, node_two_id, interface_one, interface_two, options=options
         )
         interface_one_proto = None
         interface_two_proto = None

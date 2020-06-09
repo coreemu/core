@@ -105,7 +105,7 @@ class TestLinks:
             node_one.id,
             node_two.id,
             interface_one_id=interface_one_data.id,
-            link_options=link_options,
+            options=link_options,
         )
 
         # then
