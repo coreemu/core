@@ -20,7 +20,6 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData
 from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
-    IdGen,
     InterfaceData,
     LinkOptions,
     NodeOptions,
@@ -111,7 +110,6 @@ class Session:
         self.link_colors = {}
 
         # dict of nodes: all nodes and nets
-        self.node_id_gen = IdGen()
         self.nodes = {}
         self._nodes_lock = threading.Lock()
 
@@ -649,6 +647,19 @@ class Session:
             if node_two:
                 node_two.lock.release()
 
+    def _next_node_id(self) -> int:
+        """
+        Find the next valid node id, starting from 1.
+
+        :return: next node id
+        """
+        _id = 1
+        while True:
+            if _id not in self.nodes:
+                break
+            _id += 1
+        return _id
+
     def add_node(
         self, _class: Type[NT], _id: int = None, options: NodeOptions = None
     ) -> NT:
@@ -669,10 +680,7 @@ class Session:
 
         # determine node id
         if not _id:
-            while True:
-                _id = self.node_id_gen.next()
-                if _id not in self.nodes:
-                    break
+            _id = self._next_node_id()
 
         # generate name if not provided
         if not options:
@@ -1399,7 +1407,6 @@ class Session:
                 self.sdt.delete_node(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
-        self.node_id_gen.id = 0
 
     def write_nodes(self) -> None:
         """

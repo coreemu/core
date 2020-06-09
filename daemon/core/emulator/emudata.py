@@ -10,15 +10,6 @@ from core.nodes.interface import CoreInterface
 from core.nodes.physical import PhysicalNode
 
 
-class IdGen:
-    def __init__(self, _id: int = 0) -> None:
-        self.id = _id
-
-    def next(self) -> int:
-        self.id += 1
-        return self.id
-
-
 def link_config(
     node: Union[CoreNetworkBase, PhysicalNode],
     interface: CoreInterface,
