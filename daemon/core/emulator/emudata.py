@@ -1,44 +1,13 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional
 
 import netaddr
 
 from core import utils
-from core.api.grpc.core_pb2 import LinkOptions
 from core.emulator.enumerations import LinkTypes
-from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
-    from core.nodes.base import CoreNetworkBase, CoreNode
-    from core.nodes.physical import PhysicalNode
-
-    LinkConfigNode = Union[CoreNetworkBase, PhysicalNode]
-
-
-def link_config(
-    node: "LinkConfigNode",
-    interface: CoreInterface,
-    link_options: LinkOptions,
-    interface_two: CoreInterface = None,
-) -> None:
-    """
-    Convenience method for configuring a link,
-
-    :param node: network to configure link for
-    :param interface: interface to configure
-    :param link_options: data to configure link with
-    :param interface_two: other interface associated, default is None
-    :return: nothing
-    """
-    node.linkconfig(
-        interface,
-        link_options.bandwidth,
-        link_options.delay,
-        link_options.per,
-        link_options.dup,
-        link_options.jitter,
-        interface_two,
-    )
+    from core.nodes.base import CoreNode
 
 
 @dataclass

@@ -15,7 +15,7 @@ from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import InterfaceData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.client import VnodeClient
@@ -1147,24 +1147,13 @@ class CoreNetworkBase(NodeBase):
         return all_links
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: float = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
         :param netif: interface one
-        :param bw: bandwidth to set to
-        :param delay: packet delay to set to
-        :param loss: packet loss to set to
-        :param duplicate: duplicate percentage to set to
-        :param jitter: jitter to set to
+        :param options: options for configuring link
         :param netif2: interface two
         :return: nothing
         """

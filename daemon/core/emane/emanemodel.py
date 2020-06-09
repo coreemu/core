@@ -8,6 +8,7 @@ from typing import Dict, List
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emane.nodes import EmaneNet
+from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import ConfigDataTypes, TransportType
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
@@ -155,24 +156,13 @@ class EmaneModel(WirelessModel):
             logging.exception("error during update")
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
         :param netif: interface one
-        :param bw: bandwidth to set to
-        :param delay: packet delay to set to
-        :param loss: packet loss to set to
-        :param duplicate: duplicate percentage to set to
-        :param jitter: jitter to set to
+        :param options: options for configuring link
         :param netif2: interface two
         :return: nothing
         """

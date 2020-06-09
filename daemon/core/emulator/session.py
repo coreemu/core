@@ -19,7 +19,7 @@ from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData
 from core.emulator.distributed import DistributedController
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions, link_config
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
@@ -358,7 +358,7 @@ class Session:
                     node_one_interface = node_one.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not wireless_net:
-                        link_config(net_one, node_one_interface, link_options)
+                        net_one.linkconfig(node_one_interface, link_options)
 
                 # network to node
                 if node_two and net_one:
@@ -371,7 +371,7 @@ class Session:
                     node_two_interface = node_two.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not link_options.unidirectional and not wireless_net:
-                        link_config(net_one, node_two_interface, link_options)
+                        net_one.linkconfig(node_two_interface, link_options)
 
                 # network to network
                 if net_one and net_two:
@@ -382,18 +382,16 @@ class Session:
                     )
                     interface = net_one.linknet(net_two)
                     node_one_interface = interface
-                    link_config(net_one, interface, link_options)
-
+                    net_one.linkconfig(interface, link_options)
                     if not link_options.unidirectional:
                         interface.swapparams("_params_up")
-                        link_config(net_two, interface, link_options)
+                        net_two.linkconfig(interface, link_options)
                         interface.swapparams("_params_up")
 
                 # a tunnel node was found for the nodes
                 addresses = []
                 if not node_one and all([net_one, interface_one]):
                     addresses.extend(interface_one.get_addresses())
-
                 if not node_two and all([net_two, interface_two]):
                     addresses.extend(interface_two.get_addresses())
 
@@ -418,14 +416,14 @@ class Session:
                         node_one.adoptnetif(
                             tunnel, interface_one.id, interface_one.mac, addresses
                         )
-                        link_config(node_one, tunnel, link_options)
+                        node_one.linkconfig(tunnel, link_options)
                     elif node_two and isinstance(node_two, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(
                             tunnel, interface_two.id, interface_two.mac, addresses
                         )
-                        link_config(node_two, tunnel, link_options)
+                        node_two.linkconfig(tunnel, link_options)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -596,28 +594,28 @@ class Session:
 
                         if upstream:
                             interface.swapparams("_params_up")
-                            link_config(net_one, interface, link_options)
+                            net_one.linkconfig(interface, link_options)
                             interface.swapparams("_params_up")
                         else:
-                            link_config(net_one, interface, link_options)
+                            net_one.linkconfig(interface, link_options)
 
                         if not link_options.unidirectional:
                             if upstream:
-                                link_config(net_two, interface, link_options)
+                                net_two.linkconfig(interface, link_options)
                             else:
                                 interface.swapparams("_params_up")
-                                link_config(net_two, interface, link_options)
+                                net_two.linkconfig(interface, link_options)
                                 interface.swapparams("_params_up")
                     else:
                         raise CoreError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
                     interface = node_two.netif(interface_two_id)
-                    link_config(net_one, interface, link_options)
+                    net_one.linkconfig(interface, link_options)
                 elif not node_two:
                     # node2 = layer 2node, node1 = layer3 node
                     interface = node_one.netif(interface_one_id)
-                    link_config(net_one, interface, link_options)
+                    net_one.linkconfig(interface, link_options)
                 else:
                     common_networks = node_one.commonnets(node_two)
                     if not common_networks:
@@ -630,10 +628,10 @@ class Session:
                         ):
                             continue
 
-                        link_config(net_one, interface_one, link_options, interface_two)
+                        net_one.linkconfig(interface_one, link_options, interface_two)
                         if not link_options.unidirectional:
-                            link_config(
-                                net_one, interface_two, link_options, interface_one
+                            net_one.linkconfig(
+                                interface_two, link_options, interface_one
                             )
         finally:
             if node_one:

@@ -10,7 +10,7 @@ from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import InterfaceData, LinkOptions
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
@@ -144,21 +144,14 @@ class PhysicalNode(CoreNodeBase):
             self.net_client.device_up(netif.localname)
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Apply tc queing disciplines using linkconfig.
         """
         linux_bridge = CoreNetwork(session=self.session, start=False)
         linux_bridge.up = True
-        linux_bridge.linkconfig(netif, bw, delay, loss, duplicate, jitter, netif2)
+        linux_bridge.linkconfig(netif, options, netif2)
         del linux_bridge
 
     def newifindex(self) -> int:

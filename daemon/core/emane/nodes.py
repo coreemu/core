@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from core.emulator.data import LinkData
 from core.emulator.distributed import DistributedServer
+from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -60,21 +61,14 @@ class EmaneNet(CoreNetworkBase):
         self.mobility = None
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         The CommEffect model supports link configuration.
         """
         if not self.model:
             return
-        self.model.linkconfig(netif, bw, delay, loss, duplicate, jitter, netif2)
+        self.model.linkconfig(netif, options, netif2)
 
     def config(self, conf: str) -> None:
         self.conf = conf

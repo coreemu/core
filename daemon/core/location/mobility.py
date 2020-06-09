@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Dict, List, Tuple
 from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
 from core.emulator.data import EventData, LinkData
+from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
@@ -334,9 +335,13 @@ class BasicRangeModel(WirelessModel):
         """
         with self._netifslock:
             for netif in self._netifs:
-                self.wlan.linkconfig(
-                    netif, self.bw, self.delay, self.loss, jitter=self.jitter
+                options = LinkOptions(
+                    bandwidth=self.bw,
+                    delay=self.delay,
+                    per=self.loss,
+                    jitter=self.jitter,
                 )
+                self.wlan.linkconfig(netif, options)
 
     def get_position(self, netif: CoreInterface) -> Tuple[float, float, float]:
         """

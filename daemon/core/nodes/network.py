@@ -12,6 +12,7 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
+from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -441,24 +442,13 @@ class CoreNetwork(CoreNetworkBase):
         ebq.ebchange(self)
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: float = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
         :param netif: interface one
-        :param bw: bandwidth to set to
-        :param delay: packet delay to set to
-        :param loss: packet loss to set to
-        :param duplicate: duplicate percentage to set to
-        :param jitter: jitter to set to
+        :param options: options for configuring link
         :param netif2: interface two
         :return: nothing
         """
@@ -466,6 +456,7 @@ class CoreNetwork(CoreNetworkBase):
         tc = f"{TC_BIN} qdisc replace dev {devname}"
         parent = "root"
         changed = False
+        bw = options.bandwidth
         if netif.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
             burst = max(2 * netif.mtu, int(bw / 1000))
@@ -489,13 +480,17 @@ class CoreNetwork(CoreNetworkBase):
         if netif.getparam("has_tbf"):
             parent = "parent 1:1"
         netem = "netem"
+        delay = options.delay
         changed = max(changed, netif.setparam("delay", delay))
+        loss = options.per
         if loss is not None:
             loss = float(loss)
         changed = max(changed, netif.setparam("loss", loss))
+        duplicate = options.dup
         if duplicate is not None:
             duplicate = int(duplicate)
         changed = max(changed, netif.setparam("duplicate", duplicate))
+        jitter = options.jitter
         changed = max(changed, netif.setparam("jitter", jitter))
         if not changed:
             return
