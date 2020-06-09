@@ -1,4 +1,5 @@
-from typing import List, Optional, Union
+from dataclasses import dataclass
+from typing import List, Union
 
 import netaddr
 
@@ -122,87 +123,32 @@ class LinkOptions:
         self.opaque = None
 
 
+@dataclass
 class InterfaceData:
     """
     Convenience class for storing interface data.
     """
 
-    def __init__(
-        self,
-        _id: int,
-        name: str,
-        mac: str,
-        ip4: str,
-        ip4_mask: int,
-        ip6: str,
-        ip6_mask: int,
-    ) -> None:
-        """
-        Creates an InterfaceData object.
-
-        :param _id: interface id
-        :param name: name for interface
-        :param mac: mac address
-        :param ip4: ipv4 address
-        :param ip4_mask: ipv4 bit mask
-        :param ip6: ipv6 address
-        :param ip6_mask: ipv6 bit mask
-        """
-        self.id = _id
-        self.name = name
-        self.mac = mac
-        self.ip4 = ip4
-        self.ip4_mask = ip4_mask
-        self.ip6 = ip6
-        self.ip6_mask = ip6_mask
-
-    def has_ip4(self) -> bool:
-        """
-        Determines if interface has an ip4 address.
-
-        :return: True if has ip4, False otherwise
-        """
-        return all([self.ip4, self.ip4_mask])
-
-    def has_ip6(self) -> bool:
-        """
-        Determines if interface has an ip6 address.
-
-        :return: True if has ip6, False otherwise
-        """
-        return all([self.ip6, self.ip6_mask])
-
-    def ip4_address(self) -> Optional[str]:
-        """
-        Retrieve a string representation of the ip4 address and netmask.
-
-        :return: ip4 string or None
-        """
-        if self.has_ip4():
-            return f"{self.ip4}/{self.ip4_mask}"
-        else:
-            return None
-
-    def ip6_address(self) -> Optional[str]:
-        """
-        Retrieve a string representation of the ip6 address and netmask.
-
-        :return: ip4 string or None
-        """
-        if self.has_ip6():
-            return f"{self.ip6}/{self.ip6_mask}"
-        else:
-            return None
+    id: int = None
+    name: str = None
+    mac: str = None
+    ip4: str = None
+    ip4_mask: int = None
+    ip6: str = None
+    ip6_mask: int = None
 
     def get_addresses(self) -> List[str]:
         """
-        Returns a list of ip4 and ip6 address when present.
+        Returns a list of ip4 and ip6 addresses when present.
 
         :return: list of addresses
         """
-        ip4 = self.ip4_address()
-        ip6 = self.ip6_address()
-        return [i for i in [ip4, ip6] if i]
+        addresses = []
+        if self.ip4 and self.ip4_mask:
+            addresses.append(f"{self.ip4}/{self.ip4_mask}")
+        if self.ip6 and self.ip6_mask:
+            addresses.append(f"{self.ip6}/{self.ip6_mask}")
+        return addresses
 
 
 class IpPrefixes:
@@ -285,7 +231,7 @@ class IpPrefixes:
             mac = utils.random_mac()
 
         return InterfaceData(
-            _id=inteface_id,
+            id=inteface_id,
             name=name,
             ip4=ip4,
             ip4_mask=ip4_mask,

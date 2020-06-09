@@ -21,7 +21,7 @@ _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _WIRED = [PtpNet, HubNode, SwitchNode]
 
 
-def ping(from_node, to_node, ip_prefixes):
+def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
     address = ip_prefixes.ip4_address(to_node)
     try:
         from_node.cmd(f"ping -c 1 {address}")

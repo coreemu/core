@@ -29,7 +29,9 @@ _EMANE_MODELS = [
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def ping(from_node, to_node, ip_prefixes, count=3):
+def ping(
+    from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes, count: int = 3
+):
     address = ip_prefixes.ip4_address(to_node)
     try:
         from_node.cmd(f"ping -c {count} {address}")

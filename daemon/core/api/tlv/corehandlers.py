@@ -749,7 +749,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
 
         interface_one = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
+            id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
             ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
@@ -758,7 +758,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
         )
         interface_two = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
+            id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
             ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),

@@ -59,19 +59,17 @@ def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     """
     interface = None
     if interface_proto:
-        name = interface_proto.name
-        if name == "":
-            name = None
-        mac = interface_proto.mac
-        if mac == "":
-            mac = None
+        name = interface_proto.name if interface_proto.name else None
+        mac = interface_proto.mac if interface_proto.mac else None
+        ip4 = interface_proto.ip4 if interface_proto.ip4 else None
+        ip6 = interface_proto.ip6 if interface_proto.ip6 else None
         interface = InterfaceData(
-            _id=interface_proto.id,
+            id=interface_proto.id,
             name=name,
             mac=mac,
-            ip4=interface_proto.ip4,
+            ip4=ip4,
             ip4_mask=interface_proto.ip4mask,
-            ip6=interface_proto.ip6,
+            ip6=ip6,
             ip6_mask=interface_proto.ip6mask,
         )
     return interface
