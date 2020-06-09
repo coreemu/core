@@ -1,18 +1,22 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 import netaddr
 
 from core import utils
 from core.api.grpc.core_pb2 import LinkOptions
 from core.emulator.enumerations import LinkTypes
-from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
-from core.nodes.physical import PhysicalNode
+
+if TYPE_CHECKING:
+    from core.nodes.base import CoreNetworkBase, CoreNode
+    from core.nodes.physical import PhysicalNode
+
+    LinkConfigNode = Union[CoreNetworkBase, PhysicalNode]
 
 
 def link_config(
-    node: Union[CoreNetworkBase, PhysicalNode],
+    node: "LinkConfigNode",
     interface: CoreInterface,
     link_options: LinkOptions,
     interface_two: CoreInterface = None,
@@ -160,7 +164,7 @@ class IpPrefixes:
         if ip6_prefix:
             self.ip6 = netaddr.IPNetwork(ip6_prefix)
 
-    def ip4_address(self, node: CoreNode) -> str:
+    def ip4_address(self, node: "CoreNode") -> str:
         """
         Convenience method to return the IP4 address for a node.
 
@@ -171,7 +175,7 @@ class IpPrefixes:
             raise ValueError("ip4 prefixes have not been set")
         return str(self.ip4[node.id])
 
-    def ip6_address(self, node: CoreNode) -> str:
+    def ip6_address(self, node: "CoreNode") -> str:
         """
         Convenience method to return the IP6 address for a node.
 
@@ -183,7 +187,7 @@ class IpPrefixes:
         return str(self.ip6[node.id])
 
     def create_interface(
-        self, node: CoreNode, name: str = None, mac: str = None
+        self, node: "CoreNode", name: str = None, mac: str = None
     ) -> InterfaceData:
         """
         Creates interface data for linking nodes, using the nodes unique id for
@@ -225,24 +229,3 @@ class IpPrefixes:
             ip6_mask=ip6_mask,
             mac=mac,
         )
-
-
-def create_interface(
-    node: CoreNode, network: CoreNetworkBase, interface_data: InterfaceData
-):
-    """
-    Create an interface for a node on a network using provided interface data.
-
-    :param node: node to create interface for
-    :param network: network to associate interface with
-    :param interface_data: interface data
-    :return: created interface
-    """
-    node.newnetif(
-        network,
-        addrlist=interface_data.get_addresses(),
-        hwaddr=interface_data.mac,
-        ifindex=interface_data.id,
-        ifname=interface_data.name,
-    )
-    return node.netif(interface_data.id)

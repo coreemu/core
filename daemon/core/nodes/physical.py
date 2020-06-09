@@ -10,10 +10,11 @@ from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.distributed import DistributedServer
+from core.emulator.emudata import InterfaceData
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
-from core.nodes.interface import CoreInterface, Veth
+from core.nodes.interface import CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
 
 if TYPE_CHECKING:
@@ -168,37 +169,25 @@ class PhysicalNode(CoreNodeBase):
             self.ifindex += 1
             return ifindex
 
-    def newnetif(
-        self,
-        net: Veth = None,
-        addrlist: List[str] = None,
-        hwaddr: str = None,
-        ifindex: int = None,
-        ifname: str = None,
-    ) -> int:
+    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> int:
         logging.info("creating interface")
-        if not addrlist:
-            addrlist = []
-
-        if self.up and net is None:
-            raise NotImplementedError
-
+        addresses = interface.get_addresses()
+        ifindex = interface.id
         if ifindex is None:
             ifindex = self.newifindex()
-
-        if ifname is None:
-            ifname = f"gt{ifindex}"
-
+        name = interface.name
+        if name is None:
+            name = f"gt{ifindex}"
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
             _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
-            self.adoptnetif(remote_tap, ifindex, hwaddr, addrlist)
+            self.adoptnetif(remote_tap, ifindex, interface.mac, addresses)
             return ifindex
         else:
             # this is reached when configuring services (self.up=False)
-            netif = GreTap(node=self, name=ifname, session=self.session, start=False)
-            self.adoptnetif(netif, ifindex, hwaddr, addrlist)
+            netif = GreTap(node=self, name=name, session=self.session, start=False)
+            self.adoptnetif(netif, ifindex, interface.mac, addresses)
             return ifindex
 
     def privatedir(self, path: str) -> None:
@@ -320,28 +309,19 @@ class Rj45Node(CoreNodeBase):
         self.up = False
         self.restorestate()
 
-    def newnetif(
-        self,
-        net: CoreNetworkBase = None,
-        addrlist: List[str] = None,
-        hwaddr: str = None,
-        ifindex: int = None,
-        ifname: str = None,
-    ) -> int:
+    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> int:
         """
         This is called when linking with another node. Since this node
         represents an interface, we do not create another object here,
         but attach ourselves to the given network.
 
         :param net: new network instance
-        :param addrlist: address list
-        :param hwaddr: hardware address
-        :param ifindex: interface index
-        :param ifname: interface name
+        :param interface: interface data for new interface
         :return: interface index
         :raises ValueError: when an interface has already been created, one max
         """
         with self.lock:
+            ifindex = interface.id
             if ifindex is None:
                 ifindex = 0
             if self.interface.net is not None:
@@ -350,9 +330,8 @@ class Rj45Node(CoreNodeBase):
             self.ifindex = ifindex
             if net is not None:
                 self.interface.attachnet(net)
-            if addrlist:
-                for addr in utils.make_tuple(addrlist):
-                    self.addaddr(addr)
+            for addr in interface.get_addresses():
+                self.addaddr(addr)
             return ifindex
 
     def delnetif(self, ifindex: int) -> None:

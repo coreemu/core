@@ -1,6 +1,6 @@
 import pytest
 
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import InterfaceData, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
@@ -52,7 +52,9 @@ class TestNodes:
     def test_node_sethwaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
-        index = node.newnetif()
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         interface = node.netif(index)
         mac = "aa:aa:aa:ff:ff:ff"
 
@@ -65,7 +67,9 @@ class TestNodes:
     def test_node_sethwaddr_exception(self, session: Session):
         # given
         node = session.add_node(CoreNode)
-        index = node.newnetif()
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         node.netif(index)
         mac = "aa:aa:aa:ff:ff:fff"
 
@@ -76,7 +80,9 @@ class TestNodes:
     def test_node_addaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
-        index = node.newnetif()
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         interface = node.netif(index)
         addr = "192.168.0.1/24"
 
@@ -89,7 +95,9 @@ class TestNodes:
     def test_node_addaddr_exception(self, session):
         # given
         node = session.add_node(CoreNode)
-        index = node.newnetif()
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         node.netif(index)
         addr = "256.168.0.1/24"
 

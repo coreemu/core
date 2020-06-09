@@ -15,6 +15,7 @@ from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
+from core.emulator.emudata import InterfaceData
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.client import VnodeClient
@@ -845,53 +846,36 @@ class CoreNode(CoreNodeBase):
             interface_name = self.ifname(ifindex)
             self.node_net_client.device_up(interface_name)
 
-    def newnetif(
-        self,
-        net: "CoreNetworkBase" = None,
-        addrlist: List[str] = None,
-        hwaddr: str = None,
-        ifindex: int = None,
-        ifname: str = None,
-    ) -> int:
+    def newnetif(self, net: "CoreNetworkBase", interface: InterfaceData) -> int:
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param addrlist: addresses to add on the interface
-        :param hwaddr: hardware address to set for interface
-        :param ifindex: index of interface to create
-        :param ifname: name for interface
+        :param interface: interface data for new interface
         :return: interface index
         """
-        if not addrlist:
-            addrlist = []
-
+        addresses = interface.get_addresses()
         with self.lock:
             # TODO: emane specific code
-            if net is not None and net.is_emane is True:
-                ifindex = self.newtuntap(ifindex, ifname)
+            if net.is_emane is True:
+                ifindex = self.newtuntap(interface.id, interface.name)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
                 #   save addresses with the interface now
                 self.attachnet(ifindex, net)
                 netif = self.netif(ifindex)
-                netif.sethwaddr(hwaddr)
-                for address in utils.make_tuple(addrlist):
+                netif.sethwaddr(interface.mac)
+                for address in addresses:
                     netif.addaddr(address)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex, ifname)
-
-            if net is not None:
-                self.attachnet(ifindex, net)
-
-            if hwaddr:
-                self.sethwaddr(ifindex, hwaddr)
-
-            for address in utils.make_tuple(addrlist):
+                ifindex = self.newveth(interface.id, interface.name)
+            self.attachnet(ifindex, net)
+            if interface.mac:
+                self.sethwaddr(ifindex, interface.mac)
+            for address in addresses:
                 self.addaddr(ifindex, address)
-
             self.ifup(ifindex)
             return ifindex
 

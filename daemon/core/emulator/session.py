@@ -19,13 +19,7 @@ from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData
 from core.emulator.distributed import DistributedController
-from core.emulator.emudata import (
-    InterfaceData,
-    LinkOptions,
-    NodeOptions,
-    create_interface,
-    link_config,
-)
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions, link_config
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
@@ -360,11 +354,11 @@ class Session:
                         node_one.name,
                         net_one.name,
                     )
-                    interface = create_interface(node_one, net_one, interface_one)
-                    node_one_interface = interface
+                    ifindex = node_one.newnetif(net_one, interface_one)
+                    node_one_interface = node_one.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not wireless_net:
-                        link_config(net_one, interface, link_options)
+                        link_config(net_one, node_one_interface, link_options)
 
                 # network to node
                 if node_two and net_one:
@@ -373,11 +367,11 @@ class Session:
                         node_two.name,
                         net_one.name,
                     )
-                    interface = create_interface(node_two, net_one, interface_two)
-                    node_two_interface = interface
+                    ifindex = node_two.newnetif(net_one, interface_two)
+                    node_two_interface = node_two.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not link_options.unidirectional and not wireless_net:
-                        link_config(net_one, interface, link_options)
+                        link_config(net_one, node_two_interface, link_options)
 
                 # network to network
                 if net_one and net_two:
@@ -1797,35 +1791,28 @@ class Session:
         control_net = self.add_remove_control_net(net_index, remove, conf_required)
         if not control_net:
             return
-
         if not node:
             return
-
         # ctrl# already exists
         if node.netif(control_net.CTRLIF_IDX_BASE + net_index):
             return
-
-        control_ip = node.id
-
         try:
-            address = control_net.prefix[control_ip]
-            prefix = control_net.prefix.prefixlen
-            addrlist = [f"{address}/{prefix}"]
+            ip4 = control_net.prefix[node.id]
+            ip4_mask = control_net.prefix.prefixlen
+            interface = InterfaceData(
+                id=control_net.CTRLIF_IDX_BASE + net_index,
+                name=f"ctrl{net_index}",
+                mac=utils.random_mac(),
+                ip4=ip4,
+                ip4_mask=ip4_mask,
+            )
+            ifindex = node.newnetif(control_net, interface)
+            node.netif(ifindex).control = True
         except ValueError:
             msg = f"Control interface not added to node {node.id}. "
             msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)
-            return
-
-        interface1 = node.newnetif(
-            net=control_net,
-            ifindex=control_net.CTRLIF_IDX_BASE + net_index,
-            ifname=f"ctrl{net_index}",
-            hwaddr=utils.random_mac(),
-            addrlist=addrlist,
-        )
-        node.netif(interface1).control = True
 
     def update_control_interface_hosts(
         self, net_index: int = 0, remove: bool = False
