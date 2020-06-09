@@ -86,13 +86,8 @@ def add_link_data(
     """
     interface_one = link_interface(link_proto.interface_one)
     interface_two = link_interface(link_proto.interface_two)
-
-    link_type = None
-    link_type_value = link_proto.type
-    if link_type_value is not None:
-        link_type = LinkTypes(link_type_value)
-
-    options = LinkOptions(_type=link_type)
+    link_type = LinkTypes(link_proto.type)
+    options = LinkOptions(type=link_type)
     options_data = link_proto.options
     if options_data:
         options.delay = options_data.delay
@@ -106,7 +101,6 @@ def add_link_data(
         options.unidirectional = options_data.unidirectional
         options.key = options_data.key
         options.opaque = options_data.opaque
-
     return interface_one, interface_two, options
 
 

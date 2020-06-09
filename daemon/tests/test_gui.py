@@ -511,7 +511,7 @@ class TestGui:
             EventTypes.DEFINITION_STATE,
         ],
     )
-    def test_event_state(self, coretlv, state):
+    def test_event_state(self, coretlv: CoreHandler, state: EventTypes):
         message = coreapi.CoreEventMessage.create(0, [(EventTlvs.TYPE, state.value)])
 
         coretlv.handle_message(message)
@@ -536,7 +536,7 @@ class TestGui:
 
         coretlv.session.add_event.assert_called_once()
 
-    def test_event_save_xml(self, coretlv, tmpdir):
+    def test_event_save_xml(self, coretlv: CoreHandler, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
         coretlv.session.add_node(CoreNode)
@@ -549,7 +549,7 @@ class TestGui:
 
         assert os.path.exists(file_path)
 
-    def test_event_open_xml(self, coretlv, tmpdir):
+    def test_event_open_xml(self, coretlv: CoreHandler, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
         node = coretlv.session.add_node(CoreNode)
@@ -573,7 +573,7 @@ class TestGui:
             EventTypes.RECONFIGURE,
         ],
     )
-    def test_event_service(self, coretlv, state):
+    def test_event_service(self, coretlv: CoreHandler, state: EventTypes):
         coretlv.session.broadcast_event = mock.MagicMock()
         node = coretlv.session.add_node(CoreNode)
         message = coreapi.CoreEventMessage.create(
@@ -599,7 +599,7 @@ class TestGui:
             EventTypes.RECONFIGURE,
         ],
     )
-    def test_event_mobility(self, coretlv, state):
+    def test_event_mobility(self, coretlv: CoreHandler, state: EventTypes):
         message = coreapi.CoreEventMessage.create(
             0, [(EventTlvs.TYPE, state.value), (EventTlvs.NAME, "mobility:ns2script")]
         )
@@ -610,7 +610,7 @@ class TestGui:
         message = coreapi.CoreRegMessage.create(0, [(RegisterTlvs.GUI, "gui")])
         coretlv.handle_message(message)
 
-    def test_register_xml(self, coretlv, tmpdir):
+    def test_register_xml(self, coretlv: CoreHandler, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
         file_path = xml_file.strpath
         node = coretlv.session.add_node(CoreNode)
@@ -625,7 +625,7 @@ class TestGui:
 
         assert coretlv.coreemu.sessions[1].get_node(node.id, CoreNode)
 
-    def test_register_python(self, coretlv, tmpdir):
+    def test_register_python(self, coretlv: CoreHandler, tmpdir):
         xml_file = tmpdir.join("test.py")
         file_path = xml_file.strpath
         with open(file_path, "w") as f:

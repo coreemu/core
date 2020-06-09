@@ -93,34 +93,28 @@ class NodeOptions:
         self.alt = alt
 
 
+@dataclass
 class LinkOptions:
     """
     Options for creating and updating links within core.
     """
 
-    def __init__(self, _type: LinkTypes = LinkTypes.WIRED) -> None:
-        """
-        Create a LinkOptions object.
-
-        :param _type: type of link, defaults to
-            wired
-        """
-        self.type = _type
-        self.session = None
-        self.delay = None
-        self.bandwidth = None
-        self.per = None
-        self.dup = None
-        self.jitter = None
-        self.mer = None
-        self.burst = None
-        self.mburst = None
-        self.gui_attributes = None
-        self.unidirectional = None
-        self.emulation_id = None
-        self.network_id = None
-        self.key = None
-        self.opaque = None
+    type: LinkTypes = LinkTypes.WIRED
+    session: int = None
+    delay: int = None
+    bandwidth: int = None
+    per: float = None
+    dup: int = None
+    jitter: int = None
+    mer: int = None
+    burst: int = None
+    mburst: int = None
+    gui_attributes: str = None
+    unidirectional: bool = None
+    emulation_id: int = None
+    network_id: int = None
+    key: int = None
+    opaque: str = None
 
 
 @dataclass

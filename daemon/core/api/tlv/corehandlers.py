@@ -772,7 +772,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
 
-        link_options = LinkOptions(_type=link_type)
+        link_options = LinkOptions(type=link_type)
         link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
         link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
