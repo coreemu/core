@@ -5,7 +5,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 import logging
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional
+from typing import IO, TYPE_CHECKING, Dict, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 from core import constants
@@ -42,11 +42,11 @@ class Sdt:
     when a node position or link has changed.
     """
 
-    DEFAULT_SDT_URL = "tcp://127.0.0.1:50000/"
+    DEFAULT_SDT_URL: str = "tcp://127.0.0.1:50000/"
     # default altitude (in meters) for flyto view
-    DEFAULT_ALT = 2500
+    DEFAULT_ALT: int = 2500
     # TODO: read in user"s nodes.conf here; below are default node types from the GUI
-    DEFAULT_SPRITES = [
+    DEFAULT_SPRITES: Dict[str, str] = [
         ("router", "router.gif"),
         ("host", "host.gif"),
         ("PC", "pc.gif"),
@@ -65,14 +65,14 @@ class Sdt:
 
         :param session: session this manager is tied to
         """
-        self.session = session
-        self.lock = threading.Lock()
-        self.sock = None
-        self.connected = False
-        self.url = self.DEFAULT_SDT_URL
-        self.address = None
-        self.protocol = None
-        self.network_layers = set()
+        self.session: "Session" = session
+        self.lock: threading.Lock = threading.Lock()
+        self.sock: Optional[IO] = None
+        self.connected: bool = False
+        self.url: str = self.DEFAULT_SDT_URL
+        self.address: Optional[Tuple[Optional[str], Optional[int]]] = None
+        self.protocol: Optional[str] = None
+        self.network_layers: Set[str] = set()
         self.session.node_handlers.append(self.handle_node_update)
         self.session.link_handlers.append(self.handle_link_update)
 
