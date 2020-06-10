@@ -32,7 +32,7 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 def ping(
     from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes, count: int = 3
 ):
-    address = ip_prefixes.ip4_address(to_node)
+    address = ip_prefixes.ip4_address(to_node.id)
     try:
         from_node.cmd(f"ping -c {count} {address}")
         status = 0

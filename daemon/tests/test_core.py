@@ -22,7 +22,7 @@ _WIRED = [PtpNet, HubNode, SwitchNode]
 
 
 def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
-    address = ip_prefixes.ip4_address(to_node)
+    address = ip_prefixes.ip4_address(to_node.id)
     try:
         from_node.cmd(f"ping -c 1 {address}")
         status = 0
