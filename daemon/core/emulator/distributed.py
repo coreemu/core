@@ -37,10 +37,10 @@ class DistributedServer:
         :param name: convenience name to associate with host
         :param host: host to connect to
         """
-        self.name = name
-        self.host = host
-        self.conn = Connection(host, user="root")
-        self.lock = threading.Lock()
+        self.name: str = name
+        self.host: str = host
+        self.conn: Connection = Connection(host, user="root")
+        self.lock: threading.Lock = threading.Lock()
 
     def remote_cmd(
         self, cmd: str, env: Dict[str, str] = None, cwd: str = None, wait: bool = True
@@ -117,10 +117,10 @@ class DistributedController:
 
         :param session: session
         """
-        self.session = session
-        self.servers = OrderedDict()
-        self.tunnels = {}
-        self.address = self.session.options.get_config(
+        self.session: "Session" = session
+        self.servers: Dict[str, DistributedServer] = OrderedDict()
+        self.tunnels: Dict[int, Tuple[GreTap, GreTap]] = {}
+        self.address: str = self.session.options.get_config(
             "distributed_address", default=None
         )
 
@@ -178,13 +178,10 @@ class DistributedController:
         """
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
-
             if not isinstance(node, CoreNetwork):
                 continue
-
             if isinstance(node, CtrlNet) and node.serverintf is not None:
                 continue
-
             for name in self.servers:
                 server = self.servers[name]
                 self.create_gre_tunnel(node, server)
@@ -194,7 +191,6 @@ class DistributedController:
     ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
-
 
         :param node: node to create gre tunnel for
         :param server: server to create
@@ -243,15 +239,3 @@ class DistributedController:
             (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
         )
         return key & 0xFFFFFFFF
-
-    def get_tunnel(self, n1_id: int, n2_id: int) -> GreTap:
-        """
-        Return the GreTap between two nodes if it exists.
-
-        :param n1_id: node one id
-        :param n2_id: node two id
-        :return: gre tap between nodes or None
-        """
-        key = self.tunnel_key(n1_id, n2_id)
-        logging.debug("checking for tunnel key(%s) in: %s", key, self.tunnels)
-        return self.tunnels.get(key)

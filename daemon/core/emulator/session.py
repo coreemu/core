@@ -42,7 +42,7 @@ from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import CoreInterface, GreTap
+from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -200,7 +200,6 @@ class Session:
         Optional[CoreNode],
         Optional[CoreNetworkBase],
         Optional[CoreNetworkBase],
-        GreTap,
     ]:
         """
         Convenience method for retrieving nodes within link data.
@@ -221,23 +220,6 @@ class Session:
         node_one = self.get_node(node_one_id, NodeBase)
         node_two = self.get_node(node_two_id, NodeBase)
 
-        # both node ids are provided
-        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
-        logging.debug("tunnel between nodes: %s", tunnel)
-        if isinstance(tunnel, GreTapBridge):
-            net_one = tunnel
-            if tunnel.remotenum == node_one_id:
-                node_one = None
-            else:
-                node_two = None
-        # physical node connected via gre tap tunnel
-        # TODO: double check this cases type
-        elif tunnel:
-            if tunnel.remotenum == node_one_id:
-                node_one = None
-            else:
-                node_two = None
-
         if isinstance(node_one, CoreNetworkBase):
             if not net_one:
                 net_one = node_one
@@ -253,14 +235,13 @@ class Session:
             node_two = None
 
         logging.debug(
-            "link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
+            "link node types n1(%s) n2(%s) net1(%s) net2(%s)",
             node_one,
             node_two,
             net_one,
             net_two,
-            tunnel,
         )
-        return node_one, node_two, net_one, net_two, tunnel
+        return node_one, node_two, net_one, net_two
 
     def _link_wireless(self, objects: Iterable[CoreNodeBase], connect: bool) -> None:
         """
@@ -326,7 +307,7 @@ class Session:
             options = LinkOptions()
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
@@ -415,23 +396,6 @@ class Session:
                     net_two.setkey(key)
                     if addresses:
                         net_two.addrconfig(addresses)
-
-                # physical node connected with tunnel
-                if not net_one and not net_two and (node_one or node_two):
-                    if node_one and isinstance(node_one, PhysicalNode):
-                        logging.info("adding link for physical node: %s", node_one.name)
-                        addresses = interface_one.get_addresses()
-                        node_one.adoptnetif(
-                            tunnel, interface_one.id, interface_one.mac, addresses
-                        )
-                        node_one.linkconfig(tunnel, options)
-                    elif node_two and isinstance(node_two, PhysicalNode):
-                        logging.info("adding link for physical node: %s", node_two.name)
-                        addresses = interface_two.get_addresses()
-                        node_two.adoptnetif(
-                            tunnel, interface_two.id, interface_two.mac, addresses
-                        )
-                        node_two.linkconfig(tunnel, options)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -461,7 +425,7 @@ class Session:
         :raises core.CoreError: when no common network is found for link being deleted
         """
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
@@ -573,7 +537,7 @@ class Session:
             options = LinkOptions()
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
