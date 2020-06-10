@@ -113,6 +113,15 @@ class InterfaceHelper:
     def create_interface(
         self, node_id: int, interface_id: int, name: str = None, mac: str = None
     ) -> core_pb2.Interface:
+        """
+        Create an interface protobuf object.
+
+        :param node_id: node id to create interface for
+        :param interface_id: interface id
+        :param name: name of interface
+        :param mac: mac address for interface
+        :return: interface protobuf
+        """
         interface_data = self.prefixes.gen_interface(node_id, name, mac)
         return core_pb2.Interface(
             id=interface_id,
