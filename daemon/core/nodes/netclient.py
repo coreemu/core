@@ -19,7 +19,7 @@ class LinuxNetClient:
 
         :param run: function to run commands with
         """
-        self.run = run
+        self.run: Callable[..., str] = run
 
     def set_hostname(self, name: str) -> None:
         """

@@ -20,8 +20,8 @@ class VnodeClient:
         :param name: name for client
         :param ctrlchnlname: control channel name
         """
-        self.name = name
-        self.ctrlchnlname = ctrlchnlname
+        self.name: str = name
+        self.ctrlchnlname: str = ctrlchnlname
 
     def _verify_connection(self) -> None:
         """

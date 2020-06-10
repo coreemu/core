@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
 from core.emulator.distributed import DistributedServer
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 
 class LxdClient:
     def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name = name
-        self.image = image
-        self.run = run
-        self.pid = None
+        self.name: str = name
+        self.image: str = image
+        self.run: Callable[..., str] = run
+        self.pid: Optional[int] = None
 
     def create_container(self) -> int:
         self.run(f"lxc launch {self.image} {self.name}")
@@ -92,7 +92,7 @@ class LxcNode(CoreNode):
         """
         if image is None:
             image = "ubuntu"
-        self.image = image
+        self.image: str = image
         super().__init__(session, _id, name, nodedir, start, server)
 
     def alive(self) -> bool:
