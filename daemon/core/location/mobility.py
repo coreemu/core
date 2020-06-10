@@ -539,7 +539,7 @@ class WayPoint:
         self,
         _time: float,
         node_id: int,
-        coords: Tuple[float, float, float],
+        coords: Tuple[float, float, Optional[float]],
         speed: float,
     ) -> None:
         """
@@ -552,7 +552,7 @@ class WayPoint:
         """
         self.time: float = _time
         self.node_id: int = node_id
-        self.coords: Tuple[float, float, float] = coords
+        self.coords: Tuple[float, float, Optional[float]] = coords
         self.speed: float = speed
 
     def __eq__(self, other: "WayPoint") -> bool:
@@ -737,7 +737,13 @@ class WayPointMobility(WirelessModel):
         self.session.mobility.updatewlans(moved, moved_netifs)
 
     def addwaypoint(
-        self, _time: float, nodenum: int, x: float, y: float, z: float, speed: float
+        self,
+        _time: float,
+        nodenum: int,
+        x: float,
+        y: float,
+        z: Optional[float],
+        speed: float,
     ) -> None:
         """
         Waypoints are pushed to a heapq, sorted by time.
