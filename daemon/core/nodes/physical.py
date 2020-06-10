@@ -126,20 +126,15 @@ class PhysicalNode(CoreNodeBase):
         netif.name = f"gt{ifindex}"
         netif.node = self
         self.addnetif(netif, ifindex)
-
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
             self.net_client.device_down(netif.localname)
             self.net_client.device_name(netif.localname, netif.name)
-
         netif.localname = netif.name
-
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
-
-        for addr in utils.make_tuple(addrlist):
+        for addr in addrlist:
             self.addaddr(ifindex, addr)
-
         if self.up:
             self.net_client.device_up(netif.localname)
 

@@ -158,19 +158,6 @@ def which(command: str, required: bool) -> str:
     return found_path
 
 
-def make_tuple(obj: Generic[T]) -> Tuple[T]:
-    """
-    Create a tuple from an object, or return the object itself.
-
-    :param obj: object to convert to a tuple
-    :return: converted tuple or the object itself
-    """
-    if hasattr(obj, "__iter__"):
-        return tuple(obj)
-    else:
-        return (obj,)
-
-
 def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> Tuple[T]:
     """
     Create a tuple from a string.
