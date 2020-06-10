@@ -50,7 +50,7 @@ class CoreInterface:
         self.mtu: int = mtu
         self.net: Optional[CoreNetworkBase] = None
         self.othernet: Optional[CoreNetworkBase] = None
-        self._params = {}
+        self._params: Dict[str, float] = {}
         self.addrlist: List[str] = []
         self.hwaddr: Optional[str] = None
         # placeholder position hook
