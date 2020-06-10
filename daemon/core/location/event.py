@@ -6,7 +6,7 @@ import heapq
 import threading
 import time
 from functools import total_ordering
-from typing import Any, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 class Timer(threading.Thread):
@@ -16,34 +16,33 @@ class Timer(threading.Thread):
     """
 
     def __init__(
-        self, interval: float, function: Callable, args: Any = None, kwargs: Any = None
+        self,
+        interval: float,
+        func: Callable[..., None],
+        args: Tuple[Any] = None,
+        kwargs: Dict[Any, Any] = None,
     ) -> None:
         """
         Create a Timer instance.
 
         :param interval: time interval
-        :param function: function to call when timer finishes
+        :param func: function to call when timer finishes
         :param args: function arguments
         :param kwargs: function keyword arguments
         """
         super().__init__()
-        self.interval = interval
-        self.function = function
-
-        self.finished = threading.Event()
-        self._running = threading.Lock()
-
+        self.interval: float = interval
+        self.func: Callable[..., None] = func
+        self.finished: threading.Event = threading.Event()
+        self._running: threading.Lock = threading.Lock()
         # validate arguments were provided
-        if args:
-            self.args = args
-        else:
-            self.args = []
-
+        if args is None:
+            args = ()
+        self.args: Tuple[Any] = args
         # validate keyword arguments were provided
-        if kwargs:
-            self.kwargs = kwargs
-        else:
-            self.kwargs = {}
+        if kwargs is None:
+            kwargs = {}
+        self.kwargs: Dict[Any, Any] = kwargs
 
     def cancel(self) -> bool:
         """
@@ -67,7 +66,7 @@ class Timer(threading.Thread):
         self.finished.wait(self.interval)
         with self._running:
             if not self.finished.is_set():
-                self.function(*self.args, **self.kwargs)
+                self.func(*self.args, **self.kwargs)
             self.finished.set()
 
 
@@ -78,7 +77,12 @@ class Event:
     """
 
     def __init__(
-        self, eventnum: int, event_time: float, func: Callable, *args: Any, **kwds: Any
+        self,
+        eventnum: int,
+        event_time: float,
+        func: Callable[..., None],
+        *args: Any,
+        **kwds: Any
     ) -> None:
         """
         Create an Event instance.
@@ -89,12 +93,12 @@ class Event:
         :param args: function arguments
         :param kwds: function keyword arguments
         """
-        self.eventnum = eventnum
-        self.time = event_time
-        self.func = func
-        self.args = args
-        self.kwds = kwds
-        self.canceled = False
+        self.eventnum: int = eventnum
+        self.time: float = event_time
+        self.func: Callable[..., None] = func
+        self.args: Tuple[Any] = args
+        self.kwds: Dict[Any, Any] = kwds
+        self.canceled: bool = False
 
     def __lt__(self, other: "Event") -> bool:
         result = self.time < other.time
@@ -118,7 +122,6 @@ class Event:
 
         :return: nothing
         """
-        # XXX not thread-safe
         self.canceled = True
 
 
@@ -131,14 +134,14 @@ class EventLoop:
         """
         Creates a EventLoop instance.
         """
-        self.lock = threading.RLock()
-        self.queue = []
-        self.eventnum = 0
-        self.timer = None
-        self.running = False
-        self.start = None
+        self.lock: threading.RLock = threading.RLock()
+        self.queue: List[Event] = []
+        self.eventnum: int = 0
+        self.timer: Optional[Timer] = None
+        self.running: bool = False
+        self.start: Optional[float] = None
 
-    def __run_events(self) -> None:
+    def _run_events(self) -> None:
         """
         Run events.
 
@@ -161,9 +164,9 @@ class EventLoop:
         with self.lock:
             self.timer = None
             if schedule:
-                self.__schedule_event()
+                self._schedule_event()
 
-    def __schedule_event(self) -> None:
+    def _schedule_event(self) -> None:
         """
         Schedule event.
 
@@ -177,7 +180,7 @@ class EventLoop:
             delay = self.queue[0].time - time.monotonic()
             if self.timer:
                 raise ValueError("timer was already set")
-            self.timer = Timer(delay, self.__run_events)
+            self.timer = Timer(delay, self._run_events)
             self.timer.daemon = True
             self.timer.start()
 
@@ -194,7 +197,7 @@ class EventLoop:
             self.start = time.monotonic()
             for event in self.queue:
                 event.time += self.start
-            self.__schedule_event()
+            self._schedule_event()
 
     def stop(self) -> None:
         """
@@ -242,5 +245,5 @@ class EventLoop:
                 if self.timer is not None and self.timer.cancel():
                     self.timer = None
             if self.running and self.timer is None:
-                self.__schedule_event()
+                self._schedule_event()
         return event

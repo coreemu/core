@@ -6,6 +6,7 @@ import logging
 from typing import Tuple
 
 import pyproj
+from pyproj import Transformer
 
 from core.emulator.enumerations import RegisterTlvs
 
@@ -20,21 +21,23 @@ class GeoLocation:
     defined projections.
     """
 
-    name = "location"
-    config_type = RegisterTlvs.UTILITY
+    name: str = "location"
+    config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
     def __init__(self) -> None:
         """
         Creates a GeoLocation instance.
         """
-        self.to_pixels = pyproj.Transformer.from_crs(
+        self.to_pixels: Transformer = pyproj.Transformer.from_crs(
             CRS_WGS84, CRS_PROJ, always_xy=True
         )
-        self.to_geo = pyproj.Transformer.from_crs(CRS_PROJ, CRS_WGS84, always_xy=True)
-        self.refproj = (0.0, 0.0, 0.0)
-        self.refgeo = (0.0, 0.0, 0.0)
-        self.refxyz = (0.0, 0.0, 0.0)
-        self.refscale = 1.0
+        self.to_geo: Transformer = pyproj.Transformer.from_crs(
+            CRS_PROJ, CRS_WGS84, always_xy=True
+        )
+        self.refproj: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refgeo: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refxyz: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refscale: float = 1.0
 
     def setrefgeo(self, lat: float, lon: float, alt: float) -> None:
         """

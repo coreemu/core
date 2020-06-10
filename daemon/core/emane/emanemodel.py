@@ -12,6 +12,7 @@ from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import ConfigDataTypes, TransportType
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
+from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -139,13 +140,13 @@ class EmaneModel(WirelessModel):
         """
         logging.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
+    def update(self, moved: List[CoreNode], moved_netifs: List[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
-        :param moved: were nodes moved
+        :param moved: moved nodes
         :param moved_netifs: interfaces that were moved
         :return: nothing
         """
