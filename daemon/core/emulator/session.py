@@ -12,7 +12,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -193,76 +193,28 @@ class Session:
             raise CoreError(f"invalid node class: {_class}")
         return node_type
 
-    def _link_nodes(
-        self, node_one_id: int, node_two_id: int
-    ) -> Tuple[
-        Optional[CoreNode],
-        Optional[CoreNode],
-        Optional[CoreNetworkBase],
-        Optional[CoreNetworkBase],
-    ]:
-        """
-        Convenience method for retrieving nodes within link data.
-
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :return: nodes, network nodes if present, and tunnel if present
-        """
-        logging.debug(
-            "link message between node1(%s) and node2(%s)", node_one_id, node_two_id
-        )
-
-        # values to fill
-        net_one = None
-        net_two = None
-
-        # retrieve node one
-        node_one = self.get_node(node_one_id, NodeBase)
-        node_two = self.get_node(node_two_id, NodeBase)
-
-        if isinstance(node_one, CoreNetworkBase):
-            if not net_one:
-                net_one = node_one
-            else:
-                net_two = node_one
-            node_one = None
-
-        if isinstance(node_two, CoreNetworkBase):
-            if not net_one:
-                net_one = node_two
-            else:
-                net_two = node_two
-            node_two = None
-
-        logging.debug(
-            "link node types n1(%s) n2(%s) net1(%s) net2(%s)",
-            node_one,
-            node_two,
-            net_one,
-            net_two,
-        )
-        return node_one, node_two, net_one, net_two
-
-    def _link_wireless(self, objects: Iterable[CoreNodeBase], connect: bool) -> None:
+    def _link_wireless(
+        self, node_one: CoreNodeBase, node_two: CoreNodeBase, connect: bool
+    ) -> None:
         """
         Objects to deal with when connecting/disconnecting wireless links.
 
-        :param objects: possible objects to deal with
+        :param node_one: node one for wireless link
+        :param node_two: node two for wireless link
         :param connect: link interfaces if True, unlink otherwise
         :return: nothing
         :raises core.CoreError: when objects to link is less than 2, or no common
             networks are found
         """
-        objects = [x for x in objects if x]
-        if len(objects) < 2:
-            raise CoreError(f"wireless link failure: {objects}")
-        logging.debug(
-            "handling wireless linking objects(%s) connect(%s)", objects, connect
+        logging.info(
+            "handling wireless linking node1(%s) node2(%s): %s",
+            node_one.name,
+            node_two.name,
+            connect,
         )
-        common_networks = objects[0].commonnets(objects[1])
+        common_networks = node_one.commonnets(node_one)
         if not common_networks:
             raise CoreError("no common network found for wireless link/unlink")
-
         for common_network, interface_one, interface_two in common_networks:
             if not isinstance(common_network, (WlanNode, EmaneNet)):
                 logging.info(
@@ -270,13 +222,6 @@ class Session:
                     common_network,
                 )
                 continue
-
-            logging.info(
-                "wireless linking connect(%s): %s - %s",
-                connect,
-                interface_one,
-                interface_two,
-            )
             if connect:
                 common_network.link(interface_one, interface_two)
             else:
@@ -305,105 +250,70 @@ class Session:
         """
         if not options:
             options = LinkOptions()
+        node1 = self.get_node(node_one_id, NodeBase)
+        node2 = self.get_node(node_two_id, NodeBase)
+        node1_interface = None
+        node2_interface = None
 
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
-        )
-
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        node_one_interface = None
-        node_two_interface = None
-
-        try:
-            # wireless link
-            if options.type == LinkTypes.WIRELESS:
-                objects = [node_one, node_two, net_one, net_two]
-                self._link_wireless(objects, connect=True)
-            # wired link
+        # wireless link
+        if options.type == LinkTypes.WIRELESS:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                self._link_wireless(node1, node2, connect=True)
             else:
-                # 2 nodes being linked, ptp network
-                if all([node_one, node_two]) and not net_one:
-                    logging.info(
-                        "adding link for peer to peer nodes: %s - %s",
-                        node_one.name,
-                        node_two.name,
-                    )
-                    start = self.state.should_start()
-                    net_one = self.create_node(PtpNet, start=start)
+                raise CoreError(
+                    f"cannot wireless link node1({type(node1)}) node2({type(node2)})"
+                )
+        # wired link
+        else:
+            # peer to peer link
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                logging.info("linking ptp: %s - %s", node1.name, node2.name)
+                start = self.state.should_start()
+                ptp = self.create_node(PtpNet, start=start)
+                node1_interface = node1.newnetif(ptp, interface_one)
+                node2_interface = node2.newnetif(ptp, interface_two)
+                ptp.linkconfig(node1_interface, options)
+                if not options.unidirectional:
+                    ptp.linkconfig(node2_interface, options)
+            # link node to net
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                node1_interface = node1.newnetif(node2, interface_one)
+                if not isinstance(node2, (EmaneNet, WlanNode)):
+                    node2.linkconfig(node1_interface, options)
+            # link net to node
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                node2_interface = node2.newnetif(node1, interface_two)
+                wireless_net = isinstance(node1, (EmaneNet, WlanNode))
+                if not options.unidirectional and not wireless_net:
+                    node1.linkconfig(node2_interface, options)
+            # network to network
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                logging.info(
+                    "linking network to network: %s - %s", node1.name, node2.name
+                )
+                node1_interface = node1.linknet(node2)
+                node1.linkconfig(node1_interface, options)
+                if not options.unidirectional:
+                    node1_interface.swapparams("_params_up")
+                    node2.linkconfig(node1_interface, options)
+                    node1_interface.swapparams("_params_up")
+            else:
+                raise CoreError(
+                    f"cannot link node1({type(node1)}) node2({type(node2)})"
+                )
 
-                # node to network
-                if node_one and net_one:
-                    logging.info(
-                        "adding link from node to network: %s - %s",
-                        node_one.name,
-                        net_one.name,
-                    )
-                    ifindex = node_one.newnetif(net_one, interface_one)
-                    node_one_interface = node_one.netif(ifindex)
-                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not wireless_net:
-                        net_one.linkconfig(node_one_interface, options)
-
-                # network to node
-                if node_two and net_one:
-                    logging.info(
-                        "adding link from network to node: %s - %s",
-                        node_two.name,
-                        net_one.name,
-                    )
-                    ifindex = node_two.newnetif(net_one, interface_two)
-                    node_two_interface = node_two.netif(ifindex)
-                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not options.unidirectional and not wireless_net:
-                        net_one.linkconfig(node_two_interface, options)
-
-                # network to network
-                if net_one and net_two:
-                    logging.info(
-                        "adding link from network to network: %s - %s",
-                        net_one.name,
-                        net_two.name,
-                    )
-                    interface = net_one.linknet(net_two)
-                    node_one_interface = interface
-                    net_one.linkconfig(interface, options)
-                    if not options.unidirectional:
-                        interface.swapparams("_params_up")
-                        net_two.linkconfig(interface, options)
-                        interface.swapparams("_params_up")
-
-                # a tunnel node was found for the nodes
-                addresses = []
-                if not node_one and all([net_one, interface_one]):
-                    addresses.extend(interface_one.get_addresses())
-                if not node_two and all([net_two, interface_two]):
-                    addresses.extend(interface_two.get_addresses())
-
-                # tunnel node logic
-                key = options.key
-                if key and isinstance(net_one, TunnelNode):
-                    logging.info("setting tunnel key for: %s", net_one.name)
-                    net_one.setkey(key)
-                    if addresses:
-                        net_one.addrconfig(addresses)
-                if key and isinstance(net_two, TunnelNode):
-                    logging.info("setting tunnel key for: %s", net_two.name)
-                    net_two.setkey(key)
-                    if addresses:
-                        net_two.addrconfig(addresses)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
-
+            # configure tunnel nodes
+            key = options.key
+            if isinstance(node1, TunnelNode):
+                logging.info("setting tunnel key for: %s", node1.name)
+                node1.setkey(key, interface_one)
+            if isinstance(node2, TunnelNode):
+                logging.info("setting tunnel key for: %s", node2.name)
+                node2.setkey(key, interface_two)
         self.sdt.add_link(node_one_id, node_two_id)
-        return node_one_interface, node_two_interface
+        return node1_interface, node2_interface
 
     def delete_link(
         self,
@@ -424,93 +334,52 @@ class Session:
         :return: nothing
         :raises core.CoreError: when no common network is found for link being deleted
         """
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
+        node1 = self.get_node(node_one_id, NodeBase)
+        node2 = self.get_node(node_two_id, NodeBase)
+        logging.info(
+            "deleting link(%s) node(%s):interface(%s) node(%s):interface(%s)",
+            link_type.name,
+            node1.name,
+            interface_one_id,
+            node2.name,
+            interface_two_id,
         )
 
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        try:
-            # wireless link
-            if link_type == LinkTypes.WIRELESS:
-                objects = [node_one, node_two, net_one, net_two]
-                self._link_wireless(objects, connect=False)
-            # wired link
+        # wireless link
+        if link_type == LinkTypes.WIRELESS:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                self._link_wireless(node1, node2, connect=False)
             else:
-                if all([node_one, node_two]):
-                    # TODO: fix this for the case where ifindex[1,2] are not specified
-                    # a wired unlink event, delete the connecting bridge
-                    interface_one = node_one.netif(interface_one_id)
-                    interface_two = node_two.netif(interface_two_id)
-
-                    # get interfaces from common network, if no network node
-                    # otherwise get interfaces between a node and network
-                    if not interface_one and not interface_two:
-                        common_networks = node_one.commonnets(node_two)
-                        for (
-                            network,
-                            common_interface_one,
-                            common_interface_two,
-                        ) in common_networks:
-                            if (net_one and network == net_one) or not net_one:
-                                interface_one = common_interface_one
-                                interface_two = common_interface_two
-                                break
-
-                    if all([interface_one, interface_two]) and any(
-                        [interface_one.net, interface_two.net]
-                    ):
-                        if interface_one.net != interface_two.net and all(
-                            [interface_one.up, interface_two.up]
-                        ):
-                            raise CoreError("no common network found")
-
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s):interface(%s)",
-                            node_one.name,
-                            interface_one.name,
-                            node_two.name,
-                            interface_two.name,
-                        )
-                        net_one = interface_one.net
-                        interface_one.detachnet()
-                        interface_two.detachnet()
-                        if net_one.numnetif() == 0:
-                            self.delete_node(net_one.id)
-                        node_one.delnetif(interface_one.netindex)
-                        node_two.delnetif(interface_two.netindex)
-                elif node_one and net_one:
-                    interface = node_one.netif(interface_one_id)
-                    if interface:
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s)",
-                            node_one.name,
-                            interface.name,
-                            net_one.name,
-                        )
-                        interface.detachnet()
-                        node_one.delnetif(interface.netindex)
-                elif node_two and net_one:
-                    interface = node_two.netif(interface_two_id)
-                    if interface:
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s)",
-                            node_two.name,
-                            interface.name,
-                            net_one.name,
-                        )
-                        interface.detachnet()
-                        node_two.delnetif(interface.netindex)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
-
+                raise CoreError(
+                    "cannot delete wireless link "
+                    f"node1({type(node1)}) node2({type(node2)})"
+                )
+        # wired link
+        else:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                interface1 = node1.netif(interface_one_id)
+                interface2 = node2.netif(interface_two_id)
+                if not interface1:
+                    raise CoreError(
+                        f"node({node1.name}) missing interface({interface_one_id})"
+                    )
+                if not interface2:
+                    raise CoreError(
+                        f"node({node2.name}) missing interface({interface_two_id})"
+                    )
+                if interface1.net != interface2.net:
+                    raise CoreError(
+                        f"node1({node1.name}) node2({node2.name}) "
+                        "not connected to same net"
+                    )
+                ptp = interface1.net
+                node1.delnetif(interface_one_id)
+                node2.delnetif(interface_two_id)
+                self.delete_node(ptp.id)
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                node1.delnetif(interface_one_id)
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                node2.delnetif(interface_two_id)
         self.sdt.delete_link(node_one_id, node_two_id)
 
     def update_link(
@@ -530,84 +399,79 @@ class Session:
         :param interface_two_id: interface id for node two
         :param options: data to update link with
         :return: nothing
-        :raises core.CoreError: when updating a wireless type link, when there is a unknown
-            link between networks
+        :raises core.CoreError: when updating a wireless type link, when there is a
+            unknown link between networks
         """
         if not options:
             options = LinkOptions()
-
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
+        node1 = self.get_node(node_one_id, NodeBase)
+        node2 = self.get_node(node_two_id, NodeBase)
+        logging.info(
+            "update link(%s) node(%s):interface(%s) node(%s):interface(%s)",
+            options.type.name,
+            node1.name,
+            interface_one_id,
+            node2.name,
+            interface_two_id,
         )
 
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        try:
-            # wireless link
-            if options.type == LinkTypes.WIRELESS:
-                raise CoreError("cannot update wireless link")
-            else:
-                if not node_one and not node_two:
-                    if net_one and net_two:
-                        # modify link between nets
-                        interface = net_one.getlinknetif(net_two)
-                        upstream = False
-
-                        if not interface:
-                            upstream = True
-                            interface = net_two.getlinknetif(net_one)
-
-                        if not interface:
-                            raise CoreError("modify unknown link between nets")
-
-                        if upstream:
-                            interface.swapparams("_params_up")
-                            net_one.linkconfig(interface, options)
-                            interface.swapparams("_params_up")
-                        else:
-                            net_one.linkconfig(interface, options)
-
-                        if not options.unidirectional:
-                            if upstream:
-                                net_two.linkconfig(interface, options)
-                            else:
-                                interface.swapparams("_params_up")
-                                net_two.linkconfig(interface, options)
-                                interface.swapparams("_params_up")
-                    else:
-                        raise CoreError("modify link for unknown nodes")
-                elif not node_one:
-                    # node1 = layer 2node, node2 = layer3 node
-                    interface = node_two.netif(interface_two_id)
-                    net_one.linkconfig(interface, options)
-                elif not node_two:
-                    # node2 = layer 2node, node1 = layer3 node
-                    interface = node_one.netif(interface_one_id)
-                    net_one.linkconfig(interface, options)
+        # wireless link
+        if options.type == LinkTypes.WIRELESS:
+            raise CoreError("cannot update wireless link")
+        else:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                interface1 = node1.netif(interface_one_id)
+                interface2 = node2.netif(interface_two_id)
+                if not interface1:
+                    raise CoreError(
+                        f"node({node1.name}) missing interface({interface_one_id})"
+                    )
+                if not interface2:
+                    raise CoreError(
+                        f"node({node2.name}) missing interface({interface_two_id})"
+                    )
+                if interface1.net != interface2.net:
+                    raise CoreError(
+                        f"node1({node1.name}) node2({node2.name}) "
+                        "not connected to same net"
+                    )
+                ptp = interface1.net
+                ptp.linkconfig(interface1, options, interface2)
+                if not options.unidirectional:
+                    ptp.linkconfig(interface2, options, interface1)
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                interface = node1.netif(interface_one_id)
+                node2.linkconfig(interface, options)
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                interface = node2.netif(interface_two_id)
+                node1.linkconfig(interface, options)
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                interface = node1.getlinknetif(node2)
+                upstream = False
+                if not interface:
+                    upstream = True
+                    interface = node2.getlinknetif(node1)
+                if not interface:
+                    raise CoreError("modify unknown link between nets")
+                if upstream:
+                    interface.swapparams("_params_up")
+                    node1.linkconfig(interface, options)
+                    interface.swapparams("_params_up")
                 else:
-                    common_networks = node_one.commonnets(node_two)
-                    if not common_networks:
-                        raise CoreError("no common network found")
-
-                    for net_one, interface_one, interface_two in common_networks:
-                        if (
-                            interface_one_id is not None
-                            and interface_one_id != node_one.getifindex(interface_one)
-                        ):
-                            continue
-
-                        net_one.linkconfig(interface_one, options, interface_two)
-                        if not options.unidirectional:
-                            net_one.linkconfig(interface_two, options, interface_one)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
+                    node1.linkconfig(interface, options)
+                if not options.unidirectional:
+                    if upstream:
+                        node2.linkconfig(interface, options)
+                    else:
+                        interface.swapparams("_params_up")
+                        node2.linkconfig(interface, options)
+                        interface.swapparams("_params_up")
+            else:
+                raise CoreError(
+                    f"cannot update link node1({type(node1)}) node2({type(node2)})"
+                )
 
     def _next_node_id(self) -> int:
         """
@@ -1345,17 +1209,15 @@ class Session:
         :return: True if node deleted, False otherwise
         """
         # delete node and check for session shutdown if a node was removed
-        logging.info("deleting node(%s)", _id)
         node = None
         with self._nodes_lock:
             if _id in self.nodes:
                 node = self.nodes.pop(_id)
-
+                logging.info("deleted node(%s)", node.name)
         if node:
             node.shutdown()
             self.sdt.delete_node(_id)
             self.check_shutdown()
-
         return node is not None
 
     def delete_nodes(self) -> None:
@@ -1767,15 +1629,15 @@ class Session:
         try:
             ip4 = control_net.prefix[node.id]
             ip4_mask = control_net.prefix.prefixlen
-            interface = InterfaceData(
+            interface_data = InterfaceData(
                 id=control_net.CTRLIF_IDX_BASE + net_index,
                 name=f"ctrl{net_index}",
                 mac=utils.random_mac(),
                 ip4=ip4,
                 ip4_mask=ip4_mask,
             )
-            ifindex = node.newnetif(control_net, interface)
-            node.netif(ifindex).control = True
+            interface = node.newnetif(control_net, interface_data)
+            interface.control = True
         except ValueError:
             msg = f"Control interface not added to node {node.id}. "
             msg += f"Invalid control network prefix ({control_net.prefix}). "

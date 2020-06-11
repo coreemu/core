@@ -157,7 +157,7 @@ class PhysicalNode(CoreNodeBase):
             self.ifindex += 1
             return ifindex
 
-    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> int:
+    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> CoreInterface:
         logging.info("creating interface")
         addresses = interface.get_addresses()
         ifindex = interface.id
@@ -171,12 +171,12 @@ class PhysicalNode(CoreNodeBase):
             # tunnel to net not built yet, so build it now and adopt it
             _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
             self.adoptnetif(remote_tap, ifindex, interface.mac, addresses)
-            return ifindex
+            return remote_tap
         else:
             # this is reached when configuring services (self.up=False)
             netif = GreTap(node=self, name=name, session=self.session, start=False)
             self.adoptnetif(netif, ifindex, interface.mac, addresses)
-            return ifindex
+            return netif
 
     def privatedir(self, path: str) -> None:
         if path[0] != "/":
@@ -297,7 +297,7 @@ class Rj45Node(CoreNodeBase):
         self.up = False
         self.restorestate()
 
-    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> int:
+    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> CoreInterface:
         """
         This is called when linking with another node. Since this node
         represents an interface, we do not create another object here,
@@ -320,7 +320,7 @@ class Rj45Node(CoreNodeBase):
                 self.interface.attachnet(net)
             for addr in interface.get_addresses():
                 self.addaddr(addr)
-            return ifindex
+            return self.interface
 
     def delnetif(self, ifindex: int) -> None:
         """

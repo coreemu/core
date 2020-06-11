@@ -12,7 +12,7 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import LinkOptions
+from core.emulator.emudata import InterfaceData, LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -697,15 +697,19 @@ class GreTapBridge(CoreNetwork):
         )
         self.attach(self.gretap)
 
-    def setkey(self, key: int) -> None:
+    def setkey(self, key: int, interface_data: InterfaceData) -> None:
         """
         Set the GRE key used for the GreTap device. This needs to be set
         prior to instantiating the GreTap device (before addrconfig).
 
         :param key: gre key
+        :param interface_data: interface data for setting up tunnel key
         :return: nothing
         """
         self.grekey = key
+        addresses = interface_data.get_addresses()
+        if addresses:
+            self.addrconfig(addresses)
 
 
 class CtrlNet(CoreNetwork):
