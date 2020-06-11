@@ -7,9 +7,12 @@ from typing import Dict, List
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
-from core.emulator.enumerations import ConfigDataTypes
+from core.emane.nodes import EmaneNet
+from core.emulator.emudata import LinkOptions
+from core.emulator.enumerations import ConfigDataTypes, TransportType
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
+from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -110,9 +113,9 @@ class EmaneModel(WirelessModel):
             server = interface.node.server
 
         # check if this is external
-        transport_type = "virtual"
-        if interface and interface.transport_type == "raw":
-            transport_type = "raw"
+        transport_type = TransportType.VIRTUAL
+        if interface and interface.transport_type == TransportType.RAW:
+            transport_type = TransportType.RAW
         transport_name = emanexml.transport_file_name(self.id, transport_type)
 
         # create nem xml file
@@ -137,44 +140,31 @@ class EmaneModel(WirelessModel):
         """
         logging.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved: bool, moved_netifs: List[CoreInterface]) -> None:
+    def update(self, moved: List[CoreNode], moved_netifs: List[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
-        :param moved: were nodes moved
+        :param moved: moved nodes
         :param moved_netifs: interfaces that were moved
         :return: nothing
         """
         try:
-            wlan = self.session.get_node(self.id)
+            wlan = self.session.get_node(self.id, EmaneNet)
             wlan.setnempositions(moved_netifs)
         except CoreError:
             logging.exception("error during update")
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
         :param netif: interface one
-        :param bw: bandwidth to set to
-        :param delay: packet delay to set to
-        :param loss: packet loss to set to
-        :param duplicate: duplicate percentage to set to
-        :param jitter: jitter to set to
+        :param options: options for configuring link
         :param netif2: interface two
         :return: nothing
         """
-        logging.warning(
-            "emane model(%s) does not support link configuration", self.name
-        )
+        logging.warning("emane model(%s) does not support link config", self.name)

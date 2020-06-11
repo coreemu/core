@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Type
+from typing import Iterable, Type
 
 import grpc
 from grpc import ServicerContext
@@ -39,6 +39,8 @@ from core.api.grpc.core_pb2 import ExecuteScriptResponse
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
+    EmanePathlossesRequest,
+    EmanePathlossesResponse,
     GetEmaneConfigRequest,
     GetEmaneConfigResponse,
     GetEmaneEventChannelRequest,
@@ -102,15 +104,18 @@ from core.api.grpc.wlan_pb2 import (
     GetWlanConfigsResponse,
     SetWlanConfigRequest,
     SetWlanConfigResponse,
+    WlanLinkRequest,
+    WlanLinkResponse,
 )
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import LinkData
 from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
-from core.emulator.session import Session
+from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import CoreNodeBase, NodeBase
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
+from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -170,21 +175,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return session
 
     def get_node(
-        self, session: Session, node_id: int, context: ServicerContext
-    ) -> NodeBase:
+        self, session: Session, node_id: int, context: ServicerContext, _class: Type[NT]
+    ) -> NT:
         """
         Retrieve node given session and node id
 
         :param session: session that has the node
         :param node_id: node id
-        :param context:
+        :param context: request
+        :param _class: type of node we are expecting
         :return: node object that satisfies. If node not found then raise an exception.
         :raises Exception: raises grpc exception when node does not exist
         """
         try:
-            return session.get_node(node_id)
-        except CoreError:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
+            return session.get_node(node_id, _class)
+        except CoreError as e:
+            context.abort(grpc.StatusCode.NOT_FOUND, str(e))
 
     def validate_service(
         self, name: str, context: ServicerContext
@@ -228,7 +234,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         # add all hooks
         for hook in request.hooks:
             state = EventTypes(hook.state)
-            session.add_hook(state, hook.file, None, hook.data)
+            session.add_hook(state, hook.file, hook.data)
 
         # create nodes
         _, exceptions = grpcutils.create_nodes(session, request.nodes)
@@ -261,7 +267,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # config service configs
         for config in request.config_service_configs:
-            node = self.get_node(session, config.node_id, context)
+            node = self.get_node(session, config.node_id, context, CoreNode)
             service = node.config_services[config.name]
             if config.config:
                 service.set_config(config.config)
@@ -663,7 +669,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("add node: %s", request)
         session = self.get_session(request.session_id, context)
         _type, _id, options = grpcutils.add_node_data(request.node)
-        node = session.add_node(_type=_type, _id=_id, options=options)
+        _class = session.get_node_class(_type)
+        node = session.add_node(_class, _id, options)
         return core_pb2.AddNodeResponse(node_id=node.id)
 
     def GetNode(
@@ -678,7 +685,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get node: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, NodeBase)
         interfaces = []
         for interface_id in node._netif:
             interface = node._netif[interface_id]
@@ -686,6 +693,42 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interfaces.append(interface_proto)
         node_proto = grpcutils.get_node_proto(session, node)
         return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
+
+    def MoveNodes(
+        self,
+        request_iterator: Iterable[core_pb2.MoveNodesRequest],
+        context: ServicerContext,
+    ) -> core_pb2.MoveNodesResponse:
+        """
+        Stream node movements
+
+        :param request_iterator: move nodes request iterator
+        :param context: context object
+        :return: move nodes response
+        """
+        for request in request_iterator:
+            if not request.WhichOneof("move_type"):
+                raise CoreError("move nodes must provide a move type")
+            session = self.get_session(request.session_id, context)
+            node = self.get_node(session, request.node_id, context, NodeBase)
+            options = NodeOptions()
+            has_geo = request.HasField("geo")
+            if has_geo:
+                logging.info("has geo")
+                lat = request.geo.lat
+                lon = request.geo.lon
+                alt = request.geo.alt
+                options.set_location(lat, lon, alt)
+            else:
+                x = request.position.x
+                y = request.position.y
+                logging.info("has pos: %s,%s", x, y)
+                options.set_position(x, y)
+            session.edit_node(node.id, options)
+            source = request.source if request.source else None
+            if not has_geo:
+                session.broadcast_node(node, source=source)
+        return core_pb2.MoveNodesResponse()
 
     def EditNode(
         self, request: core_pb2.EditNodeRequest, context: ServicerContext
@@ -699,9 +742,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
-        options = NodeOptions()
-        options.icon = request.icon
+        node = self.get_node(session, request.node_id, context, NodeBase)
+        options = NodeOptions(icon=request.icon)
         if request.HasField("position"):
             x = request.position.x
             y = request.position.y
@@ -751,12 +793,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("sending node command: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         try:
-            output = node.cmd(request.command)
+            output = node.cmd(request.command, request.wait, request.shell)
+            return_code = 0
         except CoreCommandError as e:
             output = e.stderr
-        return core_pb2.NodeCommandResponse(output=output)
+            return_code = e.returncode
+        return core_pb2.NodeCommandResponse(output=output, return_code=return_code)
 
     def GetNodeTerminal(
         self, request: core_pb2.GetNodeTerminalRequest, context: ServicerContext
@@ -770,7 +814,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("getting node terminal: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         terminal = node.termcmdstring("/bin/bash")
         return core_pb2.GetNodeTerminalResponse(terminal=terminal)
 
@@ -786,7 +830,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get node links: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, NodeBase)
         links = get_links(node)
         return core_pb2.GetNodeLinksResponse(links=links)
 
@@ -803,14 +847,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("add link: %s", request)
         # validate session and nodes
         session = self.get_session(request.session_id, context)
-        self.get_node(session, request.link.node_one_id, context)
-        self.get_node(session, request.link.node_two_id, context)
+        self.get_node(session, request.link.node_one_id, context, NodeBase)
+        self.get_node(session, request.link.node_two_id, context, NodeBase)
 
         node_one_id = request.link.node_one_id
         node_two_id = request.link.node_two_id
         interface_one, interface_two, options = grpcutils.add_link_data(request.link)
         node_one_interface, node_two_interface = session.add_link(
-            node_one_id, node_two_id, interface_one, interface_two, link_options=options
+            node_one_id, node_two_id, interface_one, interface_two, options=options
         )
         interface_one_proto = None
         interface_two_proto = None
@@ -913,7 +957,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         hook = request.hook
         state = EventTypes(hook.state)
-        session.add_hook(state, hook.file, None, hook.data)
+        session.add_hook(state, hook.file, hook.data)
         return core_pb2.AddHookResponse(result=True)
 
     def GetMobilityConfigs(
@@ -994,7 +1038,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("mobility action: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, WlanNode)
         result = True
         if request.action == MobilityAction.START:
             node.mobility.start()
@@ -1121,7 +1165,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get node service file: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         file_data = session.services.get_service_file(
             node, request.service, request.file
         )
@@ -1176,7 +1220,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("service action: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         service = None
         for current_service in node.services:
             if current_service.name == request.service:
@@ -1265,7 +1309,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             wlan_config.node_id, BasicRangeModel.name, wlan_config.config
         )
         if session.state == EventTypes.RUNTIME_STATE:
-            node = self.get_node(session, wlan_config.node_id, context)
+            node = self.get_node(session, wlan_config.node_id, context, WlanNode)
             node.updatemodel(wlan_config.config)
         return SetWlanConfigResponse(result=True)
 
@@ -1546,7 +1590,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: get node config service response
         """
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         self.validate_service(request.name, context)
         service = node.config_services.get(request.name)
         if service:
@@ -1628,7 +1672,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: get node config services response
         """
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         services = node.config_services.keys()
         return GetNodeConfigServicesResponse(services=services)
 
@@ -1643,7 +1687,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: set node config service response
         """
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         self.validate_service(request.name, context)
         service = node.config_services.get(request.name)
         if service:
@@ -1684,3 +1728,45 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if new_sessions:
             new_session = new_sessions[0]
         return ExecuteScriptResponse(session_id=new_session)
+
+    def WlanLink(
+        self, request: WlanLinkRequest, context: ServicerContext
+    ) -> WlanLinkResponse:
+        session = self.get_session(request.session_id, context)
+        wlan = self.get_node(session, request.wlan, context, WlanNode)
+        if not isinstance(wlan.model, BasicRangeModel):
+            context.abort(
+                grpc.StatusCode.NOT_FOUND,
+                f"wlan node {request.wlan} does not using BasicRangeModel",
+            )
+        n1 = self.get_node(session, request.node_one, context, CoreNode)
+        n2 = self.get_node(session, request.node_two, context, CoreNode)
+        n1_netif, n2_netif = None, None
+        for net, netif1, netif2 in n1.commonnets(n2):
+            if net == wlan:
+                n1_netif = netif1
+                n2_netif = netif2
+                break
+        result = False
+        if n1_netif and n2_netif:
+            if request.linked:
+                wlan.link(n1_netif, n2_netif)
+            else:
+                wlan.unlink(n1_netif, n2_netif)
+            wlan.model.sendlinkmsg(n1_netif, n2_netif, unlink=not request.linked)
+            result = True
+        return WlanLinkResponse(result=result)
+
+    def EmanePathlosses(
+        self,
+        request_iterator: Iterable[EmanePathlossesRequest],
+        context: ServicerContext,
+    ) -> EmanePathlossesResponse:
+        for request in request_iterator:
+            session = self.get_session(request.session_id, context)
+            n1 = self.get_node(session, request.node_one, context, CoreNode)
+            nem1 = grpcutils.get_nem_id(n1, request.interface_one_id, context)
+            n2 = self.get_node(session, request.node_two, context, CoreNode)
+            nem2 = grpcutils.get_nem_id(n2, request.interface_two_id, context)
+            session.emane.publish_pathloss(nem1, nem2, request.rx_one, request.rx_two)
+        return EmanePathlossesResponse()

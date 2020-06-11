@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
+from core.gui.themes import PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -16,7 +17,7 @@ class ColorPickerDialog(Dialog):
     def __init__(
         self, master: tk.BaseWidget, app: "Application", initcolor: str = "#000000"
     ):
-        super().__init__(app, "color picker", master=master)
+        super().__init__(app, "Color Picker", master=master)
         self.red_entry = None
         self.blue_entry = None
         self.green_entry = None
@@ -43,42 +44,40 @@ class ColorPickerDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(3, weight=1)
+
         # rgb frames
         frame = ttk.Frame(self.top)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=6)
-        frame.columnconfigure(3, weight=2)
-        label = ttk.Label(frame, text="R: ")
-        label.grid(row=0, column=0)
-        self.red_entry = validation.RgbEntry(frame, width=4, textvariable=self.red)
-        self.red_entry.grid(row=0, column=1, sticky="nsew")
+        frame.grid(row=0, column=0, sticky="ew", pady=PADY)
+        frame.columnconfigure(2, weight=3)
+        frame.columnconfigure(3, weight=1)
+        label = ttk.Label(frame, text="R")
+        label.grid(row=0, column=0, padx=PADX)
+        self.red_entry = validation.RgbEntry(frame, width=3, textvariable=self.red)
+        self.red_entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         scale = ttk.Scale(
             frame,
             from_=0,
             to=255,
             value=0,
-            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.red_scale,
             command=lambda x: self.scale_callback(self.red_scale, self.red),
         )
-        scale.grid(row=0, column=2, sticky="nsew")
+        scale.grid(row=0, column=2, sticky="ew", padx=PADX)
         self.red_label = ttk.Label(
             frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0), width=5
         )
-        self.red_label.grid(row=0, column=3, sticky="nsew")
-        frame.grid(row=0, column=0, sticky="nsew")
+        self.red_label.grid(row=0, column=3, sticky="ew")
 
         frame = ttk.Frame(self.top)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=6)
-        frame.columnconfigure(3, weight=2)
-        label = ttk.Label(frame, text="G: ")
-        label.grid(row=0, column=0)
-        self.green_entry = validation.RgbEntry(frame, width=4, textvariable=self.green)
-        self.green_entry.grid(row=0, column=1, sticky="nsew")
+        frame.grid(row=1, column=0, sticky="ew", pady=PADY)
+        frame.columnconfigure(2, weight=3)
+        frame.columnconfigure(3, weight=1)
+        label = ttk.Label(frame, text="G")
+        label.grid(row=0, column=0, padx=PADX)
+        self.green_entry = validation.RgbEntry(frame, width=3, textvariable=self.green)
+        self.green_entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         scale = ttk.Scale(
             frame,
             from_=0,
@@ -88,59 +87,54 @@ class ColorPickerDialog(Dialog):
             variable=self.green_scale,
             command=lambda x: self.scale_callback(self.green_scale, self.green),
         )
-        scale.grid(row=0, column=2, sticky="nsew")
+        scale.grid(row=0, column=2, sticky="ew", padx=PADX)
         self.green_label = ttk.Label(
             frame, background="#%02x%02x%02x" % (0, self.green.get(), 0), width=5
         )
-        self.green_label.grid(row=0, column=3, sticky="nsew")
-        frame.grid(row=1, column=0, sticky="nsew")
+        self.green_label.grid(row=0, column=3, sticky="ew")
 
         frame = ttk.Frame(self.top)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=6)
-        frame.columnconfigure(3, weight=2)
-        label = ttk.Label(frame, text="B: ")
-        label.grid(row=0, column=0)
-        self.blue_entry = validation.RgbEntry(frame, width=4, textvariable=self.blue)
-        self.blue_entry.grid(row=0, column=1, sticky="nsew")
+        frame.grid(row=2, column=0, sticky="ew", pady=PADY)
+        frame.columnconfigure(2, weight=3)
+        frame.columnconfigure(3, weight=1)
+        label = ttk.Label(frame, text="B")
+        label.grid(row=0, column=0, padx=PADX)
+        self.blue_entry = validation.RgbEntry(frame, width=3, textvariable=self.blue)
+        self.blue_entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         scale = ttk.Scale(
             frame,
             from_=0,
             to=255,
             value=0,
-            # length=200,
             orient=tk.HORIZONTAL,
             variable=self.blue_scale,
             command=lambda x: self.scale_callback(self.blue_scale, self.blue),
         )
-        scale.grid(row=0, column=2, sticky="nsew")
+        scale.grid(row=0, column=2, sticky="ew", padx=PADX)
         self.blue_label = ttk.Label(
             frame, background="#%02x%02x%02x" % (0, 0, self.blue.get()), width=5
         )
-        self.blue_label.grid(row=0, column=3, sticky="nsew")
-        frame.grid(row=2, column=0, sticky="nsew")
+        self.blue_label.grid(row=0, column=3, sticky="ew")
 
         # hex code and color display
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        label = ttk.Label(frame, text="Selection: ")
-        label.grid(row=0, column=0, sticky="nsew")
+        frame.rowconfigure(1, weight=1)
         self.hex_entry = validation.HexEntry(frame, textvariable=self.hex)
-        self.hex_entry.grid(row=1, column=0, sticky="nsew")
+        self.hex_entry.grid(sticky="ew", pady=PADY)
         self.display = tk.Frame(frame, background=self.color, width=100, height=100)
-        self.display.grid(row=2, column=0)
-        frame.grid(row=3, column=0, sticky="nsew")
+        self.display.grid(sticky="nsew")
+        frame.grid(row=3, column=0, sticky="nsew", pady=PADY)
 
         # button frame
         frame = ttk.Frame(self.top)
+        frame.grid(row=4, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="OK", command=self.button_ok)
-        button.grid(row=0, column=0, sticky="nsew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="nsew")
-        frame.grid(row=4, column=0, sticky="nsew")
+        button.grid(row=0, column=1, sticky="ew")
 
     def set_bindings(self):
         self.red_entry.bind("<FocusIn>", lambda x: self.current_focus("rgb"))

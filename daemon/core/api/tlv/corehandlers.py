@@ -41,6 +41,7 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
 
@@ -78,15 +79,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self._sessions_lock = threading.Lock()
 
         self.handler_threads = []
-        num_threads = int(server.config["numthreads"])
-        if num_threads < 1:
-            raise ValueError(f"invalid number of threads: {num_threads}")
-
-        logging.debug("launching core server handler threads: %s", num_threads)
-        for _ in range(num_threads):
-            thread = threading.Thread(target=self.handler_thread)
-            self.handler_threads.append(thread)
-            thread.start()
+        thread = threading.Thread(target=self.handler_thread, daemon=True)
+        thread.start()
+        self.handler_threads.append(thread)
 
         self.session = None
         self.coreemu = server.coreemu
@@ -681,10 +676,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
-        node_type = None
+        _class = CoreNode
         node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
         if node_type_value is not None:
             node_type = NodeTypes(node_type_value)
+            _class = self.session.get_node_class(node_type)
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
@@ -719,7 +715,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, options)
+            node = self.session.add_node(_class, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
@@ -753,7 +749,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
 
         interface_one = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
+            id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
             ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
@@ -762,7 +758,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
         )
         interface_two = InterfaceData(
-            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
+            id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
             ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
@@ -776,7 +772,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
 
-        link_options = LinkOptions(_type=link_type)
+        link_options = LinkOptions(type=link_type)
         link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
         link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
@@ -836,7 +832,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             return ()
 
         try:
-            node = self.session.get_node(node_num)
+            node = self.session.get_node(node_num, CoreNodeBase)
 
             # build common TLV items for reply
             tlv_data = b""
@@ -880,12 +876,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         except CoreCommandError as e:
                             res = e.stderr
                             status = e.returncode
-                    logging.info(
-                        "done exec cmd=%s with status=%d res=(%d bytes)",
-                        command,
-                        status,
-                        len(res),
-                    )
+                    logging.info("done exec cmd=%s with status=%d", command, status)
                     if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(
                             ExecuteTlvs.RESULT.value, res
@@ -1233,7 +1224,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if not node_id:
                     return replies
 
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, CoreNodeBase)
                 if node is None:
                     logging.warning(
                         "request to configure service for unknown node %s", node_id
@@ -1378,7 +1369,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
             if self.session.state == EventTypes.RUNTIME_STATE and parsed_config:
                 try:
-                    node = self.session.get_node(node_id)
+                    node = self.session.get_node(node_id, WlanNode)
                     if object_name == BasicRangeModel.name:
                         node.updatemodel(parsed_config)
                 except CoreError:
@@ -1504,7 +1495,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         return ()
                     state = int(state)
                     state = EventTypes(state)
-                    self.session.add_hook(state, file_name, source_name, data)
+                    self.session.add_hook(state, file_name, data, source_name)
                     return ()
 
             # writing a file to the host
@@ -1558,7 +1549,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("handling event %s at %s", event_type.name, time.ctime())
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
-                node = self.session.get_node(node_id)
+                node = self.session.get_node(node_id, NodeBase)
 
                 # configure mobility models for WLAN added during runtime
                 if event_type == EventTypes.INSTANTIATION_STATE and isinstance(
@@ -1652,7 +1643,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         name = event_data.name
 
         try:
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, CoreNodeBase)
         except CoreError:
             logging.warning(
                 "ignoring event for service '%s', unknown node '%s'", name, node_id
@@ -1888,7 +1879,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             data_types = tuple(
                 repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys))
             )
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, CoreNodeBase)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
                 message_type=0,

@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 
 
 class StatusBar(ttk.Frame):
-    def __init__(self, master: tk.Widget, app: "Application", **kwargs):
-        super().__init__(master, **kwargs)
+    def __init__(self, master: tk.Widget, app: "Application"):
+        super().__init__(master)
         self.app = app
         self.status = None
         self.statusvar = tk.StringVar()

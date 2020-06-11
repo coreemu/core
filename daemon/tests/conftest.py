@@ -44,8 +44,8 @@ class PatchManager:
 
 
 class MockServer:
-    def __init__(self, config, coreemu):
-        self.config = config
+    def __init__(self, coreemu):
+        self.config = {}
         self.coreemu = coreemu
 
 
@@ -108,7 +108,7 @@ def module_grpc(global_coreemu):
 def module_coretlv(patcher, global_coreemu, global_session):
     request_mock = MagicMock()
     request_mock.fileno = MagicMock(return_value=1)
-    server = MockServer({"numthreads": "1"}, global_coreemu)
+    server = MockServer(global_coreemu)
     request_handler = CoreHandler(request_mock, "", server)
     request_handler.session = global_session
     request_handler.add_session_handlers()

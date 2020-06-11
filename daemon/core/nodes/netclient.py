@@ -1,7 +1,6 @@
 """
 Clients for dealing with bridge/interface commands.
 """
-import json
 from typing import Callable
 
 import netaddr
@@ -20,7 +19,7 @@ class LinuxNetClient:
 
         :param run: function to run commands with
         """
-        self.run = run
+        self.run: Callable[..., str] = run
 
     def set_hostname(self, name: str) -> None:
         """
@@ -71,12 +70,21 @@ class LinuxNetClient:
 
     def device_show(self, device: str) -> str:
         """
-        Show information for a device.
+        Show link information for a device.
 
         :param device: device to get information for
         :return: device information
         """
         return self.run(f"{IP_BIN} link show {device}")
+
+    def address_show(self, device: str) -> str:
+        """
+        Show address information for a device.
+
+        :param device: device name
+        :return: address information
+        """
+        return self.run(f"{IP_BIN} address show {device}")
 
     def get_mac(self, device: str) -> str:
         """
@@ -114,7 +122,8 @@ class LinuxNetClient:
         :return: nothing
         """
         self.run(
-            f"[ -e /sys/class/net/{device} ] && {IP_BIN} -6 address flush dev {device} || true",
+            f"[ -e /sys/class/net/{device} ] && "
+            f"{IP_BIN} address flush dev {device} || true",
             shell=True,
         )
 
@@ -241,9 +250,9 @@ class LinuxNetClient:
         self.device_down(name)
         self.run(f"{IP_BIN} link delete {name} type bridge")
 
-    def create_interface(self, bridge_name: str, interface_name: str) -> None:
+    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
         """
-        Create an interface associated with a Linux bridge.
+        Assign interface master to a Linux bridge.
 
         :param bridge_name: bridge name
         :param interface_name: interface name
@@ -269,12 +278,13 @@ class LinuxNetClient:
         :param _id: node id to check bridges for
         :return: True if there are existing bridges, False otherwise
         """
-        output = self.run(f"{IP_BIN} -j link show type bridge")
-        bridges = json.loads(output)
-        for bridge in bridges:
-            name = bridge.get("ifname")
-            if not name:
+        output = self.run(f"{IP_BIN} -o link show type bridge")
+        lines = output.split("\n")
+        for line in lines:
+            values = line.split(":")
+            if not len(values) >= 2:
                 continue
+            name = values[1]
             fields = name.split(".")
             if len(fields) != 3:
                 continue
@@ -320,7 +330,7 @@ class OvsNetClient(LinuxNetClient):
         self.device_down(name)
         self.run(f"{OVS_BIN} del-br {name}")
 
-    def create_interface(self, bridge_name: str, interface_name: str) -> None:
+    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
         """
         Create an interface associated with a network bridge.
 

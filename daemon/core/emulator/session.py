@@ -12,21 +12,22 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
 
 from core import constants, utils
+from core.configservice.manager import ConfigServiceManager
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
-from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData
-from core.emulator.distributed import DistributedController
-from core.emulator.emudata import (
-    IdGen,
-    InterfaceData,
-    LinkOptions,
-    NodeOptions,
-    create_interface,
-    link_config,
+from core.emulator.data import (
+    ConfigData,
+    EventData,
+    ExceptionData,
+    FileData,
+    LinkData,
+    NodeData,
 )
+from core.emulator.distributed import DistributedController
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
@@ -41,7 +42,7 @@ from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import CoreInterface, GreTap
+from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -75,8 +76,10 @@ NODES = {
     NodeTypes.LXC: LxcNode,
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
+CONTAINER_NODES = {DockerNode, LxcNode}
 CTRL_NET_ID = 9001
 LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
+NT = TypeVar("NT", bound=NodeBase)
 
 
 class Session:
@@ -94,63 +97,62 @@ class Session:
         :param config: session configuration
         :param mkdir: flag to determine if a directory should be made
         """
-        self.id = _id
+        self.id: int = _id
 
         # define and create session directory when desired
-        self.session_dir = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
+        self.session_dir: str = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
         if mkdir:
             os.mkdir(self.session_dir)
 
-        self.name = None
-        self.file_name = None
-        self.thumbnail = None
-        self.user = None
-        self.event_loop = EventLoop()
-        self.link_colors = {}
+        self.name: Optional[str] = None
+        self.file_name: Optional[str] = None
+        self.thumbnail: Optional[str] = None
+        self.user: Optional[str] = None
+        self.event_loop: EventLoop = EventLoop()
+        self.link_colors: Dict[int, str] = {}
 
         # dict of nodes: all nodes and nets
-        self.node_id_gen = IdGen()
-        self.nodes = {}
+        self.nodes: Dict[int, NodeBase] = {}
         self._nodes_lock = threading.Lock()
 
-        self.state = EventTypes.DEFINITION_STATE
-        self._state_time = time.monotonic()
-        self._state_file = os.path.join(self.session_dir, "state")
+        self.state: EventTypes = EventTypes.DEFINITION_STATE
+        self._state_time: float = time.monotonic()
+        self._state_file: str = os.path.join(self.session_dir, "state")
 
         # hooks handlers
-        self._hooks = {}
-        self._state_hooks = {}
+        self._hooks: Dict[EventTypes, Tuple[str, str]] = {}
+        self._state_hooks: Dict[EventTypes, Callable[[int], None]] = {}
         self.add_state_hook(
             state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
         )
 
         # handlers for broadcasting information
-        self.event_handlers = []
-        self.exception_handlers = []
-        self.node_handlers = []
-        self.link_handlers = []
-        self.file_handlers = []
-        self.config_handlers = []
-        self.shutdown_handlers = []
+        self.event_handlers: List[Callable[[EventData], None]] = []
+        self.exception_handlers: List[Callable[[ExceptionData], None]] = []
+        self.node_handlers: List[Callable[[NodeData], None]] = []
+        self.link_handlers: List[Callable[[LinkData], None]] = []
+        self.file_handlers: List[Callable[[FileData], None]] = []
+        self.config_handlers: List[Callable[[ConfigData], None]] = []
+        self.shutdown_handlers: List[Callable[[Session], None]] = []
 
         # session options/metadata
-        self.options = SessionConfig()
+        self.options: SessionConfig = SessionConfig()
         if not config:
             config = {}
         for key in config:
             value = config[key]
             self.options.set_config(key, value)
-        self.metadata = {}
+        self.metadata: Dict[str, str] = {}
 
         # distributed support and logic
-        self.distributed = DistributedController(self)
+        self.distributed: DistributedController = DistributedController(self)
 
         # initialize session feature helpers
-        self.location = GeoLocation()
-        self.mobility = MobilityManager(session=self)
-        self.services = CoreServices(session=self)
-        self.emane = EmaneManager(session=self)
-        self.sdt = Sdt(session=self)
+        self.location: GeoLocation = GeoLocation()
+        self.mobility: MobilityManager = MobilityManager(self)
+        self.services: CoreServices = CoreServices(self)
+        self.emane: EmaneManager = EmaneManager(self)
+        self.sdt: Sdt = Sdt(self)
 
         # initialize default node services
         self.services.default_services = {
@@ -162,7 +164,7 @@ class Session:
         }
 
         # config services
-        self.service_manager = None
+        self.service_manager: Optional[ConfigServiceManager] = None
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> Type[NodeBase]:
@@ -194,7 +196,10 @@ class Session:
     def _link_nodes(
         self, node_one_id: int, node_two_id: int
     ) -> Tuple[
-        CoreNode, CoreNode, CoreNetworkBase, CoreNetworkBase, Tuple[GreTap, GreTap]
+        Optional[CoreNode],
+        Optional[CoreNode],
+        Optional[CoreNetworkBase],
+        Optional[CoreNetworkBase],
     ]:
         """
         Convenience method for retrieving nodes within link data.
@@ -212,24 +217,8 @@ class Session:
         net_two = None
 
         # retrieve node one
-        node_one = self.get_node(node_one_id)
-        node_two = self.get_node(node_two_id)
-
-        # both node ids are provided
-        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
-        logging.debug("tunnel between nodes: %s", tunnel)
-        if isinstance(tunnel, GreTapBridge):
-            net_one = tunnel
-            if tunnel.remotenum == node_one_id:
-                node_one = None
-            else:
-                node_two = None
-        # physical node connected via gre tap tunnel
-        elif tunnel:
-            if tunnel.remotenum == node_one_id:
-                node_one = None
-            else:
-                node_two = None
+        node_one = self.get_node(node_one_id, NodeBase)
+        node_two = self.get_node(node_two_id, NodeBase)
 
         if isinstance(node_one, CoreNetworkBase):
             if not net_one:
@@ -246,14 +235,13 @@ class Session:
             node_two = None
 
         logging.debug(
-            "link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
+            "link node types n1(%s) n2(%s) net1(%s) net2(%s)",
             node_one,
             node_two,
             net_one,
             net_two,
-            tunnel,
         )
-        return node_one, node_two, net_one, net_two, tunnel
+        return node_one, node_two, net_one, net_two
 
     def _link_wireless(self, objects: Iterable[CoreNodeBase], connect: bool) -> None:
         """
@@ -300,7 +288,7 @@ class Session:
         node_two_id: int,
         interface_one: InterfaceData = None,
         interface_two: InterfaceData = None,
-        link_options: LinkOptions = None,
+        options: LinkOptions = None,
     ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
@@ -311,15 +299,15 @@ class Session:
             data, defaults to none
         :param interface_two: node two interface
             data, defaults to none
-        :param link_options: data for creating link,
+        :param options: data for creating link,
             defaults to no options
         :return: tuple of created core interfaces, depending on link
         """
-        if not link_options:
-            link_options = LinkOptions()
+        if not options:
+            options = LinkOptions()
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
@@ -333,7 +321,7 @@ class Session:
 
         try:
             # wireless link
-            if link_options.type == LinkTypes.WIRELESS:
+            if options.type == LinkTypes.WIRELESS:
                 objects = [node_one, node_two, net_one, net_two]
                 self._link_wireless(objects, connect=True)
             # wired link
@@ -346,7 +334,7 @@ class Session:
                         node_two.name,
                     )
                     start = self.state.should_start()
-                    net_one = self.create_node(cls=PtpNet, start=start)
+                    net_one = self.create_node(PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -355,11 +343,11 @@ class Session:
                         node_one.name,
                         net_one.name,
                     )
-                    interface = create_interface(node_one, net_one, interface_one)
-                    node_one_interface = interface
+                    ifindex = node_one.newnetif(net_one, interface_one)
+                    node_one_interface = node_one.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
                     if not wireless_net:
-                        link_config(net_one, interface, link_options)
+                        net_one.linkconfig(node_one_interface, options)
 
                 # network to node
                 if node_two and net_one:
@@ -368,11 +356,11 @@ class Session:
                         node_two.name,
                         net_one.name,
                     )
-                    interface = create_interface(node_two, net_one, interface_two)
-                    node_two_interface = interface
+                    ifindex = node_two.newnetif(net_one, interface_two)
+                    node_two_interface = node_two.netif(ifindex)
                     wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not link_options.unidirectional and not wireless_net:
-                        link_config(net_one, interface, link_options)
+                    if not options.unidirectional and not wireless_net:
+                        net_one.linkconfig(node_two_interface, options)
 
                 # network to network
                 if net_one and net_two:
@@ -383,25 +371,21 @@ class Session:
                     )
                     interface = net_one.linknet(net_two)
                     node_one_interface = interface
-                    link_config(net_one, interface, link_options)
-
-                    if not link_options.unidirectional:
+                    net_one.linkconfig(interface, options)
+                    if not options.unidirectional:
                         interface.swapparams("_params_up")
-                        link_config(
-                            net_two, interface, link_options, devname=interface.name
-                        )
+                        net_two.linkconfig(interface, options)
                         interface.swapparams("_params_up")
 
                 # a tunnel node was found for the nodes
                 addresses = []
                 if not node_one and all([net_one, interface_one]):
                     addresses.extend(interface_one.get_addresses())
-
                 if not node_two and all([net_two, interface_two]):
                     addresses.extend(interface_two.get_addresses())
 
                 # tunnel node logic
-                key = link_options.key
+                key = options.key
                 if key and isinstance(net_one, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
@@ -412,23 +396,6 @@ class Session:
                     net_two.setkey(key)
                     if addresses:
                         net_two.addrconfig(addresses)
-
-                # physical node connected with tunnel
-                if not net_one and not net_two and (node_one or node_two):
-                    if node_one and isinstance(node_one, PhysicalNode):
-                        logging.info("adding link for physical node: %s", node_one.name)
-                        addresses = interface_one.get_addresses()
-                        node_one.adoptnetif(
-                            tunnel, interface_one.id, interface_one.mac, addresses
-                        )
-                        link_config(node_one, tunnel, link_options)
-                    elif node_two and isinstance(node_two, PhysicalNode):
-                        logging.info("adding link for physical node: %s", node_two.name)
-                        addresses = interface_two.get_addresses()
-                        node_two.adoptnetif(
-                            tunnel, interface_two.id, interface_two.mac, addresses
-                        )
-                        link_config(node_two, tunnel, link_options)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -458,7 +425,7 @@ class Session:
         :raises core.CoreError: when no common network is found for link being deleted
         """
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
@@ -552,7 +519,7 @@ class Session:
         node_two_id: int,
         interface_one_id: int = None,
         interface_two_id: int = None,
-        link_options: LinkOptions = None,
+        options: LinkOptions = None,
     ) -> None:
         """
         Update link information between nodes.
@@ -561,16 +528,16 @@ class Session:
         :param node_two_id: node two id
         :param interface_one_id: interface id for node one
         :param interface_two_id: interface id for node two
-        :param link_options: data to update link with
+        :param options: data to update link with
         :return: nothing
         :raises core.CoreError: when updating a wireless type link, when there is a unknown
             link between networks
         """
-        if not link_options:
-            link_options = LinkOptions()
+        if not options:
+            options = LinkOptions()
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
+        node_one, node_two, net_one, net_two = self._link_nodes(
             node_one_id, node_two_id
         )
 
@@ -581,7 +548,7 @@ class Session:
 
         try:
             # wireless link
-            if link_options.type == LinkTypes.WIRELESS:
+            if options.type == LinkTypes.WIRELESS:
                 raise CoreError("cannot update wireless link")
             else:
                 if not node_one and not node_two:
@@ -599,35 +566,28 @@ class Session:
 
                         if upstream:
                             interface.swapparams("_params_up")
-                            link_config(
-                                net_one, interface, link_options, devname=interface.name
-                            )
+                            net_one.linkconfig(interface, options)
                             interface.swapparams("_params_up")
                         else:
-                            link_config(net_one, interface, link_options)
+                            net_one.linkconfig(interface, options)
 
-                        if not link_options.unidirectional:
+                        if not options.unidirectional:
                             if upstream:
-                                link_config(net_two, interface, link_options)
+                                net_two.linkconfig(interface, options)
                             else:
                                 interface.swapparams("_params_up")
-                                link_config(
-                                    net_two,
-                                    interface,
-                                    link_options,
-                                    devname=interface.name,
-                                )
+                                net_two.linkconfig(interface, options)
                                 interface.swapparams("_params_up")
                     else:
                         raise CoreError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
                     interface = node_two.netif(interface_two_id)
-                    link_config(net_one, interface, link_options)
+                    net_one.linkconfig(interface, options)
                 elif not node_two:
                     # node2 = layer 2node, node1 = layer3 node
                     interface = node_one.netif(interface_one_id)
-                    link_config(net_one, interface, link_options)
+                    net_one.linkconfig(interface, options)
                 else:
                     common_networks = node_one.commonnets(node_two)
                     if not common_networks:
@@ -640,60 +600,49 @@ class Session:
                         ):
                             continue
 
-                        link_config(
-                            net_one,
-                            interface_one,
-                            link_options,
-                            interface_two=interface_two,
-                        )
-                        if not link_options.unidirectional:
-                            link_config(
-                                net_one,
-                                interface_two,
-                                link_options,
-                                interface_two=interface_one,
-                            )
+                        net_one.linkconfig(interface_one, options, interface_two)
+                        if not options.unidirectional:
+                            net_one.linkconfig(interface_two, options, interface_one)
         finally:
             if node_one:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
 
+    def _next_node_id(self) -> int:
+        """
+        Find the next valid node id, starting from 1.
+
+        :return: next node id
+        """
+        _id = 1
+        while True:
+            if _id not in self.nodes:
+                break
+            _id += 1
+        return _id
+
     def add_node(
-        self,
-        _type: NodeTypes = NodeTypes.DEFAULT,
-        _id: int = None,
-        options: NodeOptions = None,
-        _cls: Type[NodeBase] = None,
-    ) -> NodeBase:
+        self, _class: Type[NT], _id: int = None, options: NodeOptions = None
+    ) -> NT:
         """
         Add a node to the session, based on the provided node data.
 
-        :param _type: type of node to create
+        :param _class: node class to create
         :param _id: id for node, defaults to None for generated id
         :param options: data to create node with
-        :param _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
-        # validate node type, get class, or throw error
-        if _cls is None:
-            node_class = self.get_node_class(_type)
-        else:
-            node_class = _cls
-
         # set node start based on current session state, override and check when rj45
         start = self.state.should_start()
         enable_rj45 = self.options.get_config("enablerj45") == "1"
-        if _type == NodeTypes.RJ45 and not enable_rj45:
+        if _class == Rj45Node and not enable_rj45:
             start = False
 
         # determine node id
         if not _id:
-            while True:
-                _id = self.node_id_gen.next()
-                if _id not in self.nodes:
-                    break
+            _id = self._next_node_id()
 
         # generate name if not provided
         if not options:
@@ -701,7 +650,7 @@ class Session:
             options.set_position(0, 0)
         name = options.name
         if not name:
-            name = f"{node_class.__name__}{_id}"
+            name = f"{_class.__name__}{_id}"
 
         # verify distributed server
         server = self.distributed.servers.get(options.server)
@@ -711,24 +660,15 @@ class Session:
         # create node
         logging.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
-            node_class.__name__,
+            _class.__name__,
             _id,
             name,
             start,
         )
-        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
-            node = self.create_node(
-                cls=node_class,
-                _id=_id,
-                name=name,
-                start=start,
-                image=options.image,
-                server=server,
-            )
-        else:
-            node = self.create_node(
-                cls=node_class, _id=_id, name=name, start=start, server=server
-            )
+        kwargs = dict(_id=_id, name=name, start=start, server=server)
+        if _class in CONTAINER_NODES:
+            kwargs["image"] = options.image
+        node = self.create_node(_class, **kwargs)
 
         # set node attributes
         node.icon = options.icon
@@ -777,7 +717,7 @@ class Session:
         :raises core.CoreError: when node to update does not exist
         """
         # get node to update
-        node = self.get_node(node_id)
+        node = self.get_node(node_id, NodeBase)
 
         # set node position and broadcast it
         self.set_node_position(node, options)
@@ -873,19 +813,19 @@ class Session:
         CoreXmlWriter(self).write(file_name)
 
     def add_hook(
-        self, state: EventTypes, file_name: str, source_name: str, data: str
+        self, state: EventTypes, file_name: str, data: str, source_name: str = None
     ) -> None:
         """
         Store a hook from a received file message.
 
         :param state: when to run hook
         :param file_name: file name for hook
-        :param source_name: source name
         :param data: hook data
+        :param source_name: source name
         :return: nothing
         """
         logging.info(
-            "setting state hook: %s - %s from %s", state, file_name, source_name
+            "setting state hook: %s - %s source(%s)", state, file_name, source_name
         )
         hook = file_name, data
         state_hooks = self._hooks.setdefault(state, [])
@@ -908,9 +848,7 @@ class Session:
         :param data: file data
         :return: nothing
         """
-
-        node = self.get_node(node_id)
-
+        node = self.get_node(node_id, CoreNodeBase)
         if source_name is not None:
             node.addfile(source_name, file_name)
         elif data is not None:
@@ -1363,17 +1301,17 @@ class Session:
                     break
         return node_id
 
-    def create_node(self, cls: Type[NodeBase], *args: Any, **kwargs: Any) -> NodeBase:
+    def create_node(self, _class: Type[NT], *args: Any, **kwargs: Any) -> NT:
         """
         Create an emulation node.
 
-        :param cls: node class to create
+        :param _class: node class to create
         :param args: list of arguments for the class to create
         :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
-        node = cls(self, *args, **kwargs)
+        node = _class(self, *args, **kwargs)
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
@@ -1381,17 +1319,23 @@ class Session:
             self.nodes[node.id] = node
         return node
 
-    def get_node(self, _id: int) -> NodeBase:
+    def get_node(self, _id: int, _class: Type[NT]) -> NT:
         """
         Get a session node.
 
         :param _id: node id to retrieve
+        :param _class: expected node class
         :return: node for the given id
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
             raise CoreError(f"unknown node id {_id}")
-        return self.nodes[_id]
+        node = self.nodes[_id]
+        if not isinstance(node, _class):
+            actual = node.__class__.__name__
+            expected = _class.__name__
+            raise CoreError(f"node class({actual}) is not expected({expected})")
+        return node
 
     def delete_node(self, _id: int) -> bool:
         """
@@ -1425,7 +1369,6 @@ class Session:
                 self.sdt.delete_node(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
-        self.node_id_gen.id = 0
 
     def write_nodes(self) -> None:
         """
@@ -1709,10 +1652,7 @@ class Session:
         :return: control net
         :raises CoreError: when control net is not found
         """
-        node = self.get_node(CTRL_NET_ID + net_index)
-        if not isinstance(node, CtrlNet):
-            raise CoreError("node is not a valid CtrlNet: %s", node.name)
-        return node
+        return self.get_node(CTRL_NET_ID + net_index, CtrlNet)
 
     def add_remove_control_net(
         self, net_index: int, remove: bool = False, conf_required: bool = True
@@ -1788,10 +1728,9 @@ class Session:
             server_interface,
         )
         control_net = self.create_node(
-            cls=CtrlNet,
+            CtrlNet,
+            prefix,
             _id=_id,
-            prefix=prefix,
-            assign_address=True,
             updown_script=updown_script,
             serverintf=server_interface,
         )
@@ -1820,35 +1759,28 @@ class Session:
         control_net = self.add_remove_control_net(net_index, remove, conf_required)
         if not control_net:
             return
-
         if not node:
             return
-
         # ctrl# already exists
         if node.netif(control_net.CTRLIF_IDX_BASE + net_index):
             return
-
-        control_ip = node.id
-
         try:
-            address = control_net.prefix[control_ip]
-            prefix = control_net.prefix.prefixlen
-            addrlist = [f"{address}/{prefix}"]
+            ip4 = control_net.prefix[node.id]
+            ip4_mask = control_net.prefix.prefixlen
+            interface = InterfaceData(
+                id=control_net.CTRLIF_IDX_BASE + net_index,
+                name=f"ctrl{net_index}",
+                mac=utils.random_mac(),
+                ip4=ip4,
+                ip4_mask=ip4_mask,
+            )
+            ifindex = node.newnetif(control_net, interface)
+            node.netif(ifindex).control = True
         except ValueError:
             msg = f"Control interface not added to node {node.id}. "
             msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)
-            return
-
-        interface1 = node.newnetif(
-            net=control_net,
-            ifindex=control_net.CTRLIF_IDX_BASE + net_index,
-            ifname=f"ctrl{net_index}",
-            hwaddr=utils.random_mac(),
-            addrlist=addrlist,
-        )
-        node.netif(interface1).control = True
 
     def update_control_interface_hosts(
         self, net_index: int = 0, remove: bool = False
@@ -1959,7 +1891,7 @@ class Session:
         if not node_id:
             utils.mute_detach(data)
         else:
-            node = self.get_node(node_id)
+            node = self.get_node(node_id, CoreNodeBase)
             node.cmd(data, wait=False)
 
     def get_link_color(self, network_id: int) -> str:

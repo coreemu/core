@@ -1,5 +1,7 @@
 import time
 from queue import Queue
+from tempfile import TemporaryFile
+from typing import Optional
 
 import grpc
 import pytest
@@ -9,21 +11,25 @@ from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper
 from core.api.grpc.emane_pb2 import EmaneModelConfig
 from core.api.grpc.mobility_pb2 import MobilityAction, MobilityConfig
+from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.services_pb2 import ServiceAction, ServiceConfig, ServiceFileConfig
 from core.api.grpc.wlan_pb2 import WlanConfig
 from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import ConfigFlags
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.data import EventData
-from core.emulator.emudata import NodeOptions
+from core.emane.nodes import EmaneNet
+from core.emulator.data import EventData, NodeData
+from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode, WlanNode
 from core.xml.corexml import CoreXmlWriter
 
 
 class TestGrpc:
-    def test_start_session(self, grpc_server):
+    def test_start_session(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -156,7 +162,9 @@ class TestGrpc:
         assert service_file.data == service_file_config.data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
-    def test_create_session(self, grpc_server, session_id):
+    def test_create_session(
+        self, grpc_server: CoreGrpcServer, session_id: Optional[int]
+    ):
         # given
         client = CoreGrpcClient()
 
@@ -175,7 +183,9 @@ class TestGrpc:
             assert session.id == session_id
 
     @pytest.mark.parametrize("session_id, expected", [(None, True), (6013, False)])
-    def test_delete_session(self, grpc_server, session_id, expected):
+    def test_delete_session(
+        self, grpc_server: CoreGrpcServer, session_id: Optional[int], expected: bool
+    ):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -190,11 +200,11 @@ class TestGrpc:
         assert response.result is expected
         assert grpc_server.coreemu.sessions.get(session_id) is None
 
-    def test_get_session(self, grpc_server):
+    def test_get_session(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        session.add_node()
+        session.add_node(CoreNode)
         session.set_state(EventTypes.DEFINITION_STATE)
 
         # then
@@ -206,7 +216,7 @@ class TestGrpc:
         assert len(response.session.nodes) == 1
         assert len(response.session.links) == 0
 
-    def test_get_sessions(self, grpc_server):
+    def test_get_sessions(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -224,7 +234,7 @@ class TestGrpc:
         assert len(response.sessions) == 1
         assert found_session is not None
 
-    def test_get_session_options(self, grpc_server):
+    def test_get_session_options(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -236,7 +246,7 @@ class TestGrpc:
         # then
         assert len(response.config) > 0
 
-    def test_get_session_location(self, grpc_server):
+    def test_get_session_location(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -254,7 +264,7 @@ class TestGrpc:
         assert response.location.lon == 0
         assert response.location.alt == 0
 
-    def test_set_session_location(self, grpc_server):
+    def test_set_session_location(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -281,7 +291,7 @@ class TestGrpc:
         assert session.location.refscale == scale
         assert session.location.refgeo == lat_lon_alt
 
-    def test_set_session_options(self, grpc_server):
+    def test_set_session_options(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -298,7 +308,7 @@ class TestGrpc:
         config = session.options.get_configs()
         assert len(config) > 0
 
-    def test_set_session_metadata(self, grpc_server):
+    def test_set_session_metadata(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -313,7 +323,7 @@ class TestGrpc:
         assert response.result is True
         assert session.metadata[key] == value
 
-    def test_get_session_metadata(self, grpc_server):
+    def test_get_session_metadata(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -328,7 +338,7 @@ class TestGrpc:
         # then
         assert response.config[key] == value
 
-    def test_set_session_state(self, grpc_server):
+    def test_set_session_state(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -343,7 +353,7 @@ class TestGrpc:
         assert response.result is True
         assert session.state == EventTypes.DEFINITION_STATE
 
-    def test_add_node(self, grpc_server):
+    def test_add_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -355,13 +365,13 @@ class TestGrpc:
 
         # then
         assert response.node_id is not None
-        assert session.get_node(response.node_id) is not None
+        assert session.get_node(response.node_id, CoreNode) is not None
 
-    def test_get_node(self, grpc_server):
+    def test_get_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         with client.context_connect():
@@ -370,11 +380,11 @@ class TestGrpc:
         # then
         assert response.node.id == node.id
 
-    def test_edit_node(self, grpc_server):
+    def test_edit_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         x, y = 10, 10
@@ -388,11 +398,13 @@ class TestGrpc:
         assert node.position.y == y
 
     @pytest.mark.parametrize("node_id, expected", [(1, True), (2, False)])
-    def test_delete_node(self, grpc_server, node_id, expected):
+    def test_delete_node(
+        self, grpc_server: CoreGrpcServer, node_id: int, expected: bool
+    ):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         with client.context_connect():
@@ -402,9 +414,9 @@ class TestGrpc:
         assert response.result is expected
         if expected is True:
             with pytest.raises(CoreError):
-                assert session.get_node(node.id)
+                assert session.get_node(node.id, CoreNode)
 
-    def test_node_command(self, request, grpc_server):
+    def test_node_command(self, request, grpc_server: CoreGrpcServer):
         if request.config.getoption("mock"):
             pytest.skip("mocking calls")
 
@@ -413,7 +425,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
         options = NodeOptions(model="Host")
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
         session.instantiate()
         output = "hello world"
 
@@ -425,13 +437,13 @@ class TestGrpc:
         # then
         assert response.output == output
 
-    def test_get_node_terminal(self, grpc_server):
+    def test_get_node_terminal(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
         options = NodeOptions(model="Host")
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
         session.instantiate()
 
         # then
@@ -441,13 +453,13 @@ class TestGrpc:
         # then
         assert response.terminal is not None
 
-    def test_get_hooks(self, grpc_server):
+    def test_get_hooks(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         file_name = "test"
         file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE, file_name, None, file_data)
+        session.add_hook(EventTypes.RUNTIME_STATE, file_name, file_data)
 
         # then
         with client.context_connect():
@@ -460,7 +472,7 @@ class TestGrpc:
         assert hook.file == file_name
         assert hook.data == file_data
 
-    def test_add_hook(self, grpc_server):
+    def test_add_hook(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -476,7 +488,7 @@ class TestGrpc:
         # then
         assert response.result is True
 
-    def test_save_xml(self, grpc_server, tmpdir):
+    def test_save_xml(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -489,7 +501,7 @@ class TestGrpc:
         # then
         assert tmp.exists()
 
-    def test_open_xml_hook(self, grpc_server, tmpdir):
+    def test_open_xml_hook(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -504,12 +516,12 @@ class TestGrpc:
         assert response.result is True
         assert response.session_id is not None
 
-    def test_get_node_links(self, grpc_server, ip_prefixes):
+    def test_get_node_links(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        switch = session.add_node(_type=NodeTypes.SWITCH)
-        node = session.add_node()
+        switch = session.add_node(SwitchNode)
+        node = session.add_node(CoreNode)
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface)
 
@@ -520,12 +532,14 @@ class TestGrpc:
         # then
         assert len(response.links) == 1
 
-    def test_get_node_links_exception(self, grpc_server, ip_prefixes):
+    def test_get_node_links_exception(
+        self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes
+    ):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        switch = session.add_node(_type=NodeTypes.SWITCH)
-        node = session.add_node()
+        switch = session.add_node(SwitchNode)
+        node = session.add_node(CoreNode)
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface)
 
@@ -534,12 +548,14 @@ class TestGrpc:
             with client.context_connect():
                 client.get_node_links(session.id, 3)
 
-    def test_add_link(self, grpc_server, interface_helper):
+    def test_add_link(
+        self, grpc_server: CoreGrpcServer, interface_helper: InterfaceHelper
+    ):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        switch = session.add_node(_type=NodeTypes.SWITCH)
-        node = session.add_node()
+        switch = session.add_node(SwitchNode)
+        node = session.add_node(CoreNode)
         assert len(switch.all_link_data()) == 0
 
         # then
@@ -551,11 +567,13 @@ class TestGrpc:
         assert response.result is True
         assert len(switch.all_link_data()) == 1
 
-    def test_add_link_exception(self, grpc_server, interface_helper):
+    def test_add_link_exception(
+        self, grpc_server: CoreGrpcServer, interface_helper: InterfaceHelper
+    ):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         interface = interface_helper.create_interface(node.id, 0)
@@ -563,12 +581,12 @@ class TestGrpc:
             with client.context_connect():
                 client.add_link(session.id, 1, 3, interface)
 
-    def test_edit_link(self, grpc_server, ip_prefixes):
+    def test_edit_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        switch = session.add_node(_type=NodeTypes.SWITCH)
-        node = session.add_node()
+        switch = session.add_node(SwitchNode)
+        node = session.add_node(CoreNode)
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface)
         options = core_pb2.LinkOptions(bandwidth=30000)
@@ -586,13 +604,13 @@ class TestGrpc:
         link = switch.all_link_data()[0]
         assert options.bandwidth == link.bandwidth
 
-    def test_delete_link(self, grpc_server, ip_prefixes):
+    def test_delete_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node_one = session.add_node()
+        node_one = session.add_node(CoreNode)
         interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node()
+        node_two = session.add_node(CoreNode)
         interface_two = ip_prefixes.create_interface(node_two)
         session.add_link(node_one.id, node_two.id, interface_one, interface_two)
         link_node = None
@@ -613,11 +631,11 @@ class TestGrpc:
         assert response.result is True
         assert len(link_node.all_link_data(0)) == 0
 
-    def test_get_wlan_config(self, grpc_server):
+    def test_get_wlan_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
 
         # then
         with client.context_connect():
@@ -626,12 +644,12 @@ class TestGrpc:
         # then
         assert len(response.config) > 0
 
-    def test_set_wlan_config(self, grpc_server):
+    def test_set_wlan_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
         wlan.setmodel(BasicRangeModel, BasicRangeModel.default_values())
         session.instantiate()
         range_key = "range"
@@ -658,7 +676,7 @@ class TestGrpc:
         assert config[range_key] == range_value
         assert wlan.model.range == int(range_value)
 
-    def test_get_emane_config(self, grpc_server):
+    def test_get_emane_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -670,7 +688,7 @@ class TestGrpc:
         # then
         assert len(response.config) > 0
 
-    def test_set_emane_config(self, grpc_server):
+    def test_set_emane_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -687,14 +705,13 @@ class TestGrpc:
         assert len(config) > 1
         assert config[config_key] == config_value
 
-    def test_get_emane_model_configs(self, grpc_server):
+    def test_get_emane_model_configs(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
-        options.emane = EmaneIeee80211abgModel.name
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        emane_network = session.add_node(EmaneNet, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "platform_id_start"
         config_value = "2"
@@ -714,14 +731,13 @@ class TestGrpc:
         assert len(model_config.config) > 0
         assert model_config.interface == -1
 
-    def test_set_emane_model_config(self, grpc_server):
+    def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
-        options.emane = EmaneIeee80211abgModel.name
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        emane_network = session.add_node(EmaneNet, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "bandwidth"
         config_value = "900000"
@@ -742,14 +758,13 @@ class TestGrpc:
         )
         assert config[config_key] == config_value
 
-    def test_get_emane_model_config(self, grpc_server):
+    def test_get_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
-        options.emane = EmaneIeee80211abgModel.name
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        emane_network = session.add_node(EmaneNet, options=options)
         session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
         # then
@@ -761,7 +776,7 @@ class TestGrpc:
         # then
         assert len(response.config) > 0
 
-    def test_get_emane_models(self, grpc_server):
+    def test_get_emane_models(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -773,11 +788,11 @@ class TestGrpc:
         # then
         assert len(response.models) > 0
 
-    def test_get_mobility_configs(self, grpc_server):
+    def test_get_mobility_configs(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
         session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
 
         # then
@@ -790,11 +805,11 @@ class TestGrpc:
         mapped_config = response.configs[wlan.id]
         assert len(mapped_config.config) > 0
 
-    def test_get_mobility_config(self, grpc_server):
+    def test_get_mobility_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
         session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
 
         # then
@@ -804,11 +819,11 @@ class TestGrpc:
         # then
         assert len(response.config) > 0
 
-    def test_set_mobility_config(self, grpc_server):
+    def test_set_mobility_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
         config_key = "refresh_ms"
         config_value = "60"
 
@@ -823,11 +838,11 @@ class TestGrpc:
         config = session.mobility.get_model_config(wlan.id, Ns2ScriptedMobility.name)
         assert config[config_key] == config_value
 
-    def test_mobility_action(self, grpc_server):
+    def test_mobility_action(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan = session.add_node(WlanNode)
         session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
         session.instantiate()
 
@@ -838,7 +853,7 @@ class TestGrpc:
         # then
         assert response.result is True
 
-    def test_get_services(self, grpc_server):
+    def test_get_services(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
 
@@ -849,7 +864,7 @@ class TestGrpc:
         # then
         assert len(response.services) > 0
 
-    def test_get_service_defaults(self, grpc_server):
+    def test_get_service_defaults(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -861,7 +876,7 @@ class TestGrpc:
         # then
         assert len(response.defaults) > 0
 
-    def test_set_service_defaults(self, grpc_server):
+    def test_set_service_defaults(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -876,11 +891,11 @@ class TestGrpc:
         assert response.result is True
         assert session.services.default_services[node_type] == services
 
-    def test_get_node_service_configs(self, grpc_server):
+    def test_get_node_service_configs(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         service_name = "DefaultRoute"
         session.services.set_service(node.id, service_name)
 
@@ -894,11 +909,11 @@ class TestGrpc:
         assert service_config.node_id == node.id
         assert service_config.service == service_name
 
-    def test_get_node_service(self, grpc_server):
+    def test_get_node_service(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         with client.context_connect():
@@ -907,11 +922,11 @@ class TestGrpc:
         # then
         assert len(response.service.configs) > 0
 
-    def test_get_node_service_file(self, grpc_server):
+    def test_get_node_service_file(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # then
         with client.context_connect():
@@ -922,11 +937,11 @@ class TestGrpc:
         # then
         assert response.data is not None
 
-    def test_set_node_service(self, grpc_server):
+    def test_set_node_service(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         service_name = "DefaultRoute"
         validate = ["echo hello"]
 
@@ -943,11 +958,11 @@ class TestGrpc:
         )
         assert service.validate == tuple(validate)
 
-    def test_set_node_service_file(self, grpc_server):
+    def test_set_node_service_file(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         service_name = "DefaultRoute"
         file_name = "defaultroute.sh"
         file_data = "echo hello"
@@ -963,11 +978,11 @@ class TestGrpc:
         service_file = session.services.get_service_file(node, service_name, file_name)
         assert service_file.data == file_data
 
-    def test_service_action(self, grpc_server):
+    def test_service_action(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         service_name = "DefaultRoute"
 
         # then
@@ -979,16 +994,23 @@ class TestGrpc:
         # then
         assert response.result is True
 
-    def test_node_events(self, grpc_server):
+    def test_node_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
+        node.position.lat = 10.0
+        node.position.lon = 20.0
+        node.position.alt = 5.0
         queue = Queue()
 
         def handle_event(event_data):
             assert event_data.session_id == session.id
             assert event_data.HasField("node_event")
+            event_node = event_data.node_event.node
+            assert event_node.geo.lat == node.position.lat
+            assert event_node.geo.lon == node.position.lon
+            assert event_node.geo.alt == node.position.alt
             queue.put(event_data)
 
         # then
@@ -1000,12 +1022,12 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_link_events(self, grpc_server, ip_prefixes):
+    def test_link_events(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        node = session.add_node()
+        wlan = session.add_node(WlanNode)
+        node = session.add_node(CoreNode)
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface)
         link_data = wlan.all_link_data()[0]
@@ -1025,7 +1047,7 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_throughputs(self, request, grpc_server):
+    def test_throughputs(self, request, grpc_server: CoreGrpcServer):
         if request.config.getoption("mock"):
             pytest.skip("mocking calls")
 
@@ -1046,7 +1068,7 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_session_events(self, grpc_server):
+    def test_session_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -1069,7 +1091,7 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_config_events(self, grpc_server):
+    def test_config_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -1093,7 +1115,7 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_exception_events(self, grpc_server):
+    def test_exception_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -1122,11 +1144,11 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_file_events(self, grpc_server):
+    def test_file_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         queue = Queue()
 
         def handle_event(event_data):
@@ -1145,3 +1167,71 @@ class TestGrpc:
 
             # then
             queue.get(timeout=5)
+
+    def test_move_nodes(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        x, y = 10.0, 15.0
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest(
+                session_id=session.id,
+                node_id=node.id,
+                position=core_pb2.Position(x=x, y=y),
+            )
+
+        # then
+        with client.context_connect():
+            client.move_nodes(move_iter())
+
+        # assert
+        assert node.position.x == x
+        assert node.position.y == y
+
+    def test_move_nodes_geo(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        lon, lat, alt = 10.0, 15.0, 5.0
+        queue = Queue()
+
+        def node_handler(node_data: NodeData):
+            assert node_data.longitude == lon
+            assert node_data.latitude == lat
+            assert node_data.altitude == alt
+            queue.put(node_data)
+
+        session.node_handlers.append(node_handler)
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest(
+                session_id=session.id,
+                node_id=node.id,
+                geo=core_pb2.Geo(lon=lon, lat=lat, alt=alt),
+            )
+
+        # then
+        with client.context_connect():
+            client.move_nodes(move_iter())
+
+        # assert
+        assert node.position.lon == lon
+        assert node.position.lat == lat
+        assert node.position.alt == alt
+        assert queue.get(timeout=5)
+
+    def test_move_nodes_exception(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        grpc_server.coreemu.create_session()
+
+        def move_iter():
+            yield core_pb2.MoveNodesRequest()
+
+        # then
+        with pytest.raises(grpc.RpcError):
+            with client.context_connect():
+                client.move_nodes(move_iter())

@@ -12,7 +12,14 @@ import netaddr
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import LinkData, NodeData
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
+from core.emulator.emudata import LinkOptions
+from core.emulator.enumerations import (
+    LinkTypes,
+    MessageFlags,
+    NetworkPolicy,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
@@ -21,7 +28,7 @@ from core.nodes.netclient import get_net_client
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel
+    from core.location.mobility import WirelessModel, WayPointMobility
 
     WirelessModelType = Type[WirelessModel]
 
@@ -36,26 +43,26 @@ class EbtablesQueue:
     """
 
     # update rate is every 300ms
-    rate = 0.3
+    rate: float = 0.3
     # ebtables
-    atomic_file = "/tmp/pycore.ebtables.atomic"
+    atomic_file: str = "/tmp/pycore.ebtables.atomic"
 
     def __init__(self) -> None:
         """
         Initialize the helper class, but don't start the update thread
         until a WLAN is instantiated.
         """
-        self.doupdateloop = False
-        self.updatethread = None
+        self.doupdateloop: bool = False
+        self.updatethread: Optional[threading.Thread] = None
         # this lock protects cmds and updates lists
-        self.updatelock = threading.Lock()
+        self.updatelock: threading.Lock = threading.Lock()
         # list of pending ebtables commands
-        self.cmds = []
+        self.cmds: List[str] = []
         # list of WLANs requiring update
-        self.updates = []
+        self.updates: List["CoreNetwork"] = []
         # timestamps of last WLAN update; this keeps track of WLANs that are
         # using this queue
-        self.last_update_time = {}
+        self.last_update_time: Dict["CoreNetwork", float] = {}
 
     def startupdateloop(self, wlan: "CoreNetwork") -> None:
         """
@@ -65,10 +72,8 @@ class EbtablesQueue:
         """
         with self.updatelock:
             self.last_update_time[wlan] = time.monotonic()
-
         if self.doupdateloop:
             return
-
         self.doupdateloop = True
         self.updatethread = threading.Thread(target=self.updateloop, daemon=True)
         self.updatethread.start()
@@ -86,10 +91,8 @@ class EbtablesQueue:
                 logging.exception(
                     "error deleting last update time for wlan, ignored before: %s", wlan
                 )
-
         if len(self.last_update_time) > 0:
             return
-
         self.doupdateloop = False
         if self.updatethread:
             self.updatethread.join()
@@ -208,21 +211,21 @@ class EbtablesQueue:
                 wlan.has_ebtables_chain = True
                 self.cmds.extend(
                     [
-                        f"-N {wlan.brname} -P {wlan.policy}",
+                        f"-N {wlan.brname} -P {wlan.policy.value}",
                         f"-A FORWARD --logical-in {wlan.brname} -j {wlan.brname}",
                     ]
                 )
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
-                    if wlan.policy == "DROP" and linked:
+                    if wlan.policy == NetworkPolicy.DROP and linked:
                         self.cmds.extend(
                             [
                                 f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j ACCEPT",
                                 f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j ACCEPT",
                             ]
                         )
-                    elif wlan.policy == "ACCEPT" and not linked:
+                    elif wlan.policy == NetworkPolicy.ACCEPT and not linked:
                         self.cmds.extend(
                             [
                                 f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j DROP",
@@ -233,7 +236,7 @@ class EbtablesQueue:
 
 # a global object because all WLANs share the same queue
 # cannot have multiple threads invoking the ebtables commnd
-ebq = EbtablesQueue()
+ebq: EbtablesQueue = EbtablesQueue()
 
 
 def ebtablescmds(call: Callable[..., str], cmds: List[str]) -> None:
@@ -254,7 +257,7 @@ class CoreNetwork(CoreNetworkBase):
     Provides linux bridge network functionality for core nodes.
     """
 
-    policy = "DROP"
+    policy: NetworkPolicy = NetworkPolicy.DROP
 
     def __init__(
         self,
@@ -263,7 +266,7 @@ class CoreNetwork(CoreNetworkBase):
         name: str = None,
         start: bool = True,
         server: "DistributedServer" = None,
-        policy: str = None,
+        policy: NetworkPolicy = None,
     ) -> None:
         """
         Creates a LxBrNet instance.
@@ -281,11 +284,10 @@ class CoreNetwork(CoreNetworkBase):
             name = str(self.id)
         if policy is not None:
             self.policy = policy
-        self.name = name
+        self.name: Optional[str] = name
         sessionid = self.session.short_session_id()
-        self.brname = f"b.{self.id}.{sessionid}"
-        self.up = False
-        self.has_ebtables_chain = False
+        self.brname: str = f"b.{self.id}.{sessionid}"
+        self.has_ebtables_chain: bool = False
         if start:
             self.startup()
             ebq.startupdateloop(self)
@@ -365,7 +367,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         if self.up:
-            netif.net_client.create_interface(self.brname, netif.localname)
+            netif.net_client.set_interface_master(self.brname, netif.localname)
         super().attach(netif)
 
     def detach(self, netif: CoreInterface) -> None:
@@ -397,12 +399,12 @@ class CoreNetwork(CoreNetworkBase):
         try:
             linked = self._linked[netif1][netif2]
         except KeyError:
-            if self.policy == "ACCEPT":
+            if self.policy == NetworkPolicy.ACCEPT:
                 linked = True
-            elif self.policy == "DROP":
+            elif self.policy == NetworkPolicy.DROP:
                 linked = False
             else:
-                raise Exception(f"unknown policy: {self.policy}")
+                raise Exception(f"unknown policy: {self.policy.value}")
             self._linked[netif1][netif2] = linked
 
         return linked
@@ -440,41 +442,27 @@ class CoreNetwork(CoreNetworkBase):
         ebq.ebchange(self)
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: float = None,
-        devname: str = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
         :param netif: interface one
-        :param bw: bandwidth to set to
-        :param delay: packet delay to set to
-        :param loss: packet loss to set to
-        :param duplicate: duplicate percentage to set to
-        :param jitter: jitter to set to
+        :param options: options for configuring link
         :param netif2: interface two
-        :param devname: device name
         :return: nothing
         """
-        if devname is None:
-            devname = netif.localname
+        devname = netif.localname
         tc = f"{TC_BIN} qdisc replace dev {devname}"
         parent = "root"
         changed = False
+        bw = options.bandwidth
         if netif.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
-            if bw is not None:
-                burst = max(2 * netif.mtu, bw / 1000)
-                # max IP payload
-                limit = 0xFFFF
-                tbf = f"tbf rate {bw} burst {burst} limit {limit}"
+            burst = max(2 * netif.mtu, int(bw / 1000))
+            # max IP payload
+            limit = 0xFFFF
+            tbf = f"tbf rate {bw} burst {burst} limit {limit}"
             if bw > 0:
                 if self.up:
                     cmd = f"{tc} {parent} handle 1: {tbf}"
@@ -492,13 +480,17 @@ class CoreNetwork(CoreNetworkBase):
         if netif.getparam("has_tbf"):
             parent = "parent 1:1"
         netem = "netem"
+        delay = options.delay
         changed = max(changed, netif.setparam("delay", delay))
+        loss = options.per
         if loss is not None:
             loss = float(loss)
         changed = max(changed, netif.setparam("loss", loss))
+        duplicate = options.dup
         if duplicate is not None:
             duplicate = int(duplicate)
         changed = max(changed, netif.setparam("duplicate", duplicate))
+        jitter = options.jitter
         changed = max(changed, netif.setparam("jitter", jitter))
         if not changed:
             return
@@ -565,9 +557,8 @@ class CoreNetwork(CoreNetworkBase):
 
         netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
-        if net.up:
-            # this is similar to net.attach() but uses netif.name instead of localname
-            netif.net_client.create_interface(net.brname, netif.name)
+        if net.up and net.brname:
+            netif.net_client.set_interface_master(net.brname, netif.name)
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -585,7 +576,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: interface the provided network is linked to
         """
         for netif in self.netifs():
-            if hasattr(netif, "othernet") and netif.othernet == net:
+            if netif.othernet == net:
                 return netif
         return None
 
@@ -615,7 +606,7 @@ class GreTapBridge(CoreNetwork):
         remoteip: str = None,
         _id: int = None,
         name: str = None,
-        policy: str = "ACCEPT",
+        policy: NetworkPolicy = NetworkPolicy.ACCEPT,
         localip: str = None,
         ttl: int = 255,
         key: int = None,
@@ -638,17 +629,16 @@ class GreTapBridge(CoreNetwork):
             will run on, default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
-        self.grekey = key
-        if self.grekey is None:
-            self.grekey = self.session.id ^ self.id
-        self.localnum = None
-        self.remotenum = None
-        self.remoteip = remoteip
-        self.localip = localip
-        self.ttl = ttl
-        if remoteip is None:
-            self.gretap = None
-        else:
+        if key is None:
+            key = self.session.id ^ self.id
+        self.grekey: int = key
+        self.localnum: Optional[int] = None
+        self.remotenum: Optional[int] = None
+        self.remoteip: Optional[str] = remoteip
+        self.localip: Optional[str] = localip
+        self.ttl: int = ttl
+        self.gretap: Optional[GreTap] = None
+        if remoteip is not None:
             self.gretap = GreTap(
                 node=self,
                 session=session,
@@ -723,10 +713,10 @@ class CtrlNet(CoreNetwork):
     Control network functionality.
     """
 
-    policy = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
     # base control interface index
-    CTRLIF_IDX_BASE = 99
-    DEFAULT_PREFIX_LIST = [
+    CTRLIF_IDX_BASE: int = 99
+    DEFAULT_PREFIX_LIST: List[str] = [
         "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
         "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
         "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
@@ -736,15 +726,15 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session: "Session",
+        prefix: str,
         _id: int = None,
         name: str = None,
-        prefix: str = None,
         hostid: int = None,
         start: bool = True,
         server: "DistributedServer" = None,
         assign_address: bool = True,
         updown_script: str = None,
-        serverintf: CoreInterface = None,
+        serverintf: str = None,
     ) -> None:
         """
         Creates a CtrlNet instance.
@@ -762,11 +752,11 @@ class CtrlNet(CoreNetwork):
         :param serverintf: server interface
         :return:
         """
-        self.prefix = netaddr.IPNetwork(prefix).cidr
-        self.hostid = hostid
-        self.assign_address = assign_address
-        self.updown_script = updown_script
-        self.serverintf = serverintf
+        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(prefix).cidr
+        self.hostid: Optional[int] = hostid
+        self.assign_address: bool = assign_address
+        self.updown_script: Optional[str] = updown_script
+        self.serverintf: Optional[str] = serverintf
         super().__init__(session, _id, name, start, server)
 
     def add_addresses(self, index: int) -> None:
@@ -817,7 +807,7 @@ class CtrlNet(CoreNetwork):
             self.host_cmd(f"{self.updown_script} {self.brname} startup")
 
         if self.serverintf:
-            self.net_client.create_interface(self.brname, self.serverintf)
+            self.net_client.set_interface_master(self.brname, self.serverintf)
 
     def shutdown(self) -> None:
         """
@@ -863,7 +853,7 @@ class PtpNet(CoreNetwork):
     Peer to peer network node.
     """
 
-    policy = "ACCEPT"
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
 
     def attach(self, netif: CoreInterface) -> None:
         """
@@ -993,9 +983,9 @@ class SwitchNode(CoreNetwork):
     Provides switch functionality within a core node.
     """
 
-    apitype = NodeTypes.SWITCH
-    policy = "ACCEPT"
-    type = "lanswitch"
+    apitype: NodeTypes = NodeTypes.SWITCH
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
+    type: str = "lanswitch"
 
 
 class HubNode(CoreNetwork):
@@ -1004,9 +994,9 @@ class HubNode(CoreNetwork):
     ports by turning off MAC address learning.
     """
 
-    apitype = NodeTypes.HUB
-    policy = "ACCEPT"
-    type = "hub"
+    apitype: NodeTypes = NodeTypes.HUB
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
+    type: str = "hub"
 
     def startup(self) -> None:
         """
@@ -1023,10 +1013,10 @@ class WlanNode(CoreNetwork):
     Provides wireless lan functionality within a core node.
     """
 
-    apitype = NodeTypes.WIRELESS_LAN
-    linktype = LinkTypes.WIRED
-    policy = "DROP"
-    type = "wlan"
+    apitype: NodeTypes = NodeTypes.WIRELESS_LAN
+    linktype: LinkTypes = LinkTypes.WIRED
+    policy: NetworkPolicy = NetworkPolicy.DROP
+    type: str = "wlan"
 
     def __init__(
         self,
@@ -1035,7 +1025,7 @@ class WlanNode(CoreNetwork):
         name: str = None,
         start: bool = True,
         server: "DistributedServer" = None,
-        policy: str = None,
+        policy: NetworkPolicy = None,
     ) -> None:
         """
         Create a WlanNode instance.
@@ -1050,8 +1040,8 @@ class WlanNode(CoreNetwork):
         """
         super().__init__(session, _id, name, start, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
-        self.model = None
-        self.mobility = None
+        self.model: Optional[WirelessModel] = None
+        self.mobility: Optional[WayPointMobility] = None
 
     def startup(self) -> None:
         """
@@ -1127,6 +1117,6 @@ class TunnelNode(GreTapBridge):
     Provides tunnel functionality in a core node.
     """
 
-    apitype = NodeTypes.TUNNEL
-    policy = "ACCEPT"
-    type = "tunnel"
+    apitype: NodeTypes = NodeTypes.TUNNEL
+    policy: NetworkPolicy = NetworkPolicy.ACCEPT
+    type: str = "tunnel"

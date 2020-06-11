@@ -6,8 +6,16 @@ share the same MAC+PHY model.
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
+from core.emulator.data import LinkData
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
+from core.emulator.emudata import LinkOptions
+from core.emulator.enumerations import (
+    LinkTypes,
+    MessageFlags,
+    NodeTypes,
+    RegisterTlvs,
+    TransportType,
+)
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface
 
@@ -48,35 +56,19 @@ class EmaneNet(CoreNetworkBase):
     ) -> None:
         super().__init__(session, _id, name, start, server)
         self.conf = ""
-        self.up = False
         self.nemidmap = {}
         self.model = None
         self.mobility = None
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         The CommEffect model supports link configuration.
         """
         if not self.model:
             return
-        self.model.linkconfig(
-            netif=netif,
-            bw=bw,
-            delay=delay,
-            loss=loss,
-            duplicate=duplicate,
-            jitter=jitter,
-            netif2=netif2,
-        )
+        self.model.linkconfig(netif, options, netif2)
 
     def config(self, conf: str) -> None:
         self.conf = conf
@@ -181,7 +173,7 @@ class EmaneNet(CoreNetworkBase):
         emanetransportd terminates.
         """
         for netif in self.netifs():
-            if "virtual" in netif.transport_type.lower():
+            if netif.transport_type == TransportType.VIRTUAL:
                 netif.shutdown()
             netif.poshook = None
 
@@ -204,6 +196,7 @@ class EmaneNet(CoreNetworkBase):
         lat, lon, alt = self.session.location.getgeo(x, y, z)
         if node.position.alt is not None:
             alt = node.position.alt
+        node.position.set_geo(lon, lat, alt)
         # altitude must be an integer or warning is printed
         alt = int(round(alt))
         return nemid, lon, lat, alt
@@ -245,3 +238,27 @@ class EmaneNet(CoreNetworkBase):
                 nemid, lon, lat, alt = position
                 event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)
+
+    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+        links = super().all_link_data(flags)
+        # gather current emane links
+        nem_ids = set(self.nemidmap.values())
+        emane_manager = self.session.emane
+        emane_links = emane_manager.link_monitor.links
+        considered = set()
+        for link_key in emane_links:
+            considered_key = tuple(sorted(link_key))
+            if considered_key in considered:
+                continue
+            considered.add(considered_key)
+            nem1, nem2 = considered_key
+            # ignore links not related to this node
+            if nem1 not in nem_ids and nem2 not in nem_ids:
+                continue
+            # ignore incomplete links
+            if (nem2, nem1) not in emane_links:
+                continue
+            link = emane_manager.get_nem_link(nem1, nem2)
+            if link:
+                links.append(link)
+        return links

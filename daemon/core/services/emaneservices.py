@@ -1,4 +1,5 @@
 from core.emane.nodes import EmaneNet
+from core.errors import CoreError
 from core.services.coreservices import CoreService
 from core.xml import emanexml
 
@@ -20,8 +21,8 @@ class EmaneTransportService(CoreService):
         if filename == cls.configs[0]:
             transport_commands = []
             for interface in node.netifs(sort=True):
-                network_node = node.session.get_node(interface.net.id)
-                if isinstance(network_node, EmaneNet):
+                try:
+                    network_node = node.session.get_node(interface.net.id, EmaneNet)
                     config = node.session.emane.get_configs(
                         network_node.id, network_node.model.name
                     )
@@ -32,6 +33,8 @@ class EmaneTransportService(CoreService):
                             % nem_id
                         )
                         transport_commands.append(command)
+                except CoreError:
+                    pass
             transport_commands = "\n".join(transport_commands)
             return """
 emanegentransportxml -o ../ ../platform%s.xml

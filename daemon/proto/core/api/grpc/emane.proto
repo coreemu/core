@@ -90,3 +90,16 @@ message EmaneModelConfig {
     string model = 3;
     map<string, string> config = 4;
 }
+
+message EmanePathlossesRequest {
+    int32 session_id = 1;
+    int32 node_one = 2;
+    float rx_one = 3;
+    int32 interface_one_id = 4;
+    int32 node_two = 5;
+    float rx_two = 6;
+    int32 interface_two_id = 7;
+}
+
+message EmanePathlossesResponse {
+}

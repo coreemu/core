@@ -2,7 +2,9 @@ import logging
 import time
 from typing import Any, Dict, List, Tuple, Type
 
+import grpc
 import netaddr
+from grpc import ServicerContext
 
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
@@ -13,7 +15,7 @@ from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
-from core.nodes.base import NodeBase
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
@@ -29,17 +31,19 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     """
     _id = node_proto.id
     _type = NodeTypes(node_proto.type)
-    options = NodeOptions(name=node_proto.name, model=node_proto.model)
-    options.icon = node_proto.icon
-    options.opaque = node_proto.opaque
-    options.image = node_proto.image
-    options.services = node_proto.services
-    options.config_services = node_proto.config_services
+    options = NodeOptions(
+        name=node_proto.name,
+        model=node_proto.model,
+        icon=node_proto.icon,
+        opaque=node_proto.opaque,
+        image=node_proto.image,
+        services=node_proto.services,
+        config_services=node_proto.config_services,
+    )
     if node_proto.emane:
         options.emane = node_proto.emane
     if node_proto.server:
         options.server = node_proto.server
-
     position = node_proto.position
     options.set_position(position.x, position.y)
     if node_proto.HasField("geo"):
@@ -57,19 +61,17 @@ def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     """
     interface = None
     if interface_proto:
-        name = interface_proto.name
-        if name == "":
-            name = None
-        mac = interface_proto.mac
-        if mac == "":
-            mac = None
+        name = interface_proto.name if interface_proto.name else None
+        mac = interface_proto.mac if interface_proto.mac else None
+        ip4 = interface_proto.ip4 if interface_proto.ip4 else None
+        ip6 = interface_proto.ip6 if interface_proto.ip6 else None
         interface = InterfaceData(
-            _id=interface_proto.id,
+            id=interface_proto.id,
             name=name,
             mac=mac,
-            ip4=interface_proto.ip4,
+            ip4=ip4,
             ip4_mask=interface_proto.ip4mask,
-            ip6=interface_proto.ip6,
+            ip6=ip6,
             ip6_mask=interface_proto.ip6mask,
         )
     return interface
@@ -86,13 +88,8 @@ def add_link_data(
     """
     interface_one = link_interface(link_proto.interface_one)
     interface_two = link_interface(link_proto.interface_two)
-
-    link_type = None
-    link_type_value = link_proto.type
-    if link_type_value is not None:
-        link_type = LinkTypes(link_type_value)
-
-    options = LinkOptions(_type=link_type)
+    link_type = LinkTypes(link_proto.type)
+    options = LinkOptions(type=link_type)
     options_data = link_proto.options
     if options_data:
         options.delay = options_data.delay
@@ -106,7 +103,6 @@ def add_link_data(
         options.unidirectional = options_data.unidirectional
         options.key = options_data.key
         options.opaque = options_data.opaque
-
     return interface_one, interface_two, options
 
 
@@ -123,7 +119,8 @@ def create_nodes(
     funcs = []
     for node_proto in node_protos:
         _type, _id, options = add_node_data(node_proto)
-        args = (_type, _id, options)
+        _class = session.get_node_class(_type)
+        args = (_class, _id, options)
         funcs.append((session.add_node, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -234,6 +231,9 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
     position = core_pb2.Position(
         x=node.position.x, y=node.position.y, z=node.position.z
     )
+    geo = core_pb2.Geo(
+        lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
+    )
     services = getattr(node, "services", [])
     if services is None:
         services = []
@@ -254,6 +254,7 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
         model=model,
         type=node_type.value,
         position=position,
+        geo=geo,
         services=services,
         icon=node.icon,
         image=image,
@@ -473,3 +474,23 @@ def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
         ip6=ip6,
         ip6mask=ip6mask,
     )
+
+
+def get_nem_id(node: CoreNode, netif_id: int, context: ServicerContext) -> int:
+    """
+    Get nem id for a given node and interface id.
+
+    :param node: node to get nem id for
+    :param netif_id: id of interface on node to get nem id for
+    :param context: request context
+    :return: nem id
+    """
+    netif = node.netif(netif_id)
+    if not netif:
+        message = f"{node.name} missing interface {netif_id}"
+        context.abort(grpc.StatusCode.NOT_FOUND, message)
+    net = netif.net
+    if not isinstance(net, EmaneNet):
+        message = f"{node.name} interface {netif_id} is not an EMANE network"
+        context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+    return net.getnemid(netif)

@@ -3,7 +3,7 @@ import logging
 import os
 import signal
 import sys
-from typing import Mapping, Type
+from typing import Dict, List, Type
 
 import core.services
 from core import configservices
@@ -36,7 +36,7 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config: Mapping[str, str] = None) -> None:
+    def __init__(self, config: Dict[str, str] = None) -> None:
         """
         Create a CoreEmu object.
 
@@ -48,17 +48,17 @@ class CoreEmu:
         # configuration
         if config is None:
             config = {}
-        self.config = config
+        self.config: Dict[str, str] = config
 
         # session management
-        self.sessions = {}
+        self.sessions: Dict[int, Session] = {}
 
         # load services
-        self.service_errors = []
+        self.service_errors: List[str] = []
         self.load_services()
 
         # config services
-        self.service_manager = ConfigServiceManager()
+        self.service_manager: ConfigServiceManager = ConfigServiceManager()
         config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
         self.service_manager.load(config_services_path)
         custom_dir = self.config.get("custom_config_services_dir")

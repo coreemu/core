@@ -20,7 +20,6 @@ from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
-from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import AnnotationData, Shape
@@ -136,7 +135,7 @@ class CoreClient:
             return
 
         if event.HasField("link_event"):
-            self.handle_link_event(event.link_event)
+            self.app.after(0, self.handle_link_event, event.link_event)
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
             session_event = event.session_event
@@ -155,7 +154,7 @@ class CoreClient:
             else:
                 logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
-            self.handle_node_event(event.node_event)
+            self.app.after(0, self.handle_node_event, event.node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
         elif event.HasField("exception_event"):
@@ -221,7 +220,7 @@ class CoreClient:
             )
             return
         logging.debug("handling throughputs event: %s", event)
-        self.app.canvas.set_throughputs(event)
+        self.app.after(0, self.app.canvas.set_throughputs, event)
 
     def handle_exception_event(self, event: core_pb2.ExceptionEvent):
         logging.info("exception event: %s", event)
@@ -331,6 +330,9 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Join Session Error", e)
 
+        # organize canvas
+        self.app.canvas.organize()
+
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
 
@@ -389,9 +391,6 @@ class CoreClient:
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
-
-        for tag in tags.ABOVE_WALLPAPER_TAGS:
-            self.app.canvas.tag_raise(tag)
 
     def create_new_session(self):
         """
@@ -838,7 +837,7 @@ class CoreClient:
         ip4, ip6 = self.interfaces_manager.get_ips(node)
         ip4_mask = self.interfaces_manager.ip4_mask
         ip6_mask = self.interfaces_manager.ip6_mask
-        interface_id = len(canvas_node.interfaces)
+        interface_id = canvas_node.next_interface_id()
         name = f"eth{interface_id}"
         interface = core_pb2.Interface(
             id=interface_id,
@@ -848,7 +847,7 @@ class CoreClient:
             ip6=ip6,
             ip6mask=ip6_mask,
         )
-        logging.debug(
+        logging.info(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
             interface.name,
@@ -887,12 +886,15 @@ class CoreClient:
             interface_one=src_interface,
             interface_two=dst_interface,
         )
+        # assign after creating link proto, since interfaces are copied
         if src_interface:
-            edge.src_interface = link.interface_one
-            canvas_src_node.interfaces.append(link.interface_one)
+            interface_one = link.interface_one
+            edge.src_interface = interface_one
+            canvas_src_node.interfaces[interface_one.id] = interface_one
         if dst_interface:
-            edge.dst_interface = link.interface_two
-            canvas_dst_node.interfaces.append(link.interface_two)
+            interface_two = link.interface_two
+            edge.dst_interface = interface_two
+            canvas_dst_node.interfaces[interface_two.id] = interface_two
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)

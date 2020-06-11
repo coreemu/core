@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
 from core.emulator.distributed import DistributedServer
@@ -17,15 +17,16 @@ if TYPE_CHECKING:
 
 class DockerClient:
     def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name = name
-        self.image = image
-        self.run = run
-        self.pid = None
+        self.name: str = name
+        self.image: str = image
+        self.run: Callable[..., str] = run
+        self.pid: Optional[str] = None
 
     def create_container(self) -> str:
         self.run(
-            f"docker run -td --init --net=none --hostname {self.name} --name {self.name} "
-            f"--sysctl net.ipv6.conf.all.disable_ipv6=0 {self.image} /bin/bash"
+            f"docker run -td --init --net=none --hostname {self.name} "
+            f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+            f"--privileged {self.image} /bin/bash"
         )
         self.pid = self.get_pid()
         return self.pid
@@ -35,7 +36,7 @@ class DockerClient:
         output = self.run(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(-1, args, f"docker({self.name}) not present")
+            raise CoreCommandError(1, args, f"docker({self.name}) not present")
         return data[0]
 
     def is_alive(self) -> bool:
@@ -53,11 +54,7 @@ class DockerClient:
         return utils.cmd(f"docker exec {self.name} {cmd}", wait=wait, shell=shell)
 
     def create_ns_cmd(self, cmd: str) -> str:
-        return f"nsenter -t {self.pid} -u -i -p -n {cmd}"
-
-    def ns_cmd(self, cmd: str, wait: bool) -> str:
-        args = f"nsenter -t {self.pid} -u -i -p -n {cmd}"
-        return utils.cmd(args, wait=wait)
+        return f"nsenter -t {self.pid} -a {cmd}"
 
     def get_pid(self) -> str:
         args = f"docker inspect -f '{{{{.State.Pid}}}}' {self.name}"
@@ -80,7 +77,6 @@ class DockerNode(CoreNode):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        bootsh: str = "boot.sh",
         start: bool = True,
         server: DistributedServer = None,
         image: str = None
@@ -92,7 +88,6 @@ class DockerNode(CoreNode):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param bootsh: boot shell to use
         :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
@@ -100,8 +95,8 @@ class DockerNode(CoreNode):
         """
         if image is None:
             image = "ubuntu"
-        self.image = image
-        super().__init__(session, _id, name, nodedir, bootsh, start, server)
+        self.image: str = image
+        super().__init__(session, _id, name, nodedir, start, server)
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """

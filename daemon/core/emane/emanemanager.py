@@ -6,7 +6,7 @@ import logging
 import os
 import threading
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Dict, List, Set, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 from core import utils
 from core.config import ConfigGroup, Configuration, ModelManager
@@ -19,18 +19,25 @@ from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
+from core.emulator.data import LinkData
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    LinkTypes,
+    MessageFlags,
+    RegisterTlvs,
+)
 from core.errors import CoreCommandError, CoreError
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
+from core.nodes.physical import Rj45Node
 from core.xml import emanexml
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
 try:
-    from emane.events import EventService
+    from emane.events import EventService, PathlossEvent
     from emane.events import LocationEvent
     from emane.events.eventserviceexception import EventServiceException
 except ImportError:
@@ -41,6 +48,7 @@ except ImportError:
     except ImportError:
         EventService = None
         LocationEvent = None
+        PathlossEvent = None
         EventServiceException = None
         logging.debug("compatible emane python bindings not installed")
 
@@ -458,7 +466,7 @@ class EmaneManager(ModelManager):
             model_class = self.models[model_name]
             emane_node.setmodel(model_class, config)
 
-    def nemlookup(self, nemid) -> Tuple[EmaneNet, CoreInterface]:
+    def nemlookup(self, nemid) -> Tuple[Optional[EmaneNet], Optional[CoreInterface]]:
         """
         Look for the given numerical NEM ID and return the first matching
         EMANE network and NEM interface.
@@ -475,6 +483,29 @@ class EmaneManager(ModelManager):
                 emane_node = None
 
         return emane_node, netif
+
+    def get_nem_link(
+        self, nem1: int, nem2: int, flags: MessageFlags = MessageFlags.NONE
+    ) -> Optional[LinkData]:
+        emane1, netif = self.nemlookup(nem1)
+        if not emane1 or not netif:
+            logging.error("invalid nem: %s", nem1)
+            return None
+        node1 = netif.node
+        emane2, netif = self.nemlookup(nem2)
+        if not emane2 or not netif:
+            logging.error("invalid nem: %s", nem2)
+            return None
+        node2 = netif.node
+        color = self.session.get_link_color(emane1.id)
+        return LinkData(
+            message_type=flags,
+            node1_id=node1.id,
+            node2_id=node2.id,
+            network_id=emane1.id,
+            link_type=LinkTypes.WIRELESS,
+            color=color,
+        )
 
     def numnems(self) -> int:
         """
@@ -567,7 +598,7 @@ class EmaneManager(ModelManager):
 
         run_emane_on_host = False
         for node in self.getnodes():
-            if hasattr(node, "transport_type") and node.transport_type == "raw":
+            if isinstance(node, Rj45Node):
                 run_emane_on_host = True
                 continue
             path = self.session.session_dir
@@ -626,7 +657,7 @@ class EmaneManager(ModelManager):
         kill_transortd = "killall -q emanetransportd"
         stop_emane_on_host = False
         for node in self.getnodes():
-            if hasattr(node, "transport_type") and node.transport_type == "raw":
+            if isinstance(node, Rj45Node):
                 stop_emane_on_host = True
                 continue
 
@@ -801,8 +832,8 @@ class EmaneManager(ModelManager):
         zbit_check = z.bit_length() > 16 or z < 0
         if any([xbit_check, ybit_check, zbit_check]):
             logging.error(
-                "Unable to build node location message, received lat/long/alt exceeds coordinate "
-                "space: NEM %s (%d, %d, %d)",
+                "Unable to build node location message, received lat/long/alt "
+                "exceeds coordinate space: NEM %s (%d, %d, %d)",
                 nemid,
                 x,
                 y,
@@ -812,7 +843,7 @@ class EmaneManager(ModelManager):
 
         # generate a node message for this location update
         try:
-            node = self.session.get_node(n)
+            node = self.session.get_node(n, NodeBase)
         except CoreError:
             logging.exception(
                 "location event NEM %s has no corresponding node %s", nemid, n
@@ -836,8 +867,22 @@ class EmaneManager(ModelManager):
             result = True
         except CoreCommandError:
             result = False
-
         return result
+
+    def publish_pathloss(self, nem1: int, nem2: int, rx1: float, rx2: float) -> None:
+        """
+        Publish pathloss events between provided nems, using provided rx power.
+        :param nem1: interface one for pathloss
+        :param nem2: interface two for pathloss
+        :param rx1: received power from nem2 to nem1
+        :param rx2: received power from nem1 to nem2
+        :return: nothing
+        """
+        event = PathlossEvent()
+        event.append(nem1, forward=rx1)
+        event.append(nem2, forward=rx2)
+        self.service.publish(nem1, event)
+        self.service.publish(nem2, event)
 
 
 class EmaneGlobalModel:

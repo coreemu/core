@@ -1,11 +1,12 @@
 """
-Example using gRPC API to create a simple switch network.
+Example using gRPC API to create a simple EMANE 80211 network.
 """
 
 import logging
 
 from core.api.grpc import client
 from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
 
 
 def log_event(event):
@@ -31,12 +32,15 @@ def main():
         response = core.set_session_state(session_id, SessionState.CONFIGURATION)
         logging.info("set session state: %s", response)
 
-        # create switch node
+        # create emane node
         position = Position(x=200, y=200)
-        switch = Node(type=NodeType.SWITCH, position=position)
-        response = core.add_node(session_id, switch)
-        logging.info("created switch: %s", response)
-        switch_id = response.node_id
+        emane = Node(type=NodeType.EMANE, position=position)
+        response = core.add_node(session_id, emane)
+        logging.info("created emane: %s", response)
+        emane_id = response.node_id
+
+        # an emane model must be configured for use, by the emane node
+        core.set_emane_model_config(session_id, emane_id, EmaneIeee80211abgModel.name)
 
         # create node one
         position = Position(x=100, y=100)
@@ -54,10 +58,10 @@ def main():
 
         # links nodes to switch
         interface_one = interface_helper.create_interface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, switch_id, interface_one)
+        response = core.add_link(session_id, node1_id, emane_id, interface_one)
         logging.info("created link: %s", response)
         interface_one = interface_helper.create_interface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, switch_id, interface_one)
+        response = core.add_link(session_id, node2_id, emane_id, interface_one)
         logging.info("created link: %s", response)
 
         # change session state

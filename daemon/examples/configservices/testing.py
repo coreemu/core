@@ -2,7 +2,9 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes, NodeTypes
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
+from core.nodes.network import SwitchNode
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
@@ -13,16 +15,16 @@ if __name__ == "__main__":
     coreemu = CoreEmu()
     session = coreemu.create_session()
     session.set_state(EventTypes.CONFIGURATION_STATE)
-    switch = session.add_node(_type=NodeTypes.SWITCH)
+    switch = session.add_node(SwitchNode)
 
     # node one
     options.config_services = ["DefaultRoute", "IPForward"]
-    node_one = session.add_node(options=options)
+    node_one = session.add_node(CoreNode, options=options)
     interface = prefixes.create_interface(node_one)
     session.add_link(node_one.id, switch.id, interface_one=interface)
 
     # node two
-    node_two = session.add_node(options=options)
+    node_two = session.add_node(CoreNode, options=options)
     interface = prefixes.create_interface(node_two)
     session.add_link(node_two.id, switch.id, interface_one=interface)
 

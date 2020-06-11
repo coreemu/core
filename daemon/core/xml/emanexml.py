@@ -9,6 +9,7 @@ from core import utils
 from core.config import Configuration
 from core.emane.nodes import EmaneNet
 from core.emulator.distributed import DistributedServer
+from core.emulator.enumerations import TransportType
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
 from core.xml import corexml
@@ -182,7 +183,7 @@ def build_node_platform_xml(
             transport_type = netif.transport_type
             if not transport_type:
                 logging.info("warning: %s interface type unsupported!", netif.name)
-                transport_type = "raw"
+                transport_type = TransportType.RAW
             transport_file = transport_file_name(node.id, transport_type)
             transport_element = etree.SubElement(
                 nem_element, "transport", definition=transport_file
@@ -196,7 +197,7 @@ def build_node_platform_xml(
 
         # merging code
         key = netif.node.id
-        if netif.transport_type == "raw":
+        if netif.transport_type == TransportType.RAW:
             key = "host"
             otadev = control_net.brname
             eventdev = control_net.brname
@@ -276,8 +277,8 @@ def build_xml_files(emane_manager: "EmaneManager", node: EmaneNet) -> None:
     # build XML for specific interface (NEM) configs
     need_virtual = False
     need_raw = False
-    vtype = "virtual"
-    rtype = "raw"
+    vtype = TransportType.VIRTUAL
+    rtype = TransportType.RAW
 
     for netif in node.netifs():
         # check for interface specific emane configuration and write xml files
@@ -286,7 +287,7 @@ def build_xml_files(emane_manager: "EmaneManager", node: EmaneNet) -> None:
             node.model.build_xml_files(config, netif)
 
         # check transport type needed for interface
-        if "virtual" in netif.transport_type:
+        if netif.transport_type == TransportType.VIRTUAL:
             need_virtual = True
             vtype = netif.transport_type
         else:
@@ -301,7 +302,7 @@ def build_xml_files(emane_manager: "EmaneManager", node: EmaneNet) -> None:
 
 
 def build_transport_xml(
-    emane_manager: "EmaneManager", node: EmaneNet, transport_type: str
+    emane_manager: "EmaneManager", node: EmaneNet, transport_type: TransportType
 ) -> None:
     """
     Build transport xml file for node and transport type.
@@ -314,8 +315,8 @@ def build_transport_xml(
     """
     transport_element = etree.Element(
         "transport",
-        name=f"{transport_type.capitalize()} Transport",
-        library=f"trans{transport_type.lower()}",
+        name=f"{transport_type.value.capitalize()} Transport",
+        library=f"trans{transport_type.value.lower()}",
     )
 
     # add bitrate
@@ -325,7 +326,7 @@ def build_transport_xml(
     config = emane_manager.get_configs(node.id, node.model.name)
     flowcontrol = config.get("flowcontrolenable", "0") == "1"
 
-    if "virtual" in transport_type.lower():
+    if transport_type == TransportType.VIRTUAL:
         device_path = "/dev/net/tun_flowctl"
         if not os.path.exists(device_path):
             device_path = "/dev/net/tun"
@@ -482,7 +483,7 @@ def create_event_service_xml(
     create_file(event_element, "emaneeventmsgsvc", file_path, server)
 
 
-def transport_file_name(node_id: int, transport_type: str) -> str:
+def transport_file_name(node_id: int, transport_type: TransportType) -> str:
     """
     Create name for a transport xml file.
 
@@ -490,7 +491,7 @@ def transport_file_name(node_id: int, transport_type: str) -> str:
     :param transport_type: transport type to generate transport file
     :return:
     """
-    return f"n{node_id}trans{transport_type}.xml"
+    return f"n{node_id}trans{transport_type.value}.xml"
 
 
 def _basename(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
@@ -521,7 +522,7 @@ def nem_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) ->
     """
     basename = _basename(emane_model, interface)
     append = ""
-    if interface and interface.transport_type == "raw":
+    if interface and interface.transport_type == TransportType.RAW:
         append = "_raw"
     return f"{basename}nem{append}.xml"
 

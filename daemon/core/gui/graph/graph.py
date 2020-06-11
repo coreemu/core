@@ -20,7 +20,7 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import ImageEnum, Images, TypeToImage
+from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 ZOOM_IN = 1.1
 ZOOM_OUT = 0.9
 ICON_SIZE = 48
+MOVE_NODE_MODES = {GraphMode.NODE, GraphMode.SELECT}
+MOVE_SHAPE_MODES = {GraphMode.ANNOTATION, GraphMode.SELECT}
 
 
 class ShowVar(BooleanVar):
@@ -41,19 +43,12 @@ class ShowVar(BooleanVar):
     def state(self) -> str:
         return tk.NORMAL if self.get() else tk.HIDDEN
 
-    def click_handler(self):
+    def click_handler(self) -> None:
         self.canvas.itemconfigure(self.tag, state=self.state())
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(
-        self,
-        master: tk.Widget,
-        app: "Application",
-        core: "CoreClient",
-        width: int,
-        height: int,
-    ):
+    def __init__(self, master: tk.Widget, app: "Application", core: "CoreClient"):
         super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app = app
         self.core = core
@@ -74,6 +69,8 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge = None
         self.rect = None
         self.shape_drawing = False
+        width = self.app.guiconfig.preferences.width
+        height = self.app.guiconfig.preferences.height
         self.default_dimensions = (width, height)
         self.current_dimensions = self.default_dimensions
         self.ratio = 1.0
@@ -144,7 +141,7 @@ class CanvasGraph(tk.Canvas):
         self.show_ip6s.set(True)
 
         # delete any existing drawn items
-        for tag in tags.COMPONENT_TAGS:
+        for tag in tags.RESET_TAGS:
             self.delete(tag)
 
         # set the private variables to default value
@@ -293,9 +290,7 @@ class CanvasGraph(tk.Canvas):
             )
             # if the gui can't find node's image, default to the "edit-node" image
             if not image:
-                image = Images.get(
-                    ImageEnum.EDITNODE, int(ICON_SIZE * self.app.app_scale)
-                )
+                image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
             x = core_node.position.x
             y = core_node.position.y
             node = CanvasNode(self.app, x, y, core_node, image)
@@ -327,19 +322,24 @@ class CanvasGraph(tk.Canvas):
                     self.edges[edge.token] = edge
                     self.core.links[edge.token] = edge
                     if link.HasField("interface_one"):
-                        canvas_node_one.interfaces.append(link.interface_one)
-                        edge.src_interface = link.interface_one
+                        interface_one = link.interface_one
+                        self.core.interface_to_edge[
+                            (node_one.id, interface_one.id)
+                        ] = token
+                        canvas_node_one.interfaces[interface_one.id] = interface_one
+                        edge.src_interface = interface_one
                     if link.HasField("interface_two"):
-                        canvas_node_two.interfaces.append(link.interface_two)
-                        edge.dst_interface = link.interface_two
+                        interface_two = link.interface_two
+                        self.core.interface_to_edge[
+                            (node_two.id, interface_two.id)
+                        ] = edge.token
+                        canvas_node_two.interfaces[interface_two.id] = interface_two
+                        edge.dst_interface = interface_two
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
                 else:
                     logging.error("duplicate link received: %s", link)
-
-        # raise the nodes so they on top of the links
-        self.tag_raise(tags.NODE)
 
     def stopped_session(self):
         # clear wireless edges
@@ -521,8 +521,8 @@ class CanvasGraph(tk.Canvas):
                         other_interface = edge.dst_interface
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
-                    if other_interface in other_node.interfaces:
-                        other_node.interfaces.remove(other_interface)
+                    if other_interface:
+                        del other_node.interfaces[other_interface.id]
                     if is_wireless:
                         other_node.delete_antenna()
 
@@ -540,12 +540,12 @@ class CanvasGraph(tk.Canvas):
         del self.edges[edge.token]
         src_node = self.nodes[edge.src]
         src_node.edges.discard(edge)
-        if edge.src_interface in src_node.interfaces:
-            src_node.interfaces.remove(edge.src_interface)
+        if edge.src_interface:
+            del src_node.interfaces[edge.src_interface.id]
         dst_node = self.nodes[edge.dst]
         dst_node.edges.discard(edge)
-        if edge.dst_interface in dst_node.interfaces:
-            dst_node.interfaces.remove(edge.dst_interface)
+        if edge.dst_interface:
+            del dst_node.interfaces[edge.dst_interface.id]
         src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
         if src_wireless:
             dst_node.delete_antenna()
@@ -565,10 +565,10 @@ class CanvasGraph(tk.Canvas):
             self.offset[0] * factor + event.x * (1 - factor),
             self.offset[1] * factor + event.y * (1 - factor),
         )
-        logging.info("ratio: %s", self.ratio)
-        logging.info("offset: %s", self.offset)
-        self.app.statusbar.zoom.config(text="%s" % (int(self.ratio * 100)) + "%")
-
+        logging.debug("ratio: %s", self.ratio)
+        logging.debug("offset: %s", self.offset)
+        zoom_label = f"{self.ratio * 100:.0f}%"
+        self.app.statusbar.zoom.config(text=zoom_label)
         if self.wallpaper:
             self.redraw_wallpaper()
 
@@ -590,16 +590,17 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.EDGE and is_node:
             pos = self.coords(selected)
             self.drawing_edge = CanvasEdge(self, selected, pos, pos)
+            self.organize()
 
         if self.mode == GraphMode.ANNOTATION:
             if is_marker(self.annotation_type):
-                r = self.app.toolbar.marker_tool.radius
+                r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
                     y - r,
                     x + r,
                     y + r,
-                    fill=self.app.toolbar.marker_tool.color,
+                    fill=self.app.toolbar.marker_frame.color,
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
                     state=self.show_annotations.state(),
@@ -652,9 +653,6 @@ class CanvasGraph(tk.Canvas):
             self.select_object(selected, choose_multiple=True)
 
     def click_motion(self, event: tk.Event):
-        """
-        Redraw drawing edge according to the current position of the mouse
-        """
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             if self.select_box:
@@ -676,18 +674,19 @@ class CanvasGraph(tk.Canvas):
             if is_draw_shape(self.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
+                return
             elif is_marker(self.annotation_type):
-                r = self.app.toolbar.marker_tool.radius
+                r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
                     y - r,
                     x + r,
                     y + r,
-                    fill=self.app.toolbar.marker_tool.color,
+                    fill=self.app.toolbar.marker_frame.color,
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
                 )
-            return
+                return
 
         if self.mode == GraphMode.EDGE:
             return
@@ -695,11 +694,11 @@ class CanvasGraph(tk.Canvas):
         # move selected objects
         if self.selection:
             for selected_id in self.selection:
-                if selected_id in self.shapes:
+                if self.mode in MOVE_SHAPE_MODES and selected_id in self.shapes:
                     shape = self.shapes[selected_id]
                     shape.motion(x_offset, y_offset)
 
-                if selected_id in self.nodes:
+                if self.mode in MOVE_NODE_MODES and selected_id in self.nodes:
                     node = self.nodes[selected_id]
                     node.motion(x_offset, y_offset, update=self.core.is_runtime())
         else:
@@ -714,7 +713,7 @@ class CanvasGraph(tk.Canvas):
         if not self.app.core.is_runtime():
             self.delete_selected_objects()
         else:
-            logging.info("node deletion is disabled during runtime state")
+            logging.debug("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event):
         selected = self.get_selected(event)
@@ -733,13 +732,11 @@ class CanvasGraph(tk.Canvas):
         if not core_node:
             return
         try:
-            self.node_draw.image = Images.get(
-                self.node_draw.image_enum, int(ICON_SIZE * self.app.app_scale)
-            )
+            image_enum = self.node_draw.image_enum
+            self.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)
         except AttributeError:
-            self.node_draw.image = Images.get_custom(
-                self.node_draw.image_file, int(ICON_SIZE * self.app.app_scale)
-            )
+            image_file = self.node_draw.image_file
+            self.node_draw.image = self.app.get_custom_icon(image_file, ICON_SIZE)
         node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
         self.core.canvas_nodes[core_node.id] = node
         self.nodes[node.id] = node
@@ -830,10 +827,10 @@ class CanvasGraph(tk.Canvas):
         self.draw_wallpaper(image)
 
     def redraw_canvas(self, dimensions: Tuple[int, int] = None):
-        logging.info("redrawing canvas to dimensions: %s", dimensions)
+        logging.debug("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
-        logging.info("resetting scaling: %s %s", self.ratio, self.offset)
+        logging.debug("resetting scaling: %s %s", self.ratio, self.offset)
         factor = 1 / self.ratio
         self.scale(tk.ALL, self.offset[0], self.offset[1], factor, factor)
         self.move(tk.ALL, -self.offset[0], -self.offset[1])
@@ -852,11 +849,11 @@ class CanvasGraph(tk.Canvas):
 
     def redraw_wallpaper(self):
         if self.adjust_to_dim.get():
-            logging.info("drawing wallpaper to canvas dimensions")
+            logging.debug("drawing wallpaper to canvas dimensions")
             self.resize_to_wallpaper()
         else:
             option = ScaleOption(self.scale_option.get())
-            logging.info("drawing canvas using scaling option: %s", option)
+            logging.debug("drawing canvas using scaling option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
             elif option == ScaleOption.CENTERED:
@@ -865,10 +862,11 @@ class CanvasGraph(tk.Canvas):
                 self.wallpaper_scaled()
             elif option == ScaleOption.TILED:
                 logging.warning("tiled background not implemented yet")
+        self.organize()
 
-        # raise items above wallpaper
-        for component in tags.ABOVE_WALLPAPER_TAGS:
-            self.tag_raise(component)
+    def organize(self) -> None:
+        for tag in tags.ORGANIZE_TAGS:
+            self.tag_raise(tag)
 
     def set_wallpaper(self, filename: str):
         logging.debug("setting wallpaper: %s", filename)
@@ -902,10 +900,10 @@ class CanvasGraph(tk.Canvas):
 
     def copy(self):
         if self.core.is_runtime():
-            logging.info("copy is disabled during runtime state")
+            logging.debug("copy is disabled during runtime state")
             return
         if self.selection:
-            logging.info("to copy nodes: %s", self.selection)
+            logging.debug("to copy nodes: %s", self.selection)
             self.to_copy.clear()
             for node_id in self.selection.keys():
                 canvas_node = self.nodes[node_id]
@@ -913,7 +911,7 @@ class CanvasGraph(tk.Canvas):
 
     def paste(self):
         if self.core.is_runtime():
-            logging.info("paste is disabled during runtime state")
+            logging.debug("paste is disabled during runtime state")
             return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
@@ -1004,14 +1002,12 @@ class CanvasGraph(tk.Canvas):
             ):
                 for custom_node in self.app.guiconfig.nodes:
                     if custom_node.name == canvas_node.core_node.model:
-                        img = Images.get_custom(
-                            custom_node.image, int(ICON_SIZE * self.app.app_scale)
-                        )
+                        img = self.app.get_custom_icon(custom_node.image, ICON_SIZE)
             else:
                 image_enum = TypeToImage.get(
                     canvas_node.core_node.type, canvas_node.core_node.model
                 )
-                img = Images.get(image_enum, int(ICON_SIZE * self.app.app_scale))
+                img = self.app.get_icon(image_enum, ICON_SIZE)
 
             self.itemconfig(nid, image=img)
             canvas_node.image = img

@@ -1,16 +1,14 @@
 """
-gRpc client for interfacing with CORE, when gRPC mode is enabled.
+gRpc client for interfacing with CORE.
 """
 
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, List
+from typing import Any, Callable, Dict, Generator, Iterable, List
 
 import grpc
-import netaddr
 
-from core import utils
 from core.api.grpc import configservices_pb2, core_pb2, core_pb2_grpc
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
@@ -31,6 +29,8 @@ from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
     EmaneModelConfig,
+    EmanePathlossesRequest,
+    EmanePathlossesResponse,
     GetEmaneConfigRequest,
     GetEmaneConfigResponse,
     GetEmaneEventChannelRequest,
@@ -89,7 +89,10 @@ from core.api.grpc.wlan_pb2 import (
     SetWlanConfigRequest,
     SetWlanConfigResponse,
     WlanConfig,
+    WlanLinkRequest,
+    WlanLinkResponse,
 )
+from core.emulator.emudata import IpPrefixes
 
 
 class InterfaceHelper:
@@ -105,78 +108,29 @@ class InterfaceHelper:
         :param ip6_prefix: ip6 prefix to use for generation
         :raises ValueError: when both ip4 and ip6 prefixes have not been provided
         """
-        if not ip4_prefix and not ip6_prefix:
-            raise ValueError("ip4 or ip6 must be provided")
-
-        self.ip4 = None
-        if ip4_prefix:
-            self.ip4 = netaddr.IPNetwork(ip4_prefix)
-        self.ip6 = None
-        if ip6_prefix:
-            self.ip6 = netaddr.IPNetwork(ip6_prefix)
-
-    def ip4_address(self, node_id: int) -> str:
-        """
-        Convenience method to return the IP4 address for a node.
-
-        :param node_id: node id to get IP4 address for
-        :return: IP4 address or None
-        """
-        if not self.ip4:
-            raise ValueError("ip4 prefixes have not been set")
-        return str(self.ip4[node_id])
-
-    def ip6_address(self, node_id: int) -> str:
-        """
-        Convenience method to return the IP6 address for a node.
-
-        :param node_id: node id to get IP6 address for
-        :return: IP4 address or None
-        """
-        if not self.ip6:
-            raise ValueError("ip6 prefixes have not been set")
-        return str(self.ip6[node_id])
+        self.prefixes = IpPrefixes(ip4_prefix, ip6_prefix)
 
     def create_interface(
         self, node_id: int, interface_id: int, name: str = None, mac: str = None
     ) -> core_pb2.Interface:
         """
-        Creates interface data for linking nodes, using the nodes unique id for
-        generation, along with a random mac address, unless provided.
+        Create an interface protobuf object.
 
         :param node_id: node id to create interface for
-        :param interface_id: interface id for interface
-        :param name: name to set for interface, default is eth{id}
-        :param mac: mac address to use for this interface, default is random
-            generation
-        :return: new interface data for the provided node
+        :param interface_id: interface id
+        :param name: name of interface
+        :param mac: mac address for interface
+        :return: interface protobuf
         """
-        # generate ip4 data
-        ip4 = None
-        ip4_mask = None
-        if self.ip4:
-            ip4 = self.ip4_address(node_id)
-            ip4_mask = self.ip4.prefixlen
-
-        # generate ip6 data
-        ip6 = None
-        ip6_mask = None
-        if self.ip6:
-            ip6 = self.ip6_address(node_id)
-            ip6_mask = self.ip6.prefixlen
-
-        # random mac
-        if not mac:
-            mac = utils.random_mac()
-
+        interface_data = self.prefixes.gen_interface(node_id, name, mac)
         return core_pb2.Interface(
             id=interface_id,
-            name=name,
-            ip4=ip4,
-            ip4mask=ip4_mask,
-            ip6=ip6,
-            ip6mask=ip6_mask,
-            mac=str(mac),
+            name=interface_data.name,
+            ip4=interface_data.ip4,
+            ip4mask=interface_data.ip4_mask,
+            ip6=interface_data.ip6,
+            ip6mask=interface_data.ip6_mask,
+            mac=interface_data.mac,
         )
 
 
@@ -285,6 +239,7 @@ class CoreGrpcClient:
 
         :param session_id: id of session
         :return: stop session response
+        :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.StopSessionRequest(session_id=session_id)
         return self.stub.StopSession(request)
@@ -569,6 +524,18 @@ class CoreGrpcClient:
         )
         return self.stub.EditNode(request)
 
+    def move_nodes(
+        self, move_iterator: Iterable[core_pb2.MoveNodesRequest]
+    ) -> core_pb2.MoveNodesResponse:
+        """
+        Stream node movements using the provided iterator.
+
+        :param move_iterator: iterator for generating node movements
+        :return: move nodes response
+        :raises grpc.RpcError: when session or nodes do not exist
+        """
+        return self.stub.MoveNodes(move_iterator)
+
     def delete_node(self, session_id: int, node_id: int) -> core_pb2.DeleteNodeResponse:
         """
         Delete node from session.
@@ -582,7 +549,12 @@ class CoreGrpcClient:
         return self.stub.DeleteNode(request)
 
     def node_command(
-        self, session_id: int, node_id: int, command: str
+        self,
+        session_id: int,
+        node_id: int,
+        command: str,
+        wait: bool = True,
+        shell: bool = False,
     ) -> core_pb2.NodeCommandResponse:
         """
         Send command to a node and get the output.
@@ -590,11 +562,17 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node_id: node id
         :param command: command to run on node
+        :param wait: wait for command to complete
+        :param shell: send shell command
         :return: response with command combined stdout/stderr
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.NodeCommandRequest(
-            session_id=session_id, node_id=node_id, command=command
+            session_id=session_id,
+            node_id=node_id,
+            command=command,
+            wait=wait,
+            shell=shell,
         )
         return self.stub.NodeCommand(request)
 
@@ -1072,7 +1050,7 @@ class CoreGrpcClient:
         session_id: int,
         node_id: int,
         model: str,
-        config: Dict[str, str],
+        config: Dict[str, str] = None,
         interface_id: int = -1,
     ) -> SetEmaneModelConfigResponse:
         """
@@ -1096,9 +1074,9 @@ class CoreGrpcClient:
 
     def get_emane_model_configs(self, session_id: int) -> GetEmaneModelConfigsResponse:
         """
-        Get all emane model configurations for a session.
+        Get all EMANE model configurations for a session.
 
-        :param session_id: session id
+        :param session_id: session to get emane model configs
         :return: response with a dictionary of node/interface ids to configurations
         :raises grpc.RpcError: when session doesn't exist
         """
@@ -1109,9 +1087,10 @@ class CoreGrpcClient:
         """
         Save the current scenario to an XML file.
 
-        :param session_id: session id
+        :param session_id: session to save xml file for
         :param file_path: local path to save scenario XML file to
         :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.SaveXmlRequest(session_id=session_id)
         response = self.stub.SaveXml(request)
@@ -1137,11 +1116,12 @@ class CoreGrpcClient:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 
-        :param session_id: session id
-        :param nem_one:
-        :param nem_two:
+        :param session_id: session to emane link
+        :param nem_one: first nem for emane link
+        :param nem_two: second nem for emane link
         :param linked: True to link, False to unlink
-        :return: core_pb2.EmaneLinkResponse
+        :return: get emane link response
+        :raises grpc.RpcError: when session or nodes related to nems do not exist
         """
         request = EmaneLinkRequest(
             session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
@@ -1153,30 +1133,57 @@ class CoreGrpcClient:
         Retrieves a list of interfaces available on the host machine that are not
         a part of a CORE session.
 
-        :return: core_pb2.GetInterfacesResponse
+        :return: get interfaces response
         """
         request = core_pb2.GetInterfacesRequest()
         return self.stub.GetInterfaces(request)
 
     def get_config_services(self) -> GetConfigServicesResponse:
+        """
+        Retrieve all known config services.
+
+        :return: get config services response
+        """
         request = GetConfigServicesRequest()
         return self.stub.GetConfigServices(request)
 
     def get_config_service_defaults(
         self, name: str
     ) -> GetConfigServiceDefaultsResponse:
+        """
+        Retrieves config service default values.
+
+        :param name: name of service to get defaults for
+        :return: get config service defaults
+        """
         request = GetConfigServiceDefaultsRequest(name=name)
         return self.stub.GetConfigServiceDefaults(request)
 
     def get_node_config_service_configs(
         self, session_id: int
     ) -> GetNodeConfigServiceConfigsResponse:
+        """
+        Retrieves all node config service configurations for a session.
+
+        :param session_id: session to get config service configurations for
+        :return: get node config service configs response
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = GetNodeConfigServiceConfigsRequest(session_id=session_id)
         return self.stub.GetNodeConfigServiceConfigs(request)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str
     ) -> GetNodeConfigServiceResponse:
+        """
+        Retrieves information for a specific config service on a node.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to get service information from
+        :param name: name of service
+        :return: get node config service response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = GetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name
         )
@@ -1185,24 +1192,91 @@ class CoreGrpcClient:
     def get_node_config_services(
         self, session_id: int, node_id: int
     ) -> GetNodeConfigServicesResponse:
+        """
+        Retrieves the config services currently assigned to a node.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to get config services for
+        :return: get node config services response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = GetNodeConfigServicesRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNodeConfigServices(request)
 
     def set_node_config_service(
         self, session_id: int, node_id: int, name: str, config: Dict[str, str]
     ) -> SetNodeConfigServiceResponse:
+        """
+        Assigns a config service to a node with the provided configuration.
+
+        :param session_id: session node belongs to
+        :param node_id: id of node to assign config service to
+        :param name: name of service
+        :param config: service configuration
+        :return: set node config service response
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = SetNodeConfigServiceRequest(
             session_id=session_id, node_id=node_id, name=name, config=config
         )
         return self.stub.SetNodeConfigService(request)
 
     def get_emane_event_channel(self, session_id: int) -> GetEmaneEventChannelResponse:
+        """
+        Retrieves the current emane event channel being used for a session.
+
+        :param session_id: session to get emane event channel for
+        :return: emane event channel response
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = GetEmaneEventChannelRequest(session_id=session_id)
         return self.stub.GetEmaneEventChannel(request)
 
     def execute_script(self, script: str) -> ExecuteScriptResponse:
+        """
+        Executes a python script given context of the current CoreEmu object.
+
+        :param script: script to execute
+        :return: execute script response
+        """
         request = ExecuteScriptRequest(script=script)
         return self.stub.ExecuteScript(request)
+
+    def wlan_link(
+        self, session_id: int, wlan: int, node_one: int, node_two: int, linked: bool
+    ) -> WlanLinkResponse:
+        """
+        Links/unlinks nodes on the same WLAN.
+
+        :param session_id: session id containing wlan and nodes
+        :param wlan: wlan nodes must belong to
+        :param node_one: first node of pair to link/unlink
+        :param node_two: second node of pair to link/unlin
+        :param linked: True to link, False to unlink
+        :return: wlan link response
+        :raises grpc.RpcError: when session or one of the nodes do not exist
+        """
+        request = WlanLinkRequest(
+            session_id=session_id,
+            wlan=wlan,
+            node_one=node_one,
+            node_two=node_two,
+            linked=linked,
+        )
+        return self.stub.WlanLink(request)
+
+    def emane_pathlosses(
+        self, pathloss_iterator: Iterable[EmanePathlossesRequest]
+    ) -> EmanePathlossesResponse:
+        """
+        Stream EMANE pathloss events.
+
+        :param pathloss_iterator: iterator for sending emane pathloss events
+        :return: emane pathloss response
+        :raises grpc.RpcError: when a pathloss event session or one of the nodes do not
+            exist
+        """
+        return self.stub.EmanePathlosses(pathloss_iterator)
 
     def connect(self) -> None:
         """

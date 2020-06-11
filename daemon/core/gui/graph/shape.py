@@ -146,8 +146,7 @@ class Shape:
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
     def shape_complete(self, x: float, y: float):
-        for component in tags.ABOVE_SHAPE:
-            self.canvas.tag_raise(component)
+        self.canvas.organize()
         s = ShapeDialog(self.app, self)
         s.show()
 
@@ -158,10 +157,11 @@ class Shape:
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         coords = self.canvas.coords(self.id)
+        if self.shape_type == ShapeType.TEXT:
+            coords = coords * 2
         if not self.canvas.valid_position(*coords):
             self.canvas.coords(self.id, original_position)
             return
-
         self.canvas.move_selection(self.id, x_offset, y_offset)
         if self.text_id is not None:
             self.canvas.move(self.text_id, x_offset, y_offset)

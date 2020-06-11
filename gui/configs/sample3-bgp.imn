@@ -46,18 +46,6 @@ node n1 {
 	!
 	}
     }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
-	}
-    }
 }
 
 node n2 {
@@ -108,18 +96,6 @@ node n2 {
 	!
 	}
     }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
-	}
-    }
 }
 
 node n3 {
@@ -159,18 +135,6 @@ node n3 {
 	 neighbor 10.0.8.2 remote-as 105
 	 neighbor 10.0.8.2 next-hop-self
 	!
-	}
-    }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
 	}
     }
 }
@@ -222,18 +186,6 @@ node n4 {
 	!
 	}
     }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
-	}
-    }
 }
 
 node n5 {
@@ -281,18 +233,6 @@ node n5 {
 	 neighbor 10.0.3.1 next-hop-self
 	 network 10.0.1.0 mask 255.255.255.0
 	!
-	}
-    }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
 	}
     }
 }
@@ -344,18 +284,6 @@ node n6 {
 	!
 	}
     }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
-	}
-    }
 }
 
 node n7 {
@@ -395,18 +323,6 @@ node n7 {
 	 neighbor 10.0.10.1 remote-as 2901
 	 neighbor 10.0.10.1 next-hop-self
 	!
-	}
-    }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
 	}
     }
 }
@@ -576,18 +492,6 @@ node n16 {
 	!
 	}
     }
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	('/usr/local/etc/quagga', '/var/run/quagga')
-	('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh')
-	35
-	('sh quaggaboot.sh zebra',)
-	('killall zebra',)
-	
-	}
-    }
 }
 
 link l0 {
@@ -751,4 +655,3 @@ option global {
     annotations yes
     grid yes
 }
-

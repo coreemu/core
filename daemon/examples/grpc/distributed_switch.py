@@ -1,7 +1,8 @@
 import argparse
 import logging
 
-from core.api.grpc import client, core_pb2
+from core.api.grpc import client
+from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
 
 
 def log_event(event):
@@ -26,13 +27,11 @@ def main(args):
         core.events(session_id, log_event)
 
         # change session state
-        response = core.set_session_state(
-            session_id, core_pb2.SessionState.CONFIGURATION
-        )
+        response = core.set_session_state(session_id, SessionState.CONFIGURATION)
         logging.info("set session state: %s", response)
 
         # create switch node
-        switch = core_pb2.Node(type=core_pb2.NodeType.SWITCH)
+        switch = Node(type=NodeType.SWITCH)
         response = core.add_node(session_id, switch)
         logging.info("created switch: %s", response)
         switch_id = response.node_id
@@ -41,8 +40,8 @@ def main(args):
         interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
         # create node one
-        position = core_pb2.Position(x=100, y=50)
-        node = core_pb2.Node(position=position)
+        position = Position(x=100, y=50)
+        node = Node(position=position)
         response = core.add_node(session_id, node)
         logging.info("created node one: %s", response)
         node_one_id = response.node_id
@@ -53,8 +52,8 @@ def main(args):
         logging.info("created link from node one to switch: %s", response)
 
         # create node two
-        position = core_pb2.Position(x=200, y=50)
-        node = core_pb2.Node(position=position, server=server_name)
+        position = Position(x=200, y=50)
+        node = Node(position=position, server=server_name)
         response = core.add_node(session_id, node)
         logging.info("created node two: %s", response)
         node_two_id = response.node_id
@@ -65,9 +64,7 @@ def main(args):
         logging.info("created link from node two to switch: %s", response)
 
         # change session state
-        response = core.set_session_state(
-            session_id, core_pb2.SessionState.INSTANTIATION
-        )
+        response = core.set_session_state(session_id, SessionState.INSTANTIATION)
         logging.info("set session state: %s", response)
 
 

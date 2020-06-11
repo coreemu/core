@@ -354,7 +354,7 @@ class FrrService(CoreService):
             for peerifc in ifc.net.netifs():
                 if peerifc == ifc:
                     continue
-                if isinstance(peerifc, Rj45Node):
+                if isinstance(peerifc.node, Rj45Node):
                     return True
         return False
 

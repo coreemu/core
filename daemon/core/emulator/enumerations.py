@@ -117,3 +117,13 @@ class ExceptionLevels(Enum):
     ERROR = 2
     WARNING = 3
     NOTICE = 4
+
+
+class NetworkPolicy(Enum):
+    ACCEPT = "ACCEPT"
+    DROP = "DROP"
+
+
+class TransportType(Enum):
+    RAW = "raw"
+    VIRTUAL = "virtual"

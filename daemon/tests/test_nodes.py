@@ -1,30 +1,32 @@
 import pytest
 
-from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.emudata import InterfaceData, NodeOptions
+from core.emulator.session import Session
 from core.errors import CoreError
+from core.nodes.base import CoreNode
+from core.nodes.network import HubNode, SwitchNode, WlanNode
 
 MODELS = ["router", "host", "PC", "mdr"]
-NET_TYPES = [NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.WIRELESS_LAN]
+NET_TYPES = [SwitchNode, HubNode, WlanNode]
 
 
 class TestNodes:
     @pytest.mark.parametrize("model", MODELS)
-    def test_node_add(self, session, model):
+    def test_node_add(self, session: Session, model: str):
         # given
         options = NodeOptions(model=model)
 
         # when
-        node = session.add_node(options=options)
+        node = session.add_node(CoreNode, options=options)
 
         # then
         assert node
         assert node.alive()
         assert node.up
 
-    def test_node_update(self, session):
+    def test_node_update(self, session: Session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
         position_value = 100
         update_options = NodeOptions()
         update_options.set_position(x=position_value, y=position_value)
@@ -36,21 +38,23 @@ class TestNodes:
         assert node.position.x == position_value
         assert node.position.y == position_value
 
-    def test_node_delete(self, session):
+    def test_node_delete(self, session: Session):
         # given
-        node = session.add_node()
+        node = session.add_node(CoreNode)
 
         # when
         session.delete_node(node.id)
 
         # then
         with pytest.raises(CoreError):
-            session.get_node(node.id)
+            session.get_node(node.id, CoreNode)
 
-    def test_node_sethwaddr(self, session):
+    def test_node_sethwaddr(self, session: Session):
         # given
-        node = session.add_node()
-        index = node.newnetif()
+        node = session.add_node(CoreNode)
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         interface = node.netif(index)
         mac = "aa:aa:aa:ff:ff:ff"
 
@@ -60,10 +64,12 @@ class TestNodes:
         # then
         assert interface.hwaddr == mac
 
-    def test_node_sethwaddr_exception(self, session):
+    def test_node_sethwaddr_exception(self, session: Session):
         # given
-        node = session.add_node()
-        index = node.newnetif()
+        node = session.add_node(CoreNode)
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         node.netif(index)
         mac = "aa:aa:aa:ff:ff:fff"
 
@@ -71,10 +77,12 @@ class TestNodes:
         with pytest.raises(CoreError):
             node.sethwaddr(index, mac)
 
-    def test_node_addaddr(self, session):
+    def test_node_addaddr(self, session: Session):
         # given
-        node = session.add_node()
-        index = node.newnetif()
+        node = session.add_node(CoreNode)
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         interface = node.netif(index)
         addr = "192.168.0.1/24"
 
@@ -86,8 +94,10 @@ class TestNodes:
 
     def test_node_addaddr_exception(self, session):
         # given
-        node = session.add_node()
-        index = node.newnetif()
+        node = session.add_node(CoreNode)
+        switch = session.add_node(SwitchNode)
+        interface_data = InterfaceData()
+        index = node.newnetif(switch, interface_data)
         node.netif(index)
         addr = "256.168.0.1/24"
 
@@ -100,7 +110,7 @@ class TestNodes:
         # given
 
         # when
-        node = session.add_node(_type=net_type)
+        node = session.add_node(net_type)
 
         # then
         assert node

@@ -12,7 +12,9 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 
-def get_index(interface: "core_pb2.Interface") -> int:
+def get_index(interface: "core_pb2.Interface") -> Optional[int]:
+    if not interface.ip4:
+        return None
     net = netaddr.IPNetwork(f"{interface.ip4}/{interface.ip4mask}")
     ip_value = net.value
     cidr_value = net.cidr.value
@@ -105,12 +107,12 @@ class InterfaceManager:
         for interface in interfaces:
             subnets = self.get_subnets(interface)
             if subnets not in remaining_subnets:
-                if self.current_subnets == subnets:
-                    self.current_subnets = None
                 self.used_subnets.pop(subnets.key(), None)
             else:
                 index = get_index(interface)
-                subnets.used_indexes.discard(index)
+                if index is not None:
+                    subnets.used_indexes.discard(index)
+        self.current_subnets = None
 
     def joined(self, links: List["core_pb2.Link"]) -> None:
         interfaces = []
@@ -124,6 +126,8 @@ class InterfaceManager:
         for interface in interfaces:
             subnets = self.get_subnets(interface)
             index = get_index(interface)
+            if index is None:
+                continue
             subnets.used_indexes.add(index)
             if subnets.key() not in self.used_subnets:
                 self.used_subnets[subnets.key()] = subnets
@@ -147,7 +151,6 @@ class InterfaceManager:
         return str(ip4), str(ip6)
 
     def get_subnets(self, interface: "core_pb2.Interface") -> Subnets:
-        logging.info("get subnets for interface: %s", interface)
         ip4_subnet = self.ip4_subnets
         if interface.ip4:
             ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr

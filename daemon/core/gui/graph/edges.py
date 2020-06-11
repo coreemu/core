@@ -331,8 +331,6 @@ class CanvasEdge(Edge):
         dst_pos = self.canvas.coords(self.dst)
         self.move_dst(dst_pos)
         self.check_wireless()
-        self.canvas.tag_raise(self.src)
-        self.canvas.tag_raise(self.dst)
         logging.debug("Draw wired link from node %s to node %s", self.src, dst)
 
     def is_wireless(self) -> bool:

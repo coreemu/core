@@ -10,7 +10,7 @@ from core.emulator.data import LinkData
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
-from core.nodes.base import CoreNetworkBase, CoreNodeBase, NodeBase
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet, WlanNode
@@ -66,7 +66,15 @@ def create_interface_data(interface_element: etree.Element) -> InterfaceData:
     ip4_mask = get_int(interface_element, "ip4_mask")
     ip6 = interface_element.get("ip6")
     ip6_mask = get_int(interface_element, "ip6_mask")
-    return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
+    return InterfaceData(
+        id=interface_id,
+        name=name,
+        mac=mac,
+        ip4=ip4,
+        ip4_mask=ip4_mask,
+        ip6=ip6,
+        ip6_mask=ip6_mask,
+    )
 
 
 def create_emane_config(session: "Session") -> etree.Element:
@@ -505,9 +513,9 @@ class CoreXmlWriter:
         ip6_mask: int,
     ) -> etree.Element:
         interface = etree.Element(element_name)
-        node = self.session.get_node(node_id)
+        node = self.session.get_node(node_id, NodeBase)
         interface_name = None
-        if not isinstance(node, CoreNetworkBase):
+        if isinstance(node, CoreNodeBase):
             node_interface = node.netif(interface_id)
             interface_name = node_interface.name
 
@@ -523,7 +531,6 @@ class CoreXmlWriter:
         add_attribute(interface, "ip4_mask", ip4_mask)
         add_attribute(interface, "ip6", ip6)
         add_attribute(interface, "ip6_mask", ip6_mask)
-
         return interface
 
     def create_link_element(self, link_data: LinkData) -> etree.Element:
@@ -560,8 +567,8 @@ class CoreXmlWriter:
             link_element.append(interface_two)
 
         # check for options, don't write for emane/wlan links
-        node_one = self.session.get_node(link_data.node1_id)
-        node_two = self.session.get_node(link_data.node2_id)
+        node_one = self.session.get_node(link_data.node1_id, NodeBase)
+        node_two = self.session.get_node(link_data.node2_id, NodeBase)
         is_node_one_wireless = isinstance(node_one, (WlanNode, EmaneNet))
         is_node_two_wireless = isinstance(node_two, (WlanNode, EmaneNet))
         if not any([is_node_one_wireless, is_node_two_wireless]):
@@ -663,7 +670,7 @@ class CoreXmlReader:
             state = EventTypes(state)
             data = hook.text
             logging.info("reading hook: state(%s) name(%s)", state, name)
-            self.session.add_hook(state, name, None, data)
+            self.session.add_hook(state, name, data)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")
@@ -833,14 +840,14 @@ class CoreXmlReader:
         icon = device_element.get("icon")
         clazz = device_element.get("class")
         image = device_element.get("image")
-        options = NodeOptions(name, model, image)
-        options.icon = icon
+        options = NodeOptions(name=name, model=model, image=image, icon=icon)
 
         node_type = NodeTypes.DEFAULT
         if clazz == "docker":
             node_type = NodeTypes.DOCKER
         elif clazz == "lxc":
             node_type = NodeTypes.LXC
+        _class = self.session.get_node_class(node_type)
 
         service_elements = device_element.find("services")
         if service_elements is not None:
@@ -866,15 +873,15 @@ class CoreXmlReader:
                 options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_type=node_type, _id=node_id, options=options)
+        self.session.add_node(_class, node_id, options)
 
     def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
+        _class = self.session.get_node_class(node_type)
         icon = network_element.get("icon")
-        options = NodeOptions(name)
-        options.icon = icon
+        options = NodeOptions(name=name, icon=icon)
 
         position_element = network_element.find("position")
         if position_element is not None:
@@ -892,7 +899,7 @@ class CoreXmlReader:
         logging.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        self.session.add_node(_type=node_type, _id=node_id, options=options)
+        self.session.add_node(_class, node_id, options)
 
     def read_configservice_configs(self) -> None:
         configservice_configs = self.scenario.find("configservice_configurations")
@@ -902,7 +909,7 @@ class CoreXmlReader:
         for configservice_element in configservice_configs.iterchildren():
             name = configservice_element.get("name")
             node_id = get_int(configservice_element, "node")
-            node = self.session.get_node(node_id)
+            node = self.session.get_node(node_id, CoreNodeBase)
             service = node.config_services[name]
 
             configs_element = configservice_element.find("configs")

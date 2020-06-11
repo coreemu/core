@@ -10,6 +10,9 @@ from lxml import etree
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
+from core.emane.nodes import EmaneNet
+from core.emulator.emudata import LinkOptions
+from core.emulator.enumerations import TransportType
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -78,9 +81,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
-        transport_type = "virtual"
-        if interface and interface.transport_type == "raw":
-            transport_type = "raw"
+        transport_type = TransportType.VIRTUAL
+        if interface and interface.transport_type == TransportType.RAW:
+            transport_type = TransportType.RAW
         transport_file = emanexml.transport_file_name(self.id, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
 
@@ -112,14 +115,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         emanexml.create_file(shim_element, "shim", shim_file)
 
     def linkconfig(
-        self,
-        netif: CoreInterface,
-        bw: float = None,
-        delay: float = None,
-        loss: float = None,
-        duplicate: float = None,
-        jitter: float = None,
-        netif2: CoreInterface = None,
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
     ) -> None:
         """
         Generate CommEffect events when a Link Message is received having
@@ -137,18 +133,17 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_node(self.id)
+        emane_node = self.session.get_node(self.id, EmaneNet)
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
-        mbw = bw
         logging.info("sending comm effect event")
         event.append(
             nemid,
-            latency=convert_none(delay),
-            jitter=convert_none(jitter),
-            loss=convert_none(loss),
-            duplicate=convert_none(duplicate),
-            unicast=int(convert_none(bw)),
-            broadcast=int(convert_none(mbw)),
+            latency=convert_none(options.delay),
+            jitter=convert_none(options.jitter),
+            loss=convert_none(options.per),
+            duplicate=convert_none(options.dup),
+            unicast=int(convert_none(options.bandwidth)),
+            broadcast=int(convert_none(options.bandwidth)),
         )
         service.publish(nemid2, event)

@@ -207,8 +207,8 @@ class NodeConfigDialog(Dialog):
         notebook.grid(sticky="nsew", pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
         state = tk.DISABLED if self.app.core.is_runtime() else tk.NORMAL
-        for interface in self.canvas_node.interfaces:
-            logging.info("interface: %s", interface)
+        for interface_id in sorted(self.canvas_node.interfaces):
+            interface = self.canvas_node.interfaces[interface_id]
             tab = ttk.Frame(notebook, padding=FRAME_PAD)
             tab.grid(sticky="nsew", pady=PADY)
             tab.columnconfigure(1, weight=1)
@@ -309,7 +309,7 @@ class NodeConfigDialog(Dialog):
         self.canvas_node.image = self.image
 
         # update node interface data
-        for interface in self.canvas_node.interfaces:
+        for interface in self.canvas_node.interfaces.values():
             data = self.interfaces[interface.id]
 
             # validate ip4

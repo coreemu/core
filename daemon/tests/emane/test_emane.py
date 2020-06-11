@@ -2,18 +2,22 @@
 Unit tests for testing CORE EMANE networks.
 """
 import os
+from tempfile import TemporaryFile
 from xml.etree import ElementTree
 
 import pytest
 
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
+from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes
+from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
+from core.nodes.base import CoreNode
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
@@ -25,8 +29,10 @@ _EMANE_MODELS = [
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def ping(from_node, to_node, ip_prefixes, count=3):
-    address = ip_prefixes.ip4_address(to_node)
+def ping(
+    from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes, count: int = 3
+):
+    address = ip_prefixes.ip4_address(to_node.id)
     try:
         from_node.cmd(f"ping -c {count} {address}")
         status = 0
@@ -37,7 +43,7 @@ def ping(from_node, to_node, ip_prefixes, count=3):
 
 class TestEmane:
     @pytest.mark.parametrize("model", _EMANE_MODELS)
-    def test_models(self, session, model, ip_prefixes):
+    def test_models(self, session: Session, model: EmaneModel, ip_prefixes: IpPrefixes):
         """
         Test emane models within a basic network.
 
@@ -50,7 +56,7 @@ class TestEmane:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions()
         options.set_position(80, 50)
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        emane_network = session.add_node(EmaneNet, options=options)
         session.emane.set_model(emane_network, model)
 
         # configure tdma
@@ -64,9 +70,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -80,7 +86,9 @@ class TestEmane:
         status = ping(node_one, node_two, ip_prefixes, count=5)
         assert not status
 
-    def test_xml_emane(self, session, tmpdir, ip_prefixes):
+    def test_xml_emane(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
         """
         Test xml client methods for emane.
 
@@ -92,7 +100,7 @@ class TestEmane:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions()
         options.set_position(80, 50)
-        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        emane_network = session.add_node(EmaneNet, options=options)
         config_key = "txpower"
         config_value = "10"
         session.emane.set_model(
@@ -102,9 +110,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -133,9 +141,9 @@ class TestEmane:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id)
+            assert not session.get_node(n1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id)
+            assert not session.get_node(n2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -146,7 +154,7 @@ class TestEmane:
         )
 
         # verify nodes and configuration were restored
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
-        assert session.get_node(emane_id)
+        assert session.get_node(n1_id, CoreNode)
+        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(emane_id, EmaneNet)
         assert value == config_value

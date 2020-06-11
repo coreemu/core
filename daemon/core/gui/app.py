@@ -1,7 +1,7 @@
 import logging
 import math
 import tkinter as tk
-from tkinter import font, ttk
+from tkinter import PhotoImage, font, ttk
 from tkinter.ttk import Progressbar
 
 import grpc
@@ -104,7 +104,7 @@ class Application(ttk.Frame):
         self.rowconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.grid(sticky="nsew")
-        self.toolbar = Toolbar(self, self)
+        self.toolbar = Toolbar(self)
         self.toolbar.grid(sticky="ns")
         self.right_frame = ttk.Frame(self)
         self.right_frame.columnconfigure(0, weight=1)
@@ -113,16 +113,15 @@ class Application(ttk.Frame):
         self.draw_canvas()
         self.draw_status()
         self.progress = Progressbar(self.right_frame, mode="indeterminate")
-        self.menubar = Menubar(self.master, self)
+        self.menubar = Menubar(self)
+        self.master.config(menu=self.menubar)
 
     def draw_canvas(self) -> None:
-        width = self.guiconfig.preferences.width
-        height = self.guiconfig.preferences.height
         canvas_frame = ttk.Frame(self.right_frame)
         canvas_frame.rowconfigure(0, weight=1)
         canvas_frame.columnconfigure(0, weight=1)
         canvas_frame.grid(sticky="nsew", pady=1)
-        self.canvas = CanvasGraph(canvas_frame, self, self.core, width, height)
+        self.canvas = CanvasGraph(canvas_frame, self, self.core)
         self.canvas.grid(sticky="nsew")
         scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
         scroll_y.grid(row=0, column=1, sticky="ns")
@@ -150,6 +149,8 @@ class Application(ttk.Frame):
         self.after(0, lambda: ErrorDialog(self, title, message).show())
 
     def on_closing(self) -> None:
+        if self.toolbar.picker:
+            self.toolbar.picker.destroy()
         self.menubar.prompt_save_running_session(True)
 
     def save_config(self) -> None:
@@ -160,6 +161,12 @@ class Application(ttk.Frame):
             self.toolbar.set_runtime()
         else:
             self.toolbar.set_design()
+
+    def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
+        return Images.get(image_enum, int(width * self.app_scale))
+
+    def get_custom_icon(self, image_file: str, width: int) -> PhotoImage:
+        return Images.get_custom(image_file, int(width * self.app_scale))
 
     def close(self) -> None:
         self.master.destroy()

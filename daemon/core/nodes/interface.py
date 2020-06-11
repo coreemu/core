@@ -4,12 +4,12 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from typing import TYPE_CHECKING, Callable, Dict, List, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
-from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageFlags, TransportType
 from core.errors import CoreCommandError
-from core.nodes.netclient import get_net_client
+from core.nodes.netclient import LinuxNetClient, get_net_client
 
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
@@ -27,6 +27,7 @@ class CoreInterface:
         session: "Session",
         node: "CoreNode",
         name: str,
+        localname: str,
         mtu: int,
         server: "DistributedServer" = None,
     ) -> None:
@@ -36,33 +37,35 @@ class CoreInterface:
         :param session: core session instance
         :param node: node for interface
         :param name: interface name
+        :param localname: interface local name
         :param mtu: mtu value
         :param server: remote server node
             will run on, default is None for localhost
         """
-        self.session = session
-        self.node = node
-        self.name = name
-        if not isinstance(mtu, int):
-            raise ValueError
-        self.mtu = mtu
-        self.net = None
-        self._params = {}
-        self.addrlist = []
-        self.hwaddr = None
+        self.session: "Session" = session
+        self.node: "CoreNode" = node
+        self.name: str = name
+        self.localname: str = localname
+        self.up: bool = False
+        self.mtu: int = mtu
+        self.net: Optional[CoreNetworkBase] = None
+        self.othernet: Optional[CoreNetworkBase] = None
+        self._params: Dict[str, float] = {}
+        self.addrlist: List[str] = []
+        self.hwaddr: Optional[str] = None
         # placeholder position hook
-        self.poshook = lambda x: None
+        self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
-        self.transport_type = None
+        self.transport_type: Optional[TransportType] = None
         # node interface index
-        self.netindex = None
+        self.netindex: Optional[int] = None
         # net interface index
-        self.netifi = None
+        self.netifi: Optional[int] = None
         # index used to find flow data
-        self.flow_id = None
-        self.server = server
+        self.flow_id: Optional[int] = None
+        self.server: Optional["DistributedServer"] = server
         use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
 
     def host_cmd(
         self,
@@ -258,9 +261,7 @@ class Veth(CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        super().__init__(session, node, name, mtu, server)
-        self.localname = localname
-        self.up = False
+        super().__init__(session, node, name, localname, mtu, server)
         if start:
             self.startup()
 
@@ -326,10 +327,8 @@ class TunTap(CoreInterface):
             will run on, default is None for localhost
         :param start: start flag
         """
-        super().__init__(session, node, name, mtu, server)
-        self.localname = localname
-        self.up = False
-        self.transport_type = "virtual"
+        super().__init__(session, node, name, localname, mtu, server)
+        self.transport_type = TransportType.VIRTUAL
         if start:
             self.startup()
 
@@ -509,22 +508,17 @@ class GreTap(CoreInterface):
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        super().__init__(session, node, name, mtu, server)
         if _id is None:
-            # from PyCoreObj
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF
         self.id = _id
-        sessionid = self.session.short_session_id()
-        # interface name on the local host machine
-        self.localname = f"gt.{self.id}.{sessionid}"
-        self.transport_type = "raw"
+        sessionid = session.short_session_id()
+        localname = f"gt.{self.id}.{sessionid}"
+        super().__init__(session, node, name, localname, mtu, server)
+        self.transport_type = TransportType.RAW
         if not start:
-            self.up = False
             return
-
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
-
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True

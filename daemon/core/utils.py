@@ -158,19 +158,6 @@ def which(command: str, required: bool) -> str:
     return found_path
 
 
-def make_tuple(obj: Generic[T]) -> Tuple[T]:
-    """
-    Create a tuple from an object, or return the object itself.
-
-    :param obj: object to convert to a tuple
-    :return: converted tuple or the object itself
-    """
-    if hasattr(obj, "__iter__"):
-        return tuple(obj)
-    else:
-        return (obj,)
-
-
 def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> Tuple[T]:
     """
     Create a tuple from a string.
@@ -228,17 +215,21 @@ def cmd(
     if shell is False:
         args = shlex.split(args)
     try:
-        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
+        output = PIPE if wait else DEVNULL
+        p = Popen(args, stdout=output, stderr=output, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
+            stdout = stdout.decode("utf-8").strip()
+            stderr = stderr.decode("utf-8").strip()
             status = p.wait()
             if status != 0:
                 raise CoreCommandError(status, args, stdout, stderr)
-            return stdout.decode("utf-8").strip()
+            return stdout
         else:
             return ""
-    except OSError:
-        raise CoreCommandError(-1, args)
+    except OSError as e:
+        logging.error("cmd error: %s", e.strerror)
+        raise CoreCommandError(1, args, "", e.strerror)
 
 
 def file_munge(pathname: str, header: str, text: str) -> None:

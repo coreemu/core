@@ -6,6 +6,7 @@ import logging
 import os
 import shutil
 import threading
+from threading import RLock
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 import netaddr
@@ -14,9 +15,10 @@ from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import LinkData, NodeData
+from core.emulator.emudata import InterfaceData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
-from core.nodes import client
+from core.nodes.client import VnodeClient
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
@@ -24,7 +26,9 @@ if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
     from core.configservice.base import ConfigService
+    from core.services.coreservices import CoreService
 
+    CoreServices = List[CoreService]
     ConfigServiceType = Type[ConfigService]
 
 _DEFAULT_MTU = 1500
@@ -35,7 +39,7 @@ class NodeBase:
     Base class for CORE nodes (nodes and networks)
     """
 
-    apitype = None
+    apitype: Optional[NodeTypes] = None
 
     # TODO: appears start has no usage, verify and remove
     def __init__(
@@ -57,27 +61,25 @@ class NodeBase:
             will run on, default is None for localhost
         """
 
-        self.session = session
+        self.session: "Session" = session
         if _id is None:
             _id = session.get_node_id()
-        self.id = _id
+        self.id: int = _id
         if name is None:
             name = f"o{self.id}"
-        self.name = name
-        self.server = server
-
-        self.type = None
-        self.services = None
-        # ifindex is key, CoreInterface instance is value
-        self._netif = {}
-        self.ifindex = 0
-        self.canvas = None
-        self.icon = None
-        self.opaque = None
-        self.position = Position()
-
+        self.name: str = name
+        self.server: "DistributedServer" = server
+        self.type: Optional[str] = None
+        self.services: CoreServices = []
+        self._netif: Dict[int, CoreInterface] = {}
+        self.ifindex: int = 0
+        self.canvas: Optional[int] = None
+        self.icon: Optional[str] = None
+        self.opaque: Optional[str] = None
+        self.position: Position = Position()
+        self.up: bool = False
         use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
 
     def startup(self) -> None:
         """
@@ -209,9 +211,7 @@ class NodeBase:
         server = None
         if self.server is not None:
             server = self.server.name
-        services = None
-        if self.services is not None:
-            services = [service.name for service in self.services]
+        services = [service.name for service in self.services]
         return NodeData(
             message_type=message_type,
             id=self.id,
@@ -268,11 +268,9 @@ class CoreNodeBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
-        self.services = []
-        self.config_services = {}
-        self.nodedir = None
-        self.tmpnodedir = False
-        self.up = False
+        self.config_services: Dict[str, "ConfigService"] = {}
+        self.nodedir: Optional[str] = None
+        self.tmpnodedir: bool = False
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
@@ -301,7 +299,7 @@ class CoreNodeBase(NodeBase):
 
     def start_config_services(self) -> None:
         """
-        Determins startup paths and starts configuration services, based on their
+        Determines startup paths and starts configuration services, based on their
         dependency chains.
 
         :return: nothing
@@ -333,7 +331,6 @@ class CoreNodeBase(NodeBase):
         preserve = self.session.options.get_config("preservedir") == "1"
         if preserve:
             return
-
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.nodedir}")
 
@@ -413,14 +410,14 @@ class CoreNodeBase(NodeBase):
                 netif.setposition()
 
     def commonnets(
-        self, obj: "CoreNodeBase", want_ctrl: bool = False
-    ) -> List[Tuple[NodeBase, CoreInterface, CoreInterface]]:
+        self, node: "CoreNodeBase", want_ctrl: bool = False
+    ) -> List[Tuple["CoreNetworkBase", CoreInterface, CoreInterface]]:
         """
         Given another node or net object, return common networks between
         this node and that object. A list of tuples is returned, with each tuple
         consisting of (network, interface1, interface2).
 
-        :param obj: object to get common network with
+        :param node: node to get common network with
         :param want_ctrl: flag set to determine if control network are wanted
         :return: tuples of common networks
         """
@@ -428,10 +425,32 @@ class CoreNodeBase(NodeBase):
         for netif1 in self.netifs():
             if not want_ctrl and hasattr(netif1, "control"):
                 continue
-            for netif2 in obj.netifs():
+            for netif2 in node.netifs():
                 if netif1.net == netif2.net:
                     common.append((netif1.net, netif1, netif2))
         return common
+
+    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+        """
+        Create a node file with a given mode.
+
+        :param filename: name of file to create
+        :param contents: contents of file
+        :param mode: mode for file
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    def addfile(self, srcname: str, filename: str) -> None:
+        """
+        Add a file.
+
+        :param srcname: source file name
+        :param filename: file name to add
+        :return: nothing
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
@@ -469,7 +488,6 @@ class CoreNode(CoreNodeBase):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        bootsh: str = "boot.sh",
         start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
@@ -480,25 +498,21 @@ class CoreNode(CoreNodeBase):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param bootsh: boot shell to use
         :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
-        self.nodedir = nodedir
-        self.ctrlchnlname = os.path.abspath(
+        self.nodedir: Optional[str] = nodedir
+        self.ctrlchnlname: str = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
         )
-        self.client = None
-        self.pid = None
-        self.lock = threading.RLock()
-        self._mounts = []
-        self.bootsh = bootsh
-
+        self.client: Optional[VnodeClient] = None
+        self.pid: Optional[int] = None
+        self.lock: RLock = RLock()
+        self._mounts: List[Tuple[str, str]] = []
         use_ovs = session.options.get_config("ovs") == "True"
-        self.node_net_client = self.create_node_net_client(use_ovs)
-
+        self.node_net_client: LinuxNetClient = self.create_node_net_client(use_ovs)
         if start:
             self.startup()
 
@@ -522,7 +536,6 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"kill -0 {self.pid}")
         except CoreCommandError:
             return False
-
         return True
 
     def startup(self) -> None:
@@ -554,7 +567,7 @@ class CoreNode(CoreNodeBase):
             logging.debug("node(%s) pid: %s", self.name, self.pid)
 
             # create vnode client
-            self.client = client.VnodeClient(self.name, self.ctrlchnlname)
+            self.client = VnodeClient(self.name, self.ctrlchnlname)
 
             # bring up the loopback interface
             logging.debug("bringing up loopback interface")
@@ -833,53 +846,36 @@ class CoreNode(CoreNodeBase):
             interface_name = self.ifname(ifindex)
             self.node_net_client.device_up(interface_name)
 
-    def newnetif(
-        self,
-        net: "CoreNetworkBase" = None,
-        addrlist: List[str] = None,
-        hwaddr: str = None,
-        ifindex: int = None,
-        ifname: str = None,
-    ) -> int:
+    def newnetif(self, net: "CoreNetworkBase", interface: InterfaceData) -> int:
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param addrlist: addresses to add on the interface
-        :param hwaddr: hardware address to set for interface
-        :param ifindex: index of interface to create
-        :param ifname: name for interface
+        :param interface: interface data for new interface
         :return: interface index
         """
-        if not addrlist:
-            addrlist = []
-
+        addresses = interface.get_addresses()
         with self.lock:
             # TODO: emane specific code
-            if net is not None and net.is_emane is True:
-                ifindex = self.newtuntap(ifindex, ifname)
+            if net.is_emane is True:
+                ifindex = self.newtuntap(interface.id, interface.name)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
                 #   save addresses with the interface now
                 self.attachnet(ifindex, net)
                 netif = self.netif(ifindex)
-                netif.sethwaddr(hwaddr)
-                for address in utils.make_tuple(addrlist):
+                netif.sethwaddr(interface.mac)
+                for address in addresses:
                     netif.addaddr(address)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex, ifname)
-
-            if net is not None:
-                self.attachnet(ifindex, net)
-
-            if hwaddr:
-                self.sethwaddr(ifindex, hwaddr)
-
-            for address in utils.make_tuple(addrlist):
+                ifindex = self.newveth(interface.id, interface.name)
+            self.attachnet(ifindex, net)
+            if interface.mac:
+                self.sethwaddr(ifindex, interface.mac)
+            for address in addresses:
                 self.addaddr(ifindex, address)
-
             self.ifup(ifindex)
             return ifindex
 
@@ -992,6 +988,7 @@ class CoreNetworkBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, start, server)
+        self.brname = None
         self._linked = {}
         self._linked_lock = threading.Lock()
 
@@ -1020,7 +1017,7 @@ class CoreNetworkBase(NodeBase):
         """
         pass
 
-    def getlinknetif(self, net: "CoreNetworkBase") -> CoreInterface:
+    def getlinknetif(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
         """
         Return the interface of that links this net with another net.
 
@@ -1028,7 +1025,7 @@ class CoreNetworkBase(NodeBase):
         :return: interface the provided network is linked to
         """
         for netif in self.netifs():
-            if hasattr(netif, "othernet") and netif.othernet == net:
+            if getattr(netif, "othernet", None) == net:
                 return netif
         return None
 
@@ -1072,11 +1069,11 @@ class CoreNetworkBase(NodeBase):
         for netif in self.netifs(sort=True):
             if not hasattr(netif, "node"):
                 continue
-            linked_node = netif.node
             uni = False
+            linked_node = netif.node
             if linked_node is None:
                 # two layer-2 switches/hubs linked together via linknet()
-                if not hasattr(netif, "othernet"):
+                if not netif.othernet:
                     continue
                 linked_node = netif.othernet
                 if linked_node.id == self.id:
@@ -1149,6 +1146,19 @@ class CoreNetworkBase(NodeBase):
 
         return all_links
 
+    def linkconfig(
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+    ) -> None:
+        """
+        Configure link parameters by applying tc queuing disciplines on the interface.
+
+        :param netif: interface one
+        :param options: options for configuring link
+        :param netif2: interface two
+        :return: nothing
+        """
+        raise NotImplementedError
+
 
 class Position:
     """
@@ -1163,12 +1173,12 @@ class Position:
         :param y: y position
         :param z: z position
         """
-        self.x = x
-        self.y = y
-        self.z = z
-        self.lon = None
-        self.lat = None
-        self.alt = None
+        self.x: float = x
+        self.y: float = y
+        self.z: float = z
+        self.lon: Optional[float] = None
+        self.lat: Optional[float] = None
+        self.alt: Optional[float] = None
 
     def set(self, x: float = None, y: float = None, z: float = None) -> bool:
         """

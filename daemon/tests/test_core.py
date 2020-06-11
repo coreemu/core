@@ -4,21 +4,25 @@ Unit tests for testing basic CORE networks.
 
 import os
 import threading
+from typing import Type
 
 import pytest
 
-from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import MessageFlags, NodeTypes
+from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.enumerations import MessageFlags
+from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import CoreNode, NodeBase
+from core.nodes.network import HubNode, PtpNet, SwitchNode, WlanNode
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
+_WIRED = [PtpNet, HubNode, SwitchNode]
 
 
-def ping(from_node, to_node, ip_prefixes):
-    address = ip_prefixes.ip4_address(to_node)
+def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
+    address = ip_prefixes.ip4_address(to_node.id)
     try:
         from_node.cmd(f"ping -c 1 {address}")
         status = 0
@@ -29,7 +33,9 @@ def ping(from_node, to_node, ip_prefixes):
 
 class TestCore:
     @pytest.mark.parametrize("net_type", _WIRED)
-    def test_wired_ping(self, session, net_type, ip_prefixes):
+    def test_wired_ping(
+        self, session: Session, net_type: Type[NodeBase], ip_prefixes: IpPrefixes
+    ):
         """
         Test ptp node network.
 
@@ -39,11 +45,11 @@ class TestCore:
         """
 
         # create net node
-        net_node = session.add_node(_type=net_type)
+        net_node = session.add_node(net_type)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to net node
         for node in [node_one, node_two]:
@@ -57,7 +63,7 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_vnode_client(self, request, session, ip_prefixes):
+    def test_vnode_client(self, request, session: Session, ip_prefixes: IpPrefixes):
         """
         Test vnode client methods.
 
@@ -66,11 +72,11 @@ class TestCore:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -90,7 +96,7 @@ class TestCore:
         if not request.config.getoption("mock"):
             assert client.check_cmd("echo hello") == "hello"
 
-    def test_netif(self, session, ip_prefixes):
+    def test_netif(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test netif methods.
 
@@ -99,11 +105,11 @@ class TestCore:
         """
 
         # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
+        ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
+        node_one = session.add_node(CoreNode)
+        node_two = session.add_node(CoreNode)
 
         # link nodes to ptp net
         for node in [node_one, node_two]:
@@ -121,8 +127,8 @@ class TestCore:
         assert node_two.commonnets(node_one)
 
         # check we can retrieve netif index
-        assert node_one.getifindex(0)
-        assert node_two.getifindex(0)
+        assert node_one.ifname(0)
+        assert node_two.ifname(0)
 
         # check interface parameters
         interface = node_one.netif(0)
@@ -134,7 +140,7 @@ class TestCore:
         node_one.delnetif(0)
         assert not node_one.netif(0)
 
-    def test_wlan_ping(self, session, ip_prefixes):
+    def test_wlan_ping(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test basic wlan network.
 
@@ -143,14 +149,14 @@ class TestCore:
         """
 
         # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(options=options)
-        node_two = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         # link nodes
         for node in [node_one, node_two]:
@@ -164,7 +170,7 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_mobility(self, session, ip_prefixes):
+    def test_mobility(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test basic wlan network.
 
@@ -173,14 +179,14 @@ class TestCore:
         """
 
         # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan_node = session.add_node(WlanNode)
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(options=options)
-        node_two = session.add_node(options=options)
+        node_one = session.add_node(CoreNode, options=options)
+        node_two = session.add_node(CoreNode, options=options)
 
         # link nodes
         for node in [node_one, node_two]:
