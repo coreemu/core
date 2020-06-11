@@ -355,10 +355,11 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError(f"ifindex {ifindex} does not exist")
+            raise CoreError(f"node({self.name}) ifindex({ifindex}) does not exist")
         netif = self._netif.pop(ifindex)
+        logging.info("node(%s) removing interface(%s)", self.name, netif.name)
+        netif.detachnet()
         netif.shutdown()
-        del netif
 
     def netif(self, ifindex: int) -> Optional[CoreInterface]:
         """
@@ -470,6 +471,18 @@ class CoreNodeBase(NodeBase):
 
         :param sh: shell to execute command in
         :return: str
+        """
+        raise NotImplementedError
+
+    def newnetif(
+        self, net: "CoreNetworkBase", interface: InterfaceData
+    ) -> CoreInterface:
+        """
+        Create a new network interface.
+
+        :param net: network to associate with
+        :param interface: interface data for new interface
+        :return: interface index
         """
         raise NotImplementedError
 
@@ -846,7 +859,9 @@ class CoreNode(CoreNodeBase):
             interface_name = self.ifname(ifindex)
             self.node_net_client.device_up(interface_name)
 
-    def newnetif(self, net: "CoreNetworkBase", interface: InterfaceData) -> int:
+    def newnetif(
+        self, net: "CoreNetworkBase", interface: InterfaceData
+    ) -> CoreInterface:
         """
         Create a new network interface.
 
@@ -868,16 +883,16 @@ class CoreNode(CoreNodeBase):
                 netif.sethwaddr(interface.mac)
                 for address in addresses:
                     netif.addaddr(address)
-                return ifindex
             else:
                 ifindex = self.newveth(interface.id, interface.name)
-            self.attachnet(ifindex, net)
-            if interface.mac:
-                self.sethwaddr(ifindex, interface.mac)
-            for address in addresses:
-                self.addaddr(ifindex, address)
-            self.ifup(ifindex)
-            return ifindex
+                self.attachnet(ifindex, net)
+                if interface.mac:
+                    self.sethwaddr(ifindex, interface.mac)
+                for address in addresses:
+                    self.addaddr(ifindex, address)
+                self.ifup(ifindex)
+                netif = self.netif(ifindex)
+            return netif
 
     def addfile(self, srcname: str, filename: str) -> None:
         """

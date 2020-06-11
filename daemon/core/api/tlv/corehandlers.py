@@ -767,7 +767,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
         )
 
-        link_type = None
+        link_type = LinkTypes.WIRED
         link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)

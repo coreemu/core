@@ -54,12 +54,11 @@ class TestNodes:
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        interface = node.netif(index)
+        interface = node.newnetif(switch, interface_data)
         mac = "aa:aa:aa:ff:ff:ff"
 
         # when
-        node.sethwaddr(index, mac)
+        node.sethwaddr(interface.netindex, mac)
 
         # then
         assert interface.hwaddr == mac
@@ -69,25 +68,23 @@ class TestNodes:
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        node.netif(index)
+        interface = node.newnetif(switch, interface_data)
         mac = "aa:aa:aa:ff:ff:fff"
 
         # when
         with pytest.raises(CoreError):
-            node.sethwaddr(index, mac)
+            node.sethwaddr(interface.netindex, mac)
 
     def test_node_addaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        interface = node.netif(index)
+        interface = node.newnetif(switch, interface_data)
         addr = "192.168.0.1/24"
 
         # when
-        node.addaddr(index, addr)
+        node.addaddr(interface.netindex, addr)
 
         # then
         assert interface.addrlist[0] == addr
@@ -97,13 +94,12 @@ class TestNodes:
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        node.netif(index)
+        interface = node.newnetif(switch, interface_data)
         addr = "256.168.0.1/24"
 
         # when
         with pytest.raises(CoreError):
-            node.addaddr(index, addr)
+            node.addaddr(interface.netindex, addr)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):
