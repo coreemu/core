@@ -609,30 +609,30 @@ class CoreGrpcClient:
     def add_link(
         self,
         session_id: int,
-        node_one_id: int,
-        node_two_id: int,
-        interface_one: core_pb2.Interface = None,
-        interface_two: core_pb2.Interface = None,
+        node1_id: int,
+        node2_id: int,
+        interface1: core_pb2.Interface = None,
+        interface2: core_pb2.Interface = None,
         options: core_pb2.LinkOptions = None,
     ) -> core_pb2.AddLinkResponse:
         """
         Add a link between nodes.
 
         :param session_id: session id
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :param interface_one: node one interface data
-        :param interface_two: node two interface data
+        :param node1_id: node one id
+        :param node2_id: node two id
+        :param interface1: node one interface data
+        :param interface2: node two interface data
         :param options: options for link (jitter, bandwidth, etc)
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
         link = core_pb2.Link(
-            node_one_id=node_one_id,
-            node_two_id=node_two_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
             type=core_pb2.LinkType.WIRED,
-            interface_one=interface_one,
-            interface_two=interface_two,
+            interface1=interface1,
+            interface2=interface2,
             options=options,
         )
         request = core_pb2.AddLinkRequest(session_id=session_id, link=link)
@@ -641,59 +641,59 @@ class CoreGrpcClient:
     def edit_link(
         self,
         session_id: int,
-        node_one_id: int,
-        node_two_id: int,
+        node1_id: int,
+        node2_id: int,
         options: core_pb2.LinkOptions,
-        interface_one_id: int = None,
-        interface_two_id: int = None,
+        interface1_id: int = None,
+        interface2_id: int = None,
     ) -> core_pb2.EditLinkResponse:
         """
         Edit a link between nodes.
 
         :param session_id: session id
-        :param node_one_id: node one id
-        :param node_two_id: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :param options: options for link (jitter, bandwidth, etc)
-        :param interface_one_id: node one interface id
-        :param interface_two_id: node two interface id
+        :param interface1_id: node one interface id
+        :param interface2_id: node two interface id
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
         request = core_pb2.EditLinkRequest(
             session_id=session_id,
-            node_one_id=node_one_id,
-            node_two_id=node_two_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
             options=options,
-            interface_one_id=interface_one_id,
-            interface_two_id=interface_two_id,
+            interface1_id=interface1_id,
+            interface2_id=interface2_id,
         )
         return self.stub.EditLink(request)
 
     def delete_link(
         self,
         session_id: int,
-        node_one_id: int,
-        node_two_id: int,
-        interface_one_id: int = None,
-        interface_two_id: int = None,
+        node1_id: int,
+        node2_id: int,
+        interface1_id: int = None,
+        interface2_id: int = None,
     ) -> core_pb2.DeleteLinkResponse:
         """
         Delete a link between nodes.
 
         :param session_id: session id
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :param interface_one_id: node one interface id
-        :param interface_two_id: node two interface id
+        :param node1_id: node one id
+        :param node2_id: node two id
+        :param interface1_id: node one interface id
+        :param interface2_id: node two interface id
         :return: response with result of success or failure
         :raises grpc.RpcError: when session doesn't exist
         """
         request = core_pb2.DeleteLinkRequest(
             session_id=session_id,
-            node_one_id=node_one_id,
-            node_two_id=node_two_id,
-            interface_one_id=interface_one_id,
-            interface_two_id=interface_two_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            interface1_id=interface1_id,
+            interface2_id=interface2_id,
         )
         return self.stub.DeleteLink(request)
 
@@ -1111,20 +1111,20 @@ class CoreGrpcClient:
         return self.stub.OpenXml(request)
 
     def emane_link(
-        self, session_id: int, nem_one: int, nem_two: int, linked: bool
+        self, session_id: int, nem1: int, nem2: int, linked: bool
     ) -> EmaneLinkResponse:
         """
         Helps broadcast wireless link/unlink between EMANE nodes.
 
         :param session_id: session to emane link
-        :param nem_one: first nem for emane link
-        :param nem_two: second nem for emane link
+        :param nem1: first nem for emane link
+        :param nem2: second nem for emane link
         :param linked: True to link, False to unlink
         :return: get emane link response
         :raises grpc.RpcError: when session or nodes related to nems do not exist
         """
         request = EmaneLinkRequest(
-            session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
+            session_id=session_id, nem1=nem1, nem2=nem2, linked=linked
         )
         return self.stub.EmaneLink(request)
 
@@ -1243,24 +1243,24 @@ class CoreGrpcClient:
         return self.stub.ExecuteScript(request)
 
     def wlan_link(
-        self, session_id: int, wlan: int, node_one: int, node_two: int, linked: bool
+        self, session_id: int, wlan_id: int, node1_id: int, node2_id: int, linked: bool
     ) -> WlanLinkResponse:
         """
         Links/unlinks nodes on the same WLAN.
 
         :param session_id: session id containing wlan and nodes
-        :param wlan: wlan nodes must belong to
-        :param node_one: first node of pair to link/unlink
-        :param node_two: second node of pair to link/unlin
+        :param wlan_id: wlan nodes must belong to
+        :param node1_id: first node of pair to link/unlink
+        :param node2_id: second node of pair to link/unlin
         :param linked: True to link, False to unlink
         :return: wlan link response
         :raises grpc.RpcError: when session or one of the nodes do not exist
         """
         request = WlanLinkRequest(
             session_id=session_id,
-            wlan=wlan,
-            node_one=node_one,
-            node_two=node_two,
+            wlan=wlan_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
             linked=linked,
         )
         return self.stub.WlanLink(request)

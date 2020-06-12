@@ -296,13 +296,13 @@ class CanvasEdge(Edge):
         return label
 
     def create_node_labels(self) -> Tuple[str, str]:
-        label_one = None
-        if self.link.HasField("interface_one"):
-            label_one = self.interface_label(self.link.interface_one)
-        label_two = None
-        if self.link.HasField("interface_two"):
-            label_two = self.interface_label(self.link.interface_two)
-        return label_one, label_two
+        label1 = None
+        if self.link.HasField("interface1"):
+            label1 = self.interface_label(self.link.interface1)
+        label2 = None
+        if self.link.HasField("interface2"):
+            label2 = self.interface_label(self.link.interface2)
+        return label1, label2
 
     def draw_labels(self) -> None:
         src_text, dst_text = self.create_node_labels()

@@ -14,11 +14,11 @@ from core.nodes.network import WlanNode
 
 
 class TestConfigurableOptions(ConfigurableOptions):
-    name_one = "value1"
-    name_two = "value2"
+    name1 = "value1"
+    name2 = "value2"
     options = [
-        Configuration(_id=name_one, _type=ConfigDataTypes.STRING, label=name_one),
-        Configuration(_id=name_two, _type=ConfigDataTypes.STRING, label=name_two),
+        Configuration(_id=name1, _type=ConfigDataTypes.STRING, label=name1),
+        Configuration(_id=name2, _type=ConfigDataTypes.STRING, label=name2),
     ]
 
 
@@ -33,11 +33,11 @@ class TestConf:
 
         # then
         assert len(default_values) == 2
-        assert TestConfigurableOptions.name_one in default_values
-        assert TestConfigurableOptions.name_two in default_values
+        assert TestConfigurableOptions.name1 in default_values
+        assert TestConfigurableOptions.name2 in default_values
         assert len(instance_default_values) == 2
-        assert TestConfigurableOptions.name_one in instance_default_values
-        assert TestConfigurableOptions.name_two in instance_default_values
+        assert TestConfigurableOptions.name1 in instance_default_values
+        assert TestConfigurableOptions.name2 in instance_default_values
 
     def test_nodes(self):
         # given

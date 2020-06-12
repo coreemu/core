@@ -32,7 +32,7 @@ def main():
     for _ in range(NODES):
         node = session.add_node(CoreNode)
         interface = prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface_one=interface)
+        session.add_link(node.id, switch.id, interface1_data=interface)
 
     # instantiate session
     session.instantiate()

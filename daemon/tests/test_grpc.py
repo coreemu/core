@@ -34,23 +34,23 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         position = core_pb2.Position(x=50, y=100)
-        node_one = core_pb2.Node(id=1, position=position, model="PC")
+        node1 = core_pb2.Node(id=1, position=position, model="PC")
         position = core_pb2.Position(x=100, y=100)
-        node_two = core_pb2.Node(id=2, position=position, model="PC")
+        node2 = core_pb2.Node(id=2, position=position, model="PC")
         position = core_pb2.Position(x=200, y=200)
         wlan_node = core_pb2.Node(
             id=3, type=NodeTypes.WIRELESS_LAN.value, position=position
         )
-        nodes = [node_one, node_two, wlan_node]
+        nodes = [node1, node2, wlan_node]
         interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
-        interface_one = interface_helper.create_interface(node_one.id, 0)
-        interface_two = interface_helper.create_interface(node_two.id, 0)
+        interface1 = interface_helper.create_interface(node1.id, 0)
+        interface2 = interface_helper.create_interface(node2.id, 0)
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,
-            node_one_id=node_one.id,
-            node_two_id=node_two.id,
-            interface_one=interface_one,
-            interface_two=interface_two,
+            node1_id=node1.id,
+            node2_id=node2.id,
+            interface1=interface1,
+            interface2=interface2,
         )
         links = [link]
         hook = core_pb2.Hook(
@@ -99,11 +99,11 @@ class TestGrpc:
         )
         mobility_configs = [mobility_config]
         service_config = ServiceConfig(
-            node_id=node_one.id, service="DefaultRoute", validate=["echo hello"]
+            node_id=node1.id, service="DefaultRoute", validate=["echo hello"]
         )
         service_configs = [service_config]
         service_file_config = ServiceFileConfig(
-            node_id=node_one.id,
+            node_id=node1.id,
             service="DefaultRoute",
             file="defaultroute.sh",
             data="echo hello",
@@ -128,11 +128,11 @@ class TestGrpc:
                 )
 
         # then
-        assert node_one.id in session.nodes
-        assert node_two.id in session.nodes
+        assert node1.id in session.nodes
+        assert node2.id in session.nodes
         assert wlan_node.id in session.nodes
-        assert session.nodes[node_one.id].netif(0) is not None
-        assert session.nodes[node_two.id].netif(0) is not None
+        assert session.nodes[node1.id].netif(0) is not None
+        assert session.nodes[node2.id].netif(0) is not None
         hook_file, hook_data = session._hooks[EventTypes.RUNTIME_STATE][0]
         assert hook_file == hook.file
         assert hook_data == hook.data
@@ -153,11 +153,11 @@ class TestGrpc:
         )
         assert set_model_config[model_config_key] == model_config_value
         service = session.services.get_service(
-            node_one.id, service_config.service, default_service=True
+            node1.id, service_config.service, default_service=True
         )
         assert service.validate == tuple(service_config.validate)
         service_file = session.services.get_service_file(
-            node_one, service_file_config.service, service_file_config.file
+            node1, service_file_config.service, service_file_config.file
         )
         assert service_file.data == service_file_config.data
 
@@ -596,7 +596,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.edit_link(
-                session.id, node.id, switch.id, options, interface_one_id=interface.id
+                session.id, node.id, switch.id, options, interface1_id=interface.id
             )
 
         # then
@@ -608,28 +608,28 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node_one = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node(CoreNode)
-        interface_two = ip_prefixes.create_interface(node_two)
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
+        node1 = session.add_node(CoreNode)
+        interface1 = ip_prefixes.create_interface(node1)
+        node2 = session.add_node(CoreNode)
+        interface2 = ip_prefixes.create_interface(node2)
+        session.add_link(node1.id, node2.id, interface1, interface2)
         link_node = None
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            if node.id not in {node_one.id, node_two.id}:
+            if node.id not in {node1.id, node2.id}:
                 link_node = node
                 break
-        assert len(link_node.all_link_data(0)) == 1
+        assert len(link_node.all_link_data()) == 1
 
         # then
         with client.context_connect():
             response = client.delete_link(
-                session.id, node_one.id, node_two.id, interface_one.id, interface_two.id
+                session.id, node1.id, node2.id, interface1.id, interface2.id
             )
 
         # then
         assert response.result is True
-        assert len(link_node.all_link_data(0)) == 0
+        assert len(link_node.all_link_data()) == 0
 
     def test_get_wlan_config(self, grpc_server: CoreGrpcServer):
         # given

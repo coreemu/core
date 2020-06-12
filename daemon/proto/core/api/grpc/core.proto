@@ -492,16 +492,16 @@ message AddLinkRequest {
 
 message AddLinkResponse {
     bool result = 1;
-    Interface interface_one = 2;
-    Interface interface_two = 3;
+    Interface interface1 = 2;
+    Interface interface2 = 3;
 }
 
 message EditLinkRequest {
     int32 session_id = 1;
-    int32 node_one_id = 2;
-    int32 node_two_id = 3;
-    int32 interface_one_id = 4;
-    int32 interface_two_id = 5;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 interface1_id = 4;
+    int32 interface2_id = 5;
     LinkOptions options = 6;
 }
 
@@ -511,10 +511,10 @@ message EditLinkResponse {
 
 message DeleteLinkRequest {
     int32 session_id = 1;
-    int32 node_one_id = 2;
-    int32 node_two_id = 3;
-    int32 interface_one_id = 4;
-    int32 interface_two_id = 5;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 interface1_id = 4;
+    int32 interface2_id = 5;
 }
 
 message DeleteLinkResponse {
@@ -702,11 +702,11 @@ message Node {
 }
 
 message Link {
-    int32 node_one_id = 1;
-    int32 node_two_id = 2;
+    int32 node1_id = 1;
+    int32 node2_id = 2;
     LinkType.Enum type = 3;
-    Interface interface_one = 4;
-    Interface interface_two = 5;
+    Interface interface1 = 4;
+    Interface interface2 = 5;
     LinkOptions options = 6;
     int32 network_id = 7;
     string label = 8;

@@ -164,25 +164,19 @@ class CoreClient:
 
     def handle_link_event(self, event: core_pb2.LinkEvent):
         logging.debug("Link event: %s", event)
-        node_one_id = event.link.node_one_id
-        node_two_id = event.link.node_two_id
-        if node_one_id == node_two_id:
+        node1_id = event.link.node1_id
+        node2_id = event.link.node2_id
+        if node1_id == node2_id:
             logging.warning("ignoring links with loops: %s", event)
             return
-        canvas_node_one = self.canvas_nodes[node_one_id]
-        canvas_node_two = self.canvas_nodes[node_two_id]
+        canvas_node1 = self.canvas_nodes[node1_id]
+        canvas_node2 = self.canvas_nodes[node2_id]
         if event.message_type == core_pb2.MessageType.ADD:
-            self.app.canvas.add_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
+            self.app.canvas.add_wireless_edge(canvas_node1, canvas_node2, event.link)
         elif event.message_type == core_pb2.MessageType.DELETE:
-            self.app.canvas.delete_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
+            self.app.canvas.delete_wireless_edge(canvas_node1, canvas_node2, event.link)
         elif event.message_type == core_pb2.MessageType.NONE:
-            self.app.canvas.update_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
+            self.app.canvas.update_wireless_edge(canvas_node1, canvas_node2, event.link)
         else:
             logging.warning("unknown link event: %s", event)
 
@@ -472,10 +466,10 @@ class CoreClient:
         for edge in self.links.values():
             link = core_pb2.Link()
             link.CopyFrom(edge.link)
-            if link.HasField("interface_one") and not link.interface_one.mac:
-                link.interface_one.mac = self.interfaces_manager.next_mac()
-            if link.HasField("interface_two") and not link.interface_two.mac:
-                link.interface_two.mac = self.interfaces_manager.next_mac()
+            if link.HasField("interface1") and not link.interface1.mac:
+                link.interface1.mac = self.interfaces_manager.next_mac()
+            if link.HasField("interface2") and not link.interface2.mac:
+                link.interface2.mac = self.interfaces_manager.next_mac()
             links.append(link)
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
@@ -693,10 +687,10 @@ class CoreClient:
         for link_proto in link_protos:
             response = self.client.add_link(
                 self.session_id,
-                link_proto.node_one_id,
-                link_proto.node_two_id,
-                link_proto.interface_one,
-                link_proto.interface_two,
+                link_proto.node1_id,
+                link_proto.node2_id,
+                link_proto.interface1,
+                link_proto.interface2,
                 link_proto.options,
             )
             logging.debug("create link: %s", response)
@@ -881,20 +875,20 @@ class CoreClient:
 
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,
-            node_one_id=src_node.id,
-            node_two_id=dst_node.id,
-            interface_one=src_interface,
-            interface_two=dst_interface,
+            node1_id=src_node.id,
+            node2_id=dst_node.id,
+            interface1=src_interface,
+            interface2=dst_interface,
         )
         # assign after creating link proto, since interfaces are copied
         if src_interface:
-            interface_one = link.interface_one
-            edge.src_interface = interface_one
-            canvas_src_node.interfaces[interface_one.id] = interface_one
+            interface1 = link.interface1
+            edge.src_interface = interface1
+            canvas_src_node.interfaces[interface1.id] = interface1
         if dst_interface:
-            interface_two = link.interface_two
-            edge.dst_interface = interface_two
-            canvas_dst_node.interfaces[interface_two.id] = interface_two
+            interface2 = link.interface2
+            edge.dst_interface = interface2
+            canvas_dst_node.interfaces[interface2.id] = interface2
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)

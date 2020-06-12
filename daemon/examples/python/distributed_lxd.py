@@ -43,14 +43,14 @@ def main(args):
 
     # create local node, switch, and remote nodes
     options = NodeOptions(image="ubuntu:18.04")
-    node_one = session.add_node(LxcNode, options=options)
+    node1 = session.add_node(LxcNode, options=options)
     options.server = server_name
-    node_two = session.add_node(LxcNode, options=options)
+    node2 = session.add_node(LxcNode, options=options)
 
     # create node interfaces and link
-    interface_one = prefixes.create_interface(node_one)
-    interface_two = prefixes.create_interface(node_two)
-    session.add_link(node_one.id, node_two.id, interface_one, interface_two)
+    interface1_data = prefixes.create_interface(node1)
+    interface2_data = prefixes.create_interface(node2)
+    session.add_link(node1.id, node2.id, interface1_data, interface2_data)
 
     # instantiate session
     session.instantiate()

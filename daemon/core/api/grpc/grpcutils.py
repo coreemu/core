@@ -86,8 +86,8 @@ def add_link_data(
     :param link_proto: link  proto
     :return: link interfaces and options
     """
-    interface_one = link_interface(link_proto.interface_one)
-    interface_two = link_interface(link_proto.interface_two)
+    interface1_data = link_interface(link_proto.interface1)
+    interface2_data = link_interface(link_proto.interface2)
     link_type = LinkTypes(link_proto.type)
     options = LinkOptions(type=link_type)
     options_data = link_proto.options
@@ -103,7 +103,7 @@ def add_link_data(
         options.unidirectional = options_data.unidirectional
         options.key = options_data.key
         options.opaque = options_data.opaque
-    return interface_one, interface_two, options
+    return interface1_data, interface2_data, options
 
 
 def create_nodes(
@@ -141,10 +141,10 @@ def create_links(
     """
     funcs = []
     for link_proto in link_protos:
-        node_one_id = link_proto.node_one_id
-        node_two_id = link_proto.node_two_id
-        interface_one, interface_two, options = add_link_data(link_proto)
-        args = (node_one_id, node_two_id, interface_one, interface_two, options)
+        node1_id = link_proto.node1_id
+        node2_id = link_proto.node2_id
+        interface1, interface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, interface1, interface2, options)
         funcs.append((session.add_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -165,10 +165,10 @@ def edit_links(
     """
     funcs = []
     for link_proto in link_protos:
-        node_one_id = link_proto.node_one_id
-        node_two_id = link_proto.node_two_id
-        interface_one, interface_two, options = add_link_data(link_proto)
-        args = (node_one_id, node_two_id, interface_one.id, interface_two.id, options)
+        node1_id = link_proto.node1_id
+        node2_id = link_proto.node2_id
+        interface1, interface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, interface1.id, interface2.id, options)
         funcs.append((session.update_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -315,9 +315,9 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
     :param link_data: link to convert
     :return: core protobuf Link
     """
-    interface_one = None
+    interface1 = None
     if link_data.interface1_id is not None:
-        interface_one = core_pb2.Interface(
+        interface1 = core_pb2.Interface(
             id=link_data.interface1_id,
             name=link_data.interface1_name,
             mac=convert_value(link_data.interface1_mac),
@@ -326,9 +326,9 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
             ip6=convert_value(link_data.interface1_ip6),
             ip6mask=link_data.interface1_ip6_mask,
         )
-    interface_two = None
+    interface2 = None
     if link_data.interface2_id is not None:
-        interface_two = core_pb2.Interface(
+        interface2 = core_pb2.Interface(
             id=link_data.interface2_id,
             name=link_data.interface2_name,
             mac=convert_value(link_data.interface2_mac),
@@ -352,10 +352,10 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
     )
     return core_pb2.Link(
         type=link_data.link_type.value,
-        node_one_id=link_data.node1_id,
-        node_two_id=link_data.node2_id,
-        interface_one=interface_one,
-        interface_two=interface_two,
+        node1_id=link_data.node1_id,
+        node2_id=link_data.node2_id,
+        interface1=interface1,
+        interface2=interface2,
         options=options,
         network_id=link_data.network_id,
         label=link_data.label,

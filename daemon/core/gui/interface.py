@@ -89,21 +89,21 @@ class InterfaceManager:
         remaining_subnets = set()
         for edge in self.app.core.links.values():
             link = edge.link
-            if link.HasField("interface_one"):
-                subnets = self.get_subnets(link.interface_one)
+            if link.HasField("interface1"):
+                subnets = self.get_subnets(link.interface1)
                 remaining_subnets.add(subnets)
-            if link.HasField("interface_two"):
-                subnets = self.get_subnets(link.interface_two)
+            if link.HasField("interface2"):
+                subnets = self.get_subnets(link.interface2)
                 remaining_subnets.add(subnets)
 
         # remove all subnets from used subnets when no longer present
         # or remove used indexes from subnet
         interfaces = []
         for link in links:
-            if link.HasField("interface_one"):
-                interfaces.append(link.interface_one)
-            if link.HasField("interface_two"):
-                interfaces.append(link.interface_two)
+            if link.HasField("interface1"):
+                interfaces.append(link.interface1)
+            if link.HasField("interface2"):
+                interfaces.append(link.interface2)
         for interface in interfaces:
             subnets = self.get_subnets(interface)
             if subnets not in remaining_subnets:
@@ -117,10 +117,10 @@ class InterfaceManager:
     def joined(self, links: List["core_pb2.Link"]) -> None:
         interfaces = []
         for link in links:
-            if link.HasField("interface_one"):
-                interfaces.append(link.interface_one)
-            if link.HasField("interface_two"):
-                interfaces.append(link.interface_two)
+            if link.HasField("interface1"):
+                interfaces.append(link.interface1)
+            if link.HasField("interface2"):
+                interfaces.append(link.interface2)
 
         # add to used subnets and mark used indexes
         for interface in interfaces:

@@ -269,11 +269,11 @@ class EmaneLinkMonitor:
             self.scheduler.enter(self.link_interval, 0, self.check_links)
 
     def get_complete_id(self, link_id: Tuple[int, int]) -> Tuple[int, int]:
-        value_one, value_two = link_id
-        if value_one < value_two:
-            return value_one, value_two
+        value1, value2 = link_id
+        if value1 < value2:
+            return value1, value2
         else:
-            return value_two, value_one
+            return value2, value1
 
     def is_complete_link(self, link_id: Tuple[int, int]) -> bool:
         reverse_id = link_id[1], link_id[0]
@@ -287,8 +287,8 @@ class EmaneLinkMonitor:
         return f"{source_link.sinr:.1f} / {dest_link.sinr:.1f}"
 
     def send_link(self, message_type: MessageFlags, link_id: Tuple[int, int]) -> None:
-        nem_one, nem_two = link_id
-        link = self.emane_manager.get_nem_link(nem_one, nem_two, message_type)
+        nem1, nem2 = link_id
+        link = self.emane_manager.get_nem_link(nem1, nem2, message_type)
         if link:
             label = self.get_link_label(link_id)
             link.label = label
@@ -298,16 +298,16 @@ class EmaneLinkMonitor:
         self,
         message_type: MessageFlags,
         label: str,
-        node_one: int,
-        node_two: int,
+        node1: int,
+        node2: int,
         emane_id: int,
     ) -> None:
         color = self.emane_manager.session.get_link_color(emane_id)
         link_data = LinkData(
             message_type=message_type,
             label=label,
-            node1_id=node_one,
-            node2_id=node_two,
+            node1_id=node1,
+            node2_id=node2,
             network_id=emane_id,
             link_type=LinkTypes.WIRELESS,
             color=color,

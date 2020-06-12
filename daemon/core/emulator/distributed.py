@@ -224,18 +224,20 @@ class DistributedController:
         self.tunnels[key] = tunnel
         return tunnel
 
-    def tunnel_key(self, n1_id: int, n2_id: int) -> int:
+    def tunnel_key(self, node1_id: int, node2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
         The hash(n1num), hash(n2num) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
-        :param n1_id: node one id
-        :param n2_id: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :return: tunnel key for the node pair
         """
-        logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
+        logging.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
         key = (
-            (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
+            (self.session.id << 16)
+            ^ utils.hashkey(node1_id)
+            ^ (utils.hashkey(node2_id) << 8)
         )
         return key & 0xFFFFFFFF

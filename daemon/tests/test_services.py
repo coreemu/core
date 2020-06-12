@@ -206,23 +206,23 @@ class TestServices:
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
         file_name = my_service.configs[0]
-        file_data_one = "# custom file one"
-        file_data_two = "# custom file two"
+        file_data1 = "# custom file one"
+        file_data2 = "# custom file two"
         session.services.set_service_file(
-            node_one.id, my_service.name, file_name, file_data_one
+            node1.id, my_service.name, file_name, file_data1
         )
         session.services.set_service_file(
-            node_two.id, my_service.name, file_name, file_data_two
+            node2.id, my_service.name, file_name, file_data2
         )
 
         # when
-        custom_service_one = session.services.get_service(node_one.id, my_service.name)
-        session.services.create_service_files(node_one, custom_service_one)
-        custom_service_two = session.services.get_service(node_two.id, my_service.name)
-        session.services.create_service_files(node_two, custom_service_two)
+        custom_service1 = session.services.get_service(node1.id, my_service.name)
+        session.services.create_service_files(node1, custom_service1)
+        custom_service2 = session.services.get_service(node2.id, my_service.name)
+        session.services.create_service_files(node2, custom_service2)
 
     def test_service_import(self):
         """

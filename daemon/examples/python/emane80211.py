@@ -43,7 +43,7 @@ def main():
         node = session.add_node(CoreNode, options=options)
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
-        session.add_link(node.id, emane_network.id, interface_one=interface)
+        session.add_link(node.id, emane_network.id, interface1_data=interface)
 
     # instantiate session
     session.instantiate()
