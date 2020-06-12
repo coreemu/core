@@ -1040,7 +1040,7 @@ class CoreNetworkBase(NodeBase):
         :return: interface the provided network is linked to
         """
         for netif in self.netifs():
-            if getattr(netif, "othernet", None) == net:
+            if netif.othernet == net:
                 return netif
         return None
 
