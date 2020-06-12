@@ -65,7 +65,7 @@ class TestLinks:
         assert node_one.all_link_data()
         assert node_two.netif(interface_two.id)
 
-    def test_net_to_net(self, session):
+    def test_add_net_to_net(self, session):
         # given
         node_one = session.add_node(SwitchNode)
         node_two = session.add_node(SwitchNode)
