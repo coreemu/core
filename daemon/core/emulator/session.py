@@ -319,8 +319,8 @@ class Session:
         self,
         node_one_id: int,
         node_two_id: int,
-        interface_one_id: int,
-        interface_two_id: int,
+        interface_one_id: int = None,
+        interface_two_id: int = None,
         link_type: LinkTypes = LinkTypes.WIRED,
     ) -> None:
         """

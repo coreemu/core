@@ -788,7 +788,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
         link_options.key = message.get_tlv(LinkTlvs.KEY.value)
         link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
-
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
                 node_one_id, node_two_id, interface_one, interface_two, link_options
