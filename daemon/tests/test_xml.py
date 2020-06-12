@@ -304,7 +304,7 @@ class TestXml:
 
         # create link
         link_options = LinkOptions()
-        link_options.per = 10.5
+        link_options.loss = 10.5
         link_options.bandwidth = 50000
         link_options.jitter = 10
         link_options.delay = 30
@@ -347,7 +347,7 @@ class TestXml:
             node = session.nodes[node_id]
             links += node.all_link_data()
         link = links[0]
-        assert link_options.per == link.per
+        assert link_options.loss == link.loss
         assert link_options.bandwidth == link.bandwidth
         assert link_options.jitter == link.jitter
         assert link_options.delay == link.delay
@@ -371,7 +371,7 @@ class TestXml:
 
         # create link
         link_options = LinkOptions()
-        link_options.per = 10.5
+        link_options.loss = 10.5
         link_options.bandwidth = 50000
         link_options.jitter = 10
         link_options.delay = 30
@@ -416,7 +416,7 @@ class TestXml:
             node = session.nodes[node_id]
             links += node.all_link_data()
         link = links[0]
-        assert link_options.per == link.per
+        assert link_options.loss == link.loss
         assert link_options.bandwidth == link.bandwidth
         assert link_options.jitter == link.jitter
         assert link_options.delay == link.delay
@@ -443,7 +443,7 @@ class TestXml:
         link_options_one.unidirectional = 1
         link_options_one.bandwidth = 5000
         link_options_one.delay = 10
-        link_options_one.per = 10.5
+        link_options_one.loss = 10.5
         link_options_one.dup = 5
         link_options_one.jitter = 5
         session.add_link(
@@ -453,7 +453,7 @@ class TestXml:
         link_options_two.unidirectional = 1
         link_options_two.bandwidth = 10000
         link_options_two.delay = 20
-        link_options_two.per = 10
+        link_options_two.loss = 10
         link_options_two.dup = 10
         link_options_two.jitter = 10
         session.update_link(
@@ -504,11 +504,11 @@ class TestXml:
         link_two = links[1]
         assert link_options_one.bandwidth == link_one.bandwidth
         assert link_options_one.delay == link_one.delay
-        assert link_options_one.per == link_one.per
+        assert link_options_one.loss == link_one.loss
         assert link_options_one.dup == link_one.dup
         assert link_options_one.jitter == link_one.jitter
         assert link_options_two.bandwidth == link_two.bandwidth
         assert link_options_two.delay == link_two.delay
-        assert link_options_two.per == link_two.per
+        assert link_options_two.loss == link_two.loss
         assert link_options_two.dup == link_two.dup
         assert link_options_two.jitter == link_two.jitter

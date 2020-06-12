@@ -223,7 +223,7 @@ class LinkConfigurationDialog(Dialog):
         duplicate = get_int(self.duplicate)
         loss = get_float(self.loss)
         options = core_pb2.LinkOptions(
-            bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, per=loss
+            bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, loss=loss
         )
         link.options.CopyFrom(options)
 
@@ -252,7 +252,7 @@ class LinkConfigurationDialog(Dialog):
                 jitter=down_jitter,
                 delay=down_delay,
                 dup=down_duplicate,
-                per=down_loss,
+                loss=down_loss,
                 unidirectional=True,
             )
             self.edge.asymmetric_link = core_pb2.Link(
@@ -317,12 +317,12 @@ class LinkConfigurationDialog(Dialog):
             self.bandwidth.set(str(link.options.bandwidth))
             self.jitter.set(str(link.options.jitter))
             self.duplicate.set(str(link.options.dup))
-            self.loss.set(str(link.options.per))
+            self.loss.set(str(link.options.loss))
             self.delay.set(str(link.options.delay))
         if not self.is_symmetric:
             asym_link = self.edge.asymmetric_link
             self.down_bandwidth.set(str(asym_link.options.bandwidth))
             self.down_jitter.set(str(asym_link.options.jitter))
             self.down_duplicate.set(str(asym_link.options.dup))
-            self.down_loss.set(str(asym_link.options.per))
+            self.down_loss.set(str(asym_link.options.loss))
             self.down_delay.set(str(asym_link.options.delay))

@@ -482,7 +482,7 @@ class CoreNetwork(CoreNetworkBase):
         netem = "netem"
         delay = options.delay
         changed = max(changed, netif.setparam("delay", delay))
-        loss = options.per
+        loss = options.loss
         if loss is not None:
             loss = float(loss)
         changed = max(changed, netif.setparam("loss", loss))
@@ -939,7 +939,7 @@ class PtpNet(CoreNetwork):
             unidirectional=unidirectional,
             delay=if1.getparam("delay"),
             bandwidth=if1.getparam("bw"),
-            per=if1.getparam("loss"),
+            loss=if1.getparam("loss"),
             dup=if1.getparam("duplicate"),
             jitter=if1.getparam("jitter"),
             interface1_id=if1.node.getifindex(if1),
@@ -970,7 +970,7 @@ class PtpNet(CoreNetwork):
                 node2_id=if1.node.id,
                 delay=if2.getparam("delay"),
                 bandwidth=if2.getparam("bw"),
-                per=if2.getparam("loss"),
+                loss=if2.getparam("loss"),
                 dup=if2.getparam("duplicate"),
                 jitter=if2.getparam("jitter"),
                 unidirectional=1,

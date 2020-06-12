@@ -338,7 +338,7 @@ class BasicRangeModel(WirelessModel):
                 options = LinkOptions(
                     bandwidth=self.bw,
                     delay=self.delay,
-                    per=self.loss,
+                    loss=self.loss,
                     jitter=self.jitter,
                 )
                 self.wlan.linkconfig(netif, options)

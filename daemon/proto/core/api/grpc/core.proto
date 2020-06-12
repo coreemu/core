@@ -719,7 +719,7 @@ message LinkOptions {
     int32 key = 3;
     int32 mburst = 4;
     int32 mer = 5;
-    float per = 6;
+    float loss = 6;
     int64 bandwidth = 7;
     int32 burst = 8;
     int64 delay = 9;

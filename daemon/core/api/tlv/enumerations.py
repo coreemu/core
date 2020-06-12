@@ -59,7 +59,7 @@ class LinkTlvs(Enum):
     N2_NUMBER = 0x02
     DELAY = 0x03
     BANDWIDTH = 0x04
-    PER = 0x05
+    LOSS = 0x05
     DUP = 0x06
     JITTER = 0x07
     MER = 0x08
