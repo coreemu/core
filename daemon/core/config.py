@@ -4,7 +4,7 @@ Common support for configurable CORE objects.
 
 import logging
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
@@ -29,9 +29,9 @@ class ConfigGroup:
         :param start: configurations start index for this group
         :param stop: configurations stop index for this group
         """
-        self.name = name
-        self.start = start
-        self.stop = stop
+        self.name: str = name
+        self.start: int = start
+        self.stop: int = stop
 
 
 class Configuration:
@@ -56,18 +56,21 @@ class Configuration:
         :param default: default value for configuration
         :param options: list options if this is a configuration with a combobox
         """
-        self.id = _id
-        self.type = _type
-        self.default = default
+        self.id: str = _id
+        self.type: ConfigDataTypes = _type
+        self.default: str = default
         if not options:
             options = []
-        self.options = options
+        self.options: List[str] = options
         if not label:
             label = _id
-        self.label = label
+        self.label: str = label
 
     def __str__(self):
-        return f"{self.__class__.__name__}(id={self.id}, type={self.type}, default={self.default}, options={self.options})"
+        return (
+            f"{self.__class__.__name__}(id={self.id}, type={self.type}, "
+            f"default={self.default}, options={self.options})"
+        )
 
 
 class ConfigurableOptions:
@@ -75,9 +78,9 @@ class ConfigurableOptions:
     Provides a base for defining configuration options within CORE.
     """
 
-    name = None
-    bitmap = None
-    options = []
+    name: Optional[str] = None
+    bitmap: Optional[str] = None
+    options: List[Configuration] = []
 
     @classmethod
     def configurations(cls) -> List[Configuration]:
@@ -115,8 +118,8 @@ class ConfigurableManager:
     nodes.
     """
 
-    _default_node = -1
-    _default_type = _default_node
+    _default_node: int = -1
+    _default_type: int = _default_node
 
     def __init__(self) -> None:
         """
@@ -243,8 +246,8 @@ class ModelManager(ConfigurableManager):
         Creates a ModelManager object.
         """
         super().__init__()
-        self.models = {}
-        self.node_models = {}
+        self.models: Dict[str, Any] = {}
+        self.node_models: Dict[int, str] = {}
 
     def set_model_config(
         self, node_id: int, model_name: str, config: Dict[str, str] = None
