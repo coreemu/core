@@ -11,6 +11,7 @@ except ImportError:
     try:
         from emanesh import manifest
     except ImportError:
+        manifest = None
         logging.debug("compatible emane python bindings not installed")
 
 

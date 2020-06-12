@@ -3,7 +3,7 @@ Defines Emane Models used within CORE.
 """
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
@@ -25,19 +25,23 @@ class EmaneModel(WirelessModel):
     """
 
     # default mac configuration settings
-    mac_library = None
-    mac_xml = None
-    mac_defaults = {}
-    mac_config = []
+    mac_library: Optional[str] = None
+    mac_xml: Optional[str] = None
+    mac_defaults: Dict[str, str] = {}
+    mac_config: List[Configuration] = []
 
     # default phy configuration settings, using the universal model
-    phy_library = None
-    phy_xml = "emanephy.xml"
-    phy_defaults = {"subid": "1", "propagationmodel": "2ray", "noisemode": "none"}
-    phy_config = []
+    phy_library: Optional[str] = None
+    phy_xml: str = "emanephy.xml"
+    phy_defaults: Dict[str, str] = {
+        "subid": "1",
+        "propagationmodel": "2ray",
+        "noisemode": "none",
+    }
+    phy_config: List[Configuration] = []
 
     # support for external configurations
-    external_config = [
+    external_config: List[Configuration] = [
         Configuration("external", ConfigDataTypes.BOOL, default="0"),
         Configuration(
             "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
@@ -47,7 +51,7 @@ class EmaneModel(WirelessModel):
         ),
     ]
 
-    config_ignore = set()
+    config_ignore: Set[str] = set()
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

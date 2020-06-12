@@ -1090,12 +1090,12 @@ class WlanNode(CoreNetwork):
 
     def update_mobility(self, config: Dict[str, str]) -> None:
         if not self.mobility:
-            raise ValueError(f"no mobility set to update for node({self.id})")
+            raise CoreError(f"no mobility set to update for node({self.name})")
         self.mobility.update_config(config)
 
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
-            raise ValueError(f"no model set to update for node({self.id})")
+            raise CoreError(f"no model set to update for node({self.name})")
         logging.debug(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )

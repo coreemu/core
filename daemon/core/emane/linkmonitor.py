@@ -2,7 +2,7 @@ import logging
 import sched
 import threading
 import time
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import netaddr
 from lxml import etree
@@ -17,28 +17,29 @@ except ImportError:
     try:
         from emanesh import shell
     except ImportError:
+        shell = None
         logging.debug("compatible emane python bindings not installed")
 
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
 
-DEFAULT_PORT = 47_000
-MAC_COMPONENT_INDEX = 1
-EMANE_RFPIPE = "rfpipemaclayer"
-EMANE_80211 = "ieee80211abgmaclayer"
-EMANE_TDMA = "tdmaeventschedulerradiomodel"
-SINR_TABLE = "NeighborStatusTable"
-NEM_SELF = 65535
+DEFAULT_PORT: int = 47_000
+MAC_COMPONENT_INDEX: int = 1
+EMANE_RFPIPE: str = "rfpipemaclayer"
+EMANE_80211: str = "ieee80211abgmaclayer"
+EMANE_TDMA: str = "tdmaeventschedulerradiomodel"
+SINR_TABLE: str = "NeighborStatusTable"
+NEM_SELF: int = 65535
 
 
 class LossTable:
     def __init__(self, losses: Dict[float, float]) -> None:
-        self.losses = losses
-        self.sinrs = sorted(self.losses.keys())
-        self.loss_lookup = {}
+        self.losses: Dict[float, float] = losses
+        self.sinrs: List[float] = sorted(self.losses.keys())
+        self.loss_lookup: Dict[int, float] = {}
         for index, value in enumerate(self.sinrs):
             self.loss_lookup[index] = self.losses[value]
-        self.mac_id = None
+        self.mac_id: Optional[str] = None
 
     def get_loss(self, sinr: float) -> float:
         index = self._get_index(sinr)
@@ -54,11 +55,11 @@ class LossTable:
 
 class EmaneLink:
     def __init__(self, from_nem: int, to_nem: int, sinr: float) -> None:
-        self.from_nem = from_nem
-        self.to_nem = to_nem
-        self.sinr = sinr
-        self.last_seen = None
-        self.updated = False
+        self.from_nem: int = from_nem
+        self.to_nem: int = to_nem
+        self.sinr: float = sinr
+        self.last_seen: Optional[float] = None
+        self.updated: bool = False
         self.touch()
 
     def update(self, sinr: float) -> None:
@@ -78,9 +79,11 @@ class EmaneLink:
 
 class EmaneClient:
     def __init__(self, address: str) -> None:
-        self.address = address
-        self.client = shell.ControlPortClient(self.address, DEFAULT_PORT)
-        self.nems = {}
+        self.address: str = address
+        self.client: shell.ControlPortClient = shell.ControlPortClient(
+            self.address, DEFAULT_PORT
+        )
+        self.nems: Dict[int, LossTable] = {}
         self.setup()
 
     def setup(self) -> None:
@@ -174,15 +177,15 @@ class EmaneClient:
 
 class EmaneLinkMonitor:
     def __init__(self, emane_manager: "EmaneManager") -> None:
-        self.emane_manager = emane_manager
-        self.clients = []
-        self.links = {}
-        self.complete_links = set()
-        self.loss_threshold = None
-        self.link_interval = None
-        self.link_timeout = None
-        self.scheduler = None
-        self.running = False
+        self.emane_manager: "EmaneManager" = emane_manager
+        self.clients: List[EmaneClient] = []
+        self.links: Dict[Tuple[int, int], EmaneLink] = {}
+        self.complete_links: Set[Tuple[int, int]] = set()
+        self.loss_threshold: Optional[int] = None
+        self.link_interval: Optional[int] = None
+        self.link_timeout: Optional[int] = None
+        self.scheduler: Optional[sched.scheduler] = None
+        self.running: bool = False
 
     def start(self) -> None:
         self.loss_threshold = int(self.emane_manager.get_config("loss_threshold"))

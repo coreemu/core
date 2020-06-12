@@ -16,13 +16,16 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     TransportType,
 )
+from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
+    from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel
+    from core.location.mobility import WirelessModel, WayPointMobility
 
+    OptionalEmaneModel = Optional[EmaneModel]
     WirelessModelType = Type[WirelessModel]
 
 try:
@@ -31,6 +34,7 @@ except ImportError:
     try:
         from emanesh.events import LocationEvent
     except ImportError:
+        LocationEvent = None
         logging.debug("compatible emane python bindings not installed")
 
 
@@ -41,10 +45,10 @@ class EmaneNet(CoreNetworkBase):
     Emane controller object that exists in a session.
     """
 
-    apitype = NodeTypes.EMANE
-    linktype = LinkTypes.WIRED
-    type = "wlan"
-    is_emane = True
+    apitype: NodeTypes = NodeTypes.EMANE
+    linktype: LinkTypes = LinkTypes.WIRED
+    type: str = "wlan"
+    is_emane: bool = True
 
     def __init__(
         self,
@@ -55,10 +59,10 @@ class EmaneNet(CoreNetworkBase):
         server: DistributedServer = None,
     ) -> None:
         super().__init__(session, _id, name, start, server)
-        self.conf = ""
-        self.nemidmap = {}
-        self.model = None
-        self.mobility = None
+        self.conf: str = ""
+        self.nemidmap: Dict[CoreInterface, int] = {}
+        self.model: "OptionalEmaneModel" = None
+        self.mobility: Optional[WayPointMobility] = None
 
     def linkconfig(
         self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
@@ -84,11 +88,11 @@ class EmaneNet(CoreNetworkBase):
 
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
-            raise ValueError("no model set to update for node(%s)", self.id)
+            raise CoreError(f"no model set to update for node({self.name})")
         logging.info(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
-        self.model.set_configs(config, node_id=self.id)
+        self.model.update_config(config)
 
     def setmodel(self, model: "WirelessModelType", config: Dict[str, str]) -> None:
         """

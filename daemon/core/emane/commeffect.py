@@ -22,6 +22,7 @@ except ImportError:
     try:
         from emanesh.events.commeffectevent import CommEffectEvent
     except ImportError:
+        CommEffectEvent = None
         logging.debug("compatible emane python bindings not installed")
 
 
@@ -38,16 +39,15 @@ def convert_none(x: float) -> int:
 
 
 class EmaneCommEffectModel(emanemodel.EmaneModel):
-    name = "emane_commeffect"
-
-    shim_library = "commeffectshim"
-    shim_xml = "commeffectshim.xml"
-    shim_defaults = {}
-    config_shim = []
+    name: str = "emane_commeffect"
+    shim_library: str = "commeffectshim"
+    shim_xml: str = "commeffectshim.xml"
+    shim_defaults: Dict[str, str] = {}
+    config_shim: List[Configuration] = []
 
     # comm effect does not need the default phy and external configurations
-    phy_config = []
-    external_config = []
+    phy_config: List[Configuration] = []
+    external_config: List[Configuration] = []
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

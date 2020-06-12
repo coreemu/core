@@ -70,11 +70,13 @@ class EmaneManager(ModelManager):
     controlling the EMANE daemons.
     """
 
-    name = "emane"
-    config_type = RegisterTlvs.EMULATION_SERVER
-    SUCCESS, NOT_NEEDED, NOT_READY = (0, 1, 2)
-    EVENTCFGVAR = "LIBEMANEEVENTSERVICECONFIG"
-    DEFAULT_LOG_LEVEL = 3
+    name: str = "emane"
+    config_type: RegisterTlvs = RegisterTlvs.EMULATION_SERVER
+    SUCCESS: int = 0
+    NOT_NEEDED: int = 1
+    NOT_READY: int = 2
+    EVENTCFGVAR: str = "LIBEMANEEVENTSERVICECONFIG"
+    DEFAULT_LOG_LEVEL: int = 3
 
     def __init__(self, session: "Session") -> None:
         """
@@ -84,29 +86,29 @@ class EmaneManager(ModelManager):
         :return: nothing
         """
         super().__init__()
-        self.session = session
-        self._emane_nets = {}
-        self._emane_node_lock = threading.Lock()
+        self.session: "Session" = session
+        self._emane_nets: Dict[int, EmaneNet] = {}
+        self._emane_node_lock: threading.Lock = threading.Lock()
         # port numbers are allocated from these counters
-        self.platformport = self.session.options.get_config_int(
+        self.platformport: int = self.session.options.get_config_int(
             "emane_platform_port", 8100
         )
-        self.transformport = self.session.options.get_config_int(
+        self.transformport: int = self.session.options.get_config_int(
             "emane_transform_port", 8200
         )
-        self.doeventloop = False
-        self.eventmonthread = None
+        self.doeventloop: bool = False
+        self.eventmonthread: Optional[threading.Thread] = None
 
         # model for global EMANE configuration options
-        self.emane_config = EmaneGlobalModel(session)
+        self.emane_config: EmaneGlobalModel = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
 
         # link  monitor
-        self.link_monitor = EmaneLinkMonitor(self)
+        self.link_monitor: EmaneLinkMonitor = EmaneLinkMonitor(self)
 
-        self.service = None
-        self.eventchannel = None
-        self.event_device = None
+        self.service: Optional[EventService] = None
+        self.eventchannel: Optional[Tuple[str, int, str]] = None
+        self.event_device: Optional[str] = None
         self.emane_check()
 
     def getifcconfig(
@@ -890,12 +892,12 @@ class EmaneGlobalModel:
     Global EMANE configuration options.
     """
 
-    name = "emane"
-    bitmap = None
+    name: str = "emane"
+    bitmap: Optional[str] = None
 
     def __init__(self, session: "Session") -> None:
-        self.session = session
-        self.core_config = [
+        self.session: "Session" = session
+        self.core_config: List[Configuration] = [
             Configuration(
                 _id="platform_id_start",
                 _type=ConfigDataTypes.INT32,
