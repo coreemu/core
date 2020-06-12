@@ -101,9 +101,9 @@ def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
 
 class CoreXmlDeployment:
     def __init__(self, session: "Session", scenario: etree.Element) -> None:
-        self.session = session
-        self.scenario = scenario
-        self.root = etree.SubElement(
+        self.session: "Session" = session
+        self.scenario: etree.Element = scenario
+        self.root: etree.SubElement = etree.SubElement(
             scenario, "container", id="TestBed", name="TestBed"
         )
         self.add_deployment()

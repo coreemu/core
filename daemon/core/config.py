@@ -4,7 +4,7 @@ Common support for configurable CORE objects.
 
 import logging
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Dict, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Type, Union
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
@@ -136,7 +136,8 @@ class ConfigurableManager:
         """
         Clears all configurations or configuration for a specific node.
 
-        :param node_id: node id to clear configurations for, default is None and clears all configurations
+        :param node_id: node id to clear configurations for, default is None and clears
+            all configurations
         :return: nothing
         """
         if not node_id:
@@ -222,7 +223,7 @@ class ConfigurableManager:
             result = node_configs.get(config_type)
         return result
 
-    def get_all_configs(self, node_id: int = _default_node) -> List[Dict[str, str]]:
+    def get_all_configs(self, node_id: int = _default_node) -> Dict[str, Any]:
         """
         Retrieve all current configuration types for a node.
 

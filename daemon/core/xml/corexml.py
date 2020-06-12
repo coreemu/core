@@ -124,9 +124,9 @@ def add_configuration(parent: etree.Element, name: str, value: str) -> None:
 
 class NodeElement:
     def __init__(self, session: "Session", node: NodeBase, element_name: str) -> None:
-        self.session = session
-        self.node = node
-        self.element = etree.Element(element_name)
+        self.session: "Session" = session
+        self.node: NodeBase = node
+        self.element: etree.Element = etree.Element(element_name)
         add_attribute(self.element, "id", node.id)
         add_attribute(self.element, "name", node.name)
         add_attribute(self.element, "icon", node.icon)
@@ -151,8 +151,8 @@ class NodeElement:
 
 class ServiceElement:
     def __init__(self, service: Type[CoreService]) -> None:
-        self.service = service
-        self.element = etree.Element("service")
+        self.service: Type[CoreService] = service
+        self.element: etree.Element = etree.Element("service")
         add_attribute(self.element, "name", service.name)
         self.add_directories()
         self.add_startup()
@@ -268,10 +268,10 @@ class NetworkElement(NodeElement):
 
 class CoreXmlWriter:
     def __init__(self, session: "Session") -> None:
-        self.session = session
-        self.scenario = etree.Element("scenario")
-        self.networks = None
-        self.devices = None
+        self.session: "Session" = session
+        self.scenario: etree.Element = etree.Element("scenario")
+        self.networks: etree.SubElement = etree.SubElement(self.scenario, "networks")
+        self.devices: etree.SubElement = etree.SubElement(self.scenario, "devices")
         self.write_session()
 
     def write_session(self) -> None:
@@ -362,13 +362,11 @@ class CoreXmlWriter:
     def write_emane_configs(self) -> None:
         emane_global_configuration = create_emane_config(self.session)
         self.scenario.append(emane_global_configuration)
-
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
             if not all_configs:
                 continue
-
             for model_name in all_configs:
                 config = all_configs[model_name]
                 logging.debug(
@@ -453,9 +451,6 @@ class CoreXmlWriter:
             self.scenario.append(node_types)
 
     def write_nodes(self) -> List[LinkData]:
-        self.networks = etree.SubElement(self.scenario, "networks")
-        self.devices = etree.SubElement(self.scenario, "devices")
-
         links = []
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
@@ -472,7 +467,6 @@ class CoreXmlWriter:
 
             # add known links
             links.extend(node.all_link_data())
-
         return links
 
     def write_network(self, node: NodeBase) -> None:
@@ -597,8 +591,8 @@ class CoreXmlWriter:
 
 class CoreXmlReader:
     def __init__(self, session: "Session") -> None:
-        self.session = session
-        self.scenario = None
+        self.session: "Session" = session
+        self.scenario: Optional[etree.ElementTree] = None
 
     def read(self, file_name: str) -> None:
         xml_tree = etree.parse(file_name)
