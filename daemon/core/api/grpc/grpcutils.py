@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type, Union
 
 import grpc
 import netaddr
@@ -190,7 +190,8 @@ def convert_value(value: Any) -> str:
 
 
 def get_config_options(
-    config: Dict[str, str], configurable_options: Type[ConfigurableOptions]
+    config: Dict[str, str],
+    configurable_options: Union[ConfigurableOptions, Type[ConfigurableOptions]],
 ) -> Dict[str, common_pb2.ConfigOption]:
     """
     Retrieve configuration options in a form that is used by the grpc server.
@@ -418,7 +419,7 @@ def service_configuration(session: Session, config: ServiceConfig) -> None:
         service.shutdown = tuple(config.shutdown)
 
 
-def get_service_configuration(service: Type[CoreService]) -> NodeServiceData:
+def get_service_configuration(service: CoreService) -> NodeServiceData:
     """
     Convenience for converting a service to service data proto.
 

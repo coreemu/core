@@ -5,7 +5,7 @@ gRpc client for interfacing with CORE.
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, Iterable, List
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional
 
 import grpc
 
@@ -108,7 +108,7 @@ class InterfaceHelper:
         :param ip6_prefix: ip6 prefix to use for generation
         :raises ValueError: when both ip4 and ip6 prefixes have not been provided
         """
-        self.prefixes = IpPrefixes(ip4_prefix, ip6_prefix)
+        self.prefixes: IpPrefixes = IpPrefixes(ip4_prefix, ip6_prefix)
 
     def create_interface(
         self, node_id: int, interface_id: int, name: str = None, mac: str = None
@@ -177,10 +177,10 @@ class CoreGrpcClient:
 
         :param address: grpc server address to connect to
         """
-        self.address = address
-        self.stub = None
-        self.channel = None
-        self.proxy = proxy
+        self.address: str = address
+        self.stub: Optional[core_pb2_grpc.CoreApiStub] = None
+        self.channel: Optional[grpc.Channel] = None
+        self.proxy: bool = proxy
 
     def start_session(
         self,

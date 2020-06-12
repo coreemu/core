@@ -140,9 +140,9 @@ class EventStreamer:
         :param session: session to process events for
         :param event_types: types of events to process
         """
-        self.session = session
-        self.event_types = event_types
-        self.queue = Queue()
+        self.session: Session = session
+        self.event_types: Iterable[core_pb2.EventType] = event_types
+        self.queue: Queue = Queue()
         self.add_handlers()
 
     def add_handlers(self) -> None:

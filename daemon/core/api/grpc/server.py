@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Iterable, Type
+from typing import Iterable, Optional, Type
 
 import grpc
 from grpc import ServicerContext
@@ -131,9 +131,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def __init__(self, coreemu: CoreEmu) -> None:
         super().__init__()
-        self.coreemu = coreemu
-        self.running = True
-        self.server = None
+        self.coreemu: CoreEmu = coreemu
+        self.running: bool = True
+        self.server: Optional[grpc.Server] = None
         atexit.register(self._exit_handler)
 
     def _exit_handler(self) -> None:
