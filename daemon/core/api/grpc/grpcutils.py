@@ -59,13 +59,13 @@ def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
     :param interface_proto: interface proto
     :return: interface data
     """
-    interface = None
+    interface_data = None
     if interface_proto:
         name = interface_proto.name if interface_proto.name else None
         mac = interface_proto.mac if interface_proto.mac else None
         ip4 = interface_proto.ip4 if interface_proto.ip4 else None
         ip6 = interface_proto.ip6 if interface_proto.ip6 else None
-        interface = InterfaceData(
+        interface_data = InterfaceData(
             id=interface_proto.id,
             name=name,
             mac=mac,
@@ -74,7 +74,7 @@ def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
             ip6=ip6,
             ip6_mask=interface_proto.ip6mask,
         )
-    return interface
+    return interface_data
 
 
 def add_link_data(
