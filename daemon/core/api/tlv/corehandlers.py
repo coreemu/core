@@ -12,6 +12,7 @@ import threading
 import time
 from itertools import repeat
 from queue import Empty, Queue
+from typing import Optional
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
@@ -39,6 +40,7 @@ from core.emulator.enumerations import (
     NodeTypes,
     RegisterTlvs,
 )
+from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
@@ -83,7 +85,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         thread.start()
         self.handler_threads.append(thread)
 
-        self.session = None
+        self.session: Optional[Session] = None
         self.coreemu = server.coreemu
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -176,7 +178,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 node_count_list.append(str(session.get_node_count()))
 
-                date_list.append(time.ctime(session._state_time))
+                date_list.append(time.ctime(session.state_time))
 
                 thumb = session.thumbnail
                 if not thumb:
@@ -1819,7 +1821,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         # find all nodes and links
         links_data = []
-        with self.session._nodes_lock:
+        with self.session.nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 self.session.broadcast_node(node, MessageFlags.ADD)
@@ -1897,8 +1899,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         # TODO: send location info
 
         # send hook scripts
-        for state in sorted(self.session._hooks.keys()):
-            for file_name, config_data in self.session._hooks[state]:
+        for state in sorted(self.session.hooks.keys()):
+            for file_name, config_data in self.session.hooks[state]:
                 file_data = FileData(
                     message_type=MessageFlags.ADD,
                     name=str(file_name),

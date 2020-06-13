@@ -133,7 +133,7 @@ class TestGrpc:
         assert wlan_node.id in session.nodes
         assert session.nodes[node1.id].netif(0) is not None
         assert session.nodes[node2.id].netif(0) is not None
-        hook_file, hook_data = session._hooks[EventTypes.RUNTIME_STATE][0]
+        hook_file, hook_data = session.hooks[EventTypes.RUNTIME_STATE][0]
         assert hook_file == hook.file
         assert hook_data == hook.data
         assert session.location.refxyz == (location_x, location_y, location_z)

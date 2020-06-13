@@ -930,8 +930,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session_id, context)
         hooks = []
-        for state in session._hooks:
-            state_hooks = session._hooks[state]
+        for state in session.hooks:
+            state_hooks = session.hooks[state]
             for file_name, file_data in state_hooks:
                 hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
                 hooks.append(hook)

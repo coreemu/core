@@ -325,7 +325,13 @@ class CoreServices:
         """
         self.session = session
         # dict of default services tuples, key is node type
-        self.default_services = {}
+        self.default_services = {
+            "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
+            "PC": ("DefaultRoute",),
+            "prouter": (),
+            "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
+            "host": ("DefaultRoute", "SSH"),
+        }
         # dict of node ids to dict of custom services by name
         self.custom_services = {}
 

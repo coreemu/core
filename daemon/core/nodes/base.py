@@ -63,7 +63,7 @@ class NodeBase:
 
         self.session: "Session" = session
         if _id is None:
-            _id = session.get_node_id()
+            _id = session.next_node_id()
         self.id: int = _id
         if name is None:
             name = f"o{self.id}"

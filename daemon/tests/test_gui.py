@@ -382,7 +382,7 @@ class TestGui:
 
     def test_file_hook_add(self, coretlv: CoreHandler):
         state = EventTypes.DATACOLLECT_STATE
-        assert coretlv.session._hooks.get(state) is None
+        assert coretlv.session.hooks.get(state) is None
         file_name = "test.sh"
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
@@ -396,7 +396,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        hooks = coretlv.session._hooks.get(state)
+        hooks = coretlv.session.hooks.get(state)
         assert len(hooks) == 1
         name, data = hooks[0]
         assert file_name == name
