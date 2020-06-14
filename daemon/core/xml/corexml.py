@@ -45,11 +45,11 @@ def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T
     return value
 
 
-def get_float(element: etree.Element, name: str) -> float:
+def get_float(element: etree.Element, name: str) -> Optional[float]:
     return get_type(element, name, float)
 
 
-def get_int(element: etree.Element, name: str) -> int:
+def get_int(element: etree.Element, name: str) -> Optional[int]:
     return get_type(element, name, int)
 
 
@@ -529,13 +529,13 @@ class CoreXmlWriter:
 
     def create_link_element(self, link_data: LinkData) -> etree.Element:
         link_element = etree.Element("link")
-        add_attribute(link_element, "node_one", link_data.node1_id)
-        add_attribute(link_element, "node_two", link_data.node2_id)
+        add_attribute(link_element, "node1", link_data.node1_id)
+        add_attribute(link_element, "node2", link_data.node2_id)
 
         # check for interface one
         if link_data.interface1_id is not None:
             interface1 = self.create_interface_element(
-                "interface_one",
+                "interface1",
                 link_data.node1_id,
                 link_data.interface1_id,
                 link_data.interface1_mac,
@@ -549,7 +549,7 @@ class CoreXmlWriter:
         # check for interface two
         if link_data.interface2_id is not None:
             interface2 = self.create_interface_element(
-                "interface_two",
+                "interface2",
                 link_data.node2_id,
                 link_data.interface2_id,
                 link_data.interface2_mac,
@@ -932,16 +932,24 @@ class CoreXmlReader:
 
         node_sets = set()
         for link_element in link_elements.iterchildren():
-            node1_id = get_int(link_element, "node_one")
-            node2_id = get_int(link_element, "node_two")
+            node1_id = get_int(link_element, "node1")
+            if node1_id is None:
+                node1_id = get_int(link_element, "node_one")
+            node2_id = get_int(link_element, "node2")
+            if node2_id is None:
+                node2_id = get_int(link_element, "node_two")
             node_set = frozenset((node1_id, node2_id))
 
-            interface1_element = link_element.find("interface_one")
+            interface1_element = link_element.find("interface1")
+            if interface1_element is None:
+                interface1_element = link_element.find("interface_one")
             interface1_data = None
             if interface1_element is not None:
                 interface1_data = create_interface_data(interface1_element)
 
-            interface2_element = link_element.find("interface_two")
+            interface2_element = link_element.find("interface2")
+            if interface2_element is None:
+                interface2_element = link_element.find("interface_two")
             interface2_data = None
             if interface2_element is not None:
                 interface2_data = create_interface_data(interface2_element)
