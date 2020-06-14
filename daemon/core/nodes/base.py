@@ -41,7 +41,6 @@ class NodeBase:
 
     apitype: Optional[NodeTypes] = None
 
-    # TODO: appears start has no usage, verify and remove
     def __init__(
         self,
         session: "Session",
@@ -267,6 +266,12 @@ class CoreNodeBase(NodeBase):
         self.config_services: Dict[str, "ConfigService"] = {}
         self.nodedir: Optional[str] = None
         self.tmpnodedir: bool = False
+
+    def startup(self) -> None:
+        raise NotImplementedError
+
+    def shutdown(self) -> None:
+        raise NotImplementedError
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
