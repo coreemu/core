@@ -28,22 +28,19 @@ class PhysicalNode(CoreNodeBase):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        start: bool = True,
         server: DistributedServer = None,
     ) -> None:
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
         self.nodedir: Optional[str] = nodedir
-        self.up: bool = start
         self.lock: threading.RLock = threading.RLock()
         self._mounts: List[Tuple[str, str]] = []
-        if start:
-            self.startup()
 
     def startup(self) -> None:
         with self.lock:
             self.makenodedir()
+            self.up = True
 
     def shutdown(self) -> None:
         if not self.up:
@@ -144,7 +141,7 @@ class PhysicalNode(CoreNodeBase):
         """
         Apply tc queing disciplines using linkconfig.
         """
-        linux_bridge = CoreNetwork(session=self.session, start=False)
+        linux_bridge = CoreNetwork(self.session)
         linux_bridge.up = True
         linux_bridge.linkconfig(netif, options, netif2)
         del linux_bridge
@@ -244,7 +241,6 @@ class Rj45Node(CoreNodeBase):
         _id: int = None,
         name: str = None,
         mtu: int = 1500,
-        start: bool = True,
         server: DistributedServer = None,
     ) -> None:
         """
@@ -254,19 +250,16 @@ class Rj45Node(CoreNodeBase):
         :param _id: node id
         :param name: node name
         :param mtu: rj45 mtu
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         self.interface = CoreInterface(session, self, name, name, mtu, server)
         self.interface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
         self.ifindex: Optional[int] = None
         self.old_up: bool = False
         self.old_addrs: List[Tuple[str, Optional[str]]] = []
-        if start:
-            self.startup()
 
     def startup(self) -> None:
         """

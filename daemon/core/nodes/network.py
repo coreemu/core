@@ -264,7 +264,6 @@ class CoreNetwork(CoreNetworkBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         policy: NetworkPolicy = None,
     ) -> None:
@@ -274,12 +273,11 @@ class CoreNetwork(CoreNetworkBase):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param policy: network policy
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         if name is None:
             name = str(self.id)
         if policy is not None:
@@ -288,9 +286,6 @@ class CoreNetwork(CoreNetworkBase):
         sessionid = self.session.short_session_id()
         self.brname: str = f"b.{self.id}.{sessionid}"
         self.has_ebtables_chain: bool = False
-        if start:
-            self.startup()
-            ebq.startupdateloop(self)
 
     def host_cmd(
         self,
@@ -327,6 +322,7 @@ class CoreNetwork(CoreNetworkBase):
         self.net_client.create_bridge(self.brname)
         self.has_ebtables_chain = False
         self.up = True
+        ebq.startupdateloop(self)
 
     def shutdown(self) -> None:
         """
@@ -610,7 +606,6 @@ class GreTapBridge(CoreNetwork):
         localip: str = None,
         ttl: int = 255,
         key: int = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -628,7 +623,7 @@ class GreTapBridge(CoreNetwork):
         :param server: remote server node
             will run on, default is None for localhost
         """
-        CoreNetwork.__init__(self, session, _id, name, False, server, policy)
+        CoreNetwork.__init__(self, session, _id, name, server, policy)
         if key is None:
             key = self.session.id ^ self.id
         self.grekey: int = key
@@ -647,8 +642,6 @@ class GreTapBridge(CoreNetwork):
                 ttl=ttl,
                 key=self.grekey,
             )
-        if start:
-            self.startup()
 
     def startup(self) -> None:
         """
@@ -734,7 +727,6 @@ class CtrlNet(CoreNetwork):
         _id: int = None,
         name: str = None,
         hostid: int = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         assign_address: bool = True,
         updown_script: str = None,
@@ -748,7 +740,6 @@ class CtrlNet(CoreNetwork):
         :param name: node namee
         :param prefix: control network ipv4 prefix
         :param hostid: host id
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param assign_address: assigned address
@@ -761,7 +752,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address: bool = assign_address
         self.updown_script: Optional[str] = updown_script
         self.serverintf: Optional[str] = serverintf
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
 
     def add_addresses(self, index: int) -> None:
         """
@@ -1025,7 +1016,6 @@ class WlanNode(CoreNetwork):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         policy: NetworkPolicy = None,
     ) -> None:
@@ -1040,7 +1030,7 @@ class WlanNode(CoreNetwork):
             will run on, default is None for localhost
         :param policy: wlan policy
         """
-        super().__init__(session, _id, name, start, server, policy)
+        super().__init__(session, _id, name, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.model: Optional[WirelessModel] = None
         self.mobility: Optional[WayPointMobility] = None

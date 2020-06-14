@@ -7,7 +7,7 @@ import os
 import shutil
 import threading
 from threading import RLock
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 import netaddr
 
@@ -47,7 +47,6 @@ class NodeBase:
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -56,7 +55,6 @@ class NodeBase:
         :param session: CORE session object
         :param _id: id
         :param name: object name
-        :param start: start value
         :param server: remote server node
             will run on, default is None for localhost
         """
@@ -254,7 +252,6 @@ class CoreNodeBase(NodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -263,11 +260,10 @@ class CoreNodeBase(NodeBase):
         :param session: CORE session object
         :param _id: object id
         :param name: object name
-        :param start: boolean for starting
         :param server: remote server node
             will run on, default is None for localhost
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         self.config_services: Dict[str, "ConfigService"] = {}
         self.nodedir: Optional[str] = None
         self.tmpnodedir: bool = False
@@ -492,8 +488,8 @@ class CoreNode(CoreNodeBase):
     Provides standard core node logic.
     """
 
-    apitype = NodeTypes.DEFAULT
-    valid_address_types = {"inet", "inet6", "inet6link"}
+    apitype: NodeTypes = NodeTypes.DEFAULT
+    valid_address_types: Set[str] = {"inet", "inet6", "inet6link"}
 
     def __init__(
         self,
@@ -501,7 +497,6 @@ class CoreNode(CoreNodeBase):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -511,11 +506,10 @@ class CoreNode(CoreNodeBase):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         self.nodedir: Optional[str] = nodedir
         self.ctrlchnlname: str = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
@@ -526,8 +520,6 @@ class CoreNode(CoreNodeBase):
         self._mounts: List[Tuple[str, str]] = []
         use_ovs = session.options.get_config("ovs") == "True"
         self.node_net_client: LinuxNetClient = self.create_node_net_client(use_ovs)
-        if start:
-            self.startup()
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
@@ -981,15 +973,14 @@ class CoreNetworkBase(NodeBase):
     Base class for networks
     """
 
-    linktype = LinkTypes.WIRED
-    is_emane = False
+    linktype: LinkTypes = LinkTypes.WIRED
+    is_emane: bool = False
 
     def __init__(
         self,
         session: "Session",
         _id: int,
         name: str,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -998,11 +989,10 @@ class CoreNetworkBase(NodeBase):
         :param session: CORE session object
         :param _id: object id
         :param name: object name
-        :param start: should object start
         :param server: remote server node
             will run on, default is None for localhost
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         self.brname = None
         self._linked = {}
         self._linked_lock = threading.Lock()

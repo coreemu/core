@@ -55,10 +55,9 @@ class EmaneNet(CoreNetworkBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: DistributedServer = None,
     ) -> None:
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         self.conf: str = ""
         self.nemidmap: Dict[CoreInterface, int] = {}
         self.model: "OptionalEmaneModel" = None
