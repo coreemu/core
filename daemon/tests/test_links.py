@@ -80,7 +80,7 @@ class TestLinks:
         # given
         delay = 50
         bandwidth = 5000000
-        per = 25
+        loss = 25
         dup = 25
         jitter = 10
         node1 = session.add_node(CoreNode)
@@ -90,13 +90,13 @@ class TestLinks:
         interface1 = node1.netif(interface1_data.id)
         assert interface1.getparam("delay") != delay
         assert interface1.getparam("bw") != bandwidth
-        assert interface1.getparam("loss") != per
+        assert interface1.getparam("loss") != loss
         assert interface1.getparam("duplicate") != dup
         assert interface1.getparam("jitter") != jitter
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, per=per, dup=dup, jitter=jitter
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
         )
         session.update_link(
             node1.id, node2.id, interface1_id=interface1_data.id, options=options
@@ -105,7 +105,7 @@ class TestLinks:
         # then
         assert interface1.getparam("delay") == delay
         assert interface1.getparam("bw") == bandwidth
-        assert interface1.getparam("loss") == per
+        assert interface1.getparam("loss") == loss
         assert interface1.getparam("duplicate") == dup
         assert interface1.getparam("jitter") == jitter
 
@@ -113,7 +113,7 @@ class TestLinks:
         # given
         delay = 50
         bandwidth = 5000000
-        per = 25
+        loss = 25
         dup = 25
         jitter = 10
         node1 = session.add_node(SwitchNode)
@@ -123,13 +123,13 @@ class TestLinks:
         interface2 = node2.netif(interface2_data.id)
         assert interface2.getparam("delay") != delay
         assert interface2.getparam("bw") != bandwidth
-        assert interface2.getparam("loss") != per
+        assert interface2.getparam("loss") != loss
         assert interface2.getparam("duplicate") != dup
         assert interface2.getparam("jitter") != jitter
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, per=per, dup=dup, jitter=jitter
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
         )
         session.update_link(
             node1.id, node2.id, interface2_id=interface2_data.id, options=options
@@ -138,7 +138,7 @@ class TestLinks:
         # then
         assert interface2.getparam("delay") == delay
         assert interface2.getparam("bw") == bandwidth
-        assert interface2.getparam("loss") == per
+        assert interface2.getparam("loss") == loss
         assert interface2.getparam("duplicate") == dup
         assert interface2.getparam("jitter") == jitter
 
@@ -146,7 +146,7 @@ class TestLinks:
         # given
         delay = 50
         bandwidth = 5000000
-        per = 25
+        loss = 25
         dup = 25
         jitter = 10
         node1 = session.add_node(CoreNode)
@@ -158,18 +158,18 @@ class TestLinks:
         interface2 = node2.netif(interface2_data.id)
         assert interface1.getparam("delay") != delay
         assert interface1.getparam("bw") != bandwidth
-        assert interface1.getparam("loss") != per
+        assert interface1.getparam("loss") != loss
         assert interface1.getparam("duplicate") != dup
         assert interface1.getparam("jitter") != jitter
         assert interface2.getparam("delay") != delay
         assert interface2.getparam("bw") != bandwidth
-        assert interface2.getparam("loss") != per
+        assert interface2.getparam("loss") != loss
         assert interface2.getparam("duplicate") != dup
         assert interface2.getparam("jitter") != jitter
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, per=per, dup=dup, jitter=jitter
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
         )
         session.update_link(
             node1.id, node2.id, interface1_data.id, interface2_data.id, options
@@ -178,12 +178,12 @@ class TestLinks:
         # then
         assert interface1.getparam("delay") == delay
         assert interface1.getparam("bw") == bandwidth
-        assert interface1.getparam("loss") == per
+        assert interface1.getparam("loss") == loss
         assert interface1.getparam("duplicate") == dup
         assert interface1.getparam("jitter") == jitter
         assert interface2.getparam("delay") == delay
         assert interface2.getparam("bw") == bandwidth
-        assert interface2.getparam("loss") == per
+        assert interface2.getparam("loss") == loss
         assert interface2.getparam("duplicate") == dup
         assert interface2.getparam("jitter") == jitter
 

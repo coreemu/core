@@ -569,7 +569,7 @@ class CoreXmlWriter:
             options = etree.Element("options")
             add_attribute(options, "delay", link_data.delay)
             add_attribute(options, "bandwidth", link_data.bandwidth)
-            add_attribute(options, "per", link_data.per)
+            add_attribute(options, "loss", link_data.loss)
             add_attribute(options, "dup", link_data.dup)
             add_attribute(options, "jitter", link_data.jitter)
             add_attribute(options, "mer", link_data.mer)
@@ -947,37 +947,35 @@ class CoreXmlReader:
                 interface2_data = create_interface_data(interface2_element)
 
             options_element = link_element.find("options")
-            link_options = LinkOptions()
+            options = LinkOptions()
             if options_element is not None:
-                link_options.bandwidth = get_int(options_element, "bandwidth")
-                link_options.burst = get_int(options_element, "burst")
-                link_options.delay = get_int(options_element, "delay")
-                link_options.dup = get_int(options_element, "dup")
-                link_options.mer = get_int(options_element, "mer")
-                link_options.mburst = get_int(options_element, "mburst")
-                link_options.jitter = get_int(options_element, "jitter")
-                link_options.key = get_int(options_element, "key")
-                link_options.per = get_float(options_element, "per")
-                link_options.unidirectional = get_int(options_element, "unidirectional")
-                link_options.session = options_element.get("session")
-                link_options.emulation_id = get_int(options_element, "emulation_id")
-                link_options.network_id = get_int(options_element, "network_id")
-                link_options.opaque = options_element.get("opaque")
-                link_options.gui_attributes = options_element.get("gui_attributes")
+                options.bandwidth = get_int(options_element, "bandwidth")
+                options.burst = get_int(options_element, "burst")
+                options.delay = get_int(options_element, "delay")
+                options.dup = get_int(options_element, "dup")
+                options.mer = get_int(options_element, "mer")
+                options.mburst = get_int(options_element, "mburst")
+                options.jitter = get_int(options_element, "jitter")
+                options.key = get_int(options_element, "key")
+                options.loss = get_float(options_element, "loss")
+                if options.loss is None:
+                    options.loss = get_float(options_element, "per")
+                options.unidirectional = get_int(options_element, "unidirectional")
+                options.session = options_element.get("session")
+                options.emulation_id = get_int(options_element, "emulation_id")
+                options.network_id = get_int(options_element, "network_id")
+                options.opaque = options_element.get("opaque")
+                options.gui_attributes = options_element.get("gui_attributes")
 
-            if link_options.unidirectional == 1 and node_set in node_sets:
+            if options.unidirectional == 1 and node_set in node_sets:
                 logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.update_link(
-                    node1_id,
-                    node2_id,
-                    interface1_data.id,
-                    interface2_data.id,
-                    link_options,
+                    node1_id, node2_id, interface1_data.id, interface2_data.id, options
                 )
             else:
                 logging.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.add_link(
-                    node1_id, node2_id, interface1_data, interface2_data, link_options
+                    node1_id, node2_id, interface1_data, interface2_data, options
                 )
 
             node_sets.add(node_set)

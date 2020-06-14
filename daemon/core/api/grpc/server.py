@@ -881,21 +881,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         interface1_id = request.interface1_id
         interface2_id = request.interface2_id
         options_data = request.options
-        link_options = LinkOptions()
-        link_options.delay = options_data.delay
-        link_options.bandwidth = options_data.bandwidth
-        link_options.per = options_data.per
-        link_options.dup = options_data.dup
-        link_options.jitter = options_data.jitter
-        link_options.mer = options_data.mer
-        link_options.burst = options_data.burst
-        link_options.mburst = options_data.mburst
-        link_options.unidirectional = options_data.unidirectional
-        link_options.key = options_data.key
-        link_options.opaque = options_data.opaque
-        session.update_link(
-            node1_id, node2_id, interface1_id, interface2_id, link_options
+        options = LinkOptions(
+            delay=options_data.delay,
+            bandwidth=options_data.bandwidth,
+            loss=options_data.loss,
+            dup=options_data.dup,
+            jitter=options_data.jitter,
+            mer=options_data.mer,
+            burst=options_data.burst,
+            mburst=options_data.mburst,
+            unidirectional=options_data.unidirectional,
+            key=options_data.key,
+            opaque=options_data.opaque,
         )
+        session.update_link(node1_id, node2_id, interface1_id, interface2_id, options)
         return core_pb2.EditLinkResponse(result=True)
 
     def DeleteLink(

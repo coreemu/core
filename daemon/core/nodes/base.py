@@ -1134,7 +1134,7 @@ class CoreNetworkBase(NodeBase):
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
                 jitter=netif.getparam("jitter"),
-                per=netif.getparam("loss"),
+                loss=netif.getparam("loss"),
             )
 
             all_links.append(link_data)
@@ -1153,7 +1153,7 @@ class CoreNetworkBase(NodeBase):
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
                 jitter=netif.getparam("jitter"),
-                per=netif.getparam("loss"),
+                loss=netif.getparam("loss"),
             )
             netif.swapparams("_params_up")
 

@@ -94,7 +94,7 @@ def add_link_data(
     if options_data:
         options.delay = options_data.delay
         options.bandwidth = options_data.bandwidth
-        options.per = options_data.per
+        options.loss = options_data.loss
         options.dup = options_data.dup
         options.jitter = options_data.jitter
         options.mer = options_data.mer
@@ -343,7 +343,7 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
         key=link_data.key,
         mburst=link_data.mburst,
         mer=link_data.mer,
-        per=link_data.per,
+        loss=link_data.loss,
         bandwidth=link_data.bandwidth,
         burst=link_data.burst,
         delay=link_data.delay,

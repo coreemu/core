@@ -68,7 +68,7 @@ class LinkOptions:
     session: int = None
     delay: int = None
     bandwidth: int = None
-    per: float = None
+    loss: float = None
     dup: int = None
     jitter: int = None
     mer: int = None
