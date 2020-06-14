@@ -998,7 +998,6 @@ class Session:
         env["SESSION_NAME"] = str(self.name)
         env["SESSION_FILENAME"] = str(self.file_name)
         env["SESSION_USER"] = str(self.user)
-        env["SESSION_NODE_COUNT"] = str(self.get_node_count())
         if state:
             env["SESSION_STATE"] = str(self.state)
         # attempt to read and add environment config file
@@ -1067,8 +1066,8 @@ class Session:
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
-        node = _class(self, *args, **kwargs)
         with self.nodes_lock:
+            node = _class(self, *args, **kwargs)
             if node.id in self.nodes:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
