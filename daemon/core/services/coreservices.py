@@ -10,7 +10,7 @@ services.
 import enum
 import logging
 import time
-from typing import TYPE_CHECKING, Iterable, List, Tuple, Type
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple, Type
 
 from core import utils
 from core.constants import which
@@ -36,14 +36,15 @@ class ServiceMode(enum.Enum):
 class ServiceDependencies:
     """
     Can generate boot paths for services, based on their dependencies. Will validate
-    that all services will be booted and that all dependencies exist within the services provided.
+    that all services will be booted and that all dependencies exist within the services
+    provided.
     """
 
-    def __init__(self, services: List[Type["CoreService"]]) -> None:
+    def __init__(self, services: List["CoreService"]) -> None:
         # helpers to check validity
-        self.dependents = {}
-        self.booted = set()
-        self.node_services = {}
+        self.dependents: Dict[str, Set[str]] = {}
+        self.booted: Set[str] = set()
+        self.node_services: Dict[str, "CoreService"] = {}
         for service in services:
             self.node_services[service.name] = service
             for dependency in service.dependencies:
@@ -51,9 +52,9 @@ class ServiceDependencies:
                 dependents.add(service.name)
 
         # used to find paths
-        self.path = []
-        self.visited = set()
-        self.visiting = set()
+        self.path: List["CoreService"] = []
+        self.visited: Set[str] = set()
+        self.visiting: Set[str] = set()
 
     def boot_paths(self) -> List[List["CoreService"]]:
         """
@@ -131,7 +132,7 @@ class ServiceDependencies:
 
 
 class ServiceShim:
-    keys = [
+    keys: List[str] = [
         "dirs",
         "files",
         "startidx",
@@ -241,10 +242,10 @@ class ServiceManager:
     Manages services available for CORE nodes to use.
     """
 
-    services = {}
+    services: Dict[str, Type["CoreService"]] = {}
 
     @classmethod
-    def add(cls, service: "CoreService") -> None:
+    def add(cls, service: Type["CoreService"]) -> None:
         """
         Add a service to manager.
 
@@ -314,8 +315,8 @@ class CoreServices:
     custom service configuration. A CoreService is not a Configurable.
     """
 
-    name = "services"
-    config_type = RegisterTlvs.UTILITY
+    name: str = "services"
+    config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
     def __init__(self, session: "Session") -> None:
         """
@@ -323,17 +324,17 @@ class CoreServices:
 
         :param session: session this manager is tied to
         """
-        self.session = session
+        self.session: "Session" = session
         # dict of default services tuples, key is node type
-        self.default_services = {
-            "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
-            "PC": ("DefaultRoute",),
-            "prouter": (),
-            "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
-            "host": ("DefaultRoute", "SSH"),
+        self.default_services: Dict[str, List[str]] = {
+            "mdr": ["zebra", "OSPFv3MDR", "IPForward"],
+            "PC": ["DefaultRoute"],
+            "prouter": [],
+            "router": ["zebra", "OSPFv2", "OSPFv3", "IPForward"],
+            "host": ["DefaultRoute", "SSH"],
         }
         # dict of node ids to dict of custom services by name
-        self.custom_services = {}
+        self.custom_services: Dict[int, Dict[str, "CoreService"]] = {}
 
     def reset(self) -> None:
         """
@@ -425,7 +426,7 @@ class CoreServices:
                 continue
             node.services.append(service)
 
-    def all_configs(self) -> List[Tuple[int, Type["CoreService"]]]:
+    def all_configs(self) -> List[Tuple[int, "CoreService"]]:
         """
         Return (node_id, service) tuples for all stored configs. Used when reconnecting
         to a session or opening XML.
@@ -808,50 +809,50 @@ class CoreService:
     """
 
     # service name should not include spaces
-    name = None
+    name: Optional[str] = None
 
     # executables that must exist for service to run
-    executables = ()
+    executables: Tuple[str, ...] = ()
 
     # sets service requirements that must be started prior to this service starting
-    dependencies = ()
+    dependencies: Tuple[str, ...] = ()
 
     # group string allows grouping services together
-    group = None
+    group: Optional[str] = None
 
     # private, per-node directories required by this service
-    dirs = ()
+    dirs: Tuple[str, ...] = ()
 
     # config files written by this service
-    configs = ()
+    configs: Tuple[str, ...] = ()
 
     # config file data
-    config_data = {}
+    config_data: Dict[str, str] = {}
 
     # list of startup commands
-    startup = ()
+    startup: Tuple[str, ...] = ()
 
     # list of shutdown commands
-    shutdown = ()
+    shutdown: Tuple[str, ...] = ()
 
     # list of validate commands
-    validate = ()
+    validate: Tuple[str, ...] = ()
 
     # validation mode, used to determine startup success
-    validation_mode = ServiceMode.NON_BLOCKING
+    validation_mode: ServiceMode = ServiceMode.NON_BLOCKING
 
     # time to wait in seconds for determining if service started successfully
-    validation_timer = 5
+    validation_timer: int = 5
 
     # validation period in seconds, how frequent validation is attempted
-    validation_period = 0.5
+    validation_period: float = 0.5
 
     # metadata associated with this service
-    meta = None
+    meta: Optional[str] = None
 
     # custom configuration text
-    custom = False
-    custom_needed = False
+    custom: bool = False
+    custom_needed: bool = False
 
     def __init__(self) -> None:
         """
@@ -859,8 +860,8 @@ class CoreService:
         against their config. Services are instantiated when a custom
         configuration is used to override their default parameters.
         """
-        self.custom = True
-        self.config_data = self.__class__.config_data.copy()
+        self.custom: bool = True
+        self.config_data: Dict[str, str] = self.__class__.config_data.copy()
 
     @classmethod
     def on_load(cls) -> None:
