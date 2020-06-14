@@ -334,9 +334,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
-        per = ""
-        if link_data.per is not None:
-            per = str(link_data.per)
+        loss = ""
+        if link_data.loss is not None:
+            loss = str(link_data.loss)
         dup = ""
         if link_data.dup is not None:
             dup = str(link_data.dup)
@@ -348,7 +348,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.N2_NUMBER, link_data.node2_id),
                 (LinkTlvs.DELAY, link_data.delay),
                 (LinkTlvs.BANDWIDTH, link_data.bandwidth),
-                (LinkTlvs.PER, per),
+                (LinkTlvs.LOSS, loss),
                 (LinkTlvs.DUP, dup),
                 (LinkTlvs.JITTER, link_data.jitter),
                 (LinkTlvs.MER, link_data.mer),
@@ -776,7 +776,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
         link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
-        link_options.per = message.get_tlv(LinkTlvs.PER.value)
+        link_options.loss = message.get_tlv(LinkTlvs.LOSS.value)
         link_options.dup = message.get_tlv(LinkTlvs.DUP.value)
         link_options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
         link_options.mer = message.get_tlv(LinkTlvs.MER.value)

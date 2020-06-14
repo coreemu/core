@@ -101,7 +101,7 @@ class LinkData:
     node2_id: int = None
     delay: float = None
     bandwidth: float = None
-    per: float = None
+    loss: float = None
     dup: float = None
     jitter: float = None
     mer: float = None

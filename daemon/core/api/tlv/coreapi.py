@@ -495,7 +495,7 @@ class CoreLinkTlv(CoreTlv):
         LinkTlvs.N2_NUMBER.value: CoreTlvDataUint32,
         LinkTlvs.DELAY.value: CoreTlvDataUint64,
         LinkTlvs.BANDWIDTH.value: CoreTlvDataUint64,
-        LinkTlvs.PER.value: CoreTlvDataString,
+        LinkTlvs.LOSS.value: CoreTlvDataString,
         LinkTlvs.DUP.value: CoreTlvDataString,
         LinkTlvs.JITTER.value: CoreTlvDataUint64,
         LinkTlvs.MER.value: CoreTlvDataUint16,

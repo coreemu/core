@@ -141,7 +141,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             nemid,
             latency=convert_none(options.delay),
             jitter=convert_none(options.jitter),
-            loss=convert_none(options.per),
+            loss=convert_none(options.loss),
             duplicate=convert_none(options.dup),
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
