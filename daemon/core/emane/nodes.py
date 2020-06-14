@@ -88,6 +88,9 @@ class EmaneNet(CoreNetworkBase):
     def unlink(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
         pass
 
+    def linknet(self, net: "CoreNetworkBase") -> CoreInterface:
+        raise CoreError("emane networks cannot be linked to other networks")
+
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
             raise CoreError(f"no model set to update for node({self.name})")

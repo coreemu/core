@@ -226,7 +226,7 @@ class PhysicalNode(CoreNodeBase):
         return self.host_cmd(args, wait=wait)
 
     def addfile(self, srcname: str, filename: str) -> None:
-        raise NotImplementedError
+        raise CoreError("physical node does not support addfile")
 
 
 class Rj45Node(CoreNodeBase):
@@ -449,13 +449,13 @@ class Rj45Node(CoreNodeBase):
         self.interface.setposition()
 
     def termcmdstring(self, sh: str) -> str:
-        raise NotImplementedError
+        raise CoreError("rj45 does not support terminal commands")
 
     def addfile(self, srcname: str, filename: str) -> None:
-        raise NotImplementedError
+        raise CoreError("rj45 does not support addfile")
 
     def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
-        raise NotImplementedError
+        raise CoreError("rj45 does not support nodefile")
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        raise NotImplementedError
+        raise CoreError("rj45 does not support cmds")

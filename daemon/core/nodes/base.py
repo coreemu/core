@@ -1,7 +1,7 @@
 """
 Defines the base logic for nodes used within core.
 """
-
+import abc
 import logging
 import os
 import shutil
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 _DEFAULT_MTU = 1500
 
 
-class NodeBase:
+class NodeBase(abc.ABC):
     """
     Base class for CORE nodes (nodes and networks)
     """
@@ -78,6 +78,7 @@ class NodeBase:
         use_ovs = session.options.get_config("ovs") == "True"
         self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
 
+    @abc.abstractmethod
     def startup(self) -> None:
         """
         Each object implements its own startup method.
@@ -86,6 +87,7 @@ class NodeBase:
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def shutdown(self) -> None:
         """
         Each object implements its own shutdown method.
@@ -267,10 +269,72 @@ class CoreNodeBase(NodeBase):
         self.nodedir: Optional[str] = None
         self.tmpnodedir: bool = False
 
+    @abc.abstractmethod
     def startup(self) -> None:
         raise NotImplementedError
 
+    @abc.abstractmethod
     def shutdown(self) -> None:
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+        """
+        Create a node file with a given mode.
+
+        :param filename: name of file to create
+        :param contents: contents of file
+        :param mode: mode for file
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def addfile(self, srcname: str, filename: str) -> None:
+        """
+        Add a file.
+
+        :param srcname: source file name
+        :param filename: file name to add
+        :return: nothing
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command within a node container.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def termcmdstring(self, sh: str) -> str:
+        """
+        Create a terminal command string.
+
+        :param sh: shell to execute command in
+        :return: str
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def newnetif(
+        self, net: "CoreNetworkBase", interface_data: InterfaceData
+    ) -> CoreInterface:
+        """
+        Create a new network interface.
+
+        :param net: network to associate with
+        :param interface_data: interface data for new interface
+        :return: interface index
+        """
         raise NotImplementedError
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
@@ -431,61 +495,6 @@ class CoreNodeBase(NodeBase):
                 if netif1.net == netif2.net:
                     common.append((netif1.net, netif1, netif2))
         return common
-
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
-        """
-        Create a node file with a given mode.
-
-        :param filename: name of file to create
-        :param contents: contents of file
-        :param mode: mode for file
-        :return: nothing
-        """
-        raise NotImplementedError
-
-    def addfile(self, srcname: str, filename: str) -> None:
-        """
-        Add a file.
-
-        :param srcname: source file name
-        :param filename: file name to add
-        :return: nothing
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        """
-        Runs a command within a node container.
-
-        :param args: command to run
-        :param wait: True to wait for status, False otherwise
-        :param shell: True to use shell, False otherwise
-        :return: combined stdout and stderr
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def termcmdstring(self, sh: str) -> str:
-        """
-        Create a terminal command string.
-
-        :param sh: shell to execute command in
-        :return: str
-        """
-        raise NotImplementedError
-
-    def newnetif(
-        self, net: "CoreNetworkBase", interface_data: InterfaceData
-    ) -> CoreInterface:
-        """
-        Create a new network interface.
-
-        :param net: network to associate with
-        :param interface_data: interface data for new interface
-        :return: interface index
-        """
-        raise NotImplementedError
 
 
 class CoreNode(CoreNodeBase):
@@ -1002,6 +1011,7 @@ class CoreNetworkBase(NodeBase):
         self._linked = {}
         self._linked_lock = threading.Lock()
 
+    @abc.abstractmethod
     def startup(self) -> None:
         """
         Each object implements its own startup method.
@@ -1010,6 +1020,7 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def shutdown(self) -> None:
         """
         Each object implements its own shutdown method.
@@ -1018,6 +1029,7 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def linknet(self, net: "CoreNetworkBase") -> CoreInterface:
         """
         Link network to another.
@@ -1025,7 +1037,21 @@ class CoreNetworkBase(NodeBase):
         :param net: network to link with
         :return: created interface
         """
-        pass
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def linkconfig(
+        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+    ) -> None:
+        """
+        Configure link parameters by applying tc queuing disciplines on the interface.
+
+        :param netif: interface one
+        :param options: options for configuring link
+        :param netif2: interface two
+        :return: nothing
+        """
+        raise NotImplementedError
 
     def getlinknetif(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
         """
@@ -1155,19 +1181,6 @@ class CoreNetworkBase(NodeBase):
             all_links.append(link_data)
 
         return all_links
-
-    def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
-    ) -> None:
-        """
-        Configure link parameters by applying tc queuing disciplines on the interface.
-
-        :param netif: interface one
-        :param options: options for configuring link
-        :param netif2: interface two
-        :return: nothing
-        """
-        raise NotImplementedError
 
 
 class Position:
