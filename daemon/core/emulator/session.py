@@ -257,7 +257,7 @@ class Session:
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
                 logging.info("linking ptp: %s - %s", node1.name, node2.name)
                 start = self.state.should_start()
-                ptp = self.create_node(PtpNet, start=start)
+                ptp = self.create_node(PtpNet, start)
                 interface1 = node1.newnetif(ptp, interface1_data)
                 interface2 = node2.newnetif(ptp, interface2_data)
                 ptp.linkconfig(interface1, options)
@@ -517,10 +517,10 @@ class Session:
             name,
             start,
         )
-        kwargs = dict(_id=_id, name=name, start=start, server=server)
+        kwargs = dict(_id=_id, name=name, server=server)
         if _class in CONTAINER_NODES:
             kwargs["image"] = options.image
-        node = self.create_node(_class, **kwargs)
+        node = self.create_node(_class, start, **kwargs)
 
         # set node attributes
         node.icon = options.icon
@@ -1056,11 +1056,14 @@ class Session:
                 logging.exception("failed to set permission on %s", self.session_dir)
         self.user = user
 
-    def create_node(self, _class: Type[NT], *args: Any, **kwargs: Any) -> NT:
+    def create_node(
+        self, _class: Type[NT], start: bool, *args: Any, **kwargs: Any
+    ) -> NT:
         """
         Create an emulation node.
 
         :param _class: node class to create
+        :param start: True to start node, False otherwise
         :param args: list of arguments for the class to create
         :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
@@ -1072,6 +1075,8 @@ class Session:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
+        if start:
+            node.startup()
         return node
 
     def get_node(self, _id: int, _class: Type[NT]) -> NT:
@@ -1464,6 +1469,7 @@ class Session:
         )
         control_net = self.create_node(
             CtrlNet,
+            True,
             prefix,
             _id=_id,
             updown_script=updown_script,
