@@ -300,41 +300,39 @@ class CanvasGraph(tk.Canvas):
         # draw existing links
         for link in session.links:
             logging.debug("drawing link: %s", link)
-            canvas_node_one = self.core.canvas_nodes[link.node_one_id]
-            node_one = canvas_node_one.core_node
-            canvas_node_two = self.core.canvas_nodes[link.node_two_id]
-            node_two = canvas_node_two.core_node
-            token = create_edge_token(canvas_node_one.id, canvas_node_two.id)
+            canvas_node1 = self.core.canvas_nodes[link.node1_id]
+            node1 = canvas_node1.core_node
+            canvas_node2 = self.core.canvas_nodes[link.node2_id]
+            node2 = canvas_node2.core_node
+            token = create_edge_token(canvas_node1.id, canvas_node2.id)
 
             if link.type == core_pb2.LinkType.WIRELESS:
-                self.add_wireless_edge(canvas_node_one, canvas_node_two, link)
+                self.add_wireless_edge(canvas_node1, canvas_node2, link)
             else:
                 if token not in self.edges:
-                    src_pos = (node_one.position.x, node_one.position.y)
-                    dst_pos = (node_two.position.x, node_two.position.y)
-                    edge = CanvasEdge(self, canvas_node_one.id, src_pos, dst_pos)
+                    src_pos = (node1.position.x, node1.position.y)
+                    dst_pos = (node2.position.x, node2.position.y)
+                    edge = CanvasEdge(self, canvas_node1.id, src_pos, dst_pos)
                     edge.token = token
-                    edge.dst = canvas_node_two.id
+                    edge.dst = canvas_node2.id
                     edge.set_link(link)
                     edge.check_wireless()
-                    canvas_node_one.edges.add(edge)
-                    canvas_node_two.edges.add(edge)
+                    canvas_node1.edges.add(edge)
+                    canvas_node2.edges.add(edge)
                     self.edges[edge.token] = edge
                     self.core.links[edge.token] = edge
-                    if link.HasField("interface_one"):
-                        interface_one = link.interface_one
+                    if link.HasField("interface1"):
+                        interface1 = link.interface1
+                        self.core.interface_to_edge[(node1.id, interface1.id)] = token
+                        canvas_node1.interfaces[interface1.id] = interface1
+                        edge.src_interface = interface1
+                    if link.HasField("interface2"):
+                        interface2 = link.interface2
                         self.core.interface_to_edge[
-                            (node_one.id, interface_one.id)
-                        ] = token
-                        canvas_node_one.interfaces[interface_one.id] = interface_one
-                        edge.src_interface = interface_one
-                    if link.HasField("interface_two"):
-                        interface_two = link.interface_two
-                        self.core.interface_to_edge[
-                            (node_two.id, interface_two.id)
+                            (node2.id, interface2.id)
                         ] = edge.token
-                        canvas_node_two.interfaces[interface_two.id] = interface_two
-                        edge.dst_interface = interface_two
+                        canvas_node2.interfaces[interface2.id] = interface2
+                        edge.dst_interface = interface2
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
@@ -965,26 +963,26 @@ class CanvasGraph(tk.Canvas):
             copy_link = copy_edge.link
             options = edge.link.options
             copy_link.options.CopyFrom(options)
-            interface_one = None
-            if copy_link.HasField("interface_one"):
-                interface_one = copy_link.interface_one.id
-            interface_two = None
-            if copy_link.HasField("interface_two"):
-                interface_two = copy_link.interface_two.id
+            interface1_id = None
+            if copy_link.HasField("interface1"):
+                interface1_id = copy_link.interface1.id
+            interface2_id = None
+            if copy_link.HasField("interface2"):
+                interface2_id = copy_link.interface2.id
             if not options.unidirectional:
                 copy_edge.asymmetric_link = None
             else:
-                asym_interface_one = None
-                if interface_one:
-                    asym_interface_one = core_pb2.Interface(id=interface_one)
-                asym_interface_two = None
-                if interface_two:
-                    asym_interface_two = core_pb2.Interface(id=interface_two)
+                asym_interface1 = None
+                if interface1_id:
+                    asym_interface1 = core_pb2.Interface(id=interface1_id)
+                asym_interface2 = None
+                if interface2_id:
+                    asym_interface2 = core_pb2.Interface(id=interface2_id)
                 copy_edge.asymmetric_link = core_pb2.Link(
-                    node_one_id=copy_link.node_two_id,
-                    node_two_id=copy_link.node_one_id,
-                    interface_one=asym_interface_one,
-                    interface_two=asym_interface_two,
+                    node1_id=copy_link.node2_id,
+                    node2_id=copy_link.node1_id,
+                    interface1=asym_interface1,
+                    interface2=asym_interface2,
                     options=edge.asymmetric_link.options,
                 )
             self.itemconfig(

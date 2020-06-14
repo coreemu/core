@@ -12,6 +12,7 @@ import threading
 import time
 from itertools import repeat
 from queue import Empty, Queue
+from typing import Optional
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
@@ -39,6 +40,7 @@ from core.emulator.enumerations import (
     NodeTypes,
     RegisterTlvs,
 )
+from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
@@ -83,7 +85,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         thread.start()
         self.handler_threads.append(thread)
 
-        self.session = None
+        self.session: Optional[Session] = None
         self.coreemu = server.coreemu
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -176,7 +178,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 node_count_list.append(str(session.get_node_count()))
 
-                date_list.append(time.ctime(session._state_time))
+                date_list.append(time.ctime(session.state_time))
 
                 thumb = session.thumbnail
                 if not thumb:
@@ -745,10 +747,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.api.tlv.coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
-        node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
-        node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
-
-        interface_one = InterfaceData(
+        node1_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
+        node2_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
+        interface1_data = InterfaceData(
             id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
@@ -757,7 +758,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
             ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
         )
-        interface_two = InterfaceData(
+        interface2_data = InterfaceData(
             id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
             mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
@@ -766,45 +767,39 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
             ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
         )
-
         link_type = LinkTypes.WIRED
         link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
+        options = LinkOptions(type=link_type)
+        options.delay = message.get_tlv(LinkTlvs.DELAY.value)
+        options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
+        options.session = message.get_tlv(LinkTlvs.SESSION.value)
+        options.loss = message.get_tlv(LinkTlvs.LOSS.value)
+        options.dup = message.get_tlv(LinkTlvs.DUP.value)
+        options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
+        options.mer = message.get_tlv(LinkTlvs.MER.value)
+        options.burst = message.get_tlv(LinkTlvs.BURST.value)
+        options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
+        options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
+        options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
+        options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
+        options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
+        options.key = message.get_tlv(LinkTlvs.KEY.value)
+        options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
 
-        link_options = LinkOptions(type=link_type)
-        link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
-        link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
-        link_options.loss = message.get_tlv(LinkTlvs.LOSS.value)
-        link_options.dup = message.get_tlv(LinkTlvs.DUP.value)
-        link_options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
-        link_options.mer = message.get_tlv(LinkTlvs.MER.value)
-        link_options.burst = message.get_tlv(LinkTlvs.BURST.value)
-        link_options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
-        link_options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
-        link_options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
-        link_options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
-        link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
-        link_options.key = message.get_tlv(LinkTlvs.KEY.value)
-        link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
-                node_one_id, node_two_id, interface_one, interface_two, link_options
+                node1_id, node2_id, interface1_data, interface2_data, options
             )
         elif message.flags & MessageFlags.DELETE.value:
             self.session.delete_link(
-                node_one_id, node_two_id, interface_one.id, interface_two.id
+                node1_id, node2_id, interface1_data.id, interface2_data.id
             )
         else:
             self.session.update_link(
-                node_one_id,
-                node_two_id,
-                interface_one.id,
-                interface_two.id,
-                link_options,
+                node1_id, node2_id, interface1_data.id, interface2_data.id, options
             )
-
         return ()
 
     def handle_execute_message(self, message):
@@ -1827,7 +1822,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         # find all nodes and links
         links_data = []
-        with self.session._nodes_lock:
+        with self.session.nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 self.session.broadcast_node(node, MessageFlags.ADD)
@@ -1905,8 +1900,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         # TODO: send location info
 
         # send hook scripts
-        for state in sorted(self.session._hooks.keys()):
-            for file_name, config_data in self.session._hooks[state]:
+        for state in sorted(self.session.hooks.keys()):
+            for file_name, config_data in self.session.hooks[state]:
                 file_data = FileData(
                     message_type=MessageFlags.ADD,
                     name=str(file_name),

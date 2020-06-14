@@ -320,8 +320,8 @@ class CoreXmlWriter:
     def write_session_hooks(self) -> None:
         # hook scripts
         hooks = etree.Element("session_hooks")
-        for state in sorted(self.session._hooks, key=lambda x: x.value):
-            for file_name, data in self.session._hooks[state]:
+        for state in sorted(self.session.hooks, key=lambda x: x.value):
+            for file_name, data in self.session.hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
                 add_attribute(hook, "state", state.value)
@@ -534,7 +534,7 @@ class CoreXmlWriter:
 
         # check for interface one
         if link_data.interface1_id is not None:
-            interface_one = self.create_interface_element(
+            interface1 = self.create_interface_element(
                 "interface_one",
                 link_data.node1_id,
                 link_data.interface1_id,
@@ -544,11 +544,11 @@ class CoreXmlWriter:
                 link_data.interface1_ip6,
                 link_data.interface1_ip6_mask,
             )
-            link_element.append(interface_one)
+            link_element.append(interface1)
 
         # check for interface two
         if link_data.interface2_id is not None:
-            interface_two = self.create_interface_element(
+            interface2 = self.create_interface_element(
                 "interface_two",
                 link_data.node2_id,
                 link_data.interface2_id,
@@ -558,14 +558,14 @@ class CoreXmlWriter:
                 link_data.interface2_ip6,
                 link_data.interface2_ip6_mask,
             )
-            link_element.append(interface_two)
+            link_element.append(interface2)
 
         # check for options, don't write for emane/wlan links
-        node_one = self.session.get_node(link_data.node1_id, NodeBase)
-        node_two = self.session.get_node(link_data.node2_id, NodeBase)
-        is_node_one_wireless = isinstance(node_one, (WlanNode, EmaneNet))
-        is_node_two_wireless = isinstance(node_two, (WlanNode, EmaneNet))
-        if not any([is_node_one_wireless, is_node_two_wireless]):
+        node1 = self.session.get_node(link_data.node1_id, NodeBase)
+        node2 = self.session.get_node(link_data.node2_id, NodeBase)
+        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
+        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
+        if not any([is_node1_wireless, is_node2_wireless]):
             options = etree.Element("options")
             add_attribute(options, "delay", link_data.delay)
             add_attribute(options, "bandwidth", link_data.bandwidth)
@@ -932,19 +932,19 @@ class CoreXmlReader:
 
         node_sets = set()
         for link_element in link_elements.iterchildren():
-            node_one = get_int(link_element, "node_one")
-            node_two = get_int(link_element, "node_two")
-            node_set = frozenset((node_one, node_two))
+            node1_id = get_int(link_element, "node_one")
+            node2_id = get_int(link_element, "node_two")
+            node_set = frozenset((node1_id, node2_id))
 
-            interface_one_element = link_element.find("interface_one")
-            interface_one = None
-            if interface_one_element is not None:
-                interface_one = create_interface_data(interface_one_element)
+            interface1_element = link_element.find("interface_one")
+            interface1_data = None
+            if interface1_element is not None:
+                interface1_data = create_interface_data(interface1_element)
 
-            interface_two_element = link_element.find("interface_two")
-            interface_two = None
-            if interface_two_element is not None:
-                interface_two = create_interface_data(interface_two_element)
+            interface2_element = link_element.find("interface_two")
+            interface2_data = None
+            if interface2_element is not None:
+                interface2_data = create_interface_data(interface2_element)
 
             options_element = link_element.find("options")
             options = LinkOptions()
@@ -968,18 +968,14 @@ class CoreXmlReader:
                 options.gui_attributes = options_element.get("gui_attributes")
 
             if options.unidirectional == 1 and node_set in node_sets:
-                logging.info(
-                    "updating link node_one(%s) node_two(%s)", node_one, node_two
-                )
+                logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.update_link(
-                    node_one, node_two, interface_one.id, interface_two.id, options
+                    node1_id, node2_id, interface1_data.id, interface2_data.id, options
                 )
             else:
-                logging.info(
-                    "adding link node_one(%s) node_two(%s)", node_one, node_two
-                )
+                logging.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.add_link(
-                    node_one, node_two, interface_one, interface_two, options
+                    node1_id, node2_id, interface1_data, interface2_data, options
                 )
 
             node_sets.add(node_set)

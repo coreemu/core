@@ -157,25 +157,27 @@ class PhysicalNode(CoreNodeBase):
             self.ifindex += 1
             return ifindex
 
-    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> CoreInterface:
+    def newnetif(
+        self, net: CoreNetworkBase, interface_data: InterfaceData
+    ) -> CoreInterface:
         logging.info("creating interface")
-        addresses = interface.get_addresses()
-        ifindex = interface.id
+        addresses = interface_data.get_addresses()
+        ifindex = interface_data.id
         if ifindex is None:
             ifindex = self.newifindex()
-        name = interface.name
+        name = interface_data.name
         if name is None:
             name = f"gt{ifindex}"
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
             _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
-            self.adoptnetif(remote_tap, ifindex, interface.mac, addresses)
+            self.adoptnetif(remote_tap, ifindex, interface_data.mac, addresses)
             return remote_tap
         else:
             # this is reached when configuring services (self.up=False)
             netif = GreTap(node=self, name=name, session=self.session, start=False)
-            self.adoptnetif(netif, ifindex, interface.mac, addresses)
+            self.adoptnetif(netif, ifindex, interface_data.mac, addresses)
             return netif
 
     def privatedir(self, path: str) -> None:
@@ -297,19 +299,21 @@ class Rj45Node(CoreNodeBase):
         self.up = False
         self.restorestate()
 
-    def newnetif(self, net: CoreNetworkBase, interface: InterfaceData) -> CoreInterface:
+    def newnetif(
+        self, net: CoreNetworkBase, interface_data: InterfaceData
+    ) -> CoreInterface:
         """
         This is called when linking with another node. Since this node
         represents an interface, we do not create another object here,
         but attach ourselves to the given network.
 
         :param net: new network instance
-        :param interface: interface data for new interface
+        :param interface_data: interface data for new interface
         :return: interface index
         :raises ValueError: when an interface has already been created, one max
         """
         with self.lock:
-            ifindex = interface.id
+            ifindex = interface_data.id
             if ifindex is None:
                 ifindex = 0
             if self.interface.net is not None:
@@ -318,7 +322,7 @@ class Rj45Node(CoreNodeBase):
             self.ifindex = ifindex
             if net is not None:
                 self.interface.attachnet(net)
-            for addr in interface.get_addresses():
+            for addr in interface_data.get_addresses():
                 self.addaddr(addr)
             return self.interface
 

@@ -845,27 +845,23 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: add-link response
         """
         logging.debug("add link: %s", request)
-        # validate session and nodes
         session = self.get_session(request.session_id, context)
-        self.get_node(session, request.link.node_one_id, context, NodeBase)
-        self.get_node(session, request.link.node_two_id, context, NodeBase)
-
-        node_one_id = request.link.node_one_id
-        node_two_id = request.link.node_two_id
-        interface_one, interface_two, options = grpcutils.add_link_data(request.link)
-        node_one_interface, node_two_interface = session.add_link(
-            node_one_id, node_two_id, interface_one, interface_two, options=options
+        node1_id = request.link.node1_id
+        node2_id = request.link.node2_id
+        self.get_node(session, node1_id, context, NodeBase)
+        self.get_node(session, node2_id, context, NodeBase)
+        interface1, interface2, options = grpcutils.add_link_data(request.link)
+        node1_interface, node2_interface = session.add_link(
+            node1_id, node2_id, interface1, interface2, options=options
         )
-        interface_one_proto = None
-        interface_two_proto = None
-        if node_one_interface:
-            interface_one_proto = grpcutils.interface_to_proto(node_one_interface)
-        if node_two_interface:
-            interface_two_proto = grpcutils.interface_to_proto(node_two_interface)
+        interface1_proto = None
+        interface2_proto = None
+        if node1_interface:
+            interface1_proto = grpcutils.interface_to_proto(node1_interface)
+        if node2_interface:
+            interface2_proto = grpcutils.interface_to_proto(node2_interface)
         return core_pb2.AddLinkResponse(
-            result=True,
-            interface_one=interface_one_proto,
-            interface_two=interface_two_proto,
+            result=True, interface1=interface1_proto, interface2=interface2_proto
         )
 
     def EditLink(
@@ -880,10 +876,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("edit link: %s", request)
         session = self.get_session(request.session_id, context)
-        node_one_id = request.node_one_id
-        node_two_id = request.node_two_id
-        interface_one_id = request.interface_one_id
-        interface_two_id = request.interface_two_id
+        node1_id = request.node1_id
+        node2_id = request.node2_id
+        interface1_id = request.interface1_id
+        interface2_id = request.interface2_id
         options_data = request.options
         options = LinkOptions(
             delay=options_data.delay,
@@ -898,9 +894,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             key=options_data.key,
             opaque=options_data.opaque,
         )
-        session.update_link(
-            node_one_id, node_two_id, interface_one_id, interface_two_id, options
-        )
+        session.update_link(node1_id, node2_id, interface1_id, interface2_id, options)
         return core_pb2.EditLinkResponse(result=True)
 
     def DeleteLink(
@@ -915,13 +909,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("delete link: %s", request)
         session = self.get_session(request.session_id, context)
-        node_one_id = request.node_one_id
-        node_two_id = request.node_two_id
-        interface_one_id = request.interface_one_id
-        interface_two_id = request.interface_two_id
-        session.delete_link(
-            node_one_id, node_two_id, interface_one_id, interface_two_id
-        )
+        node1_id = request.node1_id
+        node2_id = request.node2_id
+        interface1_id = request.interface1_id
+        interface2_id = request.interface2_id
+        session.delete_link(node1_id, node2_id, interface1_id, interface2_id)
         return core_pb2.DeleteLinkResponse(result=True)
 
     def GetHooks(
@@ -937,8 +929,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session_id, context)
         hooks = []
-        for state in session._hooks:
-            state_hooks = session._hooks[state]
+        for state in session.hooks:
+            state_hooks = session.hooks[state]
             for file_name, file_data in state_hooks:
                 hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
                 hooks.append(hook)
@@ -1520,30 +1512,30 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("emane link: %s", request)
         session = self.get_session(request.session_id, context)
-        nem_one = request.nem_one
-        emane_one, netif = session.emane.nemlookup(nem_one)
-        if not emane_one or not netif:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem_one} not found")
-        node_one = netif.node
+        nem1 = request.nem1
+        emane1, netif = session.emane.nemlookup(nem1)
+        if not emane1 or not netif:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem1} not found")
+        node1 = netif.node
 
-        nem_two = request.nem_two
-        emane_two, netif = session.emane.nemlookup(nem_two)
-        if not emane_two or not netif:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem_two} not found")
-        node_two = netif.node
+        nem2 = request.nem2
+        emane2, netif = session.emane.nemlookup(nem2)
+        if not emane2 or not netif:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem2} not found")
+        node2 = netif.node
 
-        if emane_one.id == emane_two.id:
+        if emane1.id == emane2.id:
             if request.linked:
                 flag = MessageFlags.ADD
             else:
                 flag = MessageFlags.DELETE
-            color = session.get_link_color(emane_one.id)
+            color = session.get_link_color(emane1.id)
             link = LinkData(
                 message_type=flag,
                 link_type=LinkTypes.WIRELESS,
-                node1_id=node_one.id,
-                node2_id=node_two.id,
-                network_id=emane_one.id,
+                node1_id=node1.id,
+                node2_id=node2.id,
+                network_id=emane1.id,
                 color=color,
             )
             session.broadcast_link(link)
@@ -1740,21 +1732,23 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 grpc.StatusCode.NOT_FOUND,
                 f"wlan node {request.wlan} does not using BasicRangeModel",
             )
-        n1 = self.get_node(session, request.node_one, context, CoreNode)
-        n2 = self.get_node(session, request.node_two, context, CoreNode)
-        n1_netif, n2_netif = None, None
-        for net, netif1, netif2 in n1.commonnets(n2):
+        node1 = self.get_node(session, request.node1_id, context, CoreNode)
+        node2 = self.get_node(session, request.node2_id, context, CoreNode)
+        node1_interface, node2_interface = None, None
+        for net, interface1, interface2 in node1.commonnets(node2):
             if net == wlan:
-                n1_netif = netif1
-                n2_netif = netif2
+                node1_interface = interface1
+                node2_interface = interface2
                 break
         result = False
-        if n1_netif and n2_netif:
+        if node1_interface and node2_interface:
             if request.linked:
-                wlan.link(n1_netif, n2_netif)
+                wlan.link(node1_interface, node2_interface)
             else:
-                wlan.unlink(n1_netif, n2_netif)
-            wlan.model.sendlinkmsg(n1_netif, n2_netif, unlink=not request.linked)
+                wlan.unlink(node1_interface, node2_interface)
+            wlan.model.sendlinkmsg(
+                node1_interface, node2_interface, unlink=not request.linked
+            )
             result = True
         return WlanLinkResponse(result=result)
 
@@ -1765,9 +1759,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> EmanePathlossesResponse:
         for request in request_iterator:
             session = self.get_session(request.session_id, context)
-            n1 = self.get_node(session, request.node_one, context, CoreNode)
-            nem1 = grpcutils.get_nem_id(n1, request.interface_one_id, context)
-            n2 = self.get_node(session, request.node_two, context, CoreNode)
-            nem2 = grpcutils.get_nem_id(n2, request.interface_two_id, context)
-            session.emane.publish_pathloss(nem1, nem2, request.rx_one, request.rx_two)
+            node1 = self.get_node(session, request.node1_id, context, CoreNode)
+            nem1 = grpcutils.get_nem_id(node1, request.interface1_id, context)
+            node2 = self.get_node(session, request.node2_id, context, CoreNode)
+            nem2 = grpcutils.get_nem_id(node2, request.interface2_id, context)
+            session.emane.publish_pathloss(nem1, nem2, request.rx1, request.rx2)
         return EmanePathlossesResponse()

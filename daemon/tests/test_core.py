@@ -48,19 +48,19 @@ class TestCore:
         net_node = session.add_node(net_type)
 
         # create nodes
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
 
         # link nodes to net node
-        for node in [node_one, node_two]:
+        for node in [node1, node2]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, net_node.id, interface_one=interface)
+            session.add_link(node.id, net_node.id, interface1_data=interface)
 
         # instantiate session
         session.instantiate()
 
-        # ping n2 from n1 and assert success
-        status = ping(node_one, node_two, ip_prefixes)
+        # ping node2 from node1 and assert success
+        status = ping(node1, node2, ip_prefixes)
         assert not status
 
     def test_vnode_client(self, request, session: Session, ip_prefixes: IpPrefixes):
@@ -75,16 +75,16 @@ class TestCore:
         ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
 
         # link nodes to ptp net
-        for node in [node_one, node_two]:
+        for node in [node1, node2]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface1_data=interface)
 
         # get node client for testing
-        client = node_one.client
+        client = node1.client
 
         # instantiate session
         session.instantiate()
@@ -108,13 +108,13 @@ class TestCore:
         ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
 
         # link nodes to ptp net
-        for node in [node_one, node_two]:
+        for node in [node1, node2]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface1_data=interface)
 
         # instantiate session
         session.instantiate()
@@ -123,22 +123,22 @@ class TestCore:
         assert ptp_node.all_link_data(MessageFlags.ADD)
 
         # check common nets exist between linked nodes
-        assert node_one.commonnets(node_two)
-        assert node_two.commonnets(node_one)
+        assert node1.commonnets(node2)
+        assert node2.commonnets(node1)
 
         # check we can retrieve netif index
-        assert node_one.ifname(0)
-        assert node_two.ifname(0)
+        assert node1.ifname(0)
+        assert node2.ifname(0)
 
         # check interface parameters
-        interface = node_one.netif(0)
+        interface = node1.netif(0)
         interface.setparam("test", 1)
         assert interface.getparam("test") == 1
         assert interface.getparams()
 
         # delete netif and test that if no longer exists
-        node_one.delnetif(0)
-        assert not node_one.netif(0)
+        node1.delnetif(0)
+        assert not node1.netif(0)
 
     def test_wlan_ping(self, session: Session, ip_prefixes: IpPrefixes):
         """
@@ -155,19 +155,19 @@ class TestCore:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(CoreNode, options=options)
-        node_two = session.add_node(CoreNode, options=options)
+        node1 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode, options=options)
 
         # link nodes
-        for node in [node_one, node_two]:
+        for node in [node1, node2]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface1_data=interface)
 
         # instantiate session
         session.instantiate()
 
-        # ping n2 from n1 and assert success
-        status = ping(node_one, node_two, ip_prefixes)
+        # ping node2 from node1 and assert success
+        status = ping(node1, node2, ip_prefixes)
         assert not status
 
     def test_mobility(self, session: Session, ip_prefixes: IpPrefixes):
@@ -185,13 +185,13 @@ class TestCore:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(CoreNode, options=options)
-        node_two = session.add_node(CoreNode, options=options)
+        node1 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode, options=options)
 
         # link nodes
-        for node in [node_one, node_two]:
+        for node in [node1, node2]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface1_data=interface)
 
         # configure mobility script for session
         config = {

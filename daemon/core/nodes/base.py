@@ -63,7 +63,7 @@ class NodeBase:
 
         self.session: "Session" = session
         if _id is None:
-            _id = session.get_node_id()
+            _id = session.next_node_id()
         self.id: int = _id
         if name is None:
             name = f"o{self.id}"
@@ -475,13 +475,13 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     def newnetif(
-        self, net: "CoreNetworkBase", interface: InterfaceData
+        self, net: "CoreNetworkBase", interface_data: InterfaceData
     ) -> CoreInterface:
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param interface: interface data for new interface
+        :param interface_data: interface data for new interface
         :return: interface index
         """
         raise NotImplementedError
@@ -860,34 +860,34 @@ class CoreNode(CoreNodeBase):
             self.node_net_client.device_up(interface_name)
 
     def newnetif(
-        self, net: "CoreNetworkBase", interface: InterfaceData
+        self, net: "CoreNetworkBase", interface_data: InterfaceData
     ) -> CoreInterface:
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param interface: interface data for new interface
+        :param interface_data: interface data for new interface
         :return: interface index
         """
-        addresses = interface.get_addresses()
+        addresses = interface_data.get_addresses()
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
-                ifindex = self.newtuntap(interface.id, interface.name)
+                ifindex = self.newtuntap(interface_data.id, interface_data.name)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
                 #   save addresses with the interface now
                 self.attachnet(ifindex, net)
                 netif = self.netif(ifindex)
-                netif.sethwaddr(interface.mac)
+                netif.sethwaddr(interface_data.mac)
                 for address in addresses:
                     netif.addaddr(address)
             else:
-                ifindex = self.newveth(interface.id, interface.name)
+                ifindex = self.newveth(interface_data.id, interface_data.name)
                 self.attachnet(ifindex, net)
-                if interface.mac:
-                    self.sethwaddr(ifindex, interface.mac)
+                if interface_data.mac:
+                    self.sethwaddr(ifindex, interface_data.mac)
                 for address in addresses:
                     self.addaddr(ifindex, address)
                 self.ifup(ifindex)

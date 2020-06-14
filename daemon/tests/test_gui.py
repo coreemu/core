@@ -50,12 +50,13 @@ class TestGui:
         self, coretlv: CoreHandler, node_type: NodeTypes, model: Optional[str]
     ):
         node_id = 1
+        name = "node1"
         message = coreapi.CoreNodeMessage.create(
             MessageFlags.ADD.value,
             [
                 (NodeTlvs.NUMBER, node_id),
                 (NodeTlvs.TYPE, node_type.value),
-                (NodeTlvs.NAME, "n1"),
+                (NodeTlvs.NAME, name),
                 (NodeTlvs.X_POSITION, 0),
                 (NodeTlvs.Y_POSITION, 0),
                 (NodeTlvs.MODEL, model),
@@ -63,7 +64,9 @@ class TestGui:
         )
 
         coretlv.handle_message(message)
-        assert coretlv.session.get_node(node_id, NodeBase) is not None
+        node = coretlv.session.get_node(node_id, NodeBase)
+        assert node
+        assert node.name == name
 
     def test_node_update(self, coretlv: CoreHandler):
         node_id = 1
@@ -99,71 +102,71 @@ class TestGui:
             coretlv.session.get_node(node_id, NodeBase)
 
     def test_link_add_node_to_net(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        switch = 2
-        coretlv.session.add_node(SwitchNode, _id=switch)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        switch_id = 2
+        coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
+        interface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
     def test_link_add_net_to_node(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        switch = 2
-        coretlv.session.add_node(SwitchNode, _id=switch)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        switch_id = 2
+        coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
+        interface2_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, switch),
-                (LinkTlvs.N2_NUMBER, node_one),
+                (LinkTlvs.N1_NUMBER, switch_id),
+                (LinkTlvs.N2_NUMBER, node1_id),
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
-                (LinkTlvs.INTERFACE2_IP4, interface_one),
+                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
                 (LinkTlvs.INTERFACE2_IP4_MASK, 24),
             ],
         )
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
     def test_link_add_node_to_node(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        node_two = 2
-        coretlv.session.add_node(CoreNode, _id=node_two)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        node2_id = 2
+        coretlv.session.add_node(CoreNode, _id=node2_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
-        interface_two = str(ip_prefix[node_two])
+        interface1_ip4 = str(ip_prefix[node1_id])
+        interface2_ip4 = str(ip_prefix[node2_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, node_two),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, node2_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
-                (LinkTlvs.INTERFACE2_IP4, interface_two),
+                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
                 (LinkTlvs.INTERFACE2_IP4_MASK, 24),
             ],
         )
@@ -177,24 +180,24 @@ class TestGui:
         assert len(all_links) == 1
 
     def test_link_update(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        switch = 2
-        coretlv.session.add_node(SwitchNode, _id=switch)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        switch_id = 2
+        coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
+        interface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
@@ -204,37 +207,37 @@ class TestGui:
         message = coreapi.CoreLinkMessage.create(
             0,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
                 (LinkTlvs.BANDWIDTH, bandwidth),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
         assert link.bandwidth == bandwidth
 
     def test_link_delete_node_to_node(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        node_two = 2
-        coretlv.session.add_node(CoreNode, _id=node_two)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        node2_id = 2
+        coretlv.session.add_node(CoreNode, _id=node2_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
-        interface_two = str(ip_prefix[node_two])
+        interface1_ip4 = str(ip_prefix[node1_id])
+        interface2_ip4 = str(ip_prefix[node2_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, node_two),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, node2_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
-                (LinkTlvs.INTERFACE2_IP4, interface_two),
+                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
                 (LinkTlvs.INTERFACE2_IP4_MASK, 24),
             ],
         )
@@ -248,8 +251,8 @@ class TestGui:
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, node_two),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, node2_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
             ],
@@ -263,74 +266,74 @@ class TestGui:
         assert len(all_links) == 0
 
     def test_link_delete_node_to_net(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        switch = 2
-        coretlv.session.add_node(SwitchNode, _id=switch)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        switch_id = 2
+        coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
+        interface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
     def test_link_delete_net_to_node(self, coretlv: CoreHandler):
-        node_one = 1
-        coretlv.session.add_node(CoreNode, _id=node_one)
-        switch = 2
-        coretlv.session.add_node(SwitchNode, _id=switch)
+        node1_id = 1
+        coretlv.session.add_node(CoreNode, _id=node1_id)
+        switch_id = 2
+        coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface_one = str(ip_prefix[node_one])
+        interface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
-                (LinkTlvs.N1_NUMBER, node_one),
-                (LinkTlvs.N2_NUMBER, switch),
+                (LinkTlvs.N1_NUMBER, node1_id),
+                (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface_one),
+                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
 
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
             [
-                (LinkTlvs.N1_NUMBER, switch),
-                (LinkTlvs.N2_NUMBER, node_one),
+                (LinkTlvs.N1_NUMBER, switch_id),
+                (LinkTlvs.N2_NUMBER, node1_id),
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch, SwitchNode)
+        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
         all_links = switch_node.all_link_data()
         assert len(all_links) == 0
 
@@ -379,7 +382,7 @@ class TestGui:
 
     def test_file_hook_add(self, coretlv: CoreHandler):
         state = EventTypes.DATACOLLECT_STATE
-        assert coretlv.session._hooks.get(state) is None
+        assert coretlv.session.hooks.get(state) is None
         file_name = "test.sh"
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
@@ -393,7 +396,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        hooks = coretlv.session._hooks.get(state)
+        hooks = coretlv.session.hooks.get(state)
         assert len(hooks) == 1
         name, data = hooks[0]
         assert file_name == name

@@ -201,6 +201,6 @@ class IpPrefixes:
             generation
         :return: new interface data for the provided node
         """
-        interface = self.gen_interface(node.id, name, mac)
-        interface.id = node.newifindex()
-        return interface
+        interface_data = self.gen_interface(node.id, name, mac)
+        interface_data.id = node.newifindex()
+        return interface_data

@@ -22,21 +22,21 @@ if __name__ == "__main__":
         switch = session.add_node(SwitchNode)
 
         # node one
-        node_one = session.add_node(LxcNode, options=options)
-        interface_one = prefixes.create_interface(node_one)
+        node1 = session.add_node(LxcNode, options=options)
+        interface1_data = prefixes.create_interface(node1)
 
         # node two
-        node_two = session.add_node(LxcNode, options=options)
-        interface_two = prefixes.create_interface(node_two)
+        node2 = session.add_node(LxcNode, options=options)
+        interface2_data = prefixes.create_interface(node2)
 
         # node three
-        node_three = session.add_node(CoreNode)
-        interface_three = prefixes.create_interface(node_three)
+        node3 = session.add_node(CoreNode)
+        interface3_data = prefixes.create_interface(node3)
 
         # add links
-        session.add_link(node_one.id, switch.id, interface_one)
-        session.add_link(node_two.id, switch.id, interface_two)
-        session.add_link(node_three.id, switch.id, interface_three)
+        session.add_link(node1.id, switch.id, interface1_data)
+        session.add_link(node2.id, switch.id, interface2_data)
+        session.add_link(node3.id, switch.id, interface3_data)
 
         # instantiate
         session.instantiate()

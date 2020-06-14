@@ -279,7 +279,7 @@ class EmaneManager(ModelManager):
         logging.debug("emane setup")
 
         # TODO: drive this from the session object
-        with self.session._nodes_lock:
+        with self.session.nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 if isinstance(node, EmaneNet):

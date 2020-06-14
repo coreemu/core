@@ -75,8 +75,8 @@ message GetEmaneEventChannelResponse {
 
 message EmaneLinkRequest {
     int32 session_id = 1;
-    int32 nem_one = 2;
-    int32 nem_two = 3;
+    int32 nem1 = 2;
+    int32 nem2 = 3;
     bool linked = 4;
 }
 
@@ -93,12 +93,12 @@ message EmaneModelConfig {
 
 message EmanePathlossesRequest {
     int32 session_id = 1;
-    int32 node_one = 2;
-    float rx_one = 3;
-    int32 interface_one_id = 4;
-    int32 node_two = 5;
-    float rx_two = 6;
-    int32 interface_two_id = 7;
+    int32 node1_id = 2;
+    float rx1 = 3;
+    int32 interface1_id = 4;
+    int32 node2_id = 5;
+    float rx2 = 6;
+    int32 interface2_id = 7;
 }
 
 message EmanePathlossesResponse {

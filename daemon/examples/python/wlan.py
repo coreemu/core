@@ -36,7 +36,7 @@ def main():
     for _ in range(NODES):
         node = session.add_node(CoreNode, options=options)
         interface = prefixes.create_interface(node)
-        session.add_link(node.id, wlan.id, interface_one=interface)
+        session.add_link(node.id, wlan.id, interface1_data=interface)
 
     # instantiate session
     session.instantiate()
