@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Iterable, Optional, Type
+from typing import Iterable, Optional, Pattern, Type
 
 import grpc
 from grpc import ServicerContext
@@ -118,8 +118,8 @@ from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_INTERFACE_REGEX = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
+_ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
+_INTERFACE_REGEX: Pattern = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):

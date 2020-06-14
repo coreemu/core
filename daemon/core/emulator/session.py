@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -59,7 +59,7 @@ from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 # maps for converting from API call node type values to classes and vice versa
-NODES = {
+NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.DEFAULT: CoreNode,
     NodeTypes.PHYSICAL: PhysicalNode,
     NodeTypes.SWITCH: SwitchNode,
@@ -74,11 +74,11 @@ NODES = {
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
 }
-NODES_TYPE = {NODES[x]: x for x in NODES}
-CONTAINER_NODES = {DockerNode, LxcNode}
-CTRL_NET_ID = 9001
-LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
-NT = TypeVar("NT", bound=NodeBase)
+NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
+CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
+CTRL_NET_ID: int = 9001
+LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
+NT: TypeVar = TypeVar("NT", bound=NodeBase)
 
 
 class Session:
