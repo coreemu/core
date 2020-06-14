@@ -1564,23 +1564,18 @@ class Session:
             return 0.0
 
     def add_event(
-        self,
-        event_time: float,
-        node: CoreNode = None,
-        name: str = None,
-        data: str = None,
+        self, event_time: float, node_id: int = None, name: str = None, data: str = None
     ) -> None:
         """
         Add an event to the event queue, with a start time relative to the
         start of the runtime state.
 
         :param event_time: event time
-        :param node: node to add event for
+        :param node_id: node to add event for
         :param name: name of event
         :param data: data for event
         :return: nothing
         """
-        event_time = float(event_time)
         current_time = self.runtime()
         if current_time > 0:
             if event_time <= current_time:
@@ -1592,7 +1587,7 @@ class Session:
                 return
             event_time = event_time - current_time
         self.event_loop.add_event(
-            event_time, self.run_event, node=node, name=name, data=data
+            event_time, self.run_event, node_id=node_id, name=name, data=data
         )
         if not name:
             name = ""

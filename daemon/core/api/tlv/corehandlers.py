@@ -809,38 +809,38 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.api.tlv.coreapi.CoreExecMessage message: execute message to handle
         :return: reply messages
         """
-        node_num = message.get_tlv(ExecuteTlvs.NODE.value)
+        node_id = message.get_tlv(ExecuteTlvs.NODE.value)
         execute_num = message.get_tlv(ExecuteTlvs.NUMBER.value)
         execute_time = message.get_tlv(ExecuteTlvs.TIME.value)
         command = message.get_tlv(ExecuteTlvs.COMMAND.value)
 
         # local flag indicates command executed locally, not on a node
-        if node_num is None and not message.flags & MessageFlags.LOCAL.value:
+        if node_id is None and not message.flags & MessageFlags.LOCAL.value:
             raise ValueError("Execute Message is missing node number.")
 
         if execute_num is None:
             raise ValueError("Execute Message is missing execution number.")
 
         if execute_time is not None:
-            self.session.add_event(execute_time, node=node_num, name=None, data=command)
+            self.session.add_event(
+                float(execute_time), node_id=node_id, name=None, data=command
+            )
             return ()
 
         try:
-            node = self.session.get_node(node_num, CoreNodeBase)
+            node = self.session.get_node(node_id, CoreNodeBase)
 
             # build common TLV items for reply
             tlv_data = b""
-            if node_num is not None:
-                tlv_data += coreapi.CoreExecuteTlv.pack(
-                    ExecuteTlvs.NODE.value, node_num
-                )
+            if node_id is not None:
+                tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node_id)
             tlv_data += coreapi.CoreExecuteTlv.pack(
                 ExecuteTlvs.NUMBER.value, execute_num
             )
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
 
             if message.flags & MessageFlags.TTY.value:
-                if node_num is None:
+                if node_id is None:
                     raise NotImplementedError
                 # echo back exec message with cmd for spawning interactive terminal
                 if command == "bash":
@@ -850,7 +850,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY.value, tlv_data)
                 return (reply,)
             else:
-                logging.info("execute message with cmd=%s", command)
                 # execute command and send a response
                 if (
                     message.flags & MessageFlags.STRING.value
@@ -870,7 +869,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         except CoreCommandError as e:
                             res = e.stderr
                             status = e.returncode
-                    logging.info("done exec cmd=%s with status=%d", command, status)
                     if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(
                             ExecuteTlvs.RESULT.value, res
@@ -888,7 +886,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     else:
                         node.cmd(command, wait=False)
         except CoreError:
-            logging.exception("error getting object: %s", node_num)
+            logging.exception("error getting object: %s", node_id)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
             if not message.flags & MessageFlags.LOCAL.value:
@@ -1549,11 +1547,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if event_type == EventTypes.INSTANTIATION_STATE and isinstance(
                     node, WlanNode
                 ):
-                    self.session.start_mobility(node_ids=(node.id,))
+                    self.session.start_mobility(node_ids=[node.id])
                     return ()
 
                 logging.warning(
-                    "dropping unhandled event message for node: %s", node_id
+                    "dropping unhandled event message for node: %s", node.name
                 )
                 return ()
             self.session.set_state(event_type)
@@ -1611,14 +1609,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.save_xml(filename)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
-            node = event_data.node
+            node_id = event_data.node
             name = event_data.name
             data = event_data.data
             if etime is None:
                 logging.warning("Event message scheduled event missing start time")
                 return ()
             if message.flags & MessageFlags.ADD.value:
-                self.session.add_event(float(etime), node=node, name=name, data=data)
+                self.session.add_event(
+                    float(etime), node_id=node_id, name=name, data=data
+                )
             else:
                 raise NotImplementedError
 
