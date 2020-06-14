@@ -76,6 +76,9 @@ class EmaneNet(CoreNetworkBase):
     def config(self, conf: str) -> None:
         self.conf = conf
 
+    def startup(self) -> None:
+        pass
+
     def shutdown(self) -> None:
         pass
 

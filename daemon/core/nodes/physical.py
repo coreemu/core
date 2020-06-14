@@ -217,13 +217,16 @@ class PhysicalNode(CoreNodeBase):
         return open(hostfilename, mode)
 
     def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
-        with self.opennodefile(filename, "w") as node_file:
-            node_file.write(contents)
-            os.chmod(node_file.name, mode)
-            logging.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
+        with self.opennodefile(filename, "w") as f:
+            f.write(contents)
+            os.chmod(f.name, mode)
+            logging.info("created nodefile: '%s'; mode: 0%o", f.name, mode)
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         return self.host_cmd(args, wait=wait)
+
+    def addfile(self, srcname: str, filename: str) -> None:
+        raise NotImplementedError
 
 
 class Rj45Node(CoreNodeBase):
@@ -446,10 +449,13 @@ class Rj45Node(CoreNodeBase):
         self.interface.setposition()
 
     def termcmdstring(self, sh: str) -> str:
-        """
-        Create a terminal command string.
+        raise NotImplementedError
 
-        :param sh: shell to execute command in
-        :return: str
-        """
+    def addfile(self, srcname: str, filename: str) -> None:
+        raise NotImplementedError
+
+    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+        raise NotImplementedError
+
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         raise NotImplementedError
