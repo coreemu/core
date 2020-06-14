@@ -898,16 +898,16 @@ class PtpNet(CoreNetwork):
         if len(self._netif) != 2:
             return all_links
 
-        if1, if2 = self._netif.values()
+        interface1, interface2 = self._netif.values()
         unidirectional = 0
-        if if1.getparams() != if2.getparams():
+        if interface1.getparams() != interface2.getparams():
             unidirectional = 1
 
         interface1_ip4 = None
         interface1_ip4_mask = None
         interface1_ip6 = None
         interface1_ip6_mask = None
-        for address in if1.addrlist:
+        for address in interface1.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
@@ -921,7 +921,7 @@ class PtpNet(CoreNetwork):
         interface2_ip4_mask = None
         interface2_ip6 = None
         interface2_ip6_mask = None
-        for address in if2.addrlist:
+        for address in interface2.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
@@ -933,31 +933,30 @@ class PtpNet(CoreNetwork):
 
         link_data = LinkData(
             message_type=flags,
-            node1_id=if1.node.id,
-            node2_id=if2.node.id,
+            node1_id=interface1.node.id,
+            node2_id=interface2.node.id,
             link_type=self.linktype,
             unidirectional=unidirectional,
-            delay=if1.getparam("delay"),
-            bandwidth=if1.getparam("bw"),
-            loss=if1.getparam("loss"),
-            dup=if1.getparam("duplicate"),
-            jitter=if1.getparam("jitter"),
-            interface1_id=if1.node.getifindex(if1),
-            interface1_name=if1.name,
-            interface1_mac=if1.hwaddr,
+            delay=interface1.getparam("delay"),
+            bandwidth=interface1.getparam("bw"),
+            loss=interface1.getparam("loss"),
+            dup=interface1.getparam("duplicate"),
+            jitter=interface1.getparam("jitter"),
+            interface1_id=interface1.node.getifindex(interface1),
+            interface1_name=interface1.name,
+            interface1_mac=interface1.hwaddr,
             interface1_ip4=interface1_ip4,
             interface1_ip4_mask=interface1_ip4_mask,
             interface1_ip6=interface1_ip6,
             interface1_ip6_mask=interface1_ip6_mask,
-            interface2_id=if2.node.getifindex(if2),
-            interface2_name=if2.name,
-            interface2_mac=if2.hwaddr,
+            interface2_id=interface2.node.getifindex(interface2),
+            interface2_name=interface2.name,
+            interface2_mac=interface2.hwaddr,
             interface2_ip4=interface2_ip4,
             interface2_ip4_mask=interface2_ip4_mask,
             interface2_ip6=interface2_ip6,
             interface2_ip6_mask=interface2_ip6_mask,
         )
-
         all_links.append(link_data)
 
         # build a 2nd link message for the upstream link parameters
@@ -966,19 +965,18 @@ class PtpNet(CoreNetwork):
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 link_type=self.linktype,
-                node1_id=if2.node.id,
-                node2_id=if1.node.id,
-                delay=if2.getparam("delay"),
-                bandwidth=if2.getparam("bw"),
-                loss=if2.getparam("loss"),
-                dup=if2.getparam("duplicate"),
-                jitter=if2.getparam("jitter"),
+                node1_id=interface2.node.id,
+                node2_id=interface1.node.id,
+                delay=interface2.getparam("delay"),
+                bandwidth=interface2.getparam("bw"),
+                loss=interface2.getparam("loss"),
+                dup=interface2.getparam("duplicate"),
+                jitter=interface2.getparam("jitter"),
                 unidirectional=1,
-                interface1_id=if2.node.getifindex(if2),
-                interface2_id=if1.node.getifindex(if1),
+                interface1_id=interface2.node.getifindex(interface2),
+                interface2_id=interface1.node.getifindex(interface1),
             )
             all_links.append(link_data)
-
         return all_links
 
 
