@@ -53,53 +53,53 @@ class TestNodes:
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        interface = node.newnetif(switch, interface_data)
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
         mac = "aa:aa:aa:ff:ff:ff"
 
         # when
-        node.sethwaddr(interface.netindex, mac)
+        node.sethwaddr(iface.node_id, mac)
 
         # then
-        assert interface.hwaddr == mac
+        assert iface.hwaddr == mac
 
     def test_node_sethwaddr_exception(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        interface = node.newnetif(switch, interface_data)
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
         mac = "aa:aa:aa:ff:ff:fff"
 
         # when
         with pytest.raises(CoreError):
-            node.sethwaddr(interface.netindex, mac)
+            node.sethwaddr(iface.node_id, mac)
 
     def test_node_addaddr(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        interface = node.newnetif(switch, interface_data)
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
         addr = "192.168.0.1/24"
 
         # when
-        node.addaddr(interface.netindex, addr)
+        node.addaddr(iface.node_id, addr)
 
         # then
-        assert interface.addrlist[0] == addr
+        assert iface.addrlist[0] == addr
 
     def test_node_addaddr_exception(self, session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        interface = node.newnetif(switch, interface_data)
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
         addr = "256.168.0.1/24"
 
         # when
         with pytest.raises(CoreError):
-            node.addaddr(interface.netindex, addr)
+            node.addaddr(iface.node_id, addr)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):

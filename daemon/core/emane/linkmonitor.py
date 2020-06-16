@@ -212,10 +212,10 @@ class EmaneLinkMonitor:
         addresses = []
         nodes = self.emane_manager.getnodes()
         for node in nodes:
-            for netif in node.netifs():
-                if isinstance(netif.net, CtrlNet):
+            for iface in node.get_ifaces():
+                if isinstance(iface.net, CtrlNet):
                     ip4 = None
-                    for x in netif.addrlist:
+                    for x in iface.addrlist:
                         address, prefix = x.split("/")
                         if netaddr.valid_ipv4(address):
                             ip4 = address

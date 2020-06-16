@@ -20,14 +20,14 @@ class EmaneTransportService(CoreService):
     def generate_config(cls, node, filename):
         if filename == cls.configs[0]:
             transport_commands = []
-            for interface in node.netifs(sort=True):
+            for iface in node.get_ifaces():
                 try:
-                    network_node = node.session.get_node(interface.net.id, EmaneNet)
+                    network_node = node.session.get_node(iface.net.id, EmaneNet)
                     config = node.session.emane.get_configs(
                         network_node.id, network_node.model.name
                     )
                     if config and emanexml.is_external(config):
-                        nem_id = network_node.getnemid(interface)
+                        nem_id = network_node.getnemid(iface)
                         command = (
                             "emanetransportd -r -l 0 -d ../transportdaemon%s.xml"
                             % nem_id

@@ -111,41 +111,39 @@ class EmaneManager(ModelManager):
         self.event_device: Optional[str] = None
         self.emane_check()
 
-    def getifcconfig(
-        self, node_id: int, interface: CoreInterface, model_name: str
+    def get_iface_config(
+        self, node_id: int, iface: CoreInterface, model_name: str
     ) -> Dict[str, str]:
         """
         Retrieve interface configuration or node configuration if not provided.
 
         :param node_id: node id
-        :param interface: node interface
+        :param iface: node interface
         :param model_name: model to get configuration for
         :return: node/interface model configuration
         """
         # use the network-wide config values or interface(NEM)-specific values?
-        if interface is None:
+        if iface is None:
             return self.get_configs(node_id=node_id, config_type=model_name)
         else:
             # don"t use default values when interface config is the same as net
-            # note here that using ifc.node.id as key allows for only one type
+            # note here that using iface.node.id as key allows for only one type
             # of each model per node;
             # TODO: use both node and interface as key
 
-            # Adamson change: first check for iface config keyed by "node:ifc.name"
+            # Adamson change: first check for iface config keyed by "node:iface.name"
             # (so that nodes w/ multiple interfaces of same conftype can have
             #  different configs for each separate interface)
-            key = 1000 * interface.node.id
-            if interface.netindex is not None:
-                key += interface.netindex
+            key = 1000 * iface.node.id
+            if iface.node_id is not None:
+                key += iface.node_id
 
             # try retrieve interface specific configuration, avoid getting defaults
             config = self.get_configs(node_id=key, config_type=model_name)
 
             # otherwise retrieve the interfaces node configuration, avoid using defaults
             if not config:
-                config = self.get_configs(
-                    node_id=interface.node.id, config_type=model_name
-                )
+                config = self.get_configs(node_id=iface.node.id, config_type=model_name)
 
             # get non interface config, when none found
             if not config:
@@ -265,8 +263,8 @@ class EmaneManager(ModelManager):
         # assumes self._objslock already held
         nodes = set()
         for emane_net in self._emane_nets.values():
-            for netif in emane_net.netifs():
-                nodes.add(netif.node)
+            for iface in emane_net.get_ifaces():
+                nodes.add(iface.node)
         return nodes
 
     def setup(self) -> int:
@@ -352,13 +350,13 @@ class EmaneManager(ModelManager):
 
             if self.numnems() > 0:
                 self.startdaemons()
-                self.installnetifs()
+                self.install_ifaces()
 
             for node_id in self._emane_nets:
                 emane_node = self._emane_nets[node_id]
-                for netif in emane_node.netifs():
+                for iface in emane_node.get_ifaces():
                     nems.append(
-                        (netif.node.name, netif.name, emane_node.getnemid(netif))
+                        (iface.node.name, iface.name, emane_node.getnemid(iface))
                     )
 
         if nems:
@@ -392,8 +390,8 @@ class EmaneManager(ModelManager):
                     emane_node.name,
                 )
                 emane_node.model.post_startup()
-                for netif in emane_node.netifs():
-                    netif.setposition()
+                for iface in emane_node.get_ifaces():
+                    iface.setposition()
 
     def reset(self) -> None:
         """
@@ -420,7 +418,7 @@ class EmaneManager(ModelManager):
             logging.info("stopping EMANE daemons")
             if self.links_enabled():
                 self.link_monitor.stop()
-            self.deinstallnetifs()
+            self.deinstall_ifaces()
             self.stopdaemons()
             self.stopeventmonitor()
 
@@ -474,31 +472,31 @@ class EmaneManager(ModelManager):
         EMANE network and NEM interface.
         """
         emane_node = None
-        netif = None
+        iface = None
 
         for node_id in self._emane_nets:
             emane_node = self._emane_nets[node_id]
-            netif = emane_node.getnemnetif(nemid)
-            if netif is not None:
+            iface = emane_node.get_nem_iface(nemid)
+            if iface is not None:
                 break
             else:
                 emane_node = None
 
-        return emane_node, netif
+        return emane_node, iface
 
     def get_nem_link(
         self, nem1: int, nem2: int, flags: MessageFlags = MessageFlags.NONE
     ) -> Optional[LinkData]:
-        emane1, netif = self.nemlookup(nem1)
-        if not emane1 or not netif:
+        emane1, iface = self.nemlookup(nem1)
+        if not emane1 or not iface:
             logging.error("invalid nem: %s", nem1)
             return None
-        node1 = netif.node
-        emane2, netif = self.nemlookup(nem2)
-        if not emane2 or not netif:
+        node1 = iface.node
+        emane2, iface = self.nemlookup(nem2)
+        if not emane2 or not iface:
             logging.error("invalid nem: %s", nem2)
             return None
-        node2 = netif.node
+        node2 = iface.node
         color = self.session.get_link_color(emane1.id)
         return LinkData(
             message_type=flags,
@@ -516,7 +514,7 @@ class EmaneManager(ModelManager):
         count = 0
         for node_id in self._emane_nets:
             emane_node = self._emane_nets[node_id]
-            count += len(emane_node.netifs())
+            count += len(emane_node.ifaces)
         return count
 
     def buildplatformxml(self, ctrlnet: CtrlNet) -> None:
@@ -607,19 +605,19 @@ class EmaneManager(ModelManager):
             n = node.id
 
             # control network not yet started here
-            self.session.add_remove_control_interface(
+            self.session.add_remove_control_iface(
                 node, 0, remove=False, conf_required=False
             )
 
             if otanetidx > 0:
                 logging.info("adding ota device ctrl%d", otanetidx)
-                self.session.add_remove_control_interface(
+                self.session.add_remove_control_iface(
                     node, otanetidx, remove=False, conf_required=False
                 )
 
             if eventservicenetidx >= 0:
                 logging.info("adding event service device ctrl%d", eventservicenetidx)
-                self.session.add_remove_control_interface(
+                self.session.add_remove_control_iface(
                     node, eventservicenetidx, remove=False, conf_required=False
                 )
 
@@ -676,23 +674,23 @@ class EmaneManager(ModelManager):
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 
-    def installnetifs(self) -> None:
+    def install_ifaces(self) -> None:
         """
         Install TUN/TAP virtual interfaces into their proper namespaces
         now that the EMANE daemons are running.
         """
         for key in sorted(self._emane_nets.keys()):
-            emane_node = self._emane_nets[key]
-            logging.info("emane install netifs for node: %d", key)
-            emane_node.installnetifs()
+            node = self._emane_nets[key]
+            logging.info("emane install interface for node(%s): %d", node.name, key)
+            node.install_ifaces()
 
-    def deinstallnetifs(self) -> None:
+    def deinstall_ifaces(self) -> None:
         """
         Uninstall TUN/TAP virtual interfaces.
         """
         for key in sorted(self._emane_nets.keys()):
             emane_node = self._emane_nets[key]
-            emane_node.deinstallnetifs()
+            emane_node.deinstall_ifaces()
 
     def doeventmonitor(self) -> bool:
         """
@@ -808,12 +806,12 @@ class EmaneManager(ModelManager):
         Returns True if successfully parsed and a Node Message was sent.
         """
         # convert nemid to node number
-        _emanenode, netif = self.nemlookup(nemid)
-        if netif is None:
+        _emanenode, iface = self.nemlookup(nemid)
+        if iface is None:
             logging.info("location event for unknown NEM %s", nemid)
             return False
 
-        n = netif.node.id
+        n = iface.node.id
         # convert from lat/long/alt to x,y,z coordinates
         x, y, z = self.session.location.getxyz(lat, lon, alt)
         x = int(x)

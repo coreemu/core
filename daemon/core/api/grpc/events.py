@@ -82,7 +82,7 @@ def handle_config_event(event: ConfigData) -> core_pb2.ConfigEvent:
         data_values=event.data_values,
         possible_values=event.possible_values,
         groups=event.groups,
-        interface=event.interface_number,
+        iface_id=event.iface_id,
         network_id=event.network_id,
         opaque=event.opaque,
         data_types=event.data_types,

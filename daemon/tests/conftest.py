@@ -89,7 +89,7 @@ def ip_prefixes():
 
 
 @pytest.fixture(scope="session")
-def interface_helper():
+def iface_helper():
     return InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
 

@@ -146,6 +146,6 @@ class IpConfigDialog(Dialog):
         ip_config.ip6 = self.ip6
         ip_config.ip4s = ip4s
         ip_config.ip6s = ip6s
-        self.app.core.interfaces_manager.update_ips(self.ip4, self.ip6)
+        self.app.core.ifaces_manager.update_ips(self.ip4, self.ip6)
         self.app.save_config()
         self.destroy()

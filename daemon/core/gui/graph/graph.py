@@ -97,7 +97,7 @@ class CanvasGraph(tk.Canvas):
         self.show_link_labels = ShowVar(self, tags.LINK_LABEL, value=True)
         self.show_grid = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations = ShowVar(self, tags.ANNOTATION, value=True)
-        self.show_interface_names = BooleanVar(value=False)
+        self.show_iface_names = BooleanVar(value=False)
         self.show_ip4s = BooleanVar(value=True)
         self.show_ip6s = BooleanVar(value=True)
 
@@ -136,7 +136,7 @@ class CanvasGraph(tk.Canvas):
         self.show_link_labels.set(True)
         self.show_grid.set(True)
         self.show_annotations.set(True)
-        self.show_interface_names.set(False)
+        self.show_iface_names.set(False)
         self.show_ip4s.set(True)
         self.show_ip6s.set(True)
 
@@ -195,19 +195,19 @@ class CanvasGraph(tk.Canvas):
         return valid_topleft and valid_bottomright
 
     def set_throughputs(self, throughputs_event: core_pb2.ThroughputsEvent):
-        for interface_throughput in throughputs_event.interface_throughputs:
-            node_id = interface_throughput.node_id
-            interface_id = interface_throughput.interface_id
-            throughput = interface_throughput.throughput
-            interface_to_edge_id = (node_id, interface_id)
-            token = self.core.interface_to_edge.get(interface_to_edge_id)
+        for iface_throughput in throughputs_event.iface_throughputs:
+            node_id = iface_throughput.node_id
+            iface_id = iface_throughput.iface_id
+            throughput = iface_throughput.throughput
+            iface_to_edge_id = (node_id, iface_id)
+            token = self.core.iface_to_edge.get(iface_to_edge_id)
             if not token:
                 continue
             edge = self.edges.get(token)
             if edge:
                 edge.set_throughput(throughput)
             else:
-                del self.core.interface_to_edge[interface_to_edge_id]
+                del self.core.iface_to_edge[iface_to_edge_id]
 
     def draw_grid(self):
         """
@@ -321,18 +321,16 @@ class CanvasGraph(tk.Canvas):
                     canvas_node2.edges.add(edge)
                     self.edges[edge.token] = edge
                     self.core.links[edge.token] = edge
-                    if link.HasField("interface1"):
-                        interface1 = link.interface1
-                        self.core.interface_to_edge[(node1.id, interface1.id)] = token
-                        canvas_node1.interfaces[interface1.id] = interface1
-                        edge.src_interface = interface1
-                    if link.HasField("interface2"):
-                        interface2 = link.interface2
-                        self.core.interface_to_edge[
-                            (node2.id, interface2.id)
-                        ] = edge.token
-                        canvas_node2.interfaces[interface2.id] = interface2
-                        edge.dst_interface = interface2
+                    if link.HasField("iface1"):
+                        iface1 = link.iface1
+                        self.core.iface_to_edge[(node1.id, iface1.id)] = token
+                        canvas_node1.ifaces[iface1.id] = iface1
+                        edge.src_iface = iface1
+                    if link.HasField("iface2"):
+                        iface2 = link.iface2
+                        self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
+                        canvas_node2.ifaces[iface2.id] = iface2
+                        edge.dst_iface = iface2
                 elif link.options.unidirectional:
                     edge = self.edges[token]
                     edge.asymmetric_link = link
@@ -513,14 +511,14 @@ class CanvasGraph(tk.Canvas):
                     edge.delete()
                     # update node connected to edge being deleted
                     other_id = edge.src
-                    other_interface = edge.src_interface
+                    other_iface = edge.src_iface
                     if edge.src == object_id:
                         other_id = edge.dst
-                        other_interface = edge.dst_interface
+                        other_iface = edge.dst_iface
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
-                    if other_interface:
-                        del other_node.interfaces[other_interface.id]
+                    if other_iface:
+                        del other_node.ifaces[other_iface.id]
                     if is_wireless:
                         other_node.delete_antenna()
 
@@ -538,12 +536,12 @@ class CanvasGraph(tk.Canvas):
         del self.edges[edge.token]
         src_node = self.nodes[edge.src]
         src_node.edges.discard(edge)
-        if edge.src_interface:
-            del src_node.interfaces[edge.src_interface.id]
+        if edge.src_iface:
+            del src_node.ifaces[edge.src_iface.id]
         dst_node = self.nodes[edge.dst]
         dst_node.edges.discard(edge)
-        if edge.dst_interface:
-            del dst_node.interfaces[edge.dst_interface.id]
+        if edge.dst_iface:
+            del dst_node.ifaces[edge.dst_iface.id]
         src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
         if src_wireless:
             dst_node.delete_antenna()
@@ -963,26 +961,26 @@ class CanvasGraph(tk.Canvas):
             copy_link = copy_edge.link
             options = edge.link.options
             copy_link.options.CopyFrom(options)
-            interface1_id = None
-            if copy_link.HasField("interface1"):
-                interface1_id = copy_link.interface1.id
-            interface2_id = None
-            if copy_link.HasField("interface2"):
-                interface2_id = copy_link.interface2.id
+            iface1_id = None
+            if copy_link.HasField("iface1"):
+                iface1_id = copy_link.iface1.id
+            iface2_id = None
+            if copy_link.HasField("iface2"):
+                iface2_id = copy_link.iface2.id
             if not options.unidirectional:
                 copy_edge.asymmetric_link = None
             else:
-                asym_interface1 = None
-                if interface1_id:
-                    asym_interface1 = core_pb2.Interface(id=interface1_id)
-                asym_interface2 = None
-                if interface2_id:
-                    asym_interface2 = core_pb2.Interface(id=interface2_id)
+                asym_iface1 = None
+                if iface1_id:
+                    asym_iface1 = core_pb2.Interface(id=iface1_id)
+                asym_iface2 = None
+                if iface2_id:
+                    asym_iface2 = core_pb2.Interface(id=iface2_id)
                 copy_edge.asymmetric_link = core_pb2.Link(
                     node1_id=copy_link.node2_id,
                     node2_id=copy_link.node1_id,
-                    interface1=asym_interface1,
-                    interface2=asym_interface2,
+                    iface1=asym_iface1,
+                    iface2=asym_iface2,
                     options=edge.asymmetric_link.options,
                 )
             self.itemconfig(

@@ -75,7 +75,7 @@ def convert_config(config_data):
             (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
             (ConfigTlvs.GROUPS, config_data.groups),
             (ConfigTlvs.SESSION, session),
-            (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
+            (ConfigTlvs.IFACE_ID, config_data.iface_id),
             (ConfigTlvs.NETWORK_ID, config_data.network_id),
             (ConfigTlvs.OPAQUE, config_data.opaque),
         ],

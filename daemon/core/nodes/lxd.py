@@ -126,7 +126,7 @@ class LxcNode(CoreNode):
             return
 
         with self.lock:
-            self._netif.clear()
+            self.ifaces.clear()
             self.client.stop_container()
             self.up = False
 
@@ -215,7 +215,7 @@ class LxcNode(CoreNode):
         self.client.copy_file(source, filename)
         self.cmd(f"chmod {mode:o} {filename}")
 
-    def addnetif(self, netif: CoreInterface, ifindex: int) -> None:
-        super().addnetif(netif, ifindex)
+    def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
+        super().add_iface(iface, iface_id)
         # adding small delay to allow time for adding addresses to work correctly
         time.sleep(0.5)

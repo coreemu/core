@@ -24,8 +24,8 @@ class MgenSinkService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
-        for ifc in self.node.netifs():
-            name = utils.sysctl_devname(ifc.name)
+        for iface in self.node.get_ifaces():
+            name = utils.sysctl_devname(iface.name)
             ifnames.append(name)
         return dict(ifnames=ifnames)
 
@@ -47,10 +47,8 @@ class NrlNhdp(ConfigService):
     def data(self) -> Dict[str, Any]:
         has_smf = "SMF" in self.node.config_services
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
@@ -74,13 +72,11 @@ class NrlSmf(ConfigService):
         has_olsr = "OLSR" in self.node.config_services
         ifnames = []
         ip4_prefix = None
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
             if ip4_prefix:
                 continue
-            for a in ifc.addrlist:
+            for a in iface.addrlist:
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     ip4_prefix = f"{a}/{24}"
@@ -112,10 +108,8 @@ class NrlOlsr(ConfigService):
         has_smf = "SMF" in self.node.config_services
         has_zebra = "zebra" in self.node.config_services
         ifname = None
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifname = ifc.name
+        for iface in self.node.get_ifaces(control=False):
+            ifname = iface.name
             break
         return dict(has_smf=has_smf, has_zebra=has_zebra, ifname=ifname)
 
@@ -137,10 +131,8 @@ class NrlOlsrv2(ConfigService):
     def data(self) -> Dict[str, Any]:
         has_smf = "SMF" in self.node.config_services
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
@@ -161,10 +153,8 @@ class OlsrOrg(ConfigService):
     def data(self) -> Dict[str, Any]:
         has_smf = "SMF" in self.node.config_services
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
@@ -199,12 +189,10 @@ class Arouted(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ip4_prefix = None
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
+        for iface in self.node.get_ifaces(control=False):
             if ip4_prefix:
                 continue
-            for a in ifc.addrlist:
+            for a in iface.addrlist:
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     ip4_prefix = f"{a}/{24}"

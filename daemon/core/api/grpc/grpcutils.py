@@ -52,29 +52,29 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
     return _type, _id, options
 
 
-def link_interface(interface_proto: core_pb2.Interface) -> InterfaceData:
+def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
     """
     Create interface data from interface proto.
 
-    :param interface_proto: interface proto
+    :param iface_proto: interface proto
     :return: interface data
     """
-    interface_data = None
-    if interface_proto:
-        name = interface_proto.name if interface_proto.name else None
-        mac = interface_proto.mac if interface_proto.mac else None
-        ip4 = interface_proto.ip4 if interface_proto.ip4 else None
-        ip6 = interface_proto.ip6 if interface_proto.ip6 else None
-        interface_data = InterfaceData(
-            id=interface_proto.id,
+    iface_data = None
+    if iface_proto:
+        name = iface_proto.name if iface_proto.name else None
+        mac = iface_proto.mac if iface_proto.mac else None
+        ip4 = iface_proto.ip4 if iface_proto.ip4 else None
+        ip6 = iface_proto.ip6 if iface_proto.ip6 else None
+        iface_data = InterfaceData(
+            id=iface_proto.id,
             name=name,
             mac=mac,
             ip4=ip4,
-            ip4_mask=interface_proto.ip4mask,
+            ip4_mask=iface_proto.ip4mask,
             ip6=ip6,
-            ip6_mask=interface_proto.ip6mask,
+            ip6_mask=iface_proto.ip6mask,
         )
-    return interface_data
+    return iface_data
 
 
 def add_link_data(
@@ -86,8 +86,8 @@ def add_link_data(
     :param link_proto: link  proto
     :return: link interfaces and options
     """
-    interface1_data = link_interface(link_proto.interface1)
-    interface2_data = link_interface(link_proto.interface2)
+    iface1_data = link_iface(link_proto.iface1)
+    iface2_data = link_iface(link_proto.iface2)
     link_type = LinkTypes(link_proto.type)
     options = LinkOptions(type=link_type)
     options_data = link_proto.options
@@ -103,7 +103,7 @@ def add_link_data(
         options.unidirectional = options_data.unidirectional
         options.key = options_data.key
         options.opaque = options_data.opaque
-    return interface1_data, interface2_data, options
+    return iface1_data, iface2_data, options
 
 
 def create_nodes(
@@ -143,8 +143,8 @@ def create_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        interface1, interface2, options = add_link_data(link_proto)
-        args = (node1_id, node2_id, interface1, interface2, options)
+        iface1, iface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1, iface2, options)
         funcs.append((session.add_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -167,8 +167,8 @@ def edit_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        interface1, interface2, options = add_link_data(link_proto)
-        args = (node1_id, node2_id, interface1.id, interface2.id, options)
+        iface1, iface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1.id, iface2.id, options)
         funcs.append((session.update_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -279,16 +279,16 @@ def get_links(node: NodeBase):
     return links
 
 
-def get_emane_model_id(node_id: int, interface_id: int) -> int:
+def get_emane_model_id(node_id: int, iface_id: int) -> int:
     """
     Get EMANE model id
 
     :param node_id: node id
-    :param interface_id: interface id
+    :param iface_id: interface id
     :return: EMANE model id
     """
-    if interface_id >= 0:
-        return node_id * 1000 + interface_id
+    if iface_id >= 0:
+        return node_id * 1000 + iface_id
     else:
         return node_id
 
@@ -300,12 +300,12 @@ def parse_emane_model_id(_id: int) -> Tuple[int, int]:
     :param _id: id to parse
     :return: node id and interface id
     """
-    interface = -1
+    iface_id = -1
     node_id = _id
     if _id >= 1000:
-        interface = _id % 1000
+        iface_id = _id % 1000
         node_id = int(_id / 1000)
-    return node_id, interface
+    return node_id, iface_id
 
 
 def convert_link(link_data: LinkData) -> core_pb2.Link:
@@ -315,27 +315,27 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
     :param link_data: link to convert
     :return: core protobuf Link
     """
-    interface1 = None
-    if link_data.interface1_id is not None:
-        interface1 = core_pb2.Interface(
-            id=link_data.interface1_id,
-            name=link_data.interface1_name,
-            mac=convert_value(link_data.interface1_mac),
-            ip4=convert_value(link_data.interface1_ip4),
-            ip4mask=link_data.interface1_ip4_mask,
-            ip6=convert_value(link_data.interface1_ip6),
-            ip6mask=link_data.interface1_ip6_mask,
+    iface1 = None
+    if link_data.iface1_id is not None:
+        iface1 = core_pb2.Interface(
+            id=link_data.iface1_id,
+            name=link_data.iface1_name,
+            mac=convert_value(link_data.iface1_mac),
+            ip4=convert_value(link_data.iface1_ip4),
+            ip4mask=link_data.iface1_ip4_mask,
+            ip6=convert_value(link_data.iface1_ip6),
+            ip6mask=link_data.iface1_ip6_mask,
         )
-    interface2 = None
-    if link_data.interface2_id is not None:
-        interface2 = core_pb2.Interface(
-            id=link_data.interface2_id,
-            name=link_data.interface2_name,
-            mac=convert_value(link_data.interface2_mac),
-            ip4=convert_value(link_data.interface2_ip4),
-            ip4mask=link_data.interface2_ip4_mask,
-            ip6=convert_value(link_data.interface2_ip6),
-            ip6mask=link_data.interface2_ip6_mask,
+    iface2 = None
+    if link_data.iface2_id is not None:
+        iface2 = core_pb2.Interface(
+            id=link_data.iface2_id,
+            name=link_data.iface2_name,
+            mac=convert_value(link_data.iface2_mac),
+            ip4=convert_value(link_data.iface2_ip4),
+            ip4mask=link_data.iface2_ip4_mask,
+            ip6=convert_value(link_data.iface2_ip6),
+            ip6mask=link_data.iface2_ip6_mask,
         )
     options = core_pb2.LinkOptions(
         opaque=link_data.opaque,
@@ -354,8 +354,8 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
         type=link_data.link_type.value,
         node1_id=link_data.node1_id,
         node2_id=link_data.node2_id,
-        interface1=interface1,
-        interface2=interface2,
+        iface1=iface1,
+        iface2=iface2,
         options=options,
         network_id=link_data.network_id,
         label=link_data.label,
@@ -440,20 +440,20 @@ def get_service_configuration(service: CoreService) -> NodeServiceData:
     )
 
 
-def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
+def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
-    :param interface: interface to convert
+    :param iface: interface to convert
     :return: interface proto
     """
     net_id = None
-    if interface.net:
-        net_id = interface.net.id
+    if iface.net:
+        net_id = iface.net.id
     ip4 = None
     ip4mask = None
     ip6 = None
     ip6mask = None
-    for addr in interface.addrlist:
+    for addr in iface.addrlist:
         network = netaddr.IPNetwork(addr)
         mask = network.prefixlen
         ip = str(network.ip)
@@ -464,12 +464,12 @@ def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
             ip6 = ip
             ip6mask = mask
     return core_pb2.Interface(
-        id=interface.netindex,
+        id=iface.node_id,
         netid=net_id,
-        name=interface.name,
-        mac=str(interface.hwaddr),
-        mtu=interface.mtu,
-        flowid=interface.flow_id,
+        name=iface.name,
+        mac=str(iface.hwaddr),
+        mtu=iface.mtu,
+        flowid=iface.flow_id,
         ip4=ip4,
         ip4mask=ip4mask,
         ip6=ip6,
@@ -477,21 +477,21 @@ def interface_to_proto(interface: CoreInterface) -> core_pb2.Interface:
     )
 
 
-def get_nem_id(node: CoreNode, netif_id: int, context: ServicerContext) -> int:
+def get_nem_id(node: CoreNode, iface_id: int, context: ServicerContext) -> int:
     """
     Get nem id for a given node and interface id.
 
     :param node: node to get nem id for
-    :param netif_id: id of interface on node to get nem id for
+    :param iface_id: id of interface on node to get nem id for
     :param context: request context
     :return: nem id
     """
-    netif = node.netif(netif_id)
-    if not netif:
-        message = f"{node.name} missing interface {netif_id}"
+    iface = node.ifaces.get(iface_id)
+    if not iface:
+        message = f"{node.name} missing interface {iface_id}"
         context.abort(grpc.StatusCode.NOT_FOUND, message)
-    net = netif.net
+    net = iface.net
     if not isinstance(net, EmaneNet):
-        message = f"{node.name} interface {netif_id} is not an EMANE network"
+        message = f"{node.name} interface {iface_id} is not an EMANE network"
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
-    return net.getnemid(netif)
+    return net.getnemid(iface)

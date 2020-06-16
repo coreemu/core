@@ -208,7 +208,7 @@ class DistributedController:
             "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
         )
         local_tap = GreTap(session=self.session, remoteip=host, key=key)
-        local_tap.net_client.set_interface_master(node.brname, local_tap.localname)
+        local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
 
         # server to local
         logging.info(
@@ -217,7 +217,7 @@ class DistributedController:
         remote_tap = GreTap(
             session=self.session, remoteip=self.address, key=key, server=server
         )
-        remote_tap.net_client.set_interface_master(node.brname, remote_tap.localname)
+        remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
 
         # save tunnels for shutdown
         tunnel = (local_tap, remote_tap)

@@ -73,8 +73,8 @@ class TestXml:
 
         # link nodes to ptp net
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
@@ -128,8 +128,8 @@ class TestXml:
 
         # link nodes to ptp net
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
 
         # set custom values for node service
         session.services.set_service(node1.id, SshService.name)
@@ -197,8 +197,8 @@ class TestXml:
 
         # link nodes
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, wlan_node.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
@@ -299,7 +299,7 @@ class TestXml:
         """
         # create nodes
         node1 = session.add_node(CoreNode)
-        interface1_data = ip_prefixes.create_interface(node1)
+        iface1_data = ip_prefixes.create_iface(node1)
         switch = session.add_node(SwitchNode)
 
         # create link
@@ -309,7 +309,7 @@ class TestXml:
         options.jitter = 10
         options.delay = 30
         options.dup = 5
-        session.add_link(node1.id, switch.id, interface1_data, options=options)
+        session.add_link(node1.id, switch.id, iface1_data, options=options)
 
         # instantiate session
         session.instantiate()
@@ -365,9 +365,9 @@ class TestXml:
         """
         # create nodes
         node1 = session.add_node(CoreNode)
-        interface1_data = ip_prefixes.create_interface(node1)
+        iface1_data = ip_prefixes.create_iface(node1)
         node2 = session.add_node(CoreNode)
-        interface2_data = ip_prefixes.create_interface(node2)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # create link
         options = LinkOptions()
@@ -376,7 +376,7 @@ class TestXml:
         options.jitter = 10
         options.delay = 30
         options.dup = 5
-        session.add_link(node1.id, node2.id, interface1_data, interface2_data, options)
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data, options)
 
         # instantiate session
         session.instantiate()
@@ -432,9 +432,9 @@ class TestXml:
         """
         # create nodes
         node1 = session.add_node(CoreNode)
-        interface1_data = ip_prefixes.create_interface(node1)
+        iface1_data = ip_prefixes.create_iface(node1)
         node2 = session.add_node(CoreNode)
-        interface2_data = ip_prefixes.create_interface(node2)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # create link
         options1 = LinkOptions()
@@ -444,7 +444,7 @@ class TestXml:
         options1.loss = 10.5
         options1.dup = 5
         options1.jitter = 5
-        session.add_link(node1.id, node2.id, interface1_data, interface2_data, options1)
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data, options1)
         options2 = LinkOptions()
         options2.unidirectional = 1
         options2.bandwidth = 10000
@@ -453,7 +453,7 @@ class TestXml:
         options2.dup = 10
         options2.jitter = 10
         session.update_link(
-            node2.id, node1.id, interface2_data.id, interface1_data.id, options2
+            node2.id, node1.id, iface2_data.id, iface1_data.id, options2
         )
 
         # instantiate session

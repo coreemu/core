@@ -48,8 +48,8 @@ def main(args):
     node2 = session.add_node(CoreNode, options=options)
 
     # create node interfaces and link
-    interface1_data = prefixes.create_interface(node1)
-    interface2_data = prefixes.create_interface(node2)
+    interface1_data = prefixes.create_iface(node1)
+    interface2_data = prefixes.create_iface(node2)
     session.add_link(node1.id, node2.id, interface1_data, interface2_data)
 
     # instantiate session

@@ -14,33 +14,33 @@ from core.nodes.network import WlanNode
 GROUP = "Quagga"
 
 
-def has_mtu_mismatch(ifc: CoreInterface) -> bool:
+def has_mtu_mismatch(iface: CoreInterface) -> bool:
     """
     Helper to detect MTU mismatch and add the appropriate OSPF
     mtu-ignore command. This is needed when e.g. a node is linked via a
     GreTap device.
     """
-    if ifc.mtu != 1500:
+    if iface.mtu != 1500:
         return True
-    if not ifc.net:
+    if not iface.net:
         return False
-    for i in ifc.net.netifs():
-        if i.mtu != ifc.mtu:
+    for iface in iface.net.get_ifaces():
+        if iface.mtu != iface.mtu:
             return True
     return False
 
 
-def get_min_mtu(ifc):
+def get_min_mtu(iface: CoreInterface):
     """
     Helper to discover the minimum MTU of interfaces linked with the
     given interface.
     """
-    mtu = ifc.mtu
-    if not ifc.net:
+    mtu = iface.mtu
+    if not iface.net:
         return mtu
-    for i in ifc.net.netifs():
-        if i.mtu < mtu:
-            mtu = i.mtu
+    for iface in iface.net.get_ifaces():
+        if iface.mtu < mtu:
+            mtu = iface.mtu
     return mtu
 
 
@@ -48,10 +48,8 @@ def get_router_id(node: CoreNodeBase) -> str:
     """
     Helper to return the first IPv4 address of a node as its router ID.
     """
-    for ifc in node.netifs():
-        if getattr(ifc, "control", False):
-            continue
-        for a in ifc.addrlist:
+    for iface in node.get_ifaces(control=False):
+        for a in iface.addrlist:
             a = a.split("/")[0]
             if netaddr.valid_ipv4(a):
                 return a
@@ -98,25 +96,25 @@ class Zebra(ConfigService):
                 want_ip6 = True
             services.append(service)
 
-        interfaces = []
-        for ifc in self.node.netifs():
+        ifaces = []
+        for iface in self.node.get_ifaces():
             ip4s = []
             ip6s = []
-            for x in ifc.addrlist:
+            for x in iface.addrlist:
                 addr = x.split("/")[0]
                 if netaddr.valid_ipv4(addr):
                     ip4s.append(x)
                 else:
                     ip6s.append(x)
-            is_control = getattr(ifc, "control", False)
-            interfaces.append((ifc, ip4s, ip6s, is_control))
+            is_control = getattr(iface, "control", False)
+            ifaces.append((iface, ip4s, ip6s, is_control))
 
         return dict(
             quagga_bin_search=quagga_bin_search,
             quagga_sbin_search=quagga_sbin_search,
             quagga_state_dir=quagga_state_dir,
             quagga_conf=quagga_conf,
-            interfaces=interfaces,
+            ifaces=ifaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,
             services=services,
@@ -139,7 +137,7 @@ class QuaggaService(abc.ABC):
     ipv6_routing = False
 
     @abc.abstractmethod
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -159,8 +157,8 @@ class Ospfv2(QuaggaService, ConfigService):
     shutdown = ["killall ospfd"]
     ipv4_routing = True
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        if has_mtu_mismatch(ifc):
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
+        if has_mtu_mismatch(iface):
             return "ip ospf mtu-ignore"
         else:
             return ""
@@ -168,10 +166,8 @@ class Ospfv2(QuaggaService, ConfigService):
     def quagga_config(self) -> str:
         router_id = get_router_id(self.node)
         addresses = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            for a in ifc.addrlist:
+        for iface in self.node.get_ifaces(control=False):
+            for a in iface.addrlist:
                 addr = a.split("/")[0]
                 if netaddr.valid_ipv4(addr):
                     addresses.append(a)
@@ -200,9 +196,9 @@ class Ospfv3(QuaggaService, ConfigService):
     ipv4_routing = True
     ipv6_routing = True
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        mtu = get_min_mtu(ifc)
-        if mtu < ifc.mtu:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
+        mtu = get_min_mtu(iface)
+        if mtu < iface.mtu:
             return f"ipv6 ospf6 ifmtu {mtu}"
         else:
             return ""
@@ -210,10 +206,8 @@ class Ospfv3(QuaggaService, ConfigService):
     def quagga_config(self) -> str:
         router_id = get_router_id(self.node)
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         data = dict(router_id=router_id, ifnames=ifnames)
         text = """
         router ospf6
@@ -238,14 +232,14 @@ class Ospfv3mdr(Ospfv3):
     name = "OSPFv3MDR"
 
     def data(self) -> Dict[str, Any]:
-        for ifc in self.node.netifs():
-            is_wireless = isinstance(ifc.net, (WlanNode, EmaneNet))
+        for iface in self.node.get_ifaces():
+            is_wireless = isinstance(iface.net, (WlanNode, EmaneNet))
             logging.info("MDR wireless: %s", is_wireless)
         return dict()
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        config = super().quagga_interface_config(ifc)
-        if isinstance(ifc.net, (WlanNode, EmaneNet)):
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
+        config = super().quagga_iface_config(iface)
+        if isinstance(iface.net, (WlanNode, EmaneNet)):
             config = self.clean_text(
                 f"""
                 {config}
@@ -277,7 +271,7 @@ class Bgp(QuaggaService, ConfigService):
     def quagga_config(self) -> str:
         return ""
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
         router_id = get_router_id(self.node)
         text = f"""
         ! BGP configuration
@@ -313,7 +307,7 @@ class Rip(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
@@ -338,7 +332,7 @@ class Ripng(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
@@ -355,10 +349,8 @@ class Babel(QuaggaService, ConfigService):
 
     def quagga_config(self) -> str:
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         text = """
         router babel
           % for ifname in ifnames:
@@ -371,8 +363,8 @@ class Babel(QuaggaService, ConfigService):
         data = dict(ifnames=ifnames)
         return self.render_text(text, data)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
-        if isinstance(ifc.net, (WlanNode, EmaneNet)):
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
+        if isinstance(iface.net, (WlanNode, EmaneNet)):
             text = """
             babel wireless
             no babel split-horizon
@@ -397,9 +389,9 @@ class Xpimd(QuaggaService, ConfigService):
 
     def quagga_config(self) -> str:
         ifname = "eth0"
-        for ifc in self.node.netifs():
-            if ifc.name != "lo":
-                ifname = ifc.name
+        for iface in self.node.get_ifaces():
+            if iface.name != "lo":
+                ifname = iface.name
                 break
 
         text = f"""
@@ -416,7 +408,7 @@ class Xpimd(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_interface_config(self, ifc: CoreInterface) -> str:
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
         text = """
         ip mfea
         ip pim

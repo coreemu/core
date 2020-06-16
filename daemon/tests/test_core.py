@@ -53,8 +53,8 @@ class TestCore:
 
         # link nodes to net node
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, net_node.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, net_node.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
@@ -80,8 +80,8 @@ class TestCore:
 
         # link nodes to ptp net
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
 
         # get node client for testing
         client = node1.client
@@ -96,9 +96,9 @@ class TestCore:
         if not request.config.getoption("mock"):
             assert client.check_cmd("echo hello") == "hello"
 
-    def test_netif(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_iface(self, session: Session, ip_prefixes: IpPrefixes):
         """
-        Test netif methods.
+        Test interface methods.
 
         :param session: session for test
         :param ip_prefixes: generates ip addresses for nodes
@@ -113,8 +113,8 @@ class TestCore:
 
         # link nodes to ptp net
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface1_data=interface)
+            iface = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface)
 
         # instantiate session
         session.instantiate()
@@ -126,19 +126,19 @@ class TestCore:
         assert node1.commonnets(node2)
         assert node2.commonnets(node1)
 
-        # check we can retrieve netif index
-        assert node1.ifname(0)
-        assert node2.ifname(0)
+        # check we can retrieve interface id
+        assert 0 in node1.ifaces
+        assert 0 in node2.ifaces
 
         # check interface parameters
-        interface = node1.netif(0)
-        interface.setparam("test", 1)
-        assert interface.getparam("test") == 1
-        assert interface.getparams()
+        iface = node1.get_iface(0)
+        iface.setparam("test", 1)
+        assert iface.getparam("test") == 1
+        assert iface.getparams()
 
-        # delete netif and test that if no longer exists
-        node1.delnetif(0)
-        assert not node1.netif(0)
+        # delete interface and test that if no longer exists
+        node1.delete_iface(0)
+        assert 0 not in node1.ifaces
 
     def test_wlan_ping(self, session: Session, ip_prefixes: IpPrefixes):
         """
@@ -160,8 +160,8 @@ class TestCore:
 
         # link nodes
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface1_data=interface)
+            iface_id = ip_prefixes.create_iface(node)
+            session.add_link(node.id, wlan_node.id, iface1_data=iface_id)
 
         # instantiate session
         session.instantiate()
@@ -190,8 +190,8 @@ class TestCore:
 
         # link nodes
         for node in [node1, node2]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface1_data=interface)
+            iface_id = ip_prefixes.create_iface(node)
+            session.add_link(node.id, wlan_node.id, iface1_data=iface_id)
 
         # configure mobility script for session
         config = {

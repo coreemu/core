@@ -139,7 +139,7 @@ class Menubar(tk.Menu):
         menu.add_checkbutton(
             label="Interface Names",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_interface_names,
+            variable=self.canvas.show_iface_names,
         )
         menu.add_checkbutton(
             label="IPv4 Addresses",

@@ -12,10 +12,10 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 
-def get_index(interface: "core_pb2.Interface") -> Optional[int]:
-    if not interface.ip4:
+def get_index(iface: "core_pb2.Interface") -> Optional[int]:
+    if not iface.ip4:
         return None
-    net = netaddr.IPNetwork(f"{interface.ip4}/{interface.ip4mask}")
+    net = netaddr.IPNetwork(f"{iface.ip4}/{iface.ip4mask}")
     ip_value = net.value
     cidr_value = net.cidr.value
     return ip_value - cidr_value
@@ -89,43 +89,43 @@ class InterfaceManager:
         remaining_subnets = set()
         for edge in self.app.core.links.values():
             link = edge.link
-            if link.HasField("interface1"):
-                subnets = self.get_subnets(link.interface1)
+            if link.HasField("iface1"):
+                subnets = self.get_subnets(link.iface1)
                 remaining_subnets.add(subnets)
-            if link.HasField("interface2"):
-                subnets = self.get_subnets(link.interface2)
+            if link.HasField("iface2"):
+                subnets = self.get_subnets(link.iface2)
                 remaining_subnets.add(subnets)
 
         # remove all subnets from used subnets when no longer present
         # or remove used indexes from subnet
-        interfaces = []
+        ifaces = []
         for link in links:
-            if link.HasField("interface1"):
-                interfaces.append(link.interface1)
-            if link.HasField("interface2"):
-                interfaces.append(link.interface2)
-        for interface in interfaces:
-            subnets = self.get_subnets(interface)
+            if link.HasField("iface1"):
+                ifaces.append(link.iface1)
+            if link.HasField("iface2"):
+                ifaces.append(link.iface2)
+        for iface in ifaces:
+            subnets = self.get_subnets(iface)
             if subnets not in remaining_subnets:
                 self.used_subnets.pop(subnets.key(), None)
             else:
-                index = get_index(interface)
+                index = get_index(iface)
                 if index is not None:
                     subnets.used_indexes.discard(index)
         self.current_subnets = None
 
     def joined(self, links: List["core_pb2.Link"]) -> None:
-        interfaces = []
+        ifaces = []
         for link in links:
-            if link.HasField("interface1"):
-                interfaces.append(link.interface1)
-            if link.HasField("interface2"):
-                interfaces.append(link.interface2)
+            if link.HasField("iface1"):
+                ifaces.append(link.iface1)
+            if link.HasField("iface2"):
+                ifaces.append(link.iface2)
 
         # add to used subnets and mark used indexes
-        for interface in interfaces:
-            subnets = self.get_subnets(interface)
-            index = get_index(interface)
+        for iface in ifaces:
+            subnets = self.get_subnets(iface)
+            index = get_index(iface)
             if index is None:
                 continue
             subnets.used_indexes.add(index)
@@ -150,13 +150,13 @@ class InterfaceManager:
         ip6 = self.current_subnets.ip6[index]
         return str(ip4), str(ip6)
 
-    def get_subnets(self, interface: "core_pb2.Interface") -> Subnets:
+    def get_subnets(self, iface: "core_pb2.Interface") -> Subnets:
         ip4_subnet = self.ip4_subnets
-        if interface.ip4:
-            ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
+        if iface.ip4:
+            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4mask}").cidr
         ip6_subnet = self.ip6_subnets
-        if interface.ip6:
-            ip6_subnet = IPNetwork(f"{interface.ip6}/{interface.ip6mask}").cidr
+        if iface.ip6:
+            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6mask}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 
@@ -196,16 +196,16 @@ class InterfaceManager:
         for edge in canvas_node.edges:
             src_node = canvas.nodes[edge.src]
             dst_node = canvas.nodes[edge.dst]
-            interface = edge.src_interface
+            iface = edge.src_iface
             check_node = src_node
             if src_node == canvas_node:
-                interface = edge.dst_interface
+                iface = edge.dst_iface
                 check_node = dst_node
             if check_node.core_node.id in visited:
                 continue
             visited.add(check_node.core_node.id)
-            if interface:
-                subnets = self.get_subnets(interface)
+            if iface:
+                subnets = self.get_subnets(iface)
             else:
                 subnets = self.find_subnets(check_node, visited)
             if subnets:

@@ -47,7 +47,7 @@ def main(args):
         node1_id = response.node_id
 
         # create link
-        interface1 = interface_helper.create_interface(node1_id, 0)
+        interface1 = interface_helper.create_iface(node1_id, 0)
         response = core.add_link(session_id, node1_id, switch_id, interface1)
         logging.info("created link from node one to switch: %s", response)
 
@@ -59,7 +59,7 @@ def main(args):
         node2_id = response.node_id
 
         # create link
-        interface1 = interface_helper.create_interface(node2_id, 0)
+        interface1 = interface_helper.create_iface(node2_id, 0)
         response = core.add_link(session_id, node2_id, switch_id, interface1)
         logging.info("created link from node two to switch: %s", response)
 

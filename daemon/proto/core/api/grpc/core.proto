@@ -319,12 +319,12 @@ message ThroughputsRequest {
 message ThroughputsEvent {
     int32 session_id = 1;
     repeated BridgeThroughput bridge_throughputs = 2;
-    repeated InterfaceThroughput interface_throughputs = 3;
+    repeated InterfaceThroughput iface_throughputs = 3;
 }
 
 message InterfaceThroughput {
     int32 node_id = 1;
-    int32 interface_id = 2;
+    int32 iface_id = 2;
     double throughput = 3;
 }
 
@@ -374,7 +374,7 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    int32 interface = 11;
+    int32 iface_id = 11;
     int32 network_id = 12;
     string opaque = 13;
 }
@@ -416,7 +416,7 @@ message GetNodeRequest {
 
 message GetNodeResponse {
     Node node = 1;
-    repeated Interface interfaces = 2;
+    repeated Interface ifaces = 2;
 }
 
 message EditNodeRequest {
@@ -492,16 +492,16 @@ message AddLinkRequest {
 
 message AddLinkResponse {
     bool result = 1;
-    Interface interface1 = 2;
-    Interface interface2 = 3;
+    Interface iface1 = 2;
+    Interface iface2 = 3;
 }
 
 message EditLinkRequest {
     int32 session_id = 1;
     int32 node1_id = 2;
     int32 node2_id = 3;
-    int32 interface1_id = 4;
-    int32 interface2_id = 5;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
     LinkOptions options = 6;
 }
 
@@ -513,8 +513,8 @@ message DeleteLinkRequest {
     int32 session_id = 1;
     int32 node1_id = 2;
     int32 node2_id = 3;
-    int32 interface1_id = 4;
-    int32 interface2_id = 5;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
 }
 
 message DeleteLinkResponse {
@@ -561,7 +561,7 @@ message GetInterfacesRequest {
 }
 
 message GetInterfacesResponse {
-    repeated string interfaces = 1;
+    repeated string ifaces = 1;
 }
 
 message ExecuteScriptRequest {
@@ -705,8 +705,8 @@ message Link {
     int32 node1_id = 1;
     int32 node2_id = 2;
     LinkType.Enum type = 3;
-    Interface interface1 = 4;
-    Interface interface2 = 5;
+    Interface iface1 = 4;
+    Interface iface2 = 5;
     LinkOptions options = 6;
     int32 network_id = 7;
     string label = 8;

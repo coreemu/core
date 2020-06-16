@@ -107,15 +107,15 @@ class TestGui:
         switch_id = 2
         coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
             ],
         )
 
@@ -131,15 +131,15 @@ class TestGui:
         switch_id = 2
         coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface2_ip4 = str(ip_prefix[node1_id])
+        iface2_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, switch_id),
                 (LinkTlvs.N2_NUMBER, node1_id),
-                (LinkTlvs.INTERFACE2_NUMBER, 0),
-                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
-                (LinkTlvs.INTERFACE2_IP4_MASK, 24),
+                (LinkTlvs.IFACE2_NUMBER, 0),
+                (LinkTlvs.IFACE2_IP4, iface2_ip4),
+                (LinkTlvs.IFACE2_IP4_MASK, 24),
             ],
         )
 
@@ -155,19 +155,19 @@ class TestGui:
         node2_id = 2
         coretlv.session.add_node(CoreNode, _id=node2_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
-        interface2_ip4 = str(ip_prefix[node2_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
+        iface2_ip4 = str(ip_prefix[node2_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, node2_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
-                (LinkTlvs.INTERFACE2_NUMBER, 0),
-                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
-                (LinkTlvs.INTERFACE2_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE2_NUMBER, 0),
+                (LinkTlvs.IFACE2_IP4, iface2_ip4),
+                (LinkTlvs.IFACE2_IP4_MASK, 24),
             ],
         )
 
@@ -185,15 +185,15 @@ class TestGui:
         switch_id = 2
         coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
@@ -209,7 +209,7 @@ class TestGui:
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_NUMBER, 0),
                 (LinkTlvs.BANDWIDTH, bandwidth),
             ],
         )
@@ -227,18 +227,18 @@ class TestGui:
         node2_id = 2
         coretlv.session.add_node(CoreNode, _id=node2_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
-        interface2_ip4 = str(ip_prefix[node2_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
+        iface2_ip4 = str(ip_prefix[node2_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, node2_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
-                (LinkTlvs.INTERFACE2_IP4, interface2_ip4),
-                (LinkTlvs.INTERFACE2_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE2_IP4, iface2_ip4),
+                (LinkTlvs.IFACE2_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
@@ -253,8 +253,8 @@ class TestGui:
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, node2_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE2_NUMBER, 0),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE2_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
@@ -271,15 +271,15 @@ class TestGui:
         switch_id = 2
         coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
@@ -292,7 +292,7 @@ class TestGui:
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
@@ -307,15 +307,15 @@ class TestGui:
         switch_id = 2
         coretlv.session.add_node(SwitchNode, _id=switch_id)
         ip_prefix = netaddr.IPNetwork("10.0.0.0/24")
-        interface1_ip4 = str(ip_prefix[node1_id])
+        iface1_ip4 = str(ip_prefix[node1_id])
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.ADD.value,
             [
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
-                (LinkTlvs.INTERFACE1_NUMBER, 0),
-                (LinkTlvs.INTERFACE1_IP4, interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, 24),
+                (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE1_IP4, iface1_ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, 24),
             ],
         )
         coretlv.handle_message(message)
@@ -328,7 +328,7 @@ class TestGui:
             [
                 (LinkTlvs.N1_NUMBER, switch_id),
                 (LinkTlvs.N2_NUMBER, node1_id),
-                (LinkTlvs.INTERFACE2_NUMBER, 0),
+                (LinkTlvs.IFACE2_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)

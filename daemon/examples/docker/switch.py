@@ -23,15 +23,15 @@ if __name__ == "__main__":
 
         # node one
         node1 = session.add_node(DockerNode, options=options)
-        interface1_data = prefixes.create_interface(node1)
+        interface1_data = prefixes.create_iface(node1)
 
         # node two
         node2 = session.add_node(DockerNode, options=options)
-        interface2_data = prefixes.create_interface(node2)
+        interface2_data = prefixes.create_iface(node2)
 
         # node three
         node_three = session.add_node(CoreNode)
-        interface_three = prefixes.create_interface(node_three)
+        interface_three = prefixes.create_iface(node_three)
 
         # add links
         session.add_link(node1.id, switch.id, interface1_data)

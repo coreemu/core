@@ -24,25 +24,25 @@ def add_address(
     parent_element: etree.Element,
     address_type: str,
     address: str,
-    interface_name: str = None,
+    iface_name: str = None,
 ) -> None:
     address_element = etree.SubElement(parent_element, "address", type=address_type)
     address_element.text = address
-    if interface_name is not None:
-        address_element.set("iface", interface_name)
+    if iface_name is not None:
+        address_element.set("iface", iface_name)
 
 
 def add_mapping(parent_element: etree.Element, maptype: str, mapref: str) -> None:
     etree.SubElement(parent_element, "mapping", type=maptype, ref=mapref)
 
 
-def add_emane_interface(
+def add_emane_iface(
     host_element: etree.Element,
-    netif: CoreInterface,
+    iface: CoreInterface,
     platform_name: str = "p1",
     transport_name: str = "t1",
 ) -> etree.Element:
-    nem_id = netif.net.nemidmap[netif]
+    nem_id = iface.net.nemidmap[iface]
     host_id = host_element.get("id")
 
     # platform data
@@ -89,10 +89,10 @@ def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
             split = line.split()
             if not split:
                 continue
-            interface_name = split[1]
+            iface_name = split[1]
             address = split[3]
             if not address.startswith("127."):
-                addresses.append((interface_name, address))
+                addresses.append((iface_name, address))
         return addresses
     else:
         # TODO: handle other hosts
@@ -112,11 +112,11 @@ class CoreXmlDeployment:
         device = self.scenario.find(f"devices/device[@name='{name}']")
         return device
 
-    def find_interface(self, device: NodeBase, name: str) -> etree.Element:
-        interface = self.scenario.find(
+    def find_iface(self, device: NodeBase, name: str) -> etree.Element:
+        iface = self.scenario.find(
             f"devices/device[@name='{device.name}']/interfaces/interface[@name='{name}']"
         )
-        return interface
+        return iface
 
     def add_deployment(self) -> None:
         physical_host = self.add_physical_host(socket.gethostname())
@@ -136,8 +136,8 @@ class CoreXmlDeployment:
         add_type(host_element, "physical")
 
         # add ipv4 addresses
-        for interface_name, address in get_ipv4_addresses("localhost"):
-            add_address(host_element, "IPv4", address, interface_name)
+        for iface_name, address in get_ipv4_addresses("localhost"):
+            add_address(host_element, "IPv4", address, iface_name)
 
         return host_element
 
@@ -155,15 +155,15 @@ class CoreXmlDeployment:
         # add host type
         add_type(host_element, "virtual")
 
-        for netif in node.netifs():
+        for iface in node.get_ifaces():
             emane_element = None
-            if isinstance(netif.net, EmaneNet):
-                emane_element = add_emane_interface(host_element, netif)
+            if isinstance(iface.net, EmaneNet):
+                emane_element = add_emane_iface(host_element, iface)
 
             parent_element = host_element
             if emane_element is not None:
                 parent_element = emane_element
 
-            for address in netif.addrlist:
+            for address in iface.addrlist:
                 address_type = get_address_type(address)
-                add_address(parent_element, address_type, address, netif.name)
+                add_address(parent_element, address_type, address, iface.name)

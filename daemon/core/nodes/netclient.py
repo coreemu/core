@@ -155,14 +155,14 @@ class LinuxNetClient:
         """
         self.run(f"{TC_BIN} qdisc delete dev {device} root")
 
-    def checksums_off(self, interface_name: str) -> None:
+    def checksums_off(self, iface_name: str) -> None:
         """
         Turns interface checksums off.
 
-        :param interface_name: interface to update
+        :param iface_name: interface to update
         :return: nothing
         """
-        self.run(f"{ETHTOOL_BIN} -K {interface_name} rx off tx off")
+        self.run(f"{ETHTOOL_BIN} -K {iface_name} rx off tx off")
 
     def create_address(self, device: str, address: str, broadcast: str = None) -> None:
         """
@@ -250,26 +250,26 @@ class LinuxNetClient:
         self.device_down(name)
         self.run(f"{IP_BIN} link delete {name} type bridge")
 
-    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
+    def set_iface_master(self, bridge_name: str, iface_name: str) -> None:
         """
         Assign interface master to a Linux bridge.
 
         :param bridge_name: bridge name
-        :param interface_name: interface name
+        :param iface_name: interface name
         :return: nothing
         """
-        self.run(f"{IP_BIN} link set dev {interface_name} master {bridge_name}")
-        self.device_up(interface_name)
+        self.run(f"{IP_BIN} link set dev {iface_name} master {bridge_name}")
+        self.device_up(iface_name)
 
-    def delete_interface(self, bridge_name: str, interface_name: str) -> None:
+    def delete_iface(self, bridge_name: str, iface_name: str) -> None:
         """
         Delete an interface associated with a Linux bridge.
 
         :param bridge_name: bridge name
-        :param interface_name: interface name
+        :param iface_name: interface name
         :return: nothing
         """
-        self.run(f"{IP_BIN} link set dev {interface_name} nomaster")
+        self.run(f"{IP_BIN} link set dev {iface_name} nomaster")
 
     def existing_bridges(self, _id: int) -> bool:
         """
@@ -330,26 +330,26 @@ class OvsNetClient(LinuxNetClient):
         self.device_down(name)
         self.run(f"{OVS_BIN} del-br {name}")
 
-    def set_interface_master(self, bridge_name: str, interface_name: str) -> None:
+    def set_iface_master(self, bridge_name: str, iface_name: str) -> None:
         """
         Create an interface associated with a network bridge.
 
         :param bridge_name: bridge name
-        :param interface_name: interface name
+        :param iface_name: interface name
         :return: nothing
         """
-        self.run(f"{OVS_BIN} add-port {bridge_name} {interface_name}")
-        self.device_up(interface_name)
+        self.run(f"{OVS_BIN} add-port {bridge_name} {iface_name}")
+        self.device_up(iface_name)
 
-    def delete_interface(self, bridge_name: str, interface_name: str) -> None:
+    def delete_iface(self, bridge_name: str, iface_name: str) -> None:
         """
         Delete an interface associated with a OVS bridge.
 
         :param bridge_name: bridge name
-        :param interface_name: interface name
+        :param iface_name: interface name
         :return: nothing
         """
-        self.run(f"{OVS_BIN} del-port {bridge_name} {interface_name}")
+        self.run(f"{OVS_BIN} del-port {bridge_name} {iface_name}")
 
     def existing_bridges(self, _id: int) -> bool:
         """

@@ -42,15 +42,17 @@ class TestGrpc:
             id=3, type=NodeTypes.WIRELESS_LAN.value, position=position
         )
         nodes = [node1, node2, wlan_node]
-        interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
-        interface1 = interface_helper.create_interface(node1.id, 0)
-        interface2 = interface_helper.create_interface(node2.id, 0)
+        iface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
+        iface1_id = 0
+        iface1 = iface_helper.create_iface(node1.id, iface1_id)
+        iface2_id = 0
+        iface2 = iface_helper.create_iface(node2.id, iface2_id)
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,
             node1_id=node1.id,
             node2_id=node2.id,
-            interface1=interface1,
-            interface2=interface2,
+            iface1=iface1,
+            iface2=iface2,
         )
         links = [link]
         hook = core_pb2.Hook(
@@ -81,7 +83,7 @@ class TestGrpc:
         model_config_value = "500000"
         model_config = EmaneModelConfig(
             node_id=model_node_id,
-            interface_id=-1,
+            iface_id=-1,
             model=EmaneIeee80211abgModel.name,
             config={model_config_key: model_config_value},
         )
@@ -131,8 +133,8 @@ class TestGrpc:
         assert node1.id in session.nodes
         assert node2.id in session.nodes
         assert wlan_node.id in session.nodes
-        assert session.nodes[node1.id].netif(0) is not None
-        assert session.nodes[node2.id].netif(0) is not None
+        assert iface1_id in session.nodes[node1.id].ifaces
+        assert iface2_id in session.nodes[node2.id].ifaces
         hook_file, hook_data = session.hooks[EventTypes.RUNTIME_STATE][0]
         assert hook_file == hook.file
         assert hook_data == hook.data
@@ -522,8 +524,8 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        interface = ip_prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface)
+        iface_data = ip_prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface_data)
 
         # then
         with client.context_connect():
@@ -540,17 +542,15 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        interface = ip_prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface)
+        iface_data = ip_prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface_data)
 
         # then
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
                 client.get_node_links(session.id, 3)
 
-    def test_add_link(
-        self, grpc_server: CoreGrpcServer, interface_helper: InterfaceHelper
-    ):
+    def test_add_link(self, grpc_server: CoreGrpcServer, iface_helper: InterfaceHelper):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -559,16 +559,16 @@ class TestGrpc:
         assert len(switch.all_link_data()) == 0
 
         # then
-        interface = interface_helper.create_interface(node.id, 0)
+        iface = iface_helper.create_iface(node.id, 0)
         with client.context_connect():
-            response = client.add_link(session.id, node.id, switch.id, interface)
+            response = client.add_link(session.id, node.id, switch.id, iface)
 
         # then
         assert response.result is True
         assert len(switch.all_link_data()) == 1
 
     def test_add_link_exception(
-        self, grpc_server: CoreGrpcServer, interface_helper: InterfaceHelper
+        self, grpc_server: CoreGrpcServer, iface_helper: InterfaceHelper
     ):
         # given
         client = CoreGrpcClient()
@@ -576,10 +576,10 @@ class TestGrpc:
         node = session.add_node(CoreNode)
 
         # then
-        interface = interface_helper.create_interface(node.id, 0)
+        iface = iface_helper.create_iface(node.id, 0)
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
-                client.add_link(session.id, 1, 3, interface)
+                client.add_link(session.id, 1, 3, iface)
 
     def test_edit_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
@@ -587,8 +587,8 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        interface = ip_prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface)
+        iface = ip_prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface)
         options = core_pb2.LinkOptions(bandwidth=30000)
         link = switch.all_link_data()[0]
         assert options.bandwidth != link.bandwidth
@@ -596,7 +596,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.edit_link(
-                session.id, node.id, switch.id, options, interface1_id=interface.id
+                session.id, node.id, switch.id, options, iface1_id=iface.id
             )
 
         # then
@@ -609,10 +609,10 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node1 = session.add_node(CoreNode)
-        interface1 = ip_prefixes.create_interface(node1)
+        iface1 = ip_prefixes.create_iface(node1)
         node2 = session.add_node(CoreNode)
-        interface2 = ip_prefixes.create_interface(node2)
-        session.add_link(node1.id, node2.id, interface1, interface2)
+        iface2 = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, node2.id, iface1, iface2)
         link_node = None
         for node_id in session.nodes:
             node = session.nodes[node_id]
@@ -624,7 +624,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.delete_link(
-                session.id, node1.id, node2.id, interface1.id, interface2.id
+                session.id, node1.id, node2.id, iface1.id, iface2.id
             )
 
         # then
@@ -729,7 +729,7 @@ class TestGrpc:
         assert emane_network.id == model_config.node_id
         assert model_config.model == EmaneIeee80211abgModel.name
         assert len(model_config.config) > 0
-        assert model_config.interface == -1
+        assert model_config.iface_id == -1
 
     def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given
@@ -1028,8 +1028,8 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         wlan = session.add_node(WlanNode)
         node = session.add_node(CoreNode)
-        interface = ip_prefixes.create_interface(node)
-        session.add_link(node.id, wlan.id, interface)
+        iface = ip_prefixes.create_iface(node)
+        session.add_link(node.id, wlan.id, iface)
         link_data = wlan.all_link_data()[0]
         queue = Queue()
 

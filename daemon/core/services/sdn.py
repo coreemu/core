@@ -49,10 +49,8 @@ class OvsService(SdnService):
 
         cfg += "\n## Now add all our interfaces as ports to the switch\n"
         portnum = 1
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            ifnumstr = re.findall(r"\d+", ifc.name)
+        for iface in node.get_ifaces(control=False):
+            ifnumstr = re.findall(r"\d+", iface.name)
             ifnum = ifnumstr[0]
 
             # create virtual interfaces
@@ -61,18 +59,18 @@ class OvsService(SdnService):
 
             # remove ip address of eths because quagga/zebra will assign same IPs to rtr interfaces
             # or assign them manually to rtr interfaces if zebra is not running
-            for ifcaddr in ifc.addrlist:
-                addr = ifcaddr.split("/")[0]
+            for addr in iface.addrlist:
+                addr = addr.split("/")[0]
                 if netaddr.valid_ipv4(addr):
-                    cfg += "ip addr del %s dev %s\n" % (ifcaddr, ifc.name)
+                    cfg += "ip addr del %s dev %s\n" % (addr, iface.name)
                     if has_zebra == 0:
-                        cfg += "ip addr add %s dev rtr%s\n" % (ifcaddr, ifnum)
+                        cfg += "ip addr add %s dev rtr%s\n" % (addr, ifnum)
                 elif netaddr.valid_ipv6(addr):
-                    cfg += "ip -6 addr del %s dev %s\n" % (ifcaddr, ifc.name)
+                    cfg += "ip -6 addr del %s dev %s\n" % (addr, iface.name)
                     if has_zebra == 0:
-                        cfg += "ip -6 addr add %s dev rtr%s\n" % (ifcaddr, ifnum)
+                        cfg += "ip -6 addr add %s dev rtr%s\n" % (addr, ifnum)
                 else:
-                    raise ValueError("invalid address: %s" % ifcaddr)
+                    raise ValueError("invalid address: %s" % addr)
 
             # add interfaces to bridge
             # Make port numbers explicit so they're easier to follow in reading the script
@@ -102,9 +100,7 @@ class OvsService(SdnService):
         cfg += "## if the above controller will be present then you probably want to delete them\n"
         # Setup default flows
         portnum = 1
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
+        for iface in node.get_ifaces(control=False):
             cfg += "## Take the data from the CORE interface and put it on the veth and vice versa\n"
             cfg += (
                 "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"

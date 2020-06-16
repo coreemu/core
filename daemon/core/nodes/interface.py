@@ -57,11 +57,11 @@ class CoreInterface:
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
         self.transport_type: Optional[TransportType] = None
-        # node interface index
-        self.netindex: Optional[int] = None
-        # net interface index
-        self.netifi: Optional[int] = None
-        # index used to find flow data
+        # id of interface for node
+        self.node_id: Optional[int] = None
+        # id of interface for network
+        self.net_id: Optional[int] = None
+        # id used to find flow data
         self.flow_id: Optional[int] = None
         self.server: Optional["DistributedServer"] = server
         use_ovs = session.options.get_config("ovs") == "True"
@@ -284,19 +284,16 @@ class Veth(CoreInterface):
         """
         if not self.up:
             return
-
         if self.node:
             try:
                 self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
                 logging.exception("error shutting down interface")
-
         if self.localname:
             try:
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.info("link already removed: %s", self.localname)
-
         self.up = False
 
 

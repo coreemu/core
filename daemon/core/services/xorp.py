@@ -35,11 +35,11 @@ class XorpRtrmgr(CoreService):
         invoked here. Filename currently ignored.
         """
         cfg = "interfaces {\n"
-        for ifc in node.netifs():
-            cfg += "    interface %s {\n" % ifc.name
-            cfg += "\tvif %s {\n" % ifc.name
-            cfg += "".join(map(cls.addrstr, ifc.addrlist))
-            cfg += cls.lladdrstr(ifc)
+        for iface in node.get_ifaces():
+            cfg += "    interface %s {\n" % iface.name
+            cfg += "\tvif %s {\n" % iface.name
+            cfg += "".join(map(cls.addrstr, iface.addrlist))
+            cfg += cls.lladdrstr(iface)
             cfg += "\t}\n"
             cfg += "    }\n"
         cfg += "}\n\n"
@@ -65,11 +65,11 @@ class XorpRtrmgr(CoreService):
         return cfg
 
     @staticmethod
-    def lladdrstr(ifc):
+    def lladdrstr(iface):
         """
         helper for adding link-local address entries (required by OSPFv3)
         """
-        cfg = "\t    address %s {\n" % ifc.hwaddr.tolinklocal()
+        cfg = "\t    address %s {\n" % iface.hwaddr.tolinklocal()
         cfg += "\t\tprefix-length: 64\n"
         cfg += "\t    }\n"
         return cfg
@@ -104,15 +104,15 @@ class XorpService(CoreService):
         return cfg
 
     @staticmethod
-    def mfea(forwarding, ifcs):
+    def mfea(forwarding, ifaces):
         """
         Helper to add a multicast forwarding engine entry to the config file.
         """
         names = []
-        for ifc in ifcs:
-            if hasattr(ifc, "control") and ifc.control is True:
+        for iface in ifaces:
+            if hasattr(iface, "control") and iface.control is True:
                 continue
-            names.append(ifc.name)
+            names.append(iface.name)
         names.append("register_vif")
 
         cfg = "plumbing {\n"
@@ -148,10 +148,8 @@ class XorpService(CoreService):
         """
         Helper to return the first IPv4 address of a node as its router ID.
         """
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            for a in iface.addrlist:
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return a
@@ -184,12 +182,10 @@ class XorpOspfv2(XorpService):
         cfg += "    ospf4 {\n"
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += "\t    interface %s {\n" % ifc.name
-            cfg += "\t\tvif %s {\n" % ifc.name
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            cfg += "\t    interface %s {\n" % iface.name
+            cfg += "\t\tvif %s {\n" % iface.name
+            for a in iface.addrlist:
                 addr = a.split("/")[0]
                 if not netaddr.valid_ipv4(addr):
                     continue
@@ -220,11 +216,9 @@ class XorpOspfv3(XorpService):
         cfg += "    ospf6 0 { /* Instance ID 0 */\n"
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += "\t    interface %s {\n" % ifc.name
-            cfg += "\t\tvif %s {\n" % ifc.name
+        for iface in node.get_ifaces(control=False):
+            cfg += "\t    interface %s {\n" % iface.name
+            cfg += "\t\tvif %s {\n" % iface.name
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -277,12 +271,10 @@ class XorpRip(XorpService):
         cfg += "\nprotocols {\n"
         cfg += "    rip {\n"
         cfg += '\texport: "export-connected"\n'
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += "\tinterface %s {\n" % ifc.name
-            cfg += "\t    vif %s {\n" % ifc.name
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            cfg += "\tinterface %s {\n" % iface.name
+            cfg += "\t    vif %s {\n" % iface.name
+            for a in iface.addrlist:
                 addr = a.split("/")[0]
                 if not netaddr.valid_ipv4(addr):
                     continue
@@ -310,12 +302,10 @@ class XorpRipng(XorpService):
         cfg += "\nprotocols {\n"
         cfg += "    ripng {\n"
         cfg += '\texport: "export-connected"\n'
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += "\tinterface %s {\n" % ifc.name
-            cfg += "\t    vif %s {\n" % ifc.name
-            cfg += "\t\taddress %s {\n" % ifc.hwaddr.tolinklocal()
+        for iface in node.get_ifaces(control=False):
+            cfg += "\tinterface %s {\n" % iface.name
+            cfg += "\t    vif %s {\n" % iface.name
+            cfg += "\t\taddress %s {\n" % iface.hwaddr.tolinklocal()
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -334,17 +324,15 @@ class XorpPimSm4(XorpService):
 
     @classmethod
     def generatexorpconfig(cls, node):
-        cfg = cls.mfea("mfea4", node.netifs())
+        cfg = cls.mfea("mfea4", node.get_ifaces())
 
         cfg += "\nprotocols {\n"
         cfg += "    igmp {\n"
         names = []
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            names.append(ifc.name)
-            cfg += "\tinterface %s {\n" % ifc.name
-            cfg += "\t    vif %s {\n" % ifc.name
+        for iface in node.get_ifaces(control=False):
+            names.append(iface.name)
+            cfg += "\tinterface %s {\n" % iface.name
+            cfg += "\t    vif %s {\n" % iface.name
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
@@ -394,17 +382,15 @@ class XorpPimSm6(XorpService):
 
     @classmethod
     def generatexorpconfig(cls, node):
-        cfg = cls.mfea("mfea6", node.netifs())
+        cfg = cls.mfea("mfea6", node.get_ifaces())
 
         cfg += "\nprotocols {\n"
         cfg += "    mld {\n"
         names = []
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            names.append(ifc.name)
-            cfg += "\tinterface %s {\n" % ifc.name
-            cfg += "\t    vif %s {\n" % ifc.name
+        for iface in node.get_ifaces(control=False):
+            names.append(iface.name)
+            cfg += "\tinterface %s {\n" % iface.name
+            cfg += "\t    vif %s {\n" % iface.name
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
@@ -459,12 +445,10 @@ class XorpOlsr(XorpService):
         cfg += "\nprotocols {\n"
         cfg += "    olsr4 {\n"
         cfg += "\tmain-address: %s\n" % rtrid
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += "\tinterface %s {\n" % ifc.name
-            cfg += "\t    vif %s {\n" % ifc.name
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            cfg += "\tinterface %s {\n" % iface.name
+            cfg += "\t    vif %s {\n" % iface.name
+            for a in iface.addrlist:
                 addr = a.split("/")[0]
                 if not netaddr.valid_ipv4(addr):
                     continue

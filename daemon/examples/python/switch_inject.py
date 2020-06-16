@@ -33,8 +33,8 @@ def main():
     # create nodes
     for _ in range(NODES):
         node = session.add_node(CoreNode)
-        interface = prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface1_data=interface)
+        interface = prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface1_data=interface)
 
     # instantiate session
     session.instantiate()

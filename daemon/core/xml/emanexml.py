@@ -158,19 +158,19 @@ def build_node_platform_xml(
         logging.warning("warning: EMANE network %s has no associated model", node.name)
         return nem_id
 
-    for netif in node.netifs():
+    for iface in node.get_ifaces():
         logging.debug(
-            "building platform xml for interface(%s) nem_id(%s)", netif.name, nem_id
+            "building platform xml for interface(%s) nem_id(%s)", iface.name, nem_id
         )
         # build nem xml
-        nem_definition = nem_file_name(node.model, netif)
+        nem_definition = nem_file_name(node.model, iface)
         nem_element = etree.Element(
-            "nem", id=str(nem_id), name=netif.localname, definition=nem_definition
+            "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
         )
 
         # check if this is an external transport, get default config if an interface
         # specific one does not exist
-        config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
+        config = emane_manager.get_iface_config(node.model.id, iface, node.model.name)
 
         if is_external(config):
             nem_element.set("transport", "external")
@@ -180,9 +180,9 @@ def build_node_platform_xml(
             add_param(nem_element, transport_endpoint, config[transport_endpoint])
         else:
             # build transport xml
-            transport_type = netif.transport_type
+            transport_type = iface.transport_type
             if not transport_type:
-                logging.info("warning: %s interface type unsupported!", netif.name)
+                logging.info("warning: %s interface type unsupported!", iface.name)
                 transport_type = TransportType.RAW
             transport_file = transport_file_name(node.id, transport_type)
             transport_element = etree.SubElement(
@@ -190,14 +190,14 @@ def build_node_platform_xml(
             )
 
             # add transport parameter
-            add_param(transport_element, "device", netif.name)
+            add_param(transport_element, "device", iface.name)
 
         # add nem entry
-        nem_entries[netif] = nem_element
+        nem_entries[iface] = nem_element
 
         # merging code
-        key = netif.node.id
-        if netif.transport_type == TransportType.RAW:
+        key = iface.node.id
+        if iface.transport_type == TransportType.RAW:
             key = "host"
             otadev = control_net.brname
             eventdev = control_net.brname
@@ -229,10 +229,10 @@ def build_node_platform_xml(
 
         platform_element.append(nem_element)
 
-        node.setnemid(netif, nem_id)
+        node.setnemid(iface, nem_id)
         macstr = _hwaddr_prefix + ":00:00:"
         macstr += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-        netif.sethwaddr(macstr)
+        iface.sethwaddr(macstr)
 
         # increment nem id
         nem_id += 1
@@ -280,19 +280,19 @@ def build_xml_files(emane_manager: "EmaneManager", node: EmaneNet) -> None:
     vtype = TransportType.VIRTUAL
     rtype = TransportType.RAW
 
-    for netif in node.netifs():
+    for iface in node.get_ifaces():
         # check for interface specific emane configuration and write xml files
-        config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
+        config = emane_manager.get_iface_config(node.model.id, iface, node.model.name)
         if config:
-            node.model.build_xml_files(config, netif)
+            node.model.build_xml_files(config, iface)
 
         # check transport type needed for interface
-        if netif.transport_type == TransportType.VIRTUAL:
+        if iface.transport_type == TransportType.VIRTUAL:
             need_virtual = True
-            vtype = netif.transport_type
+            vtype = iface.transport_type
         else:
             need_raw = True
-            rtype = netif.transport_type
+            rtype = iface.transport_type
 
     if need_virtual:
         build_transport_xml(emane_manager, node, vtype)
@@ -494,70 +494,70 @@ def transport_file_name(node_id: int, transport_type: TransportType) -> str:
     return f"n{node_id}trans{transport_type.value}.xml"
 
 
-def _basename(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
+def _basename(emane_model: "EmaneModel", iface: CoreInterface = None) -> str:
     """
     Create name that is leveraged for configuration file creation.
 
     :param emane_model: emane model to create name for
-    :param interface: interface for this model
+    :param iface: interface for this model
     :return: basename used for file creation
     """
     name = f"n{emane_model.id}"
 
-    if interface:
-        node_id = interface.node.id
-        if emane_model.session.emane.getifcconfig(node_id, interface, emane_model.name):
-            name = interface.localname.replace(".", "_")
+    if iface:
+        node_id = iface.node.id
+        if emane_model.session.emane.get_iface_config(node_id, iface, emane_model.name):
+            name = iface.localname.replace(".", "_")
 
     return f"{name}{emane_model.name}"
 
 
-def nem_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
+def nem_file_name(emane_model: "EmaneModel", iface: CoreInterface = None) -> str:
     """
     Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
 
     :param emane_model: emane model to create file
-    :param interface: interface for this model
+    :param iface: interface for this model
     :return: nem xml filename
     """
-    basename = _basename(emane_model, interface)
+    basename = _basename(emane_model, iface)
     append = ""
-    if interface and interface.transport_type == TransportType.RAW:
+    if iface and iface.transport_type == TransportType.RAW:
         append = "_raw"
     return f"{basename}nem{append}.xml"
 
 
-def shim_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
+def shim_file_name(emane_model: "EmaneModel", iface: CoreInterface = None) -> str:
     """
     Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
 
     :param emane_model: emane model to create file
-    :param interface: interface for this model
+    :param iface: interface for this model
     :return: shim xml filename
     """
-    name = _basename(emane_model, interface)
+    name = _basename(emane_model, iface)
     return f"{name}shim.xml"
 
 
-def mac_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
+def mac_file_name(emane_model: "EmaneModel", iface: CoreInterface = None) -> str:
     """
     Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
 
     :param emane_model: emane model to create file
-    :param interface: interface for this model
+    :param iface: interface for this model
     :return: mac xml filename
     """
-    name = _basename(emane_model, interface)
+    name = _basename(emane_model, iface)
     return f"{name}mac.xml"
 
 
-def phy_file_name(emane_model: "EmaneModel", interface: CoreInterface = None) -> str:
+def phy_file_name(emane_model: "EmaneModel", iface: CoreInterface = None) -> str:
     """
     Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
 
     :param emane_model: emane model to create file
-    :param interface: interface for this model
+    :param iface: interface for this model
     :return: phy xml filename
     """
-    name = _basename(emane_model, interface)
+    name = _basename(emane_model, iface)
     return f"{name}phy.xml"

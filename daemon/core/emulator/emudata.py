@@ -155,7 +155,7 @@ class IpPrefixes:
             raise ValueError("ip6 prefixes have not been set")
         return str(self.ip6[node_id])
 
-    def gen_interface(self, node_id: int, name: str = None, mac: str = None):
+    def gen_iface(self, node_id: int, name: str = None, mac: str = None):
         """
         Creates interface data for linking nodes, using the nodes unique id for
         generation, along with a random mac address, unless provided.
@@ -188,7 +188,7 @@ class IpPrefixes:
             name=name, ip4=ip4, ip4_mask=ip4_mask, ip6=ip6, ip6_mask=ip6_mask, mac=mac
         )
 
-    def create_interface(
+    def create_iface(
         self, node: "CoreNode", name: str = None, mac: str = None
     ) -> InterfaceData:
         """
@@ -201,6 +201,6 @@ class IpPrefixes:
             generation
         :return: new interface data for the provided node
         """
-        interface_data = self.gen_interface(node.id, name, mac)
-        interface_data.id = node.newifindex()
-        return interface_data
+        iface_data = self.gen_iface(node.id, name, mac)
+        iface_data.id = node.next_iface_id()
+        return iface_data

@@ -51,8 +51,8 @@ class PhysicalNode(CoreNodeBase):
                 _source, target = self._mounts.pop(-1)
                 self.umount(target)
 
-            for netif in self.netifs():
-                netif.shutdown()
+            for iface in self.get_ifaces():
+                iface.shutdown()
 
             self.rmnodedir()
 
@@ -65,117 +65,115 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def sethwaddr(self, ifindex: int, addr: str) -> None:
+    def sethwaddr(self, iface_id: int, addr: str) -> None:
         """
         Set hardware address for an interface.
 
-        :param ifindex: index of interface to set hardware address for
+        :param iface_id: index of interface to set hardware address for
         :param addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         addr = utils.validate_mac(addr)
-        interface = self._netif[ifindex]
-        interface.sethwaddr(addr)
+        iface = self.ifaces[iface_id]
+        iface.sethwaddr(addr)
         if self.up:
-            self.net_client.device_mac(interface.name, addr)
+            self.net_client.device_mac(iface.name, addr)
 
-    def addaddr(self, ifindex: int, addr: str) -> None:
+    def addaddr(self, iface_id: int, addr: str) -> None:
         """
         Add an address to an interface.
 
-        :param ifindex: index of interface to add address to
+        :param iface_id: index of interface to add address to
         :param addr: address to add
         :return: nothing
         """
         addr = utils.validate_ip(addr)
-        interface = self._netif[ifindex]
+        iface = self.get_iface(iface_id)
         if self.up:
-            self.net_client.create_address(interface.name, addr)
-        interface.addaddr(addr)
+            self.net_client.create_address(iface.name, addr)
+        iface.addaddr(addr)
 
-    def deladdr(self, ifindex: int, addr: str) -> None:
+    def deladdr(self, iface_id: int, addr: str) -> None:
         """
         Delete an address from an interface.
 
-        :param ifindex: index of interface to delete
+        :param iface_id: index of interface to delete
         :param addr: address to delete
         :return: nothing
         """
-        interface = self._netif[ifindex]
-
+        iface = self.ifaces[iface_id]
         try:
-            interface.deladdr(addr)
+            iface.deladdr(addr)
         except ValueError:
             logging.exception("trying to delete unknown address: %s", addr)
-
         if self.up:
-            self.net_client.delete_address(interface.name, addr)
+            self.net_client.delete_address(iface.name, addr)
 
-    def adoptnetif(
-        self, netif: CoreInterface, ifindex: int, hwaddr: str, addrlist: List[str]
+    def adopt_iface(
+        self, iface: CoreInterface, iface_id: int, hwaddr: str, addrlist: List[str]
     ) -> None:
         """
         When a link message is received linking this node to another part of
         the emulation, no new interface is created; instead, adopt the
-        GreTap netif as the node interface.
+        GreTap interface as the node interface.
         """
-        netif.name = f"gt{ifindex}"
-        netif.node = self
-        self.addnetif(netif, ifindex)
+        iface.name = f"gt{iface_id}"
+        iface.node = self
+        self.add_iface(iface, iface_id)
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.net_client.device_down(netif.localname)
-            self.net_client.device_name(netif.localname, netif.name)
-        netif.localname = netif.name
+            self.net_client.device_down(iface.localname)
+            self.net_client.device_name(iface.localname, iface.name)
+        iface.localname = iface.name
         if hwaddr:
-            self.sethwaddr(ifindex, hwaddr)
+            self.sethwaddr(iface_id, hwaddr)
         for addr in addrlist:
-            self.addaddr(ifindex, addr)
+            self.addaddr(iface_id, addr)
         if self.up:
-            self.net_client.device_up(netif.localname)
+            self.net_client.device_up(iface.localname)
 
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Apply tc queing disciplines using linkconfig.
         """
         linux_bridge = CoreNetwork(self.session)
         linux_bridge.up = True
-        linux_bridge.linkconfig(netif, options, netif2)
+        linux_bridge.linkconfig(iface, options, iface2)
         del linux_bridge
 
-    def newifindex(self) -> int:
+    def next_iface_id(self) -> int:
         with self.lock:
-            while self.ifindex in self._netif:
-                self.ifindex += 1
-            ifindex = self.ifindex
-            self.ifindex += 1
-            return ifindex
+            while self.iface_id in self.ifaces:
+                self.iface_id += 1
+            iface_id = self.iface_id
+            self.iface_id += 1
+            return iface_id
 
-    def newnetif(
-        self, net: CoreNetworkBase, interface_data: InterfaceData
+    def new_iface(
+        self, net: CoreNetworkBase, iface_data: InterfaceData
     ) -> CoreInterface:
         logging.info("creating interface")
-        addresses = interface_data.get_addresses()
-        ifindex = interface_data.id
-        if ifindex is None:
-            ifindex = self.newifindex()
-        name = interface_data.name
+        addresses = iface_data.get_addresses()
+        iface_id = iface_data.id
+        if iface_id is None:
+            iface_id = self.next_iface_id()
+        name = iface_data.name
         if name is None:
-            name = f"gt{ifindex}"
+            name = f"gt{iface_id}"
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
             _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
-            self.adoptnetif(remote_tap, ifindex, interface_data.mac, addresses)
+            self.adopt_iface(remote_tap, iface_id, iface_data.mac, addresses)
             return remote_tap
         else:
             # this is reached when configuring services (self.up=False)
-            netif = GreTap(node=self, name=name, session=self.session, start=False)
-            self.adoptnetif(netif, ifindex, interface_data.mac, addresses)
-            return netif
+            iface = GreTap(node=self, name=name, session=self.session, start=False)
+            self.adopt_iface(iface, iface_id, iface_data.mac, addresses)
+            return iface
 
     def privatedir(self, path: str) -> None:
         if path[0] != "/":
@@ -257,10 +255,10 @@ class Rj45Node(CoreNodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server)
-        self.interface = CoreInterface(session, self, name, name, mtu, server)
-        self.interface.transport_type = TransportType.RAW
+        self.iface = CoreInterface(session, self, name, name, mtu, server)
+        self.iface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
-        self.ifindex: Optional[int] = None
+        self.iface_id: Optional[int] = None
         self.old_up: bool = False
         self.old_addrs: List[Tuple[str, Optional[str]]] = []
 
@@ -273,7 +271,7 @@ class Rj45Node(CoreNodeBase):
         """
         # interface will also be marked up during net.attach()
         self.savestate()
-        self.net_client.device_up(self.interface.localname)
+        self.net_client.device_up(self.iface.localname)
         self.up = True
 
     def shutdown(self) -> None:
@@ -285,7 +283,7 @@ class Rj45Node(CoreNodeBase):
         """
         if not self.up:
             return
-        localname = self.interface.localname
+        localname = self.iface.localname
         self.net_client.device_down(localname)
         self.net_client.device_flush(localname)
         try:
@@ -295,8 +293,8 @@ class Rj45Node(CoreNodeBase):
         self.up = False
         self.restorestate()
 
-    def newnetif(
-        self, net: CoreNetworkBase, interface_data: InterfaceData
+    def new_iface(
+        self, net: CoreNetworkBase, iface_data: InterfaceData
     ) -> CoreInterface:
         """
         This is called when linking with another node. Since this node
@@ -304,70 +302,51 @@ class Rj45Node(CoreNodeBase):
         but attach ourselves to the given network.
 
         :param net: new network instance
-        :param interface_data: interface data for new interface
+        :param iface_data: interface data for new interface
         :return: interface index
         :raises ValueError: when an interface has already been created, one max
         """
         with self.lock:
-            ifindex = interface_data.id
-            if ifindex is None:
-                ifindex = 0
-            if self.interface.net is not None:
-                raise ValueError("RJ45 nodes support at most 1 network interface")
-            self._netif[ifindex] = self.interface
-            self.ifindex = ifindex
+            iface_id = iface_data.id
+            if iface_id is None:
+                iface_id = 0
+            if self.iface.net is not None:
+                raise CoreError("RJ45 nodes support at most 1 network interface")
+            self.ifaces[iface_id] = self.iface
+            self.iface_id = iface_id
             if net is not None:
-                self.interface.attachnet(net)
-            for addr in interface_data.get_addresses():
+                self.iface.attachnet(net)
+            for addr in iface_data.get_addresses():
                 self.addaddr(addr)
-            return self.interface
+            return self.iface
 
-    def delnetif(self, ifindex: int) -> None:
+    def delete_iface(self, iface_id: int) -> None:
         """
         Delete a network interface.
 
-        :param ifindex: interface index to delete
+        :param iface_id: interface index to delete
         :return: nothing
         """
-        if ifindex is None:
-            ifindex = 0
-        self._netif.pop(ifindex)
-        if ifindex == self.ifindex:
-            self.shutdown()
-        else:
-            raise ValueError(f"ifindex {ifindex} does not exist")
+        self.get_iface(iface_id)
+        self.ifaces.pop(iface_id)
+        self.shutdown()
 
-    def netif(
-        self, ifindex: int, net: CoreNetworkBase = None
-    ) -> Optional[CoreInterface]:
-        """
-        This object is considered the network interface, so we only
-        return self here. This keeps the RJ45Node compatible with
-        real nodes.
+    def get_iface(self, iface_id: int) -> CoreInterface:
+        if iface_id != self.iface_id or iface_id not in self.ifaces:
+            raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
+        return self.iface
 
-        :param ifindex: interface index to retrieve
-        :param net: network to retrieve
-        :return: a network interface
-        """
-        if net is not None and net == self.interface.net:
-            return self.interface
-        if ifindex is None:
-            ifindex = 0
-        if ifindex == self.ifindex:
-            return self.interface
-        return None
-
-    def getifindex(self, netif: CoreInterface) -> Optional[int]:
+    def get_iface_id(self, iface: CoreInterface) -> Optional[int]:
         """
         Retrieve network interface index.
 
-        :param netif: network interface to retrieve
+        :param iface: network interface to retrieve
             index for
         :return: interface index, None otherwise
         """
-        if netif != self.interface:
-            return None
-        return self.ifindex
+        if iface is not self.iface:
+            raise CoreError(f"node({self.name}) does not have interface({iface.name})")
+        return self.iface_id
 
     def addaddr(self, addr: str) -> None:
         """
@@ -380,7 +359,7 @@ class Rj45Node(CoreNodeBase):
         addr = utils.validate_ip(addr)
         if self.up:
             self.net_client.create_address(self.name, addr)
-        self.interface.addaddr(addr)
+        self.iface.addaddr(addr)
 
     def deladdr(self, addr: str) -> None:
         """
@@ -392,7 +371,7 @@ class Rj45Node(CoreNodeBase):
         """
         if self.up:
             self.net_client.delete_address(self.name, addr)
-        self.interface.deladdr(addr)
+        self.iface.deladdr(addr)
 
     def savestate(self) -> None:
         """
@@ -404,7 +383,7 @@ class Rj45Node(CoreNodeBase):
         """
         self.old_up = False
         self.old_addrs: List[Tuple[str, Optional[str]]] = []
-        localname = self.interface.localname
+        localname = self.iface.localname
         output = self.net_client.address_show(localname)
         for line in output.split("\n"):
             items = line.split()
@@ -429,7 +408,7 @@ class Rj45Node(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        localname = self.interface.localname
+        localname = self.iface.localname
         logging.info("restoring rj45 state: %s", localname)
         for addr in self.old_addrs:
             self.net_client.create_address(localname, addr[0], addr[1])
@@ -446,7 +425,7 @@ class Rj45Node(CoreNodeBase):
         :return: True if position changed, False otherwise
         """
         super().setposition(x, y, z)
-        self.interface.setposition()
+        self.iface.setposition()
 
     def termcmdstring(self, sh: str) -> str:
         raise CoreError("rj45 does not support terminal commands")

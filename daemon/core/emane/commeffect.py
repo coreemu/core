@@ -63,7 +63,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
 
     def build_xml_files(
-        self, config: Dict[str, str], interface: CoreInterface = None
+        self, config: Dict[str, str], iface: CoreInterface = None
     ) -> None:
         """
         Build the necessary nem and commeffect XMLs in the given path.
@@ -72,17 +72,17 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
 
         :param config: emane model configuration for the node and interface
-        :param interface: interface for the emane node
+        :param iface: interface for the emane node
         :return: nothing
         """
         # retrieve xml names
-        nem_name = emanexml.nem_file_name(self, interface)
-        shim_name = emanexml.shim_file_name(self, interface)
+        nem_name = emanexml.nem_file_name(self, iface)
+        shim_name = emanexml.shim_file_name(self, iface)
 
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
         transport_type = TransportType.VIRTUAL
-        if interface and interface.transport_type == TransportType.RAW:
+        if iface and iface.transport_type == TransportType.RAW:
             transport_type = TransportType.RAW
         transport_file = emanexml.transport_file_name(self.id, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
@@ -115,7 +115,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         emanexml.create_file(shim_element, "shim", shim_file)
 
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Generate CommEffect events when a Link Message is received having
@@ -126,7 +126,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             logging.warning("%s: EMANE event service unavailable", self.name)
             return
 
-        if netif is None or netif2 is None:
+        if iface is None or iface2 is None:
             logging.warning("%s: missing NEM information", self.name)
             return
 
@@ -134,8 +134,8 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
         emane_node = self.session.get_node(self.id, EmaneNet)
-        nemid = emane_node.getnemid(netif)
-        nemid2 = emane_node.getnemid(netif2)
+        nemid = emane_node.getnemid(iface)
+        nemid2 = emane_node.getnemid(iface2)
         logging.info("sending comm effect event")
         event.append(
             nemid,

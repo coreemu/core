@@ -25,10 +25,10 @@ class DefaultRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         # only add default routes for linked routing nodes
         routes = []
-        netifs = self.node.netifs(sort=True)
-        if netifs:
-            netif = netifs[0]
-            for x in netif.addrlist:
+        ifaces = self.node.get_ifaces()
+        if ifaces:
+            iface = ifaces[0]
+            for x in iface.addrlist:
                 net = netaddr.IPNetwork(x).cidr
                 if net.size > 1:
                     router = net[1]
@@ -52,10 +52,8 @@ class DefaultMulticastRouteService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ifname = None
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifname = ifc.name
+        for iface in self.node.get_ifaces(control=False):
+            ifname = iface.name
             break
         return dict(ifname=ifname)
 
@@ -76,10 +74,8 @@ class StaticRouteService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         routes = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            for x in ifc.addrlist:
+        for iface in self.node.get_ifaces(control=False):
+            for x in iface.addrlist:
                 addr = x.split("/")[0]
                 if netaddr.valid_ipv6(addr):
                     dst = "3ffe:4::/64"
@@ -107,8 +103,8 @@ class IpForwardService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         devnames = []
-        for ifc in self.node.netifs():
-            devname = utils.sysctl_devname(ifc.name)
+        for iface in self.node.get_ifaces():
+            devname = utils.sysctl_devname(iface.name)
             devnames.append(devname)
         return dict(devnames=devnames)
 
@@ -151,10 +147,8 @@ class DhcpService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         subnets = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            for x in ifc.addrlist:
+        for iface in self.node.get_ifaces(control=False):
+            for x in iface.addrlist:
                 addr = x.split("/")[0]
                 if netaddr.valid_ipv4(addr):
                     net = netaddr.IPNetwork(x)
@@ -182,10 +176,8 @@ class DhcpClientService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict(ifnames=ifnames)
 
 
@@ -220,10 +212,8 @@ class PcapService(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict()
 
 
@@ -242,19 +232,17 @@ class RadvdService(ConfigService):
     modes = {}
 
     def data(self) -> Dict[str, Any]:
-        interfaces = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
+        ifaces = []
+        for iface in self.node.get_ifaces(control=False):
             prefixes = []
-            for x in ifc.addrlist:
+            for x in iface.addrlist:
                 addr = x.split("/")[0]
                 if netaddr.valid_ipv6(addr):
                     prefixes.append(x)
             if not prefixes:
                 continue
-            interfaces.append((ifc.name, prefixes))
-        return dict(interfaces=interfaces)
+            ifaces.append((iface.name, prefixes))
+        return dict(ifaces=ifaces)
 
 
 class AtdService(ConfigService):
@@ -294,9 +282,7 @@ class HttpService(ConfigService):
     modes = {}
 
     def data(self) -> Dict[str, Any]:
-        interfaces = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            interfaces.append(ifc)
-        return dict(interfaces=interfaces)
+        ifaces = []
+        for iface in self.node.get_ifaces(control=False):
+            ifaces.append(iface)
+        return dict(ifaces=ifaces)
