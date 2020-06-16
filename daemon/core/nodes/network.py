@@ -11,8 +11,7 @@ import netaddr
 
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
-from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import InterfaceData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeData
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -894,33 +893,31 @@ class PtpNet(CoreNetwork):
         if iface1.getparams() != iface2.getparams():
             unidirectional = 1
 
-        iface1_ip4 = None
-        iface1_ip4_mask = None
-        iface1_ip6 = None
-        iface1_ip6_mask = None
+        iface1_data = InterfaceData(
+            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=iface1.hwaddr
+        )
         for address in iface1.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
-                iface1_ip4 = ip
-                iface1_ip4_mask = mask
+                iface1.ip4 = ip
+                iface1.ip4_mask = mask
             else:
-                iface1_ip6 = ip
-                iface1_ip6_mask = mask
+                iface1.ip6 = ip
+                iface1.ip6_mask = mask
 
-        iface2_ip4 = None
-        iface2_ip4_mask = None
-        iface2_ip6 = None
-        iface2_ip6_mask = None
+        iface2_data = InterfaceData(
+            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=iface2.hwaddr
+        )
         for address in iface2.addrlist:
             ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if netaddr.valid_ipv4(ip):
-                iface2_ip4 = ip
-                iface2_ip4_mask = mask
+                iface2.ip4 = ip
+                iface2.ip4_mask = mask
             else:
-                iface2_ip6 = ip
-                iface2_ip6_mask = mask
+                iface2.ip6 = ip
+                iface2.ip6_mask = mask
 
         link_data = LinkData(
             message_type=flags,
@@ -933,26 +930,16 @@ class PtpNet(CoreNetwork):
             loss=iface1.getparam("loss"),
             dup=iface1.getparam("duplicate"),
             jitter=iface1.getparam("jitter"),
-            iface1_id=iface1.node.get_iface_id(iface1),
-            iface1_name=iface1.name,
-            iface1_mac=iface1.hwaddr,
-            iface1_ip4=iface1_ip4,
-            iface1_ip4_mask=iface1_ip4_mask,
-            iface1_ip6=iface1_ip6,
-            iface1_ip6_mask=iface1_ip6_mask,
-            iface2_id=iface2.node.get_iface_id(iface2),
-            iface2_name=iface2.name,
-            iface2_mac=iface2.hwaddr,
-            iface2_ip4=iface2_ip4,
-            iface2_ip4_mask=iface2_ip4_mask,
-            iface2_ip6=iface2_ip6,
-            iface2_ip6_mask=iface2_ip6_mask,
+            iface1=iface1_data,
+            iface2=iface2_data,
         )
         all_links.append(link_data)
 
         # build a 2nd link message for the upstream link parameters
         # (swap if1 and if2)
         if unidirectional:
+            iface1_data = InterfaceData(id=iface2.node.get_iface_id(iface2))
+            iface2_data = InterfaceData(id=iface1.node.get_iface_id(iface1))
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 link_type=self.linktype,
@@ -964,8 +951,8 @@ class PtpNet(CoreNetwork):
                 dup=iface2.getparam("duplicate"),
                 jitter=iface2.getparam("jitter"),
                 unidirectional=1,
-                iface1_id=iface2.node.get_iface_id(iface2),
-                iface2_id=iface1.node.get_iface_id(iface1),
+                iface1=iface1_data,
+                iface2=iface2_data,
             )
             all_links.append(link_data)
         return all_links

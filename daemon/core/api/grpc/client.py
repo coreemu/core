@@ -92,7 +92,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
-from core.emulator.emudata import IpPrefixes
+from core.emulator.data import IpPrefixes
 
 
 class InterfaceHelper:

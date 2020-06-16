@@ -18,8 +18,7 @@ from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import ConfigFlags
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, NodeData
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import EventData, IpPrefixes, NodeData, NodeOptions
 from core.emulator.enumerations import EventTypes, ExceptionLevels, NodeTypes
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility

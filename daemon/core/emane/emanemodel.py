@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Set
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emane.nodes import EmaneNet
-from core.emulator.emudata import LinkOptions
+from core.emulator.data import LinkOptions
 from core.emulator.enumerations import ConfigDataTypes, TransportType
 from core.errors import CoreError
 from core.location.mobility import WirelessModel

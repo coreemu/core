@@ -11,8 +11,7 @@ from core.api.grpc import common_pb2, core_pb2
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig
 from core.config import ConfigurableOptions
 from core.emane.nodes import EmaneNet
-from core.emulator.data import LinkData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode, NodeBase
@@ -308,6 +307,18 @@ def parse_emane_model_id(_id: int) -> Tuple[int, int]:
     return node_id, iface_id
 
 
+def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
+    return core_pb2.Interface(
+        id=iface_data.id,
+        name=iface_data.name,
+        mac=iface_data.mac,
+        ip4=iface_data.ip4,
+        ip4mask=iface_data.ip4_mask,
+        ip6=iface_data.ip6,
+        ip6mask=iface_data.ip6_mask,
+    )
+
+
 def convert_link(link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf link.
@@ -316,27 +327,11 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
     :return: core protobuf Link
     """
     iface1 = None
-    if link_data.iface1_id is not None:
-        iface1 = core_pb2.Interface(
-            id=link_data.iface1_id,
-            name=link_data.iface1_name,
-            mac=convert_value(link_data.iface1_mac),
-            ip4=convert_value(link_data.iface1_ip4),
-            ip4mask=link_data.iface1_ip4_mask,
-            ip6=convert_value(link_data.iface1_ip6),
-            ip6mask=link_data.iface1_ip6_mask,
-        )
+    if link_data.iface1 is not None:
+        iface1 = convert_iface(link_data.iface1)
     iface2 = None
-    if link_data.iface2_id is not None:
-        iface2 = core_pb2.Interface(
-            id=link_data.iface2_id,
-            name=link_data.iface2_name,
-            mac=convert_value(link_data.iface2_mac),
-            ip4=convert_value(link_data.iface2_ip4),
-            ip4mask=link_data.iface2_ip4_mask,
-            ip6=convert_value(link_data.iface2_ip6),
-            ip6mask=link_data.iface2_ip6_mask,
-        )
+    if link_data.iface2 is not None:
+        iface2 = convert_iface(link_data.iface2)
     options = core_pb2.LinkOptions(
         opaque=link_data.opaque,
         jitter=link_data.jitter,

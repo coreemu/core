@@ -108,8 +108,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkResponse,
 )
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import LinkData
-from core.emulator.emudata import LinkOptions, NodeOptions
+from core.emulator.data import LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError

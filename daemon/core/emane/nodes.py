@@ -6,9 +6,8 @@ share the same MAC+PHY model.
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
-from core.emulator.data import LinkData
+from core.emulator.data import LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,

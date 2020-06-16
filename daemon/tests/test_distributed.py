@@ -1,4 +1,4 @@
-from core.emulator.emudata import NodeOptions
+from core.emulator.data import NodeOptions
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
 from core.nodes.network import HubNode

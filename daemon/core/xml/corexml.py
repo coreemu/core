@@ -6,8 +6,7 @@ from lxml import etree
 import core.nodes.base
 import core.nodes.physical
 from core.emane.nodes import EmaneNet
-from core.emulator.data import LinkData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, NodeBase
@@ -482,12 +481,10 @@ class CoreXmlWriter:
         # add link data
         for link_data in links:
             # skip basic range links
-            if link_data.iface1_id is None and link_data.iface2_id is None:
+            if link_data.iface1 is None and link_data.iface2 is None:
                 continue
-
             link_element = self.create_link_element(link_data)
             link_elements.append(link_element)
-
         if link_elements.getchildren():
             self.scenario.append(link_elements)
 
@@ -496,36 +493,24 @@ class CoreXmlWriter:
         self.devices.append(device.element)
 
     def create_iface_element(
-        self,
-        element_name: str,
-        node_id: int,
-        iface_id: int,
-        mac: str,
-        ip4: str,
-        ip4_mask: int,
-        ip6: str,
-        ip6_mask: int,
+        self, element_name: str, node_id: int, iface_data: InterfaceData
     ) -> etree.Element:
-        iface = etree.Element(element_name)
+        iface_element = etree.Element(element_name)
         node = self.session.get_node(node_id, NodeBase)
-        iface_name = None
         if isinstance(node, CoreNodeBase):
-            node_iface = node.get_iface(iface_id)
-            iface_name = node_iface.name
-
+            iface = node.get_iface(iface_data.id)
             # check if emane interface
-            if isinstance(node_iface.net, EmaneNet):
-                nem = node_iface.net.getnemid(node_iface)
-                add_attribute(iface, "nem", nem)
-
-        add_attribute(iface, "id", iface_id)
-        add_attribute(iface, "name", iface_name)
-        add_attribute(iface, "mac", mac)
-        add_attribute(iface, "ip4", ip4)
-        add_attribute(iface, "ip4_mask", ip4_mask)
-        add_attribute(iface, "ip6", ip6)
-        add_attribute(iface, "ip6_mask", ip6_mask)
-        return iface
+            if isinstance(iface.net, EmaneNet):
+                nem = iface.net.getnemid(iface)
+                add_attribute(iface_element, "nem", nem)
+        add_attribute(iface_element, "id", iface_data.id)
+        add_attribute(iface_element, "name", iface_data.name)
+        add_attribute(iface_element, "mac", iface_data.mac)
+        add_attribute(iface_element, "ip4", iface_data.ip4)
+        add_attribute(iface_element, "ip4_mask", iface_data.ip4_mask)
+        add_attribute(iface_element, "ip6", iface_data.ip6)
+        add_attribute(iface_element, "ip6_mask", iface_data.ip6_mask)
+        return iface_element
 
     def create_link_element(self, link_data: LinkData) -> etree.Element:
         link_element = etree.Element("link")
@@ -533,30 +518,16 @@ class CoreXmlWriter:
         add_attribute(link_element, "node2", link_data.node2_id)
 
         # check for interface one
-        if link_data.iface1_id is not None:
+        if link_data.iface1 is not None:
             iface1 = self.create_iface_element(
-                "interface1",
-                link_data.node1_id,
-                link_data.iface1_id,
-                link_data.iface1_mac,
-                link_data.iface1_ip4,
-                link_data.iface1_ip4_mask,
-                link_data.iface1_ip6,
-                link_data.iface1_ip6_mask,
+                "interface1", link_data.node1_id, link_data.iface1
             )
             link_element.append(iface1)
 
         # check for interface two
-        if link_data.iface2_id is not None:
+        if link_data.iface2 is not None:
             iface2 = self.create_iface_element(
-                "interface2",
-                link_data.node2_id,
-                link_data.iface2_id,
-                link_data.iface2_mac,
-                link_data.iface2_ip4,
-                link_data.iface2_ip4_mask,
-                link_data.iface2_ip6,
-                link_data.iface2_ip6_mask,
+                "interface2", link_data.node2_id, link_data.iface2
             )
             link_element.append(iface2)
 
@@ -582,7 +553,6 @@ class CoreXmlWriter:
             add_attribute(options, "network_id", link_data.network_id)
             add_attribute(options, "key", link_data.key)
             add_attribute(options, "opaque", link_data.opaque)
-            add_attribute(options, "session", link_data.session)
             if options.items():
                 link_element.append(options)
 
@@ -969,7 +939,6 @@ class CoreXmlReader:
                 if options.loss is None:
                     options.loss = get_float(options_element, "per")
                 options.unidirectional = get_int(options_element, "unidirectional")
-                options.session = options_element.get("session")
                 options.emulation_id = get_int(options_element, "emulation_id")
                 options.network_id = get_int(options_element, "network_id")
                 options.opaque = options_element.get("opaque")

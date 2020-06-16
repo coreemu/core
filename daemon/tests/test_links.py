@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from core.emulator.emudata import IpPrefixes, LinkOptions
+from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode

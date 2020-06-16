@@ -9,8 +9,8 @@ from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
+from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import InterfaceData, LinkOptions
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNodeBase

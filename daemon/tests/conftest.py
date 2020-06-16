@@ -14,8 +14,8 @@ from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler
 from core.emane.emanemanager import EmaneManager
 from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode

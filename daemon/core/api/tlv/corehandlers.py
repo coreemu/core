@@ -29,8 +29,15 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
-from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import (
+    ConfigData,
+    EventData,
+    ExceptionData,
+    FileData,
+    InterfaceData,
+    LinkOptions,
+    NodeOptions,
+)
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
@@ -342,6 +349,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         dup = ""
         if link_data.dup is not None:
             dup = str(link_data.dup)
+        iface1 = link_data.iface1
+        if iface1 is None:
+            iface1 = InterfaceData()
+        iface2 = link_data.iface2
+        if iface2 is None:
+            iface2 = InterfaceData()
 
         tlv_data = structutils.pack_values(
             coreapi.CoreLinkTlv,
@@ -355,7 +368,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.JITTER, link_data.jitter),
                 (LinkTlvs.MER, link_data.mer),
                 (LinkTlvs.BURST, link_data.burst),
-                (LinkTlvs.SESSION, link_data.session),
                 (LinkTlvs.MBURST, link_data.mburst),
                 (LinkTlvs.TYPE, link_data.link_type.value),
                 (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
@@ -363,18 +375,18 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.EMULATION_ID, link_data.emulation_id),
                 (LinkTlvs.NETWORK_ID, link_data.network_id),
                 (LinkTlvs.KEY, link_data.key),
-                (LinkTlvs.IFACE1_NUMBER, link_data.iface1_id),
-                (LinkTlvs.IFACE1_IP4, link_data.iface1_ip4),
-                (LinkTlvs.IFACE1_IP4_MASK, link_data.iface1_ip4_mask),
-                (LinkTlvs.IFACE1_MAC, link_data.iface1_mac),
-                (LinkTlvs.IFACE1_IP6, link_data.iface1_ip6),
-                (LinkTlvs.IFACE1_IP6_MASK, link_data.iface1_ip6_mask),
-                (LinkTlvs.IFACE2_NUMBER, link_data.iface2_id),
-                (LinkTlvs.IFACE2_IP4, link_data.iface2_ip4),
-                (LinkTlvs.IFACE2_IP4_MASK, link_data.iface2_ip4_mask),
-                (LinkTlvs.IFACE2_MAC, link_data.iface2_mac),
-                (LinkTlvs.IFACE2_IP6, link_data.iface2_ip6),
-                (LinkTlvs.IFACE2_IP6_MASK, link_data.iface2_ip6_mask),
+                (LinkTlvs.IFACE1_NUMBER, iface1.id),
+                (LinkTlvs.IFACE1_IP4, iface1.ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, iface1.ip4_mask),
+                (LinkTlvs.IFACE1_MAC, iface1.mac),
+                (LinkTlvs.IFACE1_IP6, iface1.ip6),
+                (LinkTlvs.IFACE1_IP6_MASK, iface1.ip6_mask),
+                (LinkTlvs.IFACE2_NUMBER, iface2.id),
+                (LinkTlvs.IFACE2_IP4, iface2.ip4),
+                (LinkTlvs.IFACE2_IP4_MASK, iface2.ip4_mask),
+                (LinkTlvs.IFACE2_MAC, iface2.mac),
+                (LinkTlvs.IFACE2_IP6, iface2.ip6),
+                (LinkTlvs.IFACE2_IP6_MASK, iface2.ip6_mask),
                 (LinkTlvs.OPAQUE, link_data.opaque),
             ],
         )
@@ -774,7 +786,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options = LinkOptions(type=link_type)
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        options.session = message.get_tlv(LinkTlvs.SESSION.value)
         options.loss = message.get_tlv(LinkTlvs.LOSS.value)
         options.dup = message.get_tlv(LinkTlvs.DUP.value)
         options.jitter = message.get_tlv(LinkTlvs.JITTER.value)

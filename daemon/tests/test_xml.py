@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core.emulator.emudata import IpPrefixes, LinkOptions, NodeOptions
+from core.emulator.data import IpPrefixes, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.errors import CoreError

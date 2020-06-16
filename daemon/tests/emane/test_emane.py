@@ -15,7 +15,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode

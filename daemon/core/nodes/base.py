@@ -14,8 +14,7 @@ import netaddr
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
-from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import InterfaceData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeData
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.client import VnodeClient
@@ -1096,19 +1095,18 @@ class CoreNetworkBase(NodeBase):
             if uni:
                 unidirectional = 1
 
-            iface2_ip4 = None
-            iface2_ip4_mask = None
-            iface2_ip6 = None
-            iface2_ip6_mask = None
+            iface2 = InterfaceData(
+                id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.hwaddr
+            )
             for address in iface.addrlist:
                 ip, _sep, mask = address.partition("/")
                 mask = int(mask)
                 if netaddr.valid_ipv4(ip):
-                    iface2_ip4 = ip
-                    iface2_ip4_mask = mask
+                    iface2.ip4 = ip
+                    iface2.ip4_mask = mask
                 else:
-                    iface2_ip6 = ip
-                    iface2_ip6_mask = mask
+                    iface2.ip6 = ip
+                    iface2.ip6_mask = mask
 
             link_data = LinkData(
                 message_type=flags,
@@ -1116,13 +1114,7 @@ class CoreNetworkBase(NodeBase):
                 node2_id=linked_node.id,
                 link_type=self.linktype,
                 unidirectional=unidirectional,
-                iface2_id=linked_node.get_iface_id(iface),
-                iface2_name=iface.name,
-                iface2_mac=iface.hwaddr,
-                iface2_ip4=iface2_ip4,
-                iface2_ip4_mask=iface2_ip4_mask,
-                iface2_ip6=iface2_ip6,
-                iface2_ip6_mask=iface2_ip6_mask,
+                iface2=iface2,
                 delay=iface.getparam("delay"),
                 bandwidth=iface.getparam("bw"),
                 dup=iface.getparam("duplicate"),

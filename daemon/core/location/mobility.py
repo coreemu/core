@@ -13,8 +13,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
-from core.emulator.data import EventData, LinkData
-from core.emulator.emudata import LinkOptions
+from core.emulator.data import EventData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,

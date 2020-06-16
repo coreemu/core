@@ -1,6 +1,6 @@
 import pytest
 
-from core.emulator.emudata import InterfaceData, NodeOptions
+from core.emulator.data import InterfaceData, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode

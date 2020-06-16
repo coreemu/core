@@ -11,7 +11,7 @@ from lxml import etree
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
 from core.emane.nodes import EmaneNet
-from core.emulator.emudata import LinkOptions
+from core.emulator.data import LinkOptions
 from core.emulator.enumerations import TransportType
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml

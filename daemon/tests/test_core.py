@@ -8,7 +8,7 @@ from typing import Type
 
 import pytest
 
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError

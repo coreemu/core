@@ -22,11 +22,13 @@ from core.emulator.data import (
     EventData,
     ExceptionData,
     FileData,
+    InterfaceData,
     LinkData,
+    LinkOptions,
     NodeData,
+    NodeOptions,
 )
 from core.emulator.distributed import DistributedController
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,

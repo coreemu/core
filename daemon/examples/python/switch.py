@@ -6,7 +6,7 @@ interact with the GUI.
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
