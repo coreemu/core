@@ -590,7 +590,7 @@ class TestGrpc:
         session.add_link(node.id, switch.id, iface)
         options = core_pb2.LinkOptions(bandwidth=30000)
         link = switch.all_link_data()[0]
-        assert options.bandwidth != link.bandwidth
+        assert options.bandwidth != link.options.bandwidth
 
         # then
         with client.context_connect():
@@ -601,7 +601,7 @@ class TestGrpc:
         # then
         assert response.result is True
         link = switch.all_link_data()[0]
-        assert options.bandwidth == link.bandwidth
+        assert options.bandwidth == link.options.bandwidth
 
     def test_delete_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given

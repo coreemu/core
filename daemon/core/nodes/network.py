@@ -884,11 +884,12 @@ class PtpNet(CoreNetwork):
         :return: list of link data
         """
         all_links = []
-
         if len(self.ifaces) != 2:
             return all_links
 
-        iface1, iface2 = self.get_ifaces()
+        ifaces = self.get_ifaces()
+        iface1 = ifaces[0]
+        iface2 = ifaces[1]
         unidirectional = 0
         if iface1.getparams() != iface2.getparams():
             unidirectional = 1
@@ -919,19 +920,15 @@ class PtpNet(CoreNetwork):
                 iface2.ip6 = ip
                 iface2.ip6_mask = mask
 
+        options_data = iface1.get_link_options(unidirectional)
         link_data = LinkData(
             message_type=flags,
             node1_id=iface1.node.id,
             node2_id=iface2.node.id,
             link_type=self.linktype,
-            unidirectional=unidirectional,
-            delay=iface1.getparam("delay"),
-            bandwidth=iface1.getparam("bw"),
-            loss=iface1.getparam("loss"),
-            dup=iface1.getparam("duplicate"),
-            jitter=iface1.getparam("jitter"),
             iface1=iface1_data,
             iface2=iface2_data,
+            options=options_data,
         )
         all_links.append(link_data)
 
@@ -940,19 +937,15 @@ class PtpNet(CoreNetwork):
         if unidirectional:
             iface1_data = InterfaceData(id=iface2.node.get_iface_id(iface2))
             iface2_data = InterfaceData(id=iface1.node.get_iface_id(iface1))
+            options_data = iface2.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 link_type=self.linktype,
                 node1_id=iface2.node.id,
                 node2_id=iface1.node.id,
-                delay=iface2.getparam("delay"),
-                bandwidth=iface2.getparam("bw"),
-                loss=iface2.getparam("loss"),
-                dup=iface2.getparam("duplicate"),
-                jitter=iface2.getparam("jitter"),
-                unidirectional=1,
                 iface1=iface1_data,
                 iface2=iface2_data,
+                options=options_data,
             )
             all_links.append(link_data)
         return all_links

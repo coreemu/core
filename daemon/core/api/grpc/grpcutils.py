@@ -319,6 +319,22 @@ def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
     )
 
 
+def convert_link_options(options_data: LinkOptions) -> core_pb2.LinkOptions:
+    return core_pb2.LinkOptions(
+        opaque=options_data.opaque,
+        jitter=options_data.jitter,
+        key=options_data.key,
+        mburst=options_data.mburst,
+        mer=options_data.mer,
+        loss=options_data.loss,
+        bandwidth=options_data.bandwidth,
+        burst=options_data.burst,
+        delay=options_data.delay,
+        dup=options_data.dup,
+        unidirectional=options_data.unidirectional,
+    )
+
+
 def convert_link(link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf link.
@@ -332,19 +348,7 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
     iface2 = None
     if link_data.iface2 is not None:
         iface2 = convert_iface(link_data.iface2)
-    options = core_pb2.LinkOptions(
-        opaque=link_data.opaque,
-        jitter=link_data.jitter,
-        key=link_data.key,
-        mburst=link_data.mburst,
-        mer=link_data.mer,
-        loss=link_data.loss,
-        bandwidth=link_data.bandwidth,
-        burst=link_data.burst,
-        delay=link_data.delay,
-        dup=link_data.dup,
-        unidirectional=link_data.unidirectional,
-    )
+    options = convert_link_options(link_data.options)
     return core_pb2.Link(
         type=link_data.link_type.value,
         node1_id=link_data.node1_id,

@@ -142,36 +142,27 @@ class LinkOptions:
     burst: int = None
     mburst: int = None
     gui_attributes: str = None
-    unidirectional: bool = None
+    unidirectional: int = None
     emulation_id: int = None
-    network_id: int = None
     key: int = None
     opaque: str = None
 
 
 @dataclass
 class LinkData:
+    """
+    Represents all data associated with a link.
+    """
+
     message_type: MessageFlags = None
+    link_type: LinkTypes = None
     label: str = None
     node1_id: int = None
     node2_id: int = None
-    delay: float = None
-    bandwidth: float = None
-    loss: float = None
-    dup: float = None
-    jitter: float = None
-    mer: float = None
-    burst: float = None
-    mburst: float = None
-    link_type: LinkTypes = None
-    gui_attributes: str = None
-    unidirectional: int = None
-    emulation_id: int = None
-    network_id: int = None
-    key: int = None
     iface1: InterfaceData = None
     iface2: InterfaceData = None
-    opaque: str = None
+    options: LinkOptions = LinkOptions()
+    network_id: int = None
     color: str = None
 
 

@@ -224,9 +224,7 @@ class NodeBase(abc.ABC):
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
-        Build CORE Link data for this object. There is no default
-        method for PyCoreObjs as PyCoreNodes do not implement this but
-        PyCoreNets do.
+        Build link data for this node.
 
         :param flags: message flags
         :return: list of link data
@@ -1108,35 +1106,27 @@ class CoreNetworkBase(NodeBase):
                     iface2.ip6 = ip
                     iface2.ip6_mask = mask
 
+            options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=flags,
                 node1_id=self.id,
                 node2_id=linked_node.id,
                 link_type=self.linktype,
-                unidirectional=unidirectional,
                 iface2=iface2,
-                delay=iface.getparam("delay"),
-                bandwidth=iface.getparam("bw"),
-                dup=iface.getparam("duplicate"),
-                jitter=iface.getparam("jitter"),
-                loss=iface.getparam("loss"),
+                options=options_data,
             )
             all_links.append(link_data)
 
             if not uni:
                 continue
             iface.swapparams("_params_up")
+            options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 node1_id=linked_node.id,
                 node2_id=self.id,
                 link_type=self.linktype,
-                unidirectional=1,
-                delay=iface.getparam("delay"),
-                bandwidth=iface.getparam("bw"),
-                dup=iface.getparam("duplicate"),
-                jitter=iface.getparam("jitter"),
-                loss=iface.getparam("loss"),
+                options=options_data,
             )
             iface.swapparams("_params_up")
             all_links.append(link_data)

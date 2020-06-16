@@ -201,7 +201,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
-        assert link.bandwidth is None
+        assert link.options.bandwidth is None
 
         bandwidth = 50000
         message = coreapi.CoreLinkMessage.create(
@@ -219,7 +219,7 @@ class TestGui:
         all_links = switch_node.all_link_data()
         assert len(all_links) == 1
         link = all_links[0]
-        assert link.bandwidth == bandwidth
+        assert link.options.bandwidth == bandwidth
 
     def test_link_delete_node_to_node(self, coretlv: CoreHandler):
         node1_id = 1

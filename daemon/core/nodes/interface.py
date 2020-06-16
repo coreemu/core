@@ -7,6 +7,7 @@ import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
+from core.emulator.data import LinkOptions
 from core.emulator.enumerations import MessageFlags, TransportType
 from core.errors import CoreCommandError
 from core.nodes.netclient import LinuxNetClient, get_net_client
@@ -168,6 +169,34 @@ class CoreInterface:
         :return: parameter value
         """
         return self._params.get(key)
+
+    def get_link_options(self, unidirectional: int) -> LinkOptions:
+        """
+        Get currently set params as link options.
+
+        :param unidirectional: unidirectional setting
+        :return: link options
+        """
+        delay = self.getparam("delay")
+        if delay is not None:
+            delay = int(delay)
+        bandwidth = self.getparam("bw")
+        if bandwidth is not None:
+            bandwidth = int(bandwidth)
+        dup = self.getparam("duplicate")
+        if dup is not None:
+            dup = int(dup)
+        jitter = self.getparam("jitter")
+        if jitter is not None:
+            jitter = int(jitter)
+        return LinkOptions(
+            delay=delay,
+            bandwidth=bandwidth,
+            dup=dup,
+            jitter=jitter,
+            loss=self.getparam("loss"),
+            unidirectional=unidirectional,
+        )
 
     def getparams(self) -> List[Tuple[str, float]]:
         """

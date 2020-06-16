@@ -347,11 +347,11 @@ class TestXml:
             node = session.nodes[node_id]
             links += node.all_link_data()
         link = links[0]
-        assert options.loss == link.loss
-        assert options.bandwidth == link.bandwidth
-        assert options.jitter == link.jitter
-        assert options.delay == link.delay
-        assert options.dup == link.dup
+        assert options.loss == link.options.loss
+        assert options.bandwidth == link.options.bandwidth
+        assert options.jitter == link.options.jitter
+        assert options.delay == link.options.delay
+        assert options.dup == link.options.dup
 
     def test_link_options_ptp(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -414,11 +414,11 @@ class TestXml:
             node = session.nodes[node_id]
             links += node.all_link_data()
         link = links[0]
-        assert options.loss == link.loss
-        assert options.bandwidth == link.bandwidth
-        assert options.jitter == link.jitter
-        assert options.delay == link.delay
-        assert options.dup == link.dup
+        assert options.loss == link.options.loss
+        assert options.bandwidth == link.options.bandwidth
+        assert options.jitter == link.options.jitter
+        assert options.delay == link.options.delay
+        assert options.dup == link.options.dup
 
     def test_link_options_bidirectional(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -494,13 +494,13 @@ class TestXml:
         assert len(links) == 2
         link1 = links[0]
         link2 = links[1]
-        assert options1.bandwidth == link1.bandwidth
-        assert options1.delay == link1.delay
-        assert options1.loss == link1.loss
-        assert options1.dup == link1.dup
-        assert options1.jitter == link1.jitter
-        assert options2.bandwidth == link2.bandwidth
-        assert options2.delay == link2.delay
-        assert options2.loss == link2.loss
-        assert options2.dup == link2.dup
-        assert options2.jitter == link2.jitter
+        assert options1.bandwidth == link1.options.bandwidth
+        assert options1.delay == link1.options.delay
+        assert options1.loss == link1.options.loss
+        assert options1.dup == link1.options.dup
+        assert options1.jitter == link1.options.jitter
+        assert options2.bandwidth == link2.options.bandwidth
+        assert options2.delay == link2.options.delay
+        assert options2.loss == link2.options.loss
+        assert options2.dup == link2.options.dup
+        assert options2.jitter == link2.options.jitter

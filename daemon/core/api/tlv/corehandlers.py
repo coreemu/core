@@ -343,12 +343,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
+        options_data = link_data.options
         loss = ""
-        if link_data.loss is not None:
-            loss = str(link_data.loss)
+        if options_data.loss is not None:
+            loss = str(options_data.loss)
         dup = ""
-        if link_data.dup is not None:
-            dup = str(link_data.dup)
+        if options_data.dup is not None:
+            dup = str(options_data.dup)
         iface1 = link_data.iface1
         if iface1 is None:
             iface1 = InterfaceData()
@@ -361,20 +362,20 @@ class CoreHandler(socketserver.BaseRequestHandler):
             [
                 (LinkTlvs.N1_NUMBER, link_data.node1_id),
                 (LinkTlvs.N2_NUMBER, link_data.node2_id),
-                (LinkTlvs.DELAY, link_data.delay),
-                (LinkTlvs.BANDWIDTH, link_data.bandwidth),
+                (LinkTlvs.DELAY, options_data.delay),
+                (LinkTlvs.BANDWIDTH, options_data.bandwidth),
                 (LinkTlvs.LOSS, loss),
                 (LinkTlvs.DUP, dup),
-                (LinkTlvs.JITTER, link_data.jitter),
-                (LinkTlvs.MER, link_data.mer),
-                (LinkTlvs.BURST, link_data.burst),
-                (LinkTlvs.MBURST, link_data.mburst),
+                (LinkTlvs.JITTER, options_data.jitter),
+                (LinkTlvs.MER, options_data.mer),
+                (LinkTlvs.BURST, options_data.burst),
+                (LinkTlvs.MBURST, options_data.mburst),
                 (LinkTlvs.TYPE, link_data.link_type.value),
-                (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
-                (LinkTlvs.UNIDIRECTIONAL, link_data.unidirectional),
-                (LinkTlvs.EMULATION_ID, link_data.emulation_id),
+                (LinkTlvs.GUI_ATTRIBUTES, options_data.gui_attributes),
+                (LinkTlvs.UNIDIRECTIONAL, options_data.unidirectional),
+                (LinkTlvs.EMULATION_ID, options_data.emulation_id),
                 (LinkTlvs.NETWORK_ID, link_data.network_id),
-                (LinkTlvs.KEY, link_data.key),
+                (LinkTlvs.KEY, options_data.key),
                 (LinkTlvs.IFACE1_NUMBER, iface1.id),
                 (LinkTlvs.IFACE1_IP4, iface1.ip4),
                 (LinkTlvs.IFACE1_IP4_MASK, iface1.ip4_mask),
@@ -387,7 +388,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.IFACE2_MAC, iface2.mac),
                 (LinkTlvs.IFACE2_IP6, iface2.ip6),
                 (LinkTlvs.IFACE2_IP6_MASK, iface2.ip6_mask),
-                (LinkTlvs.OPAQUE, link_data.opaque),
+                (LinkTlvs.OPAQUE, options_data.opaque),
             ],
         )
 
