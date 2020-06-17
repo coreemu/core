@@ -731,9 +731,9 @@ class CoreNode(CoreNodeBase):
                 flow_id = self.node_net_client.get_ifindex(veth.name)
                 veth.flow_id = int(flow_id)
                 logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                hwaddr = self.node_net_client.get_mac(veth.name)
-                logging.debug("interface mac: %s - %s", veth.name, hwaddr)
-                veth.sethwaddr(hwaddr)
+                mac = self.node_net_client.get_mac(veth.name)
+                logging.debug("interface mac: %s - %s", veth.name, mac)
+                veth.set_mac(mac)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the
@@ -775,20 +775,20 @@ class CoreNode(CoreNodeBase):
 
             return iface_id
 
-    def sethwaddr(self, iface_id: int, addr: str) -> None:
+    def set_mac(self, iface_id: int, mac: str) -> None:
         """
         Set hardware address for an interface.
 
         :param iface_id: id of interface to set hardware address for
-        :param addr: hardware address to set
+        :param mac: mac address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        addr = utils.validate_mac(addr)
+        mac = utils.validate_mac(mac)
         iface = self.get_iface(iface_id)
-        iface.sethwaddr(addr)
+        iface.set_mac(mac)
         if self.up:
-            self.node_net_client.device_mac(iface.name, addr)
+            self.node_net_client.device_mac(iface.name, mac)
 
     def addaddr(self, iface_id: int, addr: str) -> None:
         """
@@ -857,14 +857,14 @@ class CoreNode(CoreNodeBase):
                 #   save addresses with the interface now
                 self.attachnet(iface_id, net)
                 iface = self.get_iface(iface_id)
-                iface.sethwaddr(iface_data.mac)
+                iface.set_mac(iface_data.mac)
                 for address in addresses:
                     iface.addaddr(address)
             else:
                 iface_id = self.newveth(iface_data.id, iface_data.name)
                 self.attachnet(iface_id, net)
                 if iface_data.mac:
-                    self.sethwaddr(iface_id, iface_data.mac)
+                    self.set_mac(iface_id, iface_data.mac)
                 for address in addresses:
                     self.addaddr(iface_id, address)
                 self.ifup(iface_id)
@@ -1094,7 +1094,7 @@ class CoreNetworkBase(NodeBase):
                 unidirectional = 1
 
             iface2 = InterfaceData(
-                id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.hwaddr
+                id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.mac
             )
             for address in iface.addrlist:
                 ip, _sep, mask = address.partition("/")

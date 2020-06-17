@@ -53,7 +53,7 @@ class CoreInterface:
         self.othernet: Optional[CoreNetworkBase] = None
         self._params: Dict[str, float] = {}
         self.addrlist: List[str] = []
-        self.hwaddr: Optional[str] = None
+        self.mac: Optional[str] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
@@ -150,16 +150,16 @@ class CoreInterface:
         """
         self.addrlist.remove(addr)
 
-    def sethwaddr(self, addr: str) -> None:
+    def set_mac(self, mac: str) -> None:
         """
-        Set hardware address.
+        Set mac address.
 
-        :param addr: hardware address to set to.
+        :param mac: mac address to set
         :return: nothing
         """
-        if addr is not None:
-            addr = utils.validate_mac(addr)
-        self.hwaddr = addr
+        if mac is not None:
+            mac = utils.validate_mac(mac)
+        self.mac = mac
 
     def getparam(self, key: str) -> float:
         """

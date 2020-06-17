@@ -466,7 +466,7 @@ def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
         id=iface.node_id,
         net_id=net_id,
         name=iface.name,
-        mac=iface.hwaddr,
+        mac=iface.mac,
         mtu=iface.mtu,
         flow_id=iface.flow_id,
         ip4=ip4,

@@ -49,7 +49,7 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id, CoreNode)
 
-    def test_node_sethwaddr(self, session: Session):
+    def test_node_set_mac(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
@@ -58,12 +58,12 @@ class TestNodes:
         mac = "aa:aa:aa:ff:ff:ff"
 
         # when
-        node.sethwaddr(iface.node_id, mac)
+        node.set_mac(iface.node_id, mac)
 
         # then
-        assert iface.hwaddr == mac
+        assert iface.mac == mac
 
-    def test_node_sethwaddr_exception(self, session: Session):
+    def test_node_set_mac_exception(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
@@ -73,7 +73,7 @@ class TestNodes:
 
         # when
         with pytest.raises(CoreError):
-            node.sethwaddr(iface.node_id, mac)
+            node.set_mac(iface.node_id, mac)
 
     def test_node_addaddr(self, session: Session):
         # given

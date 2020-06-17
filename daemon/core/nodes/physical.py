@@ -65,20 +65,20 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def sethwaddr(self, iface_id: int, addr: str) -> None:
+    def set_mac(self, iface_id: int, mac: str) -> None:
         """
-        Set hardware address for an interface.
+        Set mac address for an interface.
 
         :param iface_id: index of interface to set hardware address for
-        :param addr: hardware address to set
+        :param mac: mac address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        addr = utils.validate_mac(addr)
+        mac = utils.validate_mac(mac)
         iface = self.ifaces[iface_id]
-        iface.sethwaddr(addr)
+        iface.set_mac(mac)
         if self.up:
-            self.net_client.device_mac(iface.name, addr)
+            self.net_client.device_mac(iface.name, mac)
 
     def addaddr(self, iface_id: int, addr: str) -> None:
         """
@@ -111,7 +111,7 @@ class PhysicalNode(CoreNodeBase):
             self.net_client.delete_address(iface.name, addr)
 
     def adopt_iface(
-        self, iface: CoreInterface, iface_id: int, hwaddr: str, addrlist: List[str]
+        self, iface: CoreInterface, iface_id: int, mac: str, addrlist: List[str]
     ) -> None:
         """
         When a link message is received linking this node to another part of
@@ -126,8 +126,8 @@ class PhysicalNode(CoreNodeBase):
             self.net_client.device_down(iface.localname)
             self.net_client.device_name(iface.localname, iface.name)
         iface.localname = iface.name
-        if hwaddr:
-            self.sethwaddr(iface_id, hwaddr)
+        if mac:
+            self.set_mac(iface_id, mac)
         for addr in addrlist:
             self.addaddr(iface_id, addr)
         if self.up:

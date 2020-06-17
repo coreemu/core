@@ -895,7 +895,7 @@ class PtpNet(CoreNetwork):
             unidirectional = 1
 
         iface1_data = InterfaceData(
-            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=iface1.hwaddr
+            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=iface1.mac
         )
         for address in iface1.addrlist:
             ip, _sep, mask = address.partition("/")
@@ -908,7 +908,7 @@ class PtpNet(CoreNetwork):
                 iface1.ip6_mask = mask
 
         iface2_data = InterfaceData(
-            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=iface2.hwaddr
+            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=iface2.mac
         )
         for address in iface2.addrlist:
             ip, _sep, mask = address.partition("/")

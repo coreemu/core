@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
     from core.emane.emanemodel import EmaneModel
 
-_hwaddr_prefix = "02:02"
+_MAC_PREFIX = "02:02"
 
 
 def is_external(config: Dict[str, str]) -> bool:
@@ -230,9 +230,9 @@ def build_node_platform_xml(
         platform_element.append(nem_element)
 
         node.setnemid(iface, nem_id)
-        macstr = _hwaddr_prefix + ":00:00:"
+        macstr = _MAC_PREFIX + ":00:00:"
         macstr += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-        iface.sethwaddr(macstr)
+        iface.set_mac(macstr)
 
         # increment nem id
         nem_id += 1
