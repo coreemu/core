@@ -132,7 +132,6 @@ class LinkOptions:
     Options for creating and updating links within core.
     """
 
-    type: LinkTypes = LinkTypes.WIRED
     delay: int = None
     bandwidth: int = None
     loss: float = None
@@ -155,7 +154,7 @@ class LinkData:
     """
 
     message_type: MessageFlags = None
-    link_type: LinkTypes = None
+    type: LinkTypes = LinkTypes.WIRED
     label: str = None
     node1_id: int = None
     node2_id: int = None

@@ -500,10 +500,10 @@ class EmaneManager(ModelManager):
         color = self.session.get_link_color(emane1.id)
         return LinkData(
             message_type=flags,
+            type=LinkTypes.WIRELESS,
             node1_id=node1.id,
             node2_id=node2.id,
             network_id=emane1.id,
-            link_type=LinkTypes.WIRELESS,
             color=color,
         )
 

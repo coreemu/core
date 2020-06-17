@@ -1109,9 +1109,9 @@ class CoreNetworkBase(NodeBase):
             options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=flags,
+                type=self.linktype,
                 node1_id=self.id,
                 node2_id=linked_node.id,
-                link_type=self.linktype,
                 iface2=iface2,
                 options=options_data,
             )
@@ -1123,9 +1123,9 @@ class CoreNetworkBase(NodeBase):
             options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
+                type=self.linktype,
                 node1_id=linked_node.id,
                 node2_id=self.id,
-                link_type=self.linktype,
                 options=options_data,
             )
             iface.swapparams("_params_up")

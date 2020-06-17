@@ -78,7 +78,7 @@ def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
 
 def add_link_data(
     link_proto: core_pb2.Link
-) -> Tuple[InterfaceData, InterfaceData, LinkOptions]:
+) -> Tuple[InterfaceData, InterfaceData, LinkOptions, LinkTypes]:
     """
     Convert link proto to link interfaces and options data.
 
@@ -88,7 +88,7 @@ def add_link_data(
     iface1_data = link_iface(link_proto.iface1)
     iface2_data = link_iface(link_proto.iface2)
     link_type = LinkTypes(link_proto.type)
-    options = LinkOptions(type=link_type)
+    options = LinkOptions()
     options_data = link_proto.options
     if options_data:
         options.delay = options_data.delay
@@ -102,7 +102,7 @@ def add_link_data(
         options.unidirectional = options_data.unidirectional
         options.key = options_data.key
         options.opaque = options_data.opaque
-    return iface1_data, iface2_data, options
+    return iface1_data, iface2_data, options, link_type
 
 
 def create_nodes(
@@ -142,8 +142,8 @@ def create_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        iface1, iface2, options = add_link_data(link_proto)
-        args = (node1_id, node2_id, iface1, iface2, options)
+        iface1, iface2, options, link_type = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1, iface2, options, link_type)
         funcs.append((session.add_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -166,8 +166,8 @@ def edit_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        iface1, iface2, options = add_link_data(link_proto)
-        args = (node1_id, node2_id, iface1.id, iface2.id, options)
+        iface1, iface2, options, link_type = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1.id, iface2.id, options, link_type)
         funcs.append((session.update_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -350,7 +350,7 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
         iface2 = convert_iface(link_data.iface2)
     options = convert_link_options(link_data.options)
     return core_pb2.Link(
-        type=link_data.link_type.value,
+        type=link_data.type.value,
         node1_id=link_data.node1_id,
         node2_id=link_data.node2_id,
         iface1=iface1,

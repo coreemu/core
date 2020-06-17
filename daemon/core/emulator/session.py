@@ -224,6 +224,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
+        link_type: LinkTypes = LinkTypes.WIRED,
     ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
@@ -236,6 +237,7 @@ class Session:
             data, defaults to none
         :param options: data for creating link,
             defaults to no options
+        :param link_type: type of link to add
         :return: tuple of created core interfaces, depending on link
         """
         if not options:
@@ -246,7 +248,7 @@ class Session:
         iface2 = None
 
         # wireless link
-        if options.type == LinkTypes.WIRELESS:
+        if link_type == LinkTypes.WIRELESS:
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
                 self._link_wireless(node1, node2, connect=True)
             else:
@@ -371,6 +373,7 @@ class Session:
         iface1_id: int = None,
         iface2_id: int = None,
         options: LinkOptions = None,
+        link_type: LinkTypes = LinkTypes.WIRED,
     ) -> None:
         """
         Update link information between nodes.
@@ -380,6 +383,7 @@ class Session:
         :param iface1_id: interface id for node one
         :param iface2_id: interface id for node two
         :param options: data to update link with
+        :param link_type: type of link to update
         :return: nothing
         :raises core.CoreError: when updating a wireless type link, when there is a
             unknown link between networks
@@ -390,7 +394,7 @@ class Session:
         node2 = self.get_node(node2_id, NodeBase)
         logging.info(
             "update link(%s) node(%s):interface(%s) node(%s):interface(%s)",
-            options.type.name,
+            link_type.name,
             node1.name,
             iface1_id,
             node2.name,
@@ -398,7 +402,7 @@ class Session:
         )
 
         # wireless link
-        if options.type == LinkTypes.WIRELESS:
+        if link_type == LinkTypes.WIRELESS:
             raise CoreError("cannot update wireless link")
         else:
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):

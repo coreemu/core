@@ -370,7 +370,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.MER, options_data.mer),
                 (LinkTlvs.BURST, options_data.burst),
                 (LinkTlvs.MBURST, options_data.mburst),
-                (LinkTlvs.TYPE, link_data.link_type.value),
+                (LinkTlvs.TYPE, link_data.type.value),
                 (LinkTlvs.GUI_ATTRIBUTES, options_data.gui_attributes),
                 (LinkTlvs.UNIDIRECTIONAL, options_data.unidirectional),
                 (LinkTlvs.EMULATION_ID, options_data.emulation_id),
@@ -784,7 +784,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
-        options = LinkOptions(type=link_type)
+        options = LinkOptions()
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
         options.loss = message.get_tlv(LinkTlvs.LOSS.value)
@@ -801,12 +801,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
 
         if message.flags & MessageFlags.ADD.value:
-            self.session.add_link(node1_id, node2_id, iface1_data, iface2_data, options)
+            self.session.add_link(
+                node1_id, node2_id, iface1_data, iface2_data, options, link_type
+            )
         elif message.flags & MessageFlags.DELETE.value:
-            self.session.delete_link(node1_id, node2_id, iface1_data.id, iface2_data.id)
+            self.session.delete_link(
+                node1_id, node2_id, iface1_data.id, iface2_data.id, link_type
+            )
         else:
             self.session.update_link(
-                node1_id, node2_id, iface1_data.id, iface2_data.id, options
+                node1_id, node2_id, iface1_data.id, iface2_data.id, options, link_type
             )
         return ()
 

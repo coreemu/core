@@ -923,9 +923,9 @@ class PtpNet(CoreNetwork):
         options_data = iface1.get_link_options(unidirectional)
         link_data = LinkData(
             message_type=flags,
+            type=self.linktype,
             node1_id=iface1.node.id,
             node2_id=iface2.node.id,
-            link_type=self.linktype,
             iface1=iface1_data,
             iface2=iface2_data,
             options=options_data,
@@ -940,7 +940,7 @@ class PtpNet(CoreNetwork):
             options_data = iface2.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
-                link_type=self.linktype,
+                type=self.linktype,
                 node1_id=iface2.node.id,
                 node2_id=iface1.node.id,
                 iface1=iface1_data,

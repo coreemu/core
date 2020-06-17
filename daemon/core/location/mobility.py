@@ -487,10 +487,10 @@ class BasicRangeModel(WirelessModel):
         color = self.session.get_link_color(self.wlan.id)
         return LinkData(
             message_type=message_type,
+            type=LinkTypes.WIRELESS,
             node1_id=iface1.node.id,
             node2_id=iface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS,
             color=color,
         )
 

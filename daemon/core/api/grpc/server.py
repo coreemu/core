@@ -847,9 +847,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node2_id = request.link.node2_id
         self.get_node(session, node1_id, context, NodeBase)
         self.get_node(session, node2_id, context, NodeBase)
-        iface1_data, iface2_data, options = grpcutils.add_link_data(request.link)
+        iface1_data, iface2_data, options, link_type = grpcutils.add_link_data(
+            request.link
+        )
         node1_iface, node2_iface = session.add_link(
-            node1_id, node2_id, iface1_data, iface2_data, options=options
+            node1_id, node2_id, iface1_data, iface2_data, options, link_type
         )
         iface1_proto = None
         iface2_proto = None
@@ -1522,7 +1524,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             color = session.get_link_color(emane1.id)
             link = LinkData(
                 message_type=flag,
-                link_type=LinkTypes.WIRELESS,
+                type=LinkTypes.WIRELESS,
                 node1_id=node1.id,
                 node2_id=node2.id,
                 network_id=emane1.id,

@@ -305,11 +305,11 @@ class EmaneLinkMonitor:
         color = self.emane_manager.session.get_link_color(emane_id)
         link_data = LinkData(
             message_type=message_type,
+            type=LinkTypes.WIRELESS,
             label=label,
             node1_id=node1,
             node2_id=node2,
             network_id=emane_id,
-            link_type=LinkTypes.WIRELESS,
             color=color,
         )
         self.emane_manager.session.broadcast_link(link_data)
