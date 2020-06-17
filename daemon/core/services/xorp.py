@@ -69,7 +69,7 @@ class XorpRtrmgr(CoreService):
         """
         helper for adding link-local address entries (required by OSPFv3)
         """
-        cfg = "\t    address %s {\n" % iface.mac.tolinklocal()
+        cfg = "\t    address %s {\n" % netaddr.EUI(iface.mac).eui64()
         cfg += "\t\tprefix-length: 64\n"
         cfg += "\t    }\n"
         return cfg
@@ -305,7 +305,7 @@ class XorpRipng(XorpService):
         for iface in node.get_ifaces(control=False):
             cfg += "\tinterface %s {\n" % iface.name
             cfg += "\t    vif %s {\n" % iface.name
-            cfg += "\t\taddress %s {\n" % iface.mac.tolinklocal()
+            cfg += "\t\taddress %s {\n" % netaddr.EUI(iface.mac).eui64()
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
