@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 def get_index(iface: "core_pb2.Interface") -> Optional[int]:
     if not iface.ip4:
         return None
-    net = netaddr.IPNetwork(f"{iface.ip4}/{iface.ip4mask}")
+    net = netaddr.IPNetwork(f"{iface.ip4}/{iface.ip4_mask}")
     ip_value = net.value
     cidr_value = net.cidr.value
     return ip_value - cidr_value
@@ -153,10 +153,10 @@ class InterfaceManager:
     def get_subnets(self, iface: "core_pb2.Interface") -> Subnets:
         ip4_subnet = self.ip4_subnets
         if iface.ip4:
-            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4mask}").cidr
+            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4_mask}").cidr
         ip6_subnet = self.ip6_subnets
         if iface.ip6:
-            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6mask}").cidr
+            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6_mask}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 

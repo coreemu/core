@@ -289,10 +289,10 @@ class CanvasEdge(Edge):
             label = f"{iface.name}"
         if iface.ip4 and self.canvas.show_ip4s.get():
             label = f"{label}\n" if label else ""
-            label += f"{iface.ip4}/{iface.ip4mask}"
+            label += f"{iface.ip4}/{iface.ip4_mask}"
         if iface.ip6 and self.canvas.show_ip6s.get():
             label = f"{label}\n" if label else ""
-            label += f"{iface.ip6}/{iface.ip6mask}"
+            label += f"{iface.ip6}/{iface.ip6_mask}"
         return label
 
     def create_node_labels(self) -> Tuple[str, str]:

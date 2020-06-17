@@ -69,9 +69,9 @@ def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
             name=name,
             mac=mac,
             ip4=ip4,
-            ip4_mask=iface_proto.ip4mask,
+            ip4_mask=iface_proto.ip4_mask,
             ip6=ip6,
-            ip6_mask=iface_proto.ip6mask,
+            ip6_mask=iface_proto.ip6_mask,
         )
     return iface_data
 
@@ -313,9 +313,9 @@ def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
         name=iface_data.name,
         mac=iface_data.mac,
         ip4=iface_data.ip4,
-        ip4mask=iface_data.ip4_mask,
+        ip4_mask=iface_data.ip4_mask,
         ip6=iface_data.ip6,
-        ip6mask=iface_data.ip6_mask,
+        ip6_mask=iface_data.ip6_mask,
     )
 
 
@@ -449,30 +449,30 @@ def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
     if iface.net:
         net_id = iface.net.id
     ip4 = None
-    ip4mask = None
+    ip4_mask = None
     ip6 = None
-    ip6mask = None
+    ip6_mask = None
     for addr in iface.addrlist:
         network = netaddr.IPNetwork(addr)
         mask = network.prefixlen
         ip = str(network.ip)
         if netaddr.valid_ipv4(ip) and not ip4:
             ip4 = ip
-            ip4mask = mask
+            ip4_mask = mask
         elif netaddr.valid_ipv6(ip) and not ip6:
             ip6 = ip
-            ip6mask = mask
+            ip6_mask = mask
     return core_pb2.Interface(
         id=iface.node_id,
-        netid=net_id,
+        net_id=net_id,
         name=iface.name,
-        mac=str(iface.hwaddr),
+        mac=iface.hwaddr,
         mtu=iface.mtu,
-        flowid=iface.flow_id,
+        flow_id=iface.flow_id,
         ip4=ip4,
-        ip4mask=ip4mask,
+        ip4_mask=ip4_mask,
         ip6=ip6,
-        ip6mask=ip6mask,
+        ip6_mask=ip6_mask,
     )
 
 

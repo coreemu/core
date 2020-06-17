@@ -127,9 +127,9 @@ class InterfaceHelper:
             id=iface_id,
             name=iface_data.name,
             ip4=iface_data.ip4,
-            ip4mask=iface_data.ip4_mask,
+            ip4_mask=iface_data.ip4_mask,
             ip6=iface_data.ip6,
-            ip6mask=iface_data.ip6_mask,
+            ip6_mask=iface_data.ip6_mask,
             mac=iface_data.mac,
         )
 

@@ -834,7 +834,12 @@ class CoreClient:
         iface_id = canvas_node.next_iface_id()
         name = f"eth{iface_id}"
         iface = core_pb2.Interface(
-            id=iface_id, name=name, ip4=ip4, ip4mask=ip4_mask, ip6=ip6, ip6mask=ip6_mask
+            id=iface_id,
+            name=name,
+            ip4=ip4,
+            ip4_mask=ip4_mask,
+            ip6=ip6,
+            ip6_mask=ip6_mask,
         )
         logging.info(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",

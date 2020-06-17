@@ -732,11 +732,11 @@ message Interface {
     string name = 2;
     string mac = 3;
     string ip4 = 4;
-    int32 ip4mask = 5;
+    int32 ip4_mask = 5;
     string ip6 = 6;
-    int32 ip6mask = 7;
-    int32 netid = 8;
-    int32 flowid = 9;
+    int32 ip6_mask = 7;
+    int32 net_id = 8;
+    int32 flow_id = 9;
     int32 mtu = 10;
 }
 

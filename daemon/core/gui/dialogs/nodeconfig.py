@@ -248,7 +248,7 @@ class NodeConfigDialog(Dialog):
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip4_net = ""
             if iface.ip4:
-                ip4_net = f"{iface.ip4}/{iface.ip4mask}"
+                ip4_net = f"{iface.ip4}/{iface.ip4_mask}"
             ip4 = tk.StringVar(value=ip4_net)
             entry = ttk.Entry(tab, textvariable=ip4, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
@@ -258,7 +258,7 @@ class NodeConfigDialog(Dialog):
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip6_net = ""
             if iface.ip6:
-                ip6_net = f"{iface.ip6}/{iface.ip6mask}"
+                ip6_net = f"{iface.ip6}/{iface.ip6_mask}"
             ip6 = tk.StringVar(value=ip6_net)
             entry = ttk.Entry(tab, textvariable=ip6, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
@@ -318,12 +318,12 @@ class NodeConfigDialog(Dialog):
                 error = True
                 break
             if ip4_net:
-                ip4, ip4mask = ip4_net.split("/")
-                ip4mask = int(ip4mask)
+                ip4, ip4_mask = ip4_net.split("/")
+                ip4_mask = int(ip4_mask)
             else:
-                ip4, ip4mask = "", 0
+                ip4, ip4_mask = "", 0
             iface.ip4 = ip4
-            iface.ip4mask = ip4mask
+            iface.ip4_mask = ip4_mask
 
             # validate ip6
             ip6_net = data.ip6.get()
@@ -331,12 +331,12 @@ class NodeConfigDialog(Dialog):
                 error = True
                 break
             if ip6_net:
-                ip6, ip6mask = ip6_net.split("/")
-                ip6mask = int(ip6mask)
+                ip6, ip6_mask = ip6_net.split("/")
+                ip6_mask = int(ip6_mask)
             else:
-                ip6, ip6mask = "", 0
+                ip6, ip6_mask = "", 0
             iface.ip6 = ip6
-            iface.ip6mask = ip6mask
+            iface.ip6_mask = ip6_mask
 
             mac = data.mac.get()
             auto_mac = data.is_auto.get()
