@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 from core import utils
 from core.emulator.data import LinkOptions
 from core.emulator.enumerations import TransportType
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 if TYPE_CHECKING:
@@ -544,7 +544,7 @@ class GreTap(CoreInterface):
         if not start:
             return
         if remoteip is None:
-            raise ValueError("missing remote IP required for GRE TAP device")
+            raise CoreError("missing remote IP required for GRE TAP device")
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True

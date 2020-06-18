@@ -618,7 +618,6 @@ class GreTapBridge(CoreNetwork):
         :param localip: local address
         :param ttl: ttl value
         :param key: gre tap key
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         """
@@ -857,9 +856,7 @@ class PtpNet(CoreNetwork):
         :return: nothing
         """
         if len(self.ifaces) >= 2:
-            raise ValueError(
-                "Point-to-point links support at most 2 network interfaces"
-            )
+            raise CoreError("ptp links support at most 2 network interfaces")
         super().attach(iface)
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
@@ -992,7 +989,6 @@ class WlanNode(CoreNetwork):
         :param session: core session instance
         :param _id: node id
         :param name: node name
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param policy: wlan policy
