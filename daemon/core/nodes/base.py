@@ -71,7 +71,6 @@ class NodeBase(abc.ABC):
         self.iface_id: int = 0
         self.canvas: Optional[int] = None
         self.icon: Optional[str] = None
-        self.opaque: Optional[str] = None
         self.position: Position = Position()
         self.up: bool = False
         use_ovs = session.options.get_config("ovs") == "True"
