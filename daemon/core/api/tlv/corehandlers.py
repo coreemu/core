@@ -722,7 +722,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         options.icon = message.get_tlv(NodeTlvs.ICON.value)
         options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
         options.server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
         services = message.get_tlv(NodeTlvs.SERVICES.value)

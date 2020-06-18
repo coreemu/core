@@ -34,7 +34,6 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
         name=node_proto.name,
         model=node_proto.model,
         icon=node_proto.icon,
-        opaque=node_proto.opaque,
         image=node_proto.image,
         services=node_proto.services,
         config_services=node_proto.config_services,

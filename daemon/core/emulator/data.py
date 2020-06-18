@@ -73,28 +73,71 @@ class FileData:
 
 
 @dataclass
-class NodeData:
-    message_type: MessageFlags = None
-    id: int = None
-    node_type: NodeTypes = None
+class NodeOptions:
+    """
+    Options for creating and updating nodes within core.
+    """
+
     name: str = None
-    ip_address: str = None
-    mac_address: str = None
-    ip6_address: str = None
-    model: str = None
-    emulation_id: int = None
+    model: Optional[str] = "PC"
+    canvas: int = None
+    icon: str = None
+    services: List[str] = field(default_factory=list)
+    config_services: List[str] = field(default_factory=list)
+    x: float = None
+    y: float = None
+    lat: float = None
+    lon: float = None
+    alt: float = None
     server: str = None
-    session: int = None
+    image: str = None
+    emane: str = None
+
+    def set_position(self, x: float, y: float) -> None:
+        """
+        Convenience method for setting position.
+
+        :param x: x position
+        :param y: y position
+        :return: nothing
+        """
+        self.x = x
+        self.y = y
+
+    def set_location(self, lat: float, lon: float, alt: float) -> None:
+        """
+        Convenience method for setting location.
+
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :return: nothing
+        """
+        self.lat = lat
+        self.lon = lon
+        self.alt = alt
+
+
+@dataclass
+class NodeData:
+    """
+    Used to represent nodes being broadcasted.
+    """
+
+    message_type: MessageFlags = None
+    type: NodeTypes = None
+    id: int = None
+    name: str = None
+    model: str = None
+    server: str = None
+    icon: str = None
+    canvas: int = None
+    services: List[str] = None
     x_position: float = None
     y_position: float = None
-    canvas: int = None
-    network_id: int = None
-    services: List[str] = None
     latitude: float = None
     longitude: float = None
     altitude: float = None
-    icon: str = None
-    opaque: str = None
     source: str = None
 
 
@@ -158,10 +201,10 @@ class LinkData:
     label: str = None
     node1_id: int = None
     node2_id: int = None
+    network_id: int = None
     iface1: InterfaceData = None
     iface2: InterfaceData = None
     options: LinkOptions = LinkOptions()
-    network_id: int = None
     color: str = None
 
 
@@ -259,51 +302,3 @@ class IpPrefixes:
         iface_data = self.gen_iface(node.id, name, mac)
         iface_data.id = node.next_iface_id()
         return iface_data
-
-
-@dataclass
-class NodeOptions:
-    """
-    Options for creating and updating nodes within core.
-    """
-
-    name: str = None
-    model: Optional[str] = "PC"
-    canvas: int = None
-    icon: str = None
-    opaque: str = None
-    services: List[str] = field(default_factory=list)
-    config_services: List[str] = field(default_factory=list)
-    x: float = None
-    y: float = None
-    lat: float = None
-    lon: float = None
-    alt: float = None
-    emulation_id: int = None
-    server: str = None
-    image: str = None
-    emane: str = None
-
-    def set_position(self, x: float, y: float) -> None:
-        """
-        Convenience method for setting position.
-
-        :param x: x position
-        :param y: y position
-        :return: nothing
-        """
-        self.x = x
-        self.y = y
-
-    def set_location(self, lat: float, lon: float, alt: float) -> None:
-        """
-        Convenience method for setting location.
-
-        :param lat: latitude
-        :param lon: longitude
-        :param alt: altitude
-        :return: nothing
-        """
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt

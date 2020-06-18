@@ -195,29 +195,26 @@ class NodeBase(abc.ABC):
         """
         if self.apitype is None:
             return None
-
         x, y, _ = self.getposition()
         model = self.type
         server = None
         if self.server is not None:
             server = self.server.name
-        services = [service.name for service in self.services]
+        services = [x.name for x in self.services]
         return NodeData(
             message_type=message_type,
+            type=self.apitype,
             id=self.id,
-            node_type=self.apitype,
             name=self.name,
-            emulation_id=self.id,
+            model=model,
+            server=server,
             canvas=self.canvas,
             icon=self.icon,
-            opaque=self.opaque,
             x_position=x,
             y_position=y,
             latitude=self.position.lat,
             longitude=self.position.lon,
             altitude=self.position.alt,
-            model=model,
-            server=server,
             services=services,
             source=source,
         )

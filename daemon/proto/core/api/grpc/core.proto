@@ -692,13 +692,12 @@ message Node {
     repeated string services = 6;
     string emane = 7;
     string icon = 8;
-    string opaque = 9;
-    string image = 10;
-    string server = 11;
-    repeated string config_services = 12;
-    Geo geo = 13;
-    string dir = 14;
-    string channel = 15;
+    string image = 9;
+    string server = 10;
+    repeated string config_services = 11;
+    Geo geo = 12;
+    string dir = 13;
+    string channel = 14;
 }
 
 message Link {

@@ -523,7 +523,6 @@ class Session:
         # set node attributes
         node.icon = options.icon
         node.canvas = options.canvas
-        node.opaque = options.opaque
 
         # set node position and broadcast it
         self.set_node_position(node, options)

@@ -18,9 +18,6 @@ def convert_node(node_data):
     :param core.emulator.data.NodeData node_data: node data to convert
     :return: packed node message
     """
-    session = None
-    if node_data.session is not None:
-        session = str(node_data.session)
     services = None
     if node_data.services is not None:
         services = "|".join([x for x in node_data.services])
@@ -28,25 +25,18 @@ def convert_node(node_data):
         coreapi.CoreNodeTlv,
         [
             (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type.value),
+            (NodeTlvs.TYPE, node_data.type.value),
             (NodeTlvs.NAME, node_data.name),
-            (NodeTlvs.IP_ADDRESS, node_data.ip_address),
-            (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
-            (NodeTlvs.IP6_ADDRESS, node_data.ip6_address),
             (NodeTlvs.MODEL, node_data.model),
-            (NodeTlvs.EMULATION_ID, node_data.emulation_id),
             (NodeTlvs.EMULATION_SERVER, node_data.server),
-            (NodeTlvs.SESSION, session),
             (NodeTlvs.X_POSITION, int(node_data.x_position)),
             (NodeTlvs.Y_POSITION, int(node_data.y_position)),
             (NodeTlvs.CANVAS, node_data.canvas),
-            (NodeTlvs.NETWORK_ID, node_data.network_id),
             (NodeTlvs.SERVICES, services),
             (NodeTlvs.LATITUDE, str(node_data.latitude)),
             (NodeTlvs.LONGITUDE, str(node_data.longitude)),
             (NodeTlvs.ALTITUDE, str(node_data.altitude)),
             (NodeTlvs.ICON, node_data.icon),
-            (NodeTlvs.OPAQUE, node_data.opaque),
         ],
     )
     return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
