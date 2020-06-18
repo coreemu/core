@@ -183,11 +183,8 @@ class LinkOptions:
     mer: int = None
     burst: int = None
     mburst: int = None
-    gui_attributes: str = None
     unidirectional: int = None
-    emulation_id: int = None
     key: int = None
-    opaque: str = None
 
 
 @dataclass

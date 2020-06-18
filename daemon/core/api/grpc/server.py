@@ -879,19 +879,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node2_id = request.node2_id
         iface1_id = request.iface1_id
         iface2_id = request.iface2_id
-        options_data = request.options
+        options_proto = request.options
         options = LinkOptions(
-            delay=options_data.delay,
-            bandwidth=options_data.bandwidth,
-            loss=options_data.loss,
-            dup=options_data.dup,
-            jitter=options_data.jitter,
-            mer=options_data.mer,
-            burst=options_data.burst,
-            mburst=options_data.mburst,
-            unidirectional=options_data.unidirectional,
-            key=options_data.key,
-            opaque=options_data.opaque,
+            delay=options_proto.delay,
+            bandwidth=options_proto.bandwidth,
+            loss=options_proto.loss,
+            dup=options_proto.dup,
+            jitter=options_proto.jitter,
+            mer=options_proto.mer,
+            burst=options_proto.burst,
+            mburst=options_proto.mburst,
+            unidirectional=options_proto.unidirectional,
+            key=options_proto.key,
         )
         session.update_link(node1_id, node2_id, iface1_id, iface2_id, options)
         return core_pb2.EditLinkResponse(result=True)

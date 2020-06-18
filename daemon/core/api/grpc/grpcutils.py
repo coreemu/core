@@ -88,19 +88,18 @@ def add_link_data(
     iface2_data = link_iface(link_proto.iface2)
     link_type = LinkTypes(link_proto.type)
     options = LinkOptions()
-    options_data = link_proto.options
-    if options_data:
-        options.delay = options_data.delay
-        options.bandwidth = options_data.bandwidth
-        options.loss = options_data.loss
-        options.dup = options_data.dup
-        options.jitter = options_data.jitter
-        options.mer = options_data.mer
-        options.burst = options_data.burst
-        options.mburst = options_data.mburst
-        options.unidirectional = options_data.unidirectional
-        options.key = options_data.key
-        options.opaque = options_data.opaque
+    options_proto = link_proto.options
+    if options_proto:
+        options.delay = options_proto.delay
+        options.bandwidth = options_proto.bandwidth
+        options.loss = options_proto.loss
+        options.dup = options_proto.dup
+        options.jitter = options_proto.jitter
+        options.mer = options_proto.mer
+        options.burst = options_proto.burst
+        options.mburst = options_proto.mburst
+        options.unidirectional = options_proto.unidirectional
+        options.key = options_proto.key
     return iface1_data, iface2_data, options, link_type
 
 
@@ -320,7 +319,6 @@ def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
 
 def convert_link_options(options_data: LinkOptions) -> core_pb2.LinkOptions:
     return core_pb2.LinkOptions(
-        opaque=options_data.opaque,
         jitter=options_data.jitter,
         key=options_data.key,
         mburst=options_data.mburst,

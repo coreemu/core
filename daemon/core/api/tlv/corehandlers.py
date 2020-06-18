@@ -371,9 +371,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.BURST, options_data.burst),
                 (LinkTlvs.MBURST, options_data.mburst),
                 (LinkTlvs.TYPE, link_data.type.value),
-                (LinkTlvs.GUI_ATTRIBUTES, options_data.gui_attributes),
                 (LinkTlvs.UNIDIRECTIONAL, options_data.unidirectional),
-                (LinkTlvs.EMULATION_ID, options_data.emulation_id),
                 (LinkTlvs.NETWORK_ID, link_data.network_id),
                 (LinkTlvs.KEY, options_data.key),
                 (LinkTlvs.IFACE1_NUMBER, iface1.id),
@@ -388,7 +386,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 (LinkTlvs.IFACE2_MAC, iface2.mac),
                 (LinkTlvs.IFACE2_IP6, iface2.ip6),
                 (LinkTlvs.IFACE2_IP6_MASK, iface2.ip6_mask),
-                (LinkTlvs.OPAQUE, options_data.opaque),
             ],
         )
 
@@ -792,12 +789,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options.mer = message.get_tlv(LinkTlvs.MER.value)
         options.burst = message.get_tlv(LinkTlvs.BURST.value)
         options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
-        options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
         options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
-        options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
-        options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
         options.key = message.get_tlv(LinkTlvs.KEY.value)
-        options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
 
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(

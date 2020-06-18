@@ -547,12 +547,9 @@ class CoreXmlWriter:
             add_attribute(options, "mer", options_data.mer)
             add_attribute(options, "burst", options_data.burst)
             add_attribute(options, "mburst", options_data.mburst)
-            add_attribute(options, "gui_attributes", options_data.gui_attributes)
             add_attribute(options, "unidirectional", options_data.unidirectional)
-            add_attribute(options, "emulation_id", options_data.emulation_id)
             add_attribute(options, "network_id", link_data.network_id)
             add_attribute(options, "key", options_data.key)
-            add_attribute(options, "opaque", options_data.opaque)
             if options.items():
                 link_element.append(options)
 
@@ -939,9 +936,6 @@ class CoreXmlReader:
                 if options.loss is None:
                     options.loss = get_float(options_element, "per")
                 options.unidirectional = get_int(options_element, "unidirectional")
-                options.emulation_id = get_int(options_element, "emulation_id")
-                options.opaque = options_element.get("opaque")
-                options.gui_attributes = options_element.get("gui_attributes")
 
             if options.unidirectional == 1 and node_set in node_sets:
                 logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
