@@ -1198,9 +1198,10 @@ class TestGrpc:
         queue = Queue()
 
         def node_handler(node_data: NodeData):
-            assert node_data.longitude == lon
-            assert node_data.latitude == lat
-            assert node_data.altitude == alt
+            n = node_data.node
+            assert n.position.lon == lon
+            assert n.position.lat == lat
+            assert n.position.alt == alt
             queue.put(node_data)
 
         session.node_handlers.append(node_handler)

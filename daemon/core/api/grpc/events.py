@@ -15,24 +15,28 @@ from core.emulator.data import (
 from core.emulator.session import Session
 
 
-def handle_node_event(event: NodeData) -> core_pb2.NodeEvent:
+def handle_node_event(node_data: NodeData) -> core_pb2.NodeEvent:
     """
     Handle node event when there is a node event
 
-    :param event: node data
+    :param node_data: node data
     :return: node event that contains node id, name, model, position, and services
     """
-    position = core_pb2.Position(x=event.x_position, y=event.y_position)
-    geo = core_pb2.Geo(lat=event.latitude, lon=event.longitude, alt=event.altitude)
+    node = node_data.node
+    x, y, _ = node.position.get()
+    position = core_pb2.Position(x=x, y=y)
+    lon, lat, alt = node.position.get_geo()
+    geo = core_pb2.Geo(lon=lon, lat=lat, alt=alt)
+    services = [x.name for x in node.services]
     node_proto = core_pb2.Node(
-        id=event.id,
-        name=event.name,
-        model=event.model,
+        id=node.id,
+        name=node.name,
+        model=node.type,
         position=position,
         geo=geo,
-        services=event.services,
+        services=services,
     )
-    return core_pb2.NodeEvent(node=node_proto, source=event.source)
+    return core_pb2.NodeEvent(node=node_proto, source=node_data.source)
 
 
 def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:

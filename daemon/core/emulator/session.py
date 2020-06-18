@@ -807,9 +807,9 @@ class Session:
         :param source: source of broadcast, None by default
         :return: nothing
         """
-        node_data = node.data(message_type, source)
-        if not node_data:
+        if not node.apitype:
             return
+        node_data = NodeData(node=node, message_type=message_type, source=source)
         for handler in self.node_handlers:
             handler(node_data)
 

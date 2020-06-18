@@ -329,7 +329,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         logging.debug("handling broadcast node: %s", node_data)
         message = dataconversion.convert_node(node_data)
-
         try:
             self.sendall(message)
         except IOError:

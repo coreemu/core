@@ -12,11 +12,10 @@ from core.emulator.enumerations import (
     ExceptionLevels,
     LinkTypes,
     MessageFlags,
-    NodeTypes,
 )
 
 if TYPE_CHECKING:
-    from core.nodes.base import CoreNode
+    from core.nodes.base import CoreNode, NodeBase
 
 
 @dataclass
@@ -121,23 +120,11 @@ class NodeOptions:
 @dataclass
 class NodeData:
     """
-    Used to represent nodes being broadcasted.
+    Node to broadcast.
     """
 
+    node: "NodeBase"
     message_type: MessageFlags = None
-    type: NodeTypes = None
-    id: int = None
-    name: str = None
-    model: str = None
-    server: str = None
-    icon: str = None
-    canvas: int = None
-    services: List[str] = None
-    x_position: float = None
-    y_position: float = None
-    latitude: float = None
-    longitude: float = None
-    altitude: float = None
     source: str = None
 
 

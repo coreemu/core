@@ -314,26 +314,22 @@ class Sdt:
         :param node_data: node data being updated
         :return: nothing
         """
-        logging.debug("sdt handle node update: %s - %s", node_data.id, node_data.name)
         if not self.connect():
             return
-
-        # delete node
+        node = node_data.node
+        logging.debug("sdt handle node update: %s - %s", node.id, node.name)
         if node_data.message_type == MessageFlags.DELETE:
-            self.cmd(f"delete node,{node_data.id}")
+            self.cmd(f"delete node,{node.id}")
         else:
-            x = node_data.x_position
-            y = node_data.y_position
-            lat = node_data.latitude
-            lon = node_data.longitude
-            alt = node_data.altitude
+            x, y, _ = node.position.get()
+            lon, lat, alt = node.position.get_geo()
             if all([lat is not None, lon is not None, alt is not None]):
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-                self.cmd(f"node {node_data.id} {pos}")
+                self.cmd(f"node {node.id} {pos}")
             elif node_data.message_type == 0:
                 lat, lon, alt = self.session.location.getgeo(x, y, 0)
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-                self.cmd(f"node {node_data.id} {pos}")
+                self.cmd(f"node {node.id} {pos}")
 
     def wireless_net_check(self, node_id: int) -> bool:
         """

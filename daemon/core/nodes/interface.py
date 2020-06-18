@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
 from core.emulator.data import LinkOptions
-from core.emulator.enumerations import MessageFlags, TransportType
+from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
@@ -561,23 +561,4 @@ class GreTap(CoreInterface):
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.exception("error during shutdown")
-
             self.localname = None
-
-    def data(self, message_type: int) -> None:
-        """
-        Data for a gre tap.
-
-        :param message_type: message type for data
-        :return: None
-        """
-        return None
-
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
-        """
-        Retrieve link data.
-
-        :param flags: link flags
-        :return: link data
-        """
-        return []

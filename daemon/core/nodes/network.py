@@ -11,7 +11,7 @@ import netaddr
 
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
-from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeData
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -861,19 +861,6 @@ class PtpNet(CoreNetwork):
                 "Point-to-point links support at most 2 network interfaces"
             )
         super().attach(iface)
-
-    def data(
-        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> Optional[NodeData]:
-        """
-        Do not generate a Node Message for point-to-point links. They are
-        built using a link message instead.
-
-        :param message_type: purpose for the data object we are creating
-        :param source: source of node data
-        :return: node data object
-        """
-        return None
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """

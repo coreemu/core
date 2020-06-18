@@ -14,7 +14,7 @@ import netaddr
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
-from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeData
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.client import VnodeClient
@@ -181,42 +181,6 @@ class NodeBase(abc.ABC):
         iface_id = self.iface_id
         self.iface_id += 1
         return iface_id
-
-    def data(
-        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> Optional[NodeData]:
-        """
-        Build a data object for this node.
-
-        :param message_type: purpose for the data object we are creating
-        :param source: source of node data
-        :return: node data object
-        """
-        if self.apitype is None:
-            return None
-        x, y, _ = self.getposition()
-        model = self.type
-        server = None
-        if self.server is not None:
-            server = self.server.name
-        services = [x.name for x in self.services]
-        return NodeData(
-            message_type=message_type,
-            type=self.apitype,
-            id=self.id,
-            name=self.name,
-            model=model,
-            server=server,
-            canvas=self.canvas,
-            icon=self.icon,
-            x_position=x,
-            y_position=y,
-            latitude=self.position.lat,
-            longitude=self.position.lon,
-            altitude=self.position.alt,
-            services=services,
-            source=source,
-        )
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
