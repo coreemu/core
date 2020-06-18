@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import netaddr
 
@@ -6,21 +6,21 @@ from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emulator.enumerations import ConfigDataTypes
 
-GROUP_NAME = "Security"
+GROUP_NAME: str = "Security"
 
 
 class VpnClient(ConfigService):
-    name = "VPNClient"
-    group = GROUP_NAME
-    directories = []
-    files = ["vpnclient.sh"]
-    executables = ["openvpn", "ip", "killall"]
-    dependencies = []
-    startup = ["sh vpnclient.sh"]
-    validate = ["pidof openvpn"]
-    shutdown = ["killall openvpn"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = [
+    name: str = "VPNClient"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["vpnclient.sh"]
+    executables: List[str] = ["openvpn", "ip", "killall"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh vpnclient.sh"]
+    validate: List[str] = ["pidof openvpn"]
+    shutdown: List[str] = ["killall openvpn"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = [
         Configuration(
             _id="keydir",
             _type=ConfigDataTypes.STRING,
@@ -40,21 +40,21 @@ class VpnClient(ConfigService):
             default="10.0.2.10",
         ),
     ]
-    modes = {}
+    modes: Dict[str, Dict[str, str]] = {}
 
 
 class VpnServer(ConfigService):
-    name = "VPNServer"
-    group = GROUP_NAME
-    directories = []
-    files = ["vpnserver.sh"]
-    executables = ["openvpn", "ip", "killall"]
-    dependencies = []
-    startup = ["sh vpnserver.sh"]
-    validate = ["pidof openvpn"]
-    shutdown = ["killall openvpn"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = [
+    name: str = "VPNServer"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["vpnserver.sh"]
+    executables: List[str] = ["openvpn", "ip", "killall"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh vpnserver.sh"]
+    validate: List[str] = ["pidof openvpn"]
+    shutdown: List[str] = ["killall openvpn"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = [
         Configuration(
             _id="keydir",
             _type=ConfigDataTypes.STRING,
@@ -74,7 +74,7 @@ class VpnServer(ConfigService):
             default="10.0.200.0",
         ),
     ]
-    modes = {}
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         address = None
@@ -87,48 +87,48 @@ class VpnServer(ConfigService):
 
 
 class IPsec(ConfigService):
-    name = "IPsec"
-    group = GROUP_NAME
-    directories = []
-    files = ["ipsec.sh"]
-    executables = ["racoon", "ip", "setkey", "killall"]
-    dependencies = []
-    startup = ["sh ipsec.sh"]
-    validate = ["pidof racoon"]
-    shutdown = ["killall racoon"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "IPsec"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["ipsec.sh"]
+    executables: List[str] = ["racoon", "ip", "setkey", "killall"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh ipsec.sh"]
+    validate: List[str] = ["pidof racoon"]
+    shutdown: List[str] = ["killall racoon"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
 
 class Firewall(ConfigService):
-    name = "Firewall"
-    group = GROUP_NAME
-    directories = []
-    files = ["firewall.sh"]
-    executables = ["iptables"]
-    dependencies = []
-    startup = ["sh firewall.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "Firewall"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["firewall.sh"]
+    executables: List[str] = ["iptables"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh firewall.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
 
 class Nat(ConfigService):
-    name = "NAT"
-    group = GROUP_NAME
-    directories = []
-    files = ["nat.sh"]
-    executables = ["iptables"]
-    dependencies = []
-    startup = ["sh nat.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "NAT"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["nat.sh"]
+    executables: List[str] = ["iptables"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh nat.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifnames = []

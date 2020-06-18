@@ -1,17 +1,18 @@
 import abc
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import netaddr
 
 from core import constants
+from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
-GROUP = "Quagga"
+GROUP: str = "Quagga"
 
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
@@ -57,22 +58,22 @@ def get_router_id(node: CoreNodeBase) -> str:
 
 
 class Zebra(ConfigService):
-    name = "zebra"
-    group = GROUP
-    directories = ["/usr/local/etc/quagga", "/var/run/quagga"]
-    files = [
+    name: str = "zebra"
+    group: str = GROUP
+    directories: List[str] = ["/usr/local/etc/quagga", "/var/run/quagga"]
+    files: List[str] = [
         "/usr/local/etc/quagga/Quagga.conf",
         "quaggaboot.sh",
         "/usr/local/etc/quagga/vtysh.conf",
     ]
-    executables = ["zebra"]
-    dependencies = []
-    startup = ["sh quaggaboot.sh zebra"]
-    validate = ["pidof zebra"]
-    shutdown = ["killall zebra"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    executables: List[str] = ["zebra"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh quaggaboot.sh zebra"]
+    validate: List[str] = ["pidof zebra"]
+    shutdown: List[str] = ["killall zebra"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         quagga_bin_search = self.node.session.options.get_config(
@@ -89,6 +90,8 @@ class Zebra(ConfigService):
         want_ip6 = False
         for service in self.node.config_services.values():
             if self.name not in service.dependencies:
+                continue
+            if not isinstance(service, QuaggaService):
                 continue
             if service.ipv4_routing:
                 want_ip4 = True
@@ -122,19 +125,19 @@ class Zebra(ConfigService):
 
 
 class QuaggaService(abc.ABC):
-    group = GROUP
-    directories = []
-    files = []
-    executables = []
-    dependencies = ["zebra"]
-    startup = []
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
-    ipv4_routing = False
-    ipv6_routing = False
+    group: str = GROUP
+    directories: List[str] = []
+    files: List[str] = []
+    executables: List[str] = []
+    dependencies: List[str] = ["zebra"]
+    startup: List[str] = []
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
+    ipv4_routing: bool = False
+    ipv6_routing: bool = False
 
     @abc.abstractmethod
     def quagga_iface_config(self, iface: CoreInterface) -> str:
@@ -152,10 +155,10 @@ class Ospfv2(QuaggaService, ConfigService):
     unified Quagga.conf file.
     """
 
-    name = "OSPFv2"
-    validate = ["pidof ospfd"]
-    shutdown = ["killall ospfd"]
-    ipv4_routing = True
+    name: str = "OSPFv2"
+    validate: List[str] = ["pidof ospfd"]
+    shutdown: List[str] = ["killall ospfd"]
+    ipv4_routing: bool = True
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
         if has_mtu_mismatch(iface):
@@ -190,11 +193,11 @@ class Ospfv3(QuaggaService, ConfigService):
     unified Quagga.conf file.
     """
 
-    name = "OSPFv3"
-    shutdown = ("killall ospf6d",)
-    validate = ("pidof ospf6d",)
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "OSPFv3"
+    shutdown: List[str] = ["killall ospf6d"]
+    validate: List[str] = ["pidof ospf6d"]
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
         mtu = get_min_mtu(iface)
@@ -229,7 +232,7 @@ class Ospfv3mdr(Ospfv3):
     unified Quagga.conf file.
     """
 
-    name = "OSPFv3MDR"
+    name: str = "OSPFv3MDR"
 
     def data(self) -> Dict[str, Any]:
         for iface in self.node.get_ifaces():
@@ -262,11 +265,11 @@ class Bgp(QuaggaService, ConfigService):
     having the same AS number.
     """
 
-    name = "BGP"
-    shutdown = ["killall bgpd"]
-    validate = ["pidof bgpd"]
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "BGP"
+    shutdown: List[str] = ["killall bgpd"]
+    validate: List[str] = ["pidof bgpd"]
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     def quagga_config(self) -> str:
         return ""
@@ -291,10 +294,10 @@ class Rip(QuaggaService, ConfigService):
     The RIP service provides IPv4 routing for wired networks.
     """
 
-    name = "RIP"
-    shutdown = ["killall ripd"]
-    validate = ["pidof ripd"]
-    ipv4_routing = True
+    name: str = "RIP"
+    shutdown: List[str] = ["killall ripd"]
+    validate: List[str] = ["pidof ripd"]
+    ipv4_routing: bool = True
 
     def quagga_config(self) -> str:
         text = """
@@ -316,10 +319,10 @@ class Ripng(QuaggaService, ConfigService):
     The RIP NG service provides IPv6 routing for wired networks.
     """
 
-    name = "RIPNG"
-    shutdown = ["killall ripngd"]
-    validate = ["pidof ripngd"]
-    ipv6_routing = True
+    name: str = "RIPNG"
+    shutdown: List[str] = ["killall ripngd"]
+    validate: List[str] = ["pidof ripngd"]
+    ipv6_routing: bool = True
 
     def quagga_config(self) -> str:
         text = """
@@ -342,10 +345,10 @@ class Babel(QuaggaService, ConfigService):
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
 
-    name = "Babel"
-    shutdown = ["killall babeld"]
-    validate = ["pidof babeld"]
-    ipv6_routing = True
+    name: str = "Babel"
+    shutdown: List[str] = ["killall babeld"]
+    validate: List[str] = ["pidof babeld"]
+    ipv6_routing: bool = True
 
     def quagga_config(self) -> str:
         ifnames = []
@@ -382,10 +385,10 @@ class Xpimd(QuaggaService, ConfigService):
     PIM multicast routing based on XORP.
     """
 
-    name = "Xpimd"
-    shutdown = ["killall xpimd"]
-    validate = ["pidof xpimd"]
-    ipv4_routing = True
+    name: str = "Xpimd"
+    shutdown: List[str] = ["killall xpimd"]
+    validate: List[str] = ["pidof xpimd"]
+    ipv4_routing: bool = True
 
     def quagga_config(self) -> str:
         ifname = "eth0"

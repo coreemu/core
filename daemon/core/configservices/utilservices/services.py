@@ -1,26 +1,27 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import netaddr
 
 from core import utils
+from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 
 GROUP_NAME = "Utility"
 
 
 class DefaultRouteService(ConfigService):
-    name = "DefaultRoute"
-    group = GROUP_NAME
-    directories = []
-    files = ["defaultroute.sh"]
-    executables = ["ip"]
-    dependencies = []
-    startup = ["sh defaultroute.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "DefaultRoute"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["defaultroute.sh"]
+    executables: List[str] = ["ip"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh defaultroute.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         # only add default routes for linked routing nodes
@@ -37,18 +38,18 @@ class DefaultRouteService(ConfigService):
 
 
 class DefaultMulticastRouteService(ConfigService):
-    name = "DefaultMulticastRoute"
-    group = GROUP_NAME
-    directories = []
-    files = ["defaultmroute.sh"]
-    executables = []
-    dependencies = []
-    startup = ["sh defaultmroute.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "DefaultMulticastRoute"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["defaultmroute.sh"]
+    executables: List[str] = []
+    dependencies: List[str] = []
+    startup: List[str] = ["sh defaultmroute.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifname = None
@@ -59,18 +60,18 @@ class DefaultMulticastRouteService(ConfigService):
 
 
 class StaticRouteService(ConfigService):
-    name = "StaticRoute"
-    group = GROUP_NAME
-    directories = []
-    files = ["staticroute.sh"]
-    executables = []
-    dependencies = []
-    startup = ["sh staticroute.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "StaticRoute"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["staticroute.sh"]
+    executables: List[str] = []
+    dependencies: List[str] = []
+    startup: List[str] = ["sh staticroute.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         routes = []
@@ -88,18 +89,18 @@ class StaticRouteService(ConfigService):
 
 
 class IpForwardService(ConfigService):
-    name = "IPForward"
-    group = GROUP_NAME
-    directories = []
-    files = ["ipforward.sh"]
-    executables = ["sysctl"]
-    dependencies = []
-    startup = ["sh ipforward.sh"]
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "IPForward"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["ipforward.sh"]
+    executables: List[str] = ["sysctl"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh ipforward.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         devnames = []
@@ -110,18 +111,18 @@ class IpForwardService(ConfigService):
 
 
 class SshService(ConfigService):
-    name = "SSH"
-    group = GROUP_NAME
-    directories = ["/etc/ssh", "/var/run/sshd"]
-    files = ["startsshd.sh", "/etc/ssh/sshd_config"]
-    executables = ["sshd"]
-    dependencies = []
-    startup = ["sh startsshd.sh"]
-    validate = []
-    shutdown = ["killall sshd"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "SSH"
+    group: str = GROUP_NAME
+    directories: List[str] = ["/etc/ssh", "/var/run/sshd"]
+    files: List[str] = ["startsshd.sh", "/etc/ssh/sshd_config"]
+    executables: List[str] = ["sshd"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh startsshd.sh"]
+    validate: List[str] = []
+    shutdown: List[str] = ["killall sshd"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         return dict(
@@ -132,18 +133,18 @@ class SshService(ConfigService):
 
 
 class DhcpService(ConfigService):
-    name = "DHCP"
-    group = GROUP_NAME
-    directories = ["/etc/dhcp", "/var/lib/dhcp"]
-    files = ["/etc/dhcp/dhcpd.conf"]
-    executables = ["dhcpd"]
-    dependencies = []
-    startup = ["touch /var/lib/dhcp/dhcpd.leases", "dhcpd"]
-    validate = ["pidof dhcpd"]
-    shutdown = ["killall dhcpd"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "DHCP"
+    group: str = GROUP_NAME
+    directories: List[str] = ["/etc/dhcp", "/var/lib/dhcp"]
+    files: List[str] = ["/etc/dhcp/dhcpd.conf"]
+    executables: List[str] = ["dhcpd"]
+    dependencies: List[str] = []
+    startup: List[str] = ["touch /var/lib/dhcp/dhcpd.leases", "dhcpd"]
+    validate: List[str] = ["pidof dhcpd"]
+    shutdown: List[str] = ["killall dhcpd"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         subnets = []
@@ -161,18 +162,18 @@ class DhcpService(ConfigService):
 
 
 class DhcpClientService(ConfigService):
-    name = "DHCPClient"
-    group = GROUP_NAME
-    directories = []
-    files = ["startdhcpclient.sh"]
-    executables = ["dhclient"]
-    dependencies = []
-    startup = ["sh startdhcpclient.sh"]
-    validate = ["pidof dhclient"]
-    shutdown = ["killall dhclient"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "DHCPClient"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["startdhcpclient.sh"]
+    executables: List[str] = ["dhclient"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh startdhcpclient.sh"]
+    validate: List[str] = ["pidof dhclient"]
+    shutdown: List[str] = ["killall dhclient"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
@@ -182,33 +183,33 @@ class DhcpClientService(ConfigService):
 
 
 class FtpService(ConfigService):
-    name = "FTP"
-    group = GROUP_NAME
-    directories = ["/var/run/vsftpd/empty", "/var/ftp"]
-    files = ["vsftpd.conf"]
-    executables = ["vsftpd"]
-    dependencies = []
-    startup = ["vsftpd ./vsftpd.conf"]
-    validate = ["pidof vsftpd"]
-    shutdown = ["killall vsftpd"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "FTP"
+    group: str = GROUP_NAME
+    directories: List[str] = ["/var/run/vsftpd/empty", "/var/ftp"]
+    files: List[str] = ["vsftpd.conf"]
+    executables: List[str] = ["vsftpd"]
+    dependencies: List[str] = []
+    startup: List[str] = ["vsftpd ./vsftpd.conf"]
+    validate: List[str] = ["pidof vsftpd"]
+    shutdown: List[str] = ["killall vsftpd"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
 
 class PcapService(ConfigService):
-    name = "pcap"
-    group = GROUP_NAME
-    directories = []
-    files = ["pcap.sh"]
-    executables = ["tcpdump"]
-    dependencies = []
-    startup = ["sh pcap.sh start"]
-    validate = ["pidof tcpdump"]
-    shutdown = ["sh pcap.sh stop"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "pcap"
+    group: str = GROUP_NAME
+    directories: List[str] = []
+    files: List[str] = ["pcap.sh"]
+    executables: List[str] = ["tcpdump"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh pcap.sh start"]
+    validate: List[str] = ["pidof tcpdump"]
+    shutdown: List[str] = ["sh pcap.sh stop"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
@@ -218,18 +219,20 @@ class PcapService(ConfigService):
 
 
 class RadvdService(ConfigService):
-    name = "radvd"
-    group = GROUP_NAME
-    directories = ["/etc/radvd"]
-    files = ["/etc/radvd/radvd.conf"]
-    executables = ["radvd"]
-    dependencies = []
-    startup = ["radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log"]
-    validate = ["pidof radvd"]
-    shutdown = ["pkill radvd"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "radvd"
+    group: str = GROUP_NAME
+    directories: List[str] = ["/etc/radvd"]
+    files: List[str] = ["/etc/radvd/radvd.conf"]
+    executables: List[str] = ["radvd"]
+    dependencies: List[str] = []
+    startup: List[str] = [
+        "radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log"
+    ]
+    validate: List[str] = ["pidof radvd"]
+    shutdown: List[str] = ["pkill radvd"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifaces = []
@@ -246,24 +249,24 @@ class RadvdService(ConfigService):
 
 
 class AtdService(ConfigService):
-    name = "atd"
-    group = GROUP_NAME
-    directories = ["/var/spool/cron/atjobs", "/var/spool/cron/atspool"]
-    files = ["startatd.sh"]
-    executables = ["atd"]
-    dependencies = []
-    startup = ["sh startatd.sh"]
-    validate = ["pidof atd"]
-    shutdown = ["pkill atd"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    name: str = "atd"
+    group: str = GROUP_NAME
+    directories: List[str] = ["/var/spool/cron/atjobs", "/var/spool/cron/atspool"]
+    files: List[str] = ["startatd.sh"]
+    executables: List[str] = ["atd"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh startatd.sh"]
+    validate: List[str] = ["pidof atd"]
+    shutdown: List[str] = ["pkill atd"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
 
 class HttpService(ConfigService):
-    name = "HTTP"
-    group = GROUP_NAME
-    directories = [
+    name: str = "HTTP"
+    group: str = GROUP_NAME
+    directories: List[str] = [
         "/etc/apache2",
         "/var/run/apache2",
         "/var/log/apache2",
@@ -271,15 +274,19 @@ class HttpService(ConfigService):
         "/var/lock/apache2",
         "/var/www",
     ]
-    files = ["/etc/apache2/apache2.conf", "/etc/apache2/envvars", "/var/www/index.html"]
-    executables = ["apache2ctl"]
-    dependencies = []
-    startup = ["chown www-data /var/lock/apache2", "apache2ctl start"]
-    validate = ["pidof apache2"]
-    shutdown = ["apache2ctl stop"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    files: List[str] = [
+        "/etc/apache2/apache2.conf",
+        "/etc/apache2/envvars",
+        "/var/www/index.html",
+    ]
+    executables: List[str] = ["apache2ctl"]
+    dependencies: List[str] = []
+    startup: List[str] = ["chown www-data /var/lock/apache2", "apache2ctl start"]
+    validate: List[str] = ["pidof apache2"]
+    shutdown: List[str] = ["apache2ctl stop"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         ifaces = []
