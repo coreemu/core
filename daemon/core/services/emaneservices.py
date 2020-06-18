@@ -1,23 +1,26 @@
+from typing import Tuple
+
 from core.emane.nodes import EmaneNet
 from core.errors import CoreError
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 from core.xml import emanexml
 
 
 class EmaneTransportService(CoreService):
-    name = "transportd"
-    executables = ("emanetransportd", "emanegentransportxml")
-    group = "EMANE"
-    dependencies = ()
-    dirs = ()
-    configs = ("emanetransport.sh",)
-    startup = ("sh %s" % configs[0],)
-    validate = ("pidof %s" % executables[0],)
-    validation_timer = 0.5
-    shutdown = ("killall %s" % executables[0],)
+    name: str = "transportd"
+    group: str = "EMANE"
+    executables: Tuple[str, ...] = ("emanetransportd", "emanegentransportxml")
+    dependencies: Tuple[str, ...] = ()
+    dirs: Tuple[str, ...] = ()
+    configs: Tuple[str, ...] = ("emanetransport.sh",)
+    startup: Tuple[str, ...] = ("sh %s" % configs[0],)
+    validate: Tuple[str, ...] = ("pidof %s" % executables[0],)
+    validation_timer: float = 0.5
+    shutdown: Tuple[str, ...] = ("killall %s" % executables[0],)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         if filename == cls.configs[0]:
             transport_commands = []
             for iface in node.get_ifaces():

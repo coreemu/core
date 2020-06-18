@@ -7,7 +7,7 @@ import os
 import shutil
 import threading
 from threading import RLock
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type, Union
 
 import netaddr
 
@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from core.configservice.base import ConfigService
     from core.services.coreservices import CoreService
 
-    CoreServices = List[CoreService]
+    CoreServices = List[Union[CoreService, Type[CoreService]]]
     ConfigServiceType = Type[ConfigService]
 
 _DEFAULT_MTU = 1500
