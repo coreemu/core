@@ -92,7 +92,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
-from core.emulator.emudata import IpPrefixes
+from core.emulator.data import IpPrefixes
 
 
 class InterfaceHelper:
@@ -110,27 +110,27 @@ class InterfaceHelper:
         """
         self.prefixes: IpPrefixes = IpPrefixes(ip4_prefix, ip6_prefix)
 
-    def create_interface(
-        self, node_id: int, interface_id: int, name: str = None, mac: str = None
+    def create_iface(
+        self, node_id: int, iface_id: int, name: str = None, mac: str = None
     ) -> core_pb2.Interface:
         """
         Create an interface protobuf object.
 
         :param node_id: node id to create interface for
-        :param interface_id: interface id
+        :param iface_id: interface id
         :param name: name of interface
         :param mac: mac address for interface
         :return: interface protobuf
         """
-        interface_data = self.prefixes.gen_interface(node_id, name, mac)
+        iface_data = self.prefixes.gen_iface(node_id, name, mac)
         return core_pb2.Interface(
-            id=interface_id,
-            name=interface_data.name,
-            ip4=interface_data.ip4,
-            ip4mask=interface_data.ip4_mask,
-            ip6=interface_data.ip6,
-            ip6mask=interface_data.ip6_mask,
-            mac=interface_data.mac,
+            id=iface_id,
+            name=iface_data.name,
+            ip4=iface_data.ip4,
+            ip4_mask=iface_data.ip4_mask,
+            ip6=iface_data.ip6,
+            ip6_mask=iface_data.ip6_mask,
+            mac=iface_data.mac,
         )
 
 
@@ -611,8 +611,8 @@ class CoreGrpcClient:
         session_id: int,
         node1_id: int,
         node2_id: int,
-        interface1: core_pb2.Interface = None,
-        interface2: core_pb2.Interface = None,
+        iface1: core_pb2.Interface = None,
+        iface2: core_pb2.Interface = None,
         options: core_pb2.LinkOptions = None,
     ) -> core_pb2.AddLinkResponse:
         """
@@ -621,8 +621,8 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node1_id: node one id
         :param node2_id: node two id
-        :param interface1: node one interface data
-        :param interface2: node two interface data
+        :param iface1: node one interface data
+        :param iface2: node two interface data
         :param options: options for link (jitter, bandwidth, etc)
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
@@ -631,8 +631,8 @@ class CoreGrpcClient:
             node1_id=node1_id,
             node2_id=node2_id,
             type=core_pb2.LinkType.WIRED,
-            interface1=interface1,
-            interface2=interface2,
+            iface1=iface1,
+            iface2=iface2,
             options=options,
         )
         request = core_pb2.AddLinkRequest(session_id=session_id, link=link)
@@ -644,8 +644,8 @@ class CoreGrpcClient:
         node1_id: int,
         node2_id: int,
         options: core_pb2.LinkOptions,
-        interface1_id: int = None,
-        interface2_id: int = None,
+        iface1_id: int = None,
+        iface2_id: int = None,
     ) -> core_pb2.EditLinkResponse:
         """
         Edit a link between nodes.
@@ -654,8 +654,8 @@ class CoreGrpcClient:
         :param node1_id: node one id
         :param node2_id: node two id
         :param options: options for link (jitter, bandwidth, etc)
-        :param interface1_id: node one interface id
-        :param interface2_id: node two interface id
+        :param iface1_id: node one interface id
+        :param iface2_id: node two interface id
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
@@ -664,8 +664,8 @@ class CoreGrpcClient:
             node1_id=node1_id,
             node2_id=node2_id,
             options=options,
-            interface1_id=interface1_id,
-            interface2_id=interface2_id,
+            iface1_id=iface1_id,
+            iface2_id=iface2_id,
         )
         return self.stub.EditLink(request)
 
@@ -674,8 +674,8 @@ class CoreGrpcClient:
         session_id: int,
         node1_id: int,
         node2_id: int,
-        interface1_id: int = None,
-        interface2_id: int = None,
+        iface1_id: int = None,
+        iface2_id: int = None,
     ) -> core_pb2.DeleteLinkResponse:
         """
         Delete a link between nodes.
@@ -683,8 +683,8 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node1_id: node one id
         :param node2_id: node two id
-        :param interface1_id: node one interface id
-        :param interface2_id: node two interface id
+        :param iface1_id: node one interface id
+        :param iface2_id: node two interface id
         :return: response with result of success or failure
         :raises grpc.RpcError: when session doesn't exist
         """
@@ -692,8 +692,8 @@ class CoreGrpcClient:
             session_id=session_id,
             node1_id=node1_id,
             node2_id=node2_id,
-            interface1_id=interface1_id,
-            interface2_id=interface2_id,
+            iface1_id=iface1_id,
+            iface2_id=iface2_id,
         )
         return self.stub.DeleteLink(request)
 
@@ -1028,7 +1028,7 @@ class CoreGrpcClient:
         return self.stub.GetEmaneModels(request)
 
     def get_emane_model_config(
-        self, session_id: int, node_id: int, model: str, interface_id: int = -1
+        self, session_id: int, node_id: int, model: str, iface_id: int = -1
     ) -> GetEmaneModelConfigResponse:
         """
         Get emane model configuration for a node or a node's interface.
@@ -1036,12 +1036,12 @@ class CoreGrpcClient:
         :param session_id: session id
         :param node_id: node id
         :param model: emane model name
-        :param interface_id: node interface id
+        :param iface_id: node interface id
         :return: response with a list of configuration groups
         :raises grpc.RpcError: when session doesn't exist
         """
         request = GetEmaneModelConfigRequest(
-            session_id=session_id, node_id=node_id, model=model, interface=interface_id
+            session_id=session_id, node_id=node_id, model=model, iface_id=iface_id
         )
         return self.stub.GetEmaneModelConfig(request)
 
@@ -1051,7 +1051,7 @@ class CoreGrpcClient:
         node_id: int,
         model: str,
         config: Dict[str, str] = None,
-        interface_id: int = -1,
+        iface_id: int = -1,
     ) -> SetEmaneModelConfigResponse:
         """
         Set emane model configuration for a node or a node's interface.
@@ -1060,12 +1060,12 @@ class CoreGrpcClient:
         :param node_id: node id
         :param model: emane model name
         :param config: emane model configuration
-        :param interface_id: node interface id
+        :param iface_id: node interface id
         :return: response with result of success or failure
         :raises grpc.RpcError: when session doesn't exist
         """
         model_config = EmaneModelConfig(
-            node_id=node_id, model=model, config=config, interface_id=interface_id
+            node_id=node_id, model=model, config=config, iface_id=iface_id
         )
         request = SetEmaneModelConfigRequest(
             session_id=session_id, emane_model_config=model_config
@@ -1128,7 +1128,7 @@ class CoreGrpcClient:
         )
         return self.stub.EmaneLink(request)
 
-    def get_interfaces(self) -> core_pb2.GetInterfacesResponse:
+    def get_ifaces(self) -> core_pb2.GetInterfacesResponse:
         """
         Retrieves a list of interfaces available on the host machine that are not
         a part of a CORE session.

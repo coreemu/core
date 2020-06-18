@@ -227,21 +227,21 @@ class LinkConfigurationDialog(Dialog):
         )
         link.options.CopyFrom(options)
 
-        interface1_id = None
-        if link.HasField("interface1"):
-            interface1_id = link.interface1.id
-        interface2_id = None
-        if link.HasField("interface2"):
-            interface2_id = link.interface2.id
+        iface1_id = None
+        if link.HasField("iface1"):
+            iface1_id = link.iface1.id
+        iface2_id = None
+        if link.HasField("iface2"):
+            iface2_id = link.iface2.id
 
         if not self.is_symmetric:
             link.options.unidirectional = True
-            asym_interface1 = None
-            if interface1_id:
-                asym_interface1 = core_pb2.Interface(id=interface1_id)
-            asym_interface2 = None
-            if interface2_id:
-                asym_interface2 = core_pb2.Interface(id=interface2_id)
+            asym_iface1 = None
+            if iface1_id:
+                asym_iface1 = core_pb2.Interface(id=iface1_id)
+            asym_iface2 = None
+            if iface2_id:
+                asym_iface2 = core_pb2.Interface(id=iface2_id)
             down_bandwidth = get_int(self.down_bandwidth)
             down_jitter = get_int(self.down_jitter)
             down_delay = get_int(self.down_delay)
@@ -258,8 +258,8 @@ class LinkConfigurationDialog(Dialog):
             self.edge.asymmetric_link = core_pb2.Link(
                 node1_id=link.node2_id,
                 node2_id=link.node1_id,
-                interface1=asym_interface1,
-                interface2=asym_interface2,
+                iface1=asym_iface1,
+                iface2=asym_iface2,
                 options=options,
             )
         else:
@@ -273,8 +273,8 @@ class LinkConfigurationDialog(Dialog):
                 link.node1_id,
                 link.node2_id,
                 link.options,
-                interface1_id,
-                interface2_id,
+                iface1_id,
+                iface2_id,
             )
             if self.edge.asymmetric_link:
                 self.app.core.client.edit_link(
@@ -282,8 +282,8 @@ class LinkConfigurationDialog(Dialog):
                     link.node2_id,
                     link.node1_id,
                     self.edge.asymmetric_link.options,
-                    interface1_id,
-                    interface2_id,
+                    iface1_id,
+                    iface2_id,
                 )
 
         self.destroy()

@@ -15,7 +15,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
@@ -79,8 +79,8 @@ class TestEmane:
 
         for i, node in enumerate([node1, node2]):
             node.setposition(x=150 * (i + 1), y=150)
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, emane_network.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, emane_network.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
@@ -119,8 +119,8 @@ class TestEmane:
 
         for i, node in enumerate([node1, node2]):
             node.setposition(x=150 * (i + 1), y=150)
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, emane_network.id, interface1_data=interface)
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, emane_network.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()

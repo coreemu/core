@@ -7,8 +7,9 @@ import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
-from core.emulator.enumerations import MessageFlags, TransportType
-from core.errors import CoreCommandError
+from core.emulator.data import LinkOptions
+from core.emulator.enumerations import TransportType
+from core.errors import CoreCommandError, CoreError
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 if TYPE_CHECKING:
@@ -52,16 +53,16 @@ class CoreInterface:
         self.othernet: Optional[CoreNetworkBase] = None
         self._params: Dict[str, float] = {}
         self.addrlist: List[str] = []
-        self.hwaddr: Optional[str] = None
+        self.mac: Optional[str] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
         self.transport_type: Optional[TransportType] = None
-        # node interface index
-        self.netindex: Optional[int] = None
-        # net interface index
-        self.netifi: Optional[int] = None
-        # index used to find flow data
+        # id of interface for node
+        self.node_id: Optional[int] = None
+        # id of interface for network
+        self.net_id: Optional[int] = None
+        # id used to find flow data
         self.flow_id: Optional[int] = None
         self.server: Optional["DistributedServer"] = server
         use_ovs = session.options.get_config("ovs") == "True"
@@ -149,16 +150,16 @@ class CoreInterface:
         """
         self.addrlist.remove(addr)
 
-    def sethwaddr(self, addr: str) -> None:
+    def set_mac(self, mac: str) -> None:
         """
-        Set hardware address.
+        Set mac address.
 
-        :param addr: hardware address to set to.
+        :param mac: mac address to set
         :return: nothing
         """
-        if addr is not None:
-            addr = utils.validate_mac(addr)
-        self.hwaddr = addr
+        if mac is not None:
+            mac = utils.validate_mac(mac)
+        self.mac = mac
 
     def getparam(self, key: str) -> float:
         """
@@ -168,6 +169,34 @@ class CoreInterface:
         :return: parameter value
         """
         return self._params.get(key)
+
+    def get_link_options(self, unidirectional: int) -> LinkOptions:
+        """
+        Get currently set params as link options.
+
+        :param unidirectional: unidirectional setting
+        :return: link options
+        """
+        delay = self.getparam("delay")
+        if delay is not None:
+            delay = int(delay)
+        bandwidth = self.getparam("bw")
+        if bandwidth is not None:
+            bandwidth = int(bandwidth)
+        dup = self.getparam("duplicate")
+        if dup is not None:
+            dup = int(dup)
+        jitter = self.getparam("jitter")
+        if jitter is not None:
+            jitter = int(jitter)
+        return LinkOptions(
+            delay=delay,
+            bandwidth=bandwidth,
+            dup=dup,
+            jitter=jitter,
+            loss=self.getparam("loss"),
+            unidirectional=unidirectional,
+        )
 
     def getparams(self) -> List[Tuple[str, float]]:
         """
@@ -284,19 +313,16 @@ class Veth(CoreInterface):
         """
         if not self.up:
             return
-
         if self.node:
             try:
                 self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
                 logging.exception("error shutting down interface")
-
         if self.localname:
             try:
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.info("link already removed: %s", self.localname)
-
         self.up = False
 
 
@@ -518,7 +544,7 @@ class GreTap(CoreInterface):
         if not start:
             return
         if remoteip is None:
-            raise ValueError("missing remote IP required for GRE TAP device")
+            raise CoreError("missing remote IP required for GRE TAP device")
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True
@@ -535,23 +561,4 @@ class GreTap(CoreInterface):
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.exception("error during shutdown")
-
             self.localname = None
-
-    def data(self, message_type: int) -> None:
-        """
-        Data for a gre tap.
-
-        :param message_type: message type for data
-        :return: None
-        """
-        return None
-
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
-        """
-        Retrieve link data.
-
-        :param flags: link flags
-        :return: link data
-        """
-        return []

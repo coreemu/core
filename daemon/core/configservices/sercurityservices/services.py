@@ -78,10 +78,8 @@ class VpnServer(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         address = None
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            for x in ifc.addrlist:
+        for iface in self.node.get_ifaces(control=False):
+            for x in iface.addrlist:
                 addr = x.split("/")[0]
                 if netaddr.valid_ipv4(addr):
                     address = addr
@@ -134,8 +132,6 @@ class Nat(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         return dict(ifnames=ifnames)

@@ -141,7 +141,7 @@ class DockerNode(CoreNode):
             return
 
         with self.lock:
-            self._netif.clear()
+            self.ifaces.clear()
             self.client.stop_container()
             self.up = False
 

@@ -5,8 +5,8 @@
 <p>This is the default web page for this server.</p>
 <p>The web server software is running but no content has been added, yet.</p>
 <ul>
-% for ifc in interfaces:
-    <li>${ifc.name} - ${ifc.addrlist}</li>
+% for iface in ifaces:
+    <li>${iface.name} - ${iface.addrlist}</li>
 % endfor
 </ul>
 </body>

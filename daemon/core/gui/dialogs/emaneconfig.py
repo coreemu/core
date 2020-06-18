@@ -56,7 +56,7 @@ class EmaneModelDialog(Dialog):
         app: "Application",
         canvas_node: "CanvasNode",
         model: str,
-        interface: int = None,
+        iface_id: int = None,
     ):
         super().__init__(
             app, f"{canvas_node.core_node.name} {model} Configuration", master=master
@@ -64,16 +64,16 @@ class EmaneModelDialog(Dialog):
         self.canvas_node = canvas_node
         self.node = canvas_node.core_node
         self.model = f"emane_{model}"
-        self.interface = interface
+        self.iface_id = iface_id
         self.config_frame = None
         self.has_error = False
         try:
             self.config = self.canvas_node.emane_model_configs.get(
-                (self.model, self.interface)
+                (self.model, self.iface_id)
             )
             if not self.config:
                 self.config = self.app.core.get_emane_model_config(
-                    self.node.id, self.model, self.interface
+                    self.node.id, self.model, self.iface_id
                 )
             self.draw()
         except grpc.RpcError as e:
@@ -103,7 +103,7 @@ class EmaneModelDialog(Dialog):
 
     def click_apply(self):
         self.config_frame.parse_config()
-        key = (self.model, self.interface)
+        key = (self.model, self.iface_id)
         self.canvas_node.emane_model_configs[key] = self.config
         self.destroy()
 

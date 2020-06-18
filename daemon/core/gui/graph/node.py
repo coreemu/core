@@ -55,7 +55,7 @@ class CanvasNode:
         )
         self.tooltip = CanvasTooltip(self.canvas)
         self.edges = set()
-        self.interfaces = {}
+        self.ifaces = {}
         self.wireless_edges = set()
         self.antennas = []
         self.antenna_images = {}
@@ -70,9 +70,9 @@ class CanvasNode:
         self.context = tk.Menu(self.canvas)
         themes.style_menu(self.context)
 
-    def next_interface_id(self) -> int:
+    def next_iface_id(self) -> int:
         i = 0
-        while i in self.interfaces:
+        while i in self.ifaces:
             i += 1
         return i
 
@@ -300,16 +300,16 @@ class CanvasNode:
         dialog = NodeConfigServiceDialog(self.app, self)
         dialog.show()
 
-    def has_emane_link(self, interface_id: int) -> core_pb2.Node:
+    def has_emane_link(self, iface_id: int) -> core_pb2.Node:
         result = None
         for edge in self.edges:
             if self.id == edge.src:
                 other_id = edge.dst
-                edge_interface_id = edge.src_interface.id
+                edge_iface_id = edge.src_iface.id
             else:
                 other_id = edge.src
-                edge_interface_id = edge.dst_interface.id
-            if edge_interface_id != interface_id:
+                edge_iface_id = edge.dst_iface.id
+            if edge_iface_id != iface_id:
                 continue
             other_node = self.canvas.nodes[other_id]
             if other_node.core_node.type == NodeType.EMANE:

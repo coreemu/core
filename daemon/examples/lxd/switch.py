@@ -1,7 +1,7 @@
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.lxd import LxcNode
@@ -23,15 +23,15 @@ if __name__ == "__main__":
 
         # node one
         node1 = session.add_node(LxcNode, options=options)
-        interface1_data = prefixes.create_interface(node1)
+        interface1_data = prefixes.create_iface(node1)
 
         # node two
         node2 = session.add_node(LxcNode, options=options)
-        interface2_data = prefixes.create_interface(node2)
+        interface2_data = prefixes.create_iface(node2)
 
         # node three
         node3 = session.add_node(CoreNode)
-        interface3_data = prefixes.create_interface(node3)
+        interface3_data = prefixes.create_iface(node3)
 
         # add links
         session.add_link(node1.id, switch.id, interface1_data)

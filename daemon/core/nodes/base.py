@@ -14,8 +14,7 @@ import netaddr
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.constants import MOUNT_BIN, VNODED_BIN
-from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import InterfaceData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.nodes.client import VnodeClient
@@ -68,11 +67,10 @@ class NodeBase(abc.ABC):
         self.server: "DistributedServer" = server
         self.type: Optional[str] = None
         self.services: CoreServices = []
-        self._netif: Dict[int, CoreInterface] = {}
-        self.ifindex: int = 0
+        self.ifaces: Dict[int, CoreInterface] = {}
+        self.iface_id: int = 0
         self.canvas: Optional[int] = None
         self.icon: Optional[str] = None
-        self.opaque: Optional[str] = None
         self.position: Position = Position()
         self.up: bool = False
         use_ovs = session.options.get_config("ovs") == "True"
@@ -139,103 +137,54 @@ class NodeBase(abc.ABC):
         """
         return self.position.get()
 
-    def ifname(self, ifindex: int) -> str:
-        """
-        Retrieve interface name for index.
+    def get_iface(self, iface_id: int) -> CoreInterface:
+        if iface_id not in self.ifaces:
+            raise CoreError(f"node({self.name}) does not have interface({iface_id})")
+        return self.ifaces[iface_id]
 
-        :param ifindex: interface index
-        :return: interface name
+    def get_ifaces(self, control: bool = True) -> List[CoreInterface]:
         """
-        return self._netif[ifindex].name
+        Retrieve sorted list of interfaces, optionally do not include control
+        interfaces.
 
-    def netifs(self, sort: bool = False) -> List[CoreInterface]:
+        :param control: False to exclude control interfaces, included otherwise
+        :return: list of interfaces
         """
-        Retrieve network interfaces, sorted if desired.
+        ifaces = []
+        for iface_id in sorted(self.ifaces):
+            iface = self.ifaces[iface_id]
+            if not control and getattr(iface, "control", False):
+                continue
+            ifaces.append(iface)
+        return ifaces
 
-        :param sort: boolean used to determine if interfaces should be sorted
-        :return: network interfaces
+    def get_iface_id(self, iface: CoreInterface) -> int:
         """
-        if sort:
-            return [self._netif[x] for x in sorted(self._netif)]
-        else:
-            return list(self._netif.values())
+        Retrieve id for an interface.
 
-    def numnetif(self) -> int:
-        """
-        Return the attached interface count.
-
-        :return: number of network interfaces
-        """
-        return len(self._netif)
-
-    def getifindex(self, netif: CoreInterface) -> int:
-        """
-        Retrieve index for an interface.
-
-        :param netif: interface to get index for
+        :param iface: interface to get id for
         :return: interface index if found, -1 otherwise
         """
-        for ifindex in self._netif:
-            if self._netif[ifindex] is netif:
-                return ifindex
-        return -1
+        for iface_id, local_iface in self.ifaces.items():
+            if local_iface is iface:
+                return iface_id
+        raise CoreError(f"node({self.name}) does not have interface({iface.name})")
 
-    def newifindex(self) -> int:
+    def next_iface_id(self) -> int:
         """
         Create a new interface index.
 
         :return: interface index
         """
-        while self.ifindex in self._netif:
-            self.ifindex += 1
-        ifindex = self.ifindex
-        self.ifindex += 1
-        return ifindex
-
-    def data(
-        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> Optional[NodeData]:
-        """
-        Build a data object for this node.
-
-        :param message_type: purpose for the data object we are creating
-        :param source: source of node data
-        :return: node data object
-        """
-        if self.apitype is None:
-            return None
-
-        x, y, _ = self.getposition()
-        model = self.type
-        server = None
-        if self.server is not None:
-            server = self.server.name
-        services = [service.name for service in self.services]
-        return NodeData(
-            message_type=message_type,
-            id=self.id,
-            node_type=self.apitype,
-            name=self.name,
-            emulation_id=self.id,
-            canvas=self.canvas,
-            icon=self.icon,
-            opaque=self.opaque,
-            x_position=x,
-            y_position=y,
-            latitude=self.position.lat,
-            longitude=self.position.lon,
-            altitude=self.position.alt,
-            model=model,
-            server=server,
-            services=services,
-            source=source,
-        )
+        while self.iface_id in self.ifaces:
+            self.iface_id += 1
+        iface_id = self.iface_id
+        self.iface_id += 1
+        return iface_id
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
-        Build CORE Link data for this object. There is no default
-        method for PyCoreObjs as PyCoreNodes do not implement this but
-        PyCoreNets do.
+        Build link data for this node.
 
         :param flags: message flags
         :return: list of link data
@@ -325,14 +274,14 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def newnetif(
-        self, net: "CoreNetworkBase", interface_data: InterfaceData
+    def new_iface(
+        self, net: "CoreNetworkBase", iface_data: InterfaceData
     ) -> CoreInterface:
         """
-        Create a new network interface.
+        Create a new interface.
 
         :param net: network to associate with
-        :param interface_data: interface data for new interface
+        :param iface_data: interface data for new interface
         :return: interface index
         """
         raise NotImplementedError
@@ -399,67 +348,53 @@ class CoreNodeBase(NodeBase):
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.nodedir}")
 
-    def addnetif(self, netif: CoreInterface, ifindex: int) -> None:
+    def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
         """
         Add network interface to node and set the network interface index if successful.
 
-        :param netif: network interface to add
-        :param ifindex: interface index
+        :param iface: network interface to add
+        :param iface_id: interface id
         :return: nothing
         """
-        if ifindex in self._netif:
-            raise ValueError(f"ifindex {ifindex} already exists")
-        self._netif[ifindex] = netif
-        netif.netindex = ifindex
+        if iface_id in self.ifaces:
+            raise CoreError(f"interface({iface_id}) already exists")
+        self.ifaces[iface_id] = iface
+        iface.node_id = iface_id
 
-    def delnetif(self, ifindex: int) -> None:
+    def delete_iface(self, iface_id: int) -> None:
         """
         Delete a network interface
 
-        :param ifindex: interface index to delete
+        :param iface_id: interface index to delete
         :return: nothing
         """
-        if ifindex not in self._netif:
-            raise CoreError(f"node({self.name}) ifindex({ifindex}) does not exist")
-        netif = self._netif.pop(ifindex)
-        logging.info("node(%s) removing interface(%s)", self.name, netif.name)
-        netif.detachnet()
-        netif.shutdown()
+        if iface_id not in self.ifaces:
+            raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
+        iface = self.ifaces.pop(iface_id)
+        logging.info("node(%s) removing interface(%s)", self.name, iface.name)
+        iface.detachnet()
+        iface.shutdown()
 
-    def netif(self, ifindex: int) -> Optional[CoreInterface]:
-        """
-        Retrieve network interface.
-
-        :param ifindex: index of interface to retrieve
-        :return: network interface, or None if not found
-        """
-        if ifindex in self._netif:
-            return self._netif[ifindex]
-        else:
-            return None
-
-    def attachnet(self, ifindex: int, net: "CoreNetworkBase") -> None:
+    def attachnet(self, iface_id: int, net: "CoreNetworkBase") -> None:
         """
         Attach a network.
 
-        :param ifindex: interface of index to attach
+        :param iface_id: interface of index to attach
         :param net: network to attach
         :return: nothing
         """
-        if ifindex not in self._netif:
-            raise ValueError(f"ifindex {ifindex} does not exist")
-        self._netif[ifindex].attachnet(net)
+        iface = self.get_iface(iface_id)
+        iface.attachnet(net)
 
-    def detachnet(self, ifindex: int) -> None:
+    def detachnet(self, iface_id: int) -> None:
         """
         Detach network interface.
 
-        :param ifindex: interface index to detach
+        :param iface_id: interface id to detach
         :return: nothing
         """
-        if ifindex not in self._netif:
-            raise ValueError(f"ifindex {ifindex} does not exist")
-        self._netif[ifindex].detachnet()
+        iface = self.get_iface(iface_id)
+        iface.detachnet()
 
     def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
         """
@@ -472,8 +407,8 @@ class CoreNodeBase(NodeBase):
         """
         changed = super().setposition(x, y, z)
         if changed:
-            for netif in self.netifs(sort=True):
-                netif.setposition()
+            for iface in self.get_ifaces():
+                iface.setposition()
 
     def commonnets(
         self, node: "CoreNodeBase", want_ctrl: bool = False
@@ -488,12 +423,10 @@ class CoreNodeBase(NodeBase):
         :return: tuples of common networks
         """
         common = []
-        for netif1 in self.netifs():
-            if not want_ctrl and hasattr(netif1, "control"):
-                continue
-            for netif2 in node.netifs():
-                if netif1.net == netif2.net:
-                    common.append((netif1.net, netif1, netif2))
+        for iface1 in self.get_ifaces(control=want_ctrl):
+            for iface2 in node.get_ifaces():
+                if iface1.net == iface2.net:
+                    common.append((iface1.net, iface1, iface2))
         return common
 
 
@@ -620,8 +553,8 @@ class CoreNode(CoreNodeBase):
                 self._mounts = []
 
                 # shutdown all interfaces
-                for netif in self.netifs():
-                    netif.shutdown()
+                for iface in self.get_ifaces():
+                    iface.shutdown()
 
                 # kill node process if present
                 try:
@@ -636,7 +569,7 @@ class CoreNode(CoreNodeBase):
                     logging.exception("error removing node directory")
 
                 # clear interface data, close client, and mark self and not up
-                self._netif.clear()
+                self.ifaces.clear()
                 self.client.close()
                 self.up = False
             except OSError:
@@ -704,36 +637,36 @@ class CoreNode(CoreNodeBase):
         self.cmd(f"{MOUNT_BIN} -n --bind {source} {target}")
         self._mounts.append((source, target))
 
-    def newifindex(self) -> int:
+    def next_iface_id(self) -> int:
         """
         Retrieve a new interface index.
 
         :return: new interface index
         """
         with self.lock:
-            return super().newifindex()
+            return super().next_iface_id()
 
-    def newveth(self, ifindex: int = None, ifname: str = None) -> int:
+    def newveth(self, iface_id: int = None, ifname: str = None) -> int:
         """
         Create a new interface.
 
-        :param ifindex: index for the new interface
+        :param iface_id: id for the new interface
         :param ifname: name for the new interface
         :return: nothing
         """
         with self.lock:
-            if ifindex is None:
-                ifindex = self.newifindex()
+            if iface_id is None:
+                iface_id = self.next_iface_id()
 
             if ifname is None:
-                ifname = f"eth{ifindex}"
+                ifname = f"eth{iface_id}"
 
             sessionid = self.session.short_session_id()
 
             try:
-                suffix = f"{self.id:x}.{ifindex}.{sessionid}"
+                suffix = f"{self.id:x}.{iface_id}.{sessionid}"
             except TypeError:
-                suffix = f"{self.id}.{ifindex}.{sessionid}"
+                suffix = f"{self.id}.{iface_id}.{sessionid}"
 
             localname = f"veth{suffix}"
             if len(localname) >= 16:
@@ -758,147 +691,145 @@ class CoreNode(CoreNodeBase):
                 flow_id = self.node_net_client.get_ifindex(veth.name)
                 veth.flow_id = int(flow_id)
                 logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                hwaddr = self.node_net_client.get_mac(veth.name)
-                logging.debug("interface mac: %s - %s", veth.name, hwaddr)
-                veth.sethwaddr(hwaddr)
+                mac = self.node_net_client.get_mac(veth.name)
+                logging.debug("interface mac: %s - %s", veth.name, mac)
+                veth.set_mac(mac)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the
                 # network interface and raise exception.
-                self.addnetif(veth, ifindex)
+                self.add_iface(veth, iface_id)
             except ValueError as e:
                 veth.shutdown()
                 del veth
                 raise e
 
-            return ifindex
+            return iface_id
 
-    def newtuntap(self, ifindex: int = None, ifname: str = None) -> int:
+    def newtuntap(self, iface_id: int = None, ifname: str = None) -> int:
         """
         Create a new tunnel tap.
 
-        :param ifindex: interface index
+        :param iface_id: interface id
         :param ifname: interface name
         :return: interface index
         """
         with self.lock:
-            if ifindex is None:
-                ifindex = self.newifindex()
+            if iface_id is None:
+                iface_id = self.next_iface_id()
 
             if ifname is None:
-                ifname = f"eth{ifindex}"
+                ifname = f"eth{iface_id}"
 
             sessionid = self.session.short_session_id()
-            localname = f"tap{self.id}.{ifindex}.{sessionid}"
+            localname = f"tap{self.id}.{iface_id}.{sessionid}"
             name = ifname
             tuntap = TunTap(self.session, self, name, localname, start=self.up)
 
             try:
-                self.addnetif(tuntap, ifindex)
+                self.add_iface(tuntap, iface_id)
             except ValueError as e:
                 tuntap.shutdown()
                 del tuntap
                 raise e
 
-            return ifindex
+            return iface_id
 
-    def sethwaddr(self, ifindex: int, addr: str) -> None:
+    def set_mac(self, iface_id: int, mac: str) -> None:
         """
-        Set hardware addres for an interface.
+        Set hardware address for an interface.
 
-        :param ifindex: index of interface to set hardware address for
-        :param addr: hardware address to set
+        :param iface_id: id of interface to set hardware address for
+        :param mac: mac address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        addr = utils.validate_mac(addr)
-        interface = self._netif[ifindex]
-        interface.sethwaddr(addr)
+        mac = utils.validate_mac(mac)
+        iface = self.get_iface(iface_id)
+        iface.set_mac(mac)
         if self.up:
-            self.node_net_client.device_mac(interface.name, addr)
+            self.node_net_client.device_mac(iface.name, mac)
 
-    def addaddr(self, ifindex: int, addr: str) -> None:
+    def addaddr(self, iface_id: int, addr: str) -> None:
         """
         Add interface address.
 
-        :param ifindex: index of interface to add address to
+        :param iface_id: id of interface to add address to
         :param addr: address to add to interface
         :return: nothing
         """
         addr = utils.validate_ip(addr)
-        interface = self._netif[ifindex]
-        interface.addaddr(addr)
+        iface = self.get_iface(iface_id)
+        iface.addaddr(addr)
         if self.up:
             # ipv4 check
             broadcast = None
             if netaddr.valid_ipv4(addr):
                 broadcast = "+"
-            self.node_net_client.create_address(interface.name, addr, broadcast)
+            self.node_net_client.create_address(iface.name, addr, broadcast)
 
-    def deladdr(self, ifindex: int, addr: str) -> None:
+    def deladdr(self, iface_id: int, addr: str) -> None:
         """
         Delete address from an interface.
 
-        :param ifindex: index of interface to delete address from
+        :param iface_id: id of interface to delete address from
         :param addr: address to delete from interface
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        interface = self._netif[ifindex]
-
+        iface = self.get_iface(iface_id)
         try:
-            interface.deladdr(addr)
+            iface.deladdr(addr)
         except ValueError:
             logging.exception("trying to delete unknown address: %s", addr)
-
         if self.up:
-            self.node_net_client.delete_address(interface.name, addr)
+            self.node_net_client.delete_address(iface.name, addr)
 
-    def ifup(self, ifindex: int) -> None:
+    def ifup(self, iface_id: int) -> None:
         """
         Bring an interface up.
 
-        :param ifindex: index of interface to bring up
+        :param iface_id: index of interface to bring up
         :return: nothing
         """
         if self.up:
-            interface_name = self.ifname(ifindex)
-            self.node_net_client.device_up(interface_name)
+            iface = self.get_iface(iface_id)
+            self.node_net_client.device_up(iface.name)
 
-    def newnetif(
-        self, net: "CoreNetworkBase", interface_data: InterfaceData
+    def new_iface(
+        self, net: "CoreNetworkBase", iface_data: InterfaceData
     ) -> CoreInterface:
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param interface_data: interface data for new interface
+        :param iface_data: interface data for new interface
         :return: interface index
         """
-        addresses = interface_data.get_addresses()
+        addresses = iface_data.get_addresses()
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
-                ifindex = self.newtuntap(interface_data.id, interface_data.name)
+                iface_id = self.newtuntap(iface_data.id, iface_data.name)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
                 #   save addresses with the interface now
-                self.attachnet(ifindex, net)
-                netif = self.netif(ifindex)
-                netif.sethwaddr(interface_data.mac)
+                self.attachnet(iface_id, net)
+                iface = self.get_iface(iface_id)
+                iface.set_mac(iface_data.mac)
                 for address in addresses:
-                    netif.addaddr(address)
+                    iface.addaddr(address)
             else:
-                ifindex = self.newveth(interface_data.id, interface_data.name)
-                self.attachnet(ifindex, net)
-                if interface_data.mac:
-                    self.sethwaddr(ifindex, interface_data.mac)
+                iface_id = self.newveth(iface_data.id, iface_data.name)
+                self.attachnet(iface_id, net)
+                if iface_data.mac:
+                    self.set_mac(iface_id, iface_data.mac)
                 for address in addresses:
-                    self.addaddr(ifindex, address)
-                self.ifup(ifindex)
-                netif = self.netif(ifindex)
-            return netif
+                    self.addaddr(iface_id, address)
+                self.ifup(iface_id)
+                iface = self.get_iface(iface_id)
+            return iface
 
     def addfile(self, srcname: str, filename: str) -> None:
         """
@@ -1041,54 +972,54 @@ class CoreNetworkBase(NodeBase):
 
     @abc.abstractmethod
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
-        :param netif: interface one
+        :param iface: interface one
         :param options: options for configuring link
-        :param netif2: interface two
+        :param iface2: interface two
         :return: nothing
         """
         raise NotImplementedError
 
-    def getlinknetif(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
+    def get_linked_iface(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
         """
-        Return the interface of that links this net with another net.
+        Return the interface that links this net with another net.
 
         :param net: interface to get link for
         :return: interface the provided network is linked to
         """
-        for netif in self.netifs():
-            if netif.othernet == net:
-                return netif
+        for iface in self.get_ifaces():
+            if iface.othernet == net:
+                return iface
         return None
 
-    def attach(self, netif: CoreInterface) -> None:
+    def attach(self, iface: CoreInterface) -> None:
         """
         Attach network interface.
 
-        :param netif: network interface to attach
+        :param iface: network interface to attach
         :return: nothing
         """
-        i = self.newifindex()
-        self._netif[i] = netif
-        netif.netifi = i
+        i = self.next_iface_id()
+        self.ifaces[i] = iface
+        iface.net_id = i
         with self._linked_lock:
-            self._linked[netif] = {}
+            self._linked[iface] = {}
 
-    def detach(self, netif: CoreInterface) -> None:
+    def detach(self, iface: CoreInterface) -> None:
         """
         Detach network interface.
 
-        :param netif: network interface to detach
+        :param iface: network interface to detach
         :return: nothing
         """
-        del self._netif[netif.netifi]
-        netif.netifi = None
+        del self.ifaces[iface.net_id]
+        iface.net_id = None
         with self._linked_lock:
-            del self._linked[netif]
+            del self._linked[iface]
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
@@ -1102,84 +1033,63 @@ class CoreNetworkBase(NodeBase):
 
         # build a link message from this network node to each node having a
         # connected interface
-        for netif in self.netifs(sort=True):
-            if not hasattr(netif, "node"):
-                continue
+        for iface in self.get_ifaces():
             uni = False
-            linked_node = netif.node
+            linked_node = iface.node
             if linked_node is None:
                 # two layer-2 switches/hubs linked together via linknet()
-                if not netif.othernet:
+                if not iface.othernet:
                     continue
-                linked_node = netif.othernet
+                linked_node = iface.othernet
                 if linked_node.id == self.id:
                     continue
-                netif.swapparams("_params_up")
-                upstream_params = netif.getparams()
-                netif.swapparams("_params_up")
-                if netif.getparams() != upstream_params:
+                iface.swapparams("_params_up")
+                upstream_params = iface.getparams()
+                iface.swapparams("_params_up")
+                if iface.getparams() != upstream_params:
                     uni = True
 
             unidirectional = 0
             if uni:
                 unidirectional = 1
 
-            interface2_ip4 = None
-            interface2_ip4_mask = None
-            interface2_ip6 = None
-            interface2_ip6_mask = None
-            for address in netif.addrlist:
+            iface2 = InterfaceData(
+                id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.mac
+            )
+            for address in iface.addrlist:
                 ip, _sep, mask = address.partition("/")
                 mask = int(mask)
                 if netaddr.valid_ipv4(ip):
-                    interface2_ip4 = ip
-                    interface2_ip4_mask = mask
+                    iface2.ip4 = ip
+                    iface2.ip4_mask = mask
                 else:
-                    interface2_ip6 = ip
-                    interface2_ip6_mask = mask
+                    iface2.ip6 = ip
+                    iface2.ip6_mask = mask
 
+            options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=flags,
+                type=self.linktype,
                 node1_id=self.id,
                 node2_id=linked_node.id,
-                link_type=self.linktype,
-                unidirectional=unidirectional,
-                interface2_id=linked_node.getifindex(netif),
-                interface2_name=netif.name,
-                interface2_mac=netif.hwaddr,
-                interface2_ip4=interface2_ip4,
-                interface2_ip4_mask=interface2_ip4_mask,
-                interface2_ip6=interface2_ip6,
-                interface2_ip6_mask=interface2_ip6_mask,
-                delay=netif.getparam("delay"),
-                bandwidth=netif.getparam("bw"),
-                dup=netif.getparam("duplicate"),
-                jitter=netif.getparam("jitter"),
-                loss=netif.getparam("loss"),
+                iface2=iface2,
+                options=options_data,
             )
-
             all_links.append(link_data)
 
             if not uni:
                 continue
-
-            netif.swapparams("_params_up")
+            iface.swapparams("_params_up")
+            options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
+                type=self.linktype,
                 node1_id=linked_node.id,
                 node2_id=self.id,
-                link_type=self.linktype,
-                unidirectional=1,
-                delay=netif.getparam("delay"),
-                bandwidth=netif.getparam("bw"),
-                dup=netif.getparam("duplicate"),
-                jitter=netif.getparam("jitter"),
-                loss=netif.getparam("loss"),
+                options=options_data,
             )
-            netif.swapparams("_params_up")
-
+            iface.swapparams("_params_up")
             all_links.append(link_data)
-
         return all_links
 
 

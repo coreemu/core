@@ -35,10 +35,8 @@ class Bird(CoreService):
         """
         Helper to return the first IPv4 address of a node as its router ID.
         """
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            for a in iface.addrlist:
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return a
@@ -84,7 +82,7 @@ protocol device {
         for s in node.services:
             if cls.name not in s.dependencies:
                 continue
-            cfg += s.generatebirdconfig(node)
+            cfg += s.generate_bird_config(node)
 
         return cfg
 
@@ -106,11 +104,11 @@ class BirdService(CoreService):
     meta = "The config file for this service can be found in the bird service."
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         return ""
 
     @classmethod
-    def generatebirdifcconfig(cls, node):
+    def generate_bird_iface_config(cls, node):
         """
         Use only bare interfaces descriptions in generated protocol
         configurations. This has the slight advantage of being the same
@@ -118,10 +116,8 @@ class BirdService(CoreService):
         """
         cfg = ""
 
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            cfg += '        interface "%s";\n' % ifc.name
+        for iface in node.get_ifaces(control=False):
+            cfg += '        interface "%s";\n' % iface.name
 
         return cfg
 
@@ -135,7 +131,7 @@ class BirdBgp(BirdService):
     custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         return """
 /* This is a sample config that should be customized with appropriate AS numbers
  * and peers; add one section like this for each neighbor */
@@ -165,7 +161,7 @@ class BirdOspf(BirdService):
     name = "BIRD_OSPFv2"
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         cfg = "protocol ospf {\n"
         cfg += "    export filter {\n"
         cfg += "        if source = RTS_BGP then {\n"
@@ -175,7 +171,7 @@ class BirdOspf(BirdService):
         cfg += "        accept;\n"
         cfg += "    };\n"
         cfg += "    area 0.0.0.0 {\n"
-        cfg += cls.generatebirdifcconfig(node)
+        cfg += cls.generate_bird_iface_config(node)
         cfg += "    };\n"
         cfg += "}\n\n"
 
@@ -190,12 +186,12 @@ class BirdRadv(BirdService):
     name = "BIRD_RADV"
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         cfg = "/* This is a sample config that must be customized */\n"
 
         cfg += "protocol radv {\n"
         cfg += "    # auto configuration on all interfaces\n"
-        cfg += cls.generatebirdifcconfig(node)
+        cfg += cls.generate_bird_iface_config(node)
         cfg += "    # Advertise DNS\n"
         cfg += "    rdnss {\n"
         cfg += "#        lifetime mult 10;\n"
@@ -218,11 +214,11 @@ class BirdRip(BirdService):
     name = "BIRD_RIP"
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         cfg = "protocol rip {\n"
         cfg += "    period 10;\n"
         cfg += "    garbage time 60;\n"
-        cfg += cls.generatebirdifcconfig(node)
+        cfg += cls.generate_bird_iface_config(node)
         cfg += "    honor neighbor;\n"
         cfg += "    authentication none;\n"
         cfg += "    import all;\n"
@@ -241,7 +237,7 @@ class BirdStatic(BirdService):
     custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls, node):
+    def generate_bird_config(cls, node):
         cfg = "/* This is a sample config that must be customized */\n"
         cfg += "protocol static {\n"
         cfg += "#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n"

@@ -14,8 +14,8 @@ from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler
 from core.emane.emanemanager import EmaneManager
 from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
@@ -89,7 +89,7 @@ def ip_prefixes():
 
 
 @pytest.fixture(scope="session")
-def interface_helper():
+def iface_helper():
     return InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
 

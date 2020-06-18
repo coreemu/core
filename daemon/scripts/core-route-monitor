@@ -101,8 +101,8 @@ class RouterMonitor:
                     node_map[node.id] = node.channel
                     if self.src_id is None:
                         response = self.core.get_node(self.session, node.id)
-                        for netif in response.interfaces:
-                            if self.src == netif.ip4:
+                        for iface in response.ifaces:
+                            if self.src == iface.ip4:
                                 self.src_id = node.id
                                 break
             except grpc.RpcError:

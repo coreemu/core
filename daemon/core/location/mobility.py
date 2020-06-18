@@ -13,8 +13,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
-from core.emulator.data import EventData, LinkData
-from core.emulator.emudata import LinkOptions
+from core.emulator.data import EventData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
@@ -178,7 +177,7 @@ class MobilityManager(ModelManager):
         self.session.broadcast_event(event_data)
 
     def updatewlans(
-        self, moved: List[CoreNode], moved_netifs: List[CoreInterface]
+        self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]
     ) -> None:
         """
         A mobility script has caused nodes in the 'moved' list to move.
@@ -186,7 +185,7 @@ class MobilityManager(ModelManager):
         were to recalculate for each individual node movement.
 
         :param moved: moved nodes
-        :param moved_netifs: moved network interfaces
+        :param moved_ifaces: moved network interfaces
         :return: nothing
         """
         for node_id in self.nodes():
@@ -195,7 +194,7 @@ class MobilityManager(ModelManager):
             except CoreError:
                 continue
             if node.model:
-                node.model.update(moved, moved_netifs)
+                node.model.update(moved, moved_ifaces)
 
 
 class WirelessModel(ConfigurableOptions):
@@ -228,12 +227,12 @@ class WirelessModel(ConfigurableOptions):
         """
         return []
 
-    def update(self, moved: List[CoreNode], moved_netifs: List[CoreInterface]) -> None:
+    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
         """
         Update this wireless model.
 
         :param moved: moved nodes
-        :param moved_netifs: moved network interfaces
+        :param moved_ifaces: moved network interfaces
         :return: nothing
         """
         raise NotImplementedError
@@ -301,8 +300,8 @@ class BasicRangeModel(WirelessModel):
         super().__init__(session, _id)
         self.session: "Session" = session
         self.wlan: WlanNode = session.get_node(_id, WlanNode)
-        self._netifs: Dict[CoreInterface, Tuple[float, float, float]] = {}
-        self._netifslock: threading.Lock = threading.Lock()
+        self.iface_to_pos: Dict[CoreInterface, Tuple[float, float, float]] = {}
+        self.iface_lock: threading.Lock = threading.Lock()
         self.range: int = 0
         self.bw: Optional[int] = None
         self.delay: Optional[int] = None
@@ -333,48 +332,48 @@ class BasicRangeModel(WirelessModel):
         Apply link parameters to all interfaces. This is invoked from
         WlanNode.setmodel() after the position callback has been set.
         """
-        with self._netifslock:
-            for netif in self._netifs:
+        with self.iface_lock:
+            for iface in self.iface_to_pos:
                 options = LinkOptions(
                     bandwidth=self.bw,
                     delay=self.delay,
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                self.wlan.linkconfig(netif, options)
+                self.wlan.linkconfig(iface, options)
 
-    def get_position(self, netif: CoreInterface) -> Tuple[float, float, float]:
+    def get_position(self, iface: CoreInterface) -> Tuple[float, float, float]:
         """
         Retrieve network interface position.
 
-        :param netif: network interface position to retrieve
+        :param iface: network interface position to retrieve
         :return: network interface position
         """
-        with self._netifslock:
-            return self._netifs[netif]
+        with self.iface_lock:
+            return self.iface_to_pos[iface]
 
-    def set_position(self, netif: CoreInterface) -> None:
+    def set_position(self, iface: CoreInterface) -> None:
         """
         A node has moved; given an interface, a new (x,y,z) position has
         been set; calculate the new distance between other nodes and link or
         unlink node pairs based on the configured range.
 
-        :param netif: network interface to set position for
+        :param iface: network interface to set position for
         :return: nothing
         """
-        x, y, z = netif.node.position.get()
-        self._netifslock.acquire()
-        self._netifs[netif] = (x, y, z)
+        x, y, z = iface.node.position.get()
+        self.iface_lock.acquire()
+        self.iface_to_pos[iface] = (x, y, z)
         if x is None or y is None:
-            self._netifslock.release()
+            self.iface_lock.release()
             return
-        for netif2 in self._netifs:
-            self.calclink(netif, netif2)
-        self._netifslock.release()
+        for iface2 in self.iface_to_pos:
+            self.calclink(iface, iface2)
+        self.iface_lock.release()
 
     position_callback = set_position
 
-    def update(self, moved: List[CoreNode], moved_netifs: List[CoreInterface]) -> None:
+    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
         """
         Node positions have changed without recalc. Update positions from
         node.position, then re-calculate links for those that have moved.
@@ -382,37 +381,37 @@ class BasicRangeModel(WirelessModel):
         one of the nodes has moved.
 
         :param moved: moved nodes
-        :param moved_netifs: moved network interfaces
+        :param moved_ifaces: moved network interfaces
         :return: nothing
         """
-        with self._netifslock:
-            while len(moved_netifs):
-                netif = moved_netifs.pop()
-                nx, ny, nz = netif.node.getposition()
-                if netif in self._netifs:
-                    self._netifs[netif] = (nx, ny, nz)
-                for netif2 in self._netifs:
-                    if netif2 in moved_netifs:
+        with self.iface_lock:
+            while len(moved_ifaces):
+                iface = moved_ifaces.pop()
+                nx, ny, nz = iface.node.getposition()
+                if iface in self.iface_to_pos:
+                    self.iface_to_pos[iface] = (nx, ny, nz)
+                for iface2 in self.iface_to_pos:
+                    if iface2 in moved_ifaces:
                         continue
-                    self.calclink(netif, netif2)
+                    self.calclink(iface, iface2)
 
-    def calclink(self, netif: CoreInterface, netif2: CoreInterface) -> None:
+    def calclink(self, iface: CoreInterface, iface2: CoreInterface) -> None:
         """
         Helper used by set_position() and update() to
         calculate distance between two interfaces and perform
         linking/unlinking. Sends link/unlink messages and updates the
         WlanNode's linked dict.
 
-        :param netif: interface one
-        :param netif2: interface two
+        :param iface: interface one
+        :param iface2: interface two
         :return: nothing
         """
-        if netif == netif2:
+        if iface == iface2:
             return
 
         try:
-            x, y, z = self._netifs[netif]
-            x2, y2, z2 = self._netifs[netif2]
+            x, y, z = self.iface_to_pos[iface]
+            x2, y2, z2 = self.iface_to_pos[iface2]
 
             if x2 is None or y2 is None:
                 return
@@ -420,8 +419,8 @@ class BasicRangeModel(WirelessModel):
             d = self.calcdistance((x, y, z), (x2, y2, z2))
 
             # ordering is important, to keep the wlan._linked dict organized
-            a = min(netif, netif2)
-            b = max(netif, netif2)
+            a = min(iface, iface2)
+            b = max(iface, iface2)
 
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
@@ -475,42 +474,39 @@ class BasicRangeModel(WirelessModel):
         self.setlinkparams()
 
     def create_link_data(
-        self,
-        interface1: CoreInterface,
-        interface2: CoreInterface,
-        message_type: MessageFlags,
+        self, iface1: CoreInterface, iface2: CoreInterface, message_type: MessageFlags
     ) -> LinkData:
         """
         Create a wireless link/unlink data message.
 
-        :param interface1: interface one
-        :param interface2: interface two
+        :param iface1: interface one
+        :param iface2: interface two
         :param message_type: link message type
         :return: link data
         """
         color = self.session.get_link_color(self.wlan.id)
         return LinkData(
             message_type=message_type,
-            node1_id=interface1.node.id,
-            node2_id=interface2.node.id,
+            type=LinkTypes.WIRELESS,
+            node1_id=iface1.node.id,
+            node2_id=iface2.node.id,
             network_id=self.wlan.id,
-            link_type=LinkTypes.WIRELESS,
             color=color,
         )
 
     def sendlinkmsg(
-        self, netif: CoreInterface, netif2: CoreInterface, unlink: bool = False
+        self, iface: CoreInterface, iface2: CoreInterface, unlink: bool = False
     ) -> None:
         """
         Send a wireless link/unlink API message to the GUI.
 
-        :param netif: interface one
-        :param netif2: interface two
+        :param iface: interface one
+        :param iface2: interface two
         :param unlink: unlink or not
         :return: nothing
         """
         message_type = MessageFlags.DELETE if unlink else MessageFlags.ADD
-        link_data = self.create_link_data(netif, netif2, message_type)
+        link_data = self.create_link_data(iface, iface2, message_type)
         self.session.broadcast_link(link_data)
 
     def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
@@ -643,17 +639,17 @@ class WayPointMobility(WirelessModel):
                     return
                 return self.run()
 
-        # only move netifs attached to self.wlan, or all nodenum in script?
+        # only move interfaces attached to self.wlan, or all nodenum in script?
         moved = []
-        moved_netifs = []
-        for netif in self.wlan.netifs():
-            node = netif.node
+        moved_ifaces = []
+        for iface in self.wlan.get_ifaces():
+            node = iface.node
             if self.movenode(node, dt):
                 moved.append(node)
-                moved_netifs.append(netif)
+                moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.session.mobility.updatewlans(moved, moved_netifs)
+        self.session.mobility.updatewlans(moved, moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -725,16 +721,16 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         moved = []
-        moved_netifs = []
-        for netif in self.wlan.netifs():
-            node = netif.node
+        moved_ifaces = []
+        for iface in self.wlan.get_ifaces():
+            node = iface.node
             if node.id not in self.initial:
                 continue
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
             moved.append(node)
-            moved_netifs.append(netif)
-        self.session.mobility.updatewlans(moved, moved_netifs)
+            moved_ifaces.append(iface)
+        self.session.mobility.updatewlans(moved, moved_ifaces)
 
     def addwaypoint(
         self,

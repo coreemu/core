@@ -7,7 +7,7 @@ import argparse
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -52,10 +52,10 @@ def main(args):
     node2 = session.add_node(CoreNode, options=options)
 
     # create node interfaces and link
-    interface1_data = prefixes.create_interface(node1)
-    interface2_data = prefixes.create_interface(node2)
-    session.add_link(node1.id, switch.id, interface1_data=interface1_data)
-    session.add_link(node2.id, switch.id, interface1_data=interface2_data)
+    interface1_data = prefixes.create_iface(node1)
+    interface2_data = prefixes.create_iface(node2)
+    session.add_link(node1.id, switch.id, iface1_data=interface1_data)
+    session.add_link(node2.id, switch.id, iface1_data=interface2_data)
 
     # instantiate session
     session.instantiate()

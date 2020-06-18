@@ -10,7 +10,7 @@ import time
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 
@@ -42,8 +42,8 @@ def main():
     for i in range(NODES):
         node = session.add_node(CoreNode, options=options)
         node.setposition(x=150 * (i + 1), y=150)
-        interface = prefixes.create_interface(node)
-        session.add_link(node.id, emane_network.id, interface1_data=interface)
+        interface = prefixes.create_iface(node)
+        session.add_link(node.id, emane_network.id, iface1_data=interface)
 
     # instantiate session
     session.instantiate()

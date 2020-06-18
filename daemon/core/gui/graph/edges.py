@@ -259,8 +259,8 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_interface = None
-        self.dst_interface = None
+        self.src_iface = None
+        self.dst_iface = None
         self.text_src = None
         self.text_dst = None
         self.link = None
@@ -283,25 +283,25 @@ class CanvasEdge(Edge):
         self.link = link
         self.draw_labels()
 
-    def interface_label(self, interface: core_pb2.Interface) -> str:
+    def iface_label(self, iface: core_pb2.Interface) -> str:
         label = ""
-        if interface.name and self.canvas.show_interface_names.get():
-            label = f"{interface.name}"
-        if interface.ip4 and self.canvas.show_ip4s.get():
+        if iface.name and self.canvas.show_iface_names.get():
+            label = f"{iface.name}"
+        if iface.ip4 and self.canvas.show_ip4s.get():
             label = f"{label}\n" if label else ""
-            label += f"{interface.ip4}/{interface.ip4mask}"
-        if interface.ip6 and self.canvas.show_ip6s.get():
+            label += f"{iface.ip4}/{iface.ip4_mask}"
+        if iface.ip6 and self.canvas.show_ip6s.get():
             label = f"{label}\n" if label else ""
-            label += f"{interface.ip6}/{interface.ip6mask}"
+            label += f"{iface.ip6}/{iface.ip6_mask}"
         return label
 
     def create_node_labels(self) -> Tuple[str, str]:
         label1 = None
-        if self.link.HasField("interface1"):
-            label1 = self.interface_label(self.link.interface1)
+        if self.link.HasField("iface1"):
+            label1 = self.iface_label(self.link.iface1)
         label2 = None
-        if self.link.HasField("interface2"):
-            label2 = self.interface_label(self.link.interface2)
+        if self.link.HasField("iface2"):
+            label2 = self.iface_label(self.link.iface2)
         return label1, label2
 
     def draw_labels(self) -> None:

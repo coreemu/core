@@ -57,8 +57,8 @@ class CoreClient:
         self.read_config()
 
         # helpers
-        self.interface_to_edge = {}
-        self.interfaces_manager = InterfaceManager(self.app)
+        self.iface_to_edge = {}
+        self.ifaces_manager = InterfaceManager(self.app)
 
         # session data
         self.state = None
@@ -91,8 +91,8 @@ class CoreClient:
 
     def reset(self):
         # helpers
-        self.interfaces_manager.reset()
-        self.interface_to_edge.clear()
+        self.ifaces_manager.reset()
+        self.iface_to_edge.clear()
         # session data
         self.canvas_nodes.clear()
         self.links.clear()
@@ -263,7 +263,7 @@ class CoreClient:
             self.emane_config = response.config
 
             # update interface manager
-            self.interfaces_manager.joined(session.links)
+            self.ifaces_manager.joined(session.links)
 
             # draw session
             self.app.canvas.reset_and_redraw(session)
@@ -278,11 +278,11 @@ class CoreClient:
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
             for config in response.configs:
-                interface = None
-                if config.interface != -1:
-                    interface = config.interface
+                iface_id = None
+                if config.iface_id != -1:
+                    iface_id = config.iface_id
                 canvas_node = self.canvas_nodes[config.node_id]
-                canvas_node.emane_model_configs[(config.model, interface)] = dict(
+                canvas_node.emane_model_configs[(config.model, iface_id)] = dict(
                     config.config
                 )
 
@@ -460,16 +460,16 @@ class CoreClient:
             self.app.show_grpc_exception("Edit Node Error", e)
 
     def start_session(self) -> core_pb2.StartSessionResponse:
-        self.interfaces_manager.reset_mac()
+        self.ifaces_manager.reset_mac()
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = []
         for edge in self.links.values():
             link = core_pb2.Link()
             link.CopyFrom(edge.link)
-            if link.HasField("interface1") and not link.interface1.mac:
-                link.interface1.mac = self.interfaces_manager.next_mac()
-            if link.HasField("interface2") and not link.interface2.mac:
-                link.interface2.mac = self.interfaces_manager.next_mac()
+            if link.HasField("iface1") and not link.iface1.mac:
+                link.iface1.mac = self.ifaces_manager.next_mac()
+            if link.HasField("iface2") and not link.iface2.mac:
+                link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
@@ -689,8 +689,8 @@ class CoreClient:
                 self.session_id,
                 link_proto.node1_id,
                 link_proto.node2_id,
-                link_proto.interface1,
-                link_proto.interface2,
+                link_proto.iface1,
+                link_proto.iface2,
                 link_proto.options,
             )
             logging.debug("create link: %s", response)
@@ -733,7 +733,7 @@ class CoreClient:
                 config_proto.node_id,
                 config_proto.model,
                 config_proto.config,
-                config_proto.interface_id,
+                config_proto.iface_id,
             )
         if self.emane_config:
             config = {x: self.emane_config[x].value for x in self.emane_config}
@@ -824,31 +824,31 @@ class CoreClient:
         for edge in edges:
             del self.links[edge.token]
             links.append(edge.link)
-        self.interfaces_manager.removed(links)
+        self.ifaces_manager.removed(links)
 
-    def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
+    def create_iface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
         node = canvas_node.core_node
-        ip4, ip6 = self.interfaces_manager.get_ips(node)
-        ip4_mask = self.interfaces_manager.ip4_mask
-        ip6_mask = self.interfaces_manager.ip6_mask
-        interface_id = canvas_node.next_interface_id()
-        name = f"eth{interface_id}"
-        interface = core_pb2.Interface(
-            id=interface_id,
+        ip4, ip6 = self.ifaces_manager.get_ips(node)
+        ip4_mask = self.ifaces_manager.ip4_mask
+        ip6_mask = self.ifaces_manager.ip6_mask
+        iface_id = canvas_node.next_iface_id()
+        name = f"eth{iface_id}"
+        iface = core_pb2.Interface(
+            id=iface_id,
             name=name,
             ip4=ip4,
-            ip4mask=ip4_mask,
+            ip4_mask=ip4_mask,
             ip6=ip6,
-            ip6mask=ip6_mask,
+            ip6_mask=ip6_mask,
         )
         logging.info(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
-            interface.name,
-            interface.ip4,
-            interface.ip6,
+            iface.name,
+            iface.ip4,
+            iface.ip6,
         )
-        return interface
+        return iface
 
     def create_link(
         self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
@@ -861,34 +861,34 @@ class CoreClient:
         dst_node = canvas_dst_node.core_node
 
         # determine subnet
-        self.interfaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
+        self.ifaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
 
-        src_interface = None
+        src_iface = None
         if NodeUtils.is_container_node(src_node.type):
-            src_interface = self.create_interface(canvas_src_node)
-            self.interface_to_edge[(src_node.id, src_interface.id)] = edge.token
+            src_iface = self.create_iface(canvas_src_node)
+            self.iface_to_edge[(src_node.id, src_iface.id)] = edge.token
 
-        dst_interface = None
+        dst_iface = None
         if NodeUtils.is_container_node(dst_node.type):
-            dst_interface = self.create_interface(canvas_dst_node)
-            self.interface_to_edge[(dst_node.id, dst_interface.id)] = edge.token
+            dst_iface = self.create_iface(canvas_dst_node)
+            self.iface_to_edge[(dst_node.id, dst_iface.id)] = edge.token
 
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,
             node1_id=src_node.id,
             node2_id=dst_node.id,
-            interface1=src_interface,
-            interface2=dst_interface,
+            iface1=src_iface,
+            iface2=dst_iface,
         )
         # assign after creating link proto, since interfaces are copied
-        if src_interface:
-            interface1 = link.interface1
-            edge.src_interface = interface1
-            canvas_src_node.interfaces[interface1.id] = interface1
-        if dst_interface:
-            interface2 = link.interface2
-            edge.dst_interface = interface2
-            canvas_dst_node.interfaces[interface2.id] = interface2
+        if src_iface:
+            iface1 = link.iface1
+            edge.src_iface = iface1
+            canvas_src_node.ifaces[iface1.id] = iface1
+        if dst_iface:
+            iface2 = link.iface2
+            edge.dst_iface = iface2
+            canvas_dst_node.ifaces[iface2.id] = iface2
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)
@@ -928,12 +928,12 @@ class CoreClient:
                 continue
             node_id = canvas_node.core_node.id
             for key, config in canvas_node.emane_model_configs.items():
-                model, interface = key
+                model, iface_id = key
                 config = {x: config[x].value for x in config}
-                if interface is None:
-                    interface = -1
+                if iface_id is None:
+                    iface_id = -1
                 config_proto = EmaneModelConfig(
-                    node_id=node_id, interface_id=interface, model=model, config=config
+                    node_id=node_id, iface_id=iface_id, model=model, config=config
                 )
                 configs.append(config_proto)
         return configs
@@ -1021,19 +1021,19 @@ class CoreClient:
         return dict(config)
 
     def get_emane_model_config(
-        self, node_id: int, model: str, interface: int = None
+        self, node_id: int, model: str, iface_id: int = None
     ) -> Dict[str, common_pb2.ConfigOption]:
-        if interface is None:
-            interface = -1
+        if iface_id is None:
+            iface_id = -1
         response = self.client.get_emane_model_config(
-            self.session_id, node_id, model, interface
+            self.session_id, node_id, model, iface_id
         )
         config = response.config
         logging.debug(
             "get emane model config: node id: %s, EMANE model: %s, interface: %s, config: %s",
             node_id,
             model,
-            interface,
+            iface_id,
             config,
         )
         return dict(config)

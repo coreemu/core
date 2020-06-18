@@ -6,7 +6,7 @@ interact with the GUI.
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -31,8 +31,8 @@ def main():
     # create nodes
     for _ in range(NODES):
         node = session.add_node(CoreNode)
-        interface = prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface1_data=interface)
+        interface = prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface1_data=interface)
 
     # instantiate session
     session.instantiate()

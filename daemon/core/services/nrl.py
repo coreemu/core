@@ -32,10 +32,8 @@ class NrlService(CoreService):
         prefix of a node, using the supplied prefix length. This ignores the
         interface's prefix length, so e.g. '/32' can turn into '/24'.
         """
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            for a in ifc.addrlist:
+        for iface in node.get_ifaces(control=False):
+            for a in iface.addrlist:
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return f"{a}/{prefixlen}"
@@ -54,8 +52,8 @@ class MgenSinkService(NrlService):
     @classmethod
     def generate_config(cls, node, filename):
         cfg = "0.0 LISTEN UDP 5000\n"
-        for ifc in node.netifs():
-            name = utils.sysctl_devname(ifc.name)
+        for iface in node.get_ifaces():
+            name = utils.sysctl_devname(iface.name)
             cfg += "0.0 Join 224.225.1.2 INTERFACE %s\n" % name
         return cfg
 
@@ -91,11 +89,11 @@ class NrlNhdp(NrlService):
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
 
-        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
-        if len(netifs) > 0:
-            interfacenames = map(lambda x: x.name, netifs)
+        ifaces = node.get_ifaces(control=False)
+        if len(ifaces) > 0:
+            iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
-            cmd += " -i ".join(interfacenames)
+            cmd += " -i ".join(iface_names)
 
         return (cmd,)
 
@@ -125,16 +123,16 @@ class NrlSmf(NrlService):
         cmd = "nrlsmf instance %s_smf" % node.name
 
         servicenames = map(lambda x: x.name, node.services)
-        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
-        if len(netifs) == 0:
+        ifaces = node.get_ifaces(control=False)
+        if len(ifaces) == 0:
             return ""
 
         if "arouted" in servicenames:
             comments += "# arouted service is enabled\n"
             cmd += " tap %s_tap" % (node.name,)
             cmd += " unicast %s" % cls.firstipv4prefix(node, 24)
-            cmd += " push lo,%s resequence on" % netifs[0].name
-        if len(netifs) > 0:
+            cmd += " push lo,%s resequence on" % ifaces[0].name
+        if len(ifaces) > 0:
             if "NHDP" in servicenames:
                 comments += "# NHDP service is enabled\n"
                 cmd += " ecds "
@@ -143,8 +141,8 @@ class NrlSmf(NrlService):
                 cmd += " smpr "
             else:
                 cmd += " cf "
-            interfacenames = map(lambda x: x.name, netifs)
-            cmd += ",".join(interfacenames)
+            iface_names = map(lambda x: x.name, ifaces)
+            cmd += ",".join(iface_names)
 
         cmd += " hash MD5"
         cmd += " log /var/log/nrlsmf.log"
@@ -171,10 +169,10 @@ class NrlOlsr(NrlService):
         """
         cmd = cls.startup[0]
         # are multiple interfaces supported? No.
-        netifs = list(node.netifs())
-        if len(netifs) > 0:
-            ifc = netifs[0]
-            cmd += " -i %s" % ifc.name
+        ifaces = node.get_ifaces()
+        if len(ifaces) > 0:
+            iface = ifaces[0]
+            cmd += " -i %s" % iface.name
         cmd += " -l /var/log/nrlolsrd.log"
         cmd += " -rpipe %s_olsr" % node.name
 
@@ -215,11 +213,11 @@ class NrlOlsrv2(NrlService):
 
         cmd += " -p olsr"
 
-        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
-        if len(netifs) > 0:
-            interfacenames = map(lambda x: x.name, netifs)
+        ifaces = node.get_ifaces(control=False)
+        if len(ifaces) > 0:
+            iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
-            cmd += " -i ".join(interfacenames)
+            cmd += " -i ".join(iface_names)
 
         return (cmd,)
 
@@ -243,11 +241,11 @@ class OlsrOrg(NrlService):
         Generate the appropriate command-line based on node interfaces.
         """
         cmd = cls.startup[0]
-        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
-        if len(netifs) > 0:
-            interfacenames = map(lambda x: x.name, netifs)
+        ifaces = node.get_ifaces(control=False)
+        if len(ifaces) > 0:
+            iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
-            cmd += " -i ".join(interfacenames)
+            cmd += " -i ".join(iface_names)
 
         return (cmd,)
 
@@ -607,8 +605,8 @@ class MgenActor(NrlService):
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % node.name
 
-        netifs = [x for x in node.netifs() if not getattr(x, "control", False)]
-        if len(netifs) == 0:
+        ifaces = node.get_ifaces(control=False)
+        if len(ifaces) == 0:
             return ""
 
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"

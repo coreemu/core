@@ -29,8 +29,15 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
-from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import (
+    ConfigData,
+    EventData,
+    ExceptionData,
+    FileData,
+    InterfaceData,
+    LinkOptions,
+    NodeOptions,
+)
 from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
@@ -71,7 +78,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             MessageTypes.REGISTER.value: self.handle_register_message,
             MessageTypes.CONFIG.value: self.handle_config_message,
             MessageTypes.FILE.value: self.handle_file_message,
-            MessageTypes.INTERFACE.value: self.handle_interface_message,
+            MessageTypes.INTERFACE.value: self.handle_iface_message,
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }
@@ -322,7 +329,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         logging.debug("handling broadcast node: %s", node_data)
         message = dataconversion.convert_node(node_data)
-
         try:
             self.sendall(message)
         except IOError:
@@ -336,46 +342,49 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
+        options_data = link_data.options
         loss = ""
-        if link_data.loss is not None:
-            loss = str(link_data.loss)
+        if options_data.loss is not None:
+            loss = str(options_data.loss)
         dup = ""
-        if link_data.dup is not None:
-            dup = str(link_data.dup)
+        if options_data.dup is not None:
+            dup = str(options_data.dup)
+        iface1 = link_data.iface1
+        if iface1 is None:
+            iface1 = InterfaceData()
+        iface2 = link_data.iface2
+        if iface2 is None:
+            iface2 = InterfaceData()
 
         tlv_data = structutils.pack_values(
             coreapi.CoreLinkTlv,
             [
                 (LinkTlvs.N1_NUMBER, link_data.node1_id),
                 (LinkTlvs.N2_NUMBER, link_data.node2_id),
-                (LinkTlvs.DELAY, link_data.delay),
-                (LinkTlvs.BANDWIDTH, link_data.bandwidth),
+                (LinkTlvs.DELAY, options_data.delay),
+                (LinkTlvs.BANDWIDTH, options_data.bandwidth),
                 (LinkTlvs.LOSS, loss),
                 (LinkTlvs.DUP, dup),
-                (LinkTlvs.JITTER, link_data.jitter),
-                (LinkTlvs.MER, link_data.mer),
-                (LinkTlvs.BURST, link_data.burst),
-                (LinkTlvs.SESSION, link_data.session),
-                (LinkTlvs.MBURST, link_data.mburst),
-                (LinkTlvs.TYPE, link_data.link_type.value),
-                (LinkTlvs.GUI_ATTRIBUTES, link_data.gui_attributes),
-                (LinkTlvs.UNIDIRECTIONAL, link_data.unidirectional),
-                (LinkTlvs.EMULATION_ID, link_data.emulation_id),
+                (LinkTlvs.JITTER, options_data.jitter),
+                (LinkTlvs.MER, options_data.mer),
+                (LinkTlvs.BURST, options_data.burst),
+                (LinkTlvs.MBURST, options_data.mburst),
+                (LinkTlvs.TYPE, link_data.type.value),
+                (LinkTlvs.UNIDIRECTIONAL, options_data.unidirectional),
                 (LinkTlvs.NETWORK_ID, link_data.network_id),
-                (LinkTlvs.KEY, link_data.key),
-                (LinkTlvs.INTERFACE1_NUMBER, link_data.interface1_id),
-                (LinkTlvs.INTERFACE1_IP4, link_data.interface1_ip4),
-                (LinkTlvs.INTERFACE1_IP4_MASK, link_data.interface1_ip4_mask),
-                (LinkTlvs.INTERFACE1_MAC, link_data.interface1_mac),
-                (LinkTlvs.INTERFACE1_IP6, link_data.interface1_ip6),
-                (LinkTlvs.INTERFACE1_IP6_MASK, link_data.interface1_ip6_mask),
-                (LinkTlvs.INTERFACE2_NUMBER, link_data.interface2_id),
-                (LinkTlvs.INTERFACE2_IP4, link_data.interface2_ip4),
-                (LinkTlvs.INTERFACE2_IP4_MASK, link_data.interface2_ip4_mask),
-                (LinkTlvs.INTERFACE2_MAC, link_data.interface2_mac),
-                (LinkTlvs.INTERFACE2_IP6, link_data.interface2_ip6),
-                (LinkTlvs.INTERFACE2_IP6_MASK, link_data.interface2_ip6_mask),
-                (LinkTlvs.OPAQUE, link_data.opaque),
+                (LinkTlvs.KEY, options_data.key),
+                (LinkTlvs.IFACE1_NUMBER, iface1.id),
+                (LinkTlvs.IFACE1_IP4, iface1.ip4),
+                (LinkTlvs.IFACE1_IP4_MASK, iface1.ip4_mask),
+                (LinkTlvs.IFACE1_MAC, iface1.mac),
+                (LinkTlvs.IFACE1_IP6, iface1.ip6),
+                (LinkTlvs.IFACE1_IP6_MASK, iface1.ip6_mask),
+                (LinkTlvs.IFACE2_NUMBER, iface2.id),
+                (LinkTlvs.IFACE2_IP4, iface2.ip4),
+                (LinkTlvs.IFACE2_IP4_MASK, iface2.ip4_mask),
+                (LinkTlvs.IFACE2_MAC, iface2.mac),
+                (LinkTlvs.IFACE2_IP6, iface2.ip6),
+                (LinkTlvs.IFACE2_IP6_MASK, iface2.ip6_mask),
             ],
         )
 
@@ -709,7 +718,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         options.icon = message.get_tlv(NodeTlvs.ICON.value)
         options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
         options.server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
         services = message.get_tlv(NodeTlvs.SERVICES.value)
@@ -749,56 +757,51 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         node1_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
         node2_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
-        interface1_data = InterfaceData(
-            id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
+        iface1_data = InterfaceData(
+            id=message.get_tlv(LinkTlvs.IFACE1_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
-            mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
-            ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
-            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value),
-            ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
-            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+            mac=message.get_tlv(LinkTlvs.IFACE1_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.IFACE1_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.IFACE1_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.IFACE1_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.IFACE1_IP6_MASK.value),
         )
-        interface2_data = InterfaceData(
-            id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
+        iface2_data = InterfaceData(
+            id=message.get_tlv(LinkTlvs.IFACE2_NUMBER.value),
             name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
-            mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
-            ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
-            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
-            ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
-            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
+            mac=message.get_tlv(LinkTlvs.IFACE2_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.IFACE2_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.IFACE2_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.IFACE2_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.IFACE2_IP6_MASK.value),
         )
         link_type = LinkTypes.WIRED
         link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
         if link_type_value is not None:
             link_type = LinkTypes(link_type_value)
-        options = LinkOptions(type=link_type)
+        options = LinkOptions()
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        options.session = message.get_tlv(LinkTlvs.SESSION.value)
         options.loss = message.get_tlv(LinkTlvs.LOSS.value)
         options.dup = message.get_tlv(LinkTlvs.DUP.value)
         options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
         options.mer = message.get_tlv(LinkTlvs.MER.value)
         options.burst = message.get_tlv(LinkTlvs.BURST.value)
         options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
-        options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
         options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
-        options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
-        options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
         options.key = message.get_tlv(LinkTlvs.KEY.value)
-        options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
 
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
-                node1_id, node2_id, interface1_data, interface2_data, options
+                node1_id, node2_id, iface1_data, iface2_data, options, link_type
             )
         elif message.flags & MessageFlags.DELETE.value:
             self.session.delete_link(
-                node1_id, node2_id, interface1_data.id, interface2_data.id
+                node1_id, node2_id, iface1_data.id, iface2_data.id, link_type
             )
         else:
             self.session.update_link(
-                node1_id, node2_id, interface1_data.id, interface2_data.id, options
+                node1_id, node2_id, iface1_data.id, iface2_data.id, options, link_type
             )
         return ()
 
@@ -1008,7 +1011,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             possible_values=message.get_tlv(ConfigTlvs.POSSIBLE_VALUES.value),
             groups=message.get_tlv(ConfigTlvs.GROUPS.value),
             session=message.get_tlv(ConfigTlvs.SESSION.value),
-            interface_number=message.get_tlv(ConfigTlvs.INTERFACE_NUMBER.value),
+            iface_id=message.get_tlv(ConfigTlvs.IFACE_ID.value),
             network_id=message.get_tlv(ConfigTlvs.NETWORK_ID.value),
             opaque=message.get_tlv(ConfigTlvs.OPAQUE.value),
         )
@@ -1325,11 +1328,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         node_id = config_data.node
         object_name = config_data.object
-        interface_id = config_data.interface_number
+        iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if interface_id is not None:
-            node_id = node_id * 1000 + interface_id
+        if iface_id is not None:
+            node_id = node_id * 1000 + iface_id
 
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
@@ -1375,11 +1378,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         node_id = config_data.node
         object_name = config_data.object
-        interface_id = config_data.interface_number
+        iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if interface_id is not None:
-            node_id = node_id * 1000 + interface_id
+        if iface_id is not None:
+            node_id = node_id * 1000 + iface_id
 
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
@@ -1407,11 +1410,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         node_id = config_data.node
         object_name = config_data.object
-        interface_id = config_data.interface_number
+        iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if interface_id is not None:
-            node_id = node_id * 1000 + interface_id
+        if iface_id is not None:
+            node_id = node_id * 1000 + iface_id
 
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
@@ -1505,7 +1508,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         return ()
 
-    def handle_interface_message(self, message):
+    def handle_iface_message(self, message):
         """
         Interface Message handler.
 
@@ -1950,7 +1953,7 @@ class CoreUdpHandler(CoreHandler):
             MessageTypes.REGISTER.value: self.handle_register_message,
             MessageTypes.CONFIG.value: self.handle_config_message,
             MessageTypes.FILE.value: self.handle_file_message,
-            MessageTypes.INTERFACE.value: self.handle_interface_message,
+            MessageTypes.INTERFACE.value: self.handle_iface_message,
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }

@@ -6,8 +6,7 @@ from lxml import etree
 import core.nodes.base
 import core.nodes.physical
 from core.emane.nodes import EmaneNet
-from core.emulator.data import LinkData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, NodeBase
@@ -58,16 +57,16 @@ def add_attribute(element: etree.Element, name: str, value: Any) -> None:
         element.set(name, str(value))
 
 
-def create_interface_data(interface_element: etree.Element) -> InterfaceData:
-    interface_id = int(interface_element.get("id"))
-    name = interface_element.get("name")
-    mac = interface_element.get("mac")
-    ip4 = interface_element.get("ip4")
-    ip4_mask = get_int(interface_element, "ip4_mask")
-    ip6 = interface_element.get("ip6")
-    ip6_mask = get_int(interface_element, "ip6_mask")
+def create_iface_data(iface_element: etree.Element) -> InterfaceData:
+    iface_id = int(iface_element.get("id"))
+    name = iface_element.get("name")
+    mac = iface_element.get("mac")
+    ip4 = iface_element.get("ip4")
+    ip4_mask = get_int(iface_element, "ip4_mask")
+    ip6 = iface_element.get("ip6")
+    ip6_mask = get_int(iface_element, "ip6_mask")
     return InterfaceData(
-        id=interface_id,
+        id=iface_id,
         name=name,
         mac=mac,
         ip4=ip4,
@@ -482,12 +481,10 @@ class CoreXmlWriter:
         # add link data
         for link_data in links:
             # skip basic range links
-            if link_data.interface1_id is None and link_data.interface2_id is None:
+            if link_data.iface1 is None and link_data.iface2 is None:
                 continue
-
             link_element = self.create_link_element(link_data)
             link_elements.append(link_element)
-
         if link_elements.getchildren():
             self.scenario.append(link_elements)
 
@@ -495,37 +492,25 @@ class CoreXmlWriter:
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
 
-    def create_interface_element(
-        self,
-        element_name: str,
-        node_id: int,
-        interface_id: int,
-        mac: str,
-        ip4: str,
-        ip4_mask: int,
-        ip6: str,
-        ip6_mask: int,
+    def create_iface_element(
+        self, element_name: str, node_id: int, iface_data: InterfaceData
     ) -> etree.Element:
-        interface = etree.Element(element_name)
+        iface_element = etree.Element(element_name)
         node = self.session.get_node(node_id, NodeBase)
-        interface_name = None
         if isinstance(node, CoreNodeBase):
-            node_interface = node.netif(interface_id)
-            interface_name = node_interface.name
-
+            iface = node.get_iface(iface_data.id)
             # check if emane interface
-            if isinstance(node_interface.net, EmaneNet):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface, "nem", nem)
-
-        add_attribute(interface, "id", interface_id)
-        add_attribute(interface, "name", interface_name)
-        add_attribute(interface, "mac", mac)
-        add_attribute(interface, "ip4", ip4)
-        add_attribute(interface, "ip4_mask", ip4_mask)
-        add_attribute(interface, "ip6", ip6)
-        add_attribute(interface, "ip6_mask", ip6_mask)
-        return interface
+            if isinstance(iface.net, EmaneNet):
+                nem = iface.net.getnemid(iface)
+                add_attribute(iface_element, "nem", nem)
+        add_attribute(iface_element, "id", iface_data.id)
+        add_attribute(iface_element, "name", iface_data.name)
+        add_attribute(iface_element, "mac", iface_data.mac)
+        add_attribute(iface_element, "ip4", iface_data.ip4)
+        add_attribute(iface_element, "ip4_mask", iface_data.ip4_mask)
+        add_attribute(iface_element, "ip6", iface_data.ip6)
+        add_attribute(iface_element, "ip6_mask", iface_data.ip6_mask)
+        return iface_element
 
     def create_link_element(self, link_data: LinkData) -> etree.Element:
         link_element = etree.Element("link")
@@ -533,32 +518,18 @@ class CoreXmlWriter:
         add_attribute(link_element, "node2", link_data.node2_id)
 
         # check for interface one
-        if link_data.interface1_id is not None:
-            interface1 = self.create_interface_element(
-                "interface1",
-                link_data.node1_id,
-                link_data.interface1_id,
-                link_data.interface1_mac,
-                link_data.interface1_ip4,
-                link_data.interface1_ip4_mask,
-                link_data.interface1_ip6,
-                link_data.interface1_ip6_mask,
+        if link_data.iface1 is not None:
+            iface1 = self.create_iface_element(
+                "interface1", link_data.node1_id, link_data.iface1
             )
-            link_element.append(interface1)
+            link_element.append(iface1)
 
         # check for interface two
-        if link_data.interface2_id is not None:
-            interface2 = self.create_interface_element(
-                "interface2",
-                link_data.node2_id,
-                link_data.interface2_id,
-                link_data.interface2_mac,
-                link_data.interface2_ip4,
-                link_data.interface2_ip4_mask,
-                link_data.interface2_ip6,
-                link_data.interface2_ip6_mask,
+        if link_data.iface2 is not None:
+            iface2 = self.create_iface_element(
+                "interface2", link_data.node2_id, link_data.iface2
             )
-            link_element.append(interface2)
+            link_element.append(iface2)
 
         # check for options, don't write for emane/wlan links
         node1 = self.session.get_node(link_data.node1_id, NodeBase)
@@ -566,23 +537,19 @@ class CoreXmlWriter:
         is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
         is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
         if not any([is_node1_wireless, is_node2_wireless]):
+            options_data = link_data.options
             options = etree.Element("options")
-            add_attribute(options, "delay", link_data.delay)
-            add_attribute(options, "bandwidth", link_data.bandwidth)
-            add_attribute(options, "loss", link_data.loss)
-            add_attribute(options, "dup", link_data.dup)
-            add_attribute(options, "jitter", link_data.jitter)
-            add_attribute(options, "mer", link_data.mer)
-            add_attribute(options, "burst", link_data.burst)
-            add_attribute(options, "mburst", link_data.mburst)
-            add_attribute(options, "type", link_data.link_type)
-            add_attribute(options, "gui_attributes", link_data.gui_attributes)
-            add_attribute(options, "unidirectional", link_data.unidirectional)
-            add_attribute(options, "emulation_id", link_data.emulation_id)
+            add_attribute(options, "delay", options_data.delay)
+            add_attribute(options, "bandwidth", options_data.bandwidth)
+            add_attribute(options, "loss", options_data.loss)
+            add_attribute(options, "dup", options_data.dup)
+            add_attribute(options, "jitter", options_data.jitter)
+            add_attribute(options, "mer", options_data.mer)
+            add_attribute(options, "burst", options_data.burst)
+            add_attribute(options, "mburst", options_data.mburst)
+            add_attribute(options, "unidirectional", options_data.unidirectional)
             add_attribute(options, "network_id", link_data.network_id)
-            add_attribute(options, "key", link_data.key)
-            add_attribute(options, "opaque", link_data.opaque)
-            add_attribute(options, "session", link_data.session)
+            add_attribute(options, "key", options_data.key)
             if options.items():
                 link_element.append(options)
 
@@ -940,19 +907,19 @@ class CoreXmlReader:
                 node2_id = get_int(link_element, "node_two")
             node_set = frozenset((node1_id, node2_id))
 
-            interface1_element = link_element.find("interface1")
-            if interface1_element is None:
-                interface1_element = link_element.find("interface_one")
-            interface1_data = None
-            if interface1_element is not None:
-                interface1_data = create_interface_data(interface1_element)
+            iface1_element = link_element.find("interface1")
+            if iface1_element is None:
+                iface1_element = link_element.find("interface_one")
+            iface1_data = None
+            if iface1_element is not None:
+                iface1_data = create_iface_data(iface1_element)
 
-            interface2_element = link_element.find("interface2")
-            if interface2_element is None:
-                interface2_element = link_element.find("interface_two")
-            interface2_data = None
-            if interface2_element is not None:
-                interface2_data = create_interface_data(interface2_element)
+            iface2_element = link_element.find("interface2")
+            if iface2_element is None:
+                iface2_element = link_element.find("interface_two")
+            iface2_data = None
+            if iface2_element is not None:
+                iface2_data = create_iface_data(iface2_element)
 
             options_element = link_element.find("options")
             options = LinkOptions()
@@ -969,21 +936,16 @@ class CoreXmlReader:
                 if options.loss is None:
                     options.loss = get_float(options_element, "per")
                 options.unidirectional = get_int(options_element, "unidirectional")
-                options.session = options_element.get("session")
-                options.emulation_id = get_int(options_element, "emulation_id")
-                options.network_id = get_int(options_element, "network_id")
-                options.opaque = options_element.get("opaque")
-                options.gui_attributes = options_element.get("gui_attributes")
 
             if options.unidirectional == 1 and node_set in node_sets:
                 logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.update_link(
-                    node1_id, node2_id, interface1_data.id, interface2_data.id, options
+                    node1_id, node2_id, iface1_data.id, iface2_data.id, options
                 )
             else:
                 logging.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.add_link(
-                    node1_id, node2_id, interface1_data, interface2_data, options
+                    node1_id, node2_id, iface1_data, iface2_data, options
                 )
 
             node_sets.add(node_set)
