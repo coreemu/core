@@ -2,10 +2,12 @@
 xorp.py: defines routing services provided by the XORP routing suite.
 """
 
-import logging
+from typing import Optional, Tuple
 
 import netaddr
 
+from core.nodes.base import CoreNode
+from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
 
@@ -15,20 +17,20 @@ class XorpRtrmgr(CoreService):
     enabled XORP services, and launches necessary daemons upon startup.
     """
 
-    name = "xorp_rtrmgr"
-    executables = ("xorp_rtrmgr",)
-    group = "XORP"
-    dirs = ("/etc/xorp",)
-    configs = ("/etc/xorp/config.boot",)
-    startup = (
+    name: str = "xorp_rtrmgr"
+    group: str = "XORP"
+    executables: Tuple[str, ...] = ("xorp_rtrmgr",)
+    dirs: Tuple[str, ...] = ("/etc/xorp",)
+    configs: Tuple[str, ...] = ("/etc/xorp/config.boot",)
+    startup: Tuple[str, ...] = (
         "xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid"
         % (configs[0], name, name),
     )
-    shutdown = ("killall xorp_rtrmgr",)
-    validate = ("pidof xorp_rtrmgr",)
+    shutdown: Tuple[str, ...] = ("killall xorp_rtrmgr",)
+    validate: Tuple[str, ...] = ("pidof xorp_rtrmgr",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Returns config.boot configuration file text. Other services that
         depend on this will have generatexorpconfig() hooks that are
@@ -45,16 +47,15 @@ class XorpRtrmgr(CoreService):
         cfg += "}\n\n"
 
         for s in node.services:
-            try:
-                s.dependencies.index(cls.name)
-                cfg += s.generatexorpconfig(node)
-            except ValueError:
-                logging.exception("error getting value from service: %s", cls.name)
-
+            if cls.name not in s.dependencies:
+                continue
+            if not (isinstance(s, XorpService) or issubclass(s, XorpService)):
+                continue
+            cfg += s.generate_xorp_config(node)
         return cfg
 
     @staticmethod
-    def addrstr(x):
+    def addrstr(x: str) -> str:
         """
         helper for mapping IP addresses to XORP config statements
         """
@@ -65,7 +66,7 @@ class XorpRtrmgr(CoreService):
         return cfg
 
     @staticmethod
-    def lladdrstr(iface):
+    def lladdrstr(iface: CoreInterface) -> str:
         """
         helper for adding link-local address entries (required by OSPFv3)
         """
@@ -81,18 +82,16 @@ class XorpService(CoreService):
     common to XORP's routing daemons.
     """
 
-    name = None
-    executables = ("xorp_rtrmgr",)
-    group = "XORP"
-    dependencies = ("xorp_rtrmgr",)
-    dirs = ()
-    configs = ()
-    startup = ()
-    shutdown = ()
-    meta = "The config file for this service can be found in the xorp_rtrmgr service."
+    name: Optional[str] = None
+    group: str = "XORP"
+    executables: Tuple[str, ...] = ("xorp_rtrmgr",)
+    dependencies: Tuple[str, ...] = ("xorp_rtrmgr",)
+    meta: str = (
+        "The config file for this service can be found in the xorp_rtrmgr service."
+    )
 
     @staticmethod
-    def fea(forwarding):
+    def fea(forwarding: str) -> str:
         """
         Helper to add a forwarding engine entry to the config file.
         """
@@ -104,17 +103,14 @@ class XorpService(CoreService):
         return cfg
 
     @staticmethod
-    def mfea(forwarding, ifaces):
+    def mfea(forwarding, node: CoreNode) -> str:
         """
         Helper to add a multicast forwarding engine entry to the config file.
         """
         names = []
-        for iface in ifaces:
-            if hasattr(iface, "control") and iface.control is True:
-                continue
+        for iface in node.get_ifaces(control=False):
             names.append(iface.name)
         names.append("register_vif")
-
         cfg = "plumbing {\n"
         cfg += "    %s {\n" % forwarding
         for name in names:
@@ -128,7 +124,7 @@ class XorpService(CoreService):
         return cfg
 
     @staticmethod
-    def policyexportconnected():
+    def policyexportconnected() -> str:
         """
         Helper to add a policy statement for exporting connected routes.
         """
@@ -144,7 +140,7 @@ class XorpService(CoreService):
         return cfg
 
     @staticmethod
-    def routerid(node):
+    def router_id(node: CoreNode) -> str:
         """
         Helper to return the first IPv4 address of a node as its router ID.
         """
@@ -153,15 +149,14 @@ class XorpService(CoreService):
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return a
-        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         return ""
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         return ""
 
 
@@ -172,12 +167,12 @@ class XorpOspfv2(XorpService):
     unified XORP configuration file.
     """
 
-    name = "XORP_OSPFv2"
+    name: str = "XORP_OSPFv2"
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = cls.fea("unicast-forwarding4")
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    ospf4 {\n"
         cfg += "\trouter-id: %s\n" % rtrid
@@ -206,12 +201,12 @@ class XorpOspfv3(XorpService):
     unified XORP configuration file.
     """
 
-    name = "XORP_OSPFv3"
+    name: str = "XORP_OSPFv3"
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = cls.fea("unicast-forwarding6")
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    ospf6 0 { /* Instance ID 0 */\n"
         cfg += "\trouter-id: %s\n" % rtrid
@@ -232,16 +227,16 @@ class XorpBgp(XorpService):
     IPv4 inter-domain routing. AS numbers and peers must be customized.
     """
 
-    name = "XORP_BGP"
-    custom_needed = True
+    name: str = "XORP_BGP"
+    custom_needed: bool = True
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = "/* This is a sample config that should be customized with\n"
         cfg += " appropriate AS numbers and peers */\n"
         cfg += cls.fea("unicast-forwarding4")
         cfg += cls.policyexportconnected()
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    bgp {\n"
         cfg += "\tbgp-id: %s\n" % rtrid
@@ -262,10 +257,10 @@ class XorpRip(XorpService):
     RIP IPv4 unicast routing.
     """
 
-    name = "XORP_RIP"
+    name: str = "XORP_RIP"
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = cls.fea("unicast-forwarding4")
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
@@ -293,10 +288,10 @@ class XorpRipng(XorpService):
     RIP NG IPv6 unicast routing.
     """
 
-    name = "XORP_RIPNG"
+    name: str = "XORP_RIPNG"
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = cls.fea("unicast-forwarding6")
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
@@ -320,12 +315,11 @@ class XorpPimSm4(XorpService):
     PIM Sparse Mode IPv4 multicast routing.
     """
 
-    name = "XORP_PIMSM4"
+    name: str = "XORP_PIMSM4"
 
     @classmethod
-    def generatexorpconfig(cls, node):
-        cfg = cls.mfea("mfea4", node.get_ifaces())
-
+    def generate_xorp_config(cls, node: CoreNode) -> str:
+        cfg = cls.mfea("mfea4", node)
         cfg += "\nprotocols {\n"
         cfg += "    igmp {\n"
         names = []
@@ -338,7 +332,6 @@ class XorpPimSm4(XorpService):
             cfg += "\t}\n"
         cfg += "    }\n"
         cfg += "}\n"
-
         cfg += "\nprotocols {\n"
         cfg += "    pimsm4 {\n"
 
@@ -361,10 +354,8 @@ class XorpPimSm4(XorpService):
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
-
         cfg += "    }\n"
         cfg += "}\n"
-
         cfg += "\nprotocols {\n"
         cfg += "    fib2mrib {\n"
         cfg += "\tdisable: false\n"
@@ -378,12 +369,11 @@ class XorpPimSm6(XorpService):
     PIM Sparse Mode IPv6 multicast routing.
     """
 
-    name = "XORP_PIMSM6"
+    name: str = "XORP_PIMSM6"
 
     @classmethod
-    def generatexorpconfig(cls, node):
-        cfg = cls.mfea("mfea6", node.get_ifaces())
-
+    def generate_xorp_config(cls, node: CoreNode) -> str:
+        cfg = cls.mfea("mfea6", node)
         cfg += "\nprotocols {\n"
         cfg += "    mld {\n"
         names = []
@@ -396,7 +386,6 @@ class XorpPimSm6(XorpService):
             cfg += "\t}\n"
         cfg += "    }\n"
         cfg += "}\n"
-
         cfg += "\nprotocols {\n"
         cfg += "    pimsm6 {\n"
 
@@ -419,10 +408,8 @@ class XorpPimSm6(XorpService):
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
-
         cfg += "    }\n"
         cfg += "}\n"
-
         cfg += "\nprotocols {\n"
         cfg += "    fib2mrib {\n"
         cfg += "\tdisable: false\n"
@@ -436,12 +423,12 @@ class XorpOlsr(XorpService):
     OLSR IPv4 unicast MANET routing.
     """
 
-    name = "XORP_OLSR"
+    name: str = "XORP_OLSR"
 
     @classmethod
-    def generatexorpconfig(cls, node):
+    def generate_xorp_config(cls, node: CoreNode) -> str:
         cfg = cls.fea("unicast-forwarding4")
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    olsr4 {\n"
         cfg += "\tmain-address: %s\n" % rtrid

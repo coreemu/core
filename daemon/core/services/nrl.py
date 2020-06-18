@@ -2,9 +2,12 @@
 nrl.py: defines services provided by NRL protolib tools hosted here:
     http://www.nrl.navy.mil/itd/ncs/products
 """
+from typing import Optional, Tuple
+
 import netaddr
 
 from core import utils
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 
 
@@ -14,19 +17,15 @@ class NrlService(CoreService):
     common to NRL's routing daemons.
     """
 
-    name = None
-    group = "ProtoSvc"
-    dirs = ()
-    configs = ()
-    startup = ()
-    shutdown = ()
+    name: Optional[str] = None
+    group: str = "ProtoSvc"
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         return ""
 
     @staticmethod
-    def firstipv4prefix(node, prefixlen=24):
+    def firstipv4prefix(node: CoreNode, prefixlen: int = 24) -> str:
         """
         Similar to QuaggaService.routerid(). Helper to return the first IPv4
         prefix of a node, using the supplied prefix length. This ignores the
@@ -37,20 +36,19 @@ class NrlService(CoreService):
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return f"{a}/{prefixlen}"
-        # raise ValueError,  "no IPv4 address found"
         return "0.0.0.0/%s" % prefixlen
 
 
 class MgenSinkService(NrlService):
-    name = "MGEN_Sink"
-    executables = ("mgen",)
-    configs = ("sink.mgen",)
-    startup = ("mgen input sink.mgen",)
-    validate = ("pidof mgen",)
-    shutdown = ("killall mgen",)
+    name: str = "MGEN_Sink"
+    executables: Tuple[str, ...] = ("mgen",)
+    configs: Tuple[str, ...] = ("sink.mgen",)
+    startup: Tuple[str, ...] = ("mgen input sink.mgen",)
+    validate: Tuple[str, ...] = ("pidof mgen",)
+    shutdown: Tuple[str, ...] = ("killall mgen",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         cfg = "0.0 LISTEN UDP 5000\n"
         for iface in node.get_ifaces():
             name = utils.sysctl_devname(iface.name)
@@ -58,7 +56,7 @@ class MgenSinkService(NrlService):
         return cfg
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         cmd = cls.startup[0]
         cmd += " output /tmp/mgen_%s.log" % node.name
         return (cmd,)
@@ -69,32 +67,29 @@ class NrlNhdp(NrlService):
     NeighborHood Discovery Protocol for MANET networks.
     """
 
-    name = "NHDP"
-    executables = ("nrlnhdp",)
-    startup = ("nrlnhdp",)
-    shutdown = ("killall nrlnhdp",)
-    validate = ("pidof nrlnhdp",)
+    name: str = "NHDP"
+    executables: Tuple[str, ...] = ("nrlnhdp",)
+    startup: Tuple[str, ...] = ("nrlnhdp",)
+    shutdown: Tuple[str, ...] = ("killall nrlnhdp",)
+    validate: Tuple[str, ...] = ("pidof nrlnhdp",)
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         """
         Generate the appropriate command-line based on node interfaces.
         """
         cmd = cls.startup[0]
         cmd += " -l /var/log/nrlnhdp.log"
         cmd += " -rpipe %s_nhdp" % node.name
-
         servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
-
         ifaces = node.get_ifaces(control=False)
         if len(ifaces) > 0:
             iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
             cmd += " -i ".join(iface_names)
-
         return (cmd,)
 
 
@@ -103,15 +98,15 @@ class NrlSmf(NrlService):
     Simplified Multicast Forwarding for MANET networks.
     """
 
-    name = "SMF"
-    executables = ("nrlsmf",)
-    startup = ("sh startsmf.sh",)
-    shutdown = ("killall nrlsmf",)
-    validate = ("pidof nrlsmf",)
-    configs = ("startsmf.sh",)
+    name: str = "SMF"
+    executables: Tuple[str, ...] = ("nrlsmf",)
+    startup: Tuple[str, ...] = ("sh startsmf.sh",)
+    shutdown: Tuple[str, ...] = ("killall nrlsmf",)
+    validate: Tuple[str, ...] = ("pidof nrlsmf",)
+    configs: Tuple[str, ...] = ("startsmf.sh",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Generate a startup script for SMF. Because nrlsmf does not
         daemonize, it can cause problems in some situations when launched
@@ -146,7 +141,6 @@ class NrlSmf(NrlService):
 
         cmd += " hash MD5"
         cmd += " log /var/log/nrlsmf.log"
-
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"
         return cfg
 
@@ -156,14 +150,14 @@ class NrlOlsr(NrlService):
     Optimized Link State Routing protocol for MANET networks.
     """
 
-    name = "OLSR"
-    executables = ("nrlolsrd",)
-    startup = ("nrlolsrd",)
-    shutdown = ("killall nrlolsrd",)
-    validate = ("pidof nrlolsrd",)
+    name: str = "OLSR"
+    executables: Tuple[str, ...] = ("nrlolsrd",)
+    startup: Tuple[str, ...] = ("nrlolsrd",)
+    shutdown: Tuple[str, ...] = ("killall nrlolsrd",)
+    validate: Tuple[str, ...] = ("pidof nrlolsrd",)
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -175,14 +169,12 @@ class NrlOlsr(NrlService):
             cmd += " -i %s" % iface.name
         cmd += " -l /var/log/nrlolsrd.log"
         cmd += " -rpipe %s_olsr" % node.name
-
         servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames and "NHDP" not in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
         if "zebra" in servicenames:
             cmd += " -z"
-
         return (cmd,)
 
 
@@ -191,34 +183,30 @@ class NrlOlsrv2(NrlService):
     Optimized Link State Routing protocol version 2 for MANET networks.
     """
 
-    name = "OLSRv2"
-    executables = ("nrlolsrv2",)
-    startup = ("nrlolsrv2",)
-    shutdown = ("killall nrlolsrv2",)
-    validate = ("pidof nrlolsrv2",)
+    name: str = "OLSRv2"
+    executables: Tuple[str, ...] = ("nrlolsrv2",)
+    startup: Tuple[str, ...] = ("nrlolsrv2",)
+    shutdown: Tuple[str, ...] = ("killall nrlolsrv2",)
+    validate: Tuple[str, ...] = ("pidof nrlolsrv2",)
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         """
         Generate the appropriate command-line based on node interfaces.
         """
         cmd = cls.startup[0]
         cmd += " -l /var/log/nrlolsrv2.log"
         cmd += " -rpipe %s_olsrv2" % node.name
-
         servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
-
         cmd += " -p olsr"
-
         ifaces = node.get_ifaces(control=False)
         if len(ifaces) > 0:
             iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
             cmd += " -i ".join(iface_names)
-
         return (cmd,)
 
 
@@ -227,16 +215,16 @@ class OlsrOrg(NrlService):
     Optimized Link State Routing protocol from olsr.org for MANET networks.
     """
 
-    name = "OLSRORG"
-    executables = ("olsrd",)
-    configs = ("/etc/olsrd/olsrd.conf",)
-    dirs = ("/etc/olsrd",)
-    startup = ("olsrd",)
-    shutdown = ("killall olsrd",)
-    validate = ("pidof olsrd",)
+    name: str = "OLSRORG"
+    executables: Tuple[str, ...] = ("olsrd",)
+    configs: Tuple[str, ...] = ("/etc/olsrd/olsrd.conf",)
+    dirs: Tuple[str, ...] = ("/etc/olsrd",)
+    startup: Tuple[str, ...] = ("olsrd",)
+    shutdown: Tuple[str, ...] = ("killall olsrd",)
+    validate: Tuple[str, ...] = ("pidof olsrd",)
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -246,13 +234,13 @@ class OlsrOrg(NrlService):
             iface_names = map(lambda x: x.name, ifaces)
             cmd += " -i "
             cmd += " -i ".join(iface_names)
-
         return (cmd,)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
-        Generate a default olsrd config file to use the broadcast address of 255.255.255.255.
+        Generate a default olsrd config file to use the broadcast address of
+        255.255.255.255.
         """
         cfg = """\
 #
@@ -577,24 +565,16 @@ class MgenActor(NrlService):
     """
 
     # a unique name is required, without spaces
-    name = "MgenActor"
-    executables = ("mgen",)
-    # you can create your own group here
-    group = "ProtoSvc"
-    # per-node directories
-    dirs = ()
-    # generated files (without a full path this file goes in the node's dir,
-    #  e.g. /tmp/pycore.12345/n1.conf/)
-    configs = ("start_mgen_actor.sh",)
-    # list of startup commands, also may be generated during startup
-    startup = ("sh start_mgen_actor.sh",)
-    # list of validation commands
-    validate = ("pidof mgen",)
-    # list of shutdown commands
-    shutdown = ("killall mgen",)
+    name: str = "MgenActor"
+    group: str = "ProtoSvc"
+    executables: Tuple[str, ...] = ("mgen",)
+    configs: Tuple[str, ...] = ("start_mgen_actor.sh",)
+    startup: Tuple[str, ...] = ("sh start_mgen_actor.sh",)
+    validate: Tuple[str, ...] = ("pidof mgen",)
+    shutdown: Tuple[str, ...] = ("killall mgen",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Generate a startup script for MgenActor. Because mgenActor does not
         daemonize, it can cause problems in some situations when launched
@@ -604,11 +584,9 @@ class MgenActor(NrlService):
         cfg += "# auto-generated by nrl.py:MgenActor.generateconfig()\n"
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % node.name
-
         ifaces = node.get_ifaces(control=False)
         if len(ifaces) == 0:
             return ""
-
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"
         return cfg
 
@@ -618,15 +596,15 @@ class Arouted(NrlService):
     Adaptive Routing
     """
 
-    name = "arouted"
-    executables = ("arouted",)
-    configs = ("startarouted.sh",)
-    startup = ("sh startarouted.sh",)
-    shutdown = ("pkill arouted",)
-    validate = ("pidof arouted",)
+    name: str = "arouted"
+    executables: Tuple[str, ...] = ("arouted",)
+    configs: Tuple[str, ...] = ("startarouted.sh",)
+    startup: Tuple[str, ...] = ("sh startarouted.sh",)
+    shutdown: Tuple[str, ...] = ("pkill arouted",)
+    validate: Tuple[str, ...] = ("pidof arouted",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """

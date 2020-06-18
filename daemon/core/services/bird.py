@@ -1,8 +1,11 @@
 """
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
+from typing import Optional, Tuple
+
 import netaddr
 
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 
 
@@ -11,27 +14,27 @@ class Bird(CoreService):
     Bird router support
     """
 
-    name = "bird"
-    executables = ("bird",)
-    group = "BIRD"
-    dirs = ("/etc/bird",)
-    configs = ("/etc/bird/bird.conf",)
-    startup = ("bird -c %s" % (configs[0]),)
-    shutdown = ("killall bird",)
-    validate = ("pidof bird",)
+    name: str = "bird"
+    group: str = "BIRD"
+    executables: Tuple[str, ...] = ("bird",)
+    dirs: Tuple[str, ...] = ("/etc/bird",)
+    configs: Tuple[str, ...] = ("/etc/bird/bird.conf",)
+    startup: Tuple[str, ...] = ("bird -c %s" % (configs[0]),)
+    shutdown: Tuple[str, ...] = ("killall bird",)
+    validate: Tuple[str, ...] = ("pidof bird",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Return the bird.conf file contents.
         """
         if filename == cls.configs[0]:
-            return cls.generateBirdConf(node)
+            return cls.generate_bird_config(node)
         else:
             raise ValueError
 
     @staticmethod
-    def routerid(node):
+    def router_id(node: CoreNode) -> str:
         """
         Helper to return the first IPv4 address of a node as its router ID.
         """
@@ -40,15 +43,13 @@ class Bird(CoreService):
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return a
-        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
-    def generateBirdConf(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         """
         Returns configuration file text. Other services that depend on bird
-        will have generatebirdifcconfig() and generatebirdconfig()
-        hooks that are invoked here.
+        will have hooks that are invoked here.
         """
         cfg = """\
 /* Main configuration file for BIRD. This is ony a template,
@@ -75,15 +76,16 @@ protocol device {
 
 """ % (
             cls.name,
-            cls.routerid(node),
+            cls.router_id(node),
         )
 
-        # Generate protocol specific configurations
+        # generate protocol specific configurations
         for s in node.services:
             if cls.name not in s.dependencies:
                 continue
+            if not (isinstance(s, BirdService) or issubclass(s, BirdService)):
+                continue
             cfg += s.generate_bird_config(node)
-
         return cfg
 
 
@@ -93,32 +95,26 @@ class BirdService(CoreService):
     common to Bird's routing daemons.
     """
 
-    name = None
-    executables = ("bird",)
-    group = "BIRD"
-    dependencies = ("bird",)
-    dirs = ()
-    configs = ()
-    startup = ()
-    shutdown = ()
-    meta = "The config file for this service can be found in the bird service."
+    name: Optional[str] = None
+    group: str = "BIRD"
+    executables: Tuple[str, ...] = ("bird",)
+    dependencies: Tuple[str, ...] = ("bird",)
+    meta: str = "The config file for this service can be found in the bird service."
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         return ""
 
     @classmethod
-    def generate_bird_iface_config(cls, node):
+    def generate_bird_iface_config(cls, node: CoreNode) -> str:
         """
         Use only bare interfaces descriptions in generated protocol
         configurations. This has the slight advantage of being the same
         everywhere.
         """
         cfg = ""
-
         for iface in node.get_ifaces(control=False):
             cfg += '        interface "%s";\n' % iface.name
-
         return cfg
 
 
@@ -127,11 +123,11 @@ class BirdBgp(BirdService):
     BGP BIRD Service (configuration generation)
     """
 
-    name = "BIRD_BGP"
-    custom_needed = True
+    name: str = "BIRD_BGP"
+    custom_needed: bool = True
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         return """
 /* This is a sample config that should be customized with appropriate AS numbers
  * and peers; add one section like this for each neighbor */
@@ -158,10 +154,10 @@ class BirdOspf(BirdService):
     OSPF BIRD Service (configuration generation)
     """
 
-    name = "BIRD_OSPFv2"
+    name: str = "BIRD_OSPFv2"
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         cfg = "protocol ospf {\n"
         cfg += "    export filter {\n"
         cfg += "        if source = RTS_BGP then {\n"
@@ -174,7 +170,6 @@ class BirdOspf(BirdService):
         cfg += cls.generate_bird_iface_config(node)
         cfg += "    };\n"
         cfg += "}\n\n"
-
         return cfg
 
 
@@ -183,12 +178,11 @@ class BirdRadv(BirdService):
     RADV BIRD Service (configuration generation)
     """
 
-    name = "BIRD_RADV"
+    name: str = "BIRD_RADV"
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         cfg = "/* This is a sample config that must be customized */\n"
-
         cfg += "protocol radv {\n"
         cfg += "    # auto configuration on all interfaces\n"
         cfg += cls.generate_bird_iface_config(node)
@@ -202,7 +196,6 @@ class BirdRadv(BirdService):
         cfg += "#        ns 2001:0DB8:1234::12;\n"
         cfg += "    };\n"
         cfg += "}\n\n"
-
         return cfg
 
 
@@ -211,10 +204,10 @@ class BirdRip(BirdService):
     RIP BIRD Service (configuration generation)
     """
 
-    name = "BIRD_RIP"
+    name: str = "BIRD_RIP"
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         cfg = "protocol rip {\n"
         cfg += "    period 10;\n"
         cfg += "    garbage time 60;\n"
@@ -224,7 +217,6 @@ class BirdRip(BirdService):
         cfg += "    import all;\n"
         cfg += "    export all;\n"
         cfg += "}\n\n"
-
         return cfg
 
 
@@ -233,11 +225,11 @@ class BirdStatic(BirdService):
     Static Bird Service (configuration generation)
     """
 
-    name = "BIRD_static"
-    custom_needed = True
+    name: str = "BIRD_static"
+    custom_needed: bool = True
 
     @classmethod
-    def generate_bird_config(cls, node):
+    def generate_bird_config(cls, node: CoreNode) -> str:
         cfg = "/* This is a sample config that must be customized */\n"
         cfg += "protocol static {\n"
         cfg += "#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n"

@@ -2,60 +2,63 @@
 frr.py: defines routing services provided by FRRouting.
 Assumes installation of FRR via https://deb.frrouting.org/
 """
+from typing import Optional, Tuple
+
 import netaddr
 
 from core import constants
 from core.emane.nodes import EmaneNet
+from core.nodes.base import CoreNode
+from core.nodes.interface import CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
 
 
 class FRRZebra(CoreService):
-    name = "FRRzebra"
-    group = "FRR"
-    dirs = ("/usr/local/etc/frr", "/var/run/frr", "/var/log/frr")
-    configs = (
+    name: str = "FRRzebra"
+    group: str = "FRR"
+    dirs: Tuple[str, ...] = ("/usr/local/etc/frr", "/var/run/frr", "/var/log/frr")
+    configs: Tuple[str, ...] = (
         "/usr/local/etc/frr/frr.conf",
         "frrboot.sh",
         "/usr/local/etc/frr/vtysh.conf",
         "/usr/local/etc/frr/daemons",
     )
-    startup = ("sh frrboot.sh zebra",)
-    shutdown = ("killall zebra",)
-    validate = ("pidof zebra",)
+    startup: Tuple[str, ...] = ("sh frrboot.sh zebra",)
+    shutdown: Tuple[str, ...] = ("killall zebra",)
+    validate: Tuple[str, ...] = ("pidof zebra",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Return the frr.conf or frrboot.sh file contents.
         """
         if filename == cls.configs[0]:
-            return cls.generateFrrConf(node)
+            return cls.generate_frr_conf(node)
         elif filename == cls.configs[1]:
-            return cls.generateFrrBoot(node)
+            return cls.generate_frr_boot(node)
         elif filename == cls.configs[2]:
-            return cls.generateVtyshConf(node)
+            return cls.generate_vtysh_conf(node)
         elif filename == cls.configs[3]:
-            return cls.generateFrrDaemons(node)
+            return cls.generate_frr_daemons(node)
         else:
             raise ValueError(
                 "file name (%s) is not a known configuration: %s", filename, cls.configs
             )
 
     @classmethod
-    def generateVtyshConf(cls, node):
+    def generate_vtysh_conf(cls, node: CoreNode) -> str:
         """
         Returns configuration file text.
         """
         return "service integrated-vtysh-config\n"
 
     @classmethod
-    def generateFrrConf(cls, node):
+    def generate_frr_conf(cls, node: CoreNode) -> str:
         """
         Returns configuration file text. Other services that depend on zebra
-        will have generatefrrifcconfig() and generatefrrconfig()
-        hooks that are invoked here.
+        will have hooks that are invoked here.
         """
         # we could verify here that filename == frr.conf
         cfg = ""
@@ -108,7 +111,7 @@ class FRRZebra(CoreService):
         return cfg
 
     @staticmethod
-    def addrstr(x):
+    def addrstr(x: str) -> str:
         """
         helper for mapping IP addresses to zebra config statements
         """
@@ -121,7 +124,7 @@ class FRRZebra(CoreService):
             raise ValueError("invalid address: %s", x)
 
     @classmethod
-    def generateFrrBoot(cls, node):
+    def generate_frr_boot(cls, node: CoreNode) -> str:
         """
         Generate a shell script used to boot the FRR daemons.
         """
@@ -244,7 +247,7 @@ bootfrr
         return cfg
 
     @classmethod
-    def generateFrrDaemons(cls, node):
+    def generate_frr_daemons(cls, node: CoreNode) -> str:
         """
         Returns configuration file text.
         """
@@ -317,20 +320,15 @@ class FrrService(CoreService):
     common to FRR's routing daemons.
     """
 
-    name = None
-    group = "FRR"
-    dependencies = ("FRRzebra",)
-    dirs = ()
-    configs = ()
-    startup = ()
-    shutdown = ()
-    meta = "The config file for this service can be found in the Zebra service."
-
-    ipv4_routing = False
-    ipv6_routing = False
+    name: Optional[str] = None
+    group: str = "FRR"
+    dependencies: Tuple[str, ...] = ("FRRzebra",)
+    meta: str = "The config file for this service can be found in the Zebra service."
+    ipv4_routing: bool = False
+    ipv6_routing: bool = False
 
     @staticmethod
-    def routerid(node):
+    def router_id(node: CoreNode) -> str:
         """
         Helper to return the first IPv4 address of a node as its router ID.
         """
@@ -339,11 +337,10 @@ class FrrService(CoreService):
                 a = a.split("/")[0]
                 if netaddr.valid_ipv4(a):
                     return a
-        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @staticmethod
-    def rj45check(iface):
+    def rj45check(iface: CoreInterface) -> bool:
         """
         Helper to detect whether interface is connected an external RJ45
         link.
@@ -357,15 +354,15 @@ class FrrService(CoreService):
         return False
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         return ""
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         return ""
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         return ""
 
 
@@ -376,14 +373,13 @@ class FRROspfv2(FrrService):
     unified frr.conf file.
     """
 
-    name = "FRROSPFv2"
-    startup = ()
-    shutdown = ("killall ospfd",)
-    validate = ("pidof ospfd",)
-    ipv4_routing = True
+    name: str = "FRROSPFv2"
+    shutdown: Tuple[str, ...] = ("killall ospfd",)
+    validate: Tuple[str, ...] = ("pidof ospfd",)
+    ipv4_routing: bool = True
 
     @staticmethod
-    def mtucheck(iface):
+    def mtu_check(iface: CoreInterface) -> str:
         """
         Helper to detect MTU mismatch and add the appropriate OSPF
         mtu-ignore command. This is needed when e.g. a node is linked via a
@@ -401,7 +397,7 @@ class FRROspfv2(FrrService):
         return ""
 
     @staticmethod
-    def ptpcheck(iface):
+    def ptp_check(iface: CoreInterface) -> str:
         """
         Helper to detect whether interface is connected to a notional
         point-to-point link.
@@ -411,9 +407,9 @@ class FRROspfv2(FrrService):
         return ""
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = "router ospf\n"
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "  router-id %s\n" % rtrid
         # network 10.0.0.0/24 area 0
         for iface in node.get_ifaces(control=False):
@@ -426,8 +422,8 @@ class FRROspfv2(FrrService):
         return cfg
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
-        return cls.mtucheck(iface)
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
+        return cls.mtu_check(iface)
 
 
 class FRROspfv3(FrrService):
@@ -437,15 +433,14 @@ class FRROspfv3(FrrService):
     unified frr.conf file.
     """
 
-    name = "FRROSPFv3"
-    startup = ()
-    shutdown = ("killall ospf6d",)
-    validate = ("pidof ospf6d",)
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "FRROSPFv3"
+    shutdown: Tuple[str, ...] = ("killall ospf6d",)
+    validate: Tuple[str, ...] = ("pidof ospf6d",)
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     @staticmethod
-    def minmtu(iface):
+    def min_mtu(iface: CoreInterface) -> int:
         """
         Helper to discover the minimum MTU of interfaces linked with the
         given interface.
@@ -459,20 +454,20 @@ class FRROspfv3(FrrService):
         return mtu
 
     @classmethod
-    def mtucheck(cls, iface):
+    def mtu_check(cls, iface: CoreInterface) -> str:
         """
         Helper to detect MTU mismatch and add the appropriate OSPFv3
         ifmtu command. This is needed when e.g. a node is linked via a
         GreTap device.
         """
-        minmtu = cls.minmtu(iface)
+        minmtu = cls.min_mtu(iface)
         if minmtu < iface.mtu:
             return "  ipv6 ospf6 ifmtu %d\n" % minmtu
         else:
             return ""
 
     @staticmethod
-    def ptpcheck(iface):
+    def ptp_check(iface: CoreInterface) -> str:
         """
         Helper to detect whether interface is connected to a notional
         point-to-point link.
@@ -482,9 +477,9 @@ class FRROspfv3(FrrService):
         return ""
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = "router ospf6\n"
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "  router-id %s\n" % rtrid
         for iface in node.get_ifaces(control=False):
             cfg += "  interface %s area 0.0.0.0\n" % iface.name
@@ -492,14 +487,13 @@ class FRROspfv3(FrrService):
         return cfg
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
-        return cls.mtucheck(iface)
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
+        return cls.mtu_check(iface)
         # cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
         # if cls.rj45check(ifc):
         #    return cfg
         # cfg += cls.ptpcheck(ifc)
-
         # return cfg + """\
 
 
@@ -516,21 +510,20 @@ class FRRBgp(FrrService):
     having the same AS number.
     """
 
-    name = "FRRBGP"
-    startup = ()
-    shutdown = ("killall bgpd",)
-    validate = ("pidof bgpd",)
-    custom_needed = True
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "FRRBGP"
+    shutdown: Tuple[str, ...] = ("killall bgpd",)
+    validate: Tuple[str, ...] = ("pidof bgpd",)
+    custom_needed: bool = True
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
         cfg += "router bgp %s\n" % node.id
-        rtrid = cls.routerid(node)
+        rtrid = cls.router_id(node)
         cfg += "  bgp router-id %s\n" % rtrid
         cfg += "  redistribute connected\n"
         cfg += "! neighbor 1.2.3.4 remote-as 555\n!\n"
@@ -542,14 +535,13 @@ class FRRRip(FrrService):
     The RIP service provides IPv4 routing for wired networks.
     """
 
-    name = "FRRRIP"
-    startup = ()
-    shutdown = ("killall ripd",)
-    validate = ("pidof ripd",)
-    ipv4_routing = True
+    name: str = "FRRRIP"
+    shutdown: Tuple[str, ...] = ("killall ripd",)
+    validate: Tuple[str, ...] = ("pidof ripd",)
+    ipv4_routing: bool = True
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = """\
 router rip
   redistribute static
@@ -566,14 +558,13 @@ class FRRRipng(FrrService):
     The RIP NG service provides IPv6 routing for wired networks.
     """
 
-    name = "FRRRIPNG"
-    startup = ()
-    shutdown = ("killall ripngd",)
-    validate = ("pidof ripngd",)
-    ipv6_routing = True
+    name: str = "FRRRIPNG"
+    shutdown: Tuple[str, ...] = ("killall ripngd",)
+    validate: Tuple[str, ...] = ("pidof ripngd",)
+    ipv6_routing: bool = True
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = """\
 router ripng
   redistribute static
@@ -591,14 +582,13 @@ class FRRBabel(FrrService):
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
 
-    name = "FRRBabel"
-    startup = ()
-    shutdown = ("killall babeld",)
-    validate = ("pidof babeld",)
-    ipv6_routing = True
+    name: str = "FRRBabel"
+    shutdown: Tuple[str, ...] = ("killall babeld",)
+    validate: Tuple[str, ...] = ("pidof babeld",)
+    ipv6_routing: bool = True
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = "router babel\n"
         for iface in node.get_ifaces(control=False):
             cfg += "  network %s\n" % iface.name
@@ -606,7 +596,7 @@ class FRRBabel(FrrService):
         return cfg
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         if iface.net and isinstance(iface.net, (EmaneNet, WlanNode)):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
@@ -618,14 +608,13 @@ class FRRpimd(FrrService):
     PIM multicast routing based on XORP.
     """
 
-    name = "FRRpimd"
-    startup = ()
-    shutdown = ("killall pimd",)
-    validate = ("pidof pimd",)
-    ipv4_routing = True
+    name: str = "FRRpimd"
+    shutdown: Tuple[str, ...] = ("killall pimd",)
+    validate: Tuple[str, ...] = ("pidof pimd",)
+    ipv4_routing: bool = True
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         ifname = "eth0"
         for iface in node.get_ifaces():
             if iface.name != "lo":
@@ -641,7 +630,7 @@ class FRRpimd(FrrService):
         return cfg
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         return "  ip mfea\n  ip igmp\n  ip pim\n"
 
 
@@ -652,15 +641,14 @@ class FRRIsis(FrrService):
     unified frr.conf file.
     """
 
-    name = "FRRISIS"
-    startup = ()
-    shutdown = ("killall isisd",)
-    validate = ("pidof isisd",)
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "FRRISIS"
+    shutdown: Tuple[str, ...] = ("killall isisd",)
+    validate: Tuple[str, ...] = ("pidof isisd",)
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     @staticmethod
-    def ptpcheck(iface):
+    def ptp_check(iface: CoreInterface) -> str:
         """
         Helper to detect whether interface is connected to a notional
         point-to-point link.
@@ -670,7 +658,7 @@ class FRRIsis(FrrService):
         return ""
 
     @classmethod
-    def generate_frr_config(cls, node):
+    def generate_frr_config(cls, node: CoreNode) -> str:
         cfg = "router isis DEFAULT\n"
         cfg += "  net 47.0001.0000.1900.%04x.00\n" % node.id
         cfg += "  metric-style wide\n"
@@ -679,9 +667,9 @@ class FRRIsis(FrrService):
         return cfg
 
     @classmethod
-    def generate_frr_iface_config(cls, node, iface):
+    def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         cfg = "  ip router isis DEFAULT\n"
         cfg += "  ipv6 router isis DEFAULT\n"
         cfg += "  isis circuit-type level-2-only\n"
-        cfg += cls.ptpcheck(iface)
+        cfg += cls.ptp_check(iface)
         return cfg
