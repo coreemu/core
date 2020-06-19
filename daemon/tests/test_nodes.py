@@ -49,27 +49,35 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id, CoreNode)
 
-    def test_node_set_mac(self, session: Session):
+    @pytest.mark.parametrize(
+        "mac,expected",
+        [
+            ("AA-AA-AA-FF-FF-FF", "aa:aa:aa:ff:ff:ff"),
+            ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
+        ],
+    )
+    def test_node_set_mac(self, session: Session, mac: str, expected: str):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
         iface = node.new_iface(switch, iface_data)
-        mac = "aa:aa:aa:ff:ff:ff"
 
         # when
         node.set_mac(iface.node_id, mac)
 
         # then
-        assert str(iface.mac) == mac
+        assert str(iface.mac) == expected
 
-    def test_node_set_mac_exception(self, session: Session):
+    @pytest.mark.parametrize(
+        "mac", ["AAA:AA:AA:FF:FF:FF", "AA:AA:AA:FF:FF", "AA/AA/AA/FF/FF/FF"]
+    )
+    def test_node_set_mac_exception(self, session: Session, mac: str):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
         iface = node.new_iface(switch, iface_data)
-        mac = "aa:aa:aa:ff:ff:fff"
 
         # when
         with pytest.raises(CoreError):

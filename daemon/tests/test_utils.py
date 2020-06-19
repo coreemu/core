@@ -1,8 +1,6 @@
 import netaddr
-import pytest
 
 from core import utils
-from core.errors import CoreError
 
 
 class TestUtils:
@@ -24,24 +22,6 @@ class TestUtils:
         assert len(one_arg) == 1
         assert len(two_args) == 2
         assert len(unicode_args) == 3
-
-    @pytest.mark.parametrize(
-        "data,expected",
-        [
-            ("AA-AA-AA-FF-FF-FF", "aa:aa:aa:ff:ff:ff"),
-            ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
-        ],
-    )
-    def test_validate_mac(self, data: str, expected: str):
-        value = utils.validate_mac(data)
-        assert value == expected
-
-    @pytest.mark.parametrize(
-        "data", ["AAA:AA:AA:FF:FF:FF", "AA:AA:AA:FF:FF", "AA/AA/AA/FF/FF/FF"]
-    )
-    def test_validate_mac_exception(self, data: str):
-        with pytest.raises(CoreError):
-            utils.validate_mac(data)
 
     def test_random_mac(self):
         value = utils.random_mac()

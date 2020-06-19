@@ -33,7 +33,7 @@ from typing import (
 
 import netaddr
 
-from core.errors import CoreCommandError, CoreError
+from core.errors import CoreCommandError
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -430,17 +430,3 @@ def random_mac() -> str:
     value |= 0x00163E << 24
     mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
-
-
-def validate_mac(value: str) -> str:
-    """
-    Validate mac and return unix formatted version.
-
-    :param value: address to validate
-    :return: unix formatted mac
-    """
-    try:
-        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
-        return str(mac)
-    except netaddr.AddrFormatError as e:
-        raise CoreError(f"invalid mac address {value}: {e}")
