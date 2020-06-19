@@ -61,8 +61,8 @@ def main():
     # create nodes
     for _ in range(NODES):
         node = session.add_node(CoreNode)
-        interface = prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface1_data=interface)
+        iface_data = prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface1_data=iface_data)
 
     # instantiate session
     session.instantiate()
@@ -137,7 +137,7 @@ session = coreemu.create_session()
 
 # create node with custom services
 options = NodeOptions(services=["ServiceName"])
-node = session.add_node(options=options)
+node = session.add_node(CoreNode, options=options)
 
 # set custom file data
 session.services.set_service_file(node.id, "ServiceName", "FileName", "custom file data")
