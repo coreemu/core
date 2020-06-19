@@ -77,6 +77,8 @@ class FRRZebra(CoreService):
             for s in node.services:
                 if cls.name not in s.dependencies:
                     continue
+                if not (isinstance(s, FrrService) or issubclass(s, FrrService)):
+                    continue
                 iface_config = s.generate_frr_iface_config(node, iface)
                 if s.ipv4_routing:
                     want_ipv4 = True
@@ -100,6 +102,8 @@ class FRRZebra(CoreService):
 
         for s in node.services:
             if cls.name not in s.dependencies:
+                continue
+            if not (isinstance(s, FrrService) or issubclass(s, FrrService)):
                 continue
             cfg += s.generate_frr_config(node)
         return cfg
