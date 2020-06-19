@@ -697,9 +697,9 @@ class GreTapBridge(CoreNetwork):
         :return: nothing
         """
         self.grekey = key
-        addresses = iface_data.get_addresses()
-        if addresses:
-            self.add_ips(addresses)
+        ips = iface_data.get_ips()
+        if ips:
+            self.add_ips(ips)
 
 
 class CtrlNet(CoreNetwork):

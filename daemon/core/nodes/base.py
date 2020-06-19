@@ -811,7 +811,7 @@ class CoreNode(CoreNodeBase):
         :param iface_data: interface data for new interface
         :return: interface index
         """
-        addresses = iface_data.get_addresses()
+        ips = iface_data.get_ips()
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
@@ -823,15 +823,15 @@ class CoreNode(CoreNodeBase):
                 self.attachnet(iface_id, net)
                 iface = self.get_iface(iface_id)
                 iface.set_mac(iface_data.mac)
-                for address in addresses:
-                    iface.add_ip(address)
+                for ip in ips:
+                    iface.add_ip(ip)
             else:
                 iface_id = self.newveth(iface_data.id, iface_data.name)
                 self.attachnet(iface_id, net)
                 if iface_data.mac:
                     self.set_mac(iface_id, iface_data.mac)
-                for address in addresses:
-                    self.add_ip(iface_id, address)
+                for ip in ips:
+                    self.add_ip(iface_id, ip)
                 self.ifup(iface_id)
                 iface = self.get_iface(iface_id)
             return iface

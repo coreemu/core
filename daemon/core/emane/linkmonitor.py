@@ -213,11 +213,9 @@ class EmaneLinkMonitor:
         for node in nodes:
             for iface in node.get_ifaces():
                 if isinstance(iface.net, CtrlNet):
-                    address = None
                     ip4 = iface.get_ip4()
                     if ip4:
                         address = str(ip4.ip)
-                    if address:
                         addresses.append(address)
                     break
         return addresses

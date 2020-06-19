@@ -156,7 +156,7 @@ class PhysicalNode(CoreNodeBase):
         self, net: CoreNetworkBase, iface_data: InterfaceData
     ) -> CoreInterface:
         logging.info("creating interface")
-        addresses = iface_data.get_addresses()
+        ips = iface_data.get_ips()
         iface_id = iface_data.id
         if iface_id is None:
             iface_id = self.next_iface_id()
@@ -167,12 +167,12 @@ class PhysicalNode(CoreNodeBase):
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
             _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
-            self.adopt_iface(remote_tap, iface_id, iface_data.mac, addresses)
+            self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
             return remote_tap
         else:
             # this is reached when configuring services (self.up=False)
             iface = GreTap(node=self, name=name, session=self.session, start=False)
-            self.adopt_iface(iface, iface_id, iface_data.mac, addresses)
+            self.adopt_iface(iface, iface_id, iface_data.mac, ips)
             return iface
 
     def privatedir(self, path: str) -> None:
@@ -316,8 +316,8 @@ class Rj45Node(CoreNodeBase):
             self.iface_id = iface_id
             if net is not None:
                 self.iface.attachnet(net)
-            for addr in iface_data.get_addresses():
-                self.add_ip(addr)
+            for ip in iface_data.get_ips():
+                self.add_ip(ip)
             return self.iface
 
     def delete_iface(self, iface_id: int) -> None:
