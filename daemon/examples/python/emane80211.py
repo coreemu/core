@@ -55,7 +55,7 @@ def main():
     # get nodes to run example
     first_node = session.get_node(1, CoreNode)
     last_node = session.get_node(NODES, CoreNode)
-    address = prefixes.ip4_address(first_node)
+    address = prefixes.ip4_address(first_node.id)
     logging.info("node %s pinging %s", last_node.name, address)
     output = last_node.cmd(f"ping -c 3 {address}")
     logging.info(output)
