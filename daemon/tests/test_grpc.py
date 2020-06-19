@@ -555,7 +555,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        assert len(switch.all_link_data()) == 0
+        assert len(switch.links()) == 0
 
         # then
         iface = iface_helper.create_iface(node.id, 0)
@@ -564,7 +564,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert len(switch.all_link_data()) == 1
+        assert len(switch.links()) == 1
 
     def test_add_link_exception(
         self, grpc_server: CoreGrpcServer, iface_helper: InterfaceHelper
@@ -589,7 +589,7 @@ class TestGrpc:
         iface = ip_prefixes.create_iface(node)
         session.add_link(node.id, switch.id, iface)
         options = core_pb2.LinkOptions(bandwidth=30000)
-        link = switch.all_link_data()[0]
+        link = switch.links()[0]
         assert options.bandwidth != link.options.bandwidth
 
         # then
@@ -600,7 +600,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        link = switch.all_link_data()[0]
+        link = switch.links()[0]
         assert options.bandwidth == link.options.bandwidth
 
     def test_delete_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
@@ -618,7 +618,7 @@ class TestGrpc:
             if node.id not in {node1.id, node2.id}:
                 link_node = node
                 break
-        assert len(link_node.all_link_data()) == 1
+        assert len(link_node.links()) == 1
 
         # then
         with client.context_connect():
@@ -628,7 +628,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert len(link_node.all_link_data()) == 0
+        assert len(link_node.links()) == 0
 
     def test_get_wlan_config(self, grpc_server: CoreGrpcServer):
         # given
@@ -1029,7 +1029,7 @@ class TestGrpc:
         node = session.add_node(CoreNode)
         iface = ip_prefixes.create_iface(node)
         session.add_link(node.id, wlan.id, iface)
-        link_data = wlan.all_link_data()[0]
+        link_data = wlan.links()[0]
         queue = Queue()
 
         def handle_event(event_data):

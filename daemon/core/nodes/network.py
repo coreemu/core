@@ -831,7 +831,7 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Do not include CtrlNet in link messages describing this session.
 
@@ -859,7 +859,7 @@ class PtpNet(CoreNetwork):
             raise CoreError("ptp links support at most 2 network interfaces")
         super().attach(iface)
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE API TLVs for a point-to-point link. One Link message
         describes this network.
@@ -1054,17 +1054,17 @@ class WlanNode(CoreNetwork):
         for iface in self.get_ifaces():
             iface.setposition()
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Retrieve all link data.
 
         :param flags: message flags
         :return: list of link data
         """
-        all_links = super().all_link_data(flags)
+        links = super().links(flags)
         if self.model:
-            all_links.extend(self.model.all_link_data(flags))
-        return all_links
+            links.extend(self.model.links(flags))
+        return links
 
 
 class TunnelNode(GreTapBridge):

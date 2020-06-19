@@ -270,9 +270,9 @@ def get_links(node: NodeBase):
     :return: protobuf links
     """
     links = []
-    for link_data in node.all_link_data():
-        link = convert_link(link_data)
-        links.append(link)
+    for link in node.links():
+        link_proto = convert_link(link)
+        links.append(link_proto)
     return links
 
 

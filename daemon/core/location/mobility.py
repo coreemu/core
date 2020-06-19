@@ -217,7 +217,7 @@ class WirelessModel(ConfigurableOptions):
         self.session: "Session" = session
         self.id: int = _id
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         May be used if the model can populate the GUI with wireless (green)
         link lines.
@@ -509,7 +509,7 @@ class BasicRangeModel(WirelessModel):
         link_data = self.create_link_data(iface, iface2, message_type)
         self.session.broadcast_link(link_data)
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Return a list of wireless link messages for when the GUI reconnects.
 

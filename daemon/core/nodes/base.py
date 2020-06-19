@@ -182,7 +182,7 @@ class NodeBase(abc.ABC):
         self.iface_id += 1
         return iface_id
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build link data for this node.
 
@@ -1021,7 +1021,7 @@ class CoreNetworkBase(NodeBase):
         with self._linked_lock:
             del self._linked[iface]
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.

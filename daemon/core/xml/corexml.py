@@ -465,7 +465,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data())
+            links.extend(node.links())
         return links
 
     def write_network(self, node: NodeBase) -> None:

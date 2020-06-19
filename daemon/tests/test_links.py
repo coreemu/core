@@ -49,7 +49,7 @@ class TestLinks:
         session.add_link(node1.id, node2.id, iface1_data=iface1_data)
 
         # then
-        assert node2.all_link_data()
+        assert node2.links()
         assert node1.get_iface(iface1_data.id)
 
     def test_add_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
@@ -62,7 +62,7 @@ class TestLinks:
         session.add_link(node1.id, node2.id, iface2_data=iface2_data)
 
         # then
-        assert node1.all_link_data()
+        assert node1.links()
         assert node2.get_iface(iface2_data.id)
 
     def test_add_net_to_net(self, session):
@@ -74,7 +74,7 @@ class TestLinks:
         session.add_link(node1.id, node2.id)
 
         # then
-        assert node1.all_link_data()
+        assert node1.links()
 
     def test_update_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given

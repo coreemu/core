@@ -225,7 +225,7 @@ class Sdt:
                 self.add_node(node)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD)
+                all_links = net.links(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     if is_wireless and link_data.node1_id == net.id:

@@ -285,7 +285,7 @@ class TestXml:
         switch2 = session.get_node(node2_id, SwitchNode)
         assert switch1
         assert switch2
-        assert len(switch1.all_link_data() + switch2.all_link_data()) == 1
+        assert len(switch1.links() + switch2.links()) == 1
 
     def test_link_options(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -345,7 +345,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         link = links[0]
         assert options.loss == link.options.loss
         assert options.bandwidth == link.options.bandwidth
@@ -412,7 +412,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         link = links[0]
         assert options.loss == link.options.loss
         assert options.bandwidth == link.options.bandwidth
@@ -490,7 +490,7 @@ class TestXml:
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         assert len(links) == 2
         link1 = links[0]
         link2 = links[1]

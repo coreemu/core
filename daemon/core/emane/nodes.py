@@ -241,8 +241,8 @@ class EmaneNet(CoreNetworkBase):
                 event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        links = super().all_link_data(flags)
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+        links = super().links(flags)
         # gather current emane links
         nem_ids = set(self.nemidmap.values())
         emane_manager = self.session.emane
