@@ -64,7 +64,7 @@ class Zebra(CoreService):
             # include control interfaces in addressing but not routing daemons
             if getattr(iface, "control", False):
                 cfg += "  "
-                cfg += "\n  ".join(map(cls.addrstr, iface.all_ips()))
+                cfg += "\n  ".join(map(cls.addrstr, iface.ips()))
                 cfg += "\n"
                 continue
             cfgv4 = ""

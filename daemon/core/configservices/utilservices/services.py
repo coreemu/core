@@ -29,7 +29,7 @@ class DefaultRouteService(ConfigService):
         ifaces = self.node.get_ifaces()
         if ifaces:
             iface = ifaces[0]
-            for ip in iface.all_ips():
+            for ip in iface.ips():
                 net = ip.cidr
                 if net.size > 1:
                     router = net[1]
@@ -76,7 +76,7 @@ class StaticRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         routes = []
         for iface in self.node.get_ifaces(control=False):
-            for ip in iface.all_ips():
+            for ip in iface.ips():
                 address = str(ip.ip)
                 if netaddr.valid_ipv6(address):
                     dst = "3ffe:4::/64"

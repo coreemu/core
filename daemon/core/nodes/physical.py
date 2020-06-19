@@ -75,43 +75,43 @@ class PhysicalNode(CoreNodeBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         mac = utils.validate_mac(mac)
-        iface = self.ifaces[iface_id]
+        iface = self.get_iface(iface_id)
         iface.set_mac(mac)
         if self.up:
             self.net_client.device_mac(iface.name, mac)
 
-    def addaddr(self, iface_id: int, addr: str) -> None:
+    def add_ip(self, iface_id: int, ip: str) -> None:
         """
-        Add an address to an interface.
+        Add an ip address to an interface in the format "10.0.0.1/24".
 
-        :param iface_id: index of interface to add address to
-        :param addr: address to add
+        :param iface_id: id of interface to add address to
+        :param ip: address to add to interface
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
-        addr = utils.validate_ip(addr)
         iface = self.get_iface(iface_id)
+        iface.add_ip(ip)
         if self.up:
-            self.net_client.create_address(iface.name, addr)
-        iface.addaddr(addr)
+            self.net_client.create_address(iface.name, ip)
 
-    def deladdr(self, iface_id: int, addr: str) -> None:
+    def remove_ip(self, iface_id: int, ip: str) -> None:
         """
-        Delete an address from an interface.
+        Remove an ip address from an interface in the format "10.0.0.1/24".
 
-        :param iface_id: index of interface to delete
-        :param addr: address to delete
+        :param iface_id: id of interface to delete address from
+        :param ip: ip address to remove from interface
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
-        iface = self.ifaces[iface_id]
-        try:
-            iface.deladdr(addr)
-        except ValueError:
-            logging.exception("trying to delete unknown address: %s", addr)
+        iface = self.get_iface(iface_id)
+        iface.remove_ip(ip)
         if self.up:
-            self.net_client.delete_address(iface.name, addr)
+            self.net_client.delete_address(iface.name, ip)
 
     def adopt_iface(
-        self, iface: CoreInterface, iface_id: int, mac: str, addrlist: List[str]
+        self, iface: CoreInterface, iface_id: int, mac: str, ips: List[str]
     ) -> None:
         """
         When a link message is received linking this node to another part of
@@ -128,8 +128,8 @@ class PhysicalNode(CoreNodeBase):
         iface.localname = iface.name
         if mac:
             self.set_mac(iface_id, mac)
-        for addr in addrlist:
-            self.addaddr(iface_id, addr)
+        for ip in ips:
+            self.add_ip(iface_id, ip)
         if self.up:
             self.net_client.device_up(iface.localname)
 
@@ -317,7 +317,7 @@ class Rj45Node(CoreNodeBase):
             if net is not None:
                 self.iface.attachnet(net)
             for addr in iface_data.get_addresses():
-                self.addaddr(addr)
+                self.add_ip(addr)
             return self.iface
 
     def delete_iface(self, iface_id: int) -> None:
@@ -348,30 +348,31 @@ class Rj45Node(CoreNodeBase):
             raise CoreError(f"node({self.name}) does not have interface({iface.name})")
         return self.iface_id
 
-    def addaddr(self, addr: str) -> None:
+    def add_ip(self, ip: str) -> None:
         """
-        Add address to to network interface.
+        Add an ip address to an interface in the format "10.0.0.1/24".
 
-        :param addr: address to add
+        :param ip: address to add to interface
         :return: nothing
-        :raises CoreCommandError: when there is a command exception
+        :raises CoreError: when ip address provided is invalid
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
-        addr = utils.validate_ip(addr)
+        self.iface.add_ip(ip)
         if self.up:
-            self.net_client.create_address(self.name, addr)
-        self.iface.addaddr(addr)
+            self.net_client.create_address(self.name, ip)
 
-    def deladdr(self, addr: str) -> None:
+    def remove_ip(self, ip: str) -> None:
         """
-        Delete address from network interface.
+        Remove an ip address from an interface in the format "10.0.0.1/24".
 
-        :param addr: address to delete
+        :param ip: ip address to remove from interface
         :return: nothing
-        :raises CoreCommandError: when there is a command exception
+        :raises CoreError: when ip address provided is invalid
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
+        self.iface.remove_ip(ip)
         if self.up:
-            self.net_client.delete_address(self.name, addr)
-        self.iface.deladdr(addr)
+            self.net_client.delete_address(self.name, ip)
 
     def savestate(self) -> None:
         """

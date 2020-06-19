@@ -7,7 +7,7 @@ import os
 import shutil
 import threading
 from threading import RLock
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 
 import netaddr
 
@@ -138,6 +138,13 @@ class NodeBase(abc.ABC):
         return self.position.get()
 
     def get_iface(self, iface_id: int) -> CoreInterface:
+        """
+        Retrieve interface based on id.
+
+        :param iface_id: id of interface to retrieve
+        :return: interface
+        :raises CoreError: when interface does not exist
+        """
         if iface_id not in self.ifaces:
             raise CoreError(f"node({self.name}) does not have interface({iface_id})")
         return self.ifaces[iface_id]
@@ -436,7 +443,6 @@ class CoreNode(CoreNodeBase):
     """
 
     apitype: NodeTypes = NodeTypes.DEFAULT
-    valid_address_types: Set[str] = {"inet", "inet6", "inet6link"}
 
     def __init__(
         self,
@@ -750,40 +756,39 @@ class CoreNode(CoreNodeBase):
         if self.up:
             self.node_net_client.device_mac(iface.name, mac)
 
-    def addaddr(self, iface_id: int, addr: str) -> None:
+    def add_ip(self, iface_id: int, ip: str) -> None:
         """
-        Add interface address.
+        Add an ip address to an interface in the format "10.0.0.1/24".
 
         :param iface_id: id of interface to add address to
-        :param addr: address to add to interface
+        :param ip: address to add to interface
         :return: nothing
-        """
-        addr = utils.validate_ip(addr)
-        iface = self.get_iface(iface_id)
-        iface.addaddr(addr)
-        if self.up:
-            # ipv4 check
-            broadcast = None
-            if netaddr.valid_ipv4(addr):
-                broadcast = "+"
-            self.node_net_client.create_address(iface.name, addr, broadcast)
-
-    def deladdr(self, iface_id: int, addr: str) -> None:
-        """
-        Delete address from an interface.
-
-        :param iface_id: id of interface to delete address from
-        :param addr: address to delete from interface
-        :return: nothing
+        :raises CoreError: when ip address provided is invalid
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         iface = self.get_iface(iface_id)
-        try:
-            iface.deladdr(addr)
-        except ValueError:
-            logging.exception("trying to delete unknown address: %s", addr)
+        iface.add_ip(ip)
         if self.up:
-            self.node_net_client.delete_address(iface.name, addr)
+            # ipv4 check
+            broadcast = None
+            if netaddr.valid_ipv4(ip):
+                broadcast = "+"
+            self.node_net_client.create_address(iface.name, ip, broadcast)
+
+    def remove_ip(self, iface_id: int, ip: str) -> None:
+        """
+        Remove an ip address from an interface in the format "10.0.0.1/24".
+
+        :param iface_id: id of interface to delete address from
+        :param ip: ip address to remove from interface
+        :return: nothing
+        :raises CoreError: when ip address provided is invalid
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        iface = self.get_iface(iface_id)
+        iface.remove_ip(ip)
+        if self.up:
+            self.node_net_client.delete_address(iface.name, ip)
 
     def ifup(self, iface_id: int) -> None:
         """
@@ -819,14 +824,14 @@ class CoreNode(CoreNodeBase):
                 iface = self.get_iface(iface_id)
                 iface.set_mac(iface_data.mac)
                 for address in addresses:
-                    iface.addaddr(address)
+                    iface.add_ip(address)
             else:
                 iface_id = self.newveth(iface_data.id, iface_data.name)
                 self.attachnet(iface_id, net)
                 if iface_data.mac:
                     self.set_mac(iface_id, iface_data.mac)
                 for address in addresses:
-                    self.addaddr(iface_id, address)
+                    self.add_ip(iface_id, address)
                 self.ifup(iface_id)
                 iface = self.get_iface(iface_id)
             return iface

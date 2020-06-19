@@ -40,7 +40,7 @@ class XorpRtrmgr(CoreService):
         for iface in node.get_ifaces():
             cfg += "    interface %s {\n" % iface.name
             cfg += "\tvif %s {\n" % iface.name
-            cfg += "".join(map(cls.addrstr, iface.all_ips()))
+            cfg += "".join(map(cls.addrstr, iface.ips()))
             cfg += cls.lladdrstr(iface)
             cfg += "\t}\n"
             cfg += "    }\n"

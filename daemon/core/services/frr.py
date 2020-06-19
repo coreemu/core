@@ -67,7 +67,7 @@ class FRRZebra(CoreService):
             # include control interfaces in addressing but not routing daemons
             if hasattr(iface, "control") and iface.control is True:
                 cfg += "  "
-                cfg += "\n  ".join(map(cls.addrstr, iface.all_ips()))
+                cfg += "\n  ".join(map(cls.addrstr, iface.ips()))
                 cfg += "\n"
                 continue
             cfgv4 = ""

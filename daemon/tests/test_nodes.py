@@ -75,31 +75,31 @@ class TestNodes:
         with pytest.raises(CoreError):
             node.set_mac(iface.node_id, mac)
 
-    def test_node_addaddr(self, session: Session):
+    def test_node_add_ip(self, session: Session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
         iface = node.new_iface(switch, iface_data)
-        addr = "192.168.0.1/24"
+        ip = "192.168.0.1/24"
 
         # when
-        node.addaddr(iface.node_id, addr)
+        node.add_ip(iface.node_id, ip)
 
         # then
-        assert str(iface.get_ip4()) == addr
+        assert str(iface.get_ip4()) == ip
 
-    def test_node_addaddr_exception(self, session):
+    def test_node_add_ip_exception(self, session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
         iface = node.new_iface(switch, iface_data)
-        addr = "256.168.0.1/24"
+        ip = "256.168.0.1/24"
 
         # when
         with pytest.raises(CoreError):
-            node.addaddr(iface.node_id, addr)
+            node.add_ip(iface.node_id, ip)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):

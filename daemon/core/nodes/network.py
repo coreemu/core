@@ -575,18 +575,17 @@ class CoreNetwork(CoreNetworkBase):
                 return iface
         return None
 
-    def addrconfig(self, addrlist: List[str]) -> None:
+    def add_ips(self, ips: List[str]) -> None:
         """
-        Set addresses on the bridge.
+        Add ip addresses on the bridge in the format "10.0.0.1/24".
 
-        :param addrlist: address list
+        :param ips: ip address to add
         :return: nothing
         """
         if not self.up:
             return
-
-        for addr in addrlist:
-            self.net_client.create_address(self.brname, str(addr))
+        for ip in ips:
+            self.net_client.create_address(self.brname, ip)
 
 
 class GreTapBridge(CoreNetwork):
@@ -663,22 +662,22 @@ class GreTapBridge(CoreNetwork):
             self.gretap = None
         super().shutdown()
 
-    def addrconfig(self, addrlist: List[str]) -> None:
+    def add_ips(self, ips: List[str]) -> None:
         """
         Set the remote tunnel endpoint. This is a one-time method for
         creating the GreTap device, which requires the remoteip at startup.
         The 1st address in the provided list is remoteip, 2nd optionally
         specifies localip.
 
-        :param addrlist: address list
+        :param ips: address list
         :return: nothing
         """
         if self.gretap:
             raise ValueError(f"gretap already exists for {self.name}")
-        remoteip = addrlist[0].split("/")[0]
+        remoteip = ips[0].split("/")[0]
         localip = None
-        if len(addrlist) > 1:
-            localip = addrlist[1].split("/")[0]
+        if len(ips) > 1:
+            localip = ips[1].split("/")[0]
         self.gretap = GreTap(
             session=self.session,
             remoteip=remoteip,
@@ -700,7 +699,7 @@ class GreTapBridge(CoreNetwork):
         self.grekey = key
         addresses = iface_data.get_addresses()
         if addresses:
-            self.addrconfig(addresses)
+            self.add_ips(addresses)
 
 
 class CtrlNet(CoreNetwork):
