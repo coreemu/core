@@ -1548,9 +1548,8 @@ class Session:
         entries = []
         for iface in control_net.get_ifaces():
             name = iface.node.name
-            for address in iface.addrlist:
-                address = address.split("/")[0]
-                entries.append(f"{address} {name}")
+            for ip in iface.ips():
+                entries.append(f"{ip.ip} {name}")
 
         logging.info("Adding %d /etc/hosts file entries.", len(entries))
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")

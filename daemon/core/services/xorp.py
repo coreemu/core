@@ -40,7 +40,7 @@ class XorpRtrmgr(CoreService):
         for iface in node.get_ifaces():
             cfg += "    interface %s {\n" % iface.name
             cfg += "\tvif %s {\n" % iface.name
-            cfg += "".join(map(cls.addrstr, iface.addrlist))
+            cfg += "".join(map(cls.addrstr, iface.ips()))
             cfg += cls.lladdrstr(iface)
             cfg += "\t}\n"
             cfg += "    }\n"
@@ -55,13 +55,12 @@ class XorpRtrmgr(CoreService):
         return cfg
 
     @staticmethod
-    def addrstr(x: str) -> str:
+    def addrstr(ip: netaddr.IPNetwork) -> str:
         """
         helper for mapping IP addresses to XORP config statements
         """
-        addr, plen = x.split("/")
-        cfg = "\t    address %s {\n" % addr
-        cfg += "\t\tprefix-length: %s\n" % plen
+        cfg = "\t    address %s {\n" % ip.ip
+        cfg += "\t\tprefix-length: %s\n" % ip.prefixlen
         cfg += "\t    }\n"
         return cfg
 
@@ -145,10 +144,9 @@ class XorpService(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for iface in node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    return a
+            ip4 = iface.get_ip4()
+            if ip4:
+                return str(ip4.ip)
         return "0.0.0.0"
 
     @classmethod
@@ -180,11 +178,8 @@ class XorpOspfv2(XorpService):
         for iface in node.get_ifaces(control=False):
             cfg += "\t    interface %s {\n" % iface.name
             cfg += "\t\tvif %s {\n" % iface.name
-            for a in iface.addrlist:
-                addr = a.split("/")[0]
-                if not netaddr.valid_ipv4(addr):
-                    continue
-                cfg += "\t\t    address %s {\n" % addr
+            for ip4 in iface.ip4s:
+                cfg += "\t\t    address %s {\n" % ip4.ip
                 cfg += "\t\t    }\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -269,11 +264,8 @@ class XorpRip(XorpService):
         for iface in node.get_ifaces(control=False):
             cfg += "\tinterface %s {\n" % iface.name
             cfg += "\t    vif %s {\n" % iface.name
-            for a in iface.addrlist:
-                addr = a.split("/")[0]
-                if not netaddr.valid_ipv4(addr):
-                    continue
-                cfg += "\t\taddress %s {\n" % addr
+            for ip4 in iface.ip4s:
+                cfg += "\t\taddress %s {\n" % ip4.ip
                 cfg += "\t\t    disable: false\n"
                 cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -435,11 +427,8 @@ class XorpOlsr(XorpService):
         for iface in node.get_ifaces(control=False):
             cfg += "\tinterface %s {\n" % iface.name
             cfg += "\t    vif %s {\n" % iface.name
-            for a in iface.addrlist:
-                addr = a.split("/")[0]
-                if not netaddr.valid_ipv4(addr):
-                    continue
-                cfg += "\t\taddress %s {\n" % addr
+            for ip4 in iface.ip4s:
+                cfg += "\t\taddress %s {\n" % ip4.ip
                 cfg += "\t\t}\n"
             cfg += "\t    }\n"
         cfg += "\t}\n"

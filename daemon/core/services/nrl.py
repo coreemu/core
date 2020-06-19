@@ -4,8 +4,6 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 """
 from typing import Optional, Tuple
 
-import netaddr
-
 from core import utils
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
@@ -32,10 +30,9 @@ class NrlService(CoreService):
         interface's prefix length, so e.g. '/32' can turn into '/24'.
         """
         for iface in node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    return f"{a}/{prefixlen}"
+            ip4 = iface.get_ip4()
+            if ip4:
+                return f"{ip4.ip}/{prefixlen}"
         return "0.0.0.0/%s" % prefixlen
 
 

@@ -142,18 +142,18 @@ class InterfaceData:
     ip6: str = None
     ip6_mask: int = None
 
-    def get_addresses(self) -> List[str]:
+    def get_ips(self) -> List[str]:
         """
         Returns a list of ip4 and ip6 addresses when present.
 
-        :return: list of addresses
+        :return: list of ip addresses
         """
-        addresses = []
+        ips = []
         if self.ip4 and self.ip4_mask:
-            addresses.append(f"{self.ip4}/{self.ip4_mask}")
+            ips.append(f"{self.ip4}/{self.ip4_mask}")
         if self.ip6 and self.ip6_mask:
-            addresses.append(f"{self.ip6}/{self.ip6_mask}")
-        return addresses
+            ips.append(f"{self.ip6}/{self.ip6_mask}")
+        return ips
 
 
 @dataclass

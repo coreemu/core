@@ -6,6 +6,8 @@ import logging
 import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
+import netaddr
+
 from core import utils
 from core.emulator.data import LinkOptions
 from core.emulator.enumerations import TransportType
@@ -52,7 +54,8 @@ class CoreInterface:
         self.net: Optional[CoreNetworkBase] = None
         self.othernet: Optional[CoreNetworkBase] = None
         self._params: Dict[str, float] = {}
-        self.addrlist: List[str] = []
+        self.ip4s: List[netaddr.IPNetwork] = []
+        self.ip6s: List[netaddr.IPNetwork] = []
         self.mac: Optional[str] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
@@ -131,24 +134,65 @@ class CoreInterface:
         if self.net is not None:
             self.net.detach(self)
 
-    def addaddr(self, addr: str) -> None:
+    def add_ip(self, ip: str) -> None:
         """
-        Add address.
+        Add ip address in the format "10.0.0.1/24".
 
-        :param addr: address to add
+        :param ip: ip address to add
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
         """
-        addr = utils.validate_ip(addr)
-        self.addrlist.append(addr)
+        try:
+            ip = netaddr.IPNetwork(ip)
+            address = str(ip.ip)
+            if netaddr.valid_ipv4(address):
+                self.ip4s.append(ip)
+            else:
+                self.ip6s.append(ip)
+        except netaddr.AddrFormatError:
+            raise CoreError(f"adding invalid address {ip}")
 
-    def deladdr(self, addr: str) -> None:
+    def remove_ip(self, ip: str) -> None:
         """
-        Delete address.
+        Remove ip address in the format "10.0.0.1/24".
 
-        :param addr: address to delete
+        :param ip: ip address to delete
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
         """
-        self.addrlist.remove(addr)
+        try:
+            ip = netaddr.IPNetwork(ip)
+            address = str(ip.ip)
+            if netaddr.valid_ipv4(address):
+                self.ip4s.remove(ip)
+            else:
+                self.ip6s.remove(ip)
+        except (netaddr.AddrFormatError, ValueError):
+            raise CoreError(f"deleting invalid address {ip}")
+
+    def get_ip4(self) -> Optional[netaddr.IPNetwork]:
+        """
+        Looks for the first ip4 address.
+
+        :return: ip4 address, None otherwise
+        """
+        return next(iter(self.ip4s), None)
+
+    def get_ip6(self) -> Optional[netaddr.IPNetwork]:
+        """
+        Looks for the first ip6 address.
+
+        :return: ip6 address, None otherwise
+        """
+        return next(iter(self.ip6s), None)
+
+    def ips(self) -> List[netaddr.IPNetwork]:
+        """
+        Retrieve a list of all ip4 and ip6 addresses combined.
+
+        :return: ip4 and ip6 addresses
+        """
+        return self.ip4s + self.ip6s
 
     def set_mac(self, mac: str) -> None:
         """
@@ -487,13 +531,13 @@ class TunTap(CoreInterface):
 
     def setaddrs(self) -> None:
         """
-        Set interface addresses based on self.addrlist.
+        Set interface addresses.
 
         :return: nothing
         """
         self.waitfordevicenode()
-        for addr in self.addrlist:
-            self.node.node_net_client.create_address(self.name, str(addr))
+        for ip in self.ips():
+            self.node.node_net_client.create_address(self.name, str(ip))
 
 
 class GreTap(CoreInterface):

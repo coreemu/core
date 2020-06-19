@@ -5,8 +5,6 @@ sdn.py defines services to start Open vSwitch and the Ryu SDN Controller.
 import re
 from typing import Tuple
 
-import netaddr
-
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 
@@ -65,18 +63,14 @@ class OvsService(SdnService):
 
             # remove ip address of eths because quagga/zebra will assign same IPs to rtr interfaces
             # or assign them manually to rtr interfaces if zebra is not running
-            for addr in iface.addrlist:
-                addr = addr.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    cfg += "ip addr del %s dev %s\n" % (addr, iface.name)
-                    if has_zebra == 0:
-                        cfg += "ip addr add %s dev rtr%s\n" % (addr, ifnum)
-                elif netaddr.valid_ipv6(addr):
-                    cfg += "ip -6 addr del %s dev %s\n" % (addr, iface.name)
-                    if has_zebra == 0:
-                        cfg += "ip -6 addr add %s dev rtr%s\n" % (addr, ifnum)
-                else:
-                    raise ValueError("invalid address: %s" % addr)
+            for ip4 in iface.ip4s:
+                cfg += "ip addr del %s dev %s\n" % (ip4.ip, iface.name)
+                if has_zebra == 0:
+                    cfg += "ip addr add %s dev rtr%s\n" % (ip4.ip, ifnum)
+            for ip6 in iface.ip6s:
+                cfg += "ip -6 addr del %s dev %s\n" % (ip6.ip, iface.name)
+                if has_zebra == 0:
+                    cfg += "ip -6 addr add %s dev rtr%s\n" % (ip6.ip, ifnum)
 
             # add interfaces to bridge
             # Make port numbers explicit so they're easier to follow in reading the script

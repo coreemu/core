@@ -1,8 +1,6 @@
 import abc
 from typing import Any, Dict, List
 
-import netaddr
-
 from core import constants
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
@@ -49,10 +47,9 @@ def get_router_id(node: CoreNodeBase) -> str:
     Helper to return the first IPv4 address of a node as its router ID.
     """
     for iface in node.get_ifaces(control=False):
-        for a in iface.addrlist:
-            a = a.split("/")[0]
-            if netaddr.valid_ipv4(a):
-                return a
+        ip4 = iface.get_ip4()
+        if ip4:
+            return str(ip4.ip)
     return "0.0.0.0"
 
 
@@ -102,12 +99,10 @@ class FRRZebra(ConfigService):
         for iface in self.node.get_ifaces():
             ip4s = []
             ip6s = []
-            for x in iface.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    ip4s.append(x)
-                else:
-                    ip6s.append(x)
+            for ip4 in iface.ip4s:
+                ip4s.append(str(ip4.ip))
+            for ip6 in iface.ip6s:
+                ip6s.append(str(ip6.ip))
             is_control = getattr(iface, "control", False)
             ifaces.append((iface, ip4s, ip6s, is_control))
 
@@ -163,10 +158,8 @@ class FRROspfv2(FrrService, ConfigService):
         router_id = get_router_id(self.node)
         addresses = []
         for iface in self.node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                addr = a.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    addresses.append(a)
+            for ip4 in iface.ip4s:
+                addresses.append(str(ip4.ip))
         data = dict(router_id=router_id, addresses=addresses)
         text = """
         router ospf

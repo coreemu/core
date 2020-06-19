@@ -29,8 +29,8 @@ class DefaultRouteService(ConfigService):
         ifaces = self.node.get_ifaces()
         if ifaces:
             iface = ifaces[0]
-            for x in iface.addrlist:
-                net = netaddr.IPNetwork(x).cidr
+            for ip in iface.ips():
+                net = ip.cidr
                 if net.size > 1:
                     router = net[1]
                     routes.append(str(router))
@@ -76,15 +76,14 @@ class StaticRouteService(ConfigService):
     def data(self) -> Dict[str, Any]:
         routes = []
         for iface in self.node.get_ifaces(control=False):
-            for x in iface.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv6(addr):
+            for ip in iface.ips():
+                address = str(ip.ip)
+                if netaddr.valid_ipv6(address):
                     dst = "3ffe:4::/64"
                 else:
                     dst = "10.9.8.0/24"
-                net = netaddr.IPNetwork(x)
-                if net[-2] != net[1]:
-                    routes.append((dst, net[1]))
+                if ip[-2] != ip[1]:
+                    routes.append((dst, ip[1]))
         return dict(routes=routes)
 
 
@@ -149,15 +148,12 @@ class DhcpService(ConfigService):
     def data(self) -> Dict[str, Any]:
         subnets = []
         for iface in self.node.get_ifaces(control=False):
-            for x in iface.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    net = netaddr.IPNetwork(x)
-                    # divide the address space in half
-                    index = (net.size - 2) / 2
-                    rangelow = net[index]
-                    rangehigh = net[-2]
-                    subnets.append((net.ip, net.netmask, rangelow, rangehigh, addr))
+            for ip4 in iface.ip4s:
+                # divide the address space in half
+                index = (ip4.size - 2) / 2
+                rangelow = ip4[index]
+                rangehigh = ip4[-2]
+                subnets.append((ip4.ip, ip4.netmask, rangelow, rangehigh, str(ip4.ip)))
         return dict(subnets=subnets)
 
 
@@ -238,10 +234,8 @@ class RadvdService(ConfigService):
         ifaces = []
         for iface in self.node.get_ifaces(control=False):
             prefixes = []
-            for x in iface.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv6(addr):
-                    prefixes.append(x)
+            for ip6 in iface.ip6s:
+                prefixes.append(str(ip6))
             if not prefixes:
                 continue
             ifaces.append((iface.name, prefixes))
