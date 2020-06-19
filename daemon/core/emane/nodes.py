@@ -17,7 +17,7 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase
-from core.nodes.interface import CoreInterface
+from core.nodes.interface import CoreInterface, TunTap
 
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
@@ -151,18 +151,16 @@ class EmaneNet(CoreNetworkBase):
             warntxt = "unable to publish EMANE events because the eventservice "
             warntxt += "Python bindings failed to load"
             logging.error(warntxt)
-
         for iface in self.get_ifaces():
-            external = self.session.emane.get_config(
-                "external", self.id, self.model.name
+            config = self.session.emane.get_iface_config(
+                self.id, iface, self.model.name
             )
-            if external == "0":
+            external = config["external"]
+            if isinstance(iface, TunTap) and external == "0":
                 iface.setaddrs()
-
             if not self.session.emane.genlocationevents():
                 iface.poshook = None
                 continue
-
             # at this point we register location handlers for generating
             # EMANE location events
             iface.poshook = self.setnemposition
