@@ -529,9 +529,9 @@ class TunTap(CoreInterface):
         self.node.node_net_client.device_name(self.localname, self.name)
         self.node.node_net_client.device_up(self.name)
 
-    def setaddrs(self) -> None:
+    def set_ips(self) -> None:
         """
-        Set interface addresses.
+        Set interface ip addresses.
 
         :return: nothing
         """

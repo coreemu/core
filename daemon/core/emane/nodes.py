@@ -157,7 +157,7 @@ class EmaneNet(CoreNetworkBase):
             )
             external = config.get("external", "0")
             if isinstance(iface, TunTap) and external == "0":
-                iface.setaddrs()
+                iface.set_ips()
             if not self.session.emane.genlocationevents():
                 iface.poshook = None
                 continue
