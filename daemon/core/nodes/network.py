@@ -881,28 +881,26 @@ class PtpNet(CoreNetwork):
         iface1_data = InterfaceData(
             id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=iface1.mac
         )
-        for address in iface1.addrlist:
-            ip, _sep, mask = address.partition("/")
-            mask = int(mask)
-            if netaddr.valid_ipv4(ip):
-                iface1.ip4 = ip
-                iface1.ip4_mask = mask
-            else:
-                iface1.ip6 = ip
-                iface1.ip6_mask = mask
+        ip4 = iface1.get_ip4()
+        if ip4:
+            iface1_data.ip4 = str(ip4.ip)
+            iface1_data.ip4_mask = ip4.prefixlen
+        ip6 = iface1.get_ip6()
+        if ip6:
+            iface1_data.ip6 = str(ip6.ip)
+            iface1_data.ip6_mask = ip6.prefixlen
 
         iface2_data = InterfaceData(
             id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=iface2.mac
         )
-        for address in iface2.addrlist:
-            ip, _sep, mask = address.partition("/")
-            mask = int(mask)
-            if netaddr.valid_ipv4(ip):
-                iface2.ip4 = ip
-                iface2.ip4_mask = mask
-            else:
-                iface2.ip6 = ip
-                iface2.ip6_mask = mask
+        ip4 = iface2.get_ip4()
+        if ip4:
+            iface2_data.ip4 = str(ip4.ip)
+            iface2_data.ip4_mask = ip4.prefixlen
+        ip6 = iface2.get_ip6()
+        if ip6:
+            iface2_data.ip6 = str(ip6.ip)
+            iface2_data.ip6_mask = ip6.prefixlen
 
         options_data = iface1.get_link_options(unidirectional)
         link_data = LinkData(

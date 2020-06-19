@@ -164,6 +164,7 @@ class CoreXmlDeployment:
             if emane_element is not None:
                 parent_element = emane_element
 
-            for address in iface.addrlist:
+            for ip in iface.all_ips():
+                address = str(ip.ip)
                 address_type = get_address_type(address)
                 add_address(parent_element, address_type, address, iface.name)

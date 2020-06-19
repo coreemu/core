@@ -4,7 +4,6 @@ import threading
 import time
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
-import netaddr
 from lxml import etree
 
 from core.emulator.data import LinkData
@@ -214,13 +213,12 @@ class EmaneLinkMonitor:
         for node in nodes:
             for iface in node.get_ifaces():
                 if isinstance(iface.net, CtrlNet):
-                    ip4 = None
-                    for x in iface.addrlist:
-                        address, prefix = x.split("/")
-                        if netaddr.valid_ipv4(address):
-                            ip4 = address
+                    address = None
+                    ip4 = iface.get_ip4()
                     if ip4:
-                        addresses.append(ip4)
+                        address = str(ip4.ip)
+                    if address:
+                        addresses.append(address)
                     break
         return addresses
 

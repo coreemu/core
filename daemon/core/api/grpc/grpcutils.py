@@ -3,7 +3,6 @@ import time
 from typing import Any, Dict, List, Tuple, Type, Union
 
 import grpc
-import netaddr
 from grpc import ServicerContext
 
 from core import utils
@@ -447,18 +446,16 @@ def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
         net_id = iface.net.id
     ip4 = None
     ip4_mask = None
+    ip4_net = iface.get_ip4()
+    if ip4_net:
+        ip4 = str(ip4_net.ip)
+        ip4_mask = ip4_net.prefixlen
     ip6 = None
     ip6_mask = None
-    for addr in iface.addrlist:
-        network = netaddr.IPNetwork(addr)
-        mask = network.prefixlen
-        ip = str(network.ip)
-        if netaddr.valid_ipv4(ip) and not ip4:
-            ip4 = ip
-            ip4_mask = mask
-        elif netaddr.valid_ipv6(ip) and not ip6:
-            ip6 = ip
-            ip6_mask = mask
+    ip6_net = iface.get_ip6()
+    if ip6_net:
+        ip6 = str(ip6_net.ip)
+        ip6_mask = ip6_net.prefixlen
     return core_pb2.Interface(
         id=iface.node_id,
         net_id=net_id,

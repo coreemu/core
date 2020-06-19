@@ -87,7 +87,7 @@ class TestNodes:
         node.addaddr(iface.node_id, addr)
 
         # then
-        assert iface.addrlist[0] == addr
+        assert str(iface.get_ip4()) == addr
 
     def test_node_addaddr_exception(self, session):
         # given

@@ -67,7 +67,7 @@ class FRRZebra(CoreService):
             # include control interfaces in addressing but not routing daemons
             if hasattr(iface, "control") and iface.control is True:
                 cfg += "  "
-                cfg += "\n  ".join(map(cls.addrstr, iface.addrlist))
+                cfg += "\n  ".join(map(cls.addrstr, iface.all_ips()))
                 cfg += "\n"
                 continue
             cfgv4 = ""
@@ -87,19 +87,13 @@ class FRRZebra(CoreService):
                     cfgv4 += iface_config
 
             if want_ipv4:
-                ipv4list = filter(
-                    lambda x: netaddr.valid_ipv4(x.split("/")[0]), iface.addrlist
-                )
                 cfg += "  "
-                cfg += "\n  ".join(map(cls.addrstr, ipv4list))
+                cfg += "\n  ".join(map(cls.addrstr, iface.ip4s))
                 cfg += "\n"
                 cfg += cfgv4
             if want_ipv6:
-                ipv6list = filter(
-                    lambda x: netaddr.valid_ipv6(x.split("/")[0]), iface.addrlist
-                )
                 cfg += "  "
-                cfg += "\n  ".join(map(cls.addrstr, ipv6list))
+                cfg += "\n  ".join(map(cls.addrstr, iface.ip6s))
                 cfg += "\n"
                 cfg += cfgv6
             cfg += "!\n"
@@ -111,17 +105,17 @@ class FRRZebra(CoreService):
         return cfg
 
     @staticmethod
-    def addrstr(x: str) -> str:
+    def addrstr(ip: netaddr.IPNetwork) -> str:
         """
         helper for mapping IP addresses to zebra config statements
         """
-        addr = x.split("/")[0]
-        if netaddr.valid_ipv4(addr):
-            return "ip address %s" % x
-        elif netaddr.valid_ipv6(addr):
-            return "ipv6 address %s" % x
+        address = str(ip.ip)
+        if netaddr.valid_ipv4(address):
+            return "ip address %s" % ip
+        elif netaddr.valid_ipv6(address):
+            return "ipv6 address %s" % ip
         else:
-            raise ValueError("invalid address: %s", x)
+            raise ValueError("invalid address: %s", ip)
 
     @classmethod
     def generate_frr_boot(cls, node: CoreNode) -> str:
@@ -333,10 +327,9 @@ class FrrService(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for iface in node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    return a
+            ip4 = iface.get_ip4()
+            if ip4:
+                return str(ip4.ip)
         return "0.0.0.0"
 
     @staticmethod
@@ -413,11 +406,8 @@ class FRROspfv2(FrrService):
         cfg += "  router-id %s\n" % rtrid
         # network 10.0.0.0/24 area 0
         for iface in node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                addr = a.split("/")[0]
-                if not netaddr.valid_ipv4(addr):
-                    continue
-                cfg += "  network %s area 0\n" % a
+            for ip4 in iface.ip4s:
+                cfg += f"  network {ip4} area 0\n"
         cfg += "!\n"
         return cfg
 

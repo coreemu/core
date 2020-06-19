@@ -1,7 +1,5 @@
 from typing import Any, Dict, List
 
-import netaddr
-
 from core import utils
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
@@ -75,13 +73,10 @@ class NrlSmf(ConfigService):
         ip4_prefix = None
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
-            if ip4_prefix:
-                continue
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    ip4_prefix = f"{a}/{24}"
-                    break
+            ip4 = iface.get_ip4()
+            if ip4:
+                ip4_prefix = f"{ip4.ip}/{24}"
+                break
         return dict(
             has_arouted=has_arouted,
             has_nhdp=has_nhdp,
@@ -191,11 +186,8 @@ class Arouted(ConfigService):
     def data(self) -> Dict[str, Any]:
         ip4_prefix = None
         for iface in self.node.get_ifaces(control=False):
-            if ip4_prefix:
-                continue
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    ip4_prefix = f"{a}/{24}"
-                    break
+            ip4 = iface.get_ip4()
+            if ip4:
+                ip4_prefix = f"{ip4.ip}/{24}"
+                break
         return dict(ip4_prefix=ip4_prefix)

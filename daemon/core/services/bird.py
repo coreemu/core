@@ -3,8 +3,6 @@ bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
 from typing import Optional, Tuple
 
-import netaddr
-
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 
@@ -39,10 +37,9 @@ class Bird(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for iface in node.get_ifaces(control=False):
-            for a in iface.addrlist:
-                a = a.split("/")[0]
-                if netaddr.valid_ipv4(a):
-                    return a
+            ip4 = iface.get_ip4()
+            if ip4:
+                return str(ip4.ip)
         return "0.0.0.0"
 
     @classmethod

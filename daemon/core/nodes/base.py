@@ -1053,18 +1053,17 @@ class CoreNetworkBase(NodeBase):
             if uni:
                 unidirectional = 1
 
-            iface2 = InterfaceData(
+            iface2_data = InterfaceData(
                 id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.mac
             )
-            for address in iface.addrlist:
-                ip, _sep, mask = address.partition("/")
-                mask = int(mask)
-                if netaddr.valid_ipv4(ip):
-                    iface2.ip4 = ip
-                    iface2.ip4_mask = mask
-                else:
-                    iface2.ip6 = ip
-                    iface2.ip6_mask = mask
+            ip4 = iface.get_ip4()
+            if ip4:
+                iface2_data.ip4 = str(ip4.ip)
+                iface2_data.ip4_mask = ip4.prefixlen
+            ip6 = iface.get_ip6()
+            if ip6:
+                iface2_data.ip6 = str(ip6.ip)
+                iface2_data.ip6_mask = ip6.prefixlen
 
             options_data = iface.get_link_options(unidirectional)
             link_data = LinkData(
@@ -1072,7 +1071,7 @@ class CoreNetworkBase(NodeBase):
                 type=self.linktype,
                 node1_id=self.id,
                 node2_id=linked_node.id,
-                iface2=iface2,
+                iface2=iface2_data,
                 options=options_data,
             )
             all_links.append(link_data)

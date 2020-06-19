@@ -1,7 +1,5 @@
 from typing import Any, Dict, List
 
-import netaddr
-
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emulator.enumerations import ConfigDataTypes
@@ -79,10 +77,10 @@ class VpnServer(ConfigService):
     def data(self) -> Dict[str, Any]:
         address = None
         for iface in self.node.get_ifaces(control=False):
-            for x in iface.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    address = addr
+            ip4 = iface.get_ip4()
+            if ip4:
+                address = str(ip4.ip)
+                break
         return dict(address=address)
 
 
