@@ -7,7 +7,6 @@ import os
 import threading
 from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 
-from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -74,7 +73,6 @@ class PhysicalNode(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        mac = utils.validate_mac(mac)
         iface = self.get_iface(iface_id)
         iface.set_mac(mac)
         if self.up:

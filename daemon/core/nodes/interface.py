@@ -56,7 +56,7 @@ class CoreInterface:
         self._params: Dict[str, float] = {}
         self.ip4s: List[netaddr.IPNetwork] = []
         self.ip6s: List[netaddr.IPNetwork] = []
-        self.mac: Optional[str] = None
+        self.mac: Optional[netaddr.EUI] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
@@ -149,8 +149,8 @@ class CoreInterface:
                 self.ip4s.append(ip)
             else:
                 self.ip6s.append(ip)
-        except netaddr.AddrFormatError:
-            raise CoreError(f"adding invalid address {ip}")
+        except netaddr.AddrFormatError as e:
+            raise CoreError(f"adding invalid address {ip}: {e}")
 
     def remove_ip(self, ip: str) -> None:
         """
@@ -167,8 +167,8 @@ class CoreInterface:
                 self.ip4s.remove(ip)
             else:
                 self.ip6s.remove(ip)
-        except (netaddr.AddrFormatError, ValueError):
-            raise CoreError(f"deleting invalid address {ip}")
+        except (netaddr.AddrFormatError, ValueError) as e:
+            raise CoreError(f"deleting invalid address {ip}: {e}")
 
     def get_ip4(self) -> Optional[netaddr.IPNetwork]:
         """
@@ -194,16 +194,21 @@ class CoreInterface:
         """
         return self.ip4s + self.ip6s
 
-    def set_mac(self, mac: str) -> None:
+    def set_mac(self, mac: Optional[str]) -> None:
         """
         Set mac address.
 
-        :param mac: mac address to set
+        :param mac: mac address to set, None for random mac
         :return: nothing
+        :raises CoreError: when there is an invalid mac address
         """
-        if mac is not None:
-            mac = utils.validate_mac(mac)
-        self.mac = mac
+        if mac is None:
+            self.mac = mac
+        else:
+            try:
+                self.mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
+            except netaddr.AddrFormatError as e:
+                raise CoreError(f"invalid mac address({mac}): {e}")
 
     def getparam(self, key: str) -> float:
         """

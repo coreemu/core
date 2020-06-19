@@ -61,7 +61,7 @@ class TestNodes:
         node.set_mac(iface.node_id, mac)
 
         # then
-        assert iface.mac == mac
+        assert str(iface.mac) == mac
 
     def test_node_set_mac_exception(self, session: Session):
         # given

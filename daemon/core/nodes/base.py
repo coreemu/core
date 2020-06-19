@@ -750,7 +750,6 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        mac = utils.validate_mac(mac)
         iface = self.get_iface(iface_id)
         iface.set_mac(mac)
         if self.up:
@@ -1059,7 +1058,7 @@ class CoreNetworkBase(NodeBase):
                 unidirectional = 1
 
             iface2_data = InterfaceData(
-                id=linked_node.get_iface_id(iface), name=iface.name, mac=iface.mac
+                id=linked_node.get_iface_id(iface), name=iface.name, mac=str(iface.mac)
             )
             ip4 = iface.get_ip4()
             if ip4:

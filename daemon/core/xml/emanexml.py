@@ -230,9 +230,9 @@ def build_node_platform_xml(
         platform_element.append(nem_element)
 
         node.setnemid(iface, nem_id)
-        macstr = _MAC_PREFIX + ":00:00:"
-        macstr += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-        iface.set_mac(macstr)
+        mac = _MAC_PREFIX + ":00:00:"
+        mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
+        iface.set_mac(mac)
 
         # increment nem id
         nem_id += 1
