@@ -444,17 +444,3 @@ def validate_mac(value: str) -> str:
         return str(mac)
     except netaddr.AddrFormatError as e:
         raise CoreError(f"invalid mac address {value}: {e}")
-
-
-def validate_ip(value: str) -> str:
-    """
-    Validate ip address with prefix and return formatted version.
-
-    :param value: address to validate
-    :return: formatted ip address
-    """
-    try:
-        ip = netaddr.IPNetwork(value)
-        return str(ip)
-    except (ValueError, netaddr.AddrFormatError) as e:
-        raise CoreError(f"invalid ip address {value}: {e}")

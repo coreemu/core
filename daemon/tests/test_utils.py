@@ -28,24 +28,6 @@ class TestUtils:
     @pytest.mark.parametrize(
         "data,expected",
         [
-            ("127", "127.0.0.0/32"),
-            ("10.0.0.1/24", "10.0.0.1/24"),
-            ("2001::", "2001::/128"),
-            ("2001::/64", "2001::/64"),
-        ],
-    )
-    def test_validate_ip(self, data: str, expected: str):
-        value = utils.validate_ip(data)
-        assert value == expected
-
-    @pytest.mark.parametrize("data", ["256", "1270.0.0.1", "127.0.0.0.1"])
-    def test_validate_ip_exception(self, data: str):
-        with pytest.raises(CoreError):
-            utils.validate_ip("")
-
-    @pytest.mark.parametrize(
-        "data,expected",
-        [
             ("AA-AA-AA-FF-FF-FF", "aa:aa:aa:ff:ff:ff"),
             ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
         ],

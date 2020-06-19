@@ -75,19 +75,30 @@ class TestNodes:
         with pytest.raises(CoreError):
             node.set_mac(iface.node_id, mac)
 
-    def test_node_add_ip(self, session: Session):
+    @pytest.mark.parametrize(
+        "ip,expected,is_ip6",
+        [
+            ("127", "127.0.0.0/32", False),
+            ("10.0.0.1/24", "10.0.0.1/24", False),
+            ("2001::", "2001::/128", True),
+            ("2001::/64", "2001::/64", True),
+        ],
+    )
+    def test_node_add_ip(self, session: Session, ip: str, expected: str, is_ip6: bool):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
         iface = node.new_iface(switch, iface_data)
-        ip = "192.168.0.1/24"
 
         # when
         node.add_ip(iface.node_id, ip)
 
         # then
-        assert str(iface.get_ip4()) == ip
+        if is_ip6:
+            assert str(iface.get_ip6()) == expected
+        else:
+            assert str(iface.get_ip4()) == expected
 
     def test_node_add_ip_exception(self, session):
         # given
