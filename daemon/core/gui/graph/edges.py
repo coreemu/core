@@ -1,9 +1,10 @@
 import logging
 import math
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from core.api.grpc import core_pb2
+from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.graph import tags
@@ -12,12 +13,12 @@ from core.gui.nodeutils import NodeUtils
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
 
-TEXT_DISTANCE = 0.30
-EDGE_WIDTH = 3
-EDGE_COLOR = "#ff0000"
-WIRELESS_WIDTH = 1.5
-WIRELESS_COLOR = "#009933"
-ARC_DISTANCE = 50
+TEXT_DISTANCE: float = 0.30
+EDGE_WIDTH: int = 3
+EDGE_COLOR: str = "#ff0000"
+WIRELESS_WIDTH: float = 1.5
+WIRELESS_COLOR: str = "#009933"
+ARC_DISTANCE: int = 50
 
 
 def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
@@ -57,20 +58,20 @@ def arc_edges(edges) -> None:
 
 
 class Edge:
-    tag = tags.EDGE
+    tag: str = tags.EDGE
 
     def __init__(self, canvas: "CanvasGraph", src: int, dst: int = None) -> None:
         self.canvas = canvas
-        self.id = None
-        self.src = src
-        self.dst = dst
-        self.arc = 0
-        self.token = None
-        self.src_label = None
-        self.middle_label = None
-        self.dst_label = None
-        self.color = EDGE_COLOR
-        self.width = EDGE_WIDTH
+        self.id: Optional[int] = None
+        self.src: int = src
+        self.dst: int = dst
+        self.arc: int = 0
+        self.token: Optional[Tuple[int, ...]] = None
+        self.src_label: Optional[int] = None
+        self.middle_label: Optional[int] = None
+        self.dst_label: Optional[int] = None
+        self.color: str = EDGE_COLOR
+        self.width: int = EDGE_WIDTH
 
     @classmethod
     def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
@@ -120,7 +121,7 @@ class Edge:
             fill=self.color,
         )
 
-    def redraw(self):
+    def redraw(self) -> None:
         self.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
         src_pos = src_x, src_y
@@ -233,13 +234,13 @@ class CanvasWirelessEdge(Edge):
         dst: int,
         src_pos: Tuple[float, float],
         dst_pos: Tuple[float, float],
-        token: Tuple[Any, ...],
+        token: Tuple[int, ...],
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(canvas, src, dst)
-        self.token = token
-        self.width = WIRELESS_WIDTH
-        self.color = WIRELESS_COLOR
+        self.token: Tuple[int, ...] = token
+        self.width: float = WIRELESS_WIDTH
+        self.color: str = WIRELESS_COLOR
         self.draw(src_pos, dst_pos)
 
 
@@ -259,19 +260,19 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_iface = None
-        self.dst_iface = None
-        self.text_src = None
-        self.text_dst = None
-        self.link = None
-        self.asymmetric_link = None
-        self.throughput = None
+        self.src_iface: Optional[Interface] = None
+        self.dst_iface: Optional[Interface] = None
+        self.text_src: Optional[int] = None
+        self.text_dst: Optional[int] = None
+        self.link: Optional[Link] = None
+        self.asymmetric_link: Optional[Link] = None
+        self.throughput: Optional[float] = None
         self.draw(src_pos, dst_pos)
         self.set_binding()
-        self.context = tk.Menu(self.canvas)
+        self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()
 
-    def create_context(self):
+    def create_context(self) -> None:
         themes.style_menu(self.context)
         self.context.add_command(label="Configure", command=self.click_configure)
         self.context.add_command(label="Delete", command=self.click_delete)
@@ -279,7 +280,7 @@ class CanvasEdge(Edge):
     def set_binding(self) -> None:
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
 
-    def set_link(self, link) -> None:
+    def set_link(self, link: Link) -> None:
         self.link = link
         self.draw_labels()
 
@@ -383,7 +384,7 @@ class CanvasEdge(Edge):
         self.context.entryconfigure(1, state=state)
         self.context.tk_popup(event.x_root, event.y_root)
 
-    def click_delete(self):
+    def click_delete(self) -> None:
         self.canvas.delete_edge(self)
 
     def click_configure(self) -> None:

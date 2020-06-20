@@ -79,7 +79,7 @@ class CoreClient:
         self.read_config()
 
         # helpers
-        self.iface_to_edge: Dict[Tuple[int, int], Tuple[int, int]] = {}
+        self.iface_to_edge: Dict[Tuple[int, ...], Tuple[int, ...]] = {}
         self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
 
         # session data
