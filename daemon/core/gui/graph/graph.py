@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from copy import deepcopy
 from tkinter import BooleanVar
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from PIL import Image, ImageTk
 
@@ -864,7 +864,7 @@ class CanvasGraph(tk.Canvas):
         for tag in tags.ORGANIZE_TAGS:
             self.tag_raise(tag)
 
-    def set_wallpaper(self, filename: str):
+    def set_wallpaper(self, filename: Optional[str]):
         logging.debug("setting wallpaper: %s", filename)
         if filename:
             img = Image.open(filename)

@@ -436,7 +436,7 @@ class CoreGrpcClient:
         session_id: int,
         handler: Callable[[core_pb2.Event], None],
         events: List[core_pb2.Event] = None,
-    ) -> Any:
+    ) -> grpc.Channel:
         """
         Listen for session events.
 
@@ -453,7 +453,7 @@ class CoreGrpcClient:
 
     def throughputs(
         self, session_id: int, handler: Callable[[core_pb2.ThroughputsEvent], None]
-    ) -> Any:
+    ) -> grpc.Channel:
         """
         Listen for throughput events with information for interfaces and bridges.
 

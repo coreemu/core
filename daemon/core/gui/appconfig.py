@@ -1,32 +1,32 @@
 import os
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Type
 
 import yaml
 
 from core.gui import themes
 
-HOME_PATH = Path.home().joinpath(".coregui")
-BACKGROUNDS_PATH = HOME_PATH.joinpath("backgrounds")
-CUSTOM_EMANE_PATH = HOME_PATH.joinpath("custom_emane")
-CUSTOM_SERVICE_PATH = HOME_PATH.joinpath("custom_services")
-ICONS_PATH = HOME_PATH.joinpath("icons")
-MOBILITY_PATH = HOME_PATH.joinpath("mobility")
-XMLS_PATH = HOME_PATH.joinpath("xmls")
-CONFIG_PATH = HOME_PATH.joinpath("config.yaml")
-LOG_PATH = HOME_PATH.joinpath("gui.log")
-SCRIPT_PATH = HOME_PATH.joinpath("scripts")
+HOME_PATH: Path = Path.home().joinpath(".coregui")
+BACKGROUNDS_PATH: Path = HOME_PATH.joinpath("backgrounds")
+CUSTOM_EMANE_PATH: Path = HOME_PATH.joinpath("custom_emane")
+CUSTOM_SERVICE_PATH: Path = HOME_PATH.joinpath("custom_services")
+ICONS_PATH: Path = HOME_PATH.joinpath("icons")
+MOBILITY_PATH: Path = HOME_PATH.joinpath("mobility")
+XMLS_PATH: Path = HOME_PATH.joinpath("xmls")
+CONFIG_PATH: Path = HOME_PATH.joinpath("config.yaml")
+LOG_PATH: Path = HOME_PATH.joinpath("gui.log")
+SCRIPT_PATH: Path = HOME_PATH.joinpath("scripts")
 
 # local paths
-DATA_PATH = Path(__file__).parent.joinpath("data")
-LOCAL_ICONS_PATH = DATA_PATH.joinpath("icons").absolute()
-LOCAL_BACKGROUND_PATH = DATA_PATH.joinpath("backgrounds").absolute()
-LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
-LOCAL_MOBILITY_PATH = DATA_PATH.joinpath("mobility").absolute()
+DATA_PATH: Path = Path(__file__).parent.joinpath("data")
+LOCAL_ICONS_PATH: Path = DATA_PATH.joinpath("icons").absolute()
+LOCAL_BACKGROUND_PATH: Path = DATA_PATH.joinpath("backgrounds").absolute()
+LOCAL_XMLS_PATH: Path = DATA_PATH.joinpath("xmls").absolute()
+LOCAL_MOBILITY_PATH: Path = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
-TERMINALS = {
+TERMINALS: Dict[str, str] = {
     "xterm": "xterm -e",
     "aterm": "aterm -e",
     "eterm": "eterm -e",
@@ -36,45 +36,45 @@ TERMINALS = {
     "xfce4-terminal": "xfce4-terminal -x",
     "gnome-terminal": "gnome-terminal --window --",
 }
-EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
+EDITORS: List[str] = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
 
 
 class IndentDumper(yaml.Dumper):
-    def increase_indent(self, flow=False, indentless=False):
-        return super().increase_indent(flow, False)
+    def increase_indent(self, flow: bool = False, indentless: bool = False) -> None:
+        super().increase_indent(flow, False)
 
 
 class CustomNode(yaml.YAMLObject):
-    yaml_tag = "!CustomNode"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!CustomNode"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, name: str, image: str, services: List[str]) -> None:
-        self.name = name
-        self.image = image
-        self.services = services
+        self.name: str = name
+        self.image: str = image
+        self.services: List[str] = services
 
 
 class CoreServer(yaml.YAMLObject):
-    yaml_tag = "!CoreServer"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!CoreServer"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, name: str, address: str) -> None:
-        self.name = name
-        self.address = address
+        self.name: str = name
+        self.address: str = address
 
 
 class Observer(yaml.YAMLObject):
-    yaml_tag = "!Observer"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!Observer"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, name: str, cmd: str) -> None:
-        self.name = name
-        self.cmd = cmd
+        self.name: str = name
+        self.cmd: str = cmd
 
 
 class PreferencesConfig(yaml.YAMLObject):
-    yaml_tag = "!PreferencesConfig"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!PreferencesConfig"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -85,17 +85,17 @@ class PreferencesConfig(yaml.YAMLObject):
         width: int = 1000,
         height: int = 750,
     ) -> None:
-        self.theme = theme
-        self.editor = editor
-        self.terminal = terminal
-        self.gui3d = gui3d
-        self.width = width
-        self.height = height
+        self.theme: str = theme
+        self.editor: str = editor
+        self.terminal: str = terminal
+        self.gui3d: str = gui3d
+        self.width: int = width
+        self.height: int = height
 
 
 class LocationConfig(yaml.YAMLObject):
-    yaml_tag = "!LocationConfig"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!LocationConfig"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -107,18 +107,18 @@ class LocationConfig(yaml.YAMLObject):
         alt: float = 2.0,
         scale: float = 150.0,
     ) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
-        self.lat = lat
-        self.lon = lon
-        self.alt = alt
-        self.scale = scale
+        self.x: float = x
+        self.y: float = y
+        self.z: float = z
+        self.lat: float = lat
+        self.lon: float = lon
+        self.alt: float = alt
+        self.scale: float = scale
 
 
 class IpConfigs(yaml.YAMLObject):
-    yaml_tag = "!IpConfigs"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!IpConfigs"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -129,21 +129,21 @@ class IpConfigs(yaml.YAMLObject):
     ) -> None:
         if ip4s is None:
             ip4s = ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
-        self.ip4s = ip4s
+        self.ip4s: List[str] = ip4s
         if ip6s is None:
             ip6s = ["2001::", "2002::", "a::"]
-        self.ip6s = ip6s
+        self.ip6s: List[str] = ip6s
         if ip4 is None:
             ip4 = self.ip4s[0]
-        self.ip4 = ip4
+        self.ip4: str = ip4
         if ip6 is None:
             ip6 = self.ip6s[0]
-        self.ip6 = ip6
+        self.ip6: str = ip6
 
 
 class GuiConfig(yaml.YAMLObject):
-    yaml_tag = "!GuiConfig"
-    yaml_loader = yaml.SafeLoader
+    yaml_tag: str = "!GuiConfig"
+    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -159,30 +159,30 @@ class GuiConfig(yaml.YAMLObject):
     ) -> None:
         if preferences is None:
             preferences = PreferencesConfig()
-        self.preferences = preferences
+        self.preferences: PreferencesConfig = preferences
         if location is None:
             location = LocationConfig()
-        self.location = location
+        self.location: LocationConfig = location
         if servers is None:
             servers = []
-        self.servers = servers
+        self.servers: List[CoreServer] = servers
         if nodes is None:
             nodes = []
-        self.nodes = nodes
+        self.nodes: List[CustomNode] = nodes
         if recentfiles is None:
             recentfiles = []
-        self.recentfiles = recentfiles
+        self.recentfiles: List[str] = recentfiles
         if observers is None:
             observers = []
-        self.observers = observers
-        self.scale = scale
+        self.observers: List[Observer] = observers
+        self.scale: float = scale
         if ips is None:
             ips = IpConfigs()
-        self.ips = ips
-        self.mac = mac
+        self.ips: IpConfigs = ips
+        self.mac: str = mac
 
 
-def copy_files(current_path, new_path) -> None:
+def copy_files(current_path: Path, new_path: Path) -> None:
     for current_file in current_path.glob("*"):
         new_file = new_path.joinpath(current_file.name)
         shutil.copy(current_file, new_file)

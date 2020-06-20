@@ -1,7 +1,7 @@
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Any, Callable, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -16,14 +16,14 @@ class ProgressTask:
         callback: Callable = None,
         args: Tuple[Any] = None,
     ):
-        self.app = app
-        self.title = title
-        self.task = task
-        self.callback = callback
-        self.args = args
-        if self.args is None:
-            self.args = ()
-        self.time = None
+        self.app: "Application" = app
+        self.title: str = title
+        self.task: Callable = task
+        self.callback: Callable = callback
+        if args is None:
+            args = ()
+        self.args: Tuple[Any] = args
+        self.time: Optional[float] = None
 
     def start(self) -> None:
         self.app.progress.grid(sticky="ew")
@@ -49,7 +49,7 @@ class ProgressTask:
         finally:
             self.app.after(0, self.complete)
 
-    def complete(self):
+    def complete(self) -> None:
         self.app.progress.stop()
         self.app.progress.grid_forget()
         total = time.perf_counter() - self.time

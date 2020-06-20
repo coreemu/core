@@ -3,10 +3,12 @@ import math
 import tkinter as tk
 from tkinter import PhotoImage, font, ttk
 from tkinter.ttk import Progressbar
+from typing import Dict, Optional
 
 import grpc
 
 from core.gui import appconfig, themes
+from core.gui.appconfig import GuiConfig
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.graph.graph import CanvasGraph
@@ -16,8 +18,8 @@ from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
 from core.gui.toolbar import Toolbar
 
-WIDTH = 1000
-HEIGHT = 800
+WIDTH: int = 1000
+HEIGHT: int = 800
 
 
 class Application(ttk.Frame):
@@ -27,25 +29,25 @@ class Application(ttk.Frame):
         NodeUtils.setup()
 
         # widgets
-        self.menubar = None
-        self.toolbar = None
-        self.right_frame = None
-        self.canvas = None
-        self.statusbar = None
-        self.progress = None
+        self.menubar: Optional[Menubar] = None
+        self.toolbar: Optional[Toolbar] = None
+        self.right_frame: Optional[ttk.Frame] = None
+        self.canvas: Optional[CanvasGraph] = None
+        self.statusbar: Optional[StatusBar] = None
+        self.progress: Optional[Progressbar] = None
 
         # fonts
-        self.fonts_size = None
-        self.icon_text_font = None
-        self.edge_font = None
+        self.fonts_size: Dict[str, int] = {}
+        self.icon_text_font: Optional[font.Font] = None
+        self.edge_font: Optional[font.Font] = None
 
         # setup
-        self.guiconfig = appconfig.read()
-        self.app_scale = self.guiconfig.scale
+        self.guiconfig: GuiConfig = appconfig.read()
+        self.app_scale: float = self.guiconfig.scale
         self.setup_scaling()
-        self.style = ttk.Style()
+        self.style: ttk.Style = ttk.Style()
         self.setup_theme()
-        self.core = CoreClient(self, proxy)
+        self.core: CoreClient = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
         self.core.setup()

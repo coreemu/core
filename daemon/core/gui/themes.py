@@ -1,39 +1,40 @@
 import tkinter as tk
 from tkinter import font, ttk
+from typing import Dict, Tuple
 
-THEME_DARK = "black"
-PADX = (0, 5)
-PADY = (0, 5)
-FRAME_PAD = 5
-DIALOG_PAD = 5
+THEME_DARK: str = "black"
+PADX: Tuple[int, int] = (0, 5)
+PADY: Tuple[int, int] = (0, 5)
+FRAME_PAD: int = 5
+DIALOG_PAD: int = 5
 
 
 class Styles:
-    tooltip = "Tooltip.TLabel"
-    tooltip_frame = "Tooltip.TFrame"
-    service_checkbutton = "Service.TCheckbutton"
-    picker_button = "Picker.TButton"
-    green_alert = "GAlert.TButton"
-    red_alert = "RAlert.TButton"
-    yellow_alert = "YAlert.TButton"
+    tooltip: str = "Tooltip.TLabel"
+    tooltip_frame: str = "Tooltip.TFrame"
+    service_checkbutton: str = "Service.TCheckbutton"
+    picker_button: str = "Picker.TButton"
+    green_alert: str = "GAlert.TButton"
+    red_alert: str = "RAlert.TButton"
+    yellow_alert: str = "YAlert.TButton"
 
 
 class Colors:
-    disabledfg = "DarkGrey"
-    frame = "#424242"
-    dark = "#222222"
-    darker = "#121212"
-    darkest = "black"
-    lighter = "#626262"
-    lightest = "#ffffff"
-    selectbg = "#4a6984"
-    selectfg = "#ffffff"
-    white = "white"
-    black = "black"
-    listboxbg = "#f2f1f0"
+    disabledfg: str = "DarkGrey"
+    frame: str = "#424242"
+    dark: str = "#222222"
+    darker: str = "#121212"
+    darkest: str = "black"
+    lighter: str = "#626262"
+    lightest: str = "#ffffff"
+    selectbg: str = "#4a6984"
+    selectfg: str = "#ffffff"
+    white: str = "white"
+    black: str = "black"
+    listboxbg: str = "#f2f1f0"
 
 
-def load(style: ttk.Style):
+def load(style: ttk.Style) -> None:
     style.theme_create(
         THEME_DARK,
         "clam",
@@ -139,13 +140,13 @@ def load(style: ttk.Style):
     )
 
 
-def theme_change_menu(event: tk.Event):
+def theme_change_menu(event: tk.Event) -> None:
     if not isinstance(event.widget, tk.Menu):
         return
     style_menu(event.widget)
 
 
-def style_menu(widget: tk.Widget):
+def style_menu(widget: tk.Widget) -> None:
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
@@ -157,7 +158,7 @@ def style_menu(widget: tk.Widget):
     )
 
 
-def style_listbox(widget: tk.Widget):
+def style_listbox(widget: tk.Widget) -> None:
     style = ttk.Style()
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
@@ -174,7 +175,7 @@ def style_listbox(widget: tk.Widget):
     )
 
 
-def theme_change(event: tk.Event):
+def theme_change(event: tk.Event) -> None:
     style = ttk.Style()
     style.configure(Styles.picker_button, font="TkSmallCaptionFont")
     style.configure(
@@ -203,7 +204,7 @@ def theme_change(event: tk.Event):
     )
 
 
-def scale_fonts(fonts_size, scale):
+def scale_fonts(fonts_size: Dict[str, int], scale: float) -> None:
     for name in font.names():
         f = font.nametofont(name)
         if name in fonts_size:

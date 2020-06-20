@@ -4,9 +4,10 @@ import tkinter as tk
 import webbrowser
 from functools import partial
 from tkinter import filedialog, messagebox
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.appconfig import XMLS_PATH
+from core.gui.coreclient import CoreClient
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
 from core.gui.dialogs.canvaswallpaper import CanvasWallpaperDialog
@@ -22,6 +23,7 @@ from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
+from core.gui.graph.graph import CanvasGraph
 from core.gui.nodeutils import ICON_SIZE
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
@@ -29,7 +31,7 @@ from core.gui.task import ProgressTask
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-MAX_FILES = 3
+MAX_FILES: int = 3
 
 
 class Menubar(tk.Menu):
@@ -42,12 +44,12 @@ class Menubar(tk.Menu):
         Create a CoreMenubar instance
         """
         super().__init__(app)
-        self.app = app
-        self.core = app.core
-        self.canvas = app.canvas
-        self.recent_menu = None
-        self.edit_menu = None
-        self.observers_menu = None
+        self.app: "Application" = app
+        self.core: CoreClient = app.core
+        self.canvas: CanvasGraph = app.canvas
+        self.recent_menu: Optional[tk.Menu] = None
+        self.edit_menu: Optional[tk.Menu] = None
+        self.observers_menu: Optional[tk.Menu] = None
         self.draw()
 
     def draw(self) -> None:
