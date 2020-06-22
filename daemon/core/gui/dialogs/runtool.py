@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.nodeutils import NodeUtils
@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 class RunToolDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Run Tool")
-        self.cmd = tk.StringVar(value="ps ax")
-        self.result = None
-        self.node_list = None
-        self.executable_nodes = {}
+        self.cmd: tk.StringVar = tk.StringVar(value="ps ax")
+        self.result: Optional[CodeText] = None
+        self.node_list: Optional[ListboxScroll] = None
+        self.executable_nodes: Dict[str, int] = {}
         self.store_nodes()
         self.draw()
 

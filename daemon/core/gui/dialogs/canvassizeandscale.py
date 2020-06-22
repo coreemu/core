@@ -7,38 +7,43 @@ from typing import TYPE_CHECKING
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
+from core.gui.graph.graph import CanvasGraph
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-PIXEL_SCALE = 100
+PIXEL_SCALE: int = 100
 
 
 class SizeAndScaleDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         """
         create an instance for size and scale object
         """
         super().__init__(app, "Canvas Size and Scale")
-        self.canvas = self.app.canvas
-        self.section_font = font.Font(weight="bold")
+        self.canvas: CanvasGraph = self.app.canvas
+        self.section_font: font.Font = font.Font(weight="bold")
         width, height = self.canvas.current_dimensions
-        self.pixel_width = tk.IntVar(value=width)
-        self.pixel_height = tk.IntVar(value=height)
+        self.pixel_width: tk.IntVar = tk.IntVar(value=width)
+        self.pixel_height: tk.IntVar = tk.IntVar(value=height)
         location = self.app.core.location
-        self.x = tk.DoubleVar(value=location.x)
-        self.y = tk.DoubleVar(value=location.y)
-        self.lat = tk.DoubleVar(value=location.lat)
-        self.lon = tk.DoubleVar(value=location.lon)
-        self.alt = tk.DoubleVar(value=location.alt)
-        self.scale = tk.DoubleVar(value=location.scale)
-        self.meters_width = tk.IntVar(value=width / PIXEL_SCALE * location.scale)
-        self.meters_height = tk.IntVar(value=height / PIXEL_SCALE * location.scale)
-        self.save_default = tk.BooleanVar(value=False)
+        self.x: tk.DoubleVar = tk.DoubleVar(value=location.x)
+        self.y: tk.DoubleVar = tk.DoubleVar(value=location.y)
+        self.lat: tk.DoubleVar = tk.DoubleVar(value=location.lat)
+        self.lon: tk.DoubleVar = tk.DoubleVar(value=location.lon)
+        self.alt: tk.DoubleVar = tk.DoubleVar(value=location.alt)
+        self.scale: tk.DoubleVar = tk.DoubleVar(value=location.scale)
+        self.meters_width: tk.IntVar = tk.IntVar(
+            value=width / PIXEL_SCALE * location.scale
+        )
+        self.meters_height: tk.IntVar = tk.IntVar(
+            value=height / PIXEL_SCALE * location.scale
+        )
+        self.save_default: tk.BooleanVar = tk.BooleanVar(value=False)
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.draw_size()
         self.draw_scale()
@@ -47,7 +52,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
-    def draw_size(self):
+    def draw_size(self) -> None:
         label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
@@ -84,7 +89,7 @@ class SizeAndScaleDialog(Dialog):
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
 
-    def draw_scale(self):
+    def draw_scale(self) -> None:
         label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
@@ -99,7 +104,7 @@ class SizeAndScaleDialog(Dialog):
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
 
-    def draw_reference_point(self):
+    def draw_reference_point(self) -> None:
         label_frame = ttk.Labelframe(
             self.top, text="Reference Point", padding=FRAME_PAD
         )
@@ -150,13 +155,13 @@ class SizeAndScaleDialog(Dialog):
         entry = validation.FloatEntry(frame, textvariable=self.alt)
         entry.grid(row=0, column=5, sticky="ew")
 
-    def draw_save_as_default(self):
+    def draw_save_as_default(self) -> None:
         button = ttk.Checkbutton(
             self.top, text="Save as default?", variable=self.save_default
         )
         button.grid(sticky="w", pady=PADY)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -168,7 +173,7 @@ class SizeAndScaleDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         width, height = self.pixel_width.get(), self.pixel_height.get()
         self.canvas.redraw_canvas((width, height))
         if self.canvas.wallpaper:

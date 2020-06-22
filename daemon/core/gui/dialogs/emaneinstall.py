@@ -10,7 +10,7 @@ class EmaneInstallDialog(Dialog):
         super().__init__(app, "EMANE Error")
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         label = ttk.Label(self.top, text="EMANE needs to be installed!")
         label.grid(sticky="ew", pady=PADY)
@@ -21,5 +21,5 @@ class EmaneInstallDialog(Dialog):
         button = ttk.Button(self.top, text="Close", command=self.destroy)
         button.grid(sticky="ew")
 
-    def click_doc(self):
+    def click_doc(self) -> None:
         webbrowser.open_new("https://coreemu.github.io/core/emane.html")

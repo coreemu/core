@@ -2,10 +2,12 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 import netaddr
+from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.core_pb2 import Node
 from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -86,35 +88,35 @@ class InterfaceData:
         mac: tk.StringVar,
         ip4: tk.StringVar,
         ip6: tk.StringVar,
-    ):
-        self.is_auto = is_auto
-        self.mac = mac
-        self.ip4 = ip4
-        self.ip6 = ip6
+    ) -> None:
+        self.is_auto: tk.BooleanVar = is_auto
+        self.mac: tk.StringVar = mac
+        self.ip4: tk.StringVar = ip4
+        self.ip6: tk.StringVar = ip6
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
         """
         create an instance of node configuration
         """
         super().__init__(app, f"{canvas_node.core_node.name} Configuration")
-        self.canvas_node = canvas_node
-        self.node = canvas_node.core_node
-        self.image = canvas_node.image
-        self.image_file = None
-        self.image_button = None
-        self.name = tk.StringVar(value=self.node.name)
-        self.type = tk.StringVar(value=self.node.model)
-        self.container_image = tk.StringVar(value=self.node.image)
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node: Node = canvas_node.core_node
+        self.image: PhotoImage = canvas_node.image
+        self.image_file: Optional[str] = None
+        self.image_button: Optional[ttk.Button] = None
+        self.name: tk.StringVar = tk.StringVar(value=self.node.name)
+        self.type: tk.StringVar = tk.StringVar(value=self.node.model)
+        self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
         server = "localhost"
         if self.node.server:
             server = self.node.server
-        self.server = tk.StringVar(value=server)
-        self.ifaces = {}
+        self.server: tk.StringVar = tk.StringVar(value=server)
+        self.ifaces: Dict[int, InterfaceData] = {}
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         row = 0
 
@@ -202,7 +204,7 @@ class NodeConfigDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
-    def draw_ifaces(self):
+    def draw_ifaces(self) -> None:
         notebook = ttk.Notebook(self.top)
         notebook.grid(sticky="nsew", pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
@@ -265,7 +267,7 @@ class NodeConfigDialog(Dialog):
 
             self.ifaces[iface.id] = InterfaceData(is_auto, mac, ip4, ip6)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
@@ -277,20 +279,20 @@ class NodeConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_emane_config(self, emane_model: str, iface_id: int):
+    def click_emane_config(self, emane_model: str, iface_id: int) -> None:
         dialog = EmaneModelDialog(
             self, self.app, self.canvas_node, emane_model, iface_id
         )
         dialog.show()
 
-    def click_icon(self):
+    def click_icon(self) -> None:
         file_path = image_chooser(self, ICONS_PATH)
         if file_path:
             self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_button.config(image=self.image)
             self.image_file = file_path
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         error = False
 
         # update core node
@@ -354,7 +356,7 @@ class NodeConfigDialog(Dialog):
             self.canvas_node.redraw()
             self.destroy()
 
-    def iface_select(self, event: tk.Event):
+    def iface_select(self, event: tk.Event) -> None:
         listbox = event.widget
         cur = listbox.curselection()
         if cur:

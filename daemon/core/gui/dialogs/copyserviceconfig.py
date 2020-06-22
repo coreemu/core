@@ -15,17 +15,16 @@ if TYPE_CHECKING:
 
 
 class CopyServiceConfigDialog(Dialog):
-    def __init__(self, master: tk.BaseWidget, app: "Application", node_id: int):
+    def __init__(self, master: tk.BaseWidget, app: "Application", node_id: int) -> None:
         super().__init__(app, f"Copy services to node {node_id}", master=master)
         self.parent = master
         self.node_id = node_id
         self.service_configs = app.core.service_configs
         self.file_configs = app.core.file_configs
-
         self.tree = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.tree = ttk.Treeview(self.top)
         self.tree.grid(row=0, column=0, sticky="ew", padx=PADX)
@@ -88,7 +87,7 @@ class CopyServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=2, sticky="ew", padx=PADX)
 
-    def click_copy(self):
+    def click_copy(self) -> None:
         selected = self.tree.selection()
         if selected:
             item = self.tree.item(selected[0])
@@ -127,7 +126,7 @@ class CopyServiceConfigDialog(Dialog):
                         )
         self.destroy()
 
-    def click_view(self):
+    def click_view(self) -> None:
         selected = self.tree.selection()
         data = ""
         if selected:
@@ -159,7 +158,7 @@ class CopyServiceConfigDialog(Dialog):
                     )
                 dialog.show()
 
-    def get_node_service(self, selected: Tuple[str]) -> [int, str]:
+    def get_node_service(self, selected: Tuple[str]) -> Tuple[int, str]:
         service_tree_id = self.tree.parent(selected[0])
         service_name = self.tree.item(service_tree_id)["text"]
         node_tree_id = self.tree.parent(service_tree_id)
@@ -175,14 +174,14 @@ class ViewConfigDialog(Dialog):
         node_id: int,
         data: str,
         filename: str = None,
-    ):
+    ) -> None:
         super().__init__(app, f"n{node_id} config data", master=master)
         self.data = data
         self.service_data = None
         self.filepath = tk.StringVar(value=f"/tmp/services.tmp-n{node_id}-{filename}")
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
         frame.columnconfigure(0, weight=1)

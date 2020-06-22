@@ -14,7 +14,7 @@ ANTENNA_SIZE: int = 32
 class NodeDraw:
     def __init__(self) -> None:
         self.custom: bool = False
-        self.image: Optional[str] = None
+        self.image: Optional[PhotoImage] = None
         self.image_enum: Optional[ImageEnum] = None
         self.image_file: Optional[str] = None
         self.node_type: NodeType = None

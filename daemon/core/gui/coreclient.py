@@ -38,7 +38,7 @@ from core.api.grpc.mobility_pb2 import MobilityConfig
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
 from core.api.grpc.wlan_pb2 import WlanConfig
 from core.gui import appconfig
-from core.gui.appconfig import CoreServer
+from core.gui.appconfig import CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
@@ -75,7 +75,7 @@ class CoreClient:
         # loaded configuration data
         self.servers: Dict[str, CoreServer] = {}
         self.custom_nodes: Dict[str, NodeDraw] = {}
-        self.custom_observers: Dict[str, str] = {}
+        self.custom_observers: Dict[str, Observer] = {}
         self.read_config()
 
         # helpers

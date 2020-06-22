@@ -15,7 +15,7 @@ class MacConfigDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "MAC Configuration")
         mac = self.app.guiconfig.mac
-        self.mac_var = tk.StringVar(value=mac)
+        self.mac_var: tk.StringVar = tk.StringVar(value=mac)
         self.draw()
 
     def draw(self) -> None:

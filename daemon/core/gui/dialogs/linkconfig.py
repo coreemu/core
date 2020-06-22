@@ -3,7 +3,7 @@ link configuration
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc import core_pb2
 from core.gui import validation
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasEdge
 
 
-def get_int(var: tk.StringVar) -> Union[int, None]:
+def get_int(var: tk.StringVar) -> Optional[int]:
     value = var.get()
     if value != "":
         return int(value)
@@ -24,7 +24,7 @@ def get_int(var: tk.StringVar) -> Union[int, None]:
         return None
 
 
-def get_float(var: tk.StringVar) -> Union[float, None]:
+def get_float(var: tk.StringVar) -> Optional[float]:
     value = var.get()
     if value != "":
         return float(value)
@@ -33,38 +33,39 @@ def get_float(var: tk.StringVar) -> Union[float, None]:
 
 
 class LinkConfigurationDialog(Dialog):
-    def __init__(self, app: "Application", edge: "CanvasEdge"):
+    def __init__(self, app: "Application", edge: "CanvasEdge") -> None:
         super().__init__(app, "Link Configuration")
-        self.edge = edge
-        self.is_symmetric = edge.link.options.unidirectional is False
+        self.edge: "CanvasEdge" = edge
+        self.is_symmetric: bool = edge.link.options.unidirectional is False
         if self.is_symmetric:
-            self.symmetry_var = tk.StringVar(value=">>")
+            symmetry_var = tk.StringVar(value=">>")
         else:
-            self.symmetry_var = tk.StringVar(value="<<")
+            symmetry_var = tk.StringVar(value="<<")
+        self.symmetry_var: tk.StringVar = symmetry_var
 
-        self.bandwidth = tk.StringVar()
-        self.delay = tk.StringVar()
-        self.jitter = tk.StringVar()
-        self.loss = tk.StringVar()
-        self.duplicate = tk.StringVar()
+        self.bandwidth: tk.StringVar = tk.StringVar()
+        self.delay: tk.StringVar = tk.StringVar()
+        self.jitter: tk.StringVar = tk.StringVar()
+        self.loss: tk.StringVar = tk.StringVar()
+        self.duplicate: tk.StringVar = tk.StringVar()
 
-        self.down_bandwidth = tk.StringVar()
-        self.down_delay = tk.StringVar()
-        self.down_jitter = tk.StringVar()
-        self.down_loss = tk.StringVar()
-        self.down_duplicate = tk.StringVar()
+        self.down_bandwidth: tk.StringVar = tk.StringVar()
+        self.down_delay: tk.StringVar = tk.StringVar()
+        self.down_jitter: tk.StringVar = tk.StringVar()
+        self.down_loss: tk.StringVar = tk.StringVar()
+        self.down_duplicate: tk.StringVar = tk.StringVar()
 
-        self.color = tk.StringVar(value="#000000")
-        self.color_button = None
-        self.width = tk.DoubleVar()
+        self.color: tk.StringVar = tk.StringVar(value="#000000")
+        self.color_button: Optional[tk.Button] = None
+        self.width: tk.DoubleVar = tk.DoubleVar()
 
         self.load_link_config()
-        self.symmetric_frame = None
-        self.asymmetric_frame = None
+        self.symmetric_frame: Optional[ttk.Frame] = None
+        self.asymmetric_frame: Optional[ttk.Frame] = None
 
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         source_name = self.app.canvas.nodes[self.edge.src].core_node.name
         dest_name = self.app.canvas.nodes[self.edge.dst].core_node.name
@@ -207,13 +208,13 @@ class LinkConfigurationDialog(Dialog):
 
         return frame
 
-    def click_color(self):
+    def click_color(self) -> None:
         dialog = ColorPickerDialog(self, self.app, self.color.get())
         color = dialog.askcolor()
         self.color.set(color)
         self.color_button.config(background=color)
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
         self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
         link = self.edge.link
@@ -288,7 +289,7 @@ class LinkConfigurationDialog(Dialog):
 
         self.destroy()
 
-    def change_symmetry(self):
+    def change_symmetry(self) -> None:
         if self.is_symmetric:
             self.is_symmetric = False
             self.symmetry_var.set("<<")
@@ -304,7 +305,7 @@ class LinkConfigurationDialog(Dialog):
             self.asymmetric_frame.grid_forget()
             self.symmetric_frame.grid(row=2, column=0)
 
-    def load_link_config(self):
+    def load_link_config(self) -> None:
         """
         populate link config to the table
         """

@@ -3,7 +3,7 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Set
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
@@ -16,19 +16,19 @@ if TYPE_CHECKING:
 
 
 class NodeServiceDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
         title = f"{canvas_node.core_node.name} Services"
         super().__init__(app, title)
-        self.canvas_node = canvas_node
-        self.node_id = canvas_node.core_node.id
-        self.groups = None
-        self.services = None
-        self.current = None
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node_id: int = canvas_node.core_node.id
+        self.groups: Optional[ListboxScroll] = None
+        self.services: Optional[CheckboxList] = None
+        self.current: Optional[ListboxScroll] = None
         services = set(canvas_node.core_node.services)
-        self.current_services = services
+        self.current_services: Set[str] = services
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
@@ -84,7 +84,7 @@ class NodeServiceDialog(Dialog):
         # trigger group change
         self.groups.listbox.event_generate("<<ListboxSelect>>")
 
-    def handle_group_change(self, event: tk.Event = None):
+    def handle_group_change(self, event: tk.Event = None) -> None:
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -94,7 +94,7 @@ class NodeServiceDialog(Dialog):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
-    def service_clicked(self, name: str, var: tk.IntVar):
+    def service_clicked(self, name: str, var: tk.IntVar) -> None:
         if var.get() and name not in self.current_services:
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
@@ -106,7 +106,7 @@ class NodeServiceDialog(Dialog):
                 self.current.listbox.itemconfig(tk.END, bg="green")
         self.canvas_node.core_node.services[:] = self.current_services
 
-    def click_configure(self):
+    def click_configure(self) -> None:
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
             dialog = ServiceConfigDialog(
@@ -127,12 +127,12 @@ class NodeServiceDialog(Dialog):
                 "Service Configuration", "Select a service to configure", parent=self
             )
 
-    def click_save(self):
+    def click_save(self) -> None:
         core_node = self.canvas_node.core_node
         core_node.services[:] = self.current_services
         self.destroy()
 
-    def click_remove(self):
+    def click_remove(self) -> None:
         cur = self.current.listbox.curselection()
         if cur:
             service = self.current.listbox.get(cur[0])

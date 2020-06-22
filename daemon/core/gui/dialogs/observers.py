@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.appconfig import Observer
 from core.gui.dialogs.dialog import Dialog
@@ -12,18 +12,18 @@ if TYPE_CHECKING:
 
 
 class ObserverDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Observer Widgets")
-        self.observers = None
-        self.save_button = None
-        self.delete_button = None
-        self.selected = None
-        self.selected_index = None
-        self.name = tk.StringVar()
-        self.cmd = tk.StringVar()
+        self.observers: Optional[tk.Listbox] = None
+        self.save_button: Optional[ttk.Button] = None
+        self.delete_button: Optional[ttk.Button] = None
+        self.selected: Optional[str] = None
+        self.selected_index: Optional[int] = None
+        self.name: tk.StringVar = tk.StringVar()
+        self.cmd: tk.StringVar = tk.StringVar()
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.draw_listbox()
@@ -31,7 +31,7 @@ class ObserverDialog(Dialog):
         self.draw_config_buttons()
         self.draw_apply_buttons()
 
-    def draw_listbox(self):
+    def draw_listbox(self) -> None:
         listbox_scroll = ListboxScroll(self.top)
         listbox_scroll.grid(sticky="nsew", pady=PADY)
         listbox_scroll.columnconfigure(0, weight=1)
@@ -42,7 +42,7 @@ class ObserverDialog(Dialog):
         for name in sorted(self.app.core.custom_observers):
             self.observers.insert(tk.END, name)
 
-    def draw_form_fields(self):
+    def draw_form_fields(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PADY)
         frame.columnconfigure(1, weight=1)
@@ -57,7 +57,7 @@ class ObserverDialog(Dialog):
         entry = ttk.Entry(frame, textvariable=self.cmd)
         entry.grid(row=1, column=1, sticky="ew")
 
-    def draw_config_buttons(self):
+    def draw_config_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PADY)
         for i in range(3):
@@ -76,7 +76,7 @@ class ObserverDialog(Dialog):
         )
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
-    def draw_apply_buttons(self):
+    def draw_apply_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
@@ -88,14 +88,14 @@ class ObserverDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_save_config(self):
+    def click_save_config(self) -> None:
         self.app.guiconfig.observers.clear()
         for observer in self.app.core.custom_observers.values():
             self.app.guiconfig.observers.append(observer)
         self.app.save_config()
         self.destroy()
 
-    def click_create(self):
+    def click_create(self) -> None:
         name = self.name.get()
         if name not in self.app.core.custom_observers:
             cmd = self.cmd.get()
@@ -109,7 +109,7 @@ class ObserverDialog(Dialog):
         else:
             messagebox.showerror("Observer Error", f"{name} already exists")
 
-    def click_save(self):
+    def click_save(self) -> None:
         name = self.name.get()
         if self.selected:
             previous_name = self.selected
@@ -122,7 +122,7 @@ class ObserverDialog(Dialog):
             self.observers.insert(self.selected_index, name)
             self.observers.selection_set(self.selected_index)
 
-    def click_delete(self):
+    def click_delete(self) -> None:
         if self.selected:
             self.observers.delete(self.selected_index)
             del self.app.core.custom_observers[self.selected]
@@ -136,7 +136,7 @@ class ObserverDialog(Dialog):
             self.app.menubar.observers_menu.draw_custom()
             self.app.toolbar.observers_menu.draw_custom()
 
-    def handle_observer_change(self, event: tk.Event):
+    def handle_observer_change(self, event: tk.Event) -> None:
         selection = self.observers.curselection()
         if selection:
             self.selected_index = selection[0]

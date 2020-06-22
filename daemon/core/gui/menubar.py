@@ -49,7 +49,7 @@ class Menubar(tk.Menu):
         self.canvas: CanvasGraph = app.canvas
         self.recent_menu: Optional[tk.Menu] = None
         self.edit_menu: Optional[tk.Menu] = None
-        self.observers_menu: Optional[tk.Menu] = None
+        self.observers_menu: Optional[ObserversMenu] = None
         self.draw()
 
     def draw(self) -> None:

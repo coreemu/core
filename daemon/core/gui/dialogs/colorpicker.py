@@ -3,7 +3,7 @@ custom color picker
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
@@ -18,23 +18,23 @@ class ColorPickerDialog(Dialog):
         self, master: tk.BaseWidget, app: "Application", initcolor: str = "#000000"
     ):
         super().__init__(app, "Color Picker", master=master)
-        self.red_entry = None
-        self.blue_entry = None
-        self.green_entry = None
-        self.hex_entry = None
-        self.red_label = None
-        self.green_label = None
-        self.blue_label = None
-        self.display = None
-        self.color = initcolor
+        self.red_entry: Optional[validation.RgbEntry] = None
+        self.blue_entry: Optional[validation.RgbEntry] = None
+        self.green_entry: Optional[validation.RgbEntry] = None
+        self.hex_entry: Optional[validation.HexEntry] = None
+        self.red_label: Optional[ttk.Label] = None
+        self.green_label: Optional[ttk.Label] = None
+        self.blue_label: Optional[ttk.Label] = None
+        self.display: Optional[tk.Frame] = None
+        self.color: str = initcolor
         red, green, blue = self.get_rgb(initcolor)
-        self.red = tk.IntVar(value=red)
-        self.blue = tk.IntVar(value=blue)
-        self.green = tk.IntVar(value=green)
-        self.hex = tk.StringVar(value=initcolor)
-        self.red_scale = tk.IntVar(value=red)
-        self.green_scale = tk.IntVar(value=green)
-        self.blue_scale = tk.IntVar(value=blue)
+        self.red: tk.IntVar = tk.IntVar(value=red)
+        self.blue: tk.IntVar = tk.IntVar(value=blue)
+        self.green: tk.IntVar = tk.IntVar(value=green)
+        self.hex: tk.StringVar = tk.StringVar(value=initcolor)
+        self.red_scale: tk.IntVar = tk.IntVar(value=red)
+        self.green_scale: tk.IntVar = tk.IntVar(value=green)
+        self.blue_scale: tk.IntVar = tk.IntVar(value=blue)
         self.draw()
         self.set_bindings()
 
@@ -42,7 +42,7 @@ class ColorPickerDialog(Dialog):
         self.show()
         return self.color
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(3, weight=1)
 
@@ -136,7 +136,7 @@ class ColorPickerDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def set_bindings(self):
+    def set_bindings(self) -> None:
         self.red_entry.bind("<FocusIn>", lambda x: self.current_focus("rgb"))
         self.green_entry.bind("<FocusIn>", lambda x: self.current_focus("rgb"))
         self.blue_entry.bind("<FocusIn>", lambda x: self.current_focus("rgb"))
@@ -146,7 +146,7 @@ class ColorPickerDialog(Dialog):
         self.blue.trace_add("write", self.update_color)
         self.hex.trace_add("write", self.update_color)
 
-    def button_ok(self):
+    def button_ok(self) -> None:
         self.color = self.hex.get()
         self.destroy()
 
@@ -159,10 +159,10 @@ class ColorPickerDialog(Dialog):
         green = self.green_entry.get()
         return "#%02x%02x%02x" % (int(red), int(green), int(blue))
 
-    def current_focus(self, focus: str):
+    def current_focus(self, focus: str) -> None:
         self.focus = focus
 
-    def update_color(self, arg1=None, arg2=None, arg3=None):
+    def update_color(self, arg1=None, arg2=None, arg3=None) -> None:
         if self.focus == "rgb":
             red = self.red_entry.get()
             blue = self.blue_entry.get()
@@ -184,7 +184,7 @@ class ColorPickerDialog(Dialog):
             self.display.config(background=hex_code)
             self.set_label(str(red), str(green), str(blue))
 
-    def scale_callback(self, var: tk.IntVar, color_var: tk.IntVar):
+    def scale_callback(self, var: tk.IntVar, color_var: tk.IntVar) -> None:
         color_var.set(var.get())
         self.focus = "rgb"
         self.update_color()
@@ -194,17 +194,17 @@ class ColorPickerDialog(Dialog):
         self.green_scale.set(green)
         self.blue_scale.set(blue)
 
-    def set_entry(self, red: int, green: int, blue: int):
+    def set_entry(self, red: int, green: int, blue: int) -> None:
         self.red.set(red)
         self.green.set(green)
         self.blue.set(blue)
 
-    def set_label(self, red: str, green: str, blue: str):
+    def set_label(self, red: str, green: str, blue: str) -> None:
         self.red_label.configure(background="#%02x%02x%02x" % (int(red), 0, 0))
         self.green_label.configure(background="#%02x%02x%02x" % (0, int(green), 0))
         self.blue_label.configure(background="#%02x%02x%02x" % (0, 0, int(blue)))
 
-    def get_rgb(self, hex_code: str) -> [int, int, int]:
+    def get_rgb(self, hex_code: str) -> Tuple[int, int, int]:
         """
         convert a valid hex code to RGB values
         """

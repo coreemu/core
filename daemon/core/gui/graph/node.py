@@ -57,7 +57,9 @@ class CanvasNode:
         self.antennas: List[int] = []
         self.antenna_images: Dict[int, PhotoImage] = {}
         # possible configurations
-        self.emane_model_configs: Dict[Tuple[str, Optional[int]], ConfigOption] = {}
+        self.emane_model_configs: Dict[
+            Tuple[str, Optional[int]], Dict[str, ConfigOption]
+        ] = {}
         self.wlan_config: Dict[str, ConfigOption] = {}
         self.mobility_config: Dict[str, ConfigOption] = {}
         self.service_configs: Dict[str, NodeServiceData] = {}
@@ -135,7 +137,7 @@ class CanvasNode:
         new_y = self._get_label_y()
         self.canvas.move(self.text_id, 0, new_y - prev_y)
 
-    def move(self, x: int, y: int) -> None:
+    def move(self, x: float, y: float) -> None:
         x, y = self.canvas.get_scaled_coords(x, y)
         current_x, current_y = self.canvas.coords(self.id)
         x_offset = x - current_x

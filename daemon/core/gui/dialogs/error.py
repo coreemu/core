@@ -1,5 +1,5 @@
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 class ErrorDialog(Dialog):
     def __init__(self, app: "Application", title: str, details: str) -> None:
         super().__init__(app, "CORE Exception")
-        self.title = title
-        self.details = details
-        self.error_message = None
+        self.title: str = title
+        self.details: str = details
+        self.error_message: Optional[CodeText] = None
         self.draw()
 
     def draw(self) -> None:
