@@ -1,4 +1,5 @@
 import logging
+import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
@@ -19,6 +20,7 @@ class SessionOptionsDialog(Dialog):
         self.config_frame: Optional[ConfigFrame] = None
         self.has_error: bool = False
         self.config: Dict[str, ConfigOption] = self.get_config()
+        self.enabled: bool = not self.app.core.is_runtime()
         if not self.has_error:
             self.draw()
 
@@ -35,8 +37,7 @@ class SessionOptionsDialog(Dialog):
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-
-        self.config_frame = ConfigFrame(self.top, self.app, config=self.config)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
 
@@ -44,7 +45,8 @@ class SessionOptionsDialog(Dialog):
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = ttk.Button(frame, text="Save", command=self.save)
+        state = tk.NORMAL if self.enabled else tk.DISABLED
+        button = ttk.Button(frame, text="Save", command=self.save, state=state)
         button.grid(row=0, column=0, padx=PADX, sticky="ew")
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
