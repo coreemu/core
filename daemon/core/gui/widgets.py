@@ -85,12 +85,14 @@ class ConfigFrame(ttk.Notebook):
         master: tk.Widget,
         app: "Application",
         config: Dict[str, ConfigOption],
+        enabled: bool = True,
         **kw: Any
     ) -> None:
         super().__init__(master, **kw)
         self.app: "Application" = app
         self.config: Dict[str, ConfigOption] = config
         self.values: Dict[str, tk.StringVar] = {}
+        self.enabled: bool = enabled
 
     def draw_config(self) -> None:
         group_mapping = {}
@@ -110,8 +112,9 @@ class ConfigFrame(ttk.Notebook):
                 value = tk.StringVar()
                 if option.type == core_pb2.ConfigOptionType.BOOL:
                     select = ("On", "Off")
+                    state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
-                        tab.frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state=state
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                     if option.value == "1":
@@ -121,32 +124,41 @@ class ConfigFrame(ttk.Notebook):
                 elif option.select:
                     value.set(option.value)
                     select = tuple(option.select)
+                    state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
-                        tab.frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state=state
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.STRING:
                     value.set(option.value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
                     if "file" in option.label:
                         file_frame = ttk.Frame(tab.frame)
                         file_frame.grid(row=index, column=1, sticky="ew")
                         file_frame.columnconfigure(0, weight=1)
-                        entry = ttk.Entry(file_frame, textvariable=value)
+                        entry = ttk.Entry(file_frame, textvariable=value, state=state)
                         entry.grid(row=0, column=0, sticky="ew", padx=PADX)
                         func = partial(file_button_click, value, self)
-                        button = ttk.Button(file_frame, text="...", command=func)
+                        button = ttk.Button(
+                            file_frame, text="...", command=func, state=state
+                        )
                         button.grid(row=0, column=1)
                     else:
-                        entry = ttk.Entry(tab.frame, textvariable=value)
+                        entry = ttk.Entry(tab.frame, textvariable=value, state=state)
                         entry.grid(row=index, column=1, sticky="ew")
-
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = validation.PositiveIntEntry(tab.frame, textvariable=value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
+                    entry = validation.PositiveIntEntry(
+                        tab.frame, textvariable=value, state=state
+                    )
                     entry.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = validation.PositiveFloatEntry(tab.frame, textvariable=value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
+                    entry = validation.PositiveFloatEntry(
+                        tab.frame, textvariable=value, state=state
+                    )
                     entry.grid(row=index, column=1, sticky="ew")
                 else:
                     logging.error("unhandled config option type: %s", option.type)

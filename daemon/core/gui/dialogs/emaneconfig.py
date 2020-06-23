@@ -24,12 +24,15 @@ class GlobalEmaneDialog(Dialog):
     def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
         super().__init__(app, "EMANE Configuration", master=master)
         self.config_frame: Optional[ConfigFrame] = None
+        self.enabled: bool = not self.app.core.is_runtime()
         self.draw()
 
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.app.core.emane_config)
+        self.config_frame = ConfigFrame(
+            self.top, self.app, self.app.core.emane_config, self.enabled
+        )
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
         self.draw_spacer()
@@ -40,9 +43,9 @@ class GlobalEmaneDialog(Dialog):
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = ttk.Button(frame, text="Apply", command=self.click_apply)
+        state = tk.NORMAL if self.enabled else tk.DISABLED
+        button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
-
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
@@ -68,6 +71,7 @@ class EmaneModelDialog(Dialog):
         self.model: str = f"emane_{model}"
         self.iface_id: int = iface_id
         self.config_frame: Optional[ConfigFrame] = None
+        self.enabled: bool = not self.app.core.is_runtime()
         self.has_error: bool = False
         try:
             config = self.canvas_node.emane_model_configs.get(
@@ -87,7 +91,7 @@ class EmaneModelDialog(Dialog):
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config)
+        self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
         self.draw_spacer()
@@ -98,9 +102,9 @@ class EmaneModelDialog(Dialog):
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = ttk.Button(frame, text="Apply", command=self.click_apply)
+        state = tk.NORMAL if self.enabled else tk.DISABLED
+        button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
         button.grid(row=0, column=0, sticky="ew", padx=PADX)
-
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
@@ -124,6 +128,7 @@ class EmaneConfigDialog(Dialog):
         model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)
         self.emane_model_button: Optional[ttk.Button] = None
+        self.enabled: bool = not self.app.core.is_runtime()
         self.draw()
 
     def draw(self) -> None:
@@ -140,8 +145,9 @@ class EmaneConfigDialog(Dialog):
         """
         label = ttk.Label(
             self.top,
-            text="The EMANE emulation system provides more complex wireless radio emulation "
-            "\nusing pluggable MAC and PHY modules. Refer to the wiki for configuration option details",
+            text="The EMANE emulation system provides more complex wireless radio "
+            "emulation \nusing pluggable MAC and PHY modules. Refer to the wiki "
+            "for configuration option details",
             justify=tk.CENTER,
         )
         label.grid(pady=PADY)
@@ -171,11 +177,9 @@ class EmaneConfigDialog(Dialog):
         label.grid(row=0, column=0, sticky="w")
 
         # create combo box and its binding
+        state = "readonly" if self.enabled else tk.DISABLED
         combobox = ttk.Combobox(
-            frame,
-            textvariable=self.emane_model,
-            values=self.emane_models,
-            state="readonly",
+            frame, textvariable=self.emane_model, values=self.emane_models, state=state
         )
         combobox.grid(row=0, column=1, sticky="ew")
         combobox.bind("<<ComboboxSelected>>", self.emane_model_change)
@@ -213,10 +217,9 @@ class EmaneConfigDialog(Dialog):
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-
-        button = ttk.Button(frame, text="Apply", command=self.click_apply)
+        state = tk.NORMAL if self.enabled else tk.DISABLED
+        button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
         button.grid(row=0, column=0, padx=PADX, sticky="ew")
-
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 

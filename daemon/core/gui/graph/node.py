@@ -202,6 +202,10 @@ class CanvasNode:
         is_emane = self.core_node.type == NodeType.EMANE
         if self.app.core.is_runtime():
             self.context.add_command(label="Configure", command=self.show_config)
+            if is_emane:
+                self.context.add_command(
+                    label="EMANE Config", command=self.show_emane_config
+                )
             if is_wlan:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
