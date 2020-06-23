@@ -520,14 +520,14 @@ class CoreXmlWriter:
         # check for interface one
         if link_data.iface1 is not None:
             iface1 = self.create_iface_element(
-                "interface1", link_data.node1_id, link_data.iface1
+                "iface1", link_data.node1_id, link_data.iface1
             )
             link_element.append(iface1)
 
         # check for interface two
         if link_data.iface2 is not None:
             iface2 = self.create_iface_element(
-                "interface2", link_data.node2_id, link_data.iface2
+                "iface2", link_data.node2_id, link_data.iface2
             )
             link_element.append(iface2)
 
@@ -907,14 +907,14 @@ class CoreXmlReader:
                 node2_id = get_int(link_element, "node_two")
             node_set = frozenset((node1_id, node2_id))
 
-            iface1_element = link_element.find("interface1")
+            iface1_element = link_element.find("iface1")
             if iface1_element is None:
                 iface1_element = link_element.find("interface_one")
             iface1_data = None
             if iface1_element is not None:
                 iface1_data = create_iface_data(iface1_element)
 
-            iface2_element = link_element.find("interface2")
+            iface2_element = link_element.find("iface2")
             if iface2_element is None:
                 iface2_element = link_element.find("interface_two")
             iface2_data = None
