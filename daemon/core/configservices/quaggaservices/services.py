@@ -2,7 +2,6 @@ import abc
 import logging
 from typing import Any, Dict, List
 
-from core import constants
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
@@ -11,6 +10,7 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
 GROUP: str = "Quagga"
+QUAGGA_STATE_DIR: str = "/var/run/quagga"
 
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
@@ -79,7 +79,7 @@ class Zebra(ConfigService):
         quagga_sbin_search = self.node.session.options.get_config(
             "quagga_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/quagga"
         ).strip('"')
-        quagga_state_dir = constants.QUAGGA_STATE_DIR
+        quagga_state_dir = QUAGGA_STATE_DIR
         quagga_conf = self.files[0]
 
         services = []

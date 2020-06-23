@@ -5,7 +5,6 @@ from typing import Optional, Tuple
 
 import netaddr
 
-from core import constants
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
 from core.nodes.base import CoreNode
@@ -13,6 +12,8 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
+
+QUAGGA_STATE_DIR: str = "/var/run/quagga"
 
 
 class Zebra(CoreService):
@@ -226,7 +227,7 @@ bootquagga
             cls.configs[0],
             quagga_sbin_search,
             quagga_bin_search,
-            constants.QUAGGA_STATE_DIR,
+            QUAGGA_STATE_DIR,
         )
 
 

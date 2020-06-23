@@ -3,7 +3,6 @@ from core.utils import which
 COREDPY_VERSION = "@PACKAGE_VERSION@"
 CORE_CONF_DIR = "@CORE_CONF_DIR@"
 CORE_DATA_DIR = "@CORE_DATA_DIR@"
-QUAGGA_STATE_DIR = "@CORE_STATE_DIR@/run/quagga"
 
 VNODED_BIN = which("vnoded", required=True)
 VCMD_BIN = which("vcmd", required=True)
