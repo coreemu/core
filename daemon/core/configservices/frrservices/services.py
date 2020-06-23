@@ -1,7 +1,6 @@
 import abc
 from typing import Any, Dict, List
 
-from core import constants
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
@@ -10,6 +9,7 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
 GROUP: str = "FRR"
+FRR_STATE_DIR: str = "/var/run/frr"
 
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
@@ -110,7 +110,7 @@ class FRRZebra(ConfigService):
             frr_conf=frr_conf,
             frr_sbin_search=frr_sbin_search,
             frr_bin_search=frr_bin_search,
-            frr_state_dir=constants.FRR_STATE_DIR,
+            frr_state_dir=FRR_STATE_DIR,
             ifaces=ifaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,

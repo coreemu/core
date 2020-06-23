@@ -6,13 +6,14 @@ from typing import Optional, Tuple
 
 import netaddr
 
-from core import constants
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
+
+FRR_STATE_DIR: str = "/var/run/frr"
 
 
 class FRRZebra(CoreService):
@@ -236,7 +237,7 @@ bootfrr
             cls.configs[0],
             frr_sbin_search,
             frr_bin_search,
-            constants.FRR_STATE_DIR,
+            FRR_STATE_DIR,
         )
         for iface in node.get_ifaces():
             cfg += f"ip link set dev {iface.name} down\n"
