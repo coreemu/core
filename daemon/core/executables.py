@@ -1,24 +1,16 @@
 from typing import List
 
-VNODED_BIN: str = "vnoded"
-VCMD_BIN: str = "vcmd"
-SYSCTL_BIN: str = "sysctl"
-IP_BIN: str = "ip"
-ETHTOOL_BIN: str = "ethtool"
-TC_BIN: str = "tc"
-EBTABLES_BIN: str = "ebtables"
-MOUNT_BIN: str = "mount"
-UMOUNT_BIN: str = "umount"
-OVS_BIN: str = "ovs-vsctl"
+VNODED: str = "vnoded"
+VCMD: str = "vcmd"
+SYSCTL: str = "sysctl"
+IP: str = "ip"
+ETHTOOL: str = "ethtool"
+TC: str = "tc"
+EBTABLES: str = "ebtables"
+MOUNT: str = "mount"
+UMOUNT: str = "umount"
+OVS_VSCTL: str = "ovs-vsctl"
 
-COMMON_REQUIREMENTS: List[str] = [
-    SYSCTL_BIN,
-    IP_BIN,
-    ETHTOOL_BIN,
-    TC_BIN,
-    EBTABLES_BIN,
-    MOUNT_BIN,
-    UMOUNT_BIN,
-]
-VCMD_REQUIREMENTS: List[str] = [VNODED_BIN, VCMD_BIN]
-OVS_REQUIREMENTS: List[str] = [OVS_BIN]
+COMMON_REQUIREMENTS: List[str] = [SYSCTL, IP, ETHTOOL, TC, EBTABLES, MOUNT, UMOUNT]
+VCMD_REQUIREMENTS: List[str] = [VNODED, VCMD]
+OVS_REQUIREMENTS: List[str] = [OVS_VSCTL]
