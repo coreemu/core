@@ -487,4 +487,8 @@ def get_nem_id(node: CoreNode, iface_id: int, context: ServicerContext) -> int:
     if not isinstance(net, EmaneNet):
         message = f"{node.name} interface {iface_id} is not an EMANE network"
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
-    return net.getnemid(iface)
+    nem_id = net.getnemid(iface)
+    if nem_id is None:
+        message = f"{node.name} interface {iface_id} nem id does not exist"
+        context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
+    return nem_id
