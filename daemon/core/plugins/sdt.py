@@ -8,8 +8,7 @@ import threading
 from typing import IO, TYPE_CHECKING, Dict, Optional, Set, Tuple
 from urllib.parse import urlparse
 
-from core import constants
-from core.constants import CORE_DATA_DIR
+from core.constants import CORE_CONF_DIR, CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import EventTypes, MessageFlags
@@ -264,8 +263,8 @@ class Sdt:
         icon = node.icon
         if icon:
             node_type = node.name
-            icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
-            icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
+            icon = icon.replace("$CORE_DATA_DIR", CORE_DATA_DIR)
+            icon = icon.replace("$CORE_CONF_DIR", CORE_CONF_DIR)
             self.cmd(f"sprite {node_type} image {icon}")
         self.cmd(
             f'node {node.id} nodeLayer "{NODE_LAYER}" '
