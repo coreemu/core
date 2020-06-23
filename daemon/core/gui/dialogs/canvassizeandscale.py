@@ -66,10 +66,12 @@ class SizeAndScaleDialog(Dialog):
         label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_width)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
         entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_height)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
 
@@ -80,11 +82,15 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        entry = validation.PositiveFloatEntry(frame, textvariable=self.meters_width)
+        entry = validation.PositiveFloatEntry(
+            frame, textvariable=self.meters_width, state=tk.DISABLED
+        )
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="x Height")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        entry = validation.PositiveFloatEntry(frame, textvariable=self.meters_height)
+        entry = validation.PositiveFloatEntry(
+            frame, textvariable=self.meters_height, state=tk.DISABLED
+        )
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
@@ -101,6 +107,7 @@ class SizeAndScaleDialog(Dialog):
         label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = validation.PositiveFloatEntry(frame, textvariable=self.scale)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
 
@@ -172,6 +179,13 @@ class SizeAndScaleDialog(Dialog):
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
+
+    def size_scale_keyup(self, _event: tk.Event) -> None:
+        scale = self.scale.get()
+        width = self.pixel_width.get()
+        height = self.pixel_height.get()
+        self.meters_width.set(width / PIXEL_SCALE * scale)
+        self.meters_height.set(height / PIXEL_SCALE * scale)
 
     def click_apply(self) -> None:
         width, height = self.pixel_width.get(), self.pixel_height.get()
