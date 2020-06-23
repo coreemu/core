@@ -52,10 +52,8 @@ class ConfigServiceManager:
         for executable in service.executables:
             try:
                 utils.which(executable, required=True)
-            except ValueError:
-                raise CoreError(
-                    f"service({service.name}) missing executable {executable}"
-                )
+            except CoreError as e:
+                raise CoreError(f"config service({service.name}): {e}")
 
             # make service available
         self.services[name] = service

@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 import netaddr
 
 from core import utils
-from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
@@ -20,6 +19,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreCommandError, CoreError
+from core.executables import EBTABLES, TC
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
@@ -104,7 +104,7 @@ class EbtablesQueue:
         :param cmd: ebtable command
         :return: ebtable atomic command
         """
-        return f"{EBTABLES_BIN} --atomic-file {self.atomic_file} {cmd}"
+        return f"{EBTABLES} --atomic-file {self.atomic_file} {cmd}"
 
     def lastupdate(self, wlan: "CoreNetwork") -> float:
         """
@@ -338,8 +338,8 @@ class CoreNetwork(CoreNetworkBase):
             self.net_client.delete_bridge(self.brname)
             if self.has_ebtables_chain:
                 cmds = [
-                    f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
-                    f"{EBTABLES_BIN} -X {self.brname}",
+                    f"{EBTABLES} -D FORWARD --logical-in {self.brname} -j {self.brname}",
+                    f"{EBTABLES} -X {self.brname}",
                 ]
                 ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
@@ -448,7 +448,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         devname = iface.localname
-        tc = f"{TC_BIN} qdisc replace dev {devname}"
+        tc = f"{TC} qdisc replace dev {devname}"
         parent = "root"
         changed = False
         bw = options.bandwidth
@@ -466,7 +466,7 @@ class CoreNetwork(CoreNetworkBase):
                 changed = True
             elif iface.getparam("has_tbf") and bw <= 0:
                 if self.up:
-                    cmd = f"{TC_BIN} qdisc delete dev {devname} {parent}"
+                    cmd = f"{TC} qdisc delete dev {devname} {parent}"
                     iface.host_cmd(cmd)
                 iface.setparam("has_tbf", False)
                 # removing the parent removes the child
@@ -512,14 +512,12 @@ class CoreNetwork(CoreNetworkBase):
             if not iface.getparam("has_netem"):
                 return
             if self.up:
-                cmd = f"{TC_BIN} qdisc delete dev {devname} {parent} handle 10:"
+                cmd = f"{TC} qdisc delete dev {devname} {parent} handle 10:"
                 iface.host_cmd(cmd)
             iface.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                cmd = (
-                    f"{TC_BIN} qdisc replace dev {devname} {parent} handle 10: {netem}"
-                )
+                cmd = f"{TC} qdisc replace dev {devname} {parent} handle 10: {netem}"
                 iface.host_cmd(cmd)
             iface.setparam("has_netem", True)
 

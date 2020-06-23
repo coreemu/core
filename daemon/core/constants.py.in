@@ -1,17 +1,3 @@
-from core.utils import which
-
 COREDPY_VERSION = "@PACKAGE_VERSION@"
 CORE_CONF_DIR = "@CORE_CONF_DIR@"
 CORE_DATA_DIR = "@CORE_DATA_DIR@"
-
-VNODED_BIN = which("vnoded", required=True)
-VCMD_BIN = which("vcmd", required=True)
-SYSCTL_BIN = which("sysctl", required=True)
-IP_BIN = which("ip", required=True)
-ETHTOOL_BIN = which("ethtool", required=True)
-TC_BIN = which("tc", required=True)
-EBTABLES_BIN = which("ebtables", required=True)
-MOUNT_BIN = which("mount", required=True)
-UMOUNT_BIN = which("umount", required=True)
-OVS_BIN = which("ovs-vsctl", required=False)
-OVS_FLOW_BIN = which("ovs-ofctl", required=False)

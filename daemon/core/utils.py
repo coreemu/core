@@ -33,7 +33,7 @@ from typing import (
 
 import netaddr
 
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -154,7 +154,7 @@ def which(command: str, required: bool) -> str:
     """
     found_path = shutil.which(command)
     if found_path is None and required:
-        raise ValueError(f"failed to find required executable({command}) in path")
+        raise CoreError(f"failed to find required executable({command}) in path")
     return found_path
 
 

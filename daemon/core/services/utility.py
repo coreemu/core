@@ -5,8 +5,9 @@ from typing import Optional, Tuple
 
 import netaddr
 
-from core import constants, utils
+from core import utils
 from core.errors import CoreCommandError
+from core.executables import SYSCTL
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService, ServiceMode
 
@@ -47,19 +48,13 @@ class IPForwardService(UtilService):
 %(sysctl)s -w net.ipv4.conf.all.rp_filter=0
 %(sysctl)s -w net.ipv4.conf.default.rp_filter=0
 """ % {
-            "sysctl": constants.SYSCTL_BIN
+            "sysctl": SYSCTL
         }
         for iface in node.get_ifaces():
             name = utils.sysctl_devname(iface.name)
-            cfg += "%s -w net.ipv4.conf.%s.forwarding=1\n" % (
-                constants.SYSCTL_BIN,
-                name,
-            )
-            cfg += "%s -w net.ipv4.conf.%s.send_redirects=0\n" % (
-                constants.SYSCTL_BIN,
-                name,
-            )
-            cfg += "%s -w net.ipv4.conf.%s.rp_filter=0\n" % (constants.SYSCTL_BIN, name)
+            cfg += "%s -w net.ipv4.conf.%s.forwarding=1\n" % (SYSCTL, name)
+            cfg += "%s -w net.ipv4.conf.%s.send_redirects=0\n" % (SYSCTL, name)
+            cfg += "%s -w net.ipv4.conf.%s.rp_filter=0\n" % (SYSCTL, name)
         return cfg
 
 
