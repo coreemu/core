@@ -428,8 +428,9 @@ class CanvasGraph(tk.Canvas):
 
         # edge dst must be a node
         logging.debug("current selected: %s", self.selected)
+        src_node = self.nodes.get(edge.src)
         dst_node = self.nodes.get(self.selected)
-        if not dst_node:
+        if not dst_node or not src_node:
             edge.delete()
             return
 
@@ -444,15 +445,21 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
 
+        # rj45 nodes can only support one link
+        if NodeUtils.is_rj45_node(src_node.core_node.type) and src_node.edges:
+            edge.delete()
+            return
+        if NodeUtils.is_rj45_node(dst_node.core_node.type) and dst_node.edges:
+            edge.delete()
+            return
+
         # set dst node and snap edge to center
         edge.complete(self.selected)
 
         self.edges[edge.token] = edge
-        node_src = self.nodes[edge.src]
-        node_src.edges.add(edge)
-        node_dst = self.nodes[edge.dst]
-        node_dst.edges.add(edge)
-        self.core.create_link(edge, node_src, node_dst)
+        src_node.edges.add(edge)
+        dst_node.edges.add(edge)
+        self.core.create_link(edge, src_node, dst_node)
 
     def select_object(self, object_id: int, choose_multiple: bool = False) -> None:
         """
