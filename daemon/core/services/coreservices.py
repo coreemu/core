@@ -13,10 +13,9 @@ import time
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple, Type
 
 from core import utils
-from core.constants import which
 from core.emulator.data import FileData
 from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
 if TYPE_CHECKING:
@@ -262,7 +261,10 @@ class ServiceManager:
 
         # validate dependent executables are present
         for executable in service.executables:
-            which(executable, required=True)
+            try:
+                utils.which(executable, required=True)
+            except CoreError as e:
+                raise CoreError(f"service({name}): {e}")
 
         # validate service on load succeeds
         try:
@@ -300,7 +302,7 @@ class ServiceManager:
 
             try:
                 cls.add(service)
-            except ValueError as e:
+            except (CoreError, ValueError) as e:
                 service_errors.append(service.name)
                 logging.debug("not loading service(%s): %s", service.name, e)
         return service_errors

@@ -13,10 +13,10 @@ import netaddr
 
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
-from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
+from core.executables import MOUNT_BIN, VNODED_BIN
 from core.nodes.client import VnodeClient
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
@@ -753,7 +753,7 @@ class CoreNode(CoreNodeBase):
         iface = self.get_iface(iface_id)
         iface.set_mac(mac)
         if self.up:
-            self.node_net_client.device_mac(iface.name, mac)
+            self.node_net_client.device_mac(iface.name, str(iface.mac))
 
     def add_ip(self, iface_id: int, ip: str) -> None:
         """

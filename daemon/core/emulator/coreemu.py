@@ -6,9 +6,10 @@ import sys
 from typing import Dict, List, Type
 
 import core.services
-from core import configservices
+from core import configservices, utils
 from core.configservice.manager import ConfigServiceManager
 from core.emulator.session import Session
+from core.executables import COMMON_REQUIREMENTS, OVS_REQUIREMENTS, VCMD_REQUIREMENTS
 from core.services.coreservices import ServiceManager
 
 
@@ -65,10 +66,35 @@ class CoreEmu:
         if custom_dir:
             self.service_manager.load(custom_dir)
 
+        # check executables exist on path
+        self._validate_env()
+
         # catch exit event
         atexit.register(self.shutdown)
 
+    def _validate_env(self) -> None:
+        """
+        Validates executables CORE depends on exist on path.
+
+        :return: nothing
+        :raises core.errors.CoreError: when an executable does not exist on path
+        """
+        for requirement in COMMON_REQUIREMENTS:
+            utils.which(requirement, required=True)
+        use_ovs = self.config.get("ovs") == "True"
+        if use_ovs:
+            for requirement in OVS_REQUIREMENTS:
+                utils.which(requirement, required=True)
+        else:
+            for requirement in VCMD_REQUIREMENTS:
+                utils.which(requirement, required=True)
+
     def load_services(self) -> None:
+        """
+        Loads default and custom services for use within CORE.
+
+        :return: nothing
+        """
         # load default services
         self.service_errors = core.services.load()
 

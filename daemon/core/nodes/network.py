@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 import netaddr
 
 from core import utils
-from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
@@ -20,6 +19,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreCommandError, CoreError
+from core.executables import EBTABLES_BIN, TC_BIN
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client

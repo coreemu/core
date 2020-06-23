@@ -6,8 +6,8 @@ import netaddr
 from lxml import etree
 
 from core import utils
-from core.constants import IP_BIN
 from core.emane.nodes import EmaneNet
+from core.executables import IP_BIN
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import CoreInterface
 

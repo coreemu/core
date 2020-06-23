@@ -5,7 +5,7 @@ from typing import Callable
 
 import netaddr
 
-from core.constants import ETHTOOL_BIN, IP_BIN, OVS_BIN, SYSCTL_BIN, TC_BIN
+from core.executables import ETHTOOL_BIN, IP_BIN, OVS_BIN, SYSCTL_BIN, TC_BIN
 
 
 class LinuxNetClient:

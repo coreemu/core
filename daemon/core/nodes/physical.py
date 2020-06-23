@@ -7,11 +7,11 @@ import os
 import threading
 from typing import IO, TYPE_CHECKING, List, Optional, Tuple
 
-from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
+from core.executables import MOUNT_BIN, UMOUNT_BIN
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
@@ -76,7 +76,7 @@ class PhysicalNode(CoreNodeBase):
         iface = self.get_iface(iface_id)
         iface.set_mac(mac)
         if self.up:
-            self.net_client.device_mac(iface.name, mac)
+            self.net_client.device_mac(iface.name, str(iface.mac))
 
     def add_ip(self, iface_id: int, ip: str) -> None:
         """

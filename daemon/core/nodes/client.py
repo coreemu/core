@@ -5,7 +5,7 @@ The control channel can be accessed via calls using the vcmd shell.
 """
 
 from core import utils
-from core.constants import VCMD_BIN
+from core.executables import VCMD_BIN
 
 
 class VnodeClient:
