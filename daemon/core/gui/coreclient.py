@@ -221,6 +221,7 @@ class CoreClient:
         if self.handling_throughputs:
             self.handling_throughputs.cancel()
             self.handling_throughputs = None
+            self.app.canvas.clear_throughputs()
 
     def cancel_events(self) -> None:
         if self.handling_events:

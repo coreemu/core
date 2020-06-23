@@ -145,6 +145,10 @@ class Edge:
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
 
+    def clear_middle_label(self) -> None:
+        self.canvas.delete(self.middle_label)
+        self.middle_label = None
+
     def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         src_x, src_y, _, _, dst_x, dst_y = self.canvas.coords(self.id)
         v1 = dst_x - src_x
@@ -216,11 +220,10 @@ class Edge:
         logging.debug("deleting canvas edge, id: %s", self.id)
         self.canvas.delete(self.id)
         self.canvas.delete(self.src_label)
-        self.canvas.delete(self.middle_label)
         self.canvas.delete(self.dst_label)
+        self.clear_middle_label()
         self.id = None
         self.src_label = None
-        self.middle_label = None
         self.dst_label = None
 
 

@@ -997,6 +997,10 @@ class CanvasGraph(tk.Canvas):
             )
         self.tag_raise(tags.NODE)
 
+    def clear_throughputs(self) -> None:
+        for edge in self.edges.values():
+            edge.clear_middle_label()
+
     def scale_graph(self) -> None:
         for nid, canvas_node in self.nodes.items():
             img = None
