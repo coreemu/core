@@ -563,7 +563,11 @@ class ServiceConfigDialog(Dialog):
         self.current_service_color("")
 
     def click_copy(self) -> None:
-        dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
+        file_name = self.filename_combobox.get()
+        name = self.canvas_node.core_node.name
+        dialog = CopyServiceConfigDialog(
+            self.app, self, name, self.service_name, file_name
+        )
         dialog.show()
 
     @classmethod
