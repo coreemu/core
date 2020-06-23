@@ -718,7 +718,7 @@ class CoreClient:
 
     def send_data(self) -> None:
         """
-        send to daemon all session info, but don't start the session
+        Send to daemon all session info, but don't start the session
         """
         self.create_nodes_and_links()
         for config_proto in self.get_wlan_configs_proto():
@@ -759,6 +759,17 @@ class CoreClient:
         if self.emane_config:
             config = {x: self.emane_config[x].value for x in self.emane_config}
             self.client.set_emane_config(self.session_id, config)
+        if self.location:
+            self.client.set_session_location(
+                self.session_id,
+                self.location.x,
+                self.location.y,
+                self.location.z,
+                self.location.lat,
+                self.location.lon,
+                self.location.alt,
+                self.location.scale,
+            )
         self.set_metadata()
 
     def close(self) -> None:
