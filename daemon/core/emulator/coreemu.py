@@ -79,15 +79,14 @@ class CoreEmu:
         :return: nothing
         :raises core.errors.CoreError: when an executable does not exist on path
         """
-        for requirement in COMMON_REQUIREMENTS:
-            utils.which(requirement, required=True)
+        requirements = COMMON_REQUIREMENTS
         use_ovs = self.config.get("ovs") == "True"
         if use_ovs:
-            for requirement in OVS_REQUIREMENTS:
-                utils.which(requirement, required=True)
+            requirements += OVS_REQUIREMENTS
         else:
-            for requirement in VCMD_REQUIREMENTS:
-                utils.which(requirement, required=True)
+            requirements += VCMD_REQUIREMENTS
+        for requirement in requirements:
+            utils.which(requirement, required=True)
 
     def load_services(self) -> None:
         """
