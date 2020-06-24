@@ -287,6 +287,8 @@ class LinkConfigurationDialog(Dialog):
                     iface2_id,
                 )
 
+        # update edge label
+        self.edge.draw_link_options()
         self.destroy()
 
     def change_symmetry(self) -> None:

@@ -57,6 +57,18 @@ def arc_edges(edges) -> None:
         edge.redraw()
 
 
+def bandwidth_label(bandwidth: int) -> str:
+    size = {0: "bps", 1: "Kbps", 2: "Mbps", 3: "Gbps"}
+    unit = 1000
+    i = 0
+    while bandwidth > unit:
+        bandwidth /= unit
+        i += 1
+        if i == 3:
+            break
+    return f"{bandwidth} {size[i]}"
+
+
 class Edge:
     tag: str = tags.EDGE
 
@@ -140,6 +152,7 @@ class Edge:
                 font=self.canvas.app.edge_font,
                 text=text,
                 tags=tags.LINK_LABEL,
+                justify=tk.CENTER,
                 state=self.canvas.show_link_labels.state(),
             )
         else:
@@ -312,6 +325,7 @@ class CanvasEdge(Edge):
         src_text, dst_text = self.create_node_labels()
         self.src_label_text(src_text)
         self.dst_label_text(dst_text)
+        self.draw_link_options()
 
     def redraw(self) -> None:
         super().redraw()
@@ -393,3 +407,24 @@ class CanvasEdge(Edge):
     def click_configure(self) -> None:
         dialog = LinkConfigurationDialog(self.canvas.app, self)
         dialog.show()
+
+    def draw_link_options(self):
+        options = self.link.options
+        lines = []
+        bandwidth = options.bandwidth
+        if bandwidth > 0:
+            lines.append(bandwidth_label(bandwidth))
+        delay = options.delay
+        jitter = options.jitter
+        if delay > 0 and jitter > 0:
+            lines.append(f"{delay} us (\u00B1{jitter} us)")
+        elif jitter > 0:
+            lines.append(f"0 us (\u00B1{jitter} us)")
+        loss = options.loss
+        if loss > 0:
+            lines.append(f"loss={loss}%")
+        dup = options.dup
+        if dup > 0:
+            lines.append(f"dup={dup}%")
+        label = "\n".join(lines)
+        self.middle_label_text(label)

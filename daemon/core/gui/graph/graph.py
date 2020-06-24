@@ -1000,6 +1000,7 @@ class CanvasGraph(tk.Canvas):
     def clear_throughputs(self) -> None:
         for edge in self.edges.values():
             edge.clear_middle_label()
+            edge.draw_link_options()
 
     def scale_graph(self) -> None:
         for nid, canvas_node in self.nodes.items():
