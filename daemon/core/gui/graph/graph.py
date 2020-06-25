@@ -715,6 +715,7 @@ class CanvasGraph(tk.Canvas):
         logging.debug("press delete key")
         if not self.app.core.is_runtime():
             self.delete_selected_objects()
+            self.app.default_info()
         else:
             logging.debug("node deletion is disabled during runtime state")
 

@@ -26,7 +26,7 @@ class ProgressTask:
         self.time: Optional[float] = None
 
     def start(self) -> None:
-        self.app.progress.grid(sticky="ew")
+        self.app.progress.grid(sticky="ew", columnspan=2)
         self.app.progress.start()
         self.time = time.perf_counter()
         thread = threading.Thread(target=self.run, daemon=True)
