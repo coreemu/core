@@ -139,6 +139,11 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_checkbutton(
+            label="Details Panel",
+            command=self.click_infobar_change,
+            variable=self.app.show_infobar,
+        )
+        menu.add_checkbutton(
             label="Interface Names",
             command=self.click_edge_label_change,
             variable=self.canvas.show_iface_names,
@@ -442,6 +447,12 @@ class Menubar(tk.Menu):
             x = (col * layout_size) + padding
             y = (row * layout_size) + padding
             node.move(x, y)
+
+    def click_infobar_change(self) -> None:
+        if self.app.show_infobar.get():
+            self.app.show_info()
+        else:
+            self.app.hide_info()
 
     def click_edge_label_change(self) -> None:
         for edge in self.canvas.edges.values():

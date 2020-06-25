@@ -7,8 +7,10 @@ from core.api.grpc import core_pb2
 from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
+from core.gui.frames.link import EdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
+from core.gui.utils import bandwidth_text
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
@@ -55,18 +57,6 @@ def arc_edges(edges) -> None:
         arc += arc_step
         edge.arc = arc
         edge.redraw()
-
-
-def bandwidth_label(bandwidth: int) -> str:
-    size = {0: "bps", 1: "Kbps", 2: "Mbps", 3: "Gbps"}
-    unit = 1000
-    i = 0
-    while bandwidth > unit:
-        bandwidth /= unit
-        i += 1
-        if i == 3:
-            break
-    return f"{bandwidth} {size[i]}"
 
 
 class Edge:
@@ -295,6 +285,7 @@ class CanvasEdge(Edge):
 
     def set_binding(self) -> None:
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
     def set_link(self, link: Link) -> None:
         self.link = link
@@ -396,6 +387,9 @@ class CanvasEdge(Edge):
         self.middle_label = None
         self.canvas.itemconfig(self.id, fill=self.color, width=self.scaled_width())
 
+    def show_info(self, _event: tk.Event) -> None:
+        self.canvas.app.display_info(EdgeInfoFrame, app=self.canvas.app, edge=self)
+
     def show_context(self, event: tk.Event) -> None:
         state = tk.DISABLED if self.canvas.core.is_runtime() else tk.NORMAL
         self.context.entryconfigure(1, state=state)
@@ -413,7 +407,7 @@ class CanvasEdge(Edge):
         lines = []
         bandwidth = options.bandwidth
         if bandwidth > 0:
-            lines.append(bandwidth_label(bandwidth))
+            lines.append(bandwidth_text(bandwidth))
         delay = options.delay
         jitter = options.jitter
         if delay > 0 and jitter > 0:

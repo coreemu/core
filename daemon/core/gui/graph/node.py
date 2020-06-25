@@ -16,6 +16,7 @@ from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
+from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
@@ -80,6 +81,7 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
     def delete(self) -> None:
         logging.debug("Delete canvas node for %s", self.core_node)
@@ -195,6 +197,9 @@ class CanvasNode:
         else:
             self.show_config()
 
+    def show_info(self, _event: tk.Event) -> None:
+        self.app.display_info(NodeInfoFrame, app=self.app, canvas_node=self)
+
     def show_context(self, event: tk.Event) -> None:
         # clear existing menu
         self.context.delete(0, tk.END)
@@ -262,6 +267,7 @@ class CanvasNode:
 
     def click_unlink(self, edge: CanvasEdge) -> None:
         self.canvas.delete_edge(edge)
+        self.app.default_info()
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
