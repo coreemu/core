@@ -23,6 +23,12 @@ class NodeInfoFrame(InfoFrameBase):
         frame.add_detail("Name", node.name)
         if NodeUtils.is_model_node(node.type):
             frame.add_detail("Type", node.model)
+        if NodeUtils.is_container_node(node.type):
+            for index, service in enumerate(sorted(node.services)):
+                if index == 0:
+                    frame.add_detail("Services", service)
+                else:
+                    frame.add_detail("", service)
         if node.type == NodeType.EMANE:
             emane = node.emane.split("_")[1:]
             frame.add_detail("EMANE", emane)
