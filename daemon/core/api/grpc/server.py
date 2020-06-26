@@ -866,6 +866,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node2_id=node2_id,
             iface1=iface1_data,
             iface2=iface2_data,
+            options=options,
             source=source,
         )
         session.broadcast_link(link_data)
@@ -909,6 +910,19 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             key=options_proto.key,
         )
         session.update_link(node1_id, node2_id, iface1_id, iface2_id, options)
+        iface1 = InterfaceData(id=iface1_id)
+        iface2 = InterfaceData(id=iface2_id)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.NONE,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1,
+            iface2=iface2,
+            options=options,
+            source=source,
+        )
+        session.broadcast_link(link_data)
         return core_pb2.EditLinkResponse(result=True)
 
     def DeleteLink(

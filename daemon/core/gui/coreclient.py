@@ -216,6 +216,10 @@ class CoreClient:
                 self.app.canvas.organize()
             elif event.message_type == MessageType.DELETE:
                 self.app.canvas.delete_wired_edge(canvas_node1, canvas_node2)
+            elif event.message_type == MessageType.NONE:
+                self.app.canvas.update_wired_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
             else:
                 logging.warning("unknown link event: %s", event)
 

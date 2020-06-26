@@ -504,6 +504,7 @@ message EditLinkRequest {
     int32 iface1_id = 4;
     int32 iface2_id = 5;
     LinkOptions options = 6;
+    string source = 7;
 }
 
 message EditLinkResponse {

@@ -262,6 +262,13 @@ class CanvasGraph(tk.Canvas):
             return
         self.delete_edge(edge)
 
+    def update_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
+        token = create_edge_token(src.id, dst.id)
+        edge = self.edges.get(token)
+        if not edge:
+            return
+        edge.link.options.CopyFrom(link.options)
+
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
         token = create_edge_token(src.id, dst.id, network_id)
@@ -350,9 +357,8 @@ class CanvasGraph(tk.Canvas):
             dst_node.wireless_edges.remove(edge)
         self.wireless_edges.clear()
 
-        # clear all middle edge labels
-        for edge in self.edges.values():
-            edge.reset()
+        # clear throughputs
+        self.clear_throughputs()
 
     def canvas_xy(self, event: tk.Event) -> Tuple[float, float]:
         """
