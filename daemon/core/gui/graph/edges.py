@@ -7,7 +7,7 @@ from core.api.grpc import core_pb2
 from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
-from core.gui.frames.link import EdgeInfoFrame
+from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
 from core.gui.utils import bandwidth_text
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 TEXT_DISTANCE: float = 0.30
 EDGE_WIDTH: int = 3
 EDGE_COLOR: str = "#ff0000"
-WIRELESS_WIDTH: float = 1.5
+WIRELESS_WIDTH: float = 3
 WIRELESS_COLOR: str = "#009933"
 ARC_DISTANCE: int = 50
 
@@ -241,13 +241,27 @@ class CanvasWirelessEdge(Edge):
         src_pos: Tuple[float, float],
         dst_pos: Tuple[float, float],
         token: Tuple[int, ...],
+        link: Link,
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(canvas, src, dst)
+        self.link: Link = link
         self.token: Tuple[int, ...] = token
         self.width: float = WIRELESS_WIDTH
-        self.color: str = WIRELESS_COLOR
+        color = link.color if link.color else WIRELESS_COLOR
+        self.color: str = color
         self.draw(src_pos, dst_pos)
+        if link.label:
+            self.middle_label_text(link.label)
+        self.set_binding()
+
+    def set_binding(self) -> None:
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
+
+    def show_info(self, _event: tk.Event) -> None:
+        self.canvas.app.display_info(
+            WirelessEdgeInfoFrame, app=self.canvas.app, edge=self
+        )
 
 
 class CanvasEdge(Edge):
