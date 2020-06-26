@@ -637,19 +637,16 @@ class Session:
         # clear out existing session
         self.clear()
 
-        if start:
-            state = EventTypes.CONFIGURATION_STATE
-        else:
-            state = EventTypes.DEFINITION_STATE
+        # set state and read xml
+        state = EventTypes.CONFIGURATION_STATE if start else EventTypes.DEFINITION_STATE
         self.set_state(state)
         self.name = os.path.basename(file_name)
         self.file_name = file_name
-
-        # write out xml file
         CoreXmlReader(self).read(file_name)
 
         # start session if needed
         if start:
+            self.set_state(EventTypes.INSTANTIATION_STATE)
             self.instantiate()
 
     def save_xml(self, file_name: str) -> None:
