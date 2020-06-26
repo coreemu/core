@@ -56,6 +56,9 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
             default=Sdt.DEFAULT_SDT_URL,
             label="SDT3D URL",
         ),
+        Configuration(
+            _id="ovs", _type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
+        ),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 

@@ -73,8 +73,9 @@ class NodeBase(abc.ABC):
         self.icon: Optional[str] = None
         self.position: Position = Position()
         self.up: bool = False
-        use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(
+            self.session.use_ovs(), self.host_cmd
+        )
 
     @abc.abstractmethod
     def startup(self) -> None:
@@ -471,8 +472,9 @@ class CoreNode(CoreNodeBase):
         self.pid: Optional[int] = None
         self.lock: RLock = RLock()
         self._mounts: List[Tuple[str, str]] = []
-        use_ovs = session.options.get_config("ovs") == "True"
-        self.node_net_client: LinuxNetClient = self.create_node_net_client(use_ovs)
+        self.node_net_client: LinuxNetClient = self.create_node_net_client(
+            self.session.use_ovs()
+        )
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """

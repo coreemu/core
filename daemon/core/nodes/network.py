@@ -756,7 +756,7 @@ class CtrlNet(CoreNetwork):
         :param index: starting address index
         :return: nothing
         """
-        use_ovs = self.session.options.get_config("ovs") == "True"
+        use_ovs = self.session.use_ovs()
         address = self.prefix[index]
         current = f"{address}/{self.prefix.prefixlen}"
         net_client = get_net_client(use_ovs, utils.cmd)

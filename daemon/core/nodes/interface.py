@@ -68,8 +68,9 @@ class CoreInterface:
         # id used to find flow data
         self.flow_id: Optional[int] = None
         self.server: Optional["DistributedServer"] = server
-        use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(
+            self.session.use_ovs(), self.host_cmd
+        )
 
     def host_cmd(
         self,

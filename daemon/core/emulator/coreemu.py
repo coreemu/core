@@ -80,7 +80,7 @@ class CoreEmu:
         :raises core.errors.CoreError: when an executable does not exist on path
         """
         requirements = COMMON_REQUIREMENTS
-        use_ovs = self.config.get("ovs") == "True"
+        use_ovs = self.config.get("ovs") == "1"
         if use_ovs:
             requirements += OVS_REQUIREMENTS
         else:

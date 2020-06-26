@@ -217,6 +217,9 @@ class Session:
             else:
                 common_network.unlink(iface1, iface2)
 
+    def use_ovs(self) -> bool:
+        return self.options.get_config("ovs") == "1"
+
     def add_link(
         self,
         node1_id: int,
