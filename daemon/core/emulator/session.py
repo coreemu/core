@@ -833,11 +833,12 @@ class Session:
         for handler in self.config_handlers:
             handler(config_data)
 
-    def broadcast_link(self, link_data: LinkData) -> None:
+    def broadcast_link(self, link_data: LinkData, source: str = None) -> None:
         """
         Handle link data that should be provided to link handlers.
 
         :param link_data: link data to send out
+        :param source: source of broadcast, None by default
         :return: nothing
         """
         for handler in self.link_handlers:

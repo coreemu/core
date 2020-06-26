@@ -225,6 +225,43 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.rect)
 
+    def add_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
+        token = create_edge_token(src.id, dst.id)
+        if token in self.edges and link.options.unidirectional:
+            edge = self.edges[token]
+            edge.asymmetric_link = link
+        elif token not in self.edges:
+            node1 = src.core_node
+            node2 = dst.core_node
+            src_pos = (node1.position.x, node1.position.y)
+            dst_pos = (node2.position.x, node2.position.y)
+            edge = CanvasEdge(self, src.id, src_pos, dst_pos)
+            edge.token = token
+            edge.dst = dst.id
+            edge.set_link(link)
+            edge.check_wireless()
+            src.edges.add(edge)
+            dst.edges.add(edge)
+            self.edges[edge.token] = edge
+            self.core.links[edge.token] = edge
+            if link.HasField("iface1"):
+                iface1 = link.iface1
+                self.core.iface_to_edge[(node1.id, iface1.id)] = token
+                src.ifaces[iface1.id] = iface1
+                edge.src_iface = iface1
+            if link.HasField("iface2"):
+                iface2 = link.iface2
+                self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
+                dst.ifaces[iface2.id] = iface2
+                edge.dst_iface = iface2
+
+    def delete_wired_edge(self, src: CanvasNode, dst: CanvasNode) -> None:
+        token = create_edge_token(src.id, dst.id)
+        edge = self.edges.get(token)
+        if not edge:
+            return
+        self.delete_edge(edge)
+
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
         token = create_edge_token(src.id, dst.id, network_id)
@@ -297,41 +334,11 @@ class CanvasGraph(tk.Canvas):
         for link in session.links:
             logging.debug("drawing link: %s", link)
             canvas_node1 = self.core.canvas_nodes[link.node1_id]
-            node1 = canvas_node1.core_node
             canvas_node2 = self.core.canvas_nodes[link.node2_id]
-            node2 = canvas_node2.core_node
-            token = create_edge_token(canvas_node1.id, canvas_node2.id)
-
             if link.type == LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node1, canvas_node2, link)
             else:
-                if token not in self.edges:
-                    src_pos = (node1.position.x, node1.position.y)
-                    dst_pos = (node2.position.x, node2.position.y)
-                    edge = CanvasEdge(self, canvas_node1.id, src_pos, dst_pos)
-                    edge.token = token
-                    edge.dst = canvas_node2.id
-                    edge.set_link(link)
-                    edge.check_wireless()
-                    canvas_node1.edges.add(edge)
-                    canvas_node2.edges.add(edge)
-                    self.edges[edge.token] = edge
-                    self.core.links[edge.token] = edge
-                    if link.HasField("iface1"):
-                        iface1 = link.iface1
-                        self.core.iface_to_edge[(node1.id, iface1.id)] = token
-                        canvas_node1.ifaces[iface1.id] = iface1
-                        edge.src_iface = iface1
-                    if link.HasField("iface2"):
-                        iface2 = link.iface2
-                        self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
-                        canvas_node2.ifaces[iface2.id] = iface2
-                        edge.dst_iface = iface2
-                elif link.options.unidirectional:
-                    edge = self.edges[token]
-                    edge.asymmetric_link = link
-                else:
-                    logging.error("duplicate link received: %s", link)
+                self.add_wired_edge(canvas_node1, canvas_node2, link)
 
     def stopped_session(self) -> None:
         # clear wireless edges

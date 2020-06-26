@@ -190,6 +190,7 @@ class LinkData:
     iface2: InterfaceData = None
     options: LinkOptions = LinkOptions()
     color: str = None
+    source: str = None
 
 
 class IpPrefixes:

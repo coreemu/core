@@ -148,6 +148,8 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event: Event) -> None:
+        if event.source == GUI_SOURCE:
+            return
         if event.session_id != self.session_id:
             logging.warning(
                 "ignoring event session(%s) current(%s)",
@@ -193,19 +195,32 @@ class CoreClient:
             return
         canvas_node1 = self.canvas_nodes[node1_id]
         canvas_node2 = self.canvas_nodes[node2_id]
-        if event.message_type == MessageType.ADD:
-            self.app.canvas.add_wireless_edge(canvas_node1, canvas_node2, event.link)
-        elif event.message_type == MessageType.DELETE:
-            self.app.canvas.delete_wireless_edge(canvas_node1, canvas_node2, event.link)
-        elif event.message_type == MessageType.NONE:
-            self.app.canvas.update_wireless_edge(canvas_node1, canvas_node2, event.link)
+        if event.link.type == LinkType.WIRELESS:
+            if event.message_type == MessageType.ADD:
+                self.app.canvas.add_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            elif event.message_type == MessageType.DELETE:
+                self.app.canvas.delete_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            elif event.message_type == MessageType.NONE:
+                self.app.canvas.update_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            else:
+                logging.warning("unknown link event: %s", event)
         else:
-            logging.warning("unknown link event: %s", event)
+            if event.message_type == MessageType.ADD:
+                self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
+                self.app.canvas.organize()
+            elif event.message_type == MessageType.DELETE:
+                self.app.canvas.delete_wired_edge(canvas_node1, canvas_node2)
+            else:
+                logging.warning("unknown link event: %s", event)
 
     def handle_node_event(self, event: NodeEvent) -> None:
         logging.debug("node event: %s", event)
-        if event.source == GUI_SOURCE:
-            return
         node_id = event.node.id
         x = event.node.position.x
         y = event.node.position.y

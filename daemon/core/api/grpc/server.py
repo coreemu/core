@@ -108,7 +108,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkResponse,
 )
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import LinkData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
@@ -853,6 +853,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node1_iface, node2_iface = session.add_link(
             node1_id, node2_id, iface1_data, iface2_data, options, link_type
         )
+        iface1_data = None
+        if node1_iface:
+            iface1_data = grpcutils.iface_to_data(node1_iface)
+        iface2_data = None
+        if node2_iface:
+            iface2_data = grpcutils.iface_to_data(node2_iface)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.ADD,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1_data,
+            iface2=iface2_data,
+            source=source,
+        )
+        session.broadcast_link(link_data)
         iface1_proto = None
         iface2_proto = None
         if node1_iface:
@@ -912,6 +928,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         iface1_id = request.iface1_id
         iface2_id = request.iface2_id
         session.delete_link(node1_id, node2_id, iface1_id, iface2_id)
+        iface1 = InterfaceData(id=iface1_id)
+        iface2 = InterfaceData(id=iface2_id)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.DELETE,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1,
+            iface2=iface2,
+            source=source,
+        )
+        session.broadcast_link(link_data)
         return core_pb2.DeleteLinkResponse(result=True)
 
     def GetHooks(
