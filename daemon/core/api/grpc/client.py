@@ -509,7 +509,7 @@ class CoreGrpcClient:
         :param node_id: node id
         :param position: position to set node to
         :param icon: path to icon for gui to use for node
-        :param source: application source editing node
+        :param source: application source
         :param geo: lon,lat,alt location for node
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or node doesn't exist
@@ -614,6 +614,7 @@ class CoreGrpcClient:
         iface1: core_pb2.Interface = None,
         iface2: core_pb2.Interface = None,
         options: core_pb2.LinkOptions = None,
+        source: str = None,
     ) -> core_pb2.AddLinkResponse:
         """
         Add a link between nodes.
@@ -624,6 +625,7 @@ class CoreGrpcClient:
         :param iface1: node one interface data
         :param iface2: node two interface data
         :param options: options for link (jitter, bandwidth, etc)
+        :param source: application source
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
@@ -635,7 +637,9 @@ class CoreGrpcClient:
             iface2=iface2,
             options=options,
         )
-        request = core_pb2.AddLinkRequest(session_id=session_id, link=link)
+        request = core_pb2.AddLinkRequest(
+            session_id=session_id, link=link, source=source
+        )
         return self.stub.AddLink(request)
 
     def edit_link(
@@ -646,6 +650,7 @@ class CoreGrpcClient:
         options: core_pb2.LinkOptions,
         iface1_id: int = None,
         iface2_id: int = None,
+        source: str = None,
     ) -> core_pb2.EditLinkResponse:
         """
         Edit a link between nodes.
@@ -656,6 +661,7 @@ class CoreGrpcClient:
         :param options: options for link (jitter, bandwidth, etc)
         :param iface1_id: node one interface id
         :param iface2_id: node two interface id
+        :param source: application source
         :return: response with result of success or failure
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
@@ -666,6 +672,7 @@ class CoreGrpcClient:
             options=options,
             iface1_id=iface1_id,
             iface2_id=iface2_id,
+            source=source,
         )
         return self.stub.EditLink(request)
 
@@ -676,6 +683,7 @@ class CoreGrpcClient:
         node2_id: int,
         iface1_id: int = None,
         iface2_id: int = None,
+        source: str = None,
     ) -> core_pb2.DeleteLinkResponse:
         """
         Delete a link between nodes.
@@ -685,6 +693,7 @@ class CoreGrpcClient:
         :param node2_id: node two id
         :param iface1_id: node one interface id
         :param iface2_id: node two interface id
+        :param source: application source
         :return: response with result of success or failure
         :raises grpc.RpcError: when session doesn't exist
         """
@@ -694,6 +703,7 @@ class CoreGrpcClient:
             node2_id=node2_id,
             iface1_id=iface1_id,
             iface2_id=iface2_id,
+            source=source,
         )
         return self.stub.DeleteLink(request)
 

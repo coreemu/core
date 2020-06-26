@@ -343,11 +343,11 @@ message Event {
         FileEvent file_event = 6;
     }
     int32 session_id = 7;
+    string source = 8;
 }
 
 message NodeEvent {
     Node node = 1;
-    string source = 2;
 }
 
 message LinkEvent {
@@ -488,6 +488,7 @@ message GetNodeLinksResponse {
 message AddLinkRequest {
     int32 session_id = 1;
     Link link = 2;
+    string source = 3;
 }
 
 message AddLinkResponse {
@@ -503,6 +504,7 @@ message EditLinkRequest {
     int32 iface1_id = 4;
     int32 iface2_id = 5;
     LinkOptions options = 6;
+    string source = 7;
 }
 
 message EditLinkResponse {
@@ -515,6 +517,7 @@ message DeleteLinkRequest {
     int32 node2_id = 3;
     int32 iface1_id = 4;
     int32 iface2_id = 5;
+    string source = 6;
 }
 
 message DeleteLinkResponse {

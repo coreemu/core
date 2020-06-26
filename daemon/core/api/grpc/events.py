@@ -1,6 +1,6 @@
 import logging
 from queue import Empty, Queue
-from typing import Iterable
+from typing import Iterable, Optional
 
 from core.api.grpc import core_pb2
 from core.api.grpc.grpcutils import convert_link
@@ -15,7 +15,7 @@ from core.emulator.data import (
 from core.emulator.session import Session
 
 
-def handle_node_event(node_data: NodeData) -> core_pb2.NodeEvent:
+def handle_node_event(node_data: NodeData) -> core_pb2.Event:
     """
     Handle node event when there is a node event
 
@@ -36,98 +36,105 @@ def handle_node_event(node_data: NodeData) -> core_pb2.NodeEvent:
         geo=geo,
         services=services,
     )
-    return core_pb2.NodeEvent(node=node_proto, source=node_data.source)
+    node_event = core_pb2.NodeEvent(node=node_proto)
+    return core_pb2.Event(node_event=node_event, source=node_data.source)
 
 
-def handle_link_event(event: LinkData) -> core_pb2.LinkEvent:
+def handle_link_event(link_data: LinkData) -> core_pb2.Event:
     """
     Handle link event when there is a link event
 
-    :param event: link data
+    :param link_data: link data
     :return: link event that has message type and link information
     """
-    link = convert_link(event)
-    return core_pb2.LinkEvent(message_type=event.message_type.value, link=link)
+    link = convert_link(link_data)
+    message_type = link_data.message_type.value
+    link_event = core_pb2.LinkEvent(message_type=message_type, link=link)
+    return core_pb2.Event(link_event=link_event, source=link_data.source)
 
 
-def handle_session_event(event: EventData) -> core_pb2.SessionEvent:
+def handle_session_event(event_data: EventData) -> core_pb2.Event:
     """
     Handle session event when there is a session event
 
-    :param event: event data
+    :param event_data: event data
     :return: session event
     """
-    event_time = event.time
+    event_time = event_data.time
     if event_time is not None:
         event_time = float(event_time)
-    return core_pb2.SessionEvent(
-        node_id=event.node,
-        event=event.event_type.value,
-        name=event.name,
-        data=event.data,
+    session_event = core_pb2.SessionEvent(
+        node_id=event_data.node,
+        event=event_data.event_type.value,
+        name=event_data.name,
+        data=event_data.data,
         time=event_time,
     )
+    return core_pb2.Event(session_event=session_event)
 
 
-def handle_config_event(event: ConfigData) -> core_pb2.ConfigEvent:
+def handle_config_event(config_data: ConfigData) -> core_pb2.Event:
     """
     Handle configuration event when there is configuration event
 
-    :param event: configuration data
+    :param config_data: configuration data
     :return: configuration event
     """
-    return core_pb2.ConfigEvent(
-        message_type=event.message_type,
-        node_id=event.node,
-        object=event.object,
-        type=event.type,
-        captions=event.captions,
-        bitmap=event.bitmap,
-        data_values=event.data_values,
-        possible_values=event.possible_values,
-        groups=event.groups,
-        iface_id=event.iface_id,
-        network_id=event.network_id,
-        opaque=event.opaque,
-        data_types=event.data_types,
+    config_event = core_pb2.ConfigEvent(
+        message_type=config_data.message_type,
+        node_id=config_data.node,
+        object=config_data.object,
+        type=config_data.type,
+        captions=config_data.captions,
+        bitmap=config_data.bitmap,
+        data_values=config_data.data_values,
+        possible_values=config_data.possible_values,
+        groups=config_data.groups,
+        iface_id=config_data.iface_id,
+        network_id=config_data.network_id,
+        opaque=config_data.opaque,
+        data_types=config_data.data_types,
     )
+    return core_pb2.Event(config_event=config_event)
 
 
-def handle_exception_event(event: ExceptionData) -> core_pb2.ExceptionEvent:
+def handle_exception_event(exception_data: ExceptionData) -> core_pb2.Event:
     """
     Handle exception event when there is exception event
 
-    :param event: exception data
+    :param exception_data: exception data
     :return: exception event
     """
-    return core_pb2.ExceptionEvent(
-        node_id=event.node,
-        level=event.level.value,
-        source=event.source,
-        date=event.date,
-        text=event.text,
-        opaque=event.opaque,
+    exception_event = core_pb2.ExceptionEvent(
+        node_id=exception_data.node,
+        level=exception_data.level.value,
+        source=exception_data.source,
+        date=exception_data.date,
+        text=exception_data.text,
+        opaque=exception_data.opaque,
     )
+    return core_pb2.Event(exception_event=exception_event)
 
 
-def handle_file_event(event: FileData) -> core_pb2.FileEvent:
+def handle_file_event(file_data: FileData) -> core_pb2.Event:
     """
     Handle file event
 
-    :param event: file data
+    :param file_data: file data
     :return: file event
     """
-    return core_pb2.FileEvent(
-        message_type=event.message_type.value,
-        node_id=event.node,
-        name=event.name,
-        mode=event.mode,
-        number=event.number,
-        type=event.type,
-        source=event.source,
-        data=event.data,
-        compressed_data=event.compressed_data,
+    file_event = core_pb2.FileEvent(
+        message_type=file_data.message_type.value,
+        node_id=file_data.node,
+        name=file_data.name,
+        mode=file_data.mode,
+        number=file_data.number,
+        type=file_data.type,
+        source=file_data.source,
+        data=file_data.data,
+        compressed_data=file_data.compressed_data,
     )
+    return core_pb2.Event(file_event=file_event)
 
 
 class EventStreamer:
@@ -168,32 +175,33 @@ class EventStreamer:
         if core_pb2.EventType.SESSION in self.event_types:
             self.session.event_handlers.append(self.queue.put)
 
-    def process(self) -> core_pb2.Event:
+    def process(self) -> Optional[core_pb2.Event]:
         """
         Process the next event in the queue.
 
         :return: grpc event, or None when invalid event or queue timeout
         """
-        event = core_pb2.Event(session_id=self.session.id)
+        event = None
         try:
             data = self.queue.get(timeout=1)
             if isinstance(data, NodeData):
-                event.node_event.CopyFrom(handle_node_event(data))
+                event = handle_node_event(data)
             elif isinstance(data, LinkData):
-                event.link_event.CopyFrom(handle_link_event(data))
+                event = handle_link_event(data)
             elif isinstance(data, EventData):
-                event.session_event.CopyFrom(handle_session_event(data))
+                event = handle_session_event(data)
             elif isinstance(data, ConfigData):
-                event.config_event.CopyFrom(handle_config_event(data))
+                event = handle_config_event(data)
             elif isinstance(data, ExceptionData):
-                event.exception_event.CopyFrom(handle_exception_event(data))
+                event = handle_exception_event(data)
             elif isinstance(data, FileData):
-                event.file_event.CopyFrom(handle_file_event(data))
+                event = handle_file_event(data)
             else:
                 logging.error("unknown event: %s", data)
-                event = None
         except Empty:
-            event = None
+            pass
+        if event:
+            event.session_id = self.session.id
         return event
 
     def remove_handlers(self) -> None:

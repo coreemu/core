@@ -435,6 +435,24 @@ def get_service_configuration(service: CoreService) -> NodeServiceData:
     )
 
 
+def iface_to_data(iface: CoreInterface) -> InterfaceData:
+    ip4 = iface.get_ip4()
+    ip4_addr = str(ip4.ip) if ip4 else None
+    ip4_mask = ip4.prefixlen if ip4 else None
+    ip6 = iface.get_ip6()
+    ip6_addr = str(ip6.ip) if ip6 else None
+    ip6_mask = ip6.prefixlen if ip6 else None
+    return InterfaceData(
+        id=iface.node_id,
+        name=iface.name,
+        mac=str(iface.mac),
+        ip4=ip4_addr,
+        ip4_mask=ip4_mask,
+        ip6=ip6_addr,
+        ip6_mask=ip6_mask,
+    )
+
+
 def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
