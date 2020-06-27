@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.core_pb2 import Interface, Link, LinkType, Session, ThroughputsEvent
+from core.api.grpc.core_pb2 import (
+    Interface,
+    Link,
+    LinkType,
+    Node,
+    Session,
+    ThroughputsEvent,
+)
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -315,29 +322,33 @@ class CanvasGraph(tk.Canvas):
             edge = self.wireless_edges[token]
             edge.middle_label_text(link.label)
 
+    def add_core_node(self, core_node: Node) -> None:
+        if core_node.id in self.core.canvas_nodes:
+            logging.error("core node already exists: %s", core_node)
+            return
+        logging.debug("adding node %s", core_node)
+        # if the gui can't find node's image, default to the "edit-node" image
+        image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
+        if not image:
+            image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
+        x = core_node.position.x
+        y = core_node.position.y
+        node = CanvasNode(self.app, x, y, core_node, image)
+        self.nodes[node.id] = node
+        self.core.canvas_nodes[core_node.id] = node
+
     def draw_session(self, session: Session) -> None:
         """
         Draw existing session.
         """
         # draw existing nodes
         for core_node in session.nodes:
-            logging.debug("drawing node %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            image = NodeUtils.node_image(
-                core_node, self.app.guiconfig, self.app.app_scale
-            )
-            # if the gui can't find node's image, default to the "edit-node" image
-            if not image:
-                image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
-            x = core_node.position.x
-            y = core_node.position.y
-            node = CanvasNode(self.app, x, y, core_node, image)
-            self.nodes[node.id] = node
-            self.core.canvas_nodes[core_node.id] = node
+            self.add_core_node(core_node)
 
-        # draw existing links
+            # draw existing links
         for link in session.links:
             logging.debug("drawing link: %s", link)
             canvas_node1 = self.core.canvas_nodes[link.node1_id]

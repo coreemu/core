@@ -225,16 +225,18 @@ class CoreClient:
 
     def handle_node_event(self, event: NodeEvent) -> None:
         logging.debug("node event: %s", event)
-        node_id = event.node.id
-        canvas_node = self.canvas_nodes[node_id]
         if event.message_type == MessageType.NONE:
+            canvas_node = self.canvas_nodes[event.node.id]
             x = event.node.position.x
             y = event.node.position.y
             canvas_node.move(x, y)
         elif event.message_type == MessageType.DELETE:
+            canvas_node = self.canvas_nodes[event.node.id]
             self.app.canvas.clear_selection()
             self.app.canvas.select_object(canvas_node.id)
             self.app.canvas.delete_selected_objects()
+        elif event.message_type == MessageType.ADD:
+            self.app.canvas.add_core_node(event.node)
         else:
             logging.warning("unknown node event: %s", event)
 

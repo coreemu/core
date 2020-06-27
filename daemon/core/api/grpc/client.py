@@ -468,17 +468,20 @@ class CoreGrpcClient:
         return stream
 
     def add_node(
-        self, session_id: int, node: core_pb2.Node
+        self, session_id: int, node: core_pb2.Node, source: str = None
     ) -> core_pb2.AddNodeResponse:
         """
         Add node to session.
 
         :param session_id: session id
         :param node: node to add
+        :param source: source application
         :return: response with node id
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.AddNodeRequest(session_id=session_id, node=node)
+        request = core_pb2.AddNodeRequest(
+            session_id=session_id, node=node, source=source
+        )
         return self.stub.AddNode(request)
 
     def get_node(self, session_id: int, node_id: int) -> core_pb2.GetNodeResponse:

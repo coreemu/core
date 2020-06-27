@@ -668,6 +668,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         _type, _id, options = grpcutils.add_node_data(request.node)
         _class = session.get_node_class(_type)
         node = session.add_node(_class, _id, options)
+        source = request.source if request.source else None
+        session.broadcast_node(node, MessageFlags.ADD, source)
         return core_pb2.AddNodeResponse(node_id=node.id)
 
     def GetNode(

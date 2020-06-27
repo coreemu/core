@@ -404,6 +404,7 @@ message FileEvent {
 message AddNodeRequest {
     int32 session_id = 1;
     Node node = 2;
+    string source = 3;
 }
 
 message AddNodeResponse {
