@@ -775,7 +775,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("delete node: %s", request)
         session = self.get_session(request.session_id, context)
-        result = session.delete_node(request.node_id)
+        result = False
+        try:
+            node = self.get_node(session, request.node_id, context, NodeBase)
+            result = session.delete_node(node.id)
+            source = request.source if request.source else None
+            session.broadcast_node(node, MessageFlags.DELETE, source)
+        except grpc.RpcError:
+            pass
         return core_pb2.DeleteNodeResponse(result=result)
 
     def NodeCommand(

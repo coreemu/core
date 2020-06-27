@@ -348,6 +348,7 @@ message Event {
 
 message NodeEvent {
     Node node = 1;
+    MessageType.Enum message_type = 2;
 }
 
 message LinkEvent {
@@ -435,6 +436,7 @@ message EditNodeResponse {
 message DeleteNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
+    string source = 3;
 }
 
 message DeleteNodeResponse {

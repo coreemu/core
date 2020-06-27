@@ -271,12 +271,12 @@ class CanvasNode:
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
-        self.canvas.selection[self.id] = self
+        self.canvas.select_object(self.id)
         self.canvas.delete_selected_objects()
 
     def canvas_copy(self) -> None:
         self.canvas.clear_selection()
-        self.canvas.selection[self.id] = self
+        self.canvas.select_object(self.id)
         self.canvas.copy()
 
     def show_config(self) -> None:

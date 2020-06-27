@@ -536,16 +536,21 @@ class CoreGrpcClient:
         """
         return self.stub.MoveNodes(move_iterator)
 
-    def delete_node(self, session_id: int, node_id: int) -> core_pb2.DeleteNodeResponse:
+    def delete_node(
+        self, session_id: int, node_id: int, source: str = None
+    ) -> core_pb2.DeleteNodeResponse:
         """
         Delete node from session.
 
         :param session_id: session id
         :param node_id: node id
+        :param source: application source
         :return: response with result of success or failure
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.DeleteNodeRequest(session_id=session_id, node_id=node_id)
+        request = core_pb2.DeleteNodeRequest(
+            session_id=session_id, node_id=node_id, source=source
+        )
         return self.stub.DeleteNode(request)
 
     def node_command(

@@ -226,10 +226,17 @@ class CoreClient:
     def handle_node_event(self, event: NodeEvent) -> None:
         logging.debug("node event: %s", event)
         node_id = event.node.id
-        x = event.node.position.x
-        y = event.node.position.y
         canvas_node = self.canvas_nodes[node_id]
-        canvas_node.move(x, y)
+        if event.message_type == MessageType.NONE:
+            x = event.node.position.x
+            y = event.node.position.y
+            canvas_node.move(x, y)
+        elif event.message_type == MessageType.DELETE:
+            self.app.canvas.clear_selection()
+            self.app.canvas.select_object(canvas_node.id)
+            self.app.canvas.delete_selected_objects()
+        else:
+            logging.warning("unknown node event: %s", event)
 
     def enable_throughputs(self) -> None:
         self.handling_throughputs = self.client.throughputs(

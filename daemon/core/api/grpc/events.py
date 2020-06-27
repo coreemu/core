@@ -36,7 +36,8 @@ def handle_node_event(node_data: NodeData) -> core_pb2.Event:
         geo=geo,
         services=services,
     )
-    node_event = core_pb2.NodeEvent(node=node_proto)
+    message_type = node_data.message_type.value
+    node_event = core_pb2.NodeEvent(message_type=message_type, node=node_proto)
     return core_pb2.Event(node_event=node_event, source=node_data.source)
 
 
