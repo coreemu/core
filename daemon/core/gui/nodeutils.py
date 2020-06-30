@@ -62,7 +62,7 @@ class NodeUtils:
     IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
     WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
-    IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
+    IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
     NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
     ROUTER_NODES: Set[str] = {"router", "mdr"}
     ANTENNA_ICON: PhotoImage = None

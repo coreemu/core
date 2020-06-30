@@ -150,12 +150,16 @@ def query_session(args: Namespace) -> None:
                 n2 = names[link.node2_id]
                 print(f"Node   | ", end="")
                 print_iface_header()
+                print(f"{n1:<6} | ", end="")
                 if link.HasField("iface1"):
-                    print(f"{n1:<6} | ", end="")
                     print_iface(link.iface1)
+                else:
+                    print()
+                print(f"{n2:<6} | ", end="")
                 if link.HasField("iface2"):
-                    print(f"{n2:<6} | ", end="")
                     print_iface(link.iface2)
+                else:
+                    print()
                 print()
 
 

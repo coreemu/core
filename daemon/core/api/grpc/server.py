@@ -114,7 +114,7 @@ from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
-from core.nodes.network import WlanNode
+from core.nodes.network import PtpNet, WlanNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
@@ -543,7 +543,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for _id in session.nodes:
             node = session.nodes[_id]
-            if not isinstance(node.id, int):
+            if isinstance(node, PtpNet):
                 continue
             node_proto = grpcutils.get_node_proto(session, node)
             nodes.append(node_proto)
