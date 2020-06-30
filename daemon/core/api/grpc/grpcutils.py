@@ -453,32 +453,35 @@ def iface_to_data(iface: CoreInterface) -> InterfaceData:
     )
 
 
-def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
+def iface_to_proto(node_id: int, iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
+
+    :param node_id: id of node to convert interface for
     :param iface: interface to convert
     :return: interface proto
     """
-    net_id = None
-    if iface.net:
-        net_id = iface.net.id
-    ip4 = None
-    ip4_mask = None
+    if iface.node and iface.node.id == node_id:
+        _id = iface.node_id
+    else:
+        _id = iface.net_id
+    net_id = iface.net.id if iface.net else None
+    node_id = iface.node.id if iface.node else None
+    net2_id = iface.othernet.id if iface.othernet else None
     ip4_net = iface.get_ip4()
-    if ip4_net:
-        ip4 = str(ip4_net.ip)
-        ip4_mask = ip4_net.prefixlen
-    ip6 = None
-    ip6_mask = None
+    ip4 = str(ip4_net.ip) if ip4_net else None
+    ip4_mask = ip4_net.prefixlen if ip4_net else None
     ip6_net = iface.get_ip6()
-    if ip6_net:
-        ip6 = str(ip6_net.ip)
-        ip6_mask = ip6_net.prefixlen
+    ip6 = str(ip6_net.ip) if ip6_net else None
+    ip6_mask = ip6_net.prefixlen if ip6_net else None
+    mac = str(iface.mac) if iface.mac else None
     return core_pb2.Interface(
-        id=iface.node_id,
+        id=_id,
         net_id=net_id,
+        net2_id=net2_id,
+        node_id=node_id,
         name=iface.name,
-        mac=str(iface.mac),
+        mac=mac,
         mtu=iface.mtu,
         flow_id=iface.flow_id,
         ip4=ip4,

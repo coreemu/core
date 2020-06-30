@@ -109,9 +109,9 @@ def print_iface_header() -> None:
 
 
 def print_iface(iface: Interface) -> None:
-    iface_ip4 = f"{iface.ip4}/{iface.ip4_mask}" if iface.ip4 else None
-    iface_ip6 = f"{iface.ip6}/{iface.ip6_mask}" if iface.ip6 else None
-    print(f"{iface.id:<3} | {iface.mac:<11} | {iface_ip4:<18} | {iface_ip6}")
+    iface_ip4 = f"{iface.ip4}/{iface.ip4_mask}" if iface.ip4 else ""
+    iface_ip6 = f"{iface.ip6}/{iface.ip6_mask}" if iface.ip6 else ""
+    print(f"{iface.id:<3} | {iface.mac:<17} | {iface_ip4:<18} | {iface_ip6}")
 
 
 def query_sessions(args: Namespace) -> None:
@@ -166,6 +166,11 @@ def query_session(args: Namespace) -> None:
 def query_node(args: Namespace) -> None:
     core = CoreGrpcClient()
     with core.context_connect():
+        names = {}
+        response = core.get_session(args.id)
+        for node in response.session.nodes:
+            names[node.id] = node.name
+
         response = core.get_node(args.id, args.node)
         if args.json:
             json = MessageToJson(response, preserving_proto_field_name=True)
@@ -176,8 +181,17 @@ def query_node(args: Namespace) -> None:
             print("ID   | Name    | Type")
             print(f"{node.id:<4} | {node.name:<7} | {node_type}")
             print("Interfaces")
+            print("Connected To | ", end="")
             print_iface_header()
             for iface in response.ifaces:
+                if iface.net_id == node.id:
+                    if iface.node_id:
+                        name = names[iface.node_id]
+                    else:
+                        name = names[iface.net2_id]
+                else:
+                    name = names[iface.net_id]
+                print(f"{name:<12} | ", end="")
                 print_iface(iface)
 
 
@@ -268,7 +282,7 @@ def add_link(args: Namespace) -> None:
             json = MessageToJson(response, preserving_proto_field_name=True)
             print(json)
         else:
-            print(f"edit link: {response.result}")
+            print(f"add link: {response.result}")
 
 
 def edit_link(args: Namespace) -> None:

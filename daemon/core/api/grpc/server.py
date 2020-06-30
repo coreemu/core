@@ -688,7 +688,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         ifaces = []
         for iface_id in node.ifaces:
             iface = node.ifaces[iface_id]
-            iface_proto = grpcutils.iface_to_proto(iface)
+            iface_proto = grpcutils.iface_to_proto(request.node_id, iface)
             ifaces.append(iface_proto)
         node_proto = grpcutils.get_node_proto(session, node)
         return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces)
@@ -880,9 +880,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         iface1_proto = None
         iface2_proto = None
         if node1_iface:
-            iface1_proto = grpcutils.iface_to_proto(node1_iface)
+            iface1_proto = grpcutils.iface_to_proto(node1_id, node1_iface)
         if node2_iface:
-            iface2_proto = grpcutils.iface_to_proto(node2_iface)
+            iface2_proto = grpcutils.iface_to_proto(node2_id, node2_iface)
         return core_pb2.AddLinkResponse(
             result=True, iface1=iface1_proto, iface2=iface2_proto
         )

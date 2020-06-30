@@ -742,6 +742,8 @@ message Interface {
     int32 net_id = 8;
     int32 flow_id = 9;
     int32 mtu = 10;
+    int32 node_id = 11;
+    int32 net2_id = 12;
 }
 
 message SessionLocation {
