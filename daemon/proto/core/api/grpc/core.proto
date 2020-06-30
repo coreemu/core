@@ -719,17 +719,16 @@ message Link {
 }
 
 message LinkOptions {
-    string opaque = 1;
-    int64 jitter = 2;
-    int32 key = 3;
-    int32 mburst = 4;
-    int32 mer = 5;
-    float loss = 6;
-    int64 bandwidth = 7;
-    int32 burst = 8;
-    int64 delay = 9;
-    int32 dup = 10;
-    bool unidirectional = 11;
+    int64 jitter = 1;
+    int32 key = 2;
+    int32 mburst = 3;
+    int32 mer = 4;
+    float loss = 5;
+    int64 bandwidth = 6;
+    int32 burst = 7;
+    int64 delay = 8;
+    int32 dup = 9;
+    bool unidirectional = 10;
 }
 
 message Interface {
