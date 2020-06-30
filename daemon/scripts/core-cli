@@ -1,0 +1,447 @@
+#!/usr/bin/env python3
+import sys
+from argparse import (
+    ArgumentDefaultsHelpFormatter,
+    ArgumentParser,
+    ArgumentTypeError,
+    Namespace,
+    _SubParsersAction,
+)
+from typing import Tuple
+
+import netaddr
+from google.protobuf.json_format import MessageToJson
+
+from core.api.grpc.client import CoreGrpcClient
+from core.api.grpc.core_pb2 import (
+    Geo,
+    Interface,
+    LinkOptions,
+    Node,
+    NodeType,
+    Position,
+    SessionState,
+)
+
+NODE_TYPES = [k for k, v in NodeType.Enum.items() if v != NodeType.PEER_TO_PEER]
+
+
+def mac_type(value: str) -> str:
+    if not netaddr.valid_mac(value):
+        raise ArgumentTypeError("invalid mac address")
+    return value
+
+
+def ip4_type(value: str) -> str:
+    if not netaddr.valid_ipv4(value):
+        raise ArgumentTypeError("invalid ip4 address")
+    return value
+
+
+def ip6_type(value: str) -> str:
+    if not netaddr.valid_ipv6(value):
+        raise ArgumentTypeError("invalid ip6 address")
+    return value
+
+
+def position_type(value: str) -> Tuple[float, float]:
+    error = "invalid position, must be in the format: float,float"
+    try:
+        values = [float(x) for x in value.split(",")]
+    except ValueError:
+        raise ArgumentTypeError(error)
+    if len(values) != 2:
+        raise ArgumentTypeError(error)
+    x, y = values
+    return x, y
+
+
+def geo_type(value: str) -> Tuple[float, float, float]:
+    error = "invalid geo, must be in the format: float,float,float"
+    try:
+        values = [float(x) for x in value.split(",")]
+    except ValueError:
+        raise ArgumentTypeError(error)
+    if len(values) != 3:
+        raise ArgumentTypeError(error)
+    lon, lat, alt = values
+    return lon, lat, alt
+
+
+def get_current_session() -> int:
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.get_sessions()
+    if not response.sessions:
+        print("no current session to interact with")
+        sys.exit(1)
+    return response.sessions[0].id
+
+
+def print_interface_header() -> None:
+    print("ID  | MAC Address       | IP4 Address        | IP6 Address")
+
+
+def print_interface(iface: Interface) -> None:
+    iface_ip4 = f"{iface.ip4}/{iface.ip4_mask}" if iface.ip4 else None
+    iface_ip6 = f"{iface.ip6}/{iface.ip6_mask}" if iface.ip6 else None
+    print(f"{iface.id:<3} | {iface.mac:<11} | {iface_ip4:<18} | {iface_ip6}")
+
+
+def query_sessions(args: Namespace) -> None:
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.get_sessions()
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print("Session ID | Session State | Nodes")
+            for s in response.sessions:
+                state = SessionState.Enum.Name(s.state)
+                print(f"{s.id:<10} | {state:<13} | {s.nodes}")
+
+
+def query_session(args: Namespace) -> None:
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.get_session(args.id)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print("Nodes")
+            print("Node ID | Node Name | Node Type")
+            names = {}
+            for node in response.session.nodes:
+                names[node.id] = node.name
+                node_type = NodeType.Enum.Name(node.type)
+                print(f"{node.id:<7} | {node.name:<9} | {node_type}")
+
+            print("\nLinks")
+            for link in response.session.links:
+                n1 = names[link.node1_id]
+                n2 = names[link.node2_id]
+                print(f"Node   | ", end="")
+                print_interface_header()
+                if link.HasField("iface1"):
+                    print(f"{n1:<6} | ", end="")
+                    print_interface(link.iface1)
+                if link.HasField("iface2"):
+                    print(f"{n2:<6} | ", end="")
+                    print_interface(link.iface2)
+                print()
+
+
+def query_node(args: Namespace) -> None:
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.get_node(args.id, args.node)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            node = response.node
+            node_type = NodeType.Enum.Name(node.type)
+            print("ID   | Name    | Type")
+            print(f"{node.id:<4} | {node.name:<7} | {node_type}")
+            print("Interfaces")
+            print_interface_header()
+            for iface in response.ifaces:
+                print_interface(iface)
+
+
+def add_node(args: Namespace) -> None:
+    session_id = get_current_session()
+    node_type = NodeType.Enum.Value(args.type)
+    pos = None
+    if args.pos:
+        x, y = args.pos
+        pos = Position(x=x, y=y)
+    geo = None
+    if args.geo:
+        lon, lat, alt = args.geo
+        geo = Geo(lon=lon, lat=lat, alt=alt)
+    core = CoreGrpcClient()
+    with core.context_connect():
+        node = Node(
+            id=args.id,
+            name=args.name,
+            type=node_type,
+            model=args.model,
+            emane=args.emane,
+            icon=args.icon,
+            image=args.image,
+            position=pos,
+            geo=geo,
+        )
+        response = core.add_node(session_id, node)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"created node: {response.node_id}")
+
+
+def edit_node(args: Namespace) -> None:
+    session_id = get_current_session()
+    pos = None
+    if args.pos:
+        x, y = args.pos
+        pos = Position(x=x, y=y)
+    geo = None
+    if args.geo:
+        lon, lat, alt = args.geo
+        geo = Geo(lon=lon, lat=lat, alt=alt)
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.edit_node(session_id, args.id, pos, args.icon, geo=geo)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"edit node: {response.result}")
+
+
+def delete_node(args: Namespace) -> None:
+    session_id = get_current_session()
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.delete_node(session_id, args.id)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"deleted node: {response.result}")
+
+
+def add_link(args: Namespace) -> None:
+    session_id = get_current_session()
+    iface1 = None
+    if args.iface1_id is not None:
+        iface1 = Interface(
+            id=args.iface1_id,
+            mac=args.iface1_mac,
+            ip4=args.iface1_ip4,
+            ip4_mask=args.iface1_ip4_mask,
+            ip6=args.iface1_ip4,
+            ip6_mask=args.iface1_ip6_mask,
+        )
+    iface2 = None
+    if args.iface2_id is not None:
+        iface2 = Interface(
+            id=args.iface2_id,
+            mac=args.iface2_mac,
+            ip4=args.iface2_ip4,
+            ip4_mask=args.iface2_ip4_mask,
+            ip6=args.iface2_ip4,
+            ip6_mask=args.iface2_ip6_mask,
+        )
+    options = LinkOptions(
+        bandwidth=args.bandwidth,
+        loss=args.loss,
+        jitter=args.jitter,
+        delay=args.delay,
+        dup=args.dup,
+        unidirectional=args.uni,
+    )
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.add_link(session_id, args.node1, args.node2, iface1, iface2, options)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"edit link: {response.result}")
+
+
+def edit_link(args: Namespace) -> None:
+    session_id = get_current_session()
+    options = LinkOptions(
+        bandwidth=args.bandwidth,
+        loss=args.loss,
+        jitter=args.jitter,
+        delay=args.delay,
+        dup=args.dup,
+        unidirectional=args.uni,
+    )
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.edit_link(
+            session_id, args.node1, args.node2, options, args.iface1, args.iface2
+        )
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"edit link: {response.result}")
+
+
+def delete_link(args: Namespace) -> None:
+    session_id = get_current_session()
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.delete_link(session_id, args.node1, args.node2, args.iface1, args.iface2)
+        if args.json:
+            json = MessageToJson(response, preserving_proto_field_name=True)
+            print(json)
+        else:
+            print(f"delete link: {response.result}")
+
+
+def setup_node_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("node", help="node interactions")
+    parser.add_argument("--session", type=int, help="session to interact with")
+    subparsers = parser.add_subparsers(help="node commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+
+    add_parser = subparsers.add_parser("add", help="add a node")
+    add_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    add_parser.add_argument("--id", type=int, help="id to use, optional")
+    add_parser.add_argument("--name", help="name to use, optional")
+    add_parser.add_argument(
+        "--type", choices=NODE_TYPES, default="DEFAULT", help="type of node"
+    )
+    add_parser.add_argument("--model", help="used to determine services, optional")
+    group = add_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--pos", type=position_type, help="x,y position")
+    group.add_argument("--geo", type=geo_type, help="lon,lat,alt position")
+    add_parser.add_argument("--icon", help="icon to use, optional")
+    add_parser.add_argument("--image", help="container image, optional")
+    add_parser.add_argument(
+        "--emane", help="emane model, only required for emane nodes"
+    )
+    add_parser.set_defaults(func=add_node)
+
+    edit_parser = subparsers.add_parser("edit", help="edit a node")
+    edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    edit_parser.add_argument("--id", type=int, help="id to use, optional")
+    group = edit_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--pos", type=position_type, help="x,y position")
+    group.add_argument("--geo", type=geo_type, help="lon,lat,alt position")
+    edit_parser.add_argument("--icon", help="icon to use, optional")
+    edit_parser.set_defaults(func=edit_node)
+
+    delete_parser = subparsers.add_parser("delete", help="delete a node")
+    delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    delete_parser.add_argument(
+        "--id", type=int, help="node id to delete", required=True
+    )
+    delete_parser.set_defaults(func=delete_node)
+
+
+def setup_link_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("link", help="link interactions")
+    parser.add_argument("--session", type=int, help="session to interact with")
+    subparsers = parser.add_subparsers(help="link commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+
+    add_parser = subparsers.add_parser("add", help="add a node")
+    add_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    add_parser.add_argument(
+        "--node1", type=int, help="node1 id for link", required=True
+    )
+    add_parser.add_argument(
+        "--node2", type=int, help="node1 id for link", required=True
+    )
+    add_parser.add_argument("--iface1-id", type=int, help="node1 interface id for link")
+    add_parser.add_argument("--iface1-mac", type=mac_type, help="node1 interface mac")
+    add_parser.add_argument("--iface1-ip4", type=ip4_type, help="node1 interface ip4")
+    add_parser.add_argument(
+        "--iface1-ip4-mask", type=int, help="node1 interface ip4 mask"
+    )
+    add_parser.add_argument("--iface1-ip6", type=ip6_type, help="node1 interface ip6")
+    add_parser.add_argument(
+        "--iface1-ip6-mask", type=int, help="node1 interface ip6 mask"
+    )
+    add_parser.add_argument("--iface2-id", type=int, help="node1 interface id for link")
+    add_parser.add_argument("--iface2-mac", type=mac_type, help="node1 interface mac")
+    add_parser.add_argument("--iface2-ip4", type=ip4_type, help="node1 interface ip4")
+    add_parser.add_argument(
+        "--iface2-ip4-mask", type=int, help="node1 interface ip4 mask"
+    )
+    add_parser.add_argument("--iface2-ip6", type=ip6_type, help="node1 interface ip6")
+    add_parser.add_argument(
+        "--iface2-ip6-mask", type=int, help="node1 interface ip6 mask"
+    )
+    add_parser.add_argument("--bandwidth", type=int, help="bandwidth (bps) for link")
+    add_parser.add_argument("--loss", type=float, help="loss (%) for link")
+    add_parser.add_argument("--jitter", type=int, help="jitter (us) for link")
+    add_parser.add_argument("--delay", type=int, help="delay (us) for link")
+    add_parser.add_argument("--dup", type=int, help="duplicate (%) for link")
+    add_parser.add_argument(
+        "--uni", action="store_true", help="is link unidirectional?"
+    )
+    add_parser.set_defaults(func=add_link)
+
+    edit_parser = subparsers.add_parser("edit", help="edit a link")
+    edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    edit_parser.add_argument(
+        "--node1", type=int, help="node1 id for link", required=True
+    )
+    edit_parser.add_argument(
+        "--node2", type=int, help="node1 id for link", required=True
+    )
+    edit_parser.add_argument("--iface1", type=int, help="node1 interface id for link")
+    edit_parser.add_argument("--iface2", type=int, help="node2 interface id for link")
+    edit_parser.add_argument("--bandwidth", type=int, help="bandwidth (bps) for link")
+    edit_parser.add_argument("--loss", type=float, help="loss (%) for link")
+    edit_parser.add_argument("--jitter", type=int, help="jitter (us) for link")
+    edit_parser.add_argument("--delay", type=int, help="delay (us) for link")
+    edit_parser.add_argument("--dup", type=int, help="duplicate (%) for link")
+    edit_parser.add_argument(
+        "--uni", action="store_true", help="is link unidirectional?"
+    )
+    edit_parser.set_defaults(func=edit_link)
+
+    delete_parser = subparsers.add_parser("delete", help="delete a link")
+    delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    delete_parser.add_argument(
+        "--node1", type=int, help="node1 id for link", required=True
+    )
+    delete_parser.add_argument(
+        "--node2", type=int, help="node1 id for link", required=True
+    )
+    delete_parser.add_argument("--iface1", type=int, help="node1 interface id for link")
+    delete_parser.add_argument("--iface2", type=int, help="node2 interface id for link")
+    delete_parser.set_defaults(func=delete_link)
+
+
+def setup_query_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("query", help="query interactions")
+    subparsers = parser.add_subparsers(help="query commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+
+    sessions_parser = subparsers.add_parser("sessions", help="query current sessions")
+    sessions_parser.set_defaults(func=query_sessions)
+
+    session_parser = subparsers.add_parser("session", help="query session")
+    session_parser.add_argument("--id", type=int, help="session to query", required=True)
+    session_parser.set_defaults(func=query_session)
+
+    node_parser = subparsers.add_parser("node", help="query node")
+    node_parser.add_argument("--id", type=int, help="session to query", required=True)
+    node_parser.add_argument("--node", type=int, help="node to query", required=True)
+    node_parser.set_defaults(func=query_node)
+
+
+def main() -> None:
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-j", "--json", action="store_true", help="print responses to terminal as json"
+    )
+    subparsers = parser.add_subparsers(help="supported commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+    setup_node_parser(subparsers)
+    setup_link_parser(subparsers)
+    setup_query_parser(subparsers)
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
