@@ -254,7 +254,7 @@ def add_link(args: Namespace) -> None:
         loss=args.loss,
         jitter=args.jitter,
         delay=args.delay,
-        dup=args.dup,
+        dup=args.duplicate,
         unidirectional=args.uni,
     )
     core = CoreGrpcClient()
@@ -274,7 +274,7 @@ def edit_link(args: Namespace) -> None:
         loss=args.loss,
         jitter=args.jitter,
         delay=args.delay,
-        dup=args.dup,
+        dup=args.duplicate,
         unidirectional=args.uni,
     )
     core = CoreGrpcClient()
@@ -303,109 +303,91 @@ def delete_link(args: Namespace) -> None:
 
 def setup_node_parser(parent: _SubParsersAction) -> None:
     parser = parent.add_parser("node", help="node interactions")
-    parser.add_argument("--session", type=int, help="session to interact with")
+    parser.add_argument("-s", "--session", type=int, help="session to interact with")
     subparsers = parser.add_subparsers(help="node commands")
     subparsers.required = True
     subparsers.dest = "command"
 
     add_parser = subparsers.add_parser("add", help="add a node")
     add_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    add_parser.add_argument("--id", type=int, help="id to use, optional")
-    add_parser.add_argument("--name", help="name to use, optional")
+    add_parser.add_argument("-i", "--id", type=int, help="id to use, optional")
+    add_parser.add_argument("-n", "--name", help="name to use, optional")
     add_parser.add_argument(
-        "--type", choices=NODE_TYPES, default="DEFAULT", help="type of node"
+        "-t", "--type", choices=NODE_TYPES, default="DEFAULT", help="type of node"
     )
-    add_parser.add_argument("--model", help="used to determine services, optional")
+    add_parser.add_argument("-m", "--model", help="used to determine services, optional")
     group = add_parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--pos", type=position_type, help="x,y position")
-    group.add_argument("--geo", type=geo_type, help="lon,lat,alt position")
-    add_parser.add_argument("--icon", help="icon to use, optional")
-    add_parser.add_argument("--image", help="container image, optional")
-    add_parser.add_argument(
-        "--emane", help="emane model, only required for emane nodes"
-    )
+    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
+    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    add_parser.add_argument("-ic", "--icon", help="icon to use, optional")
+    add_parser.add_argument("-im", "--image", help="container image, optional")
+    add_parser.add_argument("-e", "--emane", help="emane model, only required for emane nodes")
     add_parser.set_defaults(func=add_node)
 
     edit_parser = subparsers.add_parser("edit", help="edit a node")
     edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    edit_parser.add_argument("--id", type=int, help="id to use, optional")
+    edit_parser.add_argument("-i", "--id", type=int, help="id to use, optional")
     group = edit_parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--pos", type=position_type, help="x,y position")
-    group.add_argument("--geo", type=geo_type, help="lon,lat,alt position")
-    edit_parser.add_argument("--icon", help="icon to use, optional")
+    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
+    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    edit_parser.add_argument("-ic", "--icon", help="icon to use, optional")
     edit_parser.set_defaults(func=edit_node)
 
     delete_parser = subparsers.add_parser("delete", help="delete a node")
     delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    delete_parser.add_argument(
-        "--id", type=int, help="node id to delete", required=True
-    )
+    delete_parser.add_argument("-i", "--id", type=int, help="node id", required=True)
     delete_parser.set_defaults(func=delete_node)
 
 
 def setup_link_parser(parent: _SubParsersAction) -> None:
     parser = parent.add_parser("link", help="link interactions")
-    parser.add_argument("--session", type=int, help="session to interact with")
+    parser.add_argument("-s", "--session", type=int, help="session to interact with")
     subparsers = parser.add_subparsers(help="link commands")
     subparsers.required = True
     subparsers.dest = "command"
 
     add_parser = subparsers.add_parser("add", help="add a node")
     add_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    add_parser.add_argument(
-        "--node1", type=int, help="node1 id for link", required=True
-    )
-    add_parser.add_argument(
-        "--node2", type=int, help="node1 id for link", required=True
-    )
-    add_parser.add_argument("--iface1-id", type=int, help="node1 interface id for link")
-    add_parser.add_argument("--iface1-mac", type=mac_type, help="node1 interface mac")
-    add_parser.add_argument("--iface1-ip4", type=ip4_type, help="node1 interface ip4")
-    add_parser.add_argument("--iface1-ip6", type=ip6_type, help="node1 interface ip6")
-    add_parser.add_argument("--iface2-id", type=int, help="node1 interface id for link")
-    add_parser.add_argument("--iface2-mac", type=mac_type, help="node1 interface mac")
-    add_parser.add_argument("--iface2-ip4", type=ip4_type, help="node1 interface ip4")
-    add_parser.add_argument("--iface2-ip6", type=ip6_type, help="node1 interface ip6")
-    add_parser.add_argument("--bandwidth", type=int, help="bandwidth (bps) for link")
-    add_parser.add_argument("--loss", type=float, help="loss (%) for link")
-    add_parser.add_argument("--jitter", type=int, help="jitter (us) for link")
-    add_parser.add_argument("--delay", type=int, help="delay (us) for link")
-    add_parser.add_argument("--dup", type=int, help="duplicate (%) for link")
-    add_parser.add_argument(
-        "--uni", action="store_true", help="is link unidirectional?"
-    )
+    add_parser.add_argument("-n1", "--node1", type=int, help="node1 id", required=True)
+    add_parser.add_argument("-n2", "--node2", type=int, help="node2 id", required=True)
+    add_parser.add_argument("-i1-i", "--iface1-id", type=int, help="node1 interface id")
+    add_parser.add_argument("-i1-m", "--iface1-mac", type=mac_type, help="node1 interface mac")
+    add_parser.add_argument("-i1-4", "--iface1-ip4", type=ip4_type, help="node1 interface ip4")
+    add_parser.add_argument("-i1-6", "--iface1-ip6", type=ip6_type, help="node1 interface ip6")
+    add_parser.add_argument("-i2-i", "--iface2-id", type=int, help="node2 interface id")
+    add_parser.add_argument("-i2-m", "--iface2-mac", type=mac_type, help="node2 interface mac")
+    add_parser.add_argument("-i2-4", "--iface2-ip4", type=ip4_type, help="node2 interface ip4")
+    add_parser.add_argument("-i2-6", "--iface2-ip6", type=ip6_type, help="node2 interface ip6")
+    add_parser.add_argument("-b", "--bandwidth", type=int, help="bandwidth (bps)")
+    add_parser.add_argument("-l", "--loss", type=float, help="loss (%%)")
+    add_parser.add_argument("-j", "--jitter", type=int, help="jitter (us)")
+    add_parser.add_argument("-de", "--delay", type=int, help="delay (us)")
+    add_parser.add_argument("-du", "--duplicate", type=int, help="duplicate (%%)")
+    add_parser.add_argument("-u", "--uni", action="store_true", help="is link unidirectional?")
     add_parser.set_defaults(func=add_link)
 
     edit_parser = subparsers.add_parser("edit", help="edit a link")
     edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    edit_parser.add_argument("-n1", "--node1", type=int, help="node1 id", required=True)
+    edit_parser.add_argument("-n2", "--node2", type=int, help="node2 id", required=True)
+    edit_parser.add_argument("-i1", "--iface1", type=int, help="node1 interface id")
+    edit_parser.add_argument("-i2", "--iface2", type=int, help="node2 interface id")
+    edit_parser.add_argument("-b", "--bandwidth", type=int, help="bandwidth (bps)")
+    edit_parser.add_argument("-l", "--loss", type=float, help="loss (%%)")
+    edit_parser.add_argument("-j", "--jitter", type=int, help="jitter (us)")
+    edit_parser.add_argument("-de", "--delay", type=int, help="delay (us)")
+    edit_parser.add_argument("-du", "--duplicate", type=int, help="duplicate (%%)")
     edit_parser.add_argument(
-        "--node1", type=int, help="node1 id for link", required=True
-    )
-    edit_parser.add_argument(
-        "--node2", type=int, help="node1 id for link", required=True
-    )
-    edit_parser.add_argument("--iface1", type=int, help="node1 interface id for link")
-    edit_parser.add_argument("--iface2", type=int, help="node2 interface id for link")
-    edit_parser.add_argument("--bandwidth", type=int, help="bandwidth (bps) for link")
-    edit_parser.add_argument("--loss", type=float, help="loss (%) for link")
-    edit_parser.add_argument("--jitter", type=int, help="jitter (us) for link")
-    edit_parser.add_argument("--delay", type=int, help="delay (us) for link")
-    edit_parser.add_argument("--dup", type=int, help="duplicate (%) for link")
-    edit_parser.add_argument(
-        "--uni", action="store_true", help="is link unidirectional?"
+        "-u", "--uni", action="store_true", help="is link unidirectional?"
     )
     edit_parser.set_defaults(func=edit_link)
 
     delete_parser = subparsers.add_parser("delete", help="delete a link")
     delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    delete_parser.add_argument(
-        "--node1", type=int, help="node1 id for link", required=True
-    )
-    delete_parser.add_argument(
-        "--node2", type=int, help="node1 id for link", required=True
-    )
-    delete_parser.add_argument("--iface1", type=int, help="node1 interface id for link")
-    delete_parser.add_argument("--iface2", type=int, help="node2 interface id for link")
+    delete_parser.add_argument("-n1", "--node1", type=int, help="node1 id", required=True)
+    delete_parser.add_argument("-n2", "--node2", type=int, help="node1 id", required=True)
+    delete_parser.add_argument("-i1", "--iface1", type=int, help="node1 interface id")
+    delete_parser.add_argument("-i2", "--iface2", type=int, help="node2 interface id")
     delete_parser.set_defaults(func=delete_link)
 
 
@@ -419,19 +401,19 @@ def setup_query_parser(parent: _SubParsersAction) -> None:
     sessions_parser.set_defaults(func=query_sessions)
 
     session_parser = subparsers.add_parser("session", help="query session")
-    session_parser.add_argument("--id", type=int, help="session to query", required=True)
+    session_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
     session_parser.set_defaults(func=query_session)
 
     node_parser = subparsers.add_parser("node", help="query node")
-    node_parser.add_argument("--id", type=int, help="session to query", required=True)
-    node_parser.add_argument("--node", type=int, help="node to query", required=True)
+    node_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
+    node_parser.add_argument("-n", "--node", type=int, help="node to query", required=True)
     node_parser.set_defaults(func=query_node)
 
 
 def main() -> None:
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        "-j", "--json", action="store_true", help="print responses to terminal as json"
+        "-js", "--json", action="store_true", help="print responses to terminal as json"
     )
     subparsers = parser.add_subparsers(help="supported commands")
     subparsers.required = True
