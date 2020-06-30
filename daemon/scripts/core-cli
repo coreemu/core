@@ -7,7 +7,7 @@ from argparse import (
     Namespace,
     _SubParsersAction,
 )
-from typing import Tuple
+from typing import Any, Tuple
 
 import netaddr
 from google.protobuf.json_format import MessageToJson
@@ -114,13 +114,17 @@ def print_iface(iface: Interface) -> None:
     print(f"{iface.id:<3} | {iface.mac:<17} | {iface_ip4:<18} | {iface_ip6}")
 
 
+def print_json(message: Any) -> None:
+    json = MessageToJson(message, preserving_proto_field_name=True)
+    print(json)
+
+
 def query_sessions(args: Namespace) -> None:
     core = CoreGrpcClient()
     with core.context_connect():
         response = core.get_sessions()
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print("Session ID | Session State | Nodes")
             for s in response.sessions:
@@ -133,8 +137,7 @@ def query_session(args: Namespace) -> None:
     with core.context_connect():
         response = core.get_session(args.id)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print("Nodes")
             print("Node ID | Node Name | Node Type")
@@ -173,8 +176,7 @@ def query_node(args: Namespace) -> None:
 
         response = core.get_node(args.id, args.node)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             node = response.node
             node_type = NodeType.Enum.Name(node.type)
@@ -221,8 +223,7 @@ def add_node(args: Namespace) -> None:
         )
         response = core.add_node(session_id, node)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"created node: {response.node_id}")
 
@@ -241,8 +242,7 @@ def edit_node(args: Namespace) -> None:
     with core.context_connect():
         response = core.edit_node(session_id, args.id, pos, args.icon, geo)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"edit node: {response.result}")
 
@@ -253,8 +253,7 @@ def delete_node(args: Namespace) -> None:
     with core.context_connect():
         response = core.delete_node(session_id, args.id)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"deleted node: {response.result}")
 
@@ -279,8 +278,7 @@ def add_link(args: Namespace) -> None:
     with core.context_connect():
         response = core.add_link(session_id, args.node1, args.node2, iface1, iface2, options)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"add link: {response.result}")
 
@@ -301,8 +299,7 @@ def edit_link(args: Namespace) -> None:
             session_id, args.node1, args.node2, options, args.iface1, args.iface2
         )
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"edit link: {response.result}")
 
@@ -313,8 +310,7 @@ def delete_link(args: Namespace) -> None:
     with core.context_connect():
         response = core.delete_link(session_id, args.node1, args.node2, args.iface1, args.iface2)
         if args.json:
-            json = MessageToJson(response, preserving_proto_field_name=True)
-            print(json)
+            print_json(response)
         else:
             print(f"delete link: {response.result}")
 
