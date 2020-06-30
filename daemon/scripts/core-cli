@@ -221,7 +221,7 @@ def edit_node(args: Namespace) -> None:
         geo = Geo(lon=lon, lat=lat, alt=alt)
     core = CoreGrpcClient()
     with core.context_connect():
-        response = core.edit_node(session_id, args.id, pos, args.icon, geo=geo)
+        response = core.edit_node(session_id, args.id, pos, args.icon, geo)
         if args.json:
             json = MessageToJson(response, preserving_proto_field_name=True)
             print(json)
