@@ -543,10 +543,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for _id in session.nodes:
             node = session.nodes[_id]
-            if isinstance(node, PtpNet):
-                continue
-            node_proto = grpcutils.get_node_proto(session, node)
-            nodes.append(node_proto)
+            if not isinstance(node, PtpNet):
+                node_proto = grpcutils.get_node_proto(session, node)
+                nodes.append(node_proto)
             node_links = get_links(node)
             links.extend(node_links)
 
