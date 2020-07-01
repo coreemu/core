@@ -257,7 +257,7 @@ def query_node(core: CoreGrpcClient, args: Namespace) -> None:
                 else:
                     name = names[iface.net2_id]
             else:
-                name = names[iface.net_id]
+                name = names.get(iface.net_id, "")
             print(f"{name:<12} | ", end="")
             print_iface(iface)
 
