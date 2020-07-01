@@ -812,30 +812,29 @@ class CoreNode(CoreNodeBase):
         :param iface_data: interface data for new interface
         :return: interface index
         """
-        ips = iface_data.get_ips()
         with self.lock:
-            # TODO: emane specific code
-            if net.is_emane is True:
-                iface_id = self.newtuntap(iface_data.id, iface_data.name)
-                # TUN/TAP is not ready for addressing yet; the device may
-                #   take some time to appear, and installing it into a
-                #   namespace after it has been bound removes addressing;
-                #   save addresses with the interface now
-                self.attachnet(iface_id, net)
-                iface = self.get_iface(iface_id)
-                iface.set_mac(iface_data.mac)
-                for ip in ips:
-                    iface.add_ip(ip)
+            if net.has_custom_iface:
+                return net.custom_iface(self, iface_data)
+            # if net.is_emane is True:
+            #     iface_id = self.newtuntap(iface_data.id, iface_data.name)
+            #     # TUN/TAP is not ready for addressing yet; the device may
+            #     #   take some time to appear, and installing it into a
+            #     #   namespace after it has been bound removes addressing;
+            #     #   save addresses with the interface now
+            #     self.attachnet(iface_id, net)
+            #     iface = self.get_iface(iface_id)
+            #     iface.set_mac(iface_data.mac)
+            #     for ip in ips:
+            #         iface.add_ip(ip)
             else:
                 iface_id = self.newveth(iface_data.id, iface_data.name)
                 self.attachnet(iface_id, net)
                 if iface_data.mac:
                     self.set_mac(iface_id, iface_data.mac)
-                for ip in ips:
+                for ip in iface_data.get_ips():
                     self.add_ip(iface_id, ip)
                 self.ifup(iface_id)
-                iface = self.get_iface(iface_id)
-            return iface
+                return self.get_iface(iface_id)
 
     def addfile(self, srcname: str, filename: str) -> None:
         """
@@ -925,7 +924,7 @@ class CoreNetworkBase(NodeBase):
     """
 
     linktype: LinkTypes = LinkTypes.WIRED
-    is_emane: bool = False
+    has_custom_iface: bool = False
 
     def __init__(
         self,
@@ -988,6 +987,9 @@ class CoreNetworkBase(NodeBase):
         :param iface2: interface two
         :return: nothing
         """
+        raise NotImplementedError
+
+    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
         raise NotImplementedError
 
     def get_linked_iface(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:

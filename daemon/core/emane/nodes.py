@@ -6,9 +6,10 @@ share the same MAC+PHY model.
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
-from core.emulator.data import LinkData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import (
+    EventTypes,
     LinkTypes,
     MessageFlags,
     NodeTypes,
@@ -16,7 +17,7 @@ from core.emulator.enumerations import (
     TransportType,
 )
 from core.errors import CoreError
-from core.nodes.base import CoreNetworkBase
+from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface, TunTap
 
 if TYPE_CHECKING:
@@ -47,7 +48,7 @@ class EmaneNet(CoreNetworkBase):
     apitype: NodeTypes = NodeTypes.EMANE
     linktype: LinkTypes = LinkTypes.WIRED
     type: str = "wlan"
-    is_emane: bool = True
+    has_custom_iface: bool = True
 
     def __init__(
         self,
@@ -262,3 +263,32 @@ class EmaneNet(CoreNetworkBase):
             if link:
                 links.append(link)
         return links
+
+    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
+        # TUN/TAP is not ready for addressing yet; the device may
+        #   take some time to appear, and installing it into a
+        #   namespace after it has been bound removes addressing;
+        #   save addresses with the interface now
+        iface_id = node.newtuntap(iface_data.id, iface_data.name)
+        node.attachnet(iface_id, self)
+        iface = node.get_iface(iface_id)
+        iface.set_mac(iface_data.mac)
+        for ip in iface_data.get_ips():
+            iface.add_ip(ip)
+        # TODO: if added during runtime start EMANE
+        if self.session.state == EventTypes.RUNTIME_STATE:
+            logging.info("startup emane for node: %s", node.name)
+            # create specific xml if needed
+            config = self.session.emane.get_iface_config(
+                self.model.id, iface, self.model.name
+            )
+            if config:
+                self.model.build_xml_files(config, iface)
+
+            # start emane daemon
+
+            # install netif
+
+            # add nem to nemfile
+
+        return iface
