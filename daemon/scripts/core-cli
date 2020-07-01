@@ -7,6 +7,7 @@ from argparse import (
     Namespace,
     _SubParsersAction,
 )
+from pathlib import Path
 from typing import Any, Tuple
 
 import netaddr
@@ -79,6 +80,13 @@ def geo_type(value: str) -> Tuple[float, float, float]:
     return lon, lat, alt
 
 
+def file_type(value: str) -> str:
+    path = Path(value)
+    if not path.is_file():
+        raise ArgumentTypeError(f"invalid file: {value}")
+    return str(path.absolute())
+
+
 def get_current_session() -> int:
     core = CoreGrpcClient()
     with core.context_connect():
@@ -117,6 +125,16 @@ def print_iface(iface: Interface) -> None:
 def print_json(message: Any) -> None:
     json = MessageToJson(message, preserving_proto_field_name=True)
     print(json)
+
+
+def open_xml(args: Namespace) -> None:
+    core = CoreGrpcClient()
+    with core.context_connect():
+        response = core.open_xml(args.file, args.start)
+        if args.json:
+            print_json(response)
+        else:
+            print(f"opened xml: {response.result}")
 
 
 def query_sessions(args: Namespace) -> None:
@@ -317,6 +335,7 @@ def delete_link(args: Namespace) -> None:
 
 def setup_node_parser(parent: _SubParsersAction) -> None:
     parser = parent.add_parser("node", help="node interactions")
+    parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-s", "--session", type=int, help="session to interact with")
     subparsers = parser.add_subparsers(help="node commands")
     subparsers.required = True
@@ -355,6 +374,7 @@ def setup_node_parser(parent: _SubParsersAction) -> None:
 
 def setup_link_parser(parent: _SubParsersAction) -> None:
     parser = parent.add_parser("link", help="link interactions")
+    parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-s", "--session", type=int, help="session to interact with")
     subparsers = parser.add_subparsers(help="link commands")
     subparsers.required = True
@@ -412,16 +432,27 @@ def setup_query_parser(parent: _SubParsersAction) -> None:
     subparsers.dest = "command"
 
     sessions_parser = subparsers.add_parser("sessions", help="query current sessions")
+    sessions_parser.formatter_class = ArgumentDefaultsHelpFormatter
     sessions_parser.set_defaults(func=query_sessions)
 
     session_parser = subparsers.add_parser("session", help="query session")
+    session_parser.formatter_class = ArgumentDefaultsHelpFormatter
     session_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
     session_parser.set_defaults(func=query_session)
 
     node_parser = subparsers.add_parser("node", help="query node")
+    node_parser.formatter_class = ArgumentDefaultsHelpFormatter
     node_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
     node_parser.add_argument("-n", "--node", type=int, help="node to query", required=True)
     node_parser.set_defaults(func=query_node)
+
+
+def setup_xml_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("xml", help="open session xml")
+    parser.formatter_class = ArgumentDefaultsHelpFormatter
+    parser.add_argument("file", type=file_type, help="xml file to open")
+    parser.add_argument("-s", "--start", action="store_true", help="start the session?")
+    parser.set_defaults(func=open_xml)
 
 
 def main() -> None:
@@ -435,6 +466,7 @@ def main() -> None:
     setup_node_parser(subparsers)
     setup_link_parser(subparsers)
     setup_query_parser(subparsers)
+    setup_xml_parser(subparsers)
     args = parser.parse_args()
     args.func(args)
 
