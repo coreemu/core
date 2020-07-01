@@ -491,7 +491,7 @@ def setup_query_parser(parent: _SubParsersAction) -> None:
 def setup_xml_parser(parent: _SubParsersAction) -> None:
     parser = parent.add_parser("xml", help="open session xml")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
-    parser.add_argument("file", type=file_type, help="xml file to open")
+    parser.add_argument("-f", "--file", type=file_type, help="xml file to open", required=True)
     parser.add_argument("-s", "--start", action="store_true", help="start the session?")
     parser.set_defaults(func=open_xml)
 
