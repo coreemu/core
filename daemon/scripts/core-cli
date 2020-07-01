@@ -8,8 +8,9 @@ from argparse import (
     _SubParsersAction,
 )
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any, Optional, Tuple
 
+import grpc
 import netaddr
 from google.protobuf.json_format import MessageToJson
 from netaddr import EUI, AddrFormatError, IPNetwork
@@ -87,7 +88,9 @@ def file_type(value: str) -> str:
     return str(path.absolute())
 
 
-def get_current_session() -> int:
+def get_current_session(session_id: Optional[int]) -> int:
+    if session_id:
+        return session_id
     core = CoreGrpcClient()
     with core.context_connect():
         response = core.get_sessions()
@@ -125,6 +128,50 @@ def print_iface(iface: Interface) -> None:
 def print_json(message: Any) -> None:
     json = MessageToJson(message, preserving_proto_field_name=True)
     print(json)
+
+
+def get_wlan_config(args: Namespace) -> None:
+    session_id = get_current_session(args.session)
+    core = CoreGrpcClient()
+    try:
+        with core.context_connect():
+            response = core.get_wlan_config(session_id, args.node)
+            if args.json:
+                print_json(response)
+            else:
+                size = 0
+                for option in response.config.values():
+                    size = max(size, len(option.name))
+                print(f"{'Name':<{size}.{size}} | Value")
+                for option in response.config.values():
+                    print(f"{option.name:<{size}.{size}} | {option.value}")
+    except grpc.RpcError as e:
+        print(f"grpc error: {e.details()}")
+
+
+def set_wlan_config(args: Namespace) -> None:
+    session_id = get_current_session(args.session)
+    config = {}
+    if args.bandwidth:
+        config["bandwidth"] = str(args.bandwidth)
+    if args.delay:
+        config["delay"] = str(args.delay)
+    if args.loss:
+        config["error"] = str(args.loss)
+    if args.jitter:
+        config["jitter"] = str(args.jitter)
+    if args.range:
+        config["range"] = str(args.range)
+    core = CoreGrpcClient()
+    try:
+        with core.context_connect():
+            response = core.set_wlan_config(session_id, args.node, config)
+            if args.json:
+                print_json(response)
+            else:
+                print(f"set wlan config: {response.result}")
+    except grpc.RpcError as e:
+        print(f"grpc error: {e.details()}")
 
 
 def open_xml(args: Namespace) -> None:
@@ -216,7 +263,7 @@ def query_node(args: Namespace) -> None:
 
 
 def add_node(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     node_type = NodeType.Enum.Value(args.type)
     pos = None
     if args.pos:
@@ -247,7 +294,7 @@ def add_node(args: Namespace) -> None:
 
 
 def edit_node(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     pos = None
     if args.pos:
         x, y = args.pos
@@ -266,7 +313,7 @@ def edit_node(args: Namespace) -> None:
 
 
 def delete_node(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     core = CoreGrpcClient()
     with core.context_connect():
         response = core.delete_node(session_id, args.id)
@@ -277,7 +324,7 @@ def delete_node(args: Namespace) -> None:
 
 
 def add_link(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     iface1 = None
     if args.iface1_id is not None:
         iface1 = create_iface(args.iface1_id, args.iface1_mac, args.iface1_ip4, args.iface1_ip6)
@@ -302,7 +349,7 @@ def add_link(args: Namespace) -> None:
 
 
 def edit_link(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     options = LinkOptions(
         bandwidth=args.bandwidth,
         loss=args.loss,
@@ -323,7 +370,7 @@ def edit_link(args: Namespace) -> None:
 
 
 def delete_link(args: Namespace) -> None:
-    session_id = get_current_session()
+    session_id = get_current_session(args.session)
     core = CoreGrpcClient()
     with core.context_connect():
         response = core.delete_link(session_id, args.node1, args.node2, args.iface1, args.iface2)
@@ -455,6 +502,30 @@ def setup_xml_parser(parent: _SubParsersAction) -> None:
     parser.set_defaults(func=open_xml)
 
 
+def setup_wlan_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("wlan", help="wlan specific interactions")
+    parser.formatter_class = ArgumentDefaultsHelpFormatter
+    parser.add_argument("-s", "--session", type=int, help="session to interact with")
+    subparsers = parser.add_subparsers(help="link commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+
+    get_parser = subparsers.add_parser("get", help="get wlan configuration")
+    get_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    get_parser.add_argument("-n", "--node", type=int, help="wlan node", required=True)
+    get_parser.set_defaults(func=get_wlan_config)
+
+    set_parser = subparsers.add_parser("set", help="set wlan configuration")
+    set_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    set_parser.add_argument("-n", "--node", type=int, help="wlan node", required=True)
+    set_parser.add_argument("-b", "--bandwidth", type=int, help="bandwidth (bps)")
+    set_parser.add_argument("-d", "--delay", type=int, help="delay (us)")
+    set_parser.add_argument("-l", "--loss", type=float, help="loss (%%)")
+    set_parser.add_argument("-j", "--jitter", type=int, help="jitter (us)")
+    set_parser.add_argument("-r", "--range", type=int, help="range (pixels)")
+    set_parser.set_defaults(func=set_wlan_config)
+
+
 def main() -> None:
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     parser.add_argument(
@@ -467,6 +538,7 @@ def main() -> None:
     setup_link_parser(subparsers)
     setup_query_parser(subparsers)
     setup_xml_parser(subparsers)
+    setup_wlan_parser(subparsers)
     args = parser.parse_args()
     args.func(args)
 

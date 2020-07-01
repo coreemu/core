@@ -1343,13 +1343,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
-        wlan_config = request.wlan_config
-        session.mobility.set_model_config(
-            wlan_config.node_id, BasicRangeModel.name, wlan_config.config
-        )
+        node_id = request.wlan_config.node_id
+        config = request.wlan_config.config
+        session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
         if session.state == EventTypes.RUNTIME_STATE:
-            node = self.get_node(session, wlan_config.node_id, context, WlanNode)
-            node.updatemodel(wlan_config.config)
+            node = self.get_node(session, node_id, context, WlanNode)
+            node.updatemodel(config)
         return SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(
