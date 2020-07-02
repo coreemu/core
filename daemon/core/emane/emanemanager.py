@@ -166,7 +166,7 @@ class EmaneManager(ModelManager):
         try:
             # check for emane
             args = "emane --version"
-            emane_version = utils.cmd(args)
+            emane_version = utils.cmd(args, quiet=True)
             logging.info("using EMANE: %s", emane_version)
             self.session.distributed.execute(lambda x: x.remote_cmd(args))
 

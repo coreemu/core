@@ -197,6 +197,7 @@ def cmd(
     cwd: str = None,
     wait: bool = True,
     shell: bool = False,
+    quiet: bool = False,
 ) -> str:
     """
     Execute a command on the host and return a tuple containing the exit status and
@@ -211,7 +212,8 @@ def cmd(
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    logging.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    if not quiet:
+        logging.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
     if shell is False:
         args = shlex.split(args)
     try:
@@ -228,7 +230,8 @@ def cmd(
         else:
             return ""
     except OSError as e:
-        logging.error("cmd error: %s", e.strerror)
+        if not quiet:
+            logging.error("cmd error: %s", e.strerror)
         raise CoreCommandError(1, args, "", e.strerror)
 
 
