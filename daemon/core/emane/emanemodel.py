@@ -96,9 +96,7 @@ class EmaneModel(WirelessModel):
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
-    def build_xml_files(
-        self, config: Dict[str, str], iface: CoreInterface = None
-    ) -> None:
+    def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
         Builds xml files for this emane model. Creates a nem.xml file that points to
         both mac.xml and phy.xml definitions.
@@ -107,33 +105,30 @@ class EmaneModel(WirelessModel):
         :param iface: interface for the emane node
         :return: nothing
         """
-        nem_name = emanexml.nem_file_name(self, iface)
-        mac_name = emanexml.mac_file_name(self, iface)
-        phy_name = emanexml.phy_file_name(self, iface)
-
-        # remote server for file
-        server = None
-        if iface is not None:
-            server = iface.node.server
+        nem_name = emanexml.nem_file_name(iface)
+        mac_name = emanexml.mac_file_name(iface)
+        phy_name = emanexml.phy_file_name(iface)
 
         # check if this is external
         transport_type = TransportType.VIRTUAL
-        if iface and iface.transport_type == TransportType.RAW:
+        if iface.transport_type == TransportType.RAW:
             transport_type = TransportType.RAW
-        transport_name = emanexml.transport_file_name(self.id, transport_type)
+        transport_name = emanexml.transport_file_name(iface, transport_type)
 
+        node = iface.node
+        server = node.server
         # create nem xml file
-        nem_file = os.path.join(self.session.session_dir, nem_name)
+        nem_file = os.path.join(node.nodedir, nem_name)
         emanexml.create_nem_xml(
             self, config, nem_file, transport_name, mac_name, phy_name, server
         )
 
         # create mac xml file
-        mac_file = os.path.join(self.session.session_dir, mac_name)
+        mac_file = os.path.join(node.nodedir, mac_name)
         emanexml.create_mac_xml(self, config, mac_file, server)
 
         # create phy xml file
-        phy_file = os.path.join(self.session.session_dir, phy_name)
+        phy_file = os.path.join(node.nodedir, phy_name)
         emanexml.create_phy_xml(self, config, phy_file, server)
 
     def post_startup(self) -> None:

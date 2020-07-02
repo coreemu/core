@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVa
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
-from core.emane.emanemanager import EmaneManager
+from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
@@ -1181,7 +1181,7 @@ class Session:
         self.distributed.start()
 
         # instantiate will be invoked again upon emane configure
-        if self.emane.startup() == self.emane.NOT_READY:
+        if self.emane.startup() == EmaneState.NOT_READY:
             return []
 
         # boot node services and then start mobility

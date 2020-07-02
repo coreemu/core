@@ -8,17 +8,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import (
-    EventTypes,
-    LinkTypes,
-    MessageFlags,
-    NodeTypes,
-    RegisterTlvs,
-    TransportType,
-)
+from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
-from core.nodes.interface import CoreInterface, TunTap
+from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
@@ -139,45 +132,6 @@ class EmaneNet(CoreNetworkBase):
                 return iface
         return None
 
-    def install_ifaces(self) -> None:
-        """
-        Install TAP devices into their namespaces. This is done after
-        EMANE daemons have been started, because that is their only chance
-        to bind to the TAPs.
-        """
-        if (
-            self.session.emane.genlocationevents()
-            and self.session.emane.service is None
-        ):
-            warntxt = "unable to publish EMANE events because the eventservice "
-            warntxt += "Python bindings failed to load"
-            logging.error(warntxt)
-        for iface in self.get_ifaces():
-            config = self.session.emane.get_iface_config(
-                self.id, iface, self.model.name
-            )
-            external = config.get("external", "0")
-            if isinstance(iface, TunTap) and external == "0":
-                iface.set_ips()
-            if not self.session.emane.genlocationevents():
-                iface.poshook = None
-                continue
-            # at this point we register location handlers for generating
-            # EMANE location events
-            iface.poshook = self.setnemposition
-            iface.setposition()
-
-    def deinstall_ifaces(self) -> None:
-        """
-        Uninstall TAP devices. This invokes their shutdown method for
-        any required cleanup; the device may be actually removed when
-        emanetransportd terminates.
-        """
-        for iface in self.get_ifaces():
-            if iface.transport_type == TransportType.VIRTUAL:
-                iface.shutdown()
-            iface.poshook = None
-
     def _nem_position(
         self, iface: CoreInterface
     ) -> Optional[Tuple[int, float, float, float]]:
@@ -275,20 +229,4 @@ class EmaneNet(CoreNetworkBase):
         iface.set_mac(iface_data.mac)
         for ip in iface_data.get_ips():
             iface.add_ip(ip)
-        # TODO: if added during runtime start EMANE
-        if self.session.state == EventTypes.RUNTIME_STATE:
-            logging.info("startup emane for node: %s", node.name)
-            # create specific xml if needed
-            config = self.session.emane.get_iface_config(
-                self.model.id, iface, self.model.name
-            )
-            if config:
-                self.model.build_xml_files(config, iface)
-
-            # start emane daemon
-
-            # install netif
-
-            # add nem to nemfile
-
         return iface

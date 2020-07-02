@@ -62,9 +62,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     def config_groups(cls) -> List[ConfigGroup]:
         return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
 
-    def build_xml_files(
-        self, config: Dict[str, str], iface: CoreInterface = None
-    ) -> None:
+    def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
@@ -75,22 +73,25 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         :param iface: interface for the emane node
         :return: nothing
         """
+        # interface node
+        node = iface.node
+
         # retrieve xml names
-        nem_name = emanexml.nem_file_name(self, iface)
-        shim_name = emanexml.shim_file_name(self, iface)
+        nem_name = emanexml.nem_file_name(iface)
+        shim_name = emanexml.shim_file_name(iface)
 
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
         transport_type = TransportType.VIRTUAL
-        if iface and iface.transport_type == TransportType.RAW:
+        if iface.transport_type == TransportType.RAW:
             transport_type = TransportType.RAW
-        transport_file = emanexml.transport_file_name(self.id, transport_type)
+        transport_file = emanexml.transport_file_name(iface, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
 
         # set shim configuration
         etree.SubElement(nem_element, "shim", definition=shim_name)
 
-        nem_file = os.path.join(self.session.session_dir, nem_name)
+        nem_file = os.path.join(node.nodedir, nem_name)
         emanexml.create_file(nem_element, "nem", nem_file)
 
         # create and write shim document
@@ -111,7 +112,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         if ff.strip() != "":
             emanexml.add_param(shim_element, "filterfile", ff)
 
-        shim_file = os.path.join(self.session.session_dir, shim_name)
+        shim_file = os.path.join(node.nodedir, shim_name)
         emanexml.create_file(shim_element, "shim", shim_file)
 
     def linkconfig(
