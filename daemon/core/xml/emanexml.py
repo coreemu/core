@@ -13,7 +13,6 @@ from core.emulator.enumerations import TransportType
 from core.errors import CoreError
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
-from core.nodes.physical import Rj45Node
 from core.xml import corexml
 
 if TYPE_CHECKING:
@@ -93,7 +92,8 @@ def create_iface_file(
     :return:
     """
     node = iface.node
-    if isinstance(node, Rj45Node):
+    transport_type = get_transport_type(iface)
+    if transport_type == TransportType.RAW:
         file_path = os.path.join(node.session.session_dir, file_name)
     else:
         file_path = os.path.join(node.nodedir, file_name)
@@ -185,21 +185,15 @@ def build_platform_xml(
         )
         add_param(transport_element, "device", iface.name)
 
-    # determine platform element to add xml to
-    if iface.transport_type == TransportType.RAW:
-        otadev = control_net.brname
-        eventdev = control_net.brname
-    else:
-        otadev = None
-        eventdev = None
+    transport_type = get_transport_type(iface)
+    transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
-    if otadev:
-        emane_manager.set_config("otamanagerdevice", otadev)
-    if eventdev:
-        emane_manager.set_config("eventservicedevice", eventdev)
     for configuration in emane_manager.emane_config.emulator_config:
         name = configuration.id
-        value = emane_manager.get_config(name)
+        if transport_type == TransportType.RAW and name in transport_configs:
+            value = control_net.brname
+        else:
+            value = emane_manager.get_config(name)
         add_param(platform_element, name, value)
     platform_element.append(nem_element)
     emane_net.setnemid(iface, nem_id)

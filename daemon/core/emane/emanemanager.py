@@ -31,7 +31,6 @@ from core.emulator.enumerations import (
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface, TunTap
-from core.nodes.physical import Rj45Node
 from core.xml import emanexml
 
 if TYPE_CHECKING:
@@ -531,19 +530,21 @@ class EmaneManager(ModelManager):
         cfgloglevel = self.session.options.get_config_int("emane_log_level")
         realtime = self.session.options.get_config_bool("emane_realtime", default=True)
         if cfgloglevel:
-            logging.info("setting user-defined EMANE log level: %d", cfgloglevel)
+            logging.info("setting user-defined emane log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
         emanecmd = f"emane -d -l {loglevel}"
         if realtime:
             emanecmd += " -r"
-        otagroup, _otaport = self.get_config("otamanagergroup").split(":")
-        otadev = self.get_config("otamanagerdevice")
-        otanetidx = self.session.get_control_net_index(otadev)
-        eventgroup, _eventport = self.get_config("eventservicegroup").split(":")
-        eventdev = self.get_config("eventservicedevice")
-        eventservicenetidx = self.session.get_control_net_index(eventdev)
         node = iface.node
-        if not isinstance(node, Rj45Node):
+        transport_type = emanexml.get_transport_type(iface)
+        if not transport_type == TransportType.RAW:
+            otagroup, _otaport = self.get_config("otamanagergroup").split(":")
+            otadev = self.get_config("otamanagerdevice")
+            otanetidx = self.session.get_control_net_index(otadev)
+            eventgroup, _eventport = self.get_config("eventservicegroup").split(":")
+            eventdev = self.get_config("eventservicedevice")
+            eventservicenetidx = self.session.get_control_net_index(eventdev)
+
             # control network not yet started here
             self.session.add_remove_control_iface(
                 node, 0, remove=False, conf_required=False
@@ -559,6 +560,7 @@ class EmaneManager(ModelManager):
                     node, eventservicenetidx, remove=False, conf_required=False
                 )
             # multicast route is needed for OTA data
+            logging.info("OTA GROUP(%s) OTA DEV(%s)", otagroup, otadev)
             node.node_net_client.create_route(otagroup, otadev)
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
@@ -588,7 +590,8 @@ class EmaneManager(ModelManager):
                 node = iface.node
                 if not node.up:
                     continue
-                if isinstance(node, Rj45Node):
+                transport_type = emanexml.get_transport_type(iface)
+                if transport_type == TransportType.RAW:
                     node.host_cmd(kill_emaned, wait=False)
                 else:
                     node.cmd(kill_emaned, wait=False)
