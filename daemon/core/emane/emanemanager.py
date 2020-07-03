@@ -26,7 +26,6 @@ from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
     RegisterTlvs,
-    TransportType,
 )
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode, NodeBase
@@ -536,8 +535,7 @@ class EmaneManager(ModelManager):
         if realtime:
             emanecmd += " -r"
         node = iface.node
-        transport_type = emanexml.get_transport_type(iface)
-        if not transport_type == TransportType.RAW:
+        if iface.is_virtual():
             otagroup, _otaport = self.get_config("otamanagergroup").split(":")
             otadev = self.get_config("otamanagerdevice")
             otanetidx = self.session.get_control_net_index(otadev)
@@ -590,8 +588,7 @@ class EmaneManager(ModelManager):
                 node = iface.node
                 if not node.up:
                     continue
-                transport_type = emanexml.get_transport_type(iface)
-                if transport_type == TransportType.RAW:
+                if iface.is_raw():
                     node.host_cmd(kill_emaned, wait=False)
                 else:
                     node.cmd(kill_emaned, wait=False)
@@ -614,7 +611,7 @@ class EmaneManager(ModelManager):
         for key in sorted(self._emane_nets):
             emane_net = self._emane_nets[key]
             for iface in emane_net.get_ifaces():
-                if iface.transport_type == TransportType.VIRTUAL:
+                if iface.is_virtual():
                     iface.shutdown()
                 iface.poshook = None
 

@@ -60,7 +60,7 @@ class CoreInterface:
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
-        self.transport_type: Optional[TransportType] = None
+        self.transport_type: TransportType = TransportType.VIRTUAL
         # id of interface for node
         self.node_id: Optional[int] = None
         # id of interface for network
@@ -310,6 +310,22 @@ class CoreInterface:
         """
         return id(self) < id(other)
 
+    def is_raw(self) -> bool:
+        """
+        Used to determine if this interface is considered a raw interface.
+
+        :return: True if raw interface, False otherwise
+        """
+        return self.transport_type == TransportType.RAW
+
+    def is_virtual(self) -> bool:
+        """
+        Used to determine if this interface is considered a virtual interface.
+
+        :return: True if virtual interface, False otherwise
+        """
+        return self.transport_type == TransportType.VIRTUAL
+
 
 class Veth(CoreInterface):
     """
@@ -404,7 +420,6 @@ class TunTap(CoreInterface):
         :param start: start flag
         """
         super().__init__(session, node, name, localname, mtu, server)
-        self.transport_type = TransportType.VIRTUAL
         if start:
             self.startup()
 

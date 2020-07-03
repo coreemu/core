@@ -9,7 +9,6 @@ from core import utils
 from core.config import Configuration
 from core.emane.nodes import EmaneNet
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import TransportType
 from core.errors import CoreError
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
@@ -92,8 +91,7 @@ def create_iface_file(
     :return:
     """
     node = iface.node
-    transport_type = get_transport_type(iface)
-    if transport_type == TransportType.RAW:
+    if iface.is_raw():
         file_path = os.path.join(node.session.session_dir, file_name)
     else:
         file_path = os.path.join(node.nodedir, file_name)
@@ -185,12 +183,11 @@ def build_platform_xml(
         )
         add_param(transport_element, "device", iface.name)
 
-    transport_type = get_transport_type(iface)
     transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
     for configuration in emane_manager.emane_config.emulator_config:
         name = configuration.id
-        if transport_type == TransportType.RAW and name in transport_configs:
+        if iface.is_raw() and name in transport_configs:
             value = control_net.brname
         else:
             value = emane_manager.get_config(name)
@@ -214,7 +211,7 @@ def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
     :param config: all current configuration values
     :return: nothing
     """
-    transport_type = get_transport_type(iface)
+    transport_type = iface.transport_type
     transport_element = etree.Element(
         "transport",
         name=f"{transport_type.value.capitalize()} Transport",
@@ -224,7 +221,7 @@ def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
 
     # get emane model cnfiguration
     flowcontrol = config.get("flowcontrolenable", "0") == "1"
-    if transport_type == TransportType.VIRTUAL:
+    if iface.is_virtual():
         device_path = "/dev/net/tun_flowctl"
         if not os.path.exists(device_path):
             device_path = "/dev/net/tun"
@@ -338,19 +335,6 @@ def create_event_service_xml(
     create_file(event_element, "emaneeventmsgsvc", file_path, server)
 
 
-def get_transport_type(iface: CoreInterface) -> TransportType:
-    """
-    Get transport type for a given interface.
-
-    :param iface: interface to get transport type for
-    :return: transport type
-    """
-    transport_type = TransportType.VIRTUAL
-    if iface.transport_type == TransportType.RAW:
-        transport_type = TransportType.RAW
-    return transport_type
-
-
 def transport_file_name(iface: CoreInterface) -> str:
     """
     Create name for a transport xml file.
@@ -358,8 +342,7 @@ def transport_file_name(iface: CoreInterface) -> str:
     :param iface: interface running emane
     :return: transport xml file name
     """
-    transport_type = get_transport_type(iface)
-    return f"{iface.name}-trans-{transport_type.value}.xml"
+    return f"{iface.name}-trans-{iface.transport_type.value}.xml"
 
 
 def nem_file_name(iface: CoreInterface) -> str:
@@ -369,9 +352,7 @@ def nem_file_name(iface: CoreInterface) -> str:
     :param iface: interface running emane
     :return: nem xm file name
     """
-    append = ""
-    if iface and iface.transport_type == TransportType.RAW:
-        append = "-raw"
+    append = "-raw" if iface.is_raw() else ""
     return f"{iface.name}-nem{append}.xml"
 
 
