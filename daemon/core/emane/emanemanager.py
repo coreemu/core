@@ -281,8 +281,6 @@ class EmaneManager(ModelManager):
             instantiation
         """
         logging.debug("emane setup")
-
-        # TODO: drive this from the session object
         with self.session.nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
@@ -291,7 +289,6 @@ class EmaneManager(ModelManager):
                         "adding emane node: id(%s) name(%s)", node.id, node.name
                     )
                     self.add_node(node)
-
             if not self._emane_nets:
                 logging.debug("no emane nodes in session")
                 return EmaneState.NOT_NEEDED
@@ -322,7 +319,7 @@ class EmaneManager(ModelManager):
             logging.debug("emane event service device index: %s", netidx)
             if netidx < 0:
                 logging.error(
-                    "EMANE cannot start, check core config. invalid event service device: %s",
+                    "emane cannot start due to invalid event service device: %s",
                     eventdev,
                 )
                 return EmaneState.NOT_READY
@@ -330,7 +327,6 @@ class EmaneManager(ModelManager):
             self.session.add_remove_control_net(
                 net_index=netidx, remove=False, conf_required=False
             )
-
         self.check_node_models()
         return EmaneState.SUCCESS
 
@@ -349,10 +345,6 @@ class EmaneManager(ModelManager):
         self.starteventmonitor()
         self.buildeventservicexml()
         with self._emane_node_lock:
-            # on master, control network bridge added earlier in startup()
-            control_net = self.session.add_remove_control_net(
-                0, remove=False, conf_required=False
-            )
             logging.info("emane building xmls...")
             for node_id in sorted(self._emane_nets):
                 emane_net = self._emane_nets[node_id]
@@ -360,24 +352,30 @@ class EmaneManager(ModelManager):
                     logging.error("emane net(%s) has no model", emane_net.name)
                     continue
                 for iface in emane_net.get_ifaces():
-                    if not iface.node:
-                        logging.error(
-                            "emane net(%s) connected interface missing node",
-                            emane_net.name,
-                        )
-                        continue
-                    nem_id = self.next_nem_id()
-                    self.nems[nem_id] = iface
-                    self.write_nem(iface, nem_id)
-                    emanexml.build_platform_xml(
-                        self, control_net, emane_net, iface, nem_id
-                    )
-                    emanexml.build_model_xmls(self, emane_net, iface)
-                    self.start_daemon(iface)
-                    self.install_iface(emane_net, iface)
+                    self.start_iface(emane_net, iface)
         if self.links_enabled():
             self.link_monitor.start()
         return EmaneState.SUCCESS
+
+    def start_iface(self, emane_net: EmaneNet, iface: CoreInterface) -> None:
+        if not iface.node:
+            logging.error(
+                "emane net(%s) connected interface(%s) missing node",
+                emane_net.name,
+                iface.name,
+            )
+            return
+        control_net = self.session.add_remove_control_net(
+            0, remove=False, conf_required=False
+        )
+        nem_id = self.next_nem_id()
+        self.nems[nem_id] = iface
+        self.write_nem(iface, nem_id)
+        emanexml.build_platform_xml(self, control_net, emane_net, iface, nem_id)
+        config = self.get_iface_config(emane_net, iface)
+        emane_net.model.build_xml_files(config, iface)
+        self.start_daemon(iface)
+        self.install_iface(emane_net, iface)
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
         path = os.path.join(self.session.session_dir, "emane_nems")

@@ -12,7 +12,6 @@ from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkOptions
-from core.emulator.enumerations import TransportType
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -73,26 +72,16 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         :param iface: interface for the emane node
         :return: nothing
         """
-        # interface node
-        node = iface.node
-
-        # retrieve xml names
-        nem_name = emanexml.nem_file_name(iface)
-        shim_name = emanexml.shim_file_name(iface)
-
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
-        transport_type = TransportType.VIRTUAL
-        if iface.transport_type == TransportType.RAW:
-            transport_type = TransportType.RAW
-        transport_file = emanexml.transport_file_name(iface, transport_type)
-        etree.SubElement(nem_element, "transport", definition=transport_file)
+        transport_name = emanexml.transport_file_name(iface)
+        etree.SubElement(nem_element, "transport", definition=transport_name)
 
         # set shim configuration
+        nem_name = emanexml.nem_file_name(iface)
+        shim_name = emanexml.shim_file_name(iface)
         etree.SubElement(nem_element, "shim", definition=shim_name)
-
-        nem_file = os.path.join(node.nodedir, nem_name)
-        emanexml.create_file(nem_element, "nem", nem_file)
+        emanexml.create_iface_file(iface, nem_element, "nem", nem_name)
 
         # create and write shim document
         shim_element = etree.Element(
@@ -111,9 +100,10 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         ff = config["filterfile"]
         if ff.strip() != "":
             emanexml.add_param(shim_element, "filterfile", ff)
+        emanexml.create_iface_file(iface, shim_element, "shim", shim_name)
 
-        shim_file = os.path.join(node.nodedir, shim_name)
-        emanexml.create_file(shim_element, "shim", shim_file)
+        # create transport xml
+        emanexml.create_transport_xml(iface, config)
 
     def linkconfig(
         self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None

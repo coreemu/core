@@ -9,7 +9,7 @@ from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkOptions
-from core.emulator.enumerations import ConfigDataTypes, TransportType
+from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.nodes.base import CoreNode
@@ -102,34 +102,14 @@ class EmaneModel(WirelessModel):
         both mac.xml and phy.xml definitions.
 
         :param config: emane model configuration for the node and interface
-        :param iface: interface for the emane node
+        :param iface: interface to run emane for
         :return: nothing
         """
-        nem_name = emanexml.nem_file_name(iface)
-        mac_name = emanexml.mac_file_name(iface)
-        phy_name = emanexml.phy_file_name(iface)
-
-        # check if this is external
-        transport_type = TransportType.VIRTUAL
-        if iface.transport_type == TransportType.RAW:
-            transport_type = TransportType.RAW
-        transport_name = emanexml.transport_file_name(iface, transport_type)
-
-        node = iface.node
-        server = node.server
-        # create nem xml file
-        nem_file = os.path.join(node.nodedir, nem_name)
-        emanexml.create_nem_xml(
-            self, config, nem_file, transport_name, mac_name, phy_name, server
-        )
-
-        # create mac xml file
-        mac_file = os.path.join(node.nodedir, mac_name)
-        emanexml.create_mac_xml(self, config, mac_file, server)
-
-        # create phy xml file
-        phy_file = os.path.join(node.nodedir, phy_name)
-        emanexml.create_phy_xml(self, config, phy_file, server)
+        # create nem, mac, and phy xml files
+        emanexml.create_nem_xml(self, iface, config)
+        emanexml.create_mac_xml(self, iface, config)
+        emanexml.create_phy_xml(self, iface, config)
+        emanexml.create_transport_xml(iface, config)
 
     def post_startup(self) -> None:
         """

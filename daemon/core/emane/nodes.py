@@ -96,7 +96,6 @@ class EmaneNet(CoreNetworkBase):
         """
         set the EmaneModel associated with this node
         """
-        logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
