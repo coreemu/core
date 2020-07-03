@@ -1,7 +1,6 @@
 from typing import Tuple
 
 from core.emane.nodes import EmaneNet
-from core.errors import CoreError
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 from core.xml import emanexml
@@ -14,37 +13,22 @@ class EmaneTransportService(CoreService):
     dependencies: Tuple[str, ...] = ()
     dirs: Tuple[str, ...] = ()
     configs: Tuple[str, ...] = ("emanetransport.sh",)
-    startup: Tuple[str, ...] = ("sh %s" % configs[0],)
-    validate: Tuple[str, ...] = ("pidof %s" % executables[0],)
+    startup: Tuple[str, ...] = (f"sh {configs[0]}",)
+    validate: Tuple[str, ...] = (f"pidof {executables[0]}",)
     validation_timer: float = 0.5
-    shutdown: Tuple[str, ...] = ("killall %s" % executables[0],)
+    shutdown: Tuple[str, ...] = (f"killall {executables[0]}",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
-        if filename == cls.configs[0]:
-            transport_commands = []
-            for iface in node.get_ifaces():
-                try:
-                    network_node = node.session.get_node(iface.net.id, EmaneNet)
-                    config = node.session.emane.get_configs(
-                        network_node.id, network_node.model.name
-                    )
-                    if config and emanexml.is_external(config):
-                        nem_id = network_node.getnemid(iface)
-                        command = (
-                            "emanetransportd -r -l 0 -d ../transportdaemon%s.xml"
-                            % nem_id
-                        )
-                        transport_commands.append(command)
-                except CoreError:
-                    pass
-            transport_commands = "\n".join(transport_commands)
-            return """
-emanegentransportxml -o ../ ../platform%s.xml
-%s
-""" % (
-                node.id,
-                transport_commands,
-            )
-        else:
-            raise ValueError
+        emane_manager = node.session.emane
+        cfg = ""
+        for iface in node.get_ifaces():
+            if not isinstance(iface.net, EmaneNet):
+                continue
+            emane_net = iface.net
+            config = emane_manager.get_iface_config(emane_net, iface)
+            if emanexml.is_external(config):
+                nem_id = emane_net.getnemid(iface)
+                cfg += f"emanegentransportxml {iface.name}-platform.xml\n"
+                cfg += f"emanetransportd -r -l 0 -d transportdaemon{nem_id}.xml\n"
+        return cfg

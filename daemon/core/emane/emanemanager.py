@@ -134,31 +134,27 @@ class EmaneManager(ModelManager):
         :return: net, node, or interface model configuration
         """
         model_name = emane_net.model.name
-        # use the network-wide config values or interface(NEM)-specific values?
-        if iface is None:
-            return self.get_configs(node_id=emane_net.id, config_type=model_name)
-        else:
-            # don"t use default values when interface config is the same as net
-            # note here that using iface.node.id as key allows for only one type
-            # of each model per node;
-            # TODO: use both node and interface as key
-            # Adamson change: first check for iface config keyed by "node:iface.name"
-            # (so that nodes w/ multiple interfaces of same conftype can have
-            #  different configs for each separate interface)
-            key = 1000 * iface.node.id
-            if iface.node_id is not None:
-                key += iface.node_id
-            # try retrieve interface specific configuration, avoid getting defaults
-            config = self.get_configs(node_id=key, config_type=model_name)
-            # otherwise retrieve the interfaces node configuration, avoid using defaults
-            if not config:
-                config = self.get_configs(node_id=iface.node.id, config_type=model_name)
-            # get non interface config, when none found
-            if not config:
-                # with EMANE 0.9.2+, we need an extra NEM XML from
-                # model.buildnemxmlfiles(), so defaults are returned here
-                config = self.get_configs(node_id=emane_net.id, config_type=model_name)
-            return config
+        # don"t use default values when interface config is the same as net
+        # note here that using iface.node.id as key allows for only one type
+        # of each model per node;
+        # TODO: use both node and interface as key
+        # Adamson change: first check for iface config keyed by "node:iface.name"
+        # (so that nodes w/ multiple interfaces of same conftype can have
+        #  different configs for each separate interface)
+        key = 1000 * iface.node.id
+        if iface.node_id is not None:
+            key += iface.node_id
+        # try retrieve interface specific configuration, avoid getting defaults
+        config = self.get_configs(node_id=key, config_type=model_name)
+        # otherwise retrieve the interfaces node configuration, avoid using defaults
+        if not config:
+            config = self.get_configs(node_id=iface.node.id, config_type=model_name)
+        # get non interface config, when none found
+        if not config:
+            # with EMANE 0.9.2+, we need an extra NEM XML from
+            # model.buildnemxmlfiles(), so defaults are returned here
+            config = self.get_configs(node_id=emane_net.id, config_type=model_name)
+        return config
 
     def config_reset(self, node_id: int = None) -> None:
         super().config_reset(node_id)
@@ -587,26 +583,18 @@ class EmaneManager(ModelManager):
         """
         Kill the appropriate EMANE daemons.
         """
-        # TODO: we may want to improve this if we had the PIDs from the specific EMANE
-        #  daemons that we"ve started
         kill_emaned = "killall -q emane"
-        kill_transortd = "killall -q emanetransportd"
         stop_emane_on_host = False
         for node in self.getnodes():
             if isinstance(node, Rj45Node):
                 stop_emane_on_host = True
                 continue
-
             if node.up:
                 node.cmd(kill_emaned, wait=False)
-                # TODO: RJ45 node
-
         if stop_emane_on_host:
             try:
-                utils.cmd(kill_emaned)
-                utils.cmd(kill_transortd)
+                utils.cmd(kill_emaned, wait=False)
                 self.session.distributed.execute(lambda x: x.remote_cmd(kill_emaned))
-                self.session.distributed.execute(lambda x: x.remote_cmd(kill_transortd))
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 
