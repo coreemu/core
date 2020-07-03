@@ -567,36 +567,31 @@ class EmaneManager(ModelManager):
             log_file = os.path.join(node.nodedir, f"{iface.name}-emane.log")
             platform_xml = os.path.join(node.nodedir, f"{iface.name}-platform.xml")
             args = f"{emanecmd} -f {log_file} {platform_xml}"
-            output = node.cmd(args)
+            node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
-            logging.debug("node(%s) emane daemon output: %s", node.name, output)
         else:
             path = self.session.session_dir
             log_file = os.path.join(path, f"{iface.name}-emane.log")
             platform_xml = os.path.join(path, f"{iface.name}-platform.xml")
             emanecmd += f" -f {log_file} {platform_xml}"
-            utils.cmd(emanecmd, cwd=path)
-            self.session.distributed.execute(lambda x: x.remote_cmd(emanecmd, cwd=path))
-            logging.info("host emane daemon running: %s", emanecmd)
+            node.host_cmd(emanecmd, cwd=path)
+            logging.info("node(%s) host emane daemon running: %s", node.name, emanecmd)
 
     def stopdaemons(self) -> None:
         """
         Kill the appropriate EMANE daemons.
         """
         kill_emaned = "killall -q emane"
-        stop_emane_on_host = False
-        for node in self.getnodes():
-            if isinstance(node, Rj45Node):
-                stop_emane_on_host = True
-                continue
-            if node.up:
-                node.cmd(kill_emaned, wait=False)
-        if stop_emane_on_host:
-            try:
-                utils.cmd(kill_emaned, wait=False)
-                self.session.distributed.execute(lambda x: x.remote_cmd(kill_emaned))
-            except CoreCommandError:
-                logging.exception("error shutting down emane daemons")
+        for node_id in sorted(self._emane_nets):
+            emane_net = self._emane_nets[node_id]
+            for iface in emane_net.get_ifaces():
+                node = iface.node
+                if not node.up:
+                    continue
+                if isinstance(node, Rj45Node):
+                    node.host_cmd(kill_emaned, wait=False)
+                else:
+                    node.cmd(kill_emaned, wait=False)
 
     def install_iface(self, emane_net: EmaneNet, iface: CoreInterface) -> None:
         config = self.get_iface_config(emane_net, iface)
