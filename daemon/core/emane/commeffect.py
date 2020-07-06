@@ -10,7 +10,6 @@ from lxml import etree
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
-from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkOptions
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
@@ -124,12 +123,11 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_node(self.id, EmaneNet)
-        nemid = emane_node.getnemid(iface)
-        nemid2 = emane_node.getnemid(iface2)
+        nem1 = self.session.emane.get_nem_id(iface)
+        nem2 = self.session.emane.get_nem_id(iface2)
         logging.info("sending comm effect event")
         event.append(
-            nemid,
+            nem1,
             latency=convert_none(options.delay),
             jitter=convert_none(options.jitter),
             loss=convert_none(options.loss),
@@ -137,4 +135,4 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
         )
-        service.publish(nemid2, event)
+        service.publish(nem2, event)

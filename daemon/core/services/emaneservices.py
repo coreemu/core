@@ -28,7 +28,7 @@ class EmaneTransportService(CoreService):
             emane_net = iface.net
             config = emane_manager.get_iface_config(emane_net, iface)
             if emanexml.is_external(config):
-                nem_id = emane_net.getnemid(iface)
+                nem_id = emane_manager.get_nem_id(iface)
                 cfg += f"emanegentransportxml {iface.name}-platform.xml\n"
                 cfg += f"emanetransportd -r -l 0 -d transportdaemon{nem_id}.xml\n"
         return cfg

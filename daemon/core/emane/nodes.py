@@ -52,7 +52,6 @@ class EmaneNet(CoreNetworkBase):
     ) -> None:
         super().__init__(session, _id, name, server)
         self.conf: str = ""
-        self.nemidmap: Dict[CoreInterface, int] = {}
         self.model: "OptionalEmaneModel" = None
         self.mobility: Optional[WayPointMobility] = None
 
@@ -105,32 +104,6 @@ class EmaneNet(CoreNetworkBase):
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
-    def setnemid(self, iface: CoreInterface, nemid: int) -> None:
-        """
-        Record an interface to numerical ID mapping. The Emane controller
-        object manages and assigns these IDs for all NEMs.
-        """
-        self.nemidmap[iface] = nemid
-
-    def getnemid(self, iface: CoreInterface) -> Optional[int]:
-        """
-        Given an interface, return its numerical ID.
-        """
-        if iface not in self.nemidmap:
-            return None
-        else:
-            return self.nemidmap[iface]
-
-    def get_nem_iface(self, nemid: int) -> Optional[CoreInterface]:
-        """
-        Given a numerical NEM ID, return its interface. This returns the
-        first interface that matches the given NEM ID.
-        """
-        for iface in self.nemidmap:
-            if self.nemidmap[iface] == nemid:
-                return iface
-        return None
-
     def _nem_position(
         self, iface: CoreInterface
     ) -> Optional[Tuple[int, float, float, float]]:
@@ -140,9 +113,9 @@ class EmaneNet(CoreNetworkBase):
         :param iface: interface to get nem emane position for
         :return: nem position tuple, None otherwise
         """
-        nemid = self.getnemid(iface)
+        nem_id = self.session.emane.get_nem_id(iface)
         ifname = iface.localname
-        if nemid is None:
+        if nem_id is None:
             logging.info("nemid for %s is unknown", ifname)
             return
         node = iface.node
@@ -153,7 +126,7 @@ class EmaneNet(CoreNetworkBase):
         node.position.set_geo(lon, lat, alt)
         # altitude must be an integer or warning is printed
         alt = int(round(alt))
-        return nemid, lon, lat, alt
+        return nem_id, lon, lat, alt
 
     def setnemposition(self, iface: CoreInterface) -> None:
         """
@@ -164,7 +137,6 @@ class EmaneNet(CoreNetworkBase):
         if self.session.emane.service is None:
             logging.info("position service not available")
             return
-
         position = self._nem_position(iface)
         if position:
             nemid, lon, lat, alt = position
@@ -195,9 +167,12 @@ class EmaneNet(CoreNetworkBase):
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         links = super().links(flags)
-        # gather current emane links
-        nem_ids = set(self.nemidmap.values())
         emane_manager = self.session.emane
+        # gather current emane links
+        nem_ids = set()
+        for iface in self.get_ifaces():
+            nem_id = emane_manager.get_nem_id(iface)
+            nem_ids.add(nem_id)
         emane_links = emane_manager.link_monitor.links
         considered = set()
         for link_key in emane_links:

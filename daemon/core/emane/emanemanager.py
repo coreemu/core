@@ -90,7 +90,8 @@ class EmaneManager(ModelManager):
         """
         super().__init__()
         self.session: "Session" = session
-        self.nems: Dict[int, CoreInterface] = {}
+        self.nems_to_ifaces: Dict[int, CoreInterface] = {}
+        self.ifaces_to_nems: Dict[CoreInterface, int] = {}
         self._emane_nets: Dict[int, EmaneNet] = {}
         self._emane_node_lock: threading.Lock = threading.Lock()
         # port numbers are allocated from these counters
@@ -117,7 +118,7 @@ class EmaneManager(ModelManager):
 
     def next_nem_id(self) -> int:
         nem_id = int(self.get_config("nem_id_start"))
-        while nem_id in self.nems:
+        while nem_id in self.nems_to_ifaces:
             nem_id += 1
         return nem_id
 
@@ -363,13 +364,25 @@ class EmaneManager(ModelManager):
             0, remove=False, conf_required=False
         )
         nem_id = self.next_nem_id()
-        self.nems[nem_id] = iface
+        self.set_nem(nem_id, iface)
         self.write_nem(iface, nem_id)
         emanexml.build_platform_xml(self, control_net, emane_net, iface, nem_id)
         config = self.get_iface_config(emane_net, iface)
         emane_net.model.build_xml_files(config, iface)
         self.start_daemon(iface)
         self.install_iface(emane_net, iface)
+
+    def set_nem(self, nem_id: int, iface: CoreInterface) -> None:
+        if nem_id in self.nems_to_ifaces:
+            raise CoreError(f"adding duplicate nem: {nem_id}")
+        self.nems_to_ifaces[nem_id] = iface
+        self.ifaces_to_nems[iface] = nem_id
+
+    def get_iface(self, nem_id: int) -> Optional[CoreInterface]:
+        return self.nems_to_ifaces.get(nem_id)
+
+    def get_nem_id(self, iface: CoreInterface) -> Optional[int]:
+        return self.ifaces_to_nems.get(iface)
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
         path = os.path.join(self.session.session_dir, "emane_nems")
@@ -405,7 +418,8 @@ class EmaneManager(ModelManager):
         """
         with self._emane_node_lock:
             self._emane_nets.clear()
-            self.nems.clear()
+            self.nems_to_ifaces.clear()
+            self.ifaces_to_nems.clear()
 
     def shutdown(self) -> None:
         """
@@ -448,42 +462,29 @@ class EmaneManager(ModelManager):
             model_class = self.models[model_name]
             emane_net.setmodel(model_class, config)
 
-    def nemlookup(self, nemid) -> Tuple[Optional[EmaneNet], Optional[CoreInterface]]:
-        """
-        Look for the given numerical NEM ID and return the first matching
-        EMANE network and NEM interface.
-        """
-        emane_node = None
-        iface = None
-        for node_id in self._emane_nets:
-            emane_node = self._emane_nets[node_id]
-            iface = emane_node.get_nem_iface(nemid)
-            if iface is not None:
-                break
-            else:
-                emane_node = None
-        return emane_node, iface
-
     def get_nem_link(
         self, nem1: int, nem2: int, flags: MessageFlags = MessageFlags.NONE
     ) -> Optional[LinkData]:
-        emane1, iface = self.nemlookup(nem1)
-        if not emane1 or not iface:
+        iface1 = self.get_iface(nem1)
+        if not iface1:
             logging.error("invalid nem: %s", nem1)
             return None
-        node1 = iface.node
-        emane2, iface = self.nemlookup(nem2)
-        if not emane2 or not iface:
+        node1 = iface1.node
+        iface2 = self.get_iface(nem2)
+        if not iface2:
             logging.error("invalid nem: %s", nem2)
             return None
-        node2 = iface.node
-        color = self.session.get_link_color(emane1.id)
+        node2 = iface2.node
+        if iface1.net != iface2.net:
+            return None
+        emane_net = iface1.net
+        color = self.session.get_link_color(emane_net.id)
         return LinkData(
             message_type=flags,
             type=LinkTypes.WIRELESS,
             node1_id=node1.id,
             node2_id=node2.id,
-            network_id=emane1.id,
+            network_id=emane_net.id,
             color=color,
         )
 
@@ -728,7 +729,7 @@ class EmaneManager(ModelManager):
         Returns True if successfully parsed and a Node Message was sent.
         """
         # convert nemid to node number
-        _emanenode, iface = self.nemlookup(nemid)
+        iface = self.get_iface(nemid)
         if iface is None:
             logging.info("location event for unknown NEM %s", nemid)
             return False

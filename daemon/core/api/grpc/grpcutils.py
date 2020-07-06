@@ -491,10 +491,13 @@ def iface_to_proto(node_id: int, iface: CoreInterface) -> core_pb2.Interface:
     )
 
 
-def get_nem_id(node: CoreNode, iface_id: int, context: ServicerContext) -> int:
+def get_nem_id(
+    session: Session, node: CoreNode, iface_id: int, context: ServicerContext
+) -> int:
     """
     Get nem id for a given node and interface id.
 
+    :param session: session node belongs to
     :param node: node to get nem id for
     :param iface_id: id of interface on node to get nem id for
     :param context: request context
@@ -508,7 +511,7 @@ def get_nem_id(node: CoreNode, iface_id: int, context: ServicerContext) -> int:
     if not isinstance(net, EmaneNet):
         message = f"{node.name} interface {iface_id} is not an EMANE network"
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
-    nem_id = net.getnemid(iface)
+    nem_id = session.emane.get_nem_id(iface)
     if nem_id is None:
         message = f"{node.name} interface {iface_id} nem id does not exist"
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)

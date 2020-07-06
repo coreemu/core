@@ -501,8 +501,8 @@ class CoreXmlWriter:
             iface = node.get_iface(iface_data.id)
             # check if emane interface
             if isinstance(iface.net, EmaneNet):
-                nem = iface.net.getnemid(iface)
-                add_attribute(iface_element, "nem", nem)
+                nem_id = self.session.emane.get_nem_id(iface)
+                add_attribute(iface_element, "nem", nem_id)
         add_attribute(iface_element, "id", iface_data.id)
         add_attribute(iface_element, "name", iface_data.name)
         add_attribute(iface_element, "mac", iface_data.mac)

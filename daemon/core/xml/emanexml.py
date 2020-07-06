@@ -193,7 +193,6 @@ def build_platform_xml(
             value = emane_manager.get_config(name)
         add_param(platform_element, name, value)
     platform_element.append(nem_element)
-    emane_net.setnemid(iface, nem_id)
     mac = _MAC_PREFIX + ":00:00:"
     mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
     iface.set_mac(mac)
