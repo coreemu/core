@@ -252,8 +252,8 @@ class EmaneManager(ModelManager):
         """
         with self._emane_node_lock:
             if emane_net.id in self._emane_nets:
-                raise KeyError(
-                    f"non-unique EMANE object id {emane_net.id} for {emane_net}"
+                raise CoreError(
+                    f"duplicate emane network({emane_net.id}): {emane_net.name}"
                 )
             self._emane_nets[emane_net.id] = emane_net
 

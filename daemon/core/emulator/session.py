@@ -531,7 +531,7 @@ class Session:
         self.set_node_position(node, options)
 
         # add services to needed nodes
-        if isinstance(node, (CoreNode, PhysicalNode, DockerNode, LxcNode)):
+        if isinstance(node, (CoreNode, PhysicalNode)):
             node.type = options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
@@ -545,6 +545,8 @@ class Session:
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
             self.emane.set_model_config(_id, options.emane)
+            if self.state == EventTypes.RUNTIME_STATE:
+                self.emane.add_node(node)
         # set default wlan config if needed
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(_id, BasicRangeModel.name)

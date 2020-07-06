@@ -8,7 +8,13 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import (
+    EventTypes,
+    LinkTypes,
+    MessageFlags,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
@@ -203,4 +209,6 @@ class EmaneNet(CoreNetworkBase):
         iface.set_mac(iface_data.mac)
         for ip in iface_data.get_ips():
             iface.add_ip(ip)
+        if self.session.state == EventTypes.RUNTIME_STATE:
+            self.session.emane.start_iface(self, iface)
         return iface
