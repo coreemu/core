@@ -815,17 +815,6 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             if net.has_custom_iface:
                 return net.custom_iface(self, iface_data)
-            # if net.is_emane is True:
-            #     iface_id = self.newtuntap(iface_data.id, iface_data.name)
-            #     # TUN/TAP is not ready for addressing yet; the device may
-            #     #   take some time to appear, and installing it into a
-            #     #   namespace after it has been bound removes addressing;
-            #     #   save addresses with the interface now
-            #     self.attachnet(iface_id, net)
-            #     iface = self.get_iface(iface_id)
-            #     iface.set_mac(iface_data.mac)
-            #     for ip in ips:
-            #         iface.add_ip(ip)
             else:
                 iface_id = self.newveth(iface_data.id, iface_data.name)
                 self.attachnet(iface_id, net)
