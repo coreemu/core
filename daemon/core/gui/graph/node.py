@@ -193,7 +193,8 @@ class CanvasNode:
 
     def double_click(self, event: tk.Event) -> None:
         if self.app.core.is_runtime():
-            self.canvas.core.launch_terminal(self.core_node.id)
+            if NodeUtils.is_container_node(self.core_node.type):
+                self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
 
