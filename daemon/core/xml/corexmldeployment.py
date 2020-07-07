@@ -9,7 +9,6 @@ from core import utils
 from core.emane.nodes import EmaneNet
 from core.executables import IP
 from core.nodes.base import CoreNodeBase, NodeBase
-from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -38,11 +37,10 @@ def add_mapping(parent_element: etree.Element, maptype: str, mapref: str) -> Non
 
 def add_emane_iface(
     host_element: etree.Element,
-    iface: CoreInterface,
+    nem_id: int,
     platform_name: str = "p1",
     transport_name: str = "t1",
 ) -> etree.Element:
-    nem_id = iface.net.nemidmap[iface]
     host_id = host_element.get("id")
 
     # platform data
@@ -158,7 +156,8 @@ class CoreXmlDeployment:
         for iface in node.get_ifaces():
             emane_element = None
             if isinstance(iface.net, EmaneNet):
-                emane_element = add_emane_iface(host_element, iface)
+                nem_id = self.session.emane.get_nem_id(iface)
+                emane_element = add_emane_iface(host_element, nem_id)
 
             parent_element = host_element
             if emane_element is not None:

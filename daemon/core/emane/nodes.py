@@ -6,18 +6,18 @@ share the same MAC+PHY model.
 import logging
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
 
-from core.emulator.data import LinkData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import (
+    EventTypes,
     LinkTypes,
     MessageFlags,
     NodeTypes,
     RegisterTlvs,
-    TransportType,
 )
 from core.errors import CoreError
-from core.nodes.base import CoreNetworkBase
-from core.nodes.interface import CoreInterface, TunTap
+from core.nodes.base import CoreNetworkBase, CoreNode
+from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
@@ -47,7 +47,7 @@ class EmaneNet(CoreNetworkBase):
     apitype: NodeTypes = NodeTypes.EMANE
     linktype: LinkTypes = LinkTypes.WIRED
     type: str = "wlan"
-    is_emane: bool = True
+    has_custom_iface: bool = True
 
     def __init__(
         self,
@@ -58,7 +58,6 @@ class EmaneNet(CoreNetworkBase):
     ) -> None:
         super().__init__(session, _id, name, server)
         self.conf: str = ""
-        self.nemidmap: Dict[CoreInterface, int] = {}
         self.model: "OptionalEmaneModel" = None
         self.mobility: Optional[WayPointMobility] = None
 
@@ -102,7 +101,6 @@ class EmaneNet(CoreNetworkBase):
         """
         set the EmaneModel associated with this node
         """
-        logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
@@ -111,71 +109,6 @@ class EmaneNet(CoreNetworkBase):
         elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
-
-    def setnemid(self, iface: CoreInterface, nemid: int) -> None:
-        """
-        Record an interface to numerical ID mapping. The Emane controller
-        object manages and assigns these IDs for all NEMs.
-        """
-        self.nemidmap[iface] = nemid
-
-    def getnemid(self, iface: CoreInterface) -> Optional[int]:
-        """
-        Given an interface, return its numerical ID.
-        """
-        if iface not in self.nemidmap:
-            return None
-        else:
-            return self.nemidmap[iface]
-
-    def get_nem_iface(self, nemid: int) -> Optional[CoreInterface]:
-        """
-        Given a numerical NEM ID, return its interface. This returns the
-        first interface that matches the given NEM ID.
-        """
-        for iface in self.nemidmap:
-            if self.nemidmap[iface] == nemid:
-                return iface
-        return None
-
-    def install_ifaces(self) -> None:
-        """
-        Install TAP devices into their namespaces. This is done after
-        EMANE daemons have been started, because that is their only chance
-        to bind to the TAPs.
-        """
-        if (
-            self.session.emane.genlocationevents()
-            and self.session.emane.service is None
-        ):
-            warntxt = "unable to publish EMANE events because the eventservice "
-            warntxt += "Python bindings failed to load"
-            logging.error(warntxt)
-        for iface in self.get_ifaces():
-            config = self.session.emane.get_iface_config(
-                self.id, iface, self.model.name
-            )
-            external = config.get("external", "0")
-            if isinstance(iface, TunTap) and external == "0":
-                iface.set_ips()
-            if not self.session.emane.genlocationevents():
-                iface.poshook = None
-                continue
-            # at this point we register location handlers for generating
-            # EMANE location events
-            iface.poshook = self.setnemposition
-            iface.setposition()
-
-    def deinstall_ifaces(self) -> None:
-        """
-        Uninstall TAP devices. This invokes their shutdown method for
-        any required cleanup; the device may be actually removed when
-        emanetransportd terminates.
-        """
-        for iface in self.get_ifaces():
-            if iface.transport_type == TransportType.VIRTUAL:
-                iface.shutdown()
-            iface.poshook = None
 
     def _nem_position(
         self, iface: CoreInterface
@@ -186,9 +119,9 @@ class EmaneNet(CoreNetworkBase):
         :param iface: interface to get nem emane position for
         :return: nem position tuple, None otherwise
         """
-        nemid = self.getnemid(iface)
+        nem_id = self.session.emane.get_nem_id(iface)
         ifname = iface.localname
-        if nemid is None:
+        if nem_id is None:
             logging.info("nemid for %s is unknown", ifname)
             return
         node = iface.node
@@ -199,7 +132,7 @@ class EmaneNet(CoreNetworkBase):
         node.position.set_geo(lon, lat, alt)
         # altitude must be an integer or warning is printed
         alt = int(round(alt))
-        return nemid, lon, lat, alt
+        return nem_id, lon, lat, alt
 
     def setnemposition(self, iface: CoreInterface) -> None:
         """
@@ -210,7 +143,6 @@ class EmaneNet(CoreNetworkBase):
         if self.session.emane.service is None:
             logging.info("position service not available")
             return
-
         position = self._nem_position(iface)
         if position:
             nemid, lon, lat, alt = position
@@ -241,9 +173,12 @@ class EmaneNet(CoreNetworkBase):
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         links = super().links(flags)
-        # gather current emane links
-        nem_ids = set(self.nemidmap.values())
         emane_manager = self.session.emane
+        # gather current emane links
+        nem_ids = set()
+        for iface in self.get_ifaces():
+            nem_id = emane_manager.get_nem_id(iface)
+            nem_ids.add(nem_id)
         emane_links = emane_manager.link_monitor.links
         considered = set()
         for link_key in emane_links:
@@ -262,3 +197,18 @@ class EmaneNet(CoreNetworkBase):
             if link:
                 links.append(link)
         return links
+
+    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
+        # TUN/TAP is not ready for addressing yet; the device may
+        #   take some time to appear, and installing it into a
+        #   namespace after it has been bound removes addressing;
+        #   save addresses with the interface now
+        iface_id = node.newtuntap(iface_data.id, iface_data.name)
+        node.attachnet(iface_id, self)
+        iface = node.get_iface(iface_id)
+        iface.set_mac(iface_data.mac)
+        for ip in iface_data.get_ips():
+            iface.add_ip(ip)
+        if self.session.state == EventTypes.RUNTIME_STATE:
+            self.session.emane.start_iface(self, iface)
+        return iface

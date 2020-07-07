@@ -1551,29 +1551,29 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("emane link: %s", request)
         session = self.get_session(request.session_id, context)
         nem1 = request.nem1
-        emane1, iface = session.emane.nemlookup(nem1)
-        if not emane1 or not iface:
+        iface1 = session.emane.get_iface(nem1)
+        if not iface1:
             context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem1} not found")
-        node1 = iface.node
+        node1 = iface1.node
 
         nem2 = request.nem2
-        emane2, iface = session.emane.nemlookup(nem2)
-        if not emane2 or not iface:
+        iface2 = session.emane.get_iface(nem2)
+        if not iface2:
             context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem2} not found")
-        node2 = iface.node
+        node2 = iface2.node
 
-        if emane1.id == emane2.id:
+        if iface1.net == iface2.net:
             if request.linked:
                 flag = MessageFlags.ADD
             else:
                 flag = MessageFlags.DELETE
-            color = session.get_link_color(emane1.id)
+            color = session.get_link_color(iface1.net.id)
             link = LinkData(
                 message_type=flag,
                 type=LinkTypes.WIRELESS,
                 node1_id=node1.id,
                 node2_id=node2.id,
-                network_id=emane1.id,
+                network_id=iface1.net.id,
                 color=color,
             )
             session.broadcast_link(link)
@@ -1796,8 +1796,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for request in request_iterator:
             session = self.get_session(request.session_id, context)
             node1 = self.get_node(session, request.node1_id, context, CoreNode)
-            nem1 = grpcutils.get_nem_id(node1, request.iface1_id, context)
+            nem1 = grpcutils.get_nem_id(session, node1, request.iface1_id, context)
             node2 = self.get_node(session, request.node2_id, context, CoreNode)
-            nem2 = grpcutils.get_nem_id(node2, request.iface2_id, context)
+            nem2 = grpcutils.get_nem_id(session, node2, request.iface2_id, context)
             session.emane.publish_pathloss(nem1, nem2, request.rx1, request.rx2)
         return EmanePathlossesResponse()
