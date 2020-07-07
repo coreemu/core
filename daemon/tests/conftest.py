@@ -55,6 +55,7 @@ def patcher(request):
     if request.config.getoption("mock"):
         patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
+        patch_manager.patch("core.utils.which")
         patch_manager.patch("core.nodes.netclient.get_net_client")
         patch_manager.patch_obj(
             LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
