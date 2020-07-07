@@ -84,7 +84,7 @@ class NodeConfigServiceDialog(Dialog):
         button.grid(row=0, column=3, sticky="ew")
 
         # trigger group change
-        self.groups.listbox.event_generate("<<ListboxSelect>>")
+        self.handle_group_change()
 
     def handle_group_change(self, event: tk.Event = None) -> None:
         selection = self.groups.listbox.curselection()
