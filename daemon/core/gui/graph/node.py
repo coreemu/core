@@ -179,7 +179,10 @@ class CanvasNode:
             self.app.core.edit_node(self.core_node)
 
     def on_enter(self, event: tk.Event) -> None:
-        if self.app.core.is_runtime() and self.app.core.observer:
+        is_runtime = self.app.core.is_runtime()
+        has_observer = self.app.core.observer is not None
+        is_container = NodeUtils.is_container_node(self.core_node.type)
+        if is_runtime and has_observer and is_container:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
             try:
