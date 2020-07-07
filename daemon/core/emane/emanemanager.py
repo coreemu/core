@@ -165,23 +165,24 @@ class EmaneManager(ModelManager):
 
         :return: nothing
         """
-        try:
-            # check for emane
-            args = "emane --version"
-            emane_version = utils.cmd(args)
-            logging.info("using EMANE: %s", emane_version)
-            self.session.distributed.execute(lambda x: x.remote_cmd(args))
-
-            # load default emane models
-            self.load_models(EMANE_MODELS)
-
-            # load custom models
-            custom_models_path = self.session.options.get_config("emane_models_dir")
-            if custom_models_path:
-                emane_models = utils.load_classes(custom_models_path, EmaneModel)
-                self.load_models(emane_models)
-        except CoreCommandError:
+        # check for emane
+        path = utils.which("emane", required=False)
+        if not path:
             logging.info("emane is not installed")
+            return
+
+        # get version
+        emane_version = utils.cmd("emane --version")
+        logging.info("using emane: %s", emane_version)
+
+        # load default emane models
+        self.load_models(EMANE_MODELS)
+
+        # load custom models
+        custom_models_path = self.session.options.get_config("emane_models_dir")
+        if custom_models_path:
+            emane_models = utils.load_classes(custom_models_path, EmaneModel)
+            self.load_models(emane_models)
 
     def deleteeventservice(self) -> None:
         if self.service:
