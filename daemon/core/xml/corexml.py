@@ -128,6 +128,8 @@ class NodeElement:
         self.element: etree.Element = etree.Element(element_name)
         add_attribute(self.element, "id", node.id)
         add_attribute(self.element, "name", node.name)
+        server = self.node.server.name if self.node.server else None
+        add_attribute(self.element, "server", server)
         add_attribute(self.element, "icon", node.icon)
         add_attribute(self.element, "canvas", node.canvas)
         self.add_position()
@@ -801,8 +803,10 @@ class CoreXmlReader:
         icon = device_element.get("icon")
         clazz = device_element.get("class")
         image = device_element.get("image")
-        options = NodeOptions(name=name, model=model, image=image, icon=icon)
-
+        server = device_element.get("server")
+        options = NodeOptions(
+            name=name, model=model, image=image, icon=icon, server=server
+        )
         node_type = NodeTypes.DEFAULT
         if clazz == "docker":
             node_type = NodeTypes.DOCKER
@@ -842,7 +846,8 @@ class CoreXmlReader:
         node_type = NodeTypes[network_element.get("type")]
         _class = self.session.get_node_class(node_type)
         icon = network_element.get("icon")
-        options = NodeOptions(name=name, icon=icon)
+        server = network_element.get("server")
+        options = NodeOptions(name=name, icon=icon, server=server)
 
         position_element = network_element.find("position")
         if position_element is not None:
