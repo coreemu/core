@@ -1,45 +1,44 @@
 import abc
-from typing import Any, Dict
+from typing import Any, Dict, List
 
-import netaddr
-
-from core import constants
+from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
-GROUP = "FRR"
+GROUP: str = "FRR"
+FRR_STATE_DIR: str = "/var/run/frr"
 
 
-def has_mtu_mismatch(ifc: CoreInterface) -> bool:
+def has_mtu_mismatch(iface: CoreInterface) -> bool:
     """
     Helper to detect MTU mismatch and add the appropriate FRR
     mtu-ignore command. This is needed when e.g. a node is linked via a
     GreTap device.
     """
-    if ifc.mtu != 1500:
+    if iface.mtu != 1500:
         return True
-    if not ifc.net:
+    if not iface.net:
         return False
-    for i in ifc.net.netifs():
-        if i.mtu != ifc.mtu:
+    for iface in iface.net.get_ifaces():
+        if iface.mtu != iface.mtu:
             return True
     return False
 
 
-def get_min_mtu(ifc):
+def get_min_mtu(iface: CoreInterface) -> int:
     """
     Helper to discover the minimum MTU of interfaces linked with the
     given interface.
     """
-    mtu = ifc.mtu
-    if not ifc.net:
+    mtu = iface.mtu
+    if not iface.net:
         return mtu
-    for i in ifc.net.netifs():
-        if i.mtu < mtu:
-            mtu = i.mtu
+    for iface in iface.net.get_ifaces():
+        if iface.mtu < mtu:
+            mtu = iface.mtu
     return mtu
 
 
@@ -47,34 +46,31 @@ def get_router_id(node: CoreNodeBase) -> str:
     """
     Helper to return the first IPv4 address of a node as its router ID.
     """
-    for ifc in node.netifs():
-        if getattr(ifc, "control", False):
-            continue
-        for a in ifc.addrlist:
-            a = a.split("/")[0]
-            if netaddr.valid_ipv4(a):
-                return a
+    for iface in node.get_ifaces(control=False):
+        ip4 = iface.get_ip4()
+        if ip4:
+            return str(ip4.ip)
     return "0.0.0.0"
 
 
 class FRRZebra(ConfigService):
-    name = "FRRzebra"
-    group = GROUP
-    directories = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
-    files = [
+    name: str = "FRRzebra"
+    group: str = GROUP
+    directories: List[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
+    files: List[str] = [
         "/usr/local/etc/frr/frr.conf",
         "frrboot.sh",
         "/usr/local/etc/frr/vtysh.conf",
         "/usr/local/etc/frr/daemons",
     ]
-    executables = ["zebra"]
-    dependencies = []
-    startup = ["sh frrboot.sh zebra"]
-    validate = ["pidof zebra"]
-    shutdown = ["killall zebra"]
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
+    executables: List[str] = ["zebra"]
+    dependencies: List[str] = []
+    startup: List[str] = ["sh frrboot.sh zebra"]
+    validate: List[str] = ["pidof zebra"]
+    shutdown: List[str] = ["killall zebra"]
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
         frr_conf = self.files[0]
@@ -91,31 +87,31 @@ class FRRZebra(ConfigService):
         for service in self.node.config_services.values():
             if self.name not in service.dependencies:
                 continue
+            if not isinstance(service, FrrService):
+                continue
             if service.ipv4_routing:
                 want_ip4 = True
             if service.ipv6_routing:
                 want_ip6 = True
             services.append(service)
 
-        interfaces = []
-        for ifc in self.node.netifs():
+        ifaces = []
+        for iface in self.node.get_ifaces():
             ip4s = []
             ip6s = []
-            for x in ifc.addrlist:
-                addr = x.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    ip4s.append(x)
-                else:
-                    ip6s.append(x)
-            is_control = getattr(ifc, "control", False)
-            interfaces.append((ifc, ip4s, ip6s, is_control))
+            for ip4 in iface.ip4s:
+                ip4s.append(str(ip4.ip))
+            for ip6 in iface.ip6s:
+                ip6s.append(str(ip6.ip))
+            is_control = getattr(iface, "control", False)
+            ifaces.append((iface, ip4s, ip6s, is_control))
 
         return dict(
             frr_conf=frr_conf,
             frr_sbin_search=frr_sbin_search,
             frr_bin_search=frr_bin_search,
-            frr_state_dir=constants.FRR_STATE_DIR,
-            interfaces=interfaces,
+            frr_state_dir=FRR_STATE_DIR,
+            ifaces=ifaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,
             services=services,
@@ -123,22 +119,22 @@ class FRRZebra(ConfigService):
 
 
 class FrrService(abc.ABC):
-    group = GROUP
-    directories = []
-    files = []
-    executables = []
-    dependencies = ["FRRzebra"]
-    startup = []
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = []
-    modes = {}
-    ipv4_routing = False
-    ipv6_routing = False
+    group: str = GROUP
+    directories: List[str] = []
+    files: List[str] = []
+    executables: List[str] = []
+    dependencies: List[str] = ["FRRzebra"]
+    startup: List[str] = []
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = []
+    modes: Dict[str, Dict[str, str]] = {}
+    ipv4_routing: bool = False
+    ipv6_routing: bool = False
 
     @abc.abstractmethod
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -153,22 +149,17 @@ class FRROspfv2(FrrService, ConfigService):
     unified frr.conf file.
     """
 
-    name = "FRROSPFv2"
-    startup = ()
-    shutdown = ["killall ospfd"]
-    validate = ["pidof ospfd"]
-    ipv4_routing = True
+    name: str = "FRROSPFv2"
+    shutdown: List[str] = ["killall ospfd"]
+    validate: List[str] = ["pidof ospfd"]
+    ipv4_routing: bool = True
 
     def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         addresses = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            for a in ifc.addrlist:
-                addr = a.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    addresses.append(a)
+        for iface in self.node.get_ifaces(control=False):
+            for ip4 in iface.ip4s:
+                addresses.append(str(ip4.ip))
         data = dict(router_id=router_id, addresses=addresses)
         text = """
         router ospf
@@ -180,8 +171,8 @@ class FRROspfv2(FrrService, ConfigService):
         """
         return self.render_text(text, data)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
-        if has_mtu_mismatch(ifc):
+    def frr_iface_config(self, iface: CoreInterface) -> str:
+        if has_mtu_mismatch(iface):
             return "ip ospf mtu-ignore"
         else:
             return ""
@@ -194,19 +185,17 @@ class FRROspfv3(FrrService, ConfigService):
     unified frr.conf file.
     """
 
-    name = "FRROSPFv3"
-    shutdown = ["killall ospf6d"]
-    validate = ["pidof ospf6d"]
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "FRROSPFv3"
+    shutdown: List[str] = ["killall ospf6d"]
+    validate: List[str] = ["pidof ospf6d"]
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         data = dict(router_id=router_id, ifnames=ifnames)
         text = """
         router ospf6
@@ -218,9 +207,9 @@ class FRROspfv3(FrrService, ConfigService):
         """
         return self.render_text(text, data)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
-        mtu = get_min_mtu(ifc)
-        if mtu < ifc.mtu:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
+        mtu = get_min_mtu(iface)
+        if mtu < iface.mtu:
             return f"ipv6 ospf6 ifmtu {mtu}"
         else:
             return ""
@@ -233,12 +222,12 @@ class FRRBgp(FrrService, ConfigService):
     having the same AS number.
     """
 
-    name = "FRRBGP"
-    shutdown = ["killall bgpd"]
-    validate = ["pidof bgpd"]
-    custom_needed = True
-    ipv4_routing = True
-    ipv6_routing = True
+    name: str = "FRRBGP"
+    shutdown: List[str] = ["killall bgpd"]
+    validate: List[str] = ["pidof bgpd"]
+    custom_needed: bool = True
+    ipv4_routing: bool = True
+    ipv6_routing: bool = True
 
     def frr_config(self) -> str:
         router_id = get_router_id(self.node)
@@ -254,7 +243,7 @@ class FRRBgp(FrrService, ConfigService):
         """
         return self.clean_text(text)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
@@ -263,10 +252,10 @@ class FRRRip(FrrService, ConfigService):
     The RIP service provides IPv4 routing for wired networks.
     """
 
-    name = "FRRRIP"
-    shutdown = ["killall ripd"]
-    validate = ["pidof ripd"]
-    ipv4_routing = True
+    name: str = "FRRRIP"
+    shutdown: List[str] = ["killall ripd"]
+    validate: List[str] = ["pidof ripd"]
+    ipv4_routing: bool = True
 
     def frr_config(self) -> str:
         text = """
@@ -279,7 +268,7 @@ class FRRRip(FrrService, ConfigService):
         """
         return self.clean_text(text)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
@@ -288,10 +277,10 @@ class FRRRipng(FrrService, ConfigService):
     The RIP NG service provides IPv6 routing for wired networks.
     """
 
-    name = "FRRRIPNG"
-    shutdown = ["killall ripngd"]
-    validate = ["pidof ripngd"]
-    ipv6_routing = True
+    name: str = "FRRRIPNG"
+    shutdown: List[str] = ["killall ripngd"]
+    validate: List[str] = ["pidof ripngd"]
+    ipv6_routing: bool = True
 
     def frr_config(self) -> str:
         text = """
@@ -304,7 +293,7 @@ class FRRRipng(FrrService, ConfigService):
         """
         return self.clean_text(text)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
@@ -314,17 +303,15 @@ class FRRBabel(FrrService, ConfigService):
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
 
-    name = "FRRBabel"
-    shutdown = ["killall babeld"]
-    validate = ["pidof babeld"]
-    ipv6_routing = True
+    name: str = "FRRBabel"
+    shutdown: List[str] = ["killall babeld"]
+    validate: List[str] = ["pidof babeld"]
+    ipv6_routing: bool = True
 
     def frr_config(self) -> str:
         ifnames = []
-        for ifc in self.node.netifs():
-            if getattr(ifc, "control", False):
-                continue
-            ifnames.append(ifc.name)
+        for iface in self.node.get_ifaces(control=False):
+            ifnames.append(iface.name)
         text = """
         router babel
           % for ifname in ifnames:
@@ -337,8 +324,8 @@ class FRRBabel(FrrService, ConfigService):
         data = dict(ifnames=ifnames)
         return self.render_text(text, data)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
-        if isinstance(ifc.net, (WlanNode, EmaneNet)):
+    def frr_iface_config(self, iface: CoreInterface) -> str:
+        if isinstance(iface.net, (WlanNode, EmaneNet)):
             text = """
             babel wireless
             no babel split-horizon
@@ -356,16 +343,16 @@ class FRRpimd(FrrService, ConfigService):
     PIM multicast routing based on XORP.
     """
 
-    name = "FRRpimd"
-    shutdown = ["killall pimd"]
-    validate = ["pidof pimd"]
-    ipv4_routing = True
+    name: str = "FRRpimd"
+    shutdown: List[str] = ["killall pimd"]
+    validate: List[str] = ["pidof pimd"]
+    ipv4_routing: bool = True
 
     def frr_config(self) -> str:
         ifname = "eth0"
-        for ifc in self.node.netifs():
-            if ifc.name != "lo":
-                ifname = ifc.name
+        for iface in self.node.get_ifaces():
+            if iface.name != "lo":
+                ifname = iface.name
                 break
 
         text = f"""
@@ -382,7 +369,7 @@ class FRRpimd(FrrService, ConfigService):
         """
         return self.clean_text(text)
 
-    def frr_interface_config(self, ifc: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         text = """
         ip mfea
         ip igmp

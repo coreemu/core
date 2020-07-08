@@ -3,21 +3,26 @@ import math
 import tkinter as tk
 from tkinter import PhotoImage, font, ttk
 from tkinter.ttk import Progressbar
+from typing import Any, Dict, Optional, Type
 
 import grpc
 
 from core.gui import appconfig, themes
+from core.gui.appconfig import GuiConfig
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog
+from core.gui.frames.base import InfoFrameBase
+from core.gui.frames.default import DefaultInfoFrame
 from core.gui.graph.graph import CanvasGraph
 from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
+from core.gui.themes import PADY
 from core.gui.toolbar import Toolbar
 
-WIDTH = 1000
-HEIGHT = 800
+WIDTH: int = 1000
+HEIGHT: int = 800
 
 
 class Application(ttk.Frame):
@@ -27,25 +32,28 @@ class Application(ttk.Frame):
         NodeUtils.setup()
 
         # widgets
-        self.menubar = None
-        self.toolbar = None
-        self.right_frame = None
-        self.canvas = None
-        self.statusbar = None
-        self.progress = None
+        self.menubar: Optional[Menubar] = None
+        self.toolbar: Optional[Toolbar] = None
+        self.right_frame: Optional[ttk.Frame] = None
+        self.canvas: Optional[CanvasGraph] = None
+        self.statusbar: Optional[StatusBar] = None
+        self.progress: Optional[Progressbar] = None
+        self.infobar: Optional[ttk.Frame] = None
+        self.info_frame: Optional[InfoFrameBase] = None
+        self.show_infobar: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # fonts
-        self.fonts_size = None
-        self.icon_text_font = None
-        self.edge_font = None
+        self.fonts_size: Dict[str, int] = {}
+        self.icon_text_font: Optional[font.Font] = None
+        self.edge_font: Optional[font.Font] = None
 
         # setup
-        self.guiconfig = appconfig.read()
-        self.app_scale = self.guiconfig.scale
+        self.guiconfig: GuiConfig = appconfig.read()
+        self.app_scale: float = self.guiconfig.scale
         self.setup_scaling()
-        self.style = ttk.Style()
+        self.style: ttk.Style = ttk.Style()
         self.setup_theme()
-        self.core = CoreClient(self, proxy)
+        self.core: CoreClient = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
         self.core.setup()
@@ -111,16 +119,27 @@ class Application(ttk.Frame):
         self.right_frame.rowconfigure(0, weight=1)
         self.right_frame.grid(row=0, column=1, sticky="nsew")
         self.draw_canvas()
+        self.draw_infobar()
         self.draw_status()
         self.progress = Progressbar(self.right_frame, mode="indeterminate")
         self.menubar = Menubar(self)
         self.master.config(menu=self.menubar)
 
+    def draw_infobar(self) -> None:
+        self.infobar = ttk.Frame(self.right_frame, padding=5, relief=tk.RAISED)
+        self.infobar.columnconfigure(0, weight=1)
+        self.infobar.rowconfigure(1, weight=1)
+        label_font = font.Font(weight=font.BOLD, underline=tk.TRUE)
+        label = ttk.Label(
+            self.infobar, text="Details", anchor=tk.CENTER, font=label_font
+        )
+        label.grid(sticky=tk.EW, pady=PADY)
+
     def draw_canvas(self) -> None:
         canvas_frame = ttk.Frame(self.right_frame)
         canvas_frame.rowconfigure(0, weight=1)
         canvas_frame.columnconfigure(0, weight=1)
-        canvas_frame.grid(sticky="nsew", pady=1)
+        canvas_frame.grid(row=0, column=0, sticky="nsew", pady=1)
         self.canvas = CanvasGraph(canvas_frame, self, self.core)
         self.canvas.grid(sticky="nsew")
         scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
@@ -134,7 +153,31 @@ class Application(ttk.Frame):
 
     def draw_status(self) -> None:
         self.statusbar = StatusBar(self.right_frame, self)
-        self.statusbar.grid(sticky="ew")
+        self.statusbar.grid(sticky="ew", columnspan=2)
+
+    def display_info(self, frame_class: Type[InfoFrameBase], **kwargs: Any) -> None:
+        if not self.show_infobar.get():
+            return
+        self.clear_info()
+        self.info_frame = frame_class(self.infobar, **kwargs)
+        self.info_frame.draw()
+        self.info_frame.grid(sticky="nsew")
+
+    def clear_info(self) -> None:
+        if self.info_frame:
+            self.info_frame.destroy()
+            self.info_frame = None
+
+    def default_info(self) -> None:
+        self.clear_info()
+        self.display_info(DefaultInfoFrame, app=self)
+
+    def show_info(self) -> None:
+        self.default_info()
+        self.infobar.grid(row=0, column=1, sticky="nsew")
+
+    def hide_info(self) -> None:
+        self.infobar.grid_forget()
 
     def show_grpc_exception(self, title: str, e: grpc.RpcError) -> None:
         logging.exception("app grpc exception", exc_info=e)

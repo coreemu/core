@@ -4,16 +4,23 @@ input validation
 import re
 import tkinter as tk
 from tkinter import ttk
+from typing import Any, Optional, Pattern
 
-SMALLEST_SCALE = 0.5
-LARGEST_SCALE = 5.0
-HEX_REGEX = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
+SMALLEST_SCALE: float = 0.5
+LARGEST_SCALE: float = 5.0
+HEX_REGEX: Pattern = re.compile("^([#]([0-9]|[a-f])+)$|^[#]$")
 
 
 class ValidationEntry(ttk.Entry):
-    empty = None
+    empty: Optional[str] = None
 
-    def __init__(self, master=None, widget=None, empty_enabled=True, **kwargs) -> None:
+    def __init__(
+        self,
+        master: tk.BaseWidget = None,
+        widget: tk.BaseWidget = None,
+        empty_enabled: bool = True,
+        **kwargs: Any
+    ) -> None:
         super().__init__(master, widget, **kwargs)
         cmd = self.register(self.is_valid)
         self.configure(validate="key", validatecommand=(cmd, "%P"))
@@ -30,7 +37,7 @@ class ValidationEntry(ttk.Entry):
 
 
 class PositiveIntEntry(ValidationEntry):
-    empty = "0"
+    empty: str = "0"
 
     def is_valid(self, s: str) -> bool:
         if not s:
@@ -92,7 +99,7 @@ class HexEntry(ValidationEntry):
 
 
 class NodeNameEntry(ValidationEntry):
-    empty = "noname"
+    empty: str = "noname"
 
     def is_valid(self, s: str) -> bool:
         if len(s) < 0:

@@ -3,9 +3,9 @@ check engine light
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
-from core.api.grpc.core_pb2 import ExceptionLevel
+from core.api.grpc.core_pb2 import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
@@ -15,14 +15,14 @@ if TYPE_CHECKING:
 
 
 class AlertsDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Alerts")
-        self.tree = None
-        self.codetext = None
-        self.alarm_map = {}
+        self.tree: Optional[ttk.Treeview] = None
+        self.codetext: Optional[CodeText] = None
+        self.alarm_map: Dict[int, ExceptionEvent] = {}
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
@@ -97,13 +97,13 @@ class AlertsDialog(Dialog):
         button = ttk.Button(frame, text="Close", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def reset_alerts(self):
+    def reset_alerts(self) -> None:
         self.codetext.text.delete("1.0", tk.END)
         for item in self.tree.get_children():
             self.tree.delete(item)
         self.app.statusbar.core_alarms.clear()
 
-    def click_select(self, event: tk.Event):
+    def click_select(self, event: tk.Event) -> None:
         current = self.tree.selection()[0]
         alarm = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)

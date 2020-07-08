@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 coresendmsg: utility for generating CORE messages
 """

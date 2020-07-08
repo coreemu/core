@@ -8,45 +8,39 @@ from typing import Dict, List
 from core.api.tlv import coreapi, structutils
 from core.api.tlv.enumerations import ConfigTlvs, NodeTlvs
 from core.config import ConfigGroup, ConfigurableOptions
-from core.emulator.data import ConfigData
+from core.emulator.data import ConfigData, NodeData
 
 
-def convert_node(node_data):
+def convert_node(node_data: NodeData):
     """
     Convenience method for converting NodeData to a packed TLV message.
 
     :param core.emulator.data.NodeData node_data: node data to convert
     :return: packed node message
     """
-    session = None
-    if node_data.session is not None:
-        session = str(node_data.session)
+    node = node_data.node
     services = None
-    if node_data.services is not None:
-        services = "|".join([x for x in node_data.services])
+    if node.services is not None:
+        services = "|".join([x.name for x in node.services])
+    server = None
+    if node.server is not None:
+        server = node.server.name
     tlv_data = structutils.pack_values(
         coreapi.CoreNodeTlv,
         [
-            (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type.value),
-            (NodeTlvs.NAME, node_data.name),
-            (NodeTlvs.IP_ADDRESS, node_data.ip_address),
-            (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
-            (NodeTlvs.IP6_ADDRESS, node_data.ip6_address),
-            (NodeTlvs.MODEL, node_data.model),
-            (NodeTlvs.EMULATION_ID, node_data.emulation_id),
-            (NodeTlvs.EMULATION_SERVER, node_data.server),
-            (NodeTlvs.SESSION, session),
-            (NodeTlvs.X_POSITION, int(node_data.x_position)),
-            (NodeTlvs.Y_POSITION, int(node_data.y_position)),
-            (NodeTlvs.CANVAS, node_data.canvas),
-            (NodeTlvs.NETWORK_ID, node_data.network_id),
+            (NodeTlvs.NUMBER, node.id),
+            (NodeTlvs.TYPE, node.apitype.value),
+            (NodeTlvs.NAME, node.name),
+            (NodeTlvs.MODEL, node.type),
+            (NodeTlvs.EMULATION_SERVER, server),
+            (NodeTlvs.X_POSITION, int(node.position.x)),
+            (NodeTlvs.Y_POSITION, int(node.position.y)),
+            (NodeTlvs.CANVAS, node.canvas),
             (NodeTlvs.SERVICES, services),
-            (NodeTlvs.LATITUDE, str(node_data.latitude)),
-            (NodeTlvs.LONGITUDE, str(node_data.longitude)),
-            (NodeTlvs.ALTITUDE, str(node_data.altitude)),
-            (NodeTlvs.ICON, node_data.icon),
-            (NodeTlvs.OPAQUE, node_data.opaque),
+            (NodeTlvs.LATITUDE, str(node.position.lat)),
+            (NodeTlvs.LONGITUDE, str(node.position.lon)),
+            (NodeTlvs.ALTITUDE, str(node.position.alt)),
+            (NodeTlvs.ICON, node.icon),
         ],
     )
     return coreapi.CoreNodeMessage.pack(node_data.message_type.value, tlv_data)
@@ -75,7 +69,7 @@ def convert_config(config_data):
             (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
             (ConfigTlvs.GROUPS, config_data.groups),
             (ConfigTlvs.SESSION, session),
-            (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
+            (ConfigTlvs.IFACE_ID, config_data.iface_id),
             (ConfigTlvs.NETWORK_ID, config_data.network_id),
             (ConfigTlvs.OPAQUE, config_data.opaque),
         ],

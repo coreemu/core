@@ -1,3 +1,40 @@
+## 2020-06-11 CORE 6.5.0
+* Breaking Changes
+    * CoreNode.newnetif - both parameters are required and now takes an InterfaceData object as its second parameter
+    * CoreNetworkBase.linkconfig - now takes a LinkOptions parameter instead of a subset of some of the options (ie bandwidth, delay, etc)
+    * \#453 - Session.add_node and Session.get_node now requires the node class you expect to create/retrieve
+    * \#458 - rj45 cleanup to only inherit from one class
+* Enhancements
+    * fixed issues with handling bad commands for TLV execute messages
+    * removed unused boot.sh from CoreNode types
+    * added linkconfig to CoreNetworkBase and cleaned up function signature
+    * emane position hook now saves geo position to node
+    * emane pathloss support
+    * core.emulator.emudata leveraged dataclass and type hinting
+    * \#459 - updated transport type usage to an enum
+    * \#460 - updated network policy type usage to an enum
+* Python GUI Enhancements
+    * fixed throughput events do not work for joined sessions
+    * fixed exiting app with a toolbar picker showing
+    * fixed issue with creating interfaces and reusing subnets after deletion
+    * fixed issue with moving text shapes
+    * fixed scaling with custom node selected
+    * fixed toolbar state switching issues
+    * enable/disable toolbar when running stop/start
+    * marker config integrated into toolbar
+    * improved color picker layout
+    * shapes can now be moved while drawing shapes
+    * added observers to toolbar in run mode
+* gRPC API
+    * node events will now have geo positional data
+    * node geo data is now returned in get_session and get_node calls
+    * \#451 - added wlan link api to allow direct linking/unlinking of wireless links between nodes
+    * \#462 - added streaming call for sending node position/geo changes
+    * \#463 - added streaming call for emane pathloss events
+* Bugfixes
+    * \#454 - fixed issue creating docker nodes, but containers are now required to have networking tools
+    * \#466 - fixed issue in python gui when xml file is loading nodes with no ip4 addresses
+
 ## 2020-05-11 CORE 6.4.0
 * Enhancements
     * updates to core-route-monitor, allow specific session, configurable settings, and properly

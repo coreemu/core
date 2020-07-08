@@ -1,4 +1,4 @@
 <%
-  interfaces = "-i " + " -i ".join(ifnames)
+  ifaces = "-i " + " -i ".join(ifnames)
 %>
-olsrd ${interfaces}
+olsrd ${ifaces}

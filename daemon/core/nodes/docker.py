@@ -2,7 +2,7 @@ import json
 import logging
 import os
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
 from core.emulator.distributed import DistributedServer
@@ -17,10 +17,10 @@ if TYPE_CHECKING:
 
 class DockerClient:
     def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name = name
-        self.image = image
-        self.run = run
-        self.pid = None
+        self.name: str = name
+        self.image: str = image
+        self.run: Callable[..., str] = run
+        self.pid: Optional[str] = None
 
     def create_container(self) -> str:
         self.run(
@@ -77,7 +77,6 @@ class DockerNode(CoreNode):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        start: bool = True,
         server: DistributedServer = None,
         image: str = None
     ) -> None:
@@ -88,15 +87,14 @@ class DockerNode(CoreNode):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
         """
         if image is None:
             image = "ubuntu"
-        self.image = image
-        super().__init__(session, _id, name, nodedir, start, server)
+        self.image: str = image
+        super().__init__(session, _id, name, nodedir, server)
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
@@ -143,7 +141,7 @@ class DockerNode(CoreNode):
             return
 
         with self.lock:
-            self._netif.clear()
+            self.ifaces.clear()
             self.client.stop_container()
             self.up = False
 

@@ -5,11 +5,10 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 import logging
 import socket
 import threading
-from typing import TYPE_CHECKING, Optional
+from typing import IO, TYPE_CHECKING, Dict, Optional, Set, Tuple
 from urllib.parse import urlparse
 
-from core import constants
-from core.constants import CORE_DATA_DIR
+from core.constants import CORE_CONF_DIR, CORE_DATA_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import EventTypes, MessageFlags
@@ -21,8 +20,8 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 
-def get_link_id(node_one: int, node_two: int, network_id: int) -> str:
-    link_id = f"{node_one}-{node_two}"
+def get_link_id(node1_id: int, node2_id: int, network_id: int) -> str:
+    link_id = f"{node1_id}-{node2_id}"
     if network_id is not None:
         link_id = f"{link_id}-{network_id}"
     return link_id
@@ -42,11 +41,11 @@ class Sdt:
     when a node position or link has changed.
     """
 
-    DEFAULT_SDT_URL = "tcp://127.0.0.1:50000/"
+    DEFAULT_SDT_URL: str = "tcp://127.0.0.1:50000/"
     # default altitude (in meters) for flyto view
-    DEFAULT_ALT = 2500
+    DEFAULT_ALT: int = 2500
     # TODO: read in user"s nodes.conf here; below are default node types from the GUI
-    DEFAULT_SPRITES = [
+    DEFAULT_SPRITES: Dict[str, str] = [
         ("router", "router.gif"),
         ("host", "host.gif"),
         ("PC", "pc.gif"),
@@ -65,14 +64,14 @@ class Sdt:
 
         :param session: session this manager is tied to
         """
-        self.session = session
-        self.lock = threading.Lock()
-        self.sock = None
-        self.connected = False
-        self.url = self.DEFAULT_SDT_URL
-        self.address = None
-        self.protocol = None
-        self.network_layers = set()
+        self.session: "Session" = session
+        self.lock: threading.Lock = threading.Lock()
+        self.sock: Optional[IO] = None
+        self.connected: bool = False
+        self.url: str = self.DEFAULT_SDT_URL
+        self.address: Optional[Tuple[Optional[str], Optional[int]]] = None
+        self.protocol: Optional[str] = None
+        self.network_layers: Set[str] = set()
         self.session.node_handlers.append(self.handle_node_update)
         self.session.link_handlers.append(self.handle_link_update)
 
@@ -215,7 +214,7 @@ class Sdt:
         for layer in CORE_LAYERS:
             self.cmd(f"layer {layer}")
 
-        with self.session._nodes_lock:
+        with self.session.nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
                 if isinstance(node, CoreNetworkBase):
@@ -225,7 +224,7 @@ class Sdt:
                 self.add_node(node)
 
             for net in nets:
-                all_links = net.all_link_data(flags=MessageFlags.ADD)
+                all_links = net.links(flags=MessageFlags.ADD)
                 for link_data in all_links:
                     is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     if is_wireless and link_data.node1_id == net.id:
@@ -264,8 +263,8 @@ class Sdt:
         icon = node.icon
         if icon:
             node_type = node.name
-            icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
-            icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
+            icon = icon.replace("$CORE_DATA_DIR", CORE_DATA_DIR)
+            icon = icon.replace("$CORE_CONF_DIR", CORE_CONF_DIR)
             self.cmd(f"sprite {node_type} image {icon}")
         self.cmd(
             f'node {node.id} nodeLayer "{NODE_LAYER}" '
@@ -314,26 +313,22 @@ class Sdt:
         :param node_data: node data being updated
         :return: nothing
         """
-        logging.debug("sdt handle node update: %s - %s", node_data.id, node_data.name)
         if not self.connect():
             return
-
-        # delete node
+        node = node_data.node
+        logging.debug("sdt handle node update: %s - %s", node.id, node.name)
         if node_data.message_type == MessageFlags.DELETE:
-            self.cmd(f"delete node,{node_data.id}")
+            self.cmd(f"delete node,{node.id}")
         else:
-            x = node_data.x_position
-            y = node_data.y_position
-            lat = node_data.latitude
-            lon = node_data.longitude
-            alt = node_data.altitude
+            x, y, _ = node.position.get()
+            lon, lat, alt = node.position.get_geo()
             if all([lat is not None, lon is not None, alt is not None]):
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-                self.cmd(f"node {node_data.id} {pos}")
+                self.cmd(f"node {node.id} {pos}")
             elif node_data.message_type == 0:
                 lat, lon, alt = self.session.location.getgeo(x, y, 0)
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
-                self.cmd(f"node {node_data.id} {pos}")
+                self.cmd(f"node {node.id} {pos}")
 
     def wireless_net_check(self, node_id: int) -> bool:
         """
@@ -351,27 +346,27 @@ class Sdt:
         return result
 
     def add_link(
-        self, node_one: int, node_two: int, network_id: int = None, label: str = None
+        self, node1_id: int, node2_id: int, network_id: int = None, label: str = None
     ) -> None:
         """
         Handle adding a link in SDT.
 
-        :param node_one: node one id
-        :param node_two: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :param network_id: network link is associated with, None otherwise
         :param label: label for link
         :return: nothing
         """
-        logging.debug("sdt add link: %s, %s, %s", node_one, node_two, network_id)
+        logging.debug("sdt add link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
-        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
+        if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):
             return
         color = DEFAULT_LINK_COLOR
         if network_id:
             color = self.session.get_link_color(network_id)
         line = f"{color},2"
-        link_id = get_link_id(node_one, node_two, network_id)
+        link_id = get_link_id(node1_id, node2_id, network_id)
         layer = LINK_LAYER
         if network_id:
             node = self.session.nodes.get(network_id)
@@ -383,47 +378,47 @@ class Sdt:
         if label:
             link_label = f'linklabel on,"{label}"'
         self.cmd(
-            f"link {node_one},{node_two},{link_id} linkLayer {layer} line {line} "
+            f"link {node1_id},{node2_id},{link_id} linkLayer {layer} line {line} "
             f"{link_label}"
         )
 
-    def delete_link(self, node_one: int, node_two: int, network_id: int = None) -> None:
+    def delete_link(self, node1_id: int, node2_id: int, network_id: int = None) -> None:
         """
         Handle deleting a link in SDT.
 
-        :param node_one: node one id
-        :param node_two: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :param network_id: network link is associated with, None otherwise
         :return: nothing
         """
-        logging.debug("sdt delete link: %s, %s, %s", node_one, node_two, network_id)
+        logging.debug("sdt delete link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
-        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
+        if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):
             return
-        link_id = get_link_id(node_one, node_two, network_id)
-        self.cmd(f"delete link,{node_one},{node_two},{link_id}")
+        link_id = get_link_id(node1_id, node2_id, network_id)
+        self.cmd(f"delete link,{node1_id},{node2_id},{link_id}")
 
     def edit_link(
-        self, node_one: int, node_two: int, network_id: int, label: str
+        self, node1_id: int, node2_id: int, network_id: int, label: str
     ) -> None:
         """
         Handle editing a link in SDT.
 
-        :param node_one: node one id
-        :param node_two: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :param network_id: network link is associated with, None otherwise
         :param label: label to update
         :return: nothing
         """
-        logging.debug("sdt edit link: %s, %s, %s", node_one, node_two, network_id)
+        logging.debug("sdt edit link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
-        if self.wireless_net_check(node_one) or self.wireless_net_check(node_two):
+        if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):
             return
-        link_id = get_link_id(node_one, node_two, network_id)
+        link_id = get_link_id(node1_id, node2_id, network_id)
         link_label = f'linklabel on,"{label}"'
-        self.cmd(f"link {node_one},{node_two},{link_id} {link_label}")
+        self.cmd(f"link {node1_id},{node2_id},{link_id} {link_label}")
 
     def handle_link_update(self, link_data: LinkData) -> None:
         """
@@ -432,13 +427,13 @@ class Sdt:
         :param link_data: link data to handle
         :return: nothing
         """
-        node_one = link_data.node1_id
-        node_two = link_data.node2_id
+        node1_id = link_data.node1_id
+        node2_id = link_data.node2_id
         network_id = link_data.network_id
         label = link_data.label
         if link_data.message_type == MessageFlags.ADD:
-            self.add_link(node_one, node_two, network_id, label)
+            self.add_link(node1_id, node2_id, network_id, label)
         elif link_data.message_type == MessageFlags.DELETE:
-            self.delete_link(node_one, node_two, network_id)
+            self.delete_link(node1_id, node2_id, network_id)
         elif link_data.message_type == MessageFlags.NONE and label:
-            self.edit_link(node_one, node_two, network_id, label)
+            self.edit_link(node1_id, node2_id, network_id, label)

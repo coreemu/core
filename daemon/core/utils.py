@@ -154,21 +154,8 @@ def which(command: str, required: bool) -> str:
     """
     found_path = shutil.which(command)
     if found_path is None and required:
-        raise ValueError(f"failed to find required executable({command}) in path")
+        raise CoreError(f"failed to find required executable({command}) in path")
     return found_path
-
-
-def make_tuple(obj: Generic[T]) -> Tuple[T]:
-    """
-    Create a tuple from an object, or return the object itself.
-
-    :param obj: object to convert to a tuple
-    :return: converted tuple or the object itself
-    """
-    if hasattr(obj, "__iter__"):
-        return tuple(obj)
-    else:
-        return (obj,)
 
 
 def make_tuple_fromstr(s: str, value_type: Callable[[str], T]) -> Tuple[T]:
@@ -228,7 +215,8 @@ def cmd(
     if shell is False:
         args = shlex.split(args)
     try:
-        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
+        output = PIPE if wait else DEVNULL
+        p = Popen(args, stdout=output, stderr=output, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
             stdout = stdout.decode("utf-8").strip()
@@ -442,31 +430,3 @@ def random_mac() -> str:
     value |= 0x00163E << 24
     mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
-
-
-def validate_mac(value: str) -> str:
-    """
-    Validate mac and return unix formatted version.
-
-    :param value: address to validate
-    :return: unix formatted mac
-    """
-    try:
-        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
-        return str(mac)
-    except netaddr.AddrFormatError as e:
-        raise CoreError(f"invalid mac address {value}: {e}")
-
-
-def validate_ip(value: str) -> str:
-    """
-    Validate ip address with prefix and return formatted version.
-
-    :param value: address to validate
-    :return: formatted ip address
-    """
-    try:
-        ip = netaddr.IPNetwork(value)
-        return str(ip)
-    except (ValueError, netaddr.AddrFormatError) as e:
-        raise CoreError(f"invalid ip address {value}: {e}")

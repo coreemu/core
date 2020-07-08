@@ -9,7 +9,7 @@ import logging
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 
@@ -52,17 +52,17 @@ def main(args):
     # create local node, switch, and remote nodes
     options = NodeOptions(model="mdr")
     options.set_position(0, 0)
-    node_one = session.add_node(CoreNode, options=options)
+    node1 = session.add_node(CoreNode, options=options)
     emane_net = session.add_node(EmaneNet)
     session.emane.set_model(emane_net, EmaneIeee80211abgModel)
     options.server = server_name
-    node_two = session.add_node(CoreNode, options=options)
+    node2 = session.add_node(CoreNode, options=options)
 
     # create node interfaces and link
-    interface_one = prefixes.create_interface(node_one)
-    interface_two = prefixes.create_interface(node_two)
-    session.add_link(node_one.id, emane_net.id, interface_one=interface_one)
-    session.add_link(node_two.id, emane_net.id, interface_one=interface_two)
+    interface1_data = prefixes.create_iface(node1)
+    interface2_data = prefixes.create_iface(node2)
+    session.add_link(node1.id, emane_net.id, iface1_data=interface1_data)
+    session.add_link(node2.id, emane_net.id, iface1_data=interface2_data)
 
     # instantiate session
     session.instantiate()

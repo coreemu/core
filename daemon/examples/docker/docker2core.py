@@ -1,7 +1,7 @@
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.docker import DockerNode
@@ -17,15 +17,15 @@ if __name__ == "__main__":
         options = NodeOptions(model=None, image="ubuntu")
 
         # create node one
-        node_one = session.add_node(DockerNode, options=options)
-        interface_one = prefixes.create_interface(node_one)
+        node1 = session.add_node(DockerNode, options=options)
+        interface1_data = prefixes.create_iface(node1)
 
         # create node two
-        node_two = session.add_node(CoreNode)
-        interface_two = prefixes.create_interface(node_two)
+        node2 = session.add_node(CoreNode)
+        interface2_data = prefixes.create_iface(node2)
 
         # add link
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
+        session.add_link(node1.id, node2.id, interface1_data, interface2_data)
 
         # instantiate
         session.instantiate()

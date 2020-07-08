@@ -37,10 +37,10 @@ class DistributedServer:
         :param name: convenience name to associate with host
         :param host: host to connect to
         """
-        self.name = name
-        self.host = host
-        self.conn = Connection(host, user="root")
-        self.lock = threading.Lock()
+        self.name: str = name
+        self.host: str = host
+        self.conn: Connection = Connection(host, user="root")
+        self.lock: threading.Lock = threading.Lock()
 
     def remote_cmd(
         self, cmd: str, env: Dict[str, str] = None, cwd: str = None, wait: bool = True
@@ -117,10 +117,10 @@ class DistributedController:
 
         :param session: session
         """
-        self.session = session
-        self.servers = OrderedDict()
-        self.tunnels = {}
-        self.address = self.session.options.get_config(
+        self.session: "Session" = session
+        self.servers: Dict[str, DistributedServer] = OrderedDict()
+        self.tunnels: Dict[int, Tuple[GreTap, GreTap]] = {}
+        self.address: str = self.session.options.get_config(
             "distributed_address", default=None
         )
 
@@ -178,13 +178,10 @@ class DistributedController:
         """
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
-
             if not isinstance(node, CoreNetwork):
                 continue
-
             if isinstance(node, CtrlNet) and node.serverintf is not None:
                 continue
-
             for name in self.servers:
                 server = self.servers[name]
                 self.create_gre_tunnel(node, server)
@@ -194,7 +191,6 @@ class DistributedController:
     ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
-
 
         :param node: node to create gre tunnel for
         :param server: server to create
@@ -212,7 +208,7 @@ class DistributedController:
             "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
         )
         local_tap = GreTap(session=self.session, remoteip=host, key=key)
-        local_tap.net_client.set_interface_master(node.brname, local_tap.localname)
+        local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
 
         # server to local
         logging.info(
@@ -221,37 +217,27 @@ class DistributedController:
         remote_tap = GreTap(
             session=self.session, remoteip=self.address, key=key, server=server
         )
-        remote_tap.net_client.set_interface_master(node.brname, remote_tap.localname)
+        remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
 
         # save tunnels for shutdown
         tunnel = (local_tap, remote_tap)
         self.tunnels[key] = tunnel
         return tunnel
 
-    def tunnel_key(self, n1_id: int, n2_id: int) -> int:
+    def tunnel_key(self, node1_id: int, node2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
         The hash(n1num), hash(n2num) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
-        :param n1_id: node one id
-        :param n2_id: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :return: tunnel key for the node pair
         """
-        logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
+        logging.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
         key = (
-            (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
+            (self.session.id << 16)
+            ^ utils.hashkey(node1_id)
+            ^ (utils.hashkey(node2_id) << 8)
         )
         return key & 0xFFFFFFFF
-
-    def get_tunnel(self, n1_id: int, n2_id: int) -> GreTap:
-        """
-        Return the GreTap between two nodes if it exists.
-
-        :param n1_id: node one id
-        :param n2_id: node two id
-        :return: gre tap between nodes or None
-        """
-        key = self.tunnel_key(n1_id, n2_id)
-        logging.debug("checking for tunnel key(%s) in: %s", key, self.tunnels)
-        return self.tunnels.get(key)

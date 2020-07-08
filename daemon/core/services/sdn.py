@@ -3,9 +3,9 @@ sdn.py defines services to start Open vSwitch and the Ryu SDN Controller.
 """
 
 import re
+from typing import Tuple
 
-import netaddr
-
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
 
 
@@ -14,24 +14,28 @@ class SdnService(CoreService):
     Parent class for SDN services.
     """
 
-    group = "SDN"
+    group: str = "SDN"
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         return ""
 
 
 class OvsService(SdnService):
-    name = "OvsService"
-    executables = ("ovs-ofctl", "ovs-vsctl")
-    group = "SDN"
-    dirs = ("/etc/openvswitch", "/var/run/openvswitch", "/var/log/openvswitch")
-    configs = ("OvsService.sh",)
-    startup = ("sh OvsService.sh",)
-    shutdown = ("killall ovs-vswitchd", "killall ovsdb-server")
+    name: str = "OvsService"
+    group: str = "SDN"
+    executables: Tuple[str, ...] = ("ovs-ofctl", "ovs-vsctl")
+    dirs: Tuple[str, ...] = (
+        "/etc/openvswitch",
+        "/var/run/openvswitch",
+        "/var/log/openvswitch",
+    )
+    configs: Tuple[str, ...] = ("OvsService.sh",)
+    startup: Tuple[str, ...] = ("sh OvsService.sh",)
+    shutdown: Tuple[str, ...] = ("killall ovs-vswitchd", "killall ovsdb-server")
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         # Check whether the node is running zebra
         has_zebra = 0
         for s in node.services:
@@ -46,13 +50,11 @@ class OvsService(SdnService):
         cfg += "## this stops it from routing traffic without defined flows.\n"
         cfg += "## remove the -- and everything after if you want it to act as a regular switch\n"
         cfg += "ovs-vsctl add-br ovsbr0 -- set Bridge ovsbr0 fail-mode=secure\n"
-
         cfg += "\n## Now add all our interfaces as ports to the switch\n"
+
         portnum = 1
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
-            ifnumstr = re.findall(r"\d+", ifc.name)
+        for iface in node.get_ifaces(control=False):
+            ifnumstr = re.findall(r"\d+", iface.name)
             ifnum = ifnumstr[0]
 
             # create virtual interfaces
@@ -61,18 +63,14 @@ class OvsService(SdnService):
 
             # remove ip address of eths because quagga/zebra will assign same IPs to rtr interfaces
             # or assign them manually to rtr interfaces if zebra is not running
-            for ifcaddr in ifc.addrlist:
-                addr = ifcaddr.split("/")[0]
-                if netaddr.valid_ipv4(addr):
-                    cfg += "ip addr del %s dev %s\n" % (ifcaddr, ifc.name)
-                    if has_zebra == 0:
-                        cfg += "ip addr add %s dev rtr%s\n" % (ifcaddr, ifnum)
-                elif netaddr.valid_ipv6(addr):
-                    cfg += "ip -6 addr del %s dev %s\n" % (ifcaddr, ifc.name)
-                    if has_zebra == 0:
-                        cfg += "ip -6 addr add %s dev rtr%s\n" % (ifcaddr, ifnum)
-                else:
-                    raise ValueError("invalid address: %s" % ifcaddr)
+            for ip4 in iface.ip4s:
+                cfg += "ip addr del %s dev %s\n" % (ip4.ip, iface.name)
+                if has_zebra == 0:
+                    cfg += "ip addr add %s dev rtr%s\n" % (ip4.ip, ifnum)
+            for ip6 in iface.ip6s:
+                cfg += "ip -6 addr del %s dev %s\n" % (ip6.ip, iface.name)
+                if has_zebra == 0:
+                    cfg += "ip -6 addr add %s dev rtr%s\n" % (ip6.ip, ifnum)
 
             # add interfaces to bridge
             # Make port numbers explicit so they're easier to follow in reading the script
@@ -102,9 +100,7 @@ class OvsService(SdnService):
         cfg += "## if the above controller will be present then you probably want to delete them\n"
         # Setup default flows
         portnum = 1
-        for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control is True:
-                continue
+        for iface in node.get_ifaces(control=False):
             cfg += "## Take the data from the CORE interface and put it on the veth and vice versa\n"
             cfg += (
                 "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"
@@ -115,21 +111,19 @@ class OvsService(SdnService):
                 % (portnum + 1, portnum)
             )
             portnum += 2
-
         return cfg
 
 
 class RyuService(SdnService):
-    name = "ryuService"
-    executables = ("ryu-manager",)
-    group = "SDN"
-    dirs = ()
-    configs = ("ryuService.sh",)
-    startup = ("sh ryuService.sh",)
-    shutdown = ("killall ryu-manager",)
+    name: str = "ryuService"
+    group: str = "SDN"
+    executables: Tuple[str, ...] = ("ryu-manager",)
+    configs: Tuple[str, ...] = ("ryuService.sh",)
+    startup: Tuple[str, ...] = ("sh ryuService.sh",)
+    shutdown: Tuple[str, ...] = ("killall ryu-manager",)
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.

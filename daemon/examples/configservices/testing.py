@@ -1,7 +1,7 @@
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # setup basic network
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-    options = NodeOptions(model="nothing")
+    options = NodeOptions(model=None)
     coreemu = CoreEmu()
     session = coreemu.create_session()
     session.set_state(EventTypes.CONFIGURATION_STATE)
@@ -19,14 +19,14 @@ if __name__ == "__main__":
 
     # node one
     options.config_services = ["DefaultRoute", "IPForward"]
-    node_one = session.add_node(CoreNode, options=options)
-    interface = prefixes.create_interface(node_one)
-    session.add_link(node_one.id, switch.id, interface_one=interface)
+    node1 = session.add_node(CoreNode, options=options)
+    interface = prefixes.create_iface(node1)
+    session.add_link(node1.id, switch.id, iface1_data=interface)
 
     # node two
-    node_two = session.add_node(CoreNode, options=options)
-    interface = prefixes.create_interface(node_two)
-    session.add_link(node_two.id, switch.id, interface_one=interface)
+    node2 = session.add_node(CoreNode, options=options)
+    interface = prefixes.create_iface(node2)
+    session.add_link(node2.id, switch.id, iface1_data=interface)
 
     # start session and run services
     session.instantiate()

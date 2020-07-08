@@ -3,12 +3,13 @@ import logging
 import os
 import signal
 import sys
-from typing import Mapping, Type
+from typing import Dict, List, Type
 
 import core.services
-from core import configservices
+from core import configservices, utils
 from core.configservice.manager import ConfigServiceManager
 from core.emulator.session import Session
+from core.executables import COMMON_REQUIREMENTS, OVS_REQUIREMENTS, VCMD_REQUIREMENTS
 from core.services.coreservices import ServiceManager
 
 
@@ -36,7 +37,7 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config: Mapping[str, str] = None) -> None:
+    def __init__(self, config: Dict[str, str] = None) -> None:
         """
         Create a CoreEmu object.
 
@@ -48,27 +49,51 @@ class CoreEmu:
         # configuration
         if config is None:
             config = {}
-        self.config = config
+        self.config: Dict[str, str] = config
 
         # session management
-        self.sessions = {}
+        self.sessions: Dict[int, Session] = {}
 
         # load services
-        self.service_errors = []
+        self.service_errors: List[str] = []
         self.load_services()
 
         # config services
-        self.service_manager = ConfigServiceManager()
+        self.service_manager: ConfigServiceManager = ConfigServiceManager()
         config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
         self.service_manager.load(config_services_path)
         custom_dir = self.config.get("custom_config_services_dir")
         if custom_dir:
             self.service_manager.load(custom_dir)
 
+        # check executables exist on path
+        self._validate_env()
+
         # catch exit event
         atexit.register(self.shutdown)
 
+    def _validate_env(self) -> None:
+        """
+        Validates executables CORE depends on exist on path.
+
+        :return: nothing
+        :raises core.errors.CoreError: when an executable does not exist on path
+        """
+        requirements = COMMON_REQUIREMENTS
+        use_ovs = self.config.get("ovs") == "1"
+        if use_ovs:
+            requirements += OVS_REQUIREMENTS
+        else:
+            requirements += VCMD_REQUIREMENTS
+        for requirement in requirements:
+            utils.which(requirement, required=True)
+
     def load_services(self) -> None:
+        """
+        Loads default and custom services for use within CORE.
+
+        :return: nothing
+        """
         # load default services
         self.service_errors = core.services.load()
 

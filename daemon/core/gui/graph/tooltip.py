@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from core.gui.themes import Styles
 
@@ -27,39 +27,45 @@ class CanvasTooltip:
         self,
         canvas: "CanvasGraph",
         *,
-        pad=(5, 3, 5, 3),
+        pad: Tuple[int, int, int, int] = (5, 3, 5, 3),
         waittime: int = 400,
         wraplength: int = 600
-    ):
+    ) -> None:
         # in miliseconds, originally 500
-        self.waittime = waittime
+        self.waittime: int = waittime
         # in pixels, originally 180
-        self.wraplength = wraplength
-        self.canvas = canvas
-        self.text = tk.StringVar()
-        self.pad = pad
-        self.id = None
-        self.tw = None
+        self.wraplength: int = wraplength
+        self.canvas: "CanvasGraph" = canvas
+        self.text: tk.StringVar = tk.StringVar()
+        self.pad: Tuple[int, int, int, int] = pad
+        self.id: Optional[str] = None
+        self.tw: Optional[tk.Toplevel] = None
 
-    def on_enter(self, event: tk.Event = None):
+    def on_enter(self, event: tk.Event = None) -> None:
         self.schedule()
 
-    def on_leave(self, event: tk.Event = None):
+    def on_leave(self, event: tk.Event = None) -> None:
         self.unschedule()
         self.hide()
 
-    def schedule(self):
+    def schedule(self) -> None:
         self.unschedule()
         self.id = self.canvas.after(self.waittime, self.show)
 
-    def unschedule(self):
+    def unschedule(self) -> None:
         id_ = self.id
         self.id = None
         if id_:
             self.canvas.after_cancel(id_)
 
-    def show(self, event: tk.Event = None):
-        def tip_pos_calculator(canvas, label, *, tip_delta=(10, 5), pad=(5, 3, 5, 3)):
+    def show(self, event: tk.Event = None) -> None:
+        def tip_pos_calculator(
+            canvas: "CanvasGraph",
+            label: ttk.Label,
+            *,
+            tip_delta: Tuple[int, int] = (10, 5),
+            pad: Tuple[int, int, int, int] = (5, 3, 5, 3)
+        ):
             c = canvas
             s_width, s_height = c.winfo_screenwidth(), c.winfo_screenheight()
             width, height = (
@@ -108,7 +114,7 @@ class CanvasTooltip:
         x, y = tip_pos_calculator(canvas, label, pad=pad)
         self.tw.wm_geometry("+%d+%d" % (x, y))
 
-    def hide(self):
+    def hide(self) -> None:
         if self.tw:
             self.tw.destroy()
         self.tw = None

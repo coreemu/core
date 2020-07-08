@@ -12,10 +12,9 @@ from mock.mock import MagicMock
 from core.api.grpc.client import InterfaceHelper
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler
-from core.emane.emanemanager import EmaneManager
 from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes
 from core.emulator.distributed import DistributedServer
-from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
@@ -44,8 +43,8 @@ class PatchManager:
 
 
 class MockServer:
-    def __init__(self, config, coreemu):
-        self.config = config
+    def __init__(self, coreemu):
+        self.config = {}
         self.coreemu = coreemu
 
 
@@ -56,6 +55,7 @@ def patcher(request):
     if request.config.getoption("mock"):
         patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
+        patch_manager.patch("core.utils.which")
         patch_manager.patch("core.nodes.netclient.get_net_client")
         patch_manager.patch_obj(
             LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
@@ -63,7 +63,6 @@ def patcher(request):
         patch_manager.patch_obj(CoreNode, "nodefile")
         patch_manager.patch_obj(Session, "write_state")
         patch_manager.patch_obj(Session, "write_nodes")
-        patch_manager.patch_obj(EmaneManager, "buildxml")
     yield patch_manager
     patch_manager.shutdown()
 
@@ -89,7 +88,7 @@ def ip_prefixes():
 
 
 @pytest.fixture(scope="session")
-def interface_helper():
+def iface_helper():
     return InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
 
@@ -108,7 +107,7 @@ def module_grpc(global_coreemu):
 def module_coretlv(patcher, global_coreemu, global_session):
     request_mock = MagicMock()
     request_mock.fileno = MagicMock(return_value=1)
-    server = MockServer({"numthreads": "1"}, global_coreemu)
+    server = MockServer(global_coreemu)
     request_handler = CoreHandler(request_mock, "", server)
     request_handler.session = global_session
     request_handler.add_session_handlers()

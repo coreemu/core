@@ -1,53 +1,63 @@
 import logging
 import tkinter as tk
 from functools import partial
-from pathlib import PosixPath
+from pathlib import Path
 from tkinter import filedialog, font, ttk
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
 
-from core.api.grpc import common_pb2, core_pb2
+from core.api.grpc import core_pb2
+from core.api.grpc.common_pb2 import ConfigOption
+from core.api.grpc.core_pb2 import ConfigOptionType
 from core.gui import themes, validation
+from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.dialogs.dialog import Dialog
 
-INT_TYPES = {
-    core_pb2.ConfigOptionType.UINT8,
-    core_pb2.ConfigOptionType.UINT16,
-    core_pb2.ConfigOptionType.UINT32,
-    core_pb2.ConfigOptionType.UINT64,
-    core_pb2.ConfigOptionType.INT8,
-    core_pb2.ConfigOptionType.INT16,
-    core_pb2.ConfigOptionType.INT32,
-    core_pb2.ConfigOptionType.INT64,
+INT_TYPES: Set[ConfigOptionType] = {
+    ConfigOptionType.UINT8,
+    ConfigOptionType.UINT16,
+    ConfigOptionType.UINT32,
+    ConfigOptionType.UINT64,
+    ConfigOptionType.INT8,
+    ConfigOptionType.INT16,
+    ConfigOptionType.INT32,
+    ConfigOptionType.INT64,
 }
 
 
-def file_button_click(value: tk.StringVar, parent: tk.Widget):
+def file_button_click(value: tk.StringVar, parent: tk.Widget) -> None:
     file_path = filedialog.askopenfilename(title="Select File", parent=parent)
     if file_path:
         value.set(file_path)
 
 
 class FrameScroll(ttk.Frame):
-    def __init__(self, master: tk.Widget, app: "Application", _cls=ttk.Frame, **kw):
+    def __init__(
+        self,
+        master: tk.Widget,
+        app: "Application",
+        _cls: Type[ttk.Frame] = ttk.Frame,
+        **kw: Any
+    ) -> None:
         super().__init__(master, **kw)
-        self.app = app
+        self.app: "Application" = app
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         bg = self.app.style.lookup(".", "background")
-        self.canvas = tk.Canvas(self, highlightthickness=0, background=bg)
+        self.canvas: tk.Canvas = tk.Canvas(self, highlightthickness=0, background=bg)
         self.canvas.grid(row=0, sticky="nsew", padx=2, pady=2)
         self.canvas.columnconfigure(0, weight=1)
         self.canvas.rowconfigure(0, weight=1)
-        self.scrollbar = ttk.Scrollbar(
+        self.scrollbar: ttk.Scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
         self.scrollbar.grid(row=0, column=1, sticky="ns")
-        self.frame = _cls(self.canvas)
-        self.frame_id = self.canvas.create_window(0, 0, anchor="nw", window=self.frame)
+        self.frame: ttk.Frame = _cls(self.canvas)
+        self.frame_id: int = self.canvas.create_window(
+            0, 0, anchor="nw", window=self.frame
+        )
         self.canvas.update_idletasks()
         self.canvas.configure(
             scrollregion=self.canvas.bbox("all"), yscrollcommand=self.scrollbar.set
@@ -55,16 +65,16 @@ class FrameScroll(ttk.Frame):
         self.frame.bind("<Configure>", self._configure_frame)
         self.canvas.bind("<Configure>", self._configure_canvas)
 
-    def _configure_frame(self, event: tk.Event):
+    def _configure_frame(self, event: tk.Event) -> None:
         req_width = self.frame.winfo_reqwidth()
         if req_width != self.canvas.winfo_reqwidth():
             self.canvas.configure(width=req_width)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    def _configure_canvas(self, event: tk.Event):
+    def _configure_canvas(self, event: tk.Event) -> None:
         self.canvas.itemconfig(self.frame_id, width=event.width)
 
-    def clear(self):
+    def clear(self) -> None:
         for widget in self.frame.winfo_children():
             widget.destroy()
 
@@ -74,15 +84,17 @@ class ConfigFrame(ttk.Notebook):
         self,
         master: tk.Widget,
         app: "Application",
-        config: Dict[str, common_pb2.ConfigOption],
-        **kw
-    ):
+        config: Dict[str, ConfigOption],
+        enabled: bool = True,
+        **kw: Any
+    ) -> None:
         super().__init__(master, **kw)
-        self.app = app
-        self.config = config
-        self.values = {}
+        self.app: "Application" = app
+        self.config: Dict[str, ConfigOption] = config
+        self.values: Dict[str, tk.StringVar] = {}
+        self.enabled: bool = enabled
 
-    def draw_config(self):
+    def draw_config(self) -> None:
         group_mapping = {}
         for key in self.config:
             option = self.config[key]
@@ -100,8 +112,9 @@ class ConfigFrame(ttk.Notebook):
                 value = tk.StringVar()
                 if option.type == core_pb2.ConfigOptionType.BOOL:
                     select = ("On", "Off")
+                    state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
-                        tab.frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state=state
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                     if option.value == "1":
@@ -111,38 +124,47 @@ class ConfigFrame(ttk.Notebook):
                 elif option.select:
                     value.set(option.value)
                     select = tuple(option.select)
+                    state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
-                        tab.frame, textvariable=value, values=select, state="readonly"
+                        tab.frame, textvariable=value, values=select, state=state
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.STRING:
                     value.set(option.value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
                     if "file" in option.label:
                         file_frame = ttk.Frame(tab.frame)
                         file_frame.grid(row=index, column=1, sticky="ew")
                         file_frame.columnconfigure(0, weight=1)
-                        entry = ttk.Entry(file_frame, textvariable=value)
+                        entry = ttk.Entry(file_frame, textvariable=value, state=state)
                         entry.grid(row=0, column=0, sticky="ew", padx=PADX)
                         func = partial(file_button_click, value, self)
-                        button = ttk.Button(file_frame, text="...", command=func)
+                        button = ttk.Button(
+                            file_frame, text="...", command=func, state=state
+                        )
                         button.grid(row=0, column=1)
                     else:
-                        entry = ttk.Entry(tab.frame, textvariable=value)
+                        entry = ttk.Entry(tab.frame, textvariable=value, state=state)
                         entry.grid(row=index, column=1, sticky="ew")
-
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = validation.PositiveIntEntry(tab.frame, textvariable=value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
+                    entry = validation.PositiveIntEntry(
+                        tab.frame, textvariable=value, state=state
+                    )
                     entry.grid(row=index, column=1, sticky="ew")
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = validation.PositiveFloatEntry(tab.frame, textvariable=value)
+                    state = tk.NORMAL if self.enabled else tk.DISABLED
+                    entry = validation.PositiveFloatEntry(
+                        tab.frame, textvariable=value, state=state
+                    )
                     entry.grid(row=index, column=1, sticky="ew")
                 else:
                     logging.error("unhandled config option type: %s", option.type)
                 self.values[option.name] = value
 
-    def parse_config(self):
+    def parse_config(self) -> Dict[str, str]:
         for key in self.config:
             option = self.config[key]
             value = self.values[key]
@@ -169,13 +191,13 @@ class ConfigFrame(ttk.Notebook):
 
 
 class ListboxScroll(ttk.Frame):
-    def __init__(self, master: tk.Widget = None, **kw):
+    def __init__(self, master: tk.BaseWidget = None, **kw: Any) -> None:
         super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        self.scrollbar: ttk.Scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
-        self.listbox = tk.Listbox(
+        self.listbox: tk.Listbox = tk.Listbox(
             self,
             selectmode=tk.BROWSE,
             yscrollcommand=self.scrollbar.set,
@@ -187,12 +209,18 @@ class ListboxScroll(ttk.Frame):
 
 
 class CheckboxList(FrameScroll):
-    def __init__(self, master: ttk.Widget, app: "Application", clicked=None, **kw):
+    def __init__(
+        self,
+        master: ttk.Widget,
+        app: "Application",
+        clicked: Callable = None,
+        **kw: Any
+    ) -> None:
         super().__init__(master, app, **kw)
-        self.clicked = clicked
+        self.clicked: Callable = clicked
         self.frame.columnconfigure(0, weight=1)
 
-    def add(self, name: str, checked: bool):
+    def add(self, name: str, checked: bool) -> None:
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
@@ -200,16 +228,16 @@ class CheckboxList(FrameScroll):
 
 
 class CodeFont(font.Font):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(font="TkFixedFont", color="green")
 
 
 class CodeText(ttk.Frame):
-    def __init__(self, master: tk.Widget, **kwargs):
+    def __init__(self, master: tk.BaseWidget, **kwargs: Any) -> None:
         super().__init__(master, **kwargs)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.text = tk.Text(
+        self.text: tk.Text = tk.Text(
             self,
             bd=0,
             bg="black",
@@ -229,14 +257,14 @@ class CodeText(ttk.Frame):
 
 
 class Spinbox(ttk.Entry):
-    def __init__(self, master: tk.Widget = None, **kwargs):
+    def __init__(self, master: tk.BaseWidget = None, **kwargs: Any) -> None:
         super().__init__(master, "ttk::spinbox", **kwargs)
 
-    def set(self, value):
+    def set(self, value: str) -> None:
         self.tk.call(self._w, "set", value)
 
 
-def image_chooser(parent: "Dialog", path: PosixPath):
+def image_chooser(parent: Dialog, path: Path) -> str:
     return filedialog.askopenfilename(
         parent=parent,
         initialdir=str(path),

@@ -15,7 +15,7 @@ class MacConfigDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "MAC Configuration")
         mac = self.app.guiconfig.mac
-        self.mac_var = tk.StringVar(value=mac)
+        self.mac_var: tk.StringVar = tk.StringVar(value=mac)
         self.draw()
 
     def draw(self) -> None:
@@ -55,7 +55,7 @@ class MacConfigDialog(Dialog):
         if not netaddr.valid_mac(mac):
             messagebox.showerror("MAC Error", f"{mac} is an invalid mac")
         else:
-            self.app.core.interfaces_manager.mac = netaddr.EUI(mac)
+            self.app.core.ifaces_manager.mac = netaddr.EUI(mac)
             self.app.guiconfig.mac = mac
             self.app.save_config()
             self.destroy()

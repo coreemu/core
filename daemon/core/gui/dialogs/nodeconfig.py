@@ -2,10 +2,12 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 import netaddr
+from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.core_pb2 import Node
 from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -86,35 +88,35 @@ class InterfaceData:
         mac: tk.StringVar,
         ip4: tk.StringVar,
         ip6: tk.StringVar,
-    ):
-        self.is_auto = is_auto
-        self.mac = mac
-        self.ip4 = ip4
-        self.ip6 = ip6
+    ) -> None:
+        self.is_auto: tk.BooleanVar = is_auto
+        self.mac: tk.StringVar = mac
+        self.ip4: tk.StringVar = ip4
+        self.ip6: tk.StringVar = ip6
 
 
 class NodeConfigDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
         """
         create an instance of node configuration
         """
         super().__init__(app, f"{canvas_node.core_node.name} Configuration")
-        self.canvas_node = canvas_node
-        self.node = canvas_node.core_node
-        self.image = canvas_node.image
-        self.image_file = None
-        self.image_button = None
-        self.name = tk.StringVar(value=self.node.name)
-        self.type = tk.StringVar(value=self.node.model)
-        self.container_image = tk.StringVar(value=self.node.image)
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node: Node = canvas_node.core_node
+        self.image: PhotoImage = canvas_node.image
+        self.image_file: Optional[str] = None
+        self.image_button: Optional[ttk.Button] = None
+        self.name: tk.StringVar = tk.StringVar(value=self.node.name)
+        self.type: tk.StringVar = tk.StringVar(value=self.node.model)
+        self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
         server = "localhost"
         if self.node.server:
             server = self.node.server
-        self.server = tk.StringVar(value=server)
-        self.interfaces = {}
+        self.server: tk.StringVar = tk.StringVar(value=server)
+        self.ifaces: Dict[int, InterfaceData] = {}
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         row = 0
 
@@ -183,53 +185,53 @@ class NodeConfigDialog(Dialog):
             row += 1
 
         if NodeUtils.is_rj45_node(self.node.type):
-            response = self.app.core.client.get_interfaces()
+            response = self.app.core.client.get_ifaces()
             logging.debug("host machine available interfaces: %s", response)
-            interfaces = ListboxScroll(frame)
-            interfaces.listbox.config(state=state)
-            interfaces.grid(
+            ifaces = ListboxScroll(frame)
+            ifaces.listbox.config(state=state)
+            ifaces.grid(
                 row=row, column=0, columnspan=2, sticky="ew", padx=PADX, pady=PADY
             )
-            for inf in sorted(response.interfaces[:]):
-                interfaces.listbox.insert(tk.END, inf)
+            for inf in sorted(response.ifaces[:]):
+                ifaces.listbox.insert(tk.END, inf)
             row += 1
-            interfaces.listbox.bind("<<ListboxSelect>>", self.interface_select)
+            ifaces.listbox.bind("<<ListboxSelect>>", self.iface_select)
 
         # interfaces
-        if self.canvas_node.interfaces:
-            self.draw_interfaces()
+        if self.canvas_node.ifaces:
+            self.draw_ifaces()
 
         self.draw_spacer()
         self.draw_buttons()
 
-    def draw_interfaces(self):
+    def draw_ifaces(self) -> None:
         notebook = ttk.Notebook(self.top)
         notebook.grid(sticky="nsew", pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
         state = tk.DISABLED if self.app.core.is_runtime() else tk.NORMAL
-        for interface_id in sorted(self.canvas_node.interfaces):
-            interface = self.canvas_node.interfaces[interface_id]
+        for iface_id in sorted(self.canvas_node.ifaces):
+            iface = self.canvas_node.ifaces[iface_id]
             tab = ttk.Frame(notebook, padding=FRAME_PAD)
             tab.grid(sticky="nsew", pady=PADY)
             tab.columnconfigure(1, weight=1)
             tab.columnconfigure(2, weight=1)
-            notebook.add(tab, text=interface.name)
+            notebook.add(tab, text=iface.name)
 
             row = 0
-            emane_node = self.canvas_node.has_emane_link(interface.id)
+            emane_node = self.canvas_node.has_emane_link(iface.id)
             if emane_node:
                 emane_model = emane_node.emane.split("_")[1]
                 button = ttk.Button(
                     tab,
                     text=f"Configure EMANE {emane_model}",
-                    command=lambda: self.click_emane_config(emane_model, interface.id),
+                    command=lambda: self.click_emane_config(emane_model, iface.id),
                 )
                 button.grid(row=row, sticky="ew", columnspan=3, pady=PADY)
                 row += 1
 
             label = ttk.Label(tab, text="MAC")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
-            auto_set = not interface.mac
+            auto_set = not iface.mac
             mac_state = tk.DISABLED if auto_set else tk.NORMAL
             is_auto = tk.BooleanVar(value=auto_set)
             checkbutton = ttk.Checkbutton(
@@ -237,7 +239,7 @@ class NodeConfigDialog(Dialog):
             )
             checkbutton.var = is_auto
             checkbutton.grid(row=row, column=1, padx=PADX)
-            mac = tk.StringVar(value=interface.mac)
+            mac = tk.StringVar(value=iface.mac)
             entry = ttk.Entry(tab, textvariable=mac, state=mac_state)
             entry.grid(row=row, column=2, sticky="ew")
             func = partial(mac_auto, is_auto, entry, mac)
@@ -247,8 +249,8 @@ class NodeConfigDialog(Dialog):
             label = ttk.Label(tab, text="IPv4")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip4_net = ""
-            if interface.ip4:
-                ip4_net = f"{interface.ip4}/{interface.ip4mask}"
+            if iface.ip4:
+                ip4_net = f"{iface.ip4}/{iface.ip4_mask}"
             ip4 = tk.StringVar(value=ip4_net)
             entry = ttk.Entry(tab, textvariable=ip4, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
@@ -257,15 +259,15 @@ class NodeConfigDialog(Dialog):
             label = ttk.Label(tab, text="IPv6")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             ip6_net = ""
-            if interface.ip6:
-                ip6_net = f"{interface.ip6}/{interface.ip6mask}"
+            if iface.ip6:
+                ip6_net = f"{iface.ip6}/{iface.ip6_mask}"
             ip6 = tk.StringVar(value=ip6_net)
             entry = ttk.Entry(tab, textvariable=ip6, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky="ew")
 
-            self.interfaces[interface.id] = InterfaceData(is_auto, mac, ip4, ip6)
+            self.ifaces[iface.id] = InterfaceData(is_auto, mac, ip4, ip6)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
@@ -277,20 +279,20 @@ class NodeConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_emane_config(self, emane_model: str, interface_id: int):
+    def click_emane_config(self, emane_model: str, iface_id: int) -> None:
         dialog = EmaneModelDialog(
-            self, self.app, self.canvas_node, emane_model, interface_id
+            self, self.app, self.canvas_node, emane_model, iface_id
         )
         dialog.show()
 
-    def click_icon(self):
+    def click_icon(self) -> None:
         file_path = image_chooser(self, ICONS_PATH)
         if file_path:
             self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_button.config(image=self.image)
             self.image_file = file_path
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         error = False
 
         # update core node
@@ -309,54 +311,54 @@ class NodeConfigDialog(Dialog):
         self.canvas_node.image = self.image
 
         # update node interface data
-        for interface in self.canvas_node.interfaces.values():
-            data = self.interfaces[interface.id]
+        for iface in self.canvas_node.ifaces.values():
+            data = self.ifaces[iface.id]
 
             # validate ip4
             ip4_net = data.ip4.get()
-            if not check_ip4(self, interface.name, ip4_net):
+            if not check_ip4(self, iface.name, ip4_net):
                 error = True
                 break
             if ip4_net:
-                ip4, ip4mask = ip4_net.split("/")
-                ip4mask = int(ip4mask)
+                ip4, ip4_mask = ip4_net.split("/")
+                ip4_mask = int(ip4_mask)
             else:
-                ip4, ip4mask = "", 0
-            interface.ip4 = ip4
-            interface.ip4mask = ip4mask
+                ip4, ip4_mask = "", 0
+            iface.ip4 = ip4
+            iface.ip4_mask = ip4_mask
 
             # validate ip6
             ip6_net = data.ip6.get()
-            if not check_ip6(self, interface.name, ip6_net):
+            if not check_ip6(self, iface.name, ip6_net):
                 error = True
                 break
             if ip6_net:
-                ip6, ip6mask = ip6_net.split("/")
-                ip6mask = int(ip6mask)
+                ip6, ip6_mask = ip6_net.split("/")
+                ip6_mask = int(ip6_mask)
             else:
-                ip6, ip6mask = "", 0
-            interface.ip6 = ip6
-            interface.ip6mask = ip6mask
+                ip6, ip6_mask = "", 0
+            iface.ip6 = ip6
+            iface.ip6_mask = ip6_mask
 
             mac = data.mac.get()
             auto_mac = data.is_auto.get()
             if not auto_mac and not netaddr.valid_mac(mac):
-                title = f"MAC Error for {interface.name}"
+                title = f"MAC Error for {iface.name}"
                 messagebox.showerror(title, "Invalid MAC Address")
                 error = True
                 break
             elif not auto_mac:
                 mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
-                interface.mac = str(mac)
+                iface.mac = str(mac)
 
         # redraw
         if not error:
             self.canvas_node.redraw()
             self.destroy()
 
-    def interface_select(self, event: tk.Event):
+    def iface_select(self, event: tk.Event) -> None:
         listbox = event.widget
         cur = listbox.curselection()
         if cur:
-            interface = listbox.get(cur[0])
-            self.name.set(interface)
+            iface = listbox.get(cur[0])
+            self.name.set(iface)

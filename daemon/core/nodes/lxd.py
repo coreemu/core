@@ -3,7 +3,7 @@ import logging
 import os
 import time
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
 from core.emulator.distributed import DistributedServer
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 
 class LxdClient:
     def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name = name
-        self.image = image
-        self.run = run
-        self.pid = None
+        self.name: str = name
+        self.image: str = image
+        self.run: Callable[..., str] = run
+        self.pid: Optional[int] = None
 
     def create_container(self) -> int:
         self.run(f"lxc launch {self.image} {self.name}")
@@ -74,7 +74,6 @@ class LxcNode(CoreNode):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        start: bool = True,
         server: DistributedServer = None,
         image: str = None,
     ) -> None:
@@ -85,15 +84,14 @@ class LxcNode(CoreNode):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
         """
         if image is None:
             image = "ubuntu"
-        self.image = image
-        super().__init__(session, _id, name, nodedir, start, server)
+        self.image: str = image
+        super().__init__(session, _id, name, nodedir, server)
 
     def alive(self) -> bool:
         """
@@ -128,7 +126,7 @@ class LxcNode(CoreNode):
             return
 
         with self.lock:
-            self._netif.clear()
+            self.ifaces.clear()
             self.client.stop_container()
             self.up = False
 
@@ -217,7 +215,7 @@ class LxcNode(CoreNode):
         self.client.copy_file(source, filename)
         self.cmd(f"chmod {mode:o} {filename}")
 
-    def addnetif(self, netif: CoreInterface, ifindex: int) -> None:
-        super().addnetif(netif, ifindex)
+    def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
+        super().add_iface(iface, iface_id)
         # adding small delay to allow time for adding addresses to work correctly
         time.sleep(0.5)

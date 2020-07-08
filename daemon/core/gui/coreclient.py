@@ -4,18 +4,41 @@ Incorporate grpc into python tkinter GUI
 import json
 import logging
 import os
+import tkinter as tk
 from pathlib import Path
 from tkinter import messagebox
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional
+from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import grpc
 
-from core.api.grpc import client, common_pb2, configservices_pb2, core_pb2
+from core.api.grpc import client
+from core.api.grpc.common_pb2 import ConfigOption
+from core.api.grpc.configservices_pb2 import ConfigService, ConfigServiceConfig
+from core.api.grpc.core_pb2 import (
+    Event,
+    ExceptionEvent,
+    Hook,
+    Interface,
+    Link,
+    LinkEvent,
+    LinkType,
+    MessageType,
+    Node,
+    NodeEvent,
+    NodeType,
+    Position,
+    SessionLocation,
+    SessionState,
+    StartSessionResponse,
+    StopSessionResponse,
+    ThroughputsEvent,
+)
 from core.api.grpc.emane_pb2 import EmaneModelConfig
 from core.api.grpc.mobility_pb2 import MobilityConfig
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
 from core.api.grpc.wlan_pb2 import WlanConfig
 from core.gui import appconfig
+from core.gui.appconfig import CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
@@ -34,47 +57,46 @@ GUI_SOURCE = "gui"
 
 
 class CoreClient:
-    def __init__(self, app: "Application", proxy: bool):
+    def __init__(self, app: "Application", proxy: bool) -> None:
         """
         Create a CoreGrpc instance
         """
-        self._client = client.CoreGrpcClient(proxy=proxy)
-        self.session_id = None
-        self.node_ids = []
-        self.app = app
-        self.master = app.master
-        self.services = {}
-        self.config_services_groups = {}
-        self.config_services = {}
-        self.default_services = {}
-        self.emane_models = []
-        self.observer = None
+        self.app: "Application" = app
+        self.master: tk.Tk = app.master
+        self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy)
+        self.session_id: Optional[int] = None
+        self.services: Dict[str, Set[str]] = {}
+        self.config_services_groups: Dict[str, Set[str]] = {}
+        self.config_services: Dict[str, ConfigService] = {}
+        self.default_services: Dict[NodeType, Set[str]] = {}
+        self.emane_models: List[str] = []
+        self.observer: Optional[str] = None
 
         # loaded configuration data
-        self.servers = {}
-        self.custom_nodes = {}
-        self.custom_observers = {}
+        self.servers: Dict[str, CoreServer] = {}
+        self.custom_nodes: Dict[str, NodeDraw] = {}
+        self.custom_observers: Dict[str, Observer] = {}
         self.read_config()
 
         # helpers
-        self.interface_to_edge = {}
-        self.interfaces_manager = InterfaceManager(self.app)
+        self.iface_to_edge: Dict[Tuple[int, ...], Tuple[int, ...]] = {}
+        self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
 
         # session data
-        self.state = None
-        self.canvas_nodes = {}
-        self.location = None
-        self.links = {}
-        self.hooks = {}
-        self.emane_config = None
-        self.mobility_players = {}
-        self.handling_throughputs = None
-        self.handling_events = None
-        self.xml_dir = None
-        self.xml_file = None
+        self.state: Optional[SessionState] = None
+        self.canvas_nodes: Dict[int, CanvasNode] = {}
+        self.location: Optional[SessionLocation] = None
+        self.links: Dict[Tuple[int, int], CanvasEdge] = {}
+        self.hooks: Dict[str, Hook] = {}
+        self.emane_config: Dict[str, ConfigOption] = {}
+        self.mobility_players: Dict[int, MobilityPlayer] = {}
+        self.handling_throughputs: Optional[grpc.Channel] = None
+        self.handling_events: Optional[grpc.Channel] = None
+        self.xml_dir: Optional[str] = None
+        self.xml_file: Optional[str] = None
 
     @property
-    def client(self):
+    def client(self) -> client.CoreGrpcClient:
         if self.session_id:
             response = self._client.check_session(self.session_id)
             if not response.result:
@@ -89,10 +111,10 @@ class CoreClient:
                     self.enable_throughputs()
         return self._client
 
-    def reset(self):
+    def reset(self) -> None:
         # helpers
-        self.interfaces_manager.reset()
-        self.interface_to_edge.clear()
+        self.ifaces_manager.reset()
+        self.iface_to_edge.clear()
         # session data
         self.canvas_nodes.clear()
         self.links.clear()
@@ -104,14 +126,14 @@ class CoreClient:
         self.cancel_throughputs()
         self.cancel_events()
 
-    def close_mobility_players(self):
+    def close_mobility_players(self) -> None:
         for mobility_player in self.mobility_players.values():
             mobility_player.close()
 
-    def set_observer(self, value: str):
+    def set_observer(self, value: Optional[str]) -> None:
         self.observer = value
 
-    def read_config(self):
+    def read_config(self) -> None:
         # read distributed servers
         for server in self.app.guiconfig.servers:
             self.servers[server.name] = server
@@ -125,7 +147,9 @@ class CoreClient:
         for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
 
-    def handle_events(self, event: core_pb2.Event):
+    def handle_events(self, event: Event) -> None:
+        if event.source == GUI_SOURCE:
+            return
         if event.session_id != self.session_id:
             logging.warning(
                 "ignoring event session(%s) current(%s)",
@@ -139,7 +163,7 @@ class CoreClient:
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
             session_event = event.session_event
-            if session_event.event <= core_pb2.SessionState.SHUTDOWN:
+            if session_event.event <= SessionState.SHUTDOWN:
                 self.state = event.session_event.event
             elif session_event.event in {7, 8, 9}:
                 node_id = session_event.node_id
@@ -162,56 +186,77 @@ class CoreClient:
         else:
             logging.info("unhandled event: %s", event)
 
-    def handle_link_event(self, event: core_pb2.LinkEvent):
+    def handle_link_event(self, event: LinkEvent) -> None:
         logging.debug("Link event: %s", event)
-        node_one_id = event.link.node_one_id
-        node_two_id = event.link.node_two_id
-        if node_one_id == node_two_id:
+        node1_id = event.link.node1_id
+        node2_id = event.link.node2_id
+        if node1_id == node2_id:
             logging.warning("ignoring links with loops: %s", event)
             return
-        canvas_node_one = self.canvas_nodes[node_one_id]
-        canvas_node_two = self.canvas_nodes[node_two_id]
-        if event.message_type == core_pb2.MessageType.ADD:
-            self.app.canvas.add_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
-        elif event.message_type == core_pb2.MessageType.DELETE:
-            self.app.canvas.delete_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
-        elif event.message_type == core_pb2.MessageType.NONE:
-            self.app.canvas.update_wireless_edge(
-                canvas_node_one, canvas_node_two, event.link
-            )
+        canvas_node1 = self.canvas_nodes[node1_id]
+        canvas_node2 = self.canvas_nodes[node2_id]
+        if event.link.type == LinkType.WIRELESS:
+            if event.message_type == MessageType.ADD:
+                self.app.canvas.add_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            elif event.message_type == MessageType.DELETE:
+                self.app.canvas.delete_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            elif event.message_type == MessageType.NONE:
+                self.app.canvas.update_wireless_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            else:
+                logging.warning("unknown link event: %s", event)
         else:
-            logging.warning("unknown link event: %s", event)
+            if event.message_type == MessageType.ADD:
+                self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
+                self.app.canvas.organize()
+            elif event.message_type == MessageType.DELETE:
+                self.app.canvas.delete_wired_edge(canvas_node1, canvas_node2)
+            elif event.message_type == MessageType.NONE:
+                self.app.canvas.update_wired_edge(
+                    canvas_node1, canvas_node2, event.link
+                )
+            else:
+                logging.warning("unknown link event: %s", event)
 
-    def handle_node_event(self, event: core_pb2.NodeEvent):
+    def handle_node_event(self, event: NodeEvent) -> None:
         logging.debug("node event: %s", event)
-        if event.source == GUI_SOURCE:
-            return
-        node_id = event.node.id
-        x = event.node.position.x
-        y = event.node.position.y
-        canvas_node = self.canvas_nodes[node_id]
-        canvas_node.move(x, y)
+        if event.message_type == MessageType.NONE:
+            canvas_node = self.canvas_nodes[event.node.id]
+            x = event.node.position.x
+            y = event.node.position.y
+            canvas_node.move(x, y)
+        elif event.message_type == MessageType.DELETE:
+            canvas_node = self.canvas_nodes[event.node.id]
+            self.app.canvas.clear_selection()
+            self.app.canvas.select_object(canvas_node.id)
+            self.app.canvas.delete_selected_objects()
+        elif event.message_type == MessageType.ADD:
+            self.app.canvas.add_core_node(event.node)
+        else:
+            logging.warning("unknown node event: %s", event)
 
-    def enable_throughputs(self):
+    def enable_throughputs(self) -> None:
         self.handling_throughputs = self.client.throughputs(
             self.session_id, self.handle_throughputs
         )
 
-    def cancel_throughputs(self):
+    def cancel_throughputs(self) -> None:
         if self.handling_throughputs:
             self.handling_throughputs.cancel()
             self.handling_throughputs = None
+            self.app.canvas.clear_throughputs()
 
-    def cancel_events(self):
+    def cancel_events(self) -> None:
         if self.handling_events:
             self.handling_events.cancel()
             self.handling_events = None
 
-    def handle_throughputs(self, event: core_pb2.ThroughputsEvent):
+    def handle_throughputs(self, event: ThroughputsEvent) -> None:
         if event.session_id != self.session_id:
             logging.warning(
                 "ignoring throughput event session(%s) current(%s)",
@@ -222,11 +267,11 @@ class CoreClient:
         logging.debug("handling throughputs event: %s", event)
         self.app.after(0, self.app.canvas.set_throughputs, event)
 
-    def handle_exception_event(self, event: core_pb2.ExceptionEvent):
+    def handle_exception_event(self, event: ExceptionEvent) -> None:
         logging.info("exception event: %s", event)
         self.app.statusbar.core_alarms.append(event)
 
-    def join_session(self, session_id: int, query_location: bool = True):
+    def join_session(self, session_id: int, query_location: bool = True) -> None:
         logging.info("join session(%s)", session_id)
         # update session and title
         self.session_id = session_id
@@ -269,7 +314,7 @@ class CoreClient:
             self.emane_config = response.config
 
             # update interface manager
-            self.interfaces_manager.joined(session.links)
+            self.ifaces_manager.joined(session.links)
 
             # draw session
             self.app.canvas.reset_and_redraw(session)
@@ -284,11 +329,11 @@ class CoreClient:
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
             for config in response.configs:
-                interface = None
-                if config.interface != -1:
-                    interface = config.interface
+                iface_id = None
+                if config.iface_id != -1:
+                    iface_id = config.iface_id
                 canvas_node = self.canvas_nodes[config.node_id]
-                canvas_node.emane_model_configs[(config.model, interface)] = dict(
+                canvas_node.emane_model_configs[(config.model, iface_id)] = dict(
                     config.config
                 )
 
@@ -332,14 +377,14 @@ class CoreClient:
 
         # organize canvas
         self.app.canvas.organize()
-
+        self.show_mobility_players()
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
 
     def is_runtime(self) -> bool:
-        return self.state == core_pb2.SessionState.RUNTIME
+        return self.state == SessionState.RUNTIME
 
-    def parse_metadata(self, config: Dict[str, str]):
+    def parse_metadata(self, config: Dict[str, str]) -> None:
         # canvas setting
         canvas_config = config.get("canvas")
         logging.debug("canvas metadata: %s", canvas_config)
@@ -392,7 +437,7 @@ class CoreClient:
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
 
-    def create_new_session(self):
+    def create_new_session(self) -> None:
         """
         Create a new session
         """
@@ -400,7 +445,7 @@ class CoreClient:
             response = self.client.create_session()
             logging.info("created session: %s", response)
             location_config = self.app.guiconfig.location
-            self.location = core_pb2.SessionLocation(
+            self.location = SessionLocation(
                 x=location_config.x,
                 y=location_config.y,
                 z=location_config.z,
@@ -413,7 +458,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("New Session Error", e)
 
-    def delete_session(self, session_id: int = None):
+    def delete_session(self, session_id: int = None) -> None:
         if session_id is None:
             session_id = self.session_id
         try:
@@ -422,7 +467,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Delete Session Error", e)
 
-    def setup(self):
+    def setup(self) -> None:
         """
         Query sessions, if there exist any, prompt whether to join one
         """
@@ -457,7 +502,7 @@ class CoreClient:
             dialog.show()
             self.app.close()
 
-    def edit_node(self, core_node: core_pb2.Node):
+    def edit_node(self, core_node: Node) -> None:
         try:
             self.client.edit_node(
                 self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
@@ -465,17 +510,17 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
 
-    def start_session(self) -> core_pb2.StartSessionResponse:
-        self.interfaces_manager.reset_mac()
+    def start_session(self) -> StartSessionResponse:
+        self.ifaces_manager.reset_mac()
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = []
         for edge in self.links.values():
-            link = core_pb2.Link()
+            link = Link()
             link.CopyFrom(edge.link)
-            if link.HasField("interface_one") and not link.interface_one.mac:
-                link.interface_one.mac = self.interfaces_manager.next_mac()
-            if link.HasField("interface_two") and not link.interface_two.mac:
-                link.interface_two.mac = self.interfaces_manager.next_mac()
+            if link.HasField("iface1") and not link.iface1.mac:
+                link.iface1.mac = self.ifaces_manager.next_mac()
+            if link.HasField("iface2") and not link.iface2.mac:
+                link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
@@ -491,7 +536,7 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
-        response = core_pb2.StartSessionResponse(result=False)
+        response = StartSessionResponse(result=False)
         try:
             response = self.client.start_session(
                 self.session_id,
@@ -517,10 +562,10 @@ class CoreClient:
             self.app.show_grpc_exception("Start Session Error", e)
         return response
 
-    def stop_session(self, session_id: int = None) -> core_pb2.StartSessionResponse:
+    def stop_session(self, session_id: int = None) -> StopSessionResponse:
         if not session_id:
             session_id = self.session_id
-        response = core_pb2.StopSessionResponse(result=False)
+        response = StopSessionResponse(result=False)
         try:
             response = self.client.stop_session(session_id)
             logging.info("stopped session(%s), result: %s", session_id, response)
@@ -528,9 +573,9 @@ class CoreClient:
             self.app.show_grpc_exception("Stop Session Error", e)
         return response
 
-    def show_mobility_players(self):
+    def show_mobility_players(self) -> None:
         for canvas_node in self.canvas_nodes.values():
-            if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+            if canvas_node.core_node.type != NodeType.WIRELESS_LAN:
                 continue
             if canvas_node.mobility_config:
                 mobility_player = MobilityPlayer(
@@ -540,7 +585,7 @@ class CoreClient:
                 self.mobility_players[node_id] = mobility_player
                 mobility_player.show()
 
-    def set_metadata(self):
+    def set_metadata(self) -> None:
         # create canvas data
         wallpaper = None
         if self.app.canvas.wallpaper_file:
@@ -564,7 +609,7 @@ class CoreClient:
         response = self.client.set_session_metadata(self.session_id, metadata)
         logging.info("set session metadata %s, result: %s", metadata, response)
 
-    def launch_terminal(self, node_id: int):
+    def launch_terminal(self, node_id: int) -> None:
         try:
             terminal = self.app.guiconfig.preferences.terminal
             if not terminal:
@@ -581,12 +626,12 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Node Terminal Error", e)
 
-    def save_xml(self, file_path: str):
+    def save_xml(self, file_path: str) -> None:
         """
         Save core session as to an xml file
         """
         try:
-            if self.state != core_pb2.SessionState.RUNTIME:
+            if self.state != SessionState.RUNTIME:
                 logging.debug("Send session data to the daemon")
                 self.send_data()
             response = self.client.save_xml(self.session_id, file_path)
@@ -594,7 +639,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Save XML Error", e)
 
-    def open_xml(self, file_path: str):
+    def open_xml(self, file_path: str) -> None:
         """
         Open core xml
         """
@@ -633,7 +678,8 @@ class CoreClient:
             shutdown=shutdowns,
         )
         logging.info(
-            "Set %s service for node(%s), files: %s, Startup: %s, Validation: %s, Shutdown: %s, Result: %s",
+            "Set %s service for node(%s), files: %s, Startup: %s, "
+            "Validation: %s, Shutdown: %s, Result: %s",
             service_name,
             node_id,
             files,
@@ -662,7 +708,7 @@ class CoreClient:
 
     def set_node_service_file(
         self, node_id: int, service_name: str, file_name: str, data: str
-    ):
+    ) -> None:
         response = self.client.set_node_service_file(
             self.session_id, node_id, service_name, file_name, data
         )
@@ -675,35 +721,33 @@ class CoreClient:
             response,
         )
 
-    def create_nodes_and_links(self):
+    def create_nodes_and_links(self) -> None:
         """
         create nodes and links that have not been created yet
         """
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = [x.link for x in self.links.values()]
-        if self.state != core_pb2.SessionState.DEFINITION:
-            self.client.set_session_state(
-                self.session_id, core_pb2.SessionState.DEFINITION
-            )
+        if self.state != SessionState.DEFINITION:
+            self.client.set_session_state(self.session_id, SessionState.DEFINITION)
 
-        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
+        self.client.set_session_state(self.session_id, SessionState.DEFINITION)
         for node_proto in node_protos:
             response = self.client.add_node(self.session_id, node_proto)
             logging.debug("create node: %s", response)
         for link_proto in link_protos:
             response = self.client.add_link(
                 self.session_id,
-                link_proto.node_one_id,
-                link_proto.node_two_id,
-                link_proto.interface_one,
-                link_proto.interface_two,
+                link_proto.node1_id,
+                link_proto.node2_id,
+                link_proto.iface1,
+                link_proto.iface2,
                 link_proto.options,
             )
             logging.debug("create link: %s", response)
 
-    def send_data(self):
+    def send_data(self) -> None:
         """
-        send to daemon all session info, but don't start the session
+        Send to daemon all session info, but don't start the session
         """
         self.create_nodes_and_links()
         for config_proto in self.get_wlan_configs_proto():
@@ -739,15 +783,25 @@ class CoreClient:
                 config_proto.node_id,
                 config_proto.model,
                 config_proto.config,
-                config_proto.interface_id,
+                config_proto.iface_id,
             )
         if self.emane_config:
             config = {x: self.emane_config[x].value for x in self.emane_config}
             self.client.set_emane_config(self.session_id, config)
-
+        if self.location:
+            self.client.set_session_location(
+                self.session_id,
+                self.location.x,
+                self.location.y,
+                self.location.z,
+                self.location.lat,
+                self.location.lon,
+                self.location.alt,
+                self.location.scale,
+            )
         self.set_metadata()
 
-    def close(self):
+    def close(self) -> None:
         """
         Clean ups when done using grpc
         """
@@ -766,31 +820,31 @@ class CoreClient:
         return i
 
     def create_node(
-        self, x: float, y: float, node_type: core_pb2.NodeType, model: str
-    ) -> Optional[core_pb2.Node]:
+        self, x: float, y: float, node_type: NodeType, model: str
+    ) -> Optional[Node]:
         """
         Add node, with information filled in, to grpc manager
         """
         node_id = self.next_node_id()
-        position = core_pb2.Position(x=x, y=y)
+        position = Position(x=x, y=y)
         image = None
         if NodeUtils.is_image_node(node_type):
             image = "ubuntu:latest"
         emane = None
-        if node_type == core_pb2.NodeType.EMANE:
+        if node_type == NodeType.EMANE:
             if not self.emane_models:
                 dialog = EmaneInstallDialog(self.app)
                 dialog.show()
                 return
             emane = self.emane_models[0]
             name = f"EMANE{node_id}"
-        elif node_type == core_pb2.NodeType.WIRELESS_LAN:
+        elif node_type == NodeType.WIRELESS_LAN:
             name = f"WLAN{node_id}"
-        elif node_type in [core_pb2.NodeType.RJ45, core_pb2.NodeType.TUNNEL]:
+        elif node_type in [NodeType.RJ45, NodeType.TUNNEL]:
             name = "UNASSIGNED"
         else:
             name = f"n{node_id}"
-        node = core_pb2.Node(
+        node = Node(
             id=node_id,
             type=node_type,
             name=name,
@@ -816,7 +870,7 @@ class CoreClient:
         )
         return node
 
-    def deleted_graph_nodes(self, canvas_nodes: List[core_pb2.Node]):
+    def deleted_graph_nodes(self, canvas_nodes: List[Node]) -> None:
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
@@ -830,35 +884,35 @@ class CoreClient:
         for edge in edges:
             del self.links[edge.token]
             links.append(edge.link)
-        self.interfaces_manager.removed(links)
+        self.ifaces_manager.removed(links)
 
-    def create_interface(self, canvas_node: CanvasNode) -> core_pb2.Interface:
+    def create_iface(self, canvas_node: CanvasNode) -> Interface:
         node = canvas_node.core_node
-        ip4, ip6 = self.interfaces_manager.get_ips(node)
-        ip4_mask = self.interfaces_manager.ip4_mask
-        ip6_mask = self.interfaces_manager.ip6_mask
-        interface_id = canvas_node.next_interface_id()
-        name = f"eth{interface_id}"
-        interface = core_pb2.Interface(
-            id=interface_id,
+        ip4, ip6 = self.ifaces_manager.get_ips(node)
+        ip4_mask = self.ifaces_manager.ip4_mask
+        ip6_mask = self.ifaces_manager.ip6_mask
+        iface_id = canvas_node.next_iface_id()
+        name = f"eth{iface_id}"
+        iface = Interface(
+            id=iface_id,
             name=name,
             ip4=ip4,
-            ip4mask=ip4_mask,
+            ip4_mask=ip4_mask,
             ip6=ip6,
-            ip6mask=ip6_mask,
+            ip6_mask=ip6_mask,
         )
         logging.info(
             "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
             node.name,
-            interface.name,
-            interface.ip4,
-            interface.ip6,
+            iface.name,
+            iface.ip4,
+            iface.ip6,
         )
-        return interface
+        return iface
 
     def create_link(
         self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ):
+    ) -> None:
         """
         Create core link for a pair of canvas nodes, with token referencing
         the canvas edge.
@@ -867,34 +921,34 @@ class CoreClient:
         dst_node = canvas_dst_node.core_node
 
         # determine subnet
-        self.interfaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
+        self.ifaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
 
-        src_interface = None
+        src_iface = None
         if NodeUtils.is_container_node(src_node.type):
-            src_interface = self.create_interface(canvas_src_node)
-            self.interface_to_edge[(src_node.id, src_interface.id)] = edge.token
+            src_iface = self.create_iface(canvas_src_node)
+            self.iface_to_edge[(src_node.id, src_iface.id)] = edge.token
 
-        dst_interface = None
+        dst_iface = None
         if NodeUtils.is_container_node(dst_node.type):
-            dst_interface = self.create_interface(canvas_dst_node)
-            self.interface_to_edge[(dst_node.id, dst_interface.id)] = edge.token
+            dst_iface = self.create_iface(canvas_dst_node)
+            self.iface_to_edge[(dst_node.id, dst_iface.id)] = edge.token
 
-        link = core_pb2.Link(
-            type=core_pb2.LinkType.WIRED,
-            node_one_id=src_node.id,
-            node_two_id=dst_node.id,
-            interface_one=src_interface,
-            interface_two=dst_interface,
+        link = Link(
+            type=LinkType.WIRED,
+            node1_id=src_node.id,
+            node2_id=dst_node.id,
+            iface1=src_iface,
+            iface2=dst_iface,
         )
         # assign after creating link proto, since interfaces are copied
-        if src_interface:
-            interface_one = link.interface_one
-            edge.src_interface = interface_one
-            canvas_src_node.interfaces[interface_one.id] = interface_one
-        if dst_interface:
-            interface_two = link.interface_two
-            edge.dst_interface = interface_two
-            canvas_dst_node.interfaces[interface_two.id] = interface_two
+        if src_iface:
+            iface1 = link.iface1
+            edge.src_iface = iface1
+            canvas_src_node.ifaces[iface1.id] = iface1
+        if dst_iface:
+            iface2 = link.iface2
+            edge.dst_iface = iface2
+            canvas_dst_node.ifaces[iface2.id] = iface2
         edge.set_link(link)
         self.links[edge.token] = edge
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)
@@ -902,7 +956,7 @@ class CoreClient:
     def get_wlan_configs_proto(self) -> List[WlanConfig]:
         configs = []
         for canvas_node in self.canvas_nodes.values():
-            if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+            if canvas_node.core_node.type != NodeType.WIRELESS_LAN:
                 continue
             if not canvas_node.wlan_config:
                 continue
@@ -916,7 +970,7 @@ class CoreClient:
     def get_mobility_configs_proto(self) -> List[MobilityConfig]:
         configs = []
         for canvas_node in self.canvas_nodes.values():
-            if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+            if canvas_node.core_node.type != NodeType.WIRELESS_LAN:
                 continue
             if not canvas_node.mobility_config:
                 continue
@@ -930,16 +984,16 @@ class CoreClient:
     def get_emane_model_configs_proto(self) -> List[EmaneModelConfig]:
         configs = []
         for canvas_node in self.canvas_nodes.values():
-            if canvas_node.core_node.type != core_pb2.NodeType.EMANE:
+            if canvas_node.core_node.type != NodeType.EMANE:
                 continue
             node_id = canvas_node.core_node.id
             for key, config in canvas_node.emane_model_configs.items():
-                model, interface = key
+                model, iface_id = key
                 config = {x: config[x].value for x in config}
-                if interface is None:
-                    interface = -1
+                if iface_id is None:
+                    iface_id = -1
                 config_proto = EmaneModelConfig(
-                    node_id=node_id, interface_id=interface, model=model, config=config
+                    node_id=node_id, iface_id=iface_id, model=model, config=config
                 )
                 configs.append(config_proto)
         return configs
@@ -981,9 +1035,7 @@ class CoreClient:
                     configs.append(config_proto)
         return configs
 
-    def get_config_service_configs_proto(
-        self
-    ) -> List[configservices_pb2.ConfigServiceConfig]:
+    def get_config_service_configs_proto(self) -> List[ConfigServiceConfig]:
         config_service_protos = []
         for canvas_node in self.canvas_nodes.values():
             if not NodeUtils.is_container_node(canvas_node.core_node.type):
@@ -993,7 +1045,7 @@ class CoreClient:
             node_id = canvas_node.core_node.id
             for name, service_config in canvas_node.config_service_configs.items():
                 config = service_config.get("config", {})
-                config_proto = configservices_pb2.ConfigServiceConfig(
+                config_proto = ConfigServiceConfig(
                     node_id=node_id,
                     name=name,
                     templates=service_config["templates"],
@@ -1006,7 +1058,7 @@ class CoreClient:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
         return self.client.node_command(self.session_id, node_id, self.observer).output
 
-    def get_wlan_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
+    def get_wlan_config(self, node_id: int) -> Dict[str, ConfigOption]:
         response = self.client.get_wlan_config(self.session_id, node_id)
         config = response.config
         logging.debug(
@@ -1016,7 +1068,7 @@ class CoreClient:
         )
         return dict(config)
 
-    def get_mobility_config(self, node_id: int) -> Dict[str, common_pb2.ConfigOption]:
+    def get_mobility_config(self, node_id: int) -> Dict[str, ConfigOption]:
         response = self.client.get_mobility_config(self.session_id, node_id)
         config = response.config
         logging.debug(
@@ -1027,24 +1079,25 @@ class CoreClient:
         return dict(config)
 
     def get_emane_model_config(
-        self, node_id: int, model: str, interface: int = None
-    ) -> Dict[str, common_pb2.ConfigOption]:
-        if interface is None:
-            interface = -1
+        self, node_id: int, model: str, iface_id: int = None
+    ) -> Dict[str, ConfigOption]:
+        if iface_id is None:
+            iface_id = -1
         response = self.client.get_emane_model_config(
-            self.session_id, node_id, model, interface
+            self.session_id, node_id, model, iface_id
         )
         config = response.config
         logging.debug(
-            "get emane model config: node id: %s, EMANE model: %s, interface: %s, config: %s",
+            "get emane model config: node id: %s, EMANE model: %s, "
+            "interface: %s, config: %s",
             node_id,
             model,
-            interface,
+            iface_id,
             config,
         )
         return dict(config)
 
-    def execute_script(self, script):
+    def execute_script(self, script) -> None:
         response = self.client.execute_script(script)
         logging.info("execute python script %s", response)
         if response.session_id != -1:

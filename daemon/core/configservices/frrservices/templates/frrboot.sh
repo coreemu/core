@@ -98,8 +98,8 @@ confcheck
 bootfrr
 
 # reset interfaces
-% for ifc, _, _ , _ in interfaces:
-ip link set dev ${ifc.name} down
+% for iface, _, _ , _ in ifaces:
+ip link set dev ${iface.name} down
 sleep 1
-ip link set dev ${ifc.name} up
+ip link set dev ${iface.name} up
 % endfor

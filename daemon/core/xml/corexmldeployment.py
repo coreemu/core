@@ -6,10 +6,9 @@ import netaddr
 from lxml import etree
 
 from core import utils
-from core.constants import IP_BIN
 from core.emane.nodes import EmaneNet
+from core.executables import IP
 from core.nodes.base import CoreNodeBase, NodeBase
-from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -24,25 +23,24 @@ def add_address(
     parent_element: etree.Element,
     address_type: str,
     address: str,
-    interface_name: str = None,
+    iface_name: str = None,
 ) -> None:
     address_element = etree.SubElement(parent_element, "address", type=address_type)
     address_element.text = address
-    if interface_name is not None:
-        address_element.set("iface", interface_name)
+    if iface_name is not None:
+        address_element.set("iface", iface_name)
 
 
 def add_mapping(parent_element: etree.Element, maptype: str, mapref: str) -> None:
     etree.SubElement(parent_element, "mapping", type=maptype, ref=mapref)
 
 
-def add_emane_interface(
+def add_emane_iface(
     host_element: etree.Element,
-    netif: CoreInterface,
+    nem_id: int,
     platform_name: str = "p1",
     transport_name: str = "t1",
 ) -> etree.Element:
-    nem_id = netif.net.nemidmap[netif]
     host_id = host_element.get("id")
 
     # platform data
@@ -83,16 +81,16 @@ def get_address_type(address: str) -> str:
 def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
     if hostname == "localhost":
         addresses = []
-        args = f"{IP_BIN} -o -f inet address show"
+        args = f"{IP} -o -f inet address show"
         output = utils.cmd(args)
         for line in output.split(os.linesep):
             split = line.split()
             if not split:
                 continue
-            interface_name = split[1]
+            iface_name = split[1]
             address = split[3]
             if not address.startswith("127."):
-                addresses.append((interface_name, address))
+                addresses.append((iface_name, address))
         return addresses
     else:
         # TODO: handle other hosts
@@ -101,9 +99,9 @@ def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
 
 class CoreXmlDeployment:
     def __init__(self, session: "Session", scenario: etree.Element) -> None:
-        self.session = session
-        self.scenario = scenario
-        self.root = etree.SubElement(
+        self.session: "Session" = session
+        self.scenario: etree.Element = scenario
+        self.root: etree.SubElement = etree.SubElement(
             scenario, "container", id="TestBed", name="TestBed"
         )
         self.add_deployment()
@@ -112,11 +110,11 @@ class CoreXmlDeployment:
         device = self.scenario.find(f"devices/device[@name='{name}']")
         return device
 
-    def find_interface(self, device: NodeBase, name: str) -> etree.Element:
-        interface = self.scenario.find(
+    def find_iface(self, device: NodeBase, name: str) -> etree.Element:
+        iface = self.scenario.find(
             f"devices/device[@name='{device.name}']/interfaces/interface[@name='{name}']"
         )
-        return interface
+        return iface
 
     def add_deployment(self) -> None:
         physical_host = self.add_physical_host(socket.gethostname())
@@ -136,8 +134,8 @@ class CoreXmlDeployment:
         add_type(host_element, "physical")
 
         # add ipv4 addresses
-        for interface_name, address in get_ipv4_addresses("localhost"):
-            add_address(host_element, "IPv4", address, interface_name)
+        for iface_name, address in get_ipv4_addresses("localhost"):
+            add_address(host_element, "IPv4", address, iface_name)
 
         return host_element
 
@@ -155,15 +153,17 @@ class CoreXmlDeployment:
         # add host type
         add_type(host_element, "virtual")
 
-        for netif in node.netifs():
+        for iface in node.get_ifaces():
             emane_element = None
-            if isinstance(netif.net, EmaneNet):
-                emane_element = add_emane_interface(host_element, netif)
+            if isinstance(iface.net, EmaneNet):
+                nem_id = self.session.emane.get_nem_id(iface)
+                emane_element = add_emane_iface(host_element, nem_id)
 
             parent_element = host_element
             if emane_element is not None:
                 parent_element = emane_element
 
-            for address in netif.addrlist:
+            for ip in iface.ips():
+                address = str(ip.ip)
                 address_type = get_address_type(address)
-                add_address(parent_element, address_type, address, netif.name)
+                add_address(parent_element, address_type, address, iface.name)

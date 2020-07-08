@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from core.config import ConfigurableManager, ConfigurableOptions, Configuration
 from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
@@ -10,8 +10,8 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     Provides session configuration.
     """
 
-    name = "session"
-    options = [
+    name: str = "session"
+    options: List[Configuration] = [
         Configuration(
             _id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"
         ),
@@ -56,8 +56,11 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
             default=Sdt.DEFAULT_SDT_URL,
             label="SDT3D URL",
         ),
+        Configuration(
+            _id="ovs", _type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
+        ),
     ]
-    config_type = RegisterTlvs.UTILITY
+    config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
     def __init__(self) -> None:
         super().__init__()

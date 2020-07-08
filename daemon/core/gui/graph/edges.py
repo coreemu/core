@@ -1,23 +1,26 @@
 import logging
 import math
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple
 
 from core.api.grpc import core_pb2
+from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
+from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
+from core.gui.utils import bandwidth_text
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
 
-TEXT_DISTANCE = 0.30
-EDGE_WIDTH = 3
-EDGE_COLOR = "#ff0000"
-WIRELESS_WIDTH = 1.5
-WIRELESS_COLOR = "#009933"
-ARC_DISTANCE = 50
+TEXT_DISTANCE: float = 0.30
+EDGE_WIDTH: int = 3
+EDGE_COLOR: str = "#ff0000"
+WIRELESS_WIDTH: float = 3
+WIRELESS_COLOR: str = "#009933"
+ARC_DISTANCE: int = 50
 
 
 def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
@@ -57,20 +60,20 @@ def arc_edges(edges) -> None:
 
 
 class Edge:
-    tag = tags.EDGE
+    tag: str = tags.EDGE
 
     def __init__(self, canvas: "CanvasGraph", src: int, dst: int = None) -> None:
         self.canvas = canvas
-        self.id = None
-        self.src = src
-        self.dst = dst
-        self.arc = 0
-        self.token = None
-        self.src_label = None
-        self.middle_label = None
-        self.dst_label = None
-        self.color = EDGE_COLOR
-        self.width = EDGE_WIDTH
+        self.id: Optional[int] = None
+        self.src: int = src
+        self.dst: int = dst
+        self.arc: int = 0
+        self.token: Optional[Tuple[int, ...]] = None
+        self.src_label: Optional[int] = None
+        self.middle_label: Optional[int] = None
+        self.dst_label: Optional[int] = None
+        self.color: str = EDGE_COLOR
+        self.width: int = EDGE_WIDTH
 
     @classmethod
     def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
@@ -120,7 +123,7 @@ class Edge:
             fill=self.color,
         )
 
-    def redraw(self):
+    def redraw(self) -> None:
         self.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
         src_x, src_y, _, _, _, _ = self.canvas.coords(self.id)
         src_pos = src_x, src_y
@@ -139,10 +142,15 @@ class Edge:
                 font=self.canvas.app.edge_font,
                 text=text,
                 tags=tags.LINK_LABEL,
+                justify=tk.CENTER,
                 state=self.canvas.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
+
+    def clear_middle_label(self) -> None:
+        self.canvas.delete(self.middle_label)
+        self.middle_label = None
 
     def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         src_x, src_y, _, _, dst_x, dst_y = self.canvas.coords(self.id)
@@ -215,11 +223,10 @@ class Edge:
         logging.debug("deleting canvas edge, id: %s", self.id)
         self.canvas.delete(self.id)
         self.canvas.delete(self.src_label)
-        self.canvas.delete(self.middle_label)
         self.canvas.delete(self.dst_label)
+        self.clear_middle_label()
         self.id = None
         self.src_label = None
-        self.middle_label = None
         self.dst_label = None
 
 
@@ -233,14 +240,28 @@ class CanvasWirelessEdge(Edge):
         dst: int,
         src_pos: Tuple[float, float],
         dst_pos: Tuple[float, float],
-        token: Tuple[Any, ...],
+        token: Tuple[int, ...],
+        link: Link,
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(canvas, src, dst)
-        self.token = token
-        self.width = WIRELESS_WIDTH
-        self.color = WIRELESS_COLOR
+        self.link: Link = link
+        self.token: Tuple[int, ...] = token
+        self.width: float = WIRELESS_WIDTH
+        color = link.color if link.color else WIRELESS_COLOR
+        self.color: str = color
         self.draw(src_pos, dst_pos)
+        if link.label:
+            self.middle_label_text(link.label)
+        self.set_binding()
+
+    def set_binding(self) -> None:
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
+
+    def show_info(self, _event: tk.Event) -> None:
+        self.canvas.app.display_info(
+            WirelessEdgeInfoFrame, app=self.canvas.app, edge=self
+        )
 
 
 class CanvasEdge(Edge):
@@ -259,55 +280,57 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_interface = None
-        self.dst_interface = None
-        self.text_src = None
-        self.text_dst = None
-        self.link = None
-        self.asymmetric_link = None
-        self.throughput = None
+        self.src_iface: Optional[Interface] = None
+        self.dst_iface: Optional[Interface] = None
+        self.text_src: Optional[int] = None
+        self.text_dst: Optional[int] = None
+        self.link: Optional[Link] = None
+        self.asymmetric_link: Optional[Link] = None
+        self.throughput: Optional[float] = None
         self.draw(src_pos, dst_pos)
         self.set_binding()
-        self.context = tk.Menu(self.canvas)
+        self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()
 
-    def create_context(self):
+    def create_context(self) -> None:
         themes.style_menu(self.context)
         self.context.add_command(label="Configure", command=self.click_configure)
         self.context.add_command(label="Delete", command=self.click_delete)
 
     def set_binding(self) -> None:
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
-    def set_link(self, link) -> None:
+    def set_link(self, link: Link) -> None:
         self.link = link
         self.draw_labels()
 
-    def interface_label(self, interface: core_pb2.Interface) -> str:
+    def iface_label(self, iface: core_pb2.Interface) -> str:
         label = ""
-        if interface.name and self.canvas.show_interface_names.get():
-            label = f"{interface.name}"
-        if interface.ip4 and self.canvas.show_ip4s.get():
+        if iface.name and self.canvas.show_iface_names.get():
+            label = f"{iface.name}"
+        if iface.ip4 and self.canvas.show_ip4s.get():
             label = f"{label}\n" if label else ""
-            label += f"{interface.ip4}/{interface.ip4mask}"
-        if interface.ip6 and self.canvas.show_ip6s.get():
+            label += f"{iface.ip4}/{iface.ip4_mask}"
+        if iface.ip6 and self.canvas.show_ip6s.get():
             label = f"{label}\n" if label else ""
-            label += f"{interface.ip6}/{interface.ip6mask}"
+            label += f"{iface.ip6}/{iface.ip6_mask}"
         return label
 
     def create_node_labels(self) -> Tuple[str, str]:
-        label_one = None
-        if self.link.HasField("interface_one"):
-            label_one = self.interface_label(self.link.interface_one)
-        label_two = None
-        if self.link.HasField("interface_two"):
-            label_two = self.interface_label(self.link.interface_two)
-        return label_one, label_two
+        label1 = None
+        if self.link.HasField("iface1"):
+            label1 = self.iface_label(self.link.iface1)
+        label2 = None
+        if self.link.HasField("iface2"):
+            label2 = self.iface_label(self.link.iface2)
+        return label1, label2
 
     def draw_labels(self) -> None:
         src_text, dst_text = self.create_node_labels()
         self.src_label_text(src_text)
         self.dst_label_text(dst_text)
+        self.draw_link_options()
 
     def redraw(self) -> None:
         super().redraw()
@@ -378,14 +401,38 @@ class CanvasEdge(Edge):
         self.middle_label = None
         self.canvas.itemconfig(self.id, fill=self.color, width=self.scaled_width())
 
+    def show_info(self, _event: tk.Event) -> None:
+        self.canvas.app.display_info(EdgeInfoFrame, app=self.canvas.app, edge=self)
+
     def show_context(self, event: tk.Event) -> None:
         state = tk.DISABLED if self.canvas.core.is_runtime() else tk.NORMAL
         self.context.entryconfigure(1, state=state)
         self.context.tk_popup(event.x_root, event.y_root)
 
-    def click_delete(self):
+    def click_delete(self) -> None:
         self.canvas.delete_edge(self)
 
     def click_configure(self) -> None:
         dialog = LinkConfigurationDialog(self.canvas.app, self)
         dialog.show()
+
+    def draw_link_options(self):
+        options = self.link.options
+        lines = []
+        bandwidth = options.bandwidth
+        if bandwidth > 0:
+            lines.append(bandwidth_text(bandwidth))
+        delay = options.delay
+        jitter = options.jitter
+        if delay > 0 and jitter > 0:
+            lines.append(f"{delay} us (\u00B1{jitter} us)")
+        elif jitter > 0:
+            lines.append(f"0 us (\u00B1{jitter} us)")
+        loss = options.loss
+        if loss > 0:
+            lines.append(f"loss={loss}%")
+        dup = options.dup
+        if dup > 0:
+            lines.append(f"dup={dup}%")
+        label = "\n".join(lines)
+        self.middle_label_text(label)

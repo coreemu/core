@@ -1,38 +1,36 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional, Set
+from typing import List, Optional, Set
+
+from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.core_pb2 import Node, NodeType
 from core.gui.appconfig import CustomNode, GuiConfig
 from core.gui.images import ImageEnum, Images, TypeToImage
 
-if TYPE_CHECKING:
-    from core.api.grpc import core_pb2
-    from PIL import ImageTk
-
-ICON_SIZE = 48
-ANTENNA_SIZE = 32
+ICON_SIZE: int = 48
+ANTENNA_SIZE: int = 32
 
 
 class NodeDraw:
-    def __init__(self):
+    def __init__(self) -> None:
         self.custom: bool = False
-        self.image = None
+        self.image: Optional[PhotoImage] = None
         self.image_enum: Optional[ImageEnum] = None
-        self.image_file = None
-        self.node_type: core_pb2.NodeType = None
+        self.image_file: Optional[str] = None
+        self.node_type: NodeType = None
         self.model: Optional[str] = None
         self.services: Set[str] = set()
-        self.label = None
+        self.label: Optional[str] = None
 
     @classmethod
     def from_setup(
         cls,
         image_enum: ImageEnum,
-        node_type: "core_pb2.NodeType",
+        node_type: NodeType,
         label: str,
         model: str = None,
-        tooltip=None,
-    ):
+        tooltip: str = None,
+    ) -> "NodeDraw":
         node_draw = NodeDraw()
         node_draw.image_enum = image_enum
         node_draw.image = Images.get(image_enum, ICON_SIZE)
@@ -43,7 +41,7 @@ class NodeDraw:
         return node_draw
 
     @classmethod
-    def from_custom(cls, custom_node: CustomNode):
+    def from_custom(cls, custom_node: CustomNode) -> "NodeDraw":
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = custom_node.image
@@ -57,17 +55,17 @@ class NodeDraw:
 
 
 class NodeUtils:
-    NODES = []
-    NETWORK_NODES = []
+    NODES: List[NodeDraw] = []
+    NETWORK_NODES: List[NodeDraw] = []
     NODE_ICONS = {}
-    CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
-    IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
-    WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
-    RJ45_NODES = {NodeType.RJ45}
-    IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
-    NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
-    ROUTER_NODES = {"router", "mdr"}
-    ANTENNA_ICON = None
+    CONTAINER_NODES: Set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
+    IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
+    WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+    RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
+    IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
+    NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
+    ROUTER_NODES: Set[str] = {"router", "mdr"}
+    ANTENNA_ICON: PhotoImage = None
 
     @classmethod
     def is_router_node(cls, node: Node) -> bool:
@@ -99,8 +97,8 @@ class NodeUtils:
 
     @classmethod
     def node_icon(
-        cls, node_type: NodeType, model: str, gui_config: GuiConfig, scale=1.0
-    ) -> "ImageTk.PhotoImage":
+        cls, node_type: NodeType, model: str, gui_config: GuiConfig, scale: float = 1.0
+    ) -> PhotoImage:
 
         image_enum = TypeToImage.get(node_type, model)
         if image_enum:
@@ -112,8 +110,8 @@ class NodeUtils:
 
     @classmethod
     def node_image(
-        cls, core_node: "core_pb2.Node", gui_config: GuiConfig, scale=1.0
-    ) -> "ImageTk.PhotoImage":
+        cls, core_node: Node, gui_config: GuiConfig, scale: float = 1.0
+    ) -> PhotoImage:
         image = cls.node_icon(core_node.type, core_node.model, gui_config, scale)
         if core_node.icon:
             try:
@@ -141,7 +139,7 @@ class NodeUtils:
         return None
 
     @classmethod
-    def setup(cls):
+    def setup(cls) -> None:
         nodes = [
             (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
             (ImageEnum.HOST, NodeType.DEFAULT, "Host", "host"),

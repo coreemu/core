@@ -8,11 +8,11 @@ from core.emane import emanemodel
 
 class EmaneIeee80211abgModel(emanemodel.EmaneModel):
     # model name
-    name = "emane_ieee80211abg"
+    name: str = "emane_ieee80211abg"
 
     # mac configuration
-    mac_library = "ieee80211abgmaclayer"
-    mac_xml = "ieee80211abgmaclayer.xml"
+    mac_library: str = "ieee80211abgmaclayer"
+    mac_xml: str = "ieee80211abgmaclayer.xml"
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

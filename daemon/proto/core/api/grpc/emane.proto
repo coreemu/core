@@ -32,7 +32,7 @@ message GetEmaneModelsResponse {
 message GetEmaneModelConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;
-    int32 interface = 3;
+    int32 iface_id = 3;
     string model = 4;
 }
 
@@ -57,7 +57,7 @@ message GetEmaneModelConfigsResponse {
     message ModelConfig {
         int32 node_id = 1;
         string model = 2;
-        int32 interface = 3;
+        int32 iface_id = 3;
         map<string, common.ConfigOption> config = 4;
     }
     repeated ModelConfig configs = 1;
@@ -75,8 +75,8 @@ message GetEmaneEventChannelResponse {
 
 message EmaneLinkRequest {
     int32 session_id = 1;
-    int32 nem_one = 2;
-    int32 nem_two = 3;
+    int32 nem1 = 2;
+    int32 nem2 = 3;
     bool linked = 4;
 }
 
@@ -86,7 +86,20 @@ message EmaneLinkResponse {
 
 message EmaneModelConfig {
     int32 node_id = 1;
-    int32 interface_id = 2;
+    int32 iface_id = 2;
     string model = 3;
     map<string, string> config = 4;
+}
+
+message EmanePathlossesRequest {
+    int32 session_id = 1;
+    int32 node1_id = 2;
+    float rx1 = 3;
+    int32 iface1_id = 4;
+    int32 node2_id = 5;
+    float rx2 = 6;
+    int32 iface2_id = 7;
+}
+
+message EmanePathlossesResponse {
 }

@@ -8,11 +8,11 @@ from core.emane import emanemodel
 
 class EmaneRfPipeModel(emanemodel.EmaneModel):
     # model name
-    name = "emane_rfpipe"
+    name: str = "emane_rfpipe"
 
     # mac configuration
-    mac_library = "rfpipemaclayer"
-    mac_xml = "rfpipemaclayer.xml"
+    mac_library: str = "rfpipemaclayer"
+    mac_xml: str = "rfpipemaclayer.xml"
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

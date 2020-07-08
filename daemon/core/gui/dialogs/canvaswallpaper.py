@@ -4,10 +4,11 @@ set wallpaper
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 from core.gui.appconfig import BACKGROUNDS_PATH
 from core.gui.dialogs.dialog import Dialog
+from core.gui.graph.graph import CanvasGraph
 from core.gui.images import Images
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import image_chooser
@@ -17,20 +18,22 @@ if TYPE_CHECKING:
 
 
 class CanvasWallpaperDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         """
         create an instance of CanvasWallpaper object
         """
         super().__init__(app, "Canvas Background")
-        self.canvas = self.app.canvas
-        self.scale_option = tk.IntVar(value=self.canvas.scale_option.get())
-        self.adjust_to_dim = tk.BooleanVar(value=self.canvas.adjust_to_dim.get())
-        self.filename = tk.StringVar(value=self.canvas.wallpaper_file)
-        self.image_label = None
-        self.options = []
+        self.canvas: CanvasGraph = self.app.canvas
+        self.scale_option: tk.IntVar = tk.IntVar(value=self.canvas.scale_option.get())
+        self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(
+            value=self.canvas.adjust_to_dim.get()
+        )
+        self.filename: tk.StringVar = tk.StringVar(value=self.canvas.wallpaper_file)
+        self.image_label: Optional[ttk.Label] = None
+        self.options: List[ttk.Radiobutton] = []
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.draw_image()
         self.draw_image_label()
@@ -40,19 +43,19 @@ class CanvasWallpaperDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
-    def draw_image(self):
+    def draw_image(self) -> None:
         self.image_label = ttk.Label(
             self.top, text="(image preview)", width=32, anchor=tk.CENTER
         )
         self.image_label.grid(pady=PADY)
 
-    def draw_image_label(self):
+    def draw_image_label(self) -> None:
         label = ttk.Label(self.top, text="Image filename: ")
         label.grid(sticky="ew")
         if self.filename.get():
             self.draw_preview()
 
-    def draw_image_selection(self):
+    def draw_image_selection(self) -> None:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
@@ -69,7 +72,7 @@ class CanvasWallpaperDialog(Dialog):
         button = ttk.Button(frame, text="Clear", command=self.click_clear)
         button.grid(row=0, column=2, sticky="ew")
 
-    def draw_options(self):
+    def draw_options(self) -> None:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -101,7 +104,7 @@ class CanvasWallpaperDialog(Dialog):
         button.grid(row=0, column=3, sticky="ew")
         self.options.append(button)
 
-    def draw_additional_options(self):
+    def draw_additional_options(self) -> None:
         checkbutton = ttk.Checkbutton(
             self.top,
             text="Adjust canvas size to image dimensions",
@@ -110,7 +113,7 @@ class CanvasWallpaperDialog(Dialog):
         )
         checkbutton.grid(sticky="ew", padx=PADX)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(pady=PADY, sticky="ew")
         frame.columnconfigure(0, weight=1)
@@ -122,18 +125,18 @@ class CanvasWallpaperDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_open_image(self):
+    def click_open_image(self) -> None:
         filename = image_chooser(self, BACKGROUNDS_PATH)
         if filename:
             self.filename.set(filename)
             self.draw_preview()
 
-    def draw_preview(self):
+    def draw_preview(self) -> None:
         image = Images.create(self.filename.get(), 250, 135)
         self.image_label.config(image=image)
         self.image_label.image = image
 
-    def click_clear(self):
+    def click_clear(self) -> None:
         """
         delete like shown in image link entry if there is any
         """
@@ -143,7 +146,7 @@ class CanvasWallpaperDialog(Dialog):
         self.image_label.config(image="", width=32)
         self.image_label.image = None
 
-    def click_adjust_canvas(self):
+    def click_adjust_canvas(self) -> None:
         # deselect all radio buttons and grey them out
         if self.adjust_to_dim.get():
             self.scale_option.set(0)
@@ -155,7 +158,7 @@ class CanvasWallpaperDialog(Dialog):
             for option in self.options:
                 option.config(state=tk.NORMAL)
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         self.canvas.scale_option.set(self.scale_option.get())
         self.canvas.adjust_to_dim.set(self.adjust_to_dim.get())
         self.canvas.show_grid.click_handler()

@@ -14,7 +14,7 @@ from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
-TEMPLATES_DIR = "templates"
+TEMPLATES_DIR: str = "templates"
 
 
 class ConfigServiceMode(enum.Enum):
@@ -33,10 +33,10 @@ class ConfigService(abc.ABC):
     """
 
     # validation period in seconds, how frequent validation is attempted
-    validation_period = 0.5
+    validation_period: float = 0.5
 
     # time to wait in seconds for determining if service started successfully
-    validation_timer = 5
+    validation_timer: int = 5
 
     def __init__(self, node: CoreNode) -> None:
         """
@@ -44,13 +44,13 @@ class ConfigService(abc.ABC):
 
         :param node: node this service is assigned to
         """
-        self.node = node
+        self.node: CoreNode = node
         class_file = inspect.getfile(self.__class__)
         templates_path = pathlib.Path(class_file).parent.joinpath(TEMPLATES_DIR)
-        self.templates = TemplateLookup(directories=templates_path)
-        self.config = {}
-        self.custom_templates = {}
-        self.custom_config = {}
+        self.templates: TemplateLookup = TemplateLookup(directories=templates_path)
+        self.config: Dict[str, Configuration] = {}
+        self.custom_templates: Dict[str, str] = {}
+        self.custom_config: Dict[str, str] = {}
         configs = self.default_configs[:]
         self._define_config(configs)
 

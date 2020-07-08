@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 import netaddr
 
@@ -15,14 +15,14 @@ if TYPE_CHECKING:
 class IpConfigDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "IP Configuration")
-        self.ip4 = self.app.guiconfig.ips.ip4
-        self.ip6 = self.app.guiconfig.ips.ip6
-        self.ip4s = self.app.guiconfig.ips.ip4s
-        self.ip6s = self.app.guiconfig.ips.ip6s
-        self.ip4_entry = None
-        self.ip4_listbox = None
-        self.ip6_entry = None
-        self.ip6_listbox = None
+        self.ip4: str = self.app.guiconfig.ips.ip4
+        self.ip6: str = self.app.guiconfig.ips.ip6
+        self.ip4s: List[str] = self.app.guiconfig.ips.ip4s
+        self.ip6s: List[str] = self.app.guiconfig.ips.ip6s
+        self.ip4_entry: Optional[ttk.Entry] = None
+        self.ip4_listbox: Optional[ListboxScroll] = None
+        self.ip6_entry: Optional[ttk.Entry] = None
+        self.ip6_listbox: Optional[ListboxScroll] = None
         self.draw()
 
     def draw(self) -> None:
@@ -146,6 +146,6 @@ class IpConfigDialog(Dialog):
         ip_config.ip6 = self.ip6
         ip_config.ip4s = ip4s
         ip_config.ip6s = ip6s
-        self.app.core.interfaces_manager.update_ips(self.ip4, self.ip6)
+        self.app.core.ifaces_manager.update_ips(self.ip4, self.ip6)
         self.app.save_config()
         self.destroy()

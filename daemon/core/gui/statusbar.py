@@ -3,8 +3,9 @@ status bar
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
+from core.api.grpc.core_pb2 import ExceptionEvent
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
 
@@ -13,20 +14,19 @@ if TYPE_CHECKING:
 
 
 class StatusBar(ttk.Frame):
-    def __init__(self, master: tk.Widget, app: "Application"):
+    def __init__(self, master: tk.Widget, app: "Application") -> None:
         super().__init__(master)
-        self.app = app
-        self.status = None
-        self.statusvar = tk.StringVar()
-        self.zoom = None
-        self.cpu_usage = None
-        self.memory = None
-        self.alerts_button = None
-        self.running = False
-        self.core_alarms = []
+        self.app: "Application" = app
+        self.status: Optional[ttk.Label] = None
+        self.statusvar: tk.StringVar = tk.StringVar()
+        self.zoom: Optional[ttk.Label] = None
+        self.cpu_usage: Optional[ttk.Label] = None
+        self.alerts_button: Optional[ttk.Button] = None
+        self.running: bool = False
+        self.core_alarms: List[ExceptionEvent] = []
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.columnconfigure(0, weight=7)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
@@ -64,9 +64,9 @@ class StatusBar(ttk.Frame):
         )
         self.alerts_button.grid(row=0, column=3, sticky="ew")
 
-    def click_alerts(self):
+    def click_alerts(self) -> None:
         dialog = AlertsDialog(self.app)
         dialog.show()
 
-    def set_status(self, message: str):
+    def set_status(self, message: str) -> None:
         self.statusvar.set(message)

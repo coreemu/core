@@ -18,7 +18,7 @@ jobs:
           cd daemon
           cp setup.py.in setup.py
           cp core/constants.py.in core/constants.py
-          sed -i 's/True/False/g' core/constants.py
+          sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
           pipenv sync --dev
       - name: isort
         run: |

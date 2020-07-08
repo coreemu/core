@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
@@ -23,17 +23,17 @@ class AnnotationData:
         bold: bool = False,
         italic: bool = False,
         underline: bool = False,
-    ):
-        self.text = text
-        self.font = font
-        self.font_size = font_size
-        self.text_color = text_color
-        self.fill_color = fill_color
-        self.border_color = border_color
-        self.border_width = border_width
-        self.bold = bold
-        self.italic = italic
-        self.underline = underline
+    ) -> None:
+        self.text: str = text
+        self.font: str = font
+        self.font_size: int = font_size
+        self.text_color: str = text_color
+        self.fill_color: str = fill_color
+        self.border_color: str = border_color
+        self.border_width: int = border_width
+        self.bold: bool = bold
+        self.italic: bool = italic
+        self.underline: bool = underline
 
 
 class Shape:
@@ -47,29 +47,29 @@ class Shape:
         x2: float = None,
         y2: float = None,
         data: AnnotationData = None,
-    ):
-        self.app = app
-        self.canvas = canvas
-        self.shape_type = shape_type
-        self.id = None
-        self.text_id = None
-        self.x1 = x1
-        self.y1 = y1
+    ) -> None:
+        self.app: "Application" = app
+        self.canvas: "CanvasGraph" = canvas
+        self.shape_type: ShapeType = shape_type
+        self.id: Optional[int] = None
+        self.text_id: Optional[int] = None
+        self.x1: float = x1
+        self.y1: float = y1
         if x2 is None:
             x2 = x1
-        self.x2 = x2
+        self.x2: float = x2
         if y2 is None:
             y2 = y1
-        self.y2 = y2
+        self.y2: float = y2
         if data is None:
-            self.created = False
-            self.shape_data = AnnotationData()
+            self.created: bool = False
+            self.shape_data: AnnotationData = AnnotationData()
         else:
-            self.created = True
+            self.created: bool = True
             self.shape_data = data
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         if self.created:
             dash = None
         else:
@@ -127,7 +127,7 @@ class Shape:
             font.append("underline")
         return font
 
-    def draw_shape_text(self):
+    def draw_shape_text(self) -> None:
         if self.shape_data.text:
             x = (self.x1 + self.x2) / 2
             y = self.y1 + 1.5 * self.shape_data.font_size
@@ -142,18 +142,18 @@ class Shape:
                 state=self.canvas.show_annotations.state(),
             )
 
-    def shape_motion(self, x1: float, y1: float):
+    def shape_motion(self, x1: float, y1: float) -> None:
         self.canvas.coords(self.id, self.x1, self.y1, x1, y1)
 
-    def shape_complete(self, x: float, y: float):
+    def shape_complete(self, x: float, y: float) -> None:
         self.canvas.organize()
         s = ShapeDialog(self.app, self)
         s.show()
 
-    def disappear(self):
+    def disappear(self) -> None:
         self.canvas.delete(self.id)
 
-    def motion(self, x_offset: float, y_offset: float):
+    def motion(self, x_offset: float, y_offset: float) -> None:
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         coords = self.canvas.coords(self.id)
@@ -166,7 +166,7 @@ class Shape:
         if self.text_id is not None:
             self.canvas.move(self.text_id, x_offset, y_offset)
 
-    def delete(self):
+    def delete(self) -> None:
         logging.debug("Delete shape, id(%s)", self.id)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)

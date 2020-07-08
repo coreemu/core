@@ -36,7 +36,7 @@ interact with the GUI.
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -61,8 +61,8 @@ def main():
     # create nodes
     for _ in range(NODES):
         node = session.add_node(CoreNode)
-        interface = prefixes.create_interface(node)
-        session.add_link(node.id, switch.id, interface_one=interface)
+        iface_data = prefixes.create_iface(node)
+        session.add_link(node.id, switch.id, iface1_data=iface_data)
 
     # instantiate session
     session.instantiate()
@@ -136,9 +136,8 @@ coreemu = CoreEmu()
 session = coreemu.create_session()
 
 # create node with custom services
-options = NodeOptions()
-options.services = ["ServiceName"]
-node = session.add_node(options=options)
+options = NodeOptions(services=["ServiceName"])
+node = session.add_node(CoreNode, options=options)
 
 # set custom file data
 session.services.set_service_file(node.id, "ServiceName", "FileName", "custom file data")
@@ -157,7 +156,6 @@ options = NodeOptions()
 options.set_position(80, 50)
 emane_network = session.add_node(EmaneNet, options=options)
 
-# set custom emane model config
-config = {}
-session.emane.set_model(emane_network, EmaneIeee80211abgModel, config)
+# set custom emane model config defaults
+session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 ```
