@@ -13,8 +13,7 @@ fi
 echo "installing CORE for ${os}"
 case ${os} in
 "ubuntu")
-  sudo apt install -y python3-pip
-
+  sudo apt install -y python3-pip python3-venv
   ;;
 "centos")
   sudo yum install -y python3-pip
@@ -26,5 +25,6 @@ esac
 
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
-python3 -m pipx install invoke
+export PATH=$PATH:~/.local/bin
+pipx install invoke
 inv install
