@@ -8,7 +8,7 @@ authors = []
 python = "^3.6"
 dataclasses = { version = "*", python = "3.6" }
 fabric = "*"
-grpcio = "*"
+grpcio = "1.27.2"
 invoke = "*"
 lxml = "*"
 mako = "*"
