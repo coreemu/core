@@ -192,6 +192,14 @@ def gui(c):
 
 
 @task
+def cleanup(c):
+    """
+    run core-cleanup removing leftover core nodes, bridges, directories
+    """
+    c.run(f"sudo daemon/scripts/core-cleanup", pty=True)
+
+
+@task
 def test(c):
     """
     run core tests
