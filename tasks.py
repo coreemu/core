@@ -1,74 +1,135 @@
 import os
+import sys
+from enum import Enum
 
-from invoke import task
+from invoke import task, Context
 
-UBUNTU = "ubuntu"
-CENTOS = "centos"
-DAEMON_DIR = "daemon"
-VCMD_DIR = "netns"
-GUI_DIR = "gui"
+DAEMON_DIR: str = "daemon"
+VCMD_DIR: str = "netns"
+GUI_DIR: str = "gui"
 
 
-def get_python(c):
+class OsName(Enum):
+    UBUNTU = "ubuntu"
+    CENTOS = "centos"
+
+
+class OsLike(Enum):
+    DEBIAN = "debian"
+
+
+class OsInfo:
+    def __init__(self, name: OsName, like: OsLike, version: str) -> None:
+        self.name: OsName = name
+        self.like: OsLike = like
+        self.version: str = version
+
+
+def get_python(c: Context) -> str:
     with c.cd(DAEMON_DIR):
         venv = c.run("poetry env info -p", hide=True).stdout.strip()
         return os.path.join(venv, "bin", "python")
 
 
-def get_pytest(c):
+def get_pytest(c: Context) -> str:
     with c.cd(DAEMON_DIR):
         venv = c.run("poetry env info -p", hide=True).stdout.strip()
         return os.path.join(venv, "bin", "pytest")
 
 
-def get_os():
+def get_os() -> OsInfo:
     d = {}
     with open("/etc/os-release", "r") as f:
         for line in f.readlines():
             line = line.strip()
             key, value = line.split("=")
-            d[key] = value
-    return d["ID"]
+            d[key] = value.strip('"')
+    name_value = d["ID"]
+    like_value = d["ID_LIKE"]
+    try:
+        name = OsName(name_value)
+        like = OsLike(like_value)
+    except ValueError:
+        print(f"unsupported os({name_value}) like({like_value})")
+        sys.exit(1)
+    version = d["VERSION_ID"]
+    return OsInfo(name, like, version)
 
 
-@task
-def install(c):
-    """
-    install core
-    """
-    # get os
-    os_name = get_os()
-    # install system dependencies
+def install_system(c: Context, os_info: OsInfo) -> None:
     print("installing system dependencies...")
-    if os_name == UBUNTU:
+    if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 "
             "ethtool tk python3-tk", hide=True
         )
-    else:
-        raise Exception(f"unsupported os: {os_name}")
-    # install grpcio-tools for building proto files
+
+
+def install_grpcio(c: Context) -> None:
     print("installing grpcio-tools...")
     c.run("python3 -m pip install --user grpcio-tools", hide=True)
-    # build core
+
+
+def build(c: Context) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=True)
     c.run("./configure", hide=True)
     c.run("make -j", hide=True)
-    # install vcmd
+
+
+def install_core(c: Context) -> None:
     print("installing vcmd...")
     with c.cd(VCMD_DIR):
         c.run("sudo make install", hide=True)
-    # install vcmd
     print("installing gui...")
     with c.cd(GUI_DIR):
         c.run("sudo make install", hide=True)
-    # install poetry environment
+
+
+def install_poetry(c: Context, dev: bool) -> None:
     print("installing poetry...")
     c.run("pipx install poetry", hide=True)
+    args = "" if dev else "--no-dev"
     with c.cd(DAEMON_DIR):
         print("installing core environment using poetry...")
-        c.run("poetry install", hide=True)
+        c.run(f"poetry install {args}", hide=True)
+        if dev:
+            c.run("poetry run pre-commit install")
+
+
+def install_ospf_mdr(c: Context, os_info: OsInfo) -> None:
+    if c.run("which zebra"):
+        print("quagga already installed, skipping ospf mdr")
+        return
+    if os_info.like == OsLike.DEBIAN:
+        c.run("sudo apt install -y libtool gawk libreadline-dev")
+    clone_dir = "/tmp/ospf-mdr"
+    c.run(
+        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}"
+    )
+    with c.cd(clone_dir):
+        c.run("./bootstrap.sh")
+        c.run(
+            "./configure --disable-doc --enable-user=root --enable-group=root "
+            "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
+            "--localstatedir=/var/run/quagga"
+        )
+        c.run("make -j")
+        c.run("sudo make install")
+
+
+@task
+def install(c, dev=False):
+    """
+    install core
+    """
+    os_info = get_os()
+    install_system(c, os_info)
+    install_grpcio(c)
+    build(c)
+    install_core(c)
+    install_poetry(c, dev)
+    install_ospf_mdr(c, os_info)
 
 
 @task
