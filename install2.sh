@@ -49,4 +49,4 @@ python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke
-inv install $(dev) $(verbose)
+inv install ${dev} ${verbose}
