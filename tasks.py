@@ -137,6 +137,11 @@ def install(c, dev=False, verbose=False):
     install_core(c, hide)
     install_poetry(c, dev, hide)
     install_ospf_mdr(c, os_info, hide)
+    print("please open a new terminal or re-login to leverage invoke for running core")
+    print("# run daemon")
+    print("inv daemon")
+    print("# run gui")
+    print("inv gui")
 
 
 @task
