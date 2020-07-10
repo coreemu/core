@@ -151,7 +151,7 @@ def install(c, dev=False, verbose=False):
     os_info = get_os()
     install_system(c, os_info, hide)
     install_grpcio(c, hide)
-    build(c, hide)
+    build(c, os_info, hide)
     install_core(c, hide)
     install_poetry(c, dev, hide)
     install_ospf_mdr(c, os_info, hide)
