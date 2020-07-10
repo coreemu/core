@@ -101,15 +101,17 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     if c.run("which zebra", warn=True, hide=hide):
         print("quagga already installed, skipping ospf mdr")
         return
-    print("installing ospf mdr...")
+    print("installing ospf mdr dependencies...")
     if os_info.like == OsLike.DEBIAN:
         c.run("sudo apt install -y libtool gawk libreadline-dev", hide=hide)
+    print("cloning ospf mdr...")
     clone_dir = "/tmp/ospf-mdr"
     c.run(
         f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
         hide=hide
     )
     with c.cd(clone_dir):
+        print("building ospf mdr...")
         c.run("./bootstrap.sh", hide=hide)
         c.run(
             "./configure --disable-doc --enable-user=root --enable-group=root "
@@ -118,6 +120,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
             hide=hide
         )
         c.run("make -j", hide=hide)
+        print("installing ospf mdr...")
         c.run("sudo make install", hide=hide)
 
 
