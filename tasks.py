@@ -101,6 +101,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     if c.run("which zebra", warn=True, hide=hide):
         print("quagga already installed, skipping ospf mdr")
         return
+    print("installing ospf mdr...")
     if os_info.like == OsLike.DEBIAN:
         c.run("sudo apt install -y libtool gawk libreadline-dev", hide=hide)
     clone_dir = "/tmp/ospf-mdr"
