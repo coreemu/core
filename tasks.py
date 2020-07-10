@@ -16,13 +16,14 @@ class OsName(Enum):
 
 class OsLike(Enum):
     DEBIAN = "debian"
+    REDHAT = "rhel fedora"
 
 
 class OsInfo:
-    def __init__(self, name: OsName, like: OsLike, version: str) -> None:
+    def __init__(self, name: OsName, like: OsLike, version: float) -> None:
         self.name: OsName = name
         self.like: OsLike = like
-        self.version: str = version
+        self.version: float = version
 
 
 def get_python(c: Context) -> str:
@@ -48,13 +49,16 @@ def get_os() -> OsInfo:
             d[key] = value.strip('"')
     name_value = d["ID"]
     like_value = d["ID_LIKE"]
+    version_value = d["VERSION_ID"]
     try:
         name = OsName(name_value)
         like = OsLike(like_value)
+        version = float(version_value)
     except ValueError:
-        print(f"unsupported os({name_value}) like({like_value})")
+        print(
+            f"unsupported os({name_value}) like({like_value}) version({version_value}"
+        )
         sys.exit(1)
-    version = d["VERSION_ID"]
     return OsInfo(name, like, version)
 
 
