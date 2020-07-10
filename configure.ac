@@ -167,18 +167,6 @@ if test "x$enable_daemon" = "xyes"; then
   if test "x$ovs_of_path" = "xno" ; then
     AC_MSG_WARN([Could not locate ovs-ofctl cannot use OVS mode])
   fi
-
-  CFLAGS_save=$CFLAGS
-  CPPFLAGS_save=$CPPFLAGS
-  if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
-  fi
-  CFLAGS="-I$PYTHON_INCLUDE_DIR"
-  CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
-  AC_CHECK_HEADERS([Python.h], [],
-    AC_MSG_ERROR([Python bindings require Python development headers (try installing your 'python-devel' or 'python-dev' package)]))
-  CFLAGS=$CFLAGS_save
-  CPPFLAGS=$CPPFLAGS_save
 fi
 
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
