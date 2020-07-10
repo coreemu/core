@@ -13,7 +13,7 @@ fi
 # parse arguments
 dev=""
 verbose=""
-while getopts "drv:" opt; do
+while getopts "dv" opt; do
   case ${opt} in
   d)
     dev="-d"
