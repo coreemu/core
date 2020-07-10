@@ -42,6 +42,8 @@ def get_os() -> OsInfo:
     with open("/etc/os-release", "r") as f:
         for line in f.readlines():
             line = line.strip()
+            if not line:
+                continue
             key, value = line.split("=")
             d[key] = value.strip('"')
     name_value = d["ID"]
