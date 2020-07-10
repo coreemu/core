@@ -71,8 +71,10 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
         )
 
 
-def install_grpcio(c: Context, hide: bool) -> None:
+def install_grpcio(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("installing grpcio-tools...")
+    if os_info.like == OsLike.REDHAT:
+        c.run("sudo yum install -y python3-devel", hide=hide)
     c.run("python3 -m pip install --user grpcio-tools", hide=hide)
 
 
@@ -138,7 +140,7 @@ def install(c, dev=False, verbose=False):
     hide = not verbose
     os_info = get_os()
     install_system(c, os_info, hide)
-    install_grpcio(c, hide)
+    install_grpcio(c, os_info, hide)
     build(c, hide)
     install_core(c, hide)
     install_poetry(c, dev, hide)
