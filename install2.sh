@@ -10,6 +10,28 @@ if [[ -f /etc/os-release ]]; then
   os=${ID}
 fi
 
+# parse arguments
+dev=""
+verbose=""
+while getopts "drv:" opt; do
+  case ${opt} in
+  d)
+    dev="-d"
+    ;;
+  v)
+    verbose="-v"
+    ;;
+  \?)
+    echo "script usage: $(basename $0) [-d] [-v]" >&2
+    echo "" >&2
+    echo "-v enable verbose install" >&2
+    echo "-d enable developer install" >&2
+    exit 1
+    ;;
+  esac
+done
+shift $((OPTIND - 1))
+
 echo "installing CORE for ${os}"
 case ${os} in
 "ubuntu")
@@ -27,4 +49,4 @@ python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke
-inv install
+inv install $(dev) $(verbose)

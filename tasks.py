@@ -56,80 +56,83 @@ def get_os() -> OsInfo:
     return OsInfo(name, like, version)
 
 
-def install_system(c: Context, os_info: OsInfo) -> None:
+def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("installing system dependencies...")
     if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 "
-            "ethtool tk python3-tk", hide=True
+            "ethtool tk python3-tk", hide=hide
         )
 
 
-def install_grpcio(c: Context) -> None:
+def install_grpcio(c: Context, hide: bool) -> None:
     print("installing grpcio-tools...")
-    c.run("python3 -m pip install --user grpcio-tools", hide=True)
+    c.run("python3 -m pip install --user grpcio-tools", hide=hide)
 
 
-def build(c: Context) -> None:
+def build(c: Context, hide: bool) -> None:
     print("building core...")
-    c.run("./bootstrap.sh", hide=True)
-    c.run("./configure", hide=True)
-    c.run("make -j", hide=True)
+    c.run("./bootstrap.sh", hide=hide)
+    c.run("./configure", hide=hide)
+    c.run("make -j", hide=hide)
 
 
-def install_core(c: Context) -> None:
+def install_core(c: Context, hide: bool) -> None:
     print("installing vcmd...")
     with c.cd(VCMD_DIR):
-        c.run("sudo make install", hide=True)
+        c.run("sudo make install", hide=hide)
     print("installing gui...")
     with c.cd(GUI_DIR):
-        c.run("sudo make install", hide=True)
+        c.run("sudo make install", hide=hide)
 
 
-def install_poetry(c: Context, dev: bool) -> None:
+def install_poetry(c: Context, dev: bool, hide: bool) -> None:
     print("installing poetry...")
-    c.run("pipx install poetry", hide=True)
+    c.run("pipx install poetry", hide=hide)
     args = "" if dev else "--no-dev"
     with c.cd(DAEMON_DIR):
         print("installing core environment using poetry...")
-        c.run(f"poetry install {args}", hide=True)
+        c.run(f"poetry install {args}", hide=hide)
         if dev:
             c.run("poetry run pre-commit install")
 
 
-def install_ospf_mdr(c: Context, os_info: OsInfo) -> None:
-    if c.run("which zebra"):
+def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
+    if c.run("which zebra", warn=True, hide=hide):
         print("quagga already installed, skipping ospf mdr")
         return
     if os_info.like == OsLike.DEBIAN:
-        c.run("sudo apt install -y libtool gawk libreadline-dev")
+        c.run("sudo apt install -y libtool gawk libreadline-dev", hide=hide)
     clone_dir = "/tmp/ospf-mdr"
     c.run(
-        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}"
+        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
+        hide=hide
     )
     with c.cd(clone_dir):
-        c.run("./bootstrap.sh")
+        c.run("./bootstrap.sh", hide=hide)
         c.run(
             "./configure --disable-doc --enable-user=root --enable-group=root "
             "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
-            "--localstatedir=/var/run/quagga"
+            "--localstatedir=/var/run/quagga",
+            hide=hide
         )
-        c.run("make -j")
-        c.run("sudo make install")
+        c.run("make -j", hide=hide)
+        c.run("sudo make install", hide=hide)
 
 
 @task
-def install(c, dev=False):
+def install(c, dev=False, verbose=False):
     """
     install core
     """
+    hide = not verbose
     os_info = get_os()
-    install_system(c, os_info)
-    install_grpcio(c)
-    build(c)
-    install_core(c)
-    install_poetry(c, dev)
-    install_ospf_mdr(c, os_info)
+    install_system(c, os_info, hide)
+    install_grpcio(c, hide)
+    build(c, hide)
+    install_core(c, hide)
+    install_poetry(c, dev, hide)
+    install_ospf_mdr(c, os_info, hide)
 
 
 @task
