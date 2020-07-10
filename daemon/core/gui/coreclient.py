@@ -510,6 +510,10 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
 
+    def send_servers(self) -> None:
+        for server in self.servers.values():
+            self.client.add_session_server(self.session_id, server.name, server.address)
+
     def start_session(self) -> StartSessionResponse:
         self.ifaces_manager.reset_mac()
         nodes = [x.core_node for x in self.canvas_nodes.values()]
@@ -538,6 +542,7 @@ class CoreClient:
             emane_config = None
         response = StartSessionResponse(result=False)
         try:
+            self.send_servers()
             response = self.client.start_session(
                 self.session_id,
                 nodes,
@@ -749,6 +754,7 @@ class CoreClient:
         """
         Send to daemon all session info, but don't start the session
         """
+        self.send_servers()
         self.create_nodes_and_links()
         for config_proto in self.get_wlan_configs_proto():
             self.client.set_wlan_config(

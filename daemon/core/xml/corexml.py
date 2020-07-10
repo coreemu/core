@@ -284,6 +284,7 @@ class CoreXmlWriter:
         self.write_service_configs()
         self.write_configservice_configs()
         self.write_session_origin()
+        self.write_servers()
         self.write_session_hooks()
         self.write_session_options()
         self.write_session_metadata()
@@ -317,6 +318,15 @@ class CoreXmlWriter:
                 add_attribute(origin, "x", x)
                 add_attribute(origin, "y", y)
                 add_attribute(origin, "z", z)
+
+    def write_servers(self) -> None:
+        servers = etree.Element("servers")
+        for server in self.session.distributed.servers.values():
+            server_element = etree.SubElement(servers, "server")
+            add_attribute(server_element, "name", server.name)
+            add_attribute(server_element, "address", server.host)
+        if servers.getchildren():
+            self.scenario.append(servers)
 
     def write_session_hooks(self) -> None:
         # hook scripts
@@ -572,6 +582,7 @@ class CoreXmlReader:
         self.read_session_metadata()
         self.read_session_options()
         self.read_session_hooks()
+        self.read_servers()
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
@@ -634,6 +645,16 @@ class CoreXmlReader:
             data = hook.text
             logging.info("reading hook: state(%s) name(%s)", state, name)
             self.session.add_hook(state, name, data)
+
+    def read_servers(self) -> None:
+        servers = self.scenario.find("servers")
+        if servers is None:
+            return
+        for server in servers.iterchildren():
+            name = server.get("name")
+            address = server.get("address")
+            logging.info("reading server: name(%s) address(%s)", name, address)
+            self.session.distributed.add_server(name, address)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")

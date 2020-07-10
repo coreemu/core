@@ -42,10 +42,11 @@ class CanvasNode:
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
         label_y = self._get_label_y()
+        label = self.get_label()
         self.text_id: int = self.canvas.create_text(
             x,
             label_y,
-            text=self.core_node.name,
+            text=label,
             tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
@@ -123,9 +124,16 @@ class CanvasNode:
         self.antennas.clear()
         self.antenna_images.clear()
 
+    def get_label(self) -> str:
+        label = self.core_node.name
+        if self.core_node.server:
+            label = f"{self.core_node.name}({self.core_node.server})"
+        return label
+
     def redraw(self) -> None:
         self.canvas.itemconfig(self.id, image=self.image)
-        self.canvas.itemconfig(self.text_id, text=self.core_node.name)
+        label = self.get_label()
+        self.canvas.itemconfig(self.text_id, text=label)
         for edge in self.edges:
             edge.redraw()
 
