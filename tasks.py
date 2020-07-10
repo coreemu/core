@@ -73,15 +73,23 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel "
-            "iptables-ebtables iproute python3-devel python3-tkinter tk ethtool make",
+            "iptables-ebtables iproute python3-devel python3-tkinter tk ethtool make "
+            "kernel-modules-extra",
             hide=hide
         )
+        # centos 8+ does not support netem by default
+        if os_info.name == OsName.CENTOS and os_info.version >= 8:
+            c.run("sudo yum install -y kernel-modules-extra", hide=hide)
+            c.run("sudo modprobe sch_netem", hide=hide)
+    # attempt to setup legacy ebtables when an nftables based version is found
     r = c.run("ebtables -V", hide=hide)
     if "nf_tables" in r.stdout:
-        c.run(
+        if not c.run(
             "sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy",
+            warn=True,
             hide=hide
-        )
+        ):
+            print("ERROR: unable to setup required ebtables-legacy, WLAN will not work")
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
