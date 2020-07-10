@@ -196,6 +196,7 @@ def cleanup(c):
     """
     run core-cleanup removing leftover core nodes, bridges, directories
     """
+    print("running core-cleanup...")
     c.run(f"sudo daemon/scripts/core-cleanup", pty=True)
 
 
