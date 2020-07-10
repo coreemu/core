@@ -85,11 +85,12 @@ def install_grpcio(c: Context, hide: bool) -> None:
     )
 
 
-def build(c: Context, hide: bool) -> None:
+def build(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=hide)
-    c.run("./configure", hide=hide)
-    c.run("make", hide=hide)
+    prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
+    c.run(f"./configure {prefix}", hide=hide)
+    c.run("make -j$(nproc)", hide=hide)
 
 
 def install_core(c: Context, hide: bool) -> None:
@@ -109,7 +110,7 @@ def install_poetry(c: Context, dev: bool, hide: bool) -> None:
         print("installing core environment using poetry...")
         c.run(f"poetry install {args}", hide=hide)
         if dev:
-            c.run("poetry run pre-commit install")
+            c.run("poetry run pre-commit install", hide=hide)
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
@@ -136,7 +137,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
             "--localstatedir=/var/run/quagga",
             hide=hide
         )
-        c.run("make", hide=hide)
+        c.run("make -j$(nproc)", hide=hide)
         print("installing ospf mdr...")
         c.run("sudo make install", hide=hide)
 
