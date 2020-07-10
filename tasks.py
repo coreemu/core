@@ -76,6 +76,12 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
             "iptables-ebtables iproute python3-devel python3-tkinter tk ethtool",
             hide=hide
         )
+    r = c.run("ebtables -V", hide=hide)
+    if "nf_tables" in r.stdout:
+        c.run(
+            "sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy",
+            hide=hide
+        )
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
