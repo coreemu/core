@@ -117,6 +117,8 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("installing ospf mdr dependencies...")
     if os_info.like == OsLike.DEBIAN:
         c.run("sudo apt install -y libtool gawk libreadline-dev", hide=hide)
+    elif os_info.like == OsLike.REDHAT:
+        c.run("sudo yum install -y libtool gawk readline-devel", hide=hide)
     print("cloning ospf mdr...")
     clone_dir = "/tmp/ospf-mdr"
     c.run(
