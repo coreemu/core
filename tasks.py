@@ -74,14 +74,14 @@ def build(c: Context, hide: bool) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=hide)
     c.run("./configure", hide=hide)
-    c.run("make -j", hide=hide)
+    c.run("make", hide=hide)
 
 
 def install_core(c: Context, hide: bool) -> None:
-    print("installing vcmd...")
+    print("installing core vcmd...")
     with c.cd(VCMD_DIR):
         c.run("sudo make install", hide=hide)
-    print("installing gui...")
+    print("installing core gui...")
     with c.cd(GUI_DIR):
         c.run("sudo make install", hide=hide)
 
@@ -119,7 +119,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
             "--localstatedir=/var/run/quagga",
             hide=hide
         )
-        c.run("make -j", hide=hide)
+        c.run("make", hide=hide)
         print("installing ospf mdr...")
         c.run("sudo make install", hide=hide)
 
