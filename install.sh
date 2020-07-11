@@ -11,6 +11,10 @@ function install_python_depencencies() {
   sudo python3 -m pip install -r daemon/requirements.txt
 }
 
+function install_grpcio_tools() {
+  python3 -m pip install --only-binary ":all:" --user grpcio-tools
+}
+
 function install_ospf_mdr() {
   rm -rf /tmp/ospf-mdr
   git clone https://github.com/USNavalResearchLaboratory/ospf-mdr /tmp/ospf-mdr
@@ -86,7 +90,7 @@ if [ -z "${reinstall}" ]; then
     echo "installing core system dependencies"
     sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
       python${ubuntu_py} python${ubuntu_py}-dev python3-pip python3-tk tk libtk-img ethtool autoconf
-    python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
+    install_grpcio_tools
     echo "installing ospf-mdr system dependencies"
     sudo apt install -y libtool gawk libreadline-dev
     install_ospf_mdr
@@ -108,7 +112,7 @@ if [ -z "${reinstall}" ]; then
     echo "installing core system dependencies"
     sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
       python${centos_py} python${centos_py}-devel python3-pip python3-tkinter tk ethtool autoconf
-    python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
+    install_grpcio_tools
     echo "installing ospf-mdr system dependencies"
     sudo yum install -y libtool gawk readline-devel
     install_ospf_mdr
