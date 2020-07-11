@@ -206,6 +206,15 @@ def gui(c):
 
 
 @task
+def cli(c, args):
+    """
+    run core-cli used to query and modify a running session
+    """
+    with c.cd(DAEMON_DIR):
+        c.run(f"poetry run scripts/core-cli {args}", pty=True)
+
+
+@task
 def cleanup(c):
     """
     run core-cleanup removing leftover core nodes, bridges, directories

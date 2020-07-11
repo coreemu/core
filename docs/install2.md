@@ -61,3 +61,21 @@ Example running the core-daemon task from the root of the repo:
 ```shell
 inv daemon
 ```
+
+Some tasks are wrappers around command line tools and requires running
+them with a slight variation for compatibility. You can enter the
+poetry shell to run the script natively.
+
+```shell
+# running core-cli as a task requires all options to be provided
+# within a string
+inv cli "query session -i 1"
+
+# entering the poetry shell to use core-cli natively
+cd $REPO/daemon
+poetry shell
+core-cli query session -i 1
+
+# exit the shell
+exit
+```
