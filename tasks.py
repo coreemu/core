@@ -93,7 +93,9 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
             warn=True,
             hide=hide
         ):
-            print("ERROR: unable to setup required ebtables-legacy, WLAN will not work")
+            print(
+                "WARNING: unable to setup required ebtables-legacy, WLAN will not work"
+            )
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
