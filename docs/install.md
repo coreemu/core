@@ -236,7 +236,7 @@ Specifically leveraging 1.27.2 to avoid compatibility issues with older versions
 of pip pulling down binary files.
 
 ```shell
-python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
+python3 -m pip install --only-binary ":all:" --user grpcio-tools
 ```
 
 ### Build and Install
