@@ -80,7 +80,11 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
         # centos 8+ does not support netem by default
         if os_info.name == OsName.CENTOS and os_info.version >= 8:
             c.run("sudo yum install -y kernel-modules-extra", hide=hide)
-            c.run("sudo modprobe sch_netem", hide=hide)
+            if not c.run("sudo modprobe sch_netem", warn=True, hide=hide):
+                print("ERROR: you need to install the latest kernel")
+                print("run the following, restart, and try again")
+                print("sudo yum update")
+                sys.exit(1)
     # attempt to setup legacy ebtables when an nftables based version is found
     r = c.run("ebtables -V", hide=hide)
     if "nf_tables" in r.stdout:
