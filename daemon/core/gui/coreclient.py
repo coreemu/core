@@ -377,7 +377,8 @@ class CoreClient:
 
         # organize canvas
         self.app.canvas.organize()
-        self.show_mobility_players()
+        if self.is_runtime():
+            self.show_mobility_players()
         # update ui to represent current state
         self.app.after(0, self.app.joined_session_update)
 
