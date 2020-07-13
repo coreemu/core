@@ -10,6 +10,7 @@ from invoke import task, Context
 DAEMON_DIR: str = "daemon"
 VCMD_DIR: str = "netns"
 GUI_DIR: str = "gui"
+DEFAULT_PREFIX: str = "/usr/local"
 
 
 class OsName(Enum):
@@ -169,7 +170,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-def install_files(c: Context, hide: bool, prefix: str = "/usr/local") -> None:
+def install_files(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
     # install all scripts
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
@@ -225,10 +226,11 @@ def install_files(c: Context, hide: bool, prefix: str = "/usr/local") -> None:
 
 
 @task
-def install(c, dev=False, verbose=False):
+def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core
     """
+    print(f"installing core with prefix: {prefix}")
     hide = not verbose
     os_info = get_os()
     install_system(c, os_info, hide)
@@ -236,7 +238,7 @@ def install(c, dev=False, verbose=False):
     build(c, os_info, hide)
     install_core(c, hide)
     install_poetry(c, dev, hide)
-    install_files(c, hide)
+    install_files(c, hide, prefix)
     install_ospf_mdr(c, os_info, hide)
     print("please open a new terminal or re-login to leverage invoke for running core")
     print("# run daemon")
@@ -246,7 +248,7 @@ def install(c, dev=False, verbose=False):
 
 
 @task
-def uninstall(c, dev=False, verbose=False, prefix="/usr/local"):
+def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     uninstall core
     """

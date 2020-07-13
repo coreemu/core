@@ -13,7 +13,8 @@ fi
 # parse arguments
 dev=""
 verbose=""
-while getopts "dv" opt; do
+prefix=""
+while getopts "dvp:" opt; do
   case ${opt} in
   d)
     dev="-d"
@@ -21,11 +22,15 @@ while getopts "dv" opt; do
   v)
     verbose="-v"
     ;;
+  p)
+    prefix="-p ${OPTARG}"
+    ;;
   \?)
     echo "script usage: $(basename $0) [-d] [-v]" >&2
     echo "" >&2
     echo "-v enable verbose install" >&2
     echo "-d enable developer install" >&2
+    echo "-p install prefix, defaults to /usr/local" >&2
     exit 1
     ;;
   esac
@@ -49,4 +54,4 @@ python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke
-inv install ${dev} ${verbose}
+inv install ${dev} ${verbose} ${prefix}
