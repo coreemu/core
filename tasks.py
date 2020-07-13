@@ -101,7 +101,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
 def install_grpcio(c: Context, hide: bool) -> None:
     print("installing grpcio-tools...")
     c.run(
-        "python3 -m pip install --only-binary \":all:\" --user grpcio-tools", hide=hide
+        "python3 -m pip install --user grpcio==12.7.2 grpcio-tools==12.7.2", hide=hide
     )
 
 

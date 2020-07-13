@@ -232,11 +232,10 @@ git clone https://github.com/coreemu/core.git
 ### Install grpcio-tools
 
 Python module grpcio-tools is currently needed to generate gRPC protobuf code.
-Specifically leveraging 1.27.2 to avoid compatibility issues with older versions
-of pip pulling down binary files.
+Specifically leveraging 1.27.2 as that is what will be used during runtime.
 
 ```shell
-python3 -m pip install --only-binary ":all:" --user grpcio-tools
+python3 -m pip install --user grpcio==12.7.2 grpcio-tools==12.7.2
 ```
 
 ### Build and Install

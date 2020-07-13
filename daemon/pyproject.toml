@@ -21,7 +21,7 @@ pyyaml = "*"
 [tool.poetry.dev-dependencies]
 black = "==19.3b0"
 flake8 = "*"
-grpcio-tools = "*"
+grpcio-tools = "1.27.2"
 isort = "*"
 mock = "*"
 pre-commit = "*"
