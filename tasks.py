@@ -1,6 +1,9 @@
+import inspect
 import os
 import sys
 from enum import Enum
+from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 from invoke import task, Context
 
@@ -162,6 +165,61 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
+def install_files(c: Context, hide: bool, prefix="/usr/local") -> None:
+    # install all scripts
+    python = get_python(c)
+    bin_dir = Path(prefix).joinpath("bin")
+    for script in Path("daemon/scripts").iterdir():
+        dest = bin_dir.joinpath(script.name)
+        print(f"installing {script} to {dest}")
+        with open(script, "r") as f:
+            lines = f.readlines()
+        first = lines[0].strip()
+        # modify python scripts to point to virtual environment
+        if first == "#!/usr/bin/env python3":
+            lines[0] = f"#!{python}\n"
+            temp = NamedTemporaryFile("w", delete=False)
+            for line in lines:
+                temp.write(line)
+            temp.close()
+            c.run(f"sudo cp {temp.name} {dest}", hide=hide)
+            c.run(f"sudo chmod 755 {dest}", hide=hide)
+            os.unlink(temp.name)
+        # copy normal links
+        else:
+            c.run(f"sudo cp {script} {dest}", hide=hide)
+
+    # install core configuration file
+    config_dir = "/etc/core"
+    print(f"installing core configuration files under {config_dir}")
+    c.run(f"sudo mkdir -p {config_dir}", hide=hide)
+    c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
+
+    # install service
+    systemd_dir = Path("/lib/systemd/system/")
+    service_file = systemd_dir.joinpath("core-daemon.service")
+    if systemd_dir.exists():
+        print(f"installing core-daemon.service for systemd to {service_file}")
+        service_data = inspect.cleandoc(f"""
+        [Unit]
+        Description=Common Open Research Emulator Service
+        After=network.target
+
+        [Service]
+        Type=simple
+        ExecStart={bin_dir}/core-daemon
+        TasksMax=infinity
+
+        [Install]
+        WantedBy=multi-user.target
+        """)
+        temp = NamedTemporaryFile("w", delete=False)
+        temp.write(service_data)
+        temp.close()
+        c.run(f"sudo cp {temp.name} {service_file}", hide=hide)
+
+
 @task
 def install(c, dev=False, verbose=False):
     """
@@ -174,6 +232,7 @@ def install(c, dev=False, verbose=False):
     build(c, os_info, hide)
     install_core(c, hide)
     install_poetry(c, dev, hide)
+    install_files(c, hide)
     install_ospf_mdr(c, os_info, hide)
     print("please open a new terminal or re-login to leverage invoke for running core")
     print("# run daemon")
