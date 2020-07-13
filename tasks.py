@@ -29,10 +29,14 @@ class OsInfo:
         self.version: float = version
 
 
-def get_python(c: Context) -> str:
+def get_python(c: Context, warn: bool = False) -> str:
     with c.cd(DAEMON_DIR):
-        venv = c.run("poetry env info -p", hide=True).stdout.strip()
-        return os.path.join(venv, "bin", "python")
+        r = c.run("poetry env info -p", warn=warn, hide=True)
+        if r.ok:
+            venv = r.stdout.strip()
+            return os.path.join(venv, "bin", "python")
+        else:
+            return ""
 
 
 def get_pytest(c: Context) -> str:
@@ -165,7 +169,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-def install_files(c: Context, hide: bool, prefix="/usr/local") -> None:
+def install_files(c: Context, hide: bool, prefix: str = "/usr/local") -> None:
     # install all scripts
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
@@ -239,6 +243,47 @@ def install(c, dev=False, verbose=False):
     print("inv daemon")
     print("# run gui")
     print("inv gui")
+
+
+@task
+def uninstall(c, dev=False, verbose=False, prefix="/usr/local"):
+    """
+    uninstall core
+    """
+    hide = not verbose
+    print("uninstalling core-gui")
+    with c.cd(GUI_DIR):
+        c.run("sudo make uninstall", hide=hide)
+    print("uninstalling vcmd")
+    with c.cd(VCMD_DIR):
+        c.run("sudo make uninstall", hide=hide)
+    print("cleaning build directory")
+    c.run("make clean", hide=hide)
+    c.run("./bootstrap.sh clean", hide=hide)
+    python = get_python(c, warn=True)
+    if python:
+        with c.cd(DAEMON_DIR):
+            if dev:
+                print("uninstalling pre-commit")
+                c.run("poetry run pre-commit uninstall", hide=hide)
+            print("uninstalling poetry virtual environment")
+            c.run(f"poetry env remove {python}", hide=hide)
+
+    # remove installed files
+    bin_dir = Path(prefix).joinpath("bin")
+    for script in Path("daemon/scripts").iterdir():
+        dest = bin_dir.joinpath(script.name)
+        print(f"uninstalling {dest}")
+        c.run(f"sudo rm -f {dest}", hide=hide)
+
+    # install service
+    systemd_dir = Path("/lib/systemd/system/")
+    service_name = "core-daemon.service"
+    service_file = systemd_dir.joinpath(service_name)
+    if service_file.exists():
+        print(f"uninstalling service {service_file}")
+        c.run(f"sudo systemctl disable {service_name}", hide=hide)
+        c.run(f"sudo rm -f {service_file}", hide=hide)
 
 
 @task
