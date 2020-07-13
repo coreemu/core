@@ -235,7 +235,7 @@ Python module grpcio-tools is currently needed to generate gRPC protobuf code.
 Specifically leveraging 1.27.2 as that is what will be used during runtime.
 
 ```shell
-python3 -m pip install --user grpcio==12.7.2 grpcio-tools==12.7.2
+python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
 ```
 
 ### Build and Install
