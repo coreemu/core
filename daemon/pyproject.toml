@@ -39,6 +39,11 @@ force_grid_wrap = 0
 use_parentheses = "True"
 line_length = 88
 
+[tool.black]
+line_length = 88
+exclude = ".+_pb2.*.py|doc/|build/|__pycache__/"
+
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

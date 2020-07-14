@@ -26,7 +26,7 @@ jobs:
       - name: black
         run: |
           cd daemon
-          poetry run black --check --exclude ".+_pb2.*.py|doc|build" .
+          poetry run black --check .
       - name: flake8
         run: |
           cd daemon

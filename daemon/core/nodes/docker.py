@@ -78,7 +78,7 @@ class DockerNode(CoreNode):
         name: str = None,
         nodedir: str = None,
         server: DistributedServer = None,
-        image: str = None
+        image: str = None,
     ) -> None:
         """
         Create a DockerNode instance.
@@ -209,9 +209,7 @@ class DockerNode(CoreNode):
         if self.server is not None:
             self.host_cmd(f"rm -f {temp.name}")
         os.unlink(temp.name)
-        logging.debug(
-            "node(%s) added file: %s; mode: 0%o", self.name, filename, mode
-        )
+        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, filename, mode)
 
     def nodefilecopy(self, filename: str, srcfilename: str, mode: int = None) -> None:
         """
