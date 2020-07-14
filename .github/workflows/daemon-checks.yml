@@ -16,7 +16,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install poetry
           cd daemon
-          cp setup.py.in setup.py
           cp core/constants.py.in core/constants.py
           sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
           poetry install
