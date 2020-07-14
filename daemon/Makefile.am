@@ -24,8 +24,7 @@ distclean-local:
 DISTCLEANFILES = Makefile.in
 
 # files to include with distribution tarball
-EXTRA_DIST = setup.py \
-	     core \
+EXTRA_DIST = core \
 	     data \
 	     doc/conf.py.in \
 	     examples \
@@ -34,5 +33,4 @@ EXTRA_DIST = setup.py \
 	     setup.cfg \
 	     MANIFEST.in \
 	     poetry.lock \
-	     pyproject.toml \
-	     requirements.txt
+	     pyproject.toml

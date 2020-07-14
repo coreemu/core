@@ -126,7 +126,6 @@ change-files:
 	$(call change-files,gui/core-gui)
 	$(call change-files,daemon/core/constants.py)
 	$(call change-files,netns/setup.py)
-	$(call change-files,daemon/setup.py)
 
 CORE_DOC_SRC = core-python-$(PACKAGE_VERSION)
 .PHONY: doc
