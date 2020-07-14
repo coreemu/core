@@ -112,11 +112,10 @@ def install_grpcio(c: Context, hide: bool) -> None:
     )
 
 
-def build(c: Context, os_info: OsInfo, hide: bool) -> None:
+def build(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=hide)
-    prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
-    c.run(f"./configure {prefix}", hide=hide)
+    c.run(f"./configure --prefix={prefix}", hide=hide)
     c.run("make -j$(nproc)", hide=hide)
 
 
@@ -247,7 +246,7 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     os_info = get_os()
     install_system(c, os_info, hide)
     install_grpcio(c, hide)
-    build(c, os_info, hide)
+    build(c, hide, prefix)
     install_core(c, hide)
     install_poetry(c, dev, hide)
     install_scripts(c, hide, prefix)
