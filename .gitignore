@@ -39,6 +39,7 @@ coverage.xml
 
 # python files
 *.egg-info
+*.pyc
 
 # ignore package files
 *.rpm
@@ -54,9 +55,6 @@ coverage.xml
 # ignore built input files
 netns/setup.py
 daemon/setup.py
-
-# ignore corefx build
-corefx/target
 
 # python
 __pycache__
