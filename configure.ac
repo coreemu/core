@@ -208,22 +208,12 @@ if [test "x$want_python" = "xyes" && test "x$enable_docs" = "xyes"] ; then
   AS_IF([$PYTHON -c "import sphinx_rtd_theme" &> /dev/null], [], [AC_MSG_ERROR([doc dependency missing, please install python3 -m pip install sphinx-rtd-theme])])
 fi
 
-AC_ARG_WITH([startup],
-	    [AS_HELP_STRING([--with-startup=option],
-		[option=systemd,suse,none to install systemd/SUSE init scripts])],
-	    [with_startup=$with_startup],
-	    [with_startup=initd])
-AC_SUBST(with_startup)
-AC_MSG_RESULT([using startup option $with_startup])
-
 # Variable substitutions
 AM_CONDITIONAL(WANT_GUI, test x$enable_gui = xyes)
 AM_CONDITIONAL(WANT_DAEMON, test x$enable_daemon = xyes)
 AM_CONDITIONAL(WANT_DOCS, test x$want_docs = xyes)
 AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
-AM_CONDITIONAL(WANT_INITD, test x$with_startup = xinitd)
-AM_CONDITIONAL(WANT_SYSTEMD, test x$with_startup = xsystemd)
 AM_CONDITIONAL(WANT_VNODEDONLY, test x$enable_vnodedonly = xyes)
 
 if test $cross_compiling = no; then
@@ -237,7 +227,6 @@ AC_CONFIG_FILES([Makefile
 		gui/version.tcl
 		gui/Makefile
 		gui/icons/Makefile
-		scripts/Makefile
 		man/Makefile
 		docs/Makefile
 		daemon/Makefile
@@ -267,9 +256,6 @@ Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
   Python:                     ${PYTHON}
-  Logs:                       ${CORE_STATE_DIR}/log
-
-Startup:                      ${with_startup}
 
 Features to build:
   Build GUI:                  ${enable_gui}
