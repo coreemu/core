@@ -115,8 +115,7 @@ def install_grpcio(c: Context, hide: bool) -> None:
 def build(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=hide)
-    # prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
-    prefix = ""
+    prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
     c.run(f"./configure {prefix}", hide=hide)
     c.run("make -j$(nproc)", hide=hide)
 
@@ -171,11 +170,11 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
 
 
 @task
-def install_service(c, hide, prefix=DEFAULT_PREFIX):
+def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install systemd core service
     """
-    # install service
+    hide = not verbose
     bin_dir = Path(prefix).joinpath("bin")
     systemd_dir = Path("/lib/systemd/system/")
     service_file = systemd_dir.joinpath("core-daemon.service")
@@ -203,11 +202,11 @@ def install_service(c, hide, prefix=DEFAULT_PREFIX):
 
 
 @task
-def install_scripts(c, hide, prefix=DEFAULT_PREFIX):
+def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core script files, modified to leverage virtual environment
     """
-    # install all scripts
+    hide = not verbose
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
     for script in Path("daemon/scripts").iterdir():

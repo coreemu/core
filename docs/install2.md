@@ -92,6 +92,7 @@ python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
 
 # build core
 ./bootstrap.sh
+# centos requires --prefix=/usr
 ./configure
 make
 sudo make install
@@ -112,9 +113,11 @@ cd ..
 pipx install invoke
 
 # install core scripts leveraging poetry virtual environment
+# centos requires --prefix=/usr
 inv install-scripts
 
 # optionally install systemd service file
+# centos requires --prefix=/usr
 inv install-service
 ```
 
