@@ -31,6 +31,5 @@ EXTRA_DIST = core \
 	     scripts \
 	     tests \
 	     setup.cfg \
-	     MANIFEST.in \
 	     poetry.lock \
 	     pyproject.toml
