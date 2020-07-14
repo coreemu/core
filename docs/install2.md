@@ -44,7 +44,9 @@ Verified:
 ## Automated Installation
 
 > **NOTE:** installs OSPF MDR
+
 > **NOTE:** sets up script files using the prefix provided
+
 > **NOTE:** install a systemd service file to /lib/systemd/system/core-daemon.service
 
 ```shell
