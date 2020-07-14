@@ -115,7 +115,8 @@ def install_grpcio(c: Context, hide: bool) -> None:
 def build(c: Context, os_info: OsInfo, hide: bool) -> None:
     print("building core...")
     c.run("./bootstrap.sh", hide=hide)
-    prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
+    # prefix = "--prefix=/usr" if os_info.like == OsLike.REDHAT else ""
+    prefix = ""
     c.run(f"./configure {prefix}", hide=hide)
     c.run("make -j$(nproc)", hide=hide)
 
@@ -169,7 +170,43 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-def install_files(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
+@task
+def install_service(c, hide, prefix=DEFAULT_PREFIX):
+    """
+    install systemd core service
+    """
+    # install service
+    bin_dir = Path(prefix).joinpath("bin")
+    systemd_dir = Path("/lib/systemd/system/")
+    service_file = systemd_dir.joinpath("core-daemon.service")
+    if systemd_dir.exists():
+        print(f"installing core-daemon.service for systemd to {service_file}")
+        service_data = inspect.cleandoc(f"""
+            [Unit]
+            Description=Common Open Research Emulator Service
+            After=network.target
+
+            [Service]
+            Type=simple
+            ExecStart={bin_dir}/core-daemon
+            TasksMax=infinity
+
+            [Install]
+            WantedBy=multi-user.target
+            """)
+        temp = NamedTemporaryFile("w", delete=False)
+        temp.write(service_data)
+        temp.close()
+        c.run(f"sudo cp {temp.name} {service_file}", hide=hide)
+    else:
+        print(f"ERROR: systemd service path not found: {systemd_dir}")
+
+
+@task
+def install_scripts(c, hide, prefix=DEFAULT_PREFIX):
+    """
+    install core script files, modified to leverage virtual environment
+    """
     # install all scripts
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
@@ -200,34 +237,11 @@ def install_files(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
     c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
 
-    # install service
-    systemd_dir = Path("/lib/systemd/system/")
-    service_file = systemd_dir.joinpath("core-daemon.service")
-    if systemd_dir.exists():
-        print(f"installing core-daemon.service for systemd to {service_file}")
-        service_data = inspect.cleandoc(f"""
-        [Unit]
-        Description=Common Open Research Emulator Service
-        After=network.target
-
-        [Service]
-        Type=simple
-        ExecStart={bin_dir}/core-daemon
-        TasksMax=infinity
-
-        [Install]
-        WantedBy=multi-user.target
-        """)
-        temp = NamedTemporaryFile("w", delete=False)
-        temp.write(service_data)
-        temp.close()
-        c.run(f"sudo cp {temp.name} {service_file}", hide=hide)
-
 
 @task
 def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
-    install core
+    install core, poetry, scripts, service, and ospf mdr
     """
     print(f"installing core with prefix: {prefix}")
     hide = not verbose
@@ -237,7 +251,8 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     build(c, os_info, hide)
     install_core(c, hide)
     install_poetry(c, dev, hide)
-    install_files(c, hide, prefix)
+    install_scripts(c, hide, prefix)
+    install_service(c, hide, prefix)
     install_ospf_mdr(c, os_info, hide)
     print("please open a new terminal or re-login to leverage invoke for running core")
     print("# run daemon")
