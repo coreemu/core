@@ -36,6 +36,16 @@ Verified:
 > **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not
 > function properly
 
+> **NOTE:** CentOS 8 does not have the netem kernel mod available by default
+
+CentOS 8 Enabled netem:
+```shell
+sudo yum update
+# restart into updated kernel
+sudo yum install -y kernel-modules-extra
+sudo modprobe sch_netem
+```
+
 ## Utility Requirements
 
 * iproute2 4.5+ is a requirement for bridge related commands
