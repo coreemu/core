@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "core"
 version = "6.6.0"
-description = ""
-authors = []
+description = "CORE Common Open Research Emulator"
+authors = ["Boeing Research & Technology"]
+license = "BSD-2-Clause"
+repository = "https://github.com/coreemu/core"
+documentation = "https://coreemu.github.io/core/"
 
 [tool.poetry.dependencies]
 python = "^3.6"
