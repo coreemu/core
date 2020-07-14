@@ -12,7 +12,7 @@ repos:
     name: black
     stages: [commit]
     language: system
-    entry: bash -c 'cd daemon && poetry run black --exclude ".+_pb2.*.py|doc|build|utm\.py" .'
+    entry: bash -c 'cd daemon && poetry run black --exclude ".+_pb2.*.py|doc|build" .'
     types: [python]
 
   - id: flake8
