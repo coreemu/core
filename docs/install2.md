@@ -175,13 +175,17 @@ CORE tasks to help ensure usage of the create python virtual environment.
 ```shell
 Available tasks:
 
-  cleanup      run core-cleanup removing leftover core nodes, bridges, directories
-  daemon       start core-daemon
-  gui          start core-pygui
-  install      install core
-  test         run core tests
-  test-emane   run core emane tests
-  test-mock    run core tests using mock to avoid running as sudo
+  cleanup           run core-cleanup removing leftover core nodes, bridges, directories
+  cli               run core-cli used to query and modify a running session
+  daemon            start core-daemon
+  gui               start core-pygui
+  install           install core, poetry, scripts, service, and ospf mdr
+  install-scripts   install core script files, modified to leverage virtual environment
+  install-service   install systemd core service
+  test              run core tests
+  test-emane        run core emane tests
+  test-mock         run core tests using mock to avoid running as sudo
+  uninstall         uninstall core
 ```
 
 Example running the core-daemon task from the root of the repo:
