@@ -43,7 +43,6 @@ line_length = 88
 line_length = 88
 exclude = ".+_pb2.*.py|doc/|build/|__pycache__/"
 
-
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

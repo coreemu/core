@@ -8,8 +8,6 @@ from tempfile import NamedTemporaryFile
 from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
-VCMD_DIR: str = "netns"
-GUI_DIR: str = "gui"
 DEFAULT_PREFIX: str = "/usr/local"
 
 
@@ -121,11 +119,7 @@ def build(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
 
 def install_core(c: Context, hide: bool) -> None:
     print("installing core vcmd...")
-    with c.cd(VCMD_DIR):
-        c.run("sudo make install", hide=hide)
-    print("installing core gui...")
-    with c.cd(GUI_DIR):
-        c.run("sudo make install", hide=hide)
+    c.run("sudo make install", hide=hide)
 
 
 def install_poetry(c: Context, dev: bool, hide: bool) -> None:
@@ -265,12 +259,8 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     uninstall core
     """
     hide = not verbose
-    print("uninstalling core-gui")
-    with c.cd(GUI_DIR):
-        c.run("sudo make uninstall", hide=hide)
-    print("uninstalling vcmd")
-    with c.cd(VCMD_DIR):
-        c.run("sudo make uninstall", hide=hide)
+    print("uninstalling core")
+    c.run("sudo make uninstall", hide=hide)
     print("cleaning build directory")
     c.run("make clean", hide=hide)
     c.run("./bootstrap.sh clean", hide=hide)
