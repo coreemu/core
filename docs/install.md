@@ -5,102 +5,123 @@
 
 ## Overview
 
-This section will describe how to install CORE from source or from a pre-built package.
-CORE has been vetted on Ubuntu 18 and CentOS 7.6. Other versions and distributions
-can work, assuming you can get the required packages and versions similar to those
-noted below for the tested distributions.
+CORE provides a script to help automate installing all required software
+to build and run, including a python virtual environment to run it all in.
 
-> **NOTE:** iproute2 4.5+ is a requirement for bridge related commands
+The following tools will be leveraged during installation:
+
+|Tool|Description|
+|---|---|
+|pip|used to install pipx|
+|pipx|used to install standalone python tools (invoke, poetry)|
+|invoke|used to run provided tasks (install, daemon, gui, tests, etc)|
+|poetry|used to install the managed python virtual environment for running CORE|
 
 ## Required Hardware
 
 Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
-## Operating System
+## Supported Linux Distributions
 
-CORE requires a Linux operating system because it uses namespacing provided by the kernel. It does not run on
-Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The
-technology that CORE currently uses is Linux network namespaces.
+Plan is to support recent Ubuntu and CentOS LTS releases.
 
-Ubuntu and CentOS Linux are the recommended distributions for running CORE. However, these distributions are
-not strictly required. CORE will likely work on other flavors of Linux as well, assuming dependencies are met.
+Verified:
+* Ubuntu - 18.04, 20.04
+* CentOS - 7.8, 8.0*
 
-> **NOTE:** CORE Services determine what run on each node. You may require other software packages depending on the
-services you wish to use. For example, the HTTP service will require the apache2 package.
+> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN
+> functionality
 
-## Installed Files
+> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not
+> function properly
 
-CORE files are installed to the following directories by default, when the installation prefix is **/usr**.
+## Utility Requirements
 
-Install Path | Description
--------------|------------
-/usr/bin/core-gui|GUI startup command
-/usr/bin/coretk-gui|BETA Python GUI
-/usr/bin/core-daemon|Daemon startup command
-/usr/bin/{core-cleanup, coresendmsg, core-manage}|Misc. helper commands/scripts
-/usr/lib/core|GUI files
-/usr/lib/python{3.6+}/dist-packages/core|Python modules for daemon/scripts
-/etc/core/|Daemon and log configuration files
-~/.core/|User-specific GUI preferences and scenario files
-/usr/share/core/|Example scripts and scenarios
-/usr/share/man/man1/|Command man pages
-/etc/init.d/core-daemon|SysV startup script for daemon
-/usr/lib/systemd/system/core-daemon.service|Systemd startup script for daemon
+* iproute2 4.5+ is a requirement for bridge related commands
+* ebtables not backed by nftables
 
-## Automated Install
+## Automated Installation
 
-There is a helper script in the root of the repository that can help automate
-the CORE installation. Some steps require commands be ran as sudo and you
-will be prompted for a password. This should work on Ubuntu/CentOS and will
-install system dependencies, python dependencies, and CORE. This will target
-system installations of python 3.6.
+> **NOTE:** installs OSPF MDR
+
+> **NOTE:** sets up script files using the prefix provided
+
+> **NOTE:** install a systemd service file to /lib/systemd/system/core-daemon.service
 
 ```shell
+# clone CORE repo
 git clone https://github.com/coreemu/core.git
 cd core
+
+# run install script
+# script usage: install.sh [-d] [-v]
+#
+# -v enable verbose install
+# -d enable developer install
+# -p install prefix, defaults to /usr/local
 ./install.sh
 ```
 
-You can target newer system python versions using the **-v** flag. Assuming
-these versions are actually available on your system.
+## Manual Installation
+
+> **NOTE:** install OSPF MDR by manual instructions below
 
 ```shell
-# ubuntu 3.7
-./install.sh -v 3.7
-# centos 3.7
-./install.sh -v 37
+# clone CORE repo
+git clone https://github.com/coreemu/core.git
+cd core
+
+# install python3 and venv support
+# ubuntu
+sudo apt install -y python3-pip python3-venv
+# centos
+sudo yum install -y python3-pip
+
+# install system dependencies
+# ubuntu
+sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
+    ethtool tk python3-tk
+# centos
+sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel \
+    iptables-ebtables iproute python3-devel python3-tkinter tk ethtool \
+    make kernel-modules-extra
+
+# install grpcio-tools
+python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
+
+# build core
+./bootstrap.sh
+# centos requires --prefix=/usr
+./configure
+make
+sudo make install
+
+# install pipx, may need to restart terminal after ensurepath
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath
+
+# install poetry
+pipx install poetry
+
+# install poetry virtual environment
+cd daemon
+poetry install --no-dev
+cd ..
+
+# install invoke to run helper tasks
+pipx install invoke
+
+# install core scripts leveraging poetry virtual environment
+# centos requires --prefix=/usr
+inv install-scripts
+
+# optionally install systemd service file
+# centos requires --prefix=/usr
+inv install-service
 ```
 
-## Pre-Req Installing Python
-
-Python 3.6 is the minimum required python version. Newer versions can be used if available.
-These steps are needed, since the system packages can not provide all the
-dependencies needed by CORE.
-
-### Ubuntu
-
-```shell
-sudo apt install python3.6
-sudo apt install python3-pip
-```
-
-### CentOS
-
-```shell
-sudo yum install python36
-sudo yum install python3-pip
-```
-
-### Dependencies
-
-Install the current python dependencies.
-
-```shell
-sudo python3 -m pip install -r requirements.txt
-```
-
-## Pre-Req Installing OSPF MDR
+## Manually Install OSPF MDR (Routing Support)
 
 Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing
 tables for routing packets from one subnet to another.) CORE builds OSPF routing protocol configurations by
@@ -110,21 +131,14 @@ default when the blue router node type is used.
 suite with a modified version of OSPFv3, optimized for use with mobile wireless networks. The **mdr** node type
 (and the MDR service) requires this variant of Quagga.
 
-### Ubuntu
-
 ```shell
-sudo apt install libtool gawk libreadline-dev
-```
+# system dependencies
+# ubuntu
+sudo apt install -y libtool gawk libreadline-dev
+# centos
+sudo yum install -y libtool gawk readline-devel
 
-### CentOS
-
-```shell
-sudo yum install libtool gawk readline-devel
-```
-
-### Build and Install
-
-```shell
+# build and install
 git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
 cd ospf-mdr
 ./bootstrap.sh
@@ -135,167 +149,64 @@ make
 sudo make install
 ```
 
-Note that the configuration directory */usr/local/etc/quagga* shown for Quagga above could be */etc/quagga*,
-if you create a symbolic link from */etc/quagga/Quagga.conf -> /usr/local/etc/quagga/Quagga.conf* on the host.
-The *quaggaboot.sh* script in a Linux network namespace will try and do this for you if needed.
+## Manually Install EMANE
 
-If you try to run quagga after installing from source and get an error such as:
+EMANE can be installed from deb or RPM packages or from source. See the
+[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
 
+Here are quick instructions for installing all EMANE packages for Ubuntu 18.04:
 ```shell
-error while loading shared libraries libzebra.so.0
+# install dependencies
+# ubuntu
+sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
+wget https://adjacentlink.com/downloads/emane/emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
+tar xzf emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
+# install base emane packages
+sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/emane*.deb
+# install python3 bindings
+sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/python3*.deb
 ```
 
-this is usually a sign that you have to run ```sudo ldconfig```` to refresh the cache file.
+## Using Invoke Tasks
 
-## Installing from Packages
-
-The easiest way to install CORE is using the pre-built packages. The package managers on Ubuntu or CentOS
-will help in automatically installing most dependencies, except for the python ones described previously.
-
-You can obtain the CORE packages from [CORE Releases](https://github.com/coreemu/core/releases).
-
-### Ubuntu
-
-Ubuntu package defaults to using systemd for running as a service.
+The invoke tool installed by way of pipx provides conveniences for running
+CORE tasks to help ensure usage of the create python virtual environment.
 
 ```shell
-sudo apt install ./core_$VERSION_amd64.deb
+Available tasks:
+
+  cleanup           run core-cleanup removing leftover core nodes, bridges, directories
+  cli               run core-cli used to query and modify a running session
+  daemon            start core-daemon
+  gui               start core-pygui
+  install           install core, poetry, scripts, service, and ospf mdr
+  install-scripts   install core script files, modified to leverage virtual environment
+  install-service   install systemd core service
+  test              run core tests
+  test-emane        run core emane tests
+  test-mock         run core tests using mock to avoid running as sudo
+  uninstall         uninstall core
 ```
 
-### CentOS
-
-**NOTE: tkimg is not required for the core-gui, but if you get an error message about it you can install the package
-on CentOS <= 6, or build from source otherwise**
-
+Example running the core-daemon task from the root of the repo:
 ```shell
-yum install ./core_$VERSION_x86_64.rpm
+inv daemon
 ```
 
-Disabling SELINUX:
+Some tasks are wrappers around command line tools and requires running
+them with a slight variation for compatibility. You can enter the
+poetry shell to run the script natively.
 
 ```shell
-# change the following in /etc/sysconfig/selinux
-SELINUX=disabled
+# running core-cli as a task requires all options to be provided
+# within a string
+inv cli "query session -i 1"
 
-# add the following to the kernel line in /etc/grub.conf
-selinux=0
-```
+# entering the poetry shell to use core-cli natively
+cd $REPO/daemon
+poetry shell
+core-cli query session -i 1
 
-Turn off firewalls:
-
-```shell
-systemctl disable firewalld
-systemctl disable iptables.service
-systemctl disable ip6tables.service
-chkconfig iptables off
-chkconfig ip6tables off
-```
-
-You need to reboot after making these changes, or flush the firewall using
-
-```shell
-iptables -F
-ip6tables -F
-```
-
-## Installing from Source
-
-Steps for building from cloned source code. Python 3.6 is the minimum required version
-a newer version can be used below if available.
-
-### Distro Requirements
-
-System packages required to build from source.
-
-#### Ubuntu
-
-```shell
-sudo apt install git automake pkg-config gcc libev-dev ebtables iproute2 \
-    python3.6 python3.6-dev python3-pip python3-tk tk libtk-img ethtool autoconf
-```
-
-#### CentOS
-
-```shell
-sudo yum install git automake pkgconf-pkg-config gcc gcc-c++ libev-devel iptables-ebtables iproute \
-    python36 python36-devel python3-pip python3-tkinter tk ethtool autoconf
-```
-
-### Clone Repository
-
-Clone the CORE repository for building from source.
-
-```shell
-git clone https://github.com/coreemu/core.git
-```
-
-### Install grpcio-tools
-
-Python module grpcio-tools is currently needed to generate gRPC protobuf code.
-Specifically leveraging 1.27.2 as that is what will be used during runtime.
-
-```shell
-python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
-```
-
-### Build and Install
-
-```shell
-./bootstrap.sh
-./configure
-make
-sudo make install
-```
-
-## Building Documentation
-
-Building documentation requires python-sphinx not noted above.
-
-```shell
-sudo apt install python3-sphinx
-sudo yum install python3-sphinx
-
-./bootstrap.sh
-./configure
-make doc
-```
-
-## Building Packages
-Build package commands, DESTDIR is used to make install into and then for packaging by fpm.
-
-**NOTE: clean the DESTDIR if re-using the same directory**
-
-* Install [fpm](http://fpm.readthedocs.io/en/latest/installing.html)
-
-```shell
-./bootstrap.sh
-./configure
-make
-mkdir /tmp/core-build
-make fpm DESTDIR=/tmp/core-build
-```
-
-This will produce and RPM and Deb package for the currently configured python version.
-
-## Running CORE
-
-Start the CORE daemon.
-
-```shell
-# systemd
-sudo systemctl daemon-reload
-sudo systemctl start core-daemon
-
-# sysv
-sudo service core-daemon start
-```
-
-Run the GUI
-
-```shell
-# default gui
-core-gui
-
-# new beta gui
-coretk-gui
+# exit the shell
+exit
 ```
