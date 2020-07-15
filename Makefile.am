@@ -11,7 +11,7 @@ if WANT_GUI
 endif
 
 if WANT_DAEMON
-  DAEMON = scripts daemon
+  DAEMON = daemon
 endif
 
 if WANT_NETNS
@@ -43,58 +43,6 @@ DISTCLEANFILES = aclocal.m4 \
 
 MAINTAINERCLEANFILES = .version	\
 		       .version.date
-
-define fpm-rpm =
-fpm -s dir -t rpm -n core \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--license "BSD" \
-	--description "Common Open Research Emulator" \
-	--url https://github.com/coreemu/core \
-	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_VERSION_ARCH.rpm \
-	-v $(PACKAGE_VERSION) \
-	--rpm-init scripts/core-daemon \
-	--config-files "/etc/core" \
-	-d "ethtool" \
-	-d "tcl" \
-	-d "tk" \
-	-d "procps-ng" \
-	-d "bash >= 3.0" \
-	-d "ebtables" \
-	-d "iproute" \
-	-d "libev" \
-	-d "net-tools" \
-	-d "python3 >= 3.6" \
-	-d "python3-tkinter" \
-	-C $(DESTDIR)
-endef
-
-define fpm-deb =
-fpm -s dir -t deb -n core \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--license "BSD" \
-	--description "Common Open Research Emulator" \
-	--url https://github.com/coreemu/core \
-	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_VERSION_ARCH.deb \
-	-v $(PACKAGE_VERSION) \
-	--deb-systemd scripts/core-daemon.service \
-	--deb-no-default-config-files \
-	--config-files "/etc/core" \
-	-d "ethtool" \
-	-d "tcl" \
-	-d "tk" \
-	-d "libtk-img" \
-	-d "procps" \
-	-d "libc6 >= 2.14" \
-	-d "bash >= 3.0" \
-	-d "ebtables" \
-	-d "iproute2" \
-	-d "libev4" \
-	-d "python3 >= 3.6" \
-	-d "python3-tk" \
-	-C $(DESTDIR)
-endef
 
 define fpm-distributed-deb =
 fpm -s dir -t deb -n core-distributed \
@@ -138,12 +86,6 @@ fpm -s dir -t rpm -n core-distributed \
 	-C $(DESTDIR)
 endef
 
-.PHONY: fpm
-fpm: clean-local-fpm
-	$(MAKE) install DESTDIR=$(DESTDIR)
-	$(call fpm-deb)
-	$(call fpm-rpm)
-
 .PHONY: fpm-distributed
 fpm-distributed: clean-local-fpm
 	$(MAKE) -C netns install DESTDIR=$(DESTDIR)
@@ -182,11 +124,8 @@ all: change-files
 .PHONY: change-files
 change-files:
 	$(call change-files,gui/core-gui)
-	$(call change-files,scripts/core-daemon.service)
-	$(call change-files,scripts/core-daemon)
 	$(call change-files,daemon/core/constants.py)
 	$(call change-files,netns/setup.py)
-	$(call change-files,daemon/setup.py)
 
 CORE_DOC_SRC = core-python-$(PACKAGE_VERSION)
 .PHONY: doc

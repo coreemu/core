@@ -11,32 +11,31 @@ jobs:
         uses: actions/setup-python@v1
         with:
           python-version: 3.6
-      - name: Install pipenv
+      - name: install poetry
         run: |
           python -m pip install --upgrade pip
-          pip install pipenv
+          pip install poetry
           cd daemon
-          cp setup.py.in setup.py
           cp core/constants.py.in core/constants.py
           sed -i 's/required=True/required=False/g' core/emulator/coreemu.py
-          pipenv sync --dev
+          poetry install
       - name: isort
         run: |
           cd daemon
-          pipenv run isort -c -df
+          poetry run isort -c -df
       - name: black
         run: |
           cd daemon
-          pipenv run black --check --exclude ".+_pb2.*.py|doc|build|utm\.py|setup\.py" .
+          poetry run black --check .
       - name: flake8
         run: |
           cd daemon
-          pipenv run flake8
+          poetry run flake8
       - name: grpc
         run: |
           cd daemon/proto
-          pipenv run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
+          poetry run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/*.proto
       - name: test
         run: |
           cd daemon
-          pipenv run test --mock
+          poetry run pytest --mock tests
