@@ -289,6 +289,49 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
 
 
 @task
+def install_emane(c, verbose=False):
+    """
+    install emane and the python bindings
+    """
+    c.run("sudo -v", hide=True)
+    p = Progress(verbose)
+    hide = not verbose
+    os_info = get_os()
+    emane_dir = "/tmp/emane"
+    with p.start("installing system dependencies"):
+        if os_info.like == OsLike.DEBIAN:
+            c.run(
+                "sudo apt install gcc g++ automake libtool libxml2-dev libprotobuf-dev "
+                "libpcap-dev libpcre3-dev uuid-dev pkg-config protobuf-compiler git "
+                "python3-protobuf python3-setuptools",
+                hide=hide,
+            )
+        elif os_info.like == OsLike.REDHAT:
+            c.run(
+                "sudo yum install autoconf automake git libtool libxml2-devel "
+                "libpcap-devel pcre-devel libuuid-devel make gcc-c++ "
+                "python3-setuptools",
+                hide=hide,
+            )
+    with p.start("cloning emane"):
+        c.run(
+            f"git clone https://github.com/adjacentlink/emane.git {emane_dir}",
+            hide=hide
+        )
+    with p.start("building emane"):
+        with c.cd(emane_dir):
+            c.run("./autogen.sh", hide=hide)
+            c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
+            c.run("make -j$(nproc)", hide=hide)
+    with p.start("installing emane"):
+        with c.cd(emane_dir):
+            c.run("sudo make install", hide=hide)
+    with p.start("installing python binding for core"):
+        with c.cd(DAEMON_DIR):
+            c.run(f"poetry run pip install {emane_dir}/src/python", hide=hide)
+
+
+@task
 def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     uninstall core
