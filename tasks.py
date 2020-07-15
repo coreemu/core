@@ -1,14 +1,53 @@
 import inspect
+import itertools
 import os
 import sys
+import threading
+import time
+from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from typing import Optional
 
 from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
+
+
+class Progress:
+    cycles = itertools.cycle(["-", "/", "|", "\\"])
+
+    def __init__(self, verbose: bool) -> None:
+        self.verbose: bool = verbose
+        self.thread: Optional[threading.Thread] = None
+        self.running: bool = False
+
+    @contextmanager
+    def start(self, message: str) -> None:
+        if not self.verbose:
+            print(f"{message} ... ", end="")
+            self.running = True
+            self.thread = threading.Thread(target=self.run, daemon=True)
+            self.thread.start()
+        yield
+        self.stop()
+
+    def run(self) -> None:
+        while self.running:
+            sys.stdout.write(next(self.cycles))
+            sys.stdout.flush()
+            sys.stdout.write("\b")
+            time.sleep(0.1)
+
+    def stop(self) -> None:
+        if not self.verbose:
+            print("done")
+        if self.thread:
+            self.running = False
+            self.thread.join()
+            self.thread = None
 
 
 class OsName(Enum):
@@ -52,7 +91,7 @@ def get_os() -> OsInfo:
             if not line:
                 continue
             key, value = line.split("=")
-            d[key] = value.strip('"')
+            d[key] = value.strip("\"")
     name_value = d["ID"]
     like_value = d["ID_LIKE"]
     version_value = d["VERSION_ID"]
@@ -69,27 +108,28 @@ def get_os() -> OsInfo:
 
 
 def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
-    print("installing system dependencies...")
     if os_info.like == OsLike.DEBIAN:
         c.run(
-            "sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 "
-            "ethtool tk python3-tk",
+            "sudo apt install -y automake pkg-config gcc libev-dev ebtables "
+            "iproute2 ethtool tk python3-tk",
             hide=hide
         )
     elif os_info.like == OsLike.REDHAT:
         c.run(
-            "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel "
-            "iptables-ebtables iproute python3-devel python3-tkinter tk ethtool make",
+            "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
+            "libev-devel iptables-ebtables iproute python3-devel python3-tkinter "
+            "tk ethtool make",
             hide=hide
         )
         # centos 8+ does not support netem by default
         if os_info.name == OsName.CENTOS and os_info.version >= 8:
             c.run("sudo yum install -y kernel-modules-extra", hide=hide)
             if not c.run("sudo modprobe sch_netem", warn=True, hide=hide):
-                print("ERROR: you need to install the latest kernel")
+                print("\nERROR: you need to install the latest kernel")
                 print("run the following, restart, and try again")
                 print("sudo yum update")
                 sys.exit(1)
+
     # attempt to setup legacy ebtables when an nftables based version is found
     r = c.run("ebtables -V", hide=hide)
     if "nf_tables" in r.stdout:
@@ -99,35 +139,31 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
             hide=hide
         ):
             print(
-                "WARNING: unable to setup required ebtables-legacy, WLAN will not work"
+                "\nWARNING: unable to setup ebtables-legacy, WLAN will not work"
             )
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
-    print("installing grpcio-tools...")
     c.run(
-        "python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2", hide=hide
+        "python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2",
+        hide=hide,
     )
 
 
-def build(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
-    print("building core...")
+def build_core(c: Context, hide: bool, prefix: str = DEFAULT_PREFIX) -> None:
     c.run("./bootstrap.sh", hide=hide)
     c.run(f"./configure --prefix={prefix}", hide=hide)
     c.run("make -j$(nproc)", hide=hide)
 
 
 def install_core(c: Context, hide: bool) -> None:
-    print("installing core vcmd...")
     c.run("sudo make install", hide=hide)
 
 
 def install_poetry(c: Context, dev: bool, hide: bool) -> None:
-    print("installing poetry...")
     c.run("pipx install poetry", hide=hide)
     args = "" if dev else "--no-dev"
     with c.cd(DAEMON_DIR):
-        print("installing core environment using poetry...")
         c.run(f"poetry install {args}", hide=hide)
         if dev:
             c.run("poetry run pre-commit install", hide=hide)
@@ -135,31 +171,29 @@ def install_poetry(c: Context, dev: bool, hide: bool) -> None:
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     if c.run("which zebra", warn=True, hide=hide):
-        print("quagga already installed, skipping ospf mdr")
+        print("\nquagga already installed, skipping ospf mdr")
         return
-    print("installing ospf mdr dependencies...")
-    if os_info.like == OsLike.DEBIAN:
-        c.run("sudo apt install -y libtool gawk libreadline-dev git", hide=hide)
-    elif os_info.like == OsLike.REDHAT:
-        c.run("sudo yum install -y libtool gawk readline-devel git", hide=hide)
-    print("cloning ospf mdr...")
-    clone_dir = "/tmp/ospf-mdr"
-    c.run(
-        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
-        hide=hide
-    )
-    with c.cd(clone_dir):
-        print("building ospf mdr...")
-        c.run("./bootstrap.sh", hide=hide)
+    p = Progress(not hide)
+    with p.start("installing ospf mdr dependencies"):
+        if os_info.like == OsLike.DEBIAN:
+            c.run("sudo apt install -y libtool gawk libreadline-dev git", hide=hide)
+        elif os_info.like == OsLike.REDHAT:
+            c.run("sudo yum install -y libtool gawk readline-devel git", hide=hide)
+        clone_dir = "/tmp/ospf-mdr"
         c.run(
-            "./configure --disable-doc --enable-user=root --enable-group=root "
-            "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
-            "--localstatedir=/var/run/quagga",
+            f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
             hide=hide
         )
-        c.run("make -j$(nproc)", hide=hide)
-        print("installing ospf mdr...")
-        c.run("sudo make install", hide=hide)
+        with c.cd(clone_dir):
+            c.run("./bootstrap.sh", hide=hide)
+            c.run(
+                "./configure --disable-doc --enable-user=root --enable-group=root "
+                "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
+                "--localstatedir=/var/run/quagga",
+                hide=hide
+            )
+            c.run("make -j$(nproc)", hide=hide)
+            c.run("sudo make install", hide=hide)
 
 
 @task
@@ -172,7 +206,6 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     systemd_dir = Path("/lib/systemd/system/")
     service_file = systemd_dir.joinpath("core-daemon.service")
     if systemd_dir.exists():
-        print(f"installing core-daemon.service for systemd to {service_file}")
         service_data = inspect.cleandoc(f"""
             [Unit]
             Description=Common Open Research Emulator Service
@@ -204,7 +237,6 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
     bin_dir = Path(prefix).joinpath("bin")
     for script in Path("daemon/scripts").iterdir():
         dest = bin_dir.joinpath(script.name)
-        print(f"installing {script} to {dest}")
         with open(script, "r") as f:
             lines = f.readlines()
         first = lines[0].strip()
@@ -224,7 +256,6 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
 
     # install core configuration file
     config_dir = "/etc/core"
-    print(f"installing core configuration files under {config_dir}")
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
@@ -235,22 +266,28 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core, poetry, scripts, service, and ospf mdr
     """
+    c.run("sudo -v", hide=True)
     print(f"installing core with prefix: {prefix}")
+    p = Progress(verbose)
     hide = not verbose
     os_info = get_os()
-    install_system(c, os_info, hide)
-    install_grpcio(c, hide)
-    build(c, hide, prefix)
-    install_core(c, hide)
-    install_poetry(c, dev, hide)
-    install_scripts(c, hide, prefix)
-    install_service(c, hide, prefix)
-    install_ospf_mdr(c, os_info, hide)
-    print("please open a new terminal or re-login to leverage invoke for running core")
-    print("# run daemon")
-    print("inv daemon")
-    print("# run gui")
-    print("inv gui")
+    with p.start("installing system dependencies"):
+        install_system(c, os_info, hide)
+    with p.start("installing system grpcio-tools"):
+        install_grpcio(c, hide)
+    with p.start("building core"):
+        build_core(c, hide, prefix)
+    with p.start("installing vcmd/gui"):
+        install_core(c, hide)
+    with p.start("installing poetry virtual environment"):
+        install_poetry(c, dev, hide)
+    with p.start("installing scripts and /etc/core"):
+        install_scripts(c, hide, prefix)
+    with p.start("installing systemd service"):
+        install_service(c, hide, prefix)
+    with p.start("installing ospf mdr"):
+        install_ospf_mdr(c, os_info, hide)
+    print("\nyou may need to open a new terminal to leverage invoke for running core")
 
 
 @task
@@ -259,35 +296,39 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     uninstall core
     """
     hide = not verbose
-    print("uninstalling core")
-    c.run("sudo make uninstall", hide=hide)
-    print("cleaning build directory")
-    c.run("make clean", hide=hide)
-    c.run("./bootstrap.sh clean", hide=hide)
+    p = Progress(verbose)
+    c.run("sudo -v", hide=True)
+    with p.start("uninstalling core"):
+        c.run("sudo make uninstall", hide=hide)
+
+    with p.start("cleaning build directory"):
+        c.run("make clean", hide=hide)
+        c.run("./bootstrap.sh clean", hide=hide)
+
     python = get_python(c, warn=True)
     if python:
         with c.cd(DAEMON_DIR):
             if dev:
-                print("uninstalling pre-commit")
-                c.run("poetry run pre-commit uninstall", hide=hide)
-            print("uninstalling poetry virtual environment")
-            c.run(f"poetry env remove {python}", hide=hide)
+                with p.start("uninstalling pre-commit"):
+                    c.run("poetry run pre-commit uninstall", hide=hide)
+            with p.start("uninstalling poetry virtual environment"):
+                c.run(f"poetry env remove {python}", hide=hide)
 
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
-    for script in Path("daemon/scripts").iterdir():
-        dest = bin_dir.joinpath(script.name)
-        print(f"uninstalling {dest}")
-        c.run(f"sudo rm -f {dest}", hide=hide)
+    with p.start("uninstalling script files"):
+        for script in Path("daemon/scripts").iterdir():
+            dest = bin_dir.joinpath(script.name)
+            c.run(f"sudo rm -f {dest}", hide=hide)
 
     # install service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"
     service_file = systemd_dir.joinpath(service_name)
     if service_file.exists():
-        print(f"uninstalling service {service_file}")
-        c.run(f"sudo systemctl disable {service_name}", hide=hide)
-        c.run(f"sudo rm -f {service_file}", hide=hide)
+        with p.start(f"uninstalling service {service_file}"):
+            c.run(f"sudo systemctl disable {service_name}", hide=hide)
+            c.run(f"sudo rm -f {service_file}", hide=hide)
 
 
 @task
