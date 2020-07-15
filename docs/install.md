@@ -53,11 +53,14 @@ sudo modprobe sch_netem
 
 ## Automated Installation
 
-> **NOTE:** installs OSPF MDR
+The automated install will install the various tools needed to help automate
+the CORE installation (python3, pip, pipx, invoke, poetry). The script will
+also automatically clone, build, and install the latest version of OSPF MDR.
+Finally it will install CORE scripts and a systemd service, which have
+been modified to use the installed poetry created virtual environment.
 
-> **NOTE:** sets up script files using the prefix provided
-
-> **NOTE:** install a systemd service file to /lib/systemd/system/core-daemon.service
+After installation has completed you should be able to run the various
+CORE scripts for running core.
 
 ```shell
 # clone CORE repo
@@ -74,6 +77,13 @@ cd core
 ```
 
 ## Manual Installation
+
+Below is an example of more formal manual steps that can be taken to install
+CORE. You can also just install invoke and run `inv install` alone to simulate
+what is done using `install.sh`.
+
+The last two steps help install core scripts modified to leverage the installed
+poetry virtual environment and setup a systemd based service, if desired.
 
 > **NOTE:** install OSPF MDR by manual instructions below
 
@@ -131,6 +141,24 @@ inv install-scripts
 inv install-service
 ```
 
+## Installed Scripts
+
+These scripts will be installed from the automated `install.sh` script or
+using `inv install` manually.
+
+| Name | Description |
+|---|---|
+| core-daemon | runs the backed core server providing TLV and gRPC APIs |
+| core-gui | runs the legacy tcl/tk based GUI |
+| core-pygui | runs the new python/tk based GUI |
+| core-cleanup | tool to help removed lingering core created containers, bridges, directories |
+| core-imn-to-xml | tool to help automate converting a .imn file to .xml format |
+| core-route-monitor | tool to help monitor traffic across nodes and feed that to SDT |
+| core-service-update | tool to update automate modifying a legacy service to match current naming |
+| coresendmsg | tool to send TLV API commands from command line |
+| core-cli | tool to query, open xml files, and send commands using gRPC |
+| core-manage | tool to add, remove, or check for services, models, and node types |
+
 ## Manually Install OSPF MDR (Routing Support)
 
 Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing
@@ -171,10 +199,10 @@ Here are quick instructions for installing all EMANE packages for Ubuntu 18.04:
 sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
 wget https://adjacentlink.com/downloads/emane/emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
 tar xzf emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
-# install base emane packages
-sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/emane*.deb
-# install python3 bindings
-sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/python3*.deb
+
+# install emane python bindings into the core virtual environment
+cd $REPO/daemon
+poetry run pip install $EMANE_REPO/src/python
 ```
 
 ## Using Invoke Tasks
@@ -219,4 +247,25 @@ core-cli query session -i 1
 
 # exit the shell
 exit
+```
+
+## Running User Scripts
+
+If you create your own scripts to run CORE directly in python or using gRPC/TLV
+APIs you will need to make sure you are running them within context of the
+poetry install virtual environment.
+
+> **NOTE:** the following assumes CORE has been installed successfully
+
+One way to do this would be to enable to environments shell.
+```shell
+cd $REPO/daemon
+poetry shell
+python run /path/to/script.py
+```
+
+Another way would be to run the script directly by way of poetry.
+```shell
+cd $REPO/daemon
+poetry run python /path/to/script.py
 ```
