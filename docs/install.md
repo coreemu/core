@@ -1,4 +1,4 @@
-# CORE Installation
+# Installation
 
 * Table of Contents
 {:toc}
@@ -12,10 +12,10 @@ The following tools will be leveraged during installation:
 
 |Tool|Description|
 |---|---|
-|pip|used to install pipx|
-|pipx|used to install standalone python tools (invoke, poetry)|
-|invoke|used to run provided tasks (install, daemon, gui, tests, etc)|
-|poetry|used to install the managed python virtual environment for running CORE|
+|[pip](https://pip.pypa.io/en/stable/)|used to install pipx|
+|[pipx](https://pipxproject.github.io/pipx/)|used to install standalone python tools (invoke, poetry)|
+|[invoke](http://www.pyinvoke.org/)|used to run provided tasks (install, daemon, gui, tests, etc)|
+|[poetry](https://python-poetry.org/)|used to install the managed python virtual environment for running CORE|
 
 ## Required Hardware
 
@@ -51,6 +51,27 @@ sudo modprobe sch_netem
 * iproute2 4.5+ is a requirement for bridge related commands
 * ebtables not backed by nftables
 
+## Upgrading
+
+Please make sure to uninstall the previous installation of CORE cleanly
+before proceeding to install.
+
+Previous install was built from source:
+```shell
+cd $REPO
+sudo make uninstall
+make clean
+./bootstrap.sh clean
+```
+
+Installed from previously built packages:
+```shell
+# centos
+sudo yum remove core
+# ubuntu
+sudo apt remove core
+```
+
 ## Automated Installation
 
 The automated install will install the various tools needed to help automate
@@ -61,6 +82,9 @@ been modified to use the installed poetry created virtual environment.
 
 After installation has completed you should be able to run the various
 CORE scripts for running core.
+
+> **NOTE:** provide a prefix that will be found on path when running as sudo
+> if the default prefix is not valid
 
 ```shell
 # clone CORE repo
@@ -76,75 +100,20 @@ cd core
 ./install.sh
 ```
 
-## Manual Installation
+### Unsupported Linux Distribution
 
-Below is an example of more formal manual steps that can be taken to install
-CORE. You can also just install invoke and run `inv install` alone to simulate
-what is done using `install.sh`.
+If you are on an unsupported distribution, you can look into the
+[install.sh](https://github.com/coreemu/core/blob/master/install.sh)
+and
+[tasks.py](https://github.com/coreemu/core/blob/master/tasks.py)
+files to see the various commands ran to install CORE and translate them to
+your use case, assuming it is possible.
 
-The last two steps help install core scripts modified to leverage the installed
-poetry virtual environment and setup a systemd based service, if desired.
-
-> **NOTE:** install OSPF MDR by manual instructions below
-
-```shell
-# clone CORE repo
-git clone https://github.com/coreemu/core.git
-cd core
-
-# install python3 and venv support
-# ubuntu
-sudo apt install -y python3-pip python3-venv
-# centos
-sudo yum install -y python3-pip
-
-# install system dependencies
-# ubuntu
-sudo apt install -y automake pkg-config gcc libev-dev ebtables iproute2 \
-    ethtool tk python3-tk
-# centos
-sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ libev-devel \
-    iptables-ebtables iproute python3-devel python3-tkinter tk ethtool \
-    make kernel-modules-extra
-
-# install grpcio-tools
-python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2
-
-# build core
-./bootstrap.sh
-# centos requires --prefix=/usr
-./configure
-make
-sudo make install
-
-# install pipx, may need to restart terminal after ensurepath
-python3 -m pip install --user pipx
-python3 -m pipx ensurepath
-
-# install poetry
-pipx install poetry
-
-# install poetry virtual environment
-cd daemon
-poetry install --no-dev
-cd ..
-
-# install invoke to run helper tasks
-pipx install invoke
-
-# install core scripts leveraging poetry virtual environment
-# centos requires --prefix=/usr
-inv install-scripts
-
-# optionally install systemd service file
-# centos requires --prefix=/usr
-inv install-service
-```
+If you get install down entirely, feel free to contribute and help others.
 
 ## Installed Scripts
 
-These scripts will be installed from the automated `install.sh` script or
-using `inv install` manually.
+After the installation complete it will have installed the following scripts.
 
 | Name | Description |
 |---|---|
@@ -159,32 +128,25 @@ using `inv install` manually.
 | core-cli | tool to query, open xml files, and send commands using gRPC |
 | core-manage | tool to add, remove, or check for services, models, and node types |
 
-## Manually Install OSPF MDR (Routing Support)
+## Running User Scripts
 
-Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing
-tables for routing packets from one subnet to another.) CORE builds OSPF routing protocol configurations by
-default when the blue router node type is used.
+If you create your own python scripts to run CORE directly or using the gRPC/TLV
+APIs you will need to make sure you are running them within context of the
+installed virtual environment.
 
-* [OSPF MANET Designated Routers](https://github.com/USNavalResearchLaboratory/ospf-mdr) (MDR) - the Quagga routing
-suite with a modified version of OSPFv3, optimized for use with mobile wireless networks. The **mdr** node type
-(and the MDR service) requires this variant of Quagga.
+> **NOTE:** the following assumes CORE has been installed successfully
 
+One way to do this would be to enable the core virtual environment shell.
 ```shell
-# system dependencies
-# ubuntu
-sudo apt install -y libtool gawk libreadline-dev
-# centos
-sudo yum install -y libtool gawk readline-devel
+cd $REPO/daemon
+poetry shell
+python run /path/to/script.py
+```
 
-# build and install
-git clone https://github.com/USNavalResearchLaboratory/ospf-mdr
-cd ospf-mdr
-./bootstrap.sh
-./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
-    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
-    --localstatedir=/var/run/quagga
-make
-sudo make install
+Another way would be to run the script directly by way of poetry.
+```shell
+cd $REPO/daemon
+poetry run python /path/to/script.py
 ```
 
 ## Manually Install EMANE
@@ -217,7 +179,7 @@ Available tasks:
   cli               run core-cli used to query and modify a running session
   daemon            start core-daemon
   gui               start core-pygui
-  install           install core, poetry, scripts, service, and ospf mdr
+  install           install core, scripts, service, and ospf mdr
   install-scripts   install core script files, modified to leverage virtual environment
   install-service   install systemd core service
   test              run core tests
@@ -229,43 +191,4 @@ Available tasks:
 Example running the core-daemon task from the root of the repo:
 ```shell
 inv daemon
-```
-
-Some tasks are wrappers around command line tools and requires running
-them with a slight variation for compatibility. You can enter the
-poetry shell to run the script natively.
-
-```shell
-# running core-cli as a task requires all options to be provided
-# within a string
-inv cli "query session -i 1"
-
-# entering the poetry shell to use core-cli natively
-cd $REPO/daemon
-poetry shell
-core-cli query session -i 1
-
-# exit the shell
-exit
-```
-
-## Running User Scripts
-
-If you create your own scripts to run CORE directly in python or using gRPC/TLV
-APIs you will need to make sure you are running them within context of the
-poetry install virtual environment.
-
-> **NOTE:** the following assumes CORE has been installed successfully
-
-One way to do this would be to enable to environments shell.
-```shell
-cd $REPO/daemon
-poetry shell
-python run /path/to/script.py
-```
-
-Another way would be to run the script directly by way of poetry.
-```shell
-cd $REPO/daemon
-poetry run python /path/to/script.py
 ```
