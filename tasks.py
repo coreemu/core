@@ -173,27 +173,25 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     if c.run("which zebra", warn=True, hide=hide):
         print("\nquagga already installed, skipping ospf mdr")
         return
-    p = Progress(not hide)
-    with p.start("installing ospf mdr dependencies"):
-        if os_info.like == OsLike.DEBIAN:
-            c.run("sudo apt install -y libtool gawk libreadline-dev git", hide=hide)
-        elif os_info.like == OsLike.REDHAT:
-            c.run("sudo yum install -y libtool gawk readline-devel git", hide=hide)
-        clone_dir = "/tmp/ospf-mdr"
+    if os_info.like == OsLike.DEBIAN:
+        c.run("sudo apt install -y libtool gawk libreadline-dev git", hide=hide)
+    elif os_info.like == OsLike.REDHAT:
+        c.run("sudo yum install -y libtool gawk readline-devel git", hide=hide)
+    clone_dir = "/tmp/ospf-mdr"
+    c.run(
+        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
+        hide=hide
+    )
+    with c.cd(clone_dir):
+        c.run("./bootstrap.sh", hide=hide)
         c.run(
-            f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
+            "./configure --disable-doc --enable-user=root --enable-group=root "
+            "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
+            "--localstatedir=/var/run/quagga",
             hide=hide
         )
-        with c.cd(clone_dir):
-            c.run("./bootstrap.sh", hide=hide)
-            c.run(
-                "./configure --disable-doc --enable-user=root --enable-group=root "
-                "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
-                "--localstatedir=/var/run/quagga",
-                hide=hide
-            )
-            c.run("make -j$(nproc)", hide=hide)
-            c.run("sudo make install", hide=hide)
+        c.run("make -j$(nproc)", hide=hide)
+        c.run("sudo make install", hide=hide)
 
 
 @task
