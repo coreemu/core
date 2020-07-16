@@ -875,8 +875,9 @@ class PtpNet(CoreNetwork):
         if iface1.getparams() != iface2.getparams():
             unidirectional = 1
 
+        mac = str(iface1.mac) if iface1.mac else None
         iface1_data = InterfaceData(
-            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=str(iface1.mac)
+            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=mac
         )
         ip4 = iface1.get_ip4()
         if ip4:
@@ -887,8 +888,9 @@ class PtpNet(CoreNetwork):
             iface1_data.ip6 = str(ip6.ip)
             iface1_data.ip6_mask = ip6.prefixlen
 
+        mac = str(iface2.mac) if iface2.mac else None
         iface2_data = InterfaceData(
-            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=str(iface2.mac)
+            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=mac
         )
         ip4 = iface2.get_ip4()
         if ip4:

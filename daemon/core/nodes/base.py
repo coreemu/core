@@ -1050,8 +1050,9 @@ class CoreNetworkBase(NodeBase):
             if uni:
                 unidirectional = 1
 
+            mac = str(iface.mac) if iface.mac else None
             iface2_data = InterfaceData(
-                id=linked_node.get_iface_id(iface), name=iface.name, mac=str(iface.mac)
+                id=linked_node.get_iface_id(iface), name=iface.name, mac=mac
             )
             ip4 = iface.get_ip4()
             if ip4:
