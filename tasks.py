@@ -107,6 +107,15 @@ def get_os() -> OsInfo:
     return OsInfo(name, like, version)
 
 
+def check_existing_core(c: Context, hide: bool) -> None:
+    if c.run("python -c \"import core\"", warn=True, hide=hide):
+        raise SystemError("existing python2 core installation detected, please remove")
+    if c.run("python3 -c \"import core\"", warn=True, hide=hide):
+        raise SystemError("existing python3 core installation detected, please remove")
+    if c.run("which core-daemon", warn=True, hide=hide):
+        raise SystemError("core scripts found, please remove old installation")
+
+
 def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     if os_info.like == OsLike.DEBIAN:
         c.run(
@@ -285,6 +294,8 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os()
+    with p.start("checking for old installations"):
+        check_existing_core(c, hide)
     with p.start("installing system dependencies"):
         install_system(c, os_info, hide)
     with p.start("installing system grpcio-tools"):
@@ -396,6 +407,33 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
         with p.start(f"uninstalling service {service_file}"):
             c.run(f"sudo systemctl disable {service_name}", hide=hide)
             c.run(f"sudo rm -f {service_file}", hide=hide)
+
+
+@task(
+    help={
+        "dev": "reinstall development mode",
+        "verbose": "enable verbose",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
+        "branch": "branch to install latest code from, default is current branch"
+    },
+)
+def reinstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX, branch=None):
+    """
+    run the uninstall task, get latest from specified branch, and run install task
+    """
+    uninstall(c, dev, verbose, prefix)
+    hide = not verbose
+    p = Progress(verbose)
+    with p.start("pulling latest code"):
+        current = c.run("git rev-parse --abbrev-ref HEAD", hide=hide).stdout.strip()
+        if branch and branch != current:
+            c.run(f"git checkout {branch}")
+        else:
+            branch = current
+        c.run("git pull", hide=hide)
+        if not Path("tasks.py").exists():
+            raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
+    install(c, dev, verbose, prefix)
 
 
 @task
