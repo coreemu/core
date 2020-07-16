@@ -289,8 +289,8 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core, poetry, scripts, service, and ospf mdr
     """
-    c.run("sudo -v", hide=True)
     print(f"installing core with prefix: {prefix}")
+    c.run("sudo -v", hide=True)
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os()
@@ -338,10 +338,12 @@ def install_emane(c, verbose=False):
                 hide=hide,
             )
         elif os_info.like == OsLike.REDHAT:
+            if os_info.name == OsName.CENTOS and os_info.version >= 8:
+                c.run("sudo yum config-manager --set-enabled PowerTools", hide=hide)
             c.run(
                 "sudo yum install -y autoconf automake git libtool libxml2-devel "
                 "libpcap-devel pcre-devel libuuid-devel make gcc-c++ protobuf-compiler "
-                "python3-setuptools",
+                "protobuf-devel python3-setuptools",
                 hide=hide,
             )
     with p.start("cloning emane"):
@@ -373,6 +375,7 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
+    print(f"uninstalling core with prefix: {prefix}")
     hide = not verbose
     p = Progress(verbose)
     c.run("sudo -v", hide=True)
