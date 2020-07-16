@@ -194,7 +194,12 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-@task
+@task(
+    help={
+        "verbose": "enable verbose",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+    },
+)
 def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install systemd core service
@@ -225,7 +230,12 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
         print(f"ERROR: systemd service path not found: {systemd_dir}")
 
 
-@task
+@task(
+    help={
+        "verbose": "enable verbose",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+    },
+)
 def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core script files, modified to leverage virtual environment
@@ -259,7 +269,13 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
     c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
 
 
-@task
+@task(
+    help={
+        "dev": "install development mode",
+        "verbose": "enable verbose",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+    },
+)
 def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core, poetry, scripts, service, and ospf mdr
@@ -288,7 +304,11 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     print("\nyou may need to open a new terminal to leverage invoke for running core")
 
 
-@task
+@task(
+    help={
+        "verbose": "enable verbose",
+    },
+)
 def install_emane(c, verbose=False):
     """
     install emane and the python bindings
@@ -331,7 +351,13 @@ def install_emane(c, verbose=False):
             c.run(f"poetry run pip install {emane_dir}/src/python", hide=hide)
 
 
-@task
+@task(
+    help={
+        "dev": "uninstall development mode",
+        "verbose": "enable verbose",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+    },
+)
 def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     uninstall core
@@ -386,31 +412,26 @@ def daemon(c):
         )
 
 
-@task
-def gui(c):
+@task(
+    help={
+        "sudo": "run script as sudo",
+        "file": "script file to run in the core virtual environment"
+    },
+)
+def run(c, file, sudo=False):
     """
-    start core-pygui
+    convenience for running a core related script
     """
+    if not file:
+        print("no script was provided")
+        return
+    python = get_python(c)
+    path = Path(file).absolute()
     with c.cd(DAEMON_DIR):
-        c.run("poetry run scripts/core-pygui", pty=True)
-
-
-@task
-def cli(c, args):
-    """
-    run core-cli used to query and modify a running session
-    """
-    with c.cd(DAEMON_DIR):
-        c.run(f"poetry run scripts/core-cli {args}", pty=True)
-
-
-@task
-def cleanup(c):
-    """
-    run core-cleanup removing leftover core nodes, bridges, directories
-    """
-    print("running core-cleanup...")
-    c.run(f"sudo daemon/scripts/core-cleanup", pty=True)
+        cmd = f"{python} {path}"
+        if sudo:
+            cmd = f"sudo {cmd}"
+        c.run(cmd, pty=True)
 
 
 @task
