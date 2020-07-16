@@ -271,6 +271,7 @@ nhrpd=yes
 eigrpd=yes
 babeld=yes
 sharpd=yes
+staticd=yes
 pbrd=yes
 bfdd=yes
 fabricd=yes
