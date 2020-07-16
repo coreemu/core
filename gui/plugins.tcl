@@ -672,11 +672,11 @@ proc popupCapabilityConfig { channel wlan model types values captions bmp possib
     pack $windowScroll -fill y -side right
     pack $windowCanvas -expand yes -fill both -side top
 
-    frame $windowCanvas.notebookFrame -width 700 -height 1200
+    frame $windowCanvas.notebookFrame -width 700 -height 2400
     set notebookFrame $windowCanvas.notebookFrame
     pack $notebookFrame -fill both -expand yes -padx 5 -pady 5
 
-    ttk::notebook $notebookFrame.vals -width 690 -height 1200
+    ttk::notebook $notebookFrame.vals -width 690 -height 2400
     set configNotebook $notebookFrame.vals
     ttk::notebook::enableTraversal $configNotebook
     pack $configNotebook -fill both -expand yes
