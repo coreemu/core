@@ -163,15 +163,23 @@ python run /path/to/script.py
 EMANE can be installed from deb or RPM packages or from source. See the
 [EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
 
-Here are quick instructions for installing all EMANE packages for Ubuntu 18.04:
-```shell
-# install dependencies
-# ubuntu
-sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-wget https://adjacentlink.com/downloads/emane/emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
-tar xzf emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
+There is an invoke task to help with installing EMANE, but has issues,
+which attempts to build EMANE from source, but has issue on systems with
+ older protobuf-compilers.
 
-# install emane python bindings into the core virtual environment
+```shell
+cd $REPO
+inv install-emane
+```
+
+Alternatively, you can
+[build EMANE](https://github.com/adjacentlink/emane/wiki/Build)
+from source and install the python
+bindings into the core virtual environment.
+
+The following would install the EMANE python bindings after being
+successfully built.
+```shell
 cd $REPO/daemon
 poetry run pip install $EMANE_REPO/src/python
 ```
