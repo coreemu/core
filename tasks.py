@@ -360,7 +360,7 @@ def install_emane(c, verbose=False):
 )
 def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
-    uninstall core
+    uninstall core, scripts, service, virtual environment, and clean build directory
     """
     hide = not verbose
     p = Progress(verbose)
@@ -420,7 +420,7 @@ def daemon(c):
 )
 def run(c, file, sudo=False):
     """
-    convenience for running a core related script
+    runs a user script in the core virtual environment
     """
     if not file:
         print("no script was provided")

@@ -173,22 +173,38 @@ The invoke tool installed by way of pipx provides conveniences for running
 CORE tasks to help ensure usage of the create python virtual environment.
 
 ```shell
+inv --list
+
 Available tasks:
 
-  cleanup           run core-cleanup removing leftover core nodes, bridges, directories
-  cli               run core-cli used to query and modify a running session
   daemon            start core-daemon
-  gui               start core-pygui
-  install           install core, scripts, service, and ospf mdr
+  install           install core, poetry, scripts, service, and ospf mdr
+  install-emane     install emane and the python bindings
   install-scripts   install core script files, modified to leverage virtual environment
   install-service   install systemd core service
+  run               runs a user script in the core virtual environment
   test              run core tests
   test-emane        run core emane tests
   test-mock         run core tests using mock to avoid running as sudo
-  uninstall         uninstall core
+  uninstall         uninstall core, scripts, service, virtual environment, and clean build directory
 ```
 
-Example running the core-daemon task from the root of the repo:
+Print help for a given task:
 ```shell
-inv daemon
+inv -h install
+
+Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
+
+Docstring:
+  install core, poetry, scripts, service, and ospf mdr
+
+Options:
+  -d, --dev                    install development mode
+  -p STRING, --prefix=STRING   prefix where scripts are installed, default is /usr/local
+  -v, --verbose                enable verbose
+```
+
+Example running a core user script:
+```shell
+inv run /path/to/core/grpc/script.py
 ```
