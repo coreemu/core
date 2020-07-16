@@ -301,14 +301,14 @@ def install_emane(c, verbose=False):
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
-                "sudo apt install gcc g++ automake libtool libxml2-dev libprotobuf-dev "
-                "libpcap-dev libpcre3-dev uuid-dev pkg-config protobuf-compiler git "
-                "python3-protobuf python3-setuptools",
+                "sudo apt install -y gcc g++ automake libtool libxml2-dev "
+                "libprotobuf-dev libpcap-dev libpcre3-dev uuid-dev pkg-config "
+                "protobuf-compiler git python3-protobuf python3-setuptools",
                 hide=hide,
             )
         elif os_info.like == OsLike.REDHAT:
             c.run(
-                "sudo yum install autoconf automake git libtool libxml2-devel "
+                "sudo yum install -y autoconf automake git libtool libxml2-devel "
                 "libpcap-devel pcre-devel libuuid-devel make gcc-c++ "
                 "python3-setuptools",
                 hide=hide,
