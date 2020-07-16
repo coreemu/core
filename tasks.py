@@ -309,7 +309,7 @@ def install_emane(c, verbose=False):
         elif os_info.like == OsLike.REDHAT:
             c.run(
                 "sudo yum install -y autoconf automake git libtool libxml2-devel "
-                "libpcap-devel pcre-devel libuuid-devel make gcc-c++ "
+                "libpcap-devel pcre-devel libuuid-devel make gcc-c++ protobuf-compiler "
                 "python3-setuptools",
                 hide=hide,
             )
