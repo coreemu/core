@@ -136,17 +136,26 @@ installed virtual environment.
 
 > **NOTE:** the following assumes CORE has been installed successfully
 
-One way to do this would be to enable the core virtual environment shell.
+There is an invoke task to help with this case.
+```shell
+cd $REPO
+inv -h run
+Usage: inv[oke] [--core-opts] run [--options] [other tasks here ...]
+
+Docstring:
+  runs a user script in the core virtual environment
+
+Options:
+  -f STRING, --file=STRING   script file to run in the core virtual environment
+  -s, --sudo                 run script as sudo
+```
+
+Another way would be to enable the core virtual environment shell. Which
+would allow you to run scripts in a more **normal** way.
 ```shell
 cd $REPO/daemon
 poetry shell
 python run /path/to/script.py
-```
-
-Another way would be to run the script directly by way of poetry.
-```shell
-cd $REPO/daemon
-poetry run python /path/to/script.py
 ```
 
 ## Manually Install EMANE
@@ -202,9 +211,4 @@ Options:
   -d, --dev                    install development mode
   -p STRING, --prefix=STRING   prefix where scripts are installed, default is /usr/local
   -v, --verbose                enable verbose
-```
-
-Example running a core user script:
-```shell
-inv run /path/to/core/grpc/script.py
 ```
