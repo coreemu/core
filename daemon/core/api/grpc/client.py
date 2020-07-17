@@ -414,6 +414,20 @@ class CoreGrpcClient:
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
         return self.stub.SetSessionState(request)
 
+    def set_session_user(
+        self, session_id: int, user: str
+    ) -> core_pb2.SetSessionUserResponse:
+        """
+        Set session user, used for helping to find files without full paths.
+
+        :param session_id: id of session
+        :param user: user to set for session
+        :return: response with result of success or failure
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.SetSessionUserRequest(session_id=session_id, user=user)
+        return self.stub.SetSessionUser(request)
+
     def add_session_server(
         self, session_id: int, name: str, host: str
     ) -> core_pb2.AddSessionServerResponse:

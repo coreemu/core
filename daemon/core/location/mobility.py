@@ -5,10 +5,10 @@ mobility.py: mobility helpers for moving nodes and calculating wireless range.
 import heapq
 import logging
 import math
-import os
 import threading
 import time
 from functools import total_ordering
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
@@ -1030,30 +1030,28 @@ class Ns2ScriptedMobility(WayPointMobility):
     def findfile(self, file_name: str) -> str:
         """
         Locate a script file. If the specified file doesn't exist, look in the
-        same directory as the scenario file, or in the default
-        configs directory (~/.core/configs). This allows for sample files without
-        absolute path names.
+        same directory as the scenario file, or in gui directories.
 
         :param file_name: file name to find
         :return: absolute path to the file
+        :raises CoreError: when file is not found
         """
-        if os.path.exists(file_name):
-            return file_name
-
-        if self.session.file_name is not None:
-            d = os.path.dirname(self.session.file_name)
-            sessfn = os.path.join(d, file_name)
-            if os.path.exists(sessfn):
-                return sessfn
-
-        if self.session.user is not None:
-            userfn = os.path.join(
-                "/home", self.session.user, ".core", "configs", file_name
-            )
-            if os.path.exists(userfn):
-                return userfn
-
-        return file_name
+        file_path = Path(file_name).expanduser()
+        if file_path.exists():
+            return str(file_path)
+        if self.session.file_name:
+            file_path = Path(self.session.file_name).parent / file_name
+            if file_path.exists():
+                return str(file_path)
+        if self.session.user:
+            user_path = Path(f"~{self.session.user}").expanduser()
+            file_path = user_path / ".core" / "configs" / file_name
+            if file_path.exists():
+                return str(file_path)
+            file_path = user_path / ".coregui" / "mobility" / file_name
+            if file_path.exists():
+                return str(file_path)
+        raise CoreError(f"invalid file: {file_name}")
 
     def parsemap(self, mapstr: str) -> None:
         """

@@ -305,7 +305,7 @@ class Toolbar(ttk.Frame):
             self.set_runtime()
             self.app.core.set_metadata()
             self.app.core.show_mobility_players()
-        else:
+        elif response.exceptions:
             enable_buttons(self.design_frame, enabled=True)
             message = "\n".join(response.exceptions)
             self.app.show_error("Start Session Error", message)

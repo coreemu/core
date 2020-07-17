@@ -1,6 +1,7 @@
 """
 Incorporate grpc into python tkinter GUI
 """
+import getpass
 import json
 import logging
 import os
@@ -71,6 +72,7 @@ class CoreClient:
         self.default_services: Dict[NodeType, Set[str]] = {}
         self.emane_models: List[str] = []
         self.observer: Optional[str] = None
+        self.user = getpass.getuser()
 
         # loaded configuration data
         self.servers: Dict[str, CoreServer] = {}
@@ -288,6 +290,9 @@ class CoreClient:
             self.handling_events = self.client.events(
                 self.session_id, self.handle_events
             )
+
+            # set session user
+            self.client.set_session_user(self.session_id, self.user)
 
             # get session service defaults
             response = self.client.get_service_defaults(self.session_id)

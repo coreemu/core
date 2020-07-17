@@ -39,6 +39,8 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+    rpc SetSessionUser (SetSessionUserRequest) returns (SetSessionUserResponse) {
+    }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
     }
 
@@ -294,6 +296,15 @@ message SetSessionStateRequest {
 }
 
 message SetSessionStateResponse {
+    bool result = 1;
+}
+
+message SetSessionUserRequest {
+    int32 session_id = 1;
+    string user = 2;
+}
+
+message SetSessionUserResponse {
     bool result = 1;
 }
 
