@@ -14,7 +14,8 @@ from fabric import Connection
 from invoke import UnexpectedExit
 
 from core import utils
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
+from core.executables import get_requirements
 from core.nodes.interface import GreTap
 from core.nodes.network import CoreNetwork, CtrlNet
 
@@ -131,8 +132,17 @@ class DistributedController:
         :param name: distributed server name
         :param host: distributed server host address
         :return: nothing
+        :raises CoreError: when there is an error validating server
         """
         server = DistributedServer(name, host)
+        for requirement in get_requirements(self.session.use_ovs()):
+            try:
+                server.remote_cmd(f"which {requirement}")
+            except CoreCommandError:
+                raise CoreError(
+                    f"server({server.name}) failed validation for "
+                    f"command({requirement})"
+                )
         self.servers[name] = server
         cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)

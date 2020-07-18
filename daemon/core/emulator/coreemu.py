@@ -9,7 +9,7 @@ import core.services
 from core import configservices, utils
 from core.configservice.manager import ConfigServiceManager
 from core.emulator.session import Session
-from core.executables import COMMON_REQUIREMENTS, OVS_REQUIREMENTS, VCMD_REQUIREMENTS
+from core.executables import get_requirements
 from core.services.coreservices import ServiceManager
 
 
@@ -79,13 +79,8 @@ class CoreEmu:
         :return: nothing
         :raises core.errors.CoreError: when an executable does not exist on path
         """
-        requirements = COMMON_REQUIREMENTS
         use_ovs = self.config.get("ovs") == "1"
-        if use_ovs:
-            requirements += OVS_REQUIREMENTS
-        else:
-            requirements += VCMD_REQUIREMENTS
-        for requirement in requirements:
+        for requirement in get_requirements(use_ovs):
             utils.which(requirement, required=True)
 
     def load_services(self) -> None:
