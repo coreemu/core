@@ -62,7 +62,7 @@ core-pygui
 core-gui
 
 # run mocked unit tests
-cd $REPO
+cd <CORE_REPO>
 inv test-mock
 ```
 

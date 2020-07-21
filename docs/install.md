@@ -58,7 +58,7 @@ before proceeding to install.
 
 Previous install was built from source:
 ```shell
-cd $REPO
+cd <CORE_REPO>
 sudo make uninstall
 make clean
 ./bootstrap.sh clean
@@ -138,7 +138,7 @@ installed virtual environment.
 
 There is an invoke task to help with this case.
 ```shell
-cd $REPO
+cd <CORE_REPO>
 inv -h run
 Usage: inv[oke] [--core-opts] run [--options] [other tasks here ...]
 
@@ -153,7 +153,7 @@ Options:
 Another way would be to enable the core virtual environment shell. Which
 would allow you to run scripts in a more **normal** way.
 ```shell
-cd $REPO/daemon
+cd <CORE_REPO>/daemon
 poetry shell
 python run /path/to/script.py
 ```
@@ -168,7 +168,7 @@ which attempts to build EMANE from source, but has issue on systems with
  older protobuf-compilers.
 
 ```shell
-cd $REPO
+cd <CORE_REPO>
 inv install-emane
 ```
 
@@ -180,8 +180,8 @@ bindings into the core virtual environment.
 The following would install the EMANE python bindings after being
 successfully built.
 ```shell
-cd $REPO/daemon
-poetry run pip install $EMANE_REPO/src/python
+cd <CORE_REPO>/daemon
+poetry run pip install <EMANE_REPO>/src/python
 ```
 
 ## Using Invoke Tasks
