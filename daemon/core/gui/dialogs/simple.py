@@ -14,6 +14,7 @@ class SimpleStringDialog(Dialog):
         self, master: tk.BaseWidget, app: "Application", title: str, prompt: str
     ):
         super().__init__(app, title, master=master)
+        self.bind("<Return>", lambda e: self.destroy())
         self.prompt: str = prompt
         self.value = tk.StringVar()
         self.entry: Optional[ttk.Entry] = None

@@ -19,6 +19,7 @@ from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
+from core.gui.graph.layers import LayersMenu
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
@@ -271,6 +272,9 @@ class CanvasNode:
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
             self.context.add_cascade(label="Edit", menu=edit_menu)
+
+        layer_menu = LayersMenu(self.context, self.app, self.id)
+        self.context.add_cascade(label="Layer", menu=layer_menu)
         self.context.tk_popup(event.x_root, event.y_root)
 
     def click_cut(self) -> None:
