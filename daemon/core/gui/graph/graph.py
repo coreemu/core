@@ -25,6 +25,7 @@ from core.gui.graph.edges import (
     create_edge_token,
 )
 from core.gui.graph.enums import GraphMode, ScaleOption
+from core.gui.graph.layers import CanvasLayers
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
@@ -62,6 +63,7 @@ class CanvasGraph(tk.Canvas):
         super().__init__(master, highlightthickness=0, background="#cccccc")
         self.app: "Application" = app
         self.core: "CoreClient" = core
+        self.layers = CanvasLayers(self)
         self.mode: GraphMode = GraphMode.SELECT
         self.annotation_type: Optional[ShapeType] = None
         self.selection: Dict[int, int] = {}

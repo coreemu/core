@@ -9,6 +9,7 @@ from PIL.ImageTk import PhotoImage
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.colorpicker import ColorPickerDialog
+from core.gui.dialogs.layers import LayersDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
@@ -237,6 +238,9 @@ class Toolbar(ttk.Frame):
             "Annotation Tools",
             radio=True,
         )
+        self.design_frame.create_button(
+            self.annotation_enum, self.show_layers, "Layers"
+        )
 
     def draw_runtime_frame(self) -> None:
         self.runtime_frame = ButtonBar(self, self.app)
@@ -255,6 +259,10 @@ class Toolbar(ttk.Frame):
         self.run_command_button = self.runtime_frame.create_button(
             ImageEnum.RUN, self.click_run_button, "Run Tool"
         )
+
+    def show_layers(self) -> None:
+        dialog = LayersDialog(self.app)
+        dialog.show()
 
     def draw_node_picker(self) -> None:
         self.hide_marker()
