@@ -1,5 +1,6 @@
 import logging
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Type, Union
 
 import grpc
@@ -18,6 +19,25 @@ from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
 WORKERS = 10
+
+
+class CpuUsage:
+    def __init__(self) -> None:
+        self.stat_file: Path = Path("/proc/stat")
+        self.prev_idle: int = 0
+        self.prev_total: int = 0
+
+    def run(self) -> float:
+        lines = self.stat_file.read_text().splitlines()[0]
+        values = [int(x) for x in lines.split()[1:]]
+        idle = sum(values[3:5])
+        non_idle = sum(values[:3] + values[5:8])
+        total = idle + non_idle
+        total_diff = total - self.prev_total
+        idle_diff = idle - self.prev_idle
+        self.prev_idle = idle
+        self.prev_total = total
+        return (total_diff - idle_diff) / total_diff
 
 
 def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOptions]:

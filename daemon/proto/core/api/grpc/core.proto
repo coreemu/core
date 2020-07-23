@@ -51,6 +51,8 @@ service CoreApi {
     }
     rpc Throughputs (ThroughputsRequest) returns (stream ThroughputsEvent) {
     }
+    rpc CpuUsage (CpuUsageRequest) returns (stream CpuUsageEvent) {
+    }
 
     // node rpc
     rpc AddNode (AddNodeRequest) returns (AddNodeResponse) {
@@ -345,6 +347,14 @@ message ThroughputsEvent {
     int32 session_id = 1;
     repeated BridgeThroughput bridge_throughputs = 2;
     repeated InterfaceThroughput iface_throughputs = 3;
+}
+
+message CpuUsageRequest {
+    int32 delay = 1;
+}
+
+message CpuUsageEvent {
+    double usage = 1;
 }
 
 message InterfaceThroughput {

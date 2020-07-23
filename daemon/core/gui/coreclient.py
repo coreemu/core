@@ -16,6 +16,7 @@ from core.api.grpc import client
 from core.api.grpc.common_pb2 import ConfigOption
 from core.api.grpc.configservices_pb2 import ConfigService, ConfigServiceConfig
 from core.api.grpc.core_pb2 import (
+    CpuUsageEvent,
     Event,
     ExceptionEvent,
     Hook,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from core.gui.app import Application
 
 GUI_SOURCE = "gui"
+CPU_USAGE_DELAY = 3
 
 
 class CoreClient:
@@ -92,8 +94,9 @@ class CoreClient:
         self.hooks: Dict[str, Hook] = {}
         self.emane_config: Dict[str, ConfigOption] = {}
         self.mobility_players: Dict[int, MobilityPlayer] = {}
-        self.handling_throughputs: Optional[grpc.Channel] = None
-        self.handling_events: Optional[grpc.Channel] = None
+        self.handling_throughputs: Optional[grpc.Future] = None
+        self.handling_cpu_usage: Optional[grpc.Future] = None
+        self.handling_events: Optional[grpc.Future] = None
         self.xml_dir: Optional[str] = None
         self.xml_file: Optional[str] = None
 
@@ -111,6 +114,7 @@ class CoreClient:
                 )
                 if throughputs_enabled:
                     self.enable_throughputs()
+            self.setup_cpu_usage()
         return self._client
 
     def reset(self) -> None:
@@ -258,6 +262,20 @@ class CoreClient:
             self.handling_events.cancel()
             self.handling_events = None
 
+    def cancel_cpu_usage(self) -> None:
+        if self.handling_cpu_usage:
+            self.handling_cpu_usage.cancel()
+            self.handling_cpu_usage = None
+
+    def setup_cpu_usage(self) -> None:
+        if self.handling_cpu_usage and self.handling_cpu_usage.running():
+            return
+        if self.handling_cpu_usage:
+            self.handling_cpu_usage.cancel()
+        self.handling_cpu_usage = self._client.cpu_usage(
+            CPU_USAGE_DELAY, self.handle_cpu_event
+        )
+
     def handle_throughputs(self, event: ThroughputsEvent) -> None:
         if event.session_id != self.session_id:
             logging.warning(
@@ -268,6 +286,9 @@ class CoreClient:
             return
         logging.debug("handling throughputs event: %s", event)
         self.app.after(0, self.app.canvas.set_throughputs, event)
+
+    def handle_cpu_event(self, event: CpuUsageEvent) -> None:
+        self.app.after(0, self.app.statusbar.set_cpu, event.usage)
 
     def handle_exception_event(self, event: ExceptionEvent) -> None:
         logging.info("exception event: %s", event)
@@ -479,6 +500,8 @@ class CoreClient:
         """
         try:
             self.client.connect()
+            self.setup_cpu_usage()
+
             # get service information
             response = self.client.get_services()
             for service in response.services:

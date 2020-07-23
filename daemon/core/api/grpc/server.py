@@ -681,6 +681,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             last_stats = stats
             time.sleep(delay)
 
+    def CpuUsage(
+        self, request: core_pb2.CpuUsageRequest, context: ServicerContext
+    ) -> None:
+        cpu_usage = grpcutils.CpuUsage()
+        while self._is_running(context):
+            usage = cpu_usage.run()
+            yield core_pb2.CpuUsageEvent(usage=usage)
+            time.sleep(request.delay)
+
     def AddNode(
         self, request: core_pb2.AddNodeRequest, context: ServicerContext
     ) -> core_pb2.AddNodeResponse:

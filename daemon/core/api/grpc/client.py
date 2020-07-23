@@ -467,7 +467,7 @@ class CoreGrpcClient:
         session_id: int,
         handler: Callable[[core_pb2.Event], None],
         events: List[core_pb2.Event] = None,
-    ) -> grpc.Channel:
+    ) -> grpc.Future:
         """
         Listen for session events.
 
@@ -484,7 +484,7 @@ class CoreGrpcClient:
 
     def throughputs(
         self, session_id: int, handler: Callable[[core_pb2.ThroughputsEvent], None]
-    ) -> grpc.Channel:
+    ) -> grpc.Future:
         """
         Listen for throughput events with information for interfaces and bridges.
 
@@ -495,6 +495,21 @@ class CoreGrpcClient:
         """
         request = core_pb2.ThroughputsRequest(session_id=session_id)
         stream = self.stub.Throughputs(request)
+        start_streamer(stream, handler)
+        return stream
+
+    def cpu_usage(
+        self, delay: int, handler: Callable[[core_pb2.CpuUsageEvent], None]
+    ) -> grpc.Future:
+        """
+        Listen for cpu usage events with the given repeat delay.
+
+        :param delay: delay between receiving events
+        :param handler: handler for every event
+        :return: stream processing events, can be used to cancel stream
+        """
+        request = core_pb2.CpuUsageRequest(delay=delay)
+        stream = self.stub.CpuUsage(request)
         start_streamer(stream, handler)
         return stream
 
