@@ -590,8 +590,7 @@ class CanvasGraph(tk.Canvas):
         )
         logging.debug("ratio: %s", self.ratio)
         logging.debug("offset: %s", self.offset)
-        zoom_label = f"{self.ratio * 100:.0f}%"
-        self.app.statusbar.zoom.config(text=zoom_label)
+        self.app.statusbar.set_zoom(self.ratio)
         if self.wallpaper:
             self.redraw_wallpaper()
 
