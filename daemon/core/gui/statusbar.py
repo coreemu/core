@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, List, Optional
 
-from core.api.grpc.core_pb2 import ExceptionEvent
+from core.api.grpc.core_pb2 import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
 
@@ -22,6 +22,7 @@ class StatusBar(ttk.Frame):
         self.zoom: Optional[ttk.Label] = None
         self.cpu_usage: Optional[ttk.Label] = None
         self.alerts_button: Optional[ttk.Button] = None
+        self.alert_style = Styles.no_alert
         self.running: bool = False
         self.core_alarms: List[ExceptionEvent] = []
         self.draw()
@@ -60,9 +61,29 @@ class StatusBar(ttk.Frame):
         self.cpu_usage.grid(row=0, column=2, sticky="ew")
 
         self.alerts_button = ttk.Button(
-            self, text="Alerts", command=self.click_alerts, style=Styles.green_alert
+            self, text="Alerts", command=self.click_alerts, style=self.alert_style
         )
         self.alerts_button.grid(row=0, column=3, sticky="ew")
+
+    def add_alert(self, event: ExceptionEvent) -> None:
+        self.core_alarms.append(event)
+        level = event.exception_event.level
+        self._set_alert_style(level)
+        label = f"Alerts ({len(self.core_alarms)})"
+        self.alerts_button.config(text=label, style=self.alert_style)
+
+    def _set_alert_style(self, level: ExceptionLevel) -> None:
+        if level in [ExceptionLevel.FATAL, ExceptionLevel.ERROR]:
+            self.alert_style = Styles.red_alert
+        elif level == ExceptionLevel.WARNING and self.alert_style != Styles.red_alert:
+            self.alert_style = Styles.yellow_alert
+        elif self.alert_style == Styles.no_alert:
+            self.alert_style = Styles.green_alert
+
+    def clear_alerts(self):
+        self.core_alarms.clear()
+        self.alert_style = Styles.no_alert
+        self.alerts_button.config(text="Alerts", style=self.alert_style)
 
     def click_alerts(self) -> None:
         dialog = AlertsDialog(self.app)

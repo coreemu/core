@@ -445,6 +445,23 @@ class CoreGrpcClient:
         )
         return self.stub.AddSessionServer(request)
 
+    def alert(
+        self,
+        session_id: int,
+        level: core_pb2.ExceptionLevel,
+        source: str,
+        text: str,
+        node_id: int = None,
+    ) -> core_pb2.SessionAlertResponse:
+        request = core_pb2.SessionAlertRequest(
+            session_id=session_id,
+            level=level,
+            source=source,
+            text=text,
+            node_id=node_id,
+        )
+        return self.stub.SessionAlert(request)
+
     def events(
         self,
         session_id: int,

@@ -14,6 +14,7 @@ class Styles:
     tooltip_frame: str = "Tooltip.TFrame"
     service_checkbutton: str = "Service.TCheckbutton"
     picker_button: str = "Picker.TButton"
+    no_alert: str = "NAlert.TButton"
     green_alert: str = "GAlert.TButton"
     red_alert: str = "RAlert.TButton"
     yellow_alert: str = "YAlert.TButton"
@@ -175,33 +176,29 @@ def style_listbox(widget: tk.Widget) -> None:
     )
 
 
+def _alert_style(style: ttk.Style, name: str, background: str):
+    style.configure(
+        name,
+        background=background,
+        padding=0,
+        relief=tk.RIDGE,
+        borderwidth=1,
+        font="TkDefaultFont",
+        foreground="black",
+        highlightbackground="white",
+    )
+    style.map(name, background=[("!active", background), ("active", "white")])
+
+
 def theme_change(event: tk.Event) -> None:
     style = ttk.Style()
     style.configure(Styles.picker_button, font="TkSmallCaptionFont")
     style.configure(
-        Styles.green_alert,
-        background="green",
-        padding=0,
-        relief=tk.RIDGE,
-        borderwidth=1,
-        font="TkDefaultFont",
+        Styles.no_alert, padding=0, relief=tk.RIDGE, borderwidth=1, font="TkDefaultFont"
     )
-    style.configure(
-        Styles.yellow_alert,
-        background="yellow",
-        padding=0,
-        relief=tk.RIDGE,
-        borderwidth=1,
-        font="TkDefaultFont",
-    )
-    style.configure(
-        Styles.red_alert,
-        background="red",
-        padding=0,
-        relief=tk.RIDGE,
-        borderwidth=1,
-        font="TkDefaultFont",
-    )
+    _alert_style(style, Styles.green_alert, "green")
+    _alert_style(style, Styles.yellow_alert, "yellow")
+    _alert_style(style, Styles.red_alert, "red")
 
 
 def scale_fonts(fonts_size: Dict[str, int], scale: float) -> None:

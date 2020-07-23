@@ -43,6 +43,8 @@ service CoreApi {
     }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
     }
+    rpc SessionAlert (SessionAlertRequest) returns (SessionAlertResponse) {
+    }
 
     // streams
     rpc Events (EventsRequest) returns (stream Event) {
@@ -315,6 +317,18 @@ message AddSessionServerRequest {
 }
 
 message AddSessionServerResponse {
+    bool result = 1;
+}
+
+message SessionAlertRequest {
+    int32 session_id = 1;
+    ExceptionLevel.Enum level = 2;
+    string source = 3;
+    string text = 4;
+    int32 node_id = 5;
+}
+
+message SessionAlertResponse {
     bool result = 1;
 }
 

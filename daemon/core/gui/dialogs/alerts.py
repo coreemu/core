@@ -52,6 +52,7 @@ class AlertsDialog(Dialog):
         for alarm in self.app.statusbar.core_alarms:
             exception = alarm.exception_event
             level_name = ExceptionLevel.Enum.Name(exception.level)
+            node_id = exception.node_id if exception.node_id else ""
             insert_id = self.tree.insert(
                 "",
                 tk.END,
@@ -60,7 +61,7 @@ class AlertsDialog(Dialog):
                     exception.date,
                     level_name,
                     alarm.session_id,
-                    exception.node_id,
+                    node_id,
                     exception.source,
                 ),
                 tags=(level_name,),
@@ -98,15 +99,17 @@ class AlertsDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def reset_alerts(self) -> None:
-        self.codetext.text.delete("1.0", tk.END)
+        self.codetext.text.config(state=tk.NORMAL)
+        self.codetext.text.delete(1.0, tk.END)
+        self.codetext.text.config(state=tk.DISABLED)
         for item in self.tree.get_children():
             self.tree.delete(item)
-        self.app.statusbar.core_alarms.clear()
+        self.app.statusbar.clear_alerts()
 
     def click_select(self, event: tk.Event) -> None:
         current = self.tree.selection()[0]
         alarm = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)
-        self.codetext.text.delete("1.0", "end")
-        self.codetext.text.insert("1.0", alarm.exception_event.text)
+        self.codetext.text.delete(1.0, tk.END)
+        self.codetext.text.insert(1.0, alarm.exception_event.text)
         self.codetext.text.config(state=tk.DISABLED)

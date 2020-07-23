@@ -271,7 +271,7 @@ class CoreClient:
 
     def handle_exception_event(self, event: ExceptionEvent) -> None:
         logging.info("exception event: %s", event)
-        self.app.statusbar.core_alarms.append(event)
+        self.app.statusbar.add_alert(event)
 
     def join_session(self, session_id: int, query_location: bool = True) -> None:
         logging.info("join session(%s)", session_id)

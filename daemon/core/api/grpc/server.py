@@ -109,7 +109,12 @@ from core.api.grpc.wlan_pb2 import (
 )
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
-from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
+from core.emulator.enumerations import (
+    EventTypes,
+    ExceptionLevels,
+    LinkTypes,
+    MessageFlags,
+)
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -583,6 +588,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         session.distributed.add_server(request.name, request.host)
         return core_pb2.AddSessionServerResponse(result=True)
+
+    def SessionAlert(
+        self, request: core_pb2.SessionAlertRequest, context: ServicerContext
+    ) -> core_pb2.SessionAlertResponse:
+        session = self.get_session(request.session_id, context)
+        level = ExceptionLevels(request.level)
+        node_id = request.node_id if request.node_id else None
+        session.exception(level, request.source, request.text, node_id)
+        return core_pb2.SessionAlertResponse(result=True)
 
     def Events(self, request: core_pb2.EventsRequest, context: ServicerContext) -> None:
         session = self.get_session(request.session_id, context)
