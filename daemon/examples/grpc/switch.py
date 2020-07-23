@@ -40,14 +40,14 @@ def main():
 
         # create node one
         position = Position(x=100, y=100)
-        node1 = Node(type=NodeType.DEFAULT, position=position)
+        node1 = Node(type=NodeType.DEFAULT, position=position, model="PC")
         response = core.add_node(session_id, node1)
         logging.info("created node: %s", response)
         node1_id = response.node_id
 
         # create node two
         position = Position(x=300, y=100)
-        node2 = Node(type=NodeType.DEFAULT, position=position)
+        node2 = Node(type=NodeType.DEFAULT, position=position, model="PC")
         response = core.add_node(session_id, node2)
         logging.info("created node: %s", response)
         node2_id = response.node_id

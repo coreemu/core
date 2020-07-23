@@ -26,7 +26,7 @@ HEIGHT: int = 800
 
 
 class Application(ttk.Frame):
-    def __init__(self, proxy: bool) -> None:
+    def __init__(self, proxy: bool, session_id: int = None) -> None:
         super().__init__()
         # load node icons
         NodeUtils.setup()
@@ -56,7 +56,7 @@ class Application(ttk.Frame):
         self.core: CoreClient = CoreClient(self, proxy)
         self.setup_app()
         self.draw()
-        self.core.setup()
+        self.core.setup(session_id)
 
     def setup_scaling(self) -> None:
         self.fonts_size = {name: font.nametofont(name)["size"] for name in font.names()}

@@ -473,7 +473,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Delete Session Error", e)
 
-    def setup(self) -> None:
+    def setup(self, session_id: int = None) -> None:
         """
         Query sessions, if there exist any, prompt whether to join one
         """
@@ -494,14 +494,26 @@ class CoreClient:
                 )
                 group_services.add(service.name)
 
-            # if there are no sessions, create a new session, else join a session
+            # join provided session, create new session, or show dialog to select an
+            # existing session
             response = self.client.get_sessions()
             sessions = response.sessions
-            if len(sessions) == 0:
-                self.create_new_session()
+            if session_id:
+                session_ids = set(x.id for x in sessions)
+                if session_id not in session_ids:
+                    dialog = ErrorDialog(
+                        self.app, "Join Session Error", f"{session_id} does not exist"
+                    )
+                    dialog.show()
+                    self.app.close()
+                else:
+                    self.join_session(session_id)
             else:
-                dialog = SessionsDialog(self.app, True)
-                dialog.show()
+                if not sessions:
+                    self.create_new_session()
+                else:
+                    dialog = SessionsDialog(self.app, True)
+                    dialog.show()
         except grpc.RpcError as e:
             logging.exception("core setup error")
             dialog = ErrorDialog(self.app, "Setup Error", e.details())
