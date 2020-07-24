@@ -10,9 +10,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 import netaddr
 
 from core import utils
-from core.constants import EBTABLES_BIN, TC_BIN
-from core.emulator.data import LinkData, NodeData
-from core.emulator.emudata import LinkOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -21,6 +19,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreCommandError, CoreError
+from core.executables import EBTABLES, TC
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
@@ -105,7 +104,7 @@ class EbtablesQueue:
         :param cmd: ebtable command
         :return: ebtable atomic command
         """
-        return f"{EBTABLES_BIN} --atomic-file {self.atomic_file} {cmd}"
+        return f"{EBTABLES} --atomic-file {self.atomic_file} {cmd}"
 
     def lastupdate(self, wlan: "CoreNetwork") -> float:
         """
@@ -216,20 +215,20 @@ class EbtablesQueue:
                     ]
                 )
             # rebuild the chain
-            for netif1, v in wlan._linked.items():
-                for netif2, linked in v.items():
+            for iface1, v in wlan._linked.items():
+                for oface2, linked in v.items():
                     if wlan.policy == NetworkPolicy.DROP and linked:
                         self.cmds.extend(
                             [
-                                f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j ACCEPT",
-                                f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j ACCEPT",
+                                f"-A {wlan.brname} -i {iface1.localname} -o {oface2.localname} -j ACCEPT",
+                                f"-A {wlan.brname} -o {iface1.localname} -i {oface2.localname} -j ACCEPT",
                             ]
                         )
                     elif wlan.policy == NetworkPolicy.ACCEPT and not linked:
                         self.cmds.extend(
                             [
-                                f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j DROP",
-                                f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j DROP",
+                                f"-A {wlan.brname} -i {iface1.localname} -o {oface2.localname} -j DROP",
+                                f"-A {wlan.brname} -o {iface1.localname} -i {oface2.localname} -j DROP",
                             ]
                         )
 
@@ -264,7 +263,6 @@ class CoreNetwork(CoreNetworkBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         policy: NetworkPolicy = None,
     ) -> None:
@@ -274,12 +272,11 @@ class CoreNetwork(CoreNetworkBase):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param policy: network policy
         """
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
         if name is None:
             name = str(self.id)
         if policy is not None:
@@ -288,9 +285,6 @@ class CoreNetwork(CoreNetworkBase):
         sessionid = self.session.short_session_id()
         self.brname: str = f"b.{self.id}.{sessionid}"
         self.has_ebtables_chain: bool = False
-        if start:
-            self.startup()
-            ebq.startupdateloop(self)
 
     def host_cmd(
         self,
@@ -327,6 +321,7 @@ class CoreNetwork(CoreNetworkBase):
         self.net_client.create_bridge(self.brname)
         self.has_ebtables_chain = False
         self.up = True
+        ebq.startupdateloop(self)
 
     def shutdown(self) -> None:
         """
@@ -343,61 +338,61 @@ class CoreNetwork(CoreNetworkBase):
             self.net_client.delete_bridge(self.brname)
             if self.has_ebtables_chain:
                 cmds = [
-                    f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
-                    f"{EBTABLES_BIN} -X {self.brname}",
+                    f"{EBTABLES} -D FORWARD --logical-in {self.brname} -j {self.brname}",
+                    f"{EBTABLES} -X {self.brname}",
                 ]
                 ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
 
         # removes veth pairs used for bridge-to-bridge connections
-        for netif in self.netifs():
-            netif.shutdown()
+        for iface in self.get_ifaces():
+            iface.shutdown()
 
-        self._netif.clear()
+        self.ifaces.clear()
         self._linked.clear()
         del self.session
         self.up = False
 
-    def attach(self, netif: CoreInterface) -> None:
+    def attach(self, iface: CoreInterface) -> None:
         """
         Attach a network interface.
 
-        :param netif: network interface to attach
+        :param iface: network interface to attach
         :return: nothing
         """
         if self.up:
-            netif.net_client.set_interface_master(self.brname, netif.localname)
-        super().attach(netif)
+            iface.net_client.set_iface_master(self.brname, iface.localname)
+        super().attach(iface)
 
-    def detach(self, netif: CoreInterface) -> None:
+    def detach(self, iface: CoreInterface) -> None:
         """
         Detach a network interface.
 
-        :param netif: network interface to detach
+        :param iface: network interface to detach
         :return: nothing
         """
         if self.up:
-            netif.net_client.delete_interface(self.brname, netif.localname)
-        super().detach(netif)
+            iface.net_client.delete_iface(self.brname, iface.localname)
+        super().detach(iface)
 
-    def linked(self, netif1: CoreInterface, netif2: CoreInterface) -> bool:
+    def linked(self, iface1: CoreInterface, iface2: CoreInterface) -> bool:
         """
         Determine if the provided network interfaces are linked.
 
-        :param netif1: interface one
-        :param netif2: interface two
+        :param iface1: interface one
+        :param iface2: interface two
         :return: True if interfaces are linked, False otherwise
         """
         # check if the network interfaces are attached to this network
-        if self._netif[netif1.netifi] != netif1:
-            raise ValueError(f"inconsistency for netif {netif1.name}")
+        if self.ifaces[iface1.net_id] != iface1:
+            raise ValueError(f"inconsistency for interface {iface1.name}")
 
-        if self._netif[netif2.netifi] != netif2:
-            raise ValueError(f"inconsistency for netif {netif2.name}")
+        if self.ifaces[iface2.net_id] != iface2:
+            raise ValueError(f"inconsistency for interface {iface2.name}")
 
         try:
-            linked = self._linked[netif1][netif2]
+            linked = self._linked[iface1][iface2]
         except KeyError:
             if self.policy == NetworkPolicy.ACCEPT:
                 linked = True
@@ -405,93 +400,93 @@ class CoreNetwork(CoreNetworkBase):
                 linked = False
             else:
                 raise Exception(f"unknown policy: {self.policy.value}")
-            self._linked[netif1][netif2] = linked
+            self._linked[iface1][iface2] = linked
 
         return linked
 
-    def unlink(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
+    def unlink(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         """
         Unlink two interfaces, resulting in adding or removing ebtables
         filtering rules.
 
-        :param netif1: interface one
-        :param netif2: interface two
+        :param iface1: interface one
+        :param iface2: interface two
         :return: nothing
         """
         with self._linked_lock:
-            if not self.linked(netif1, netif2):
+            if not self.linked(iface1, iface2):
                 return
-            self._linked[netif1][netif2] = False
+            self._linked[iface1][iface2] = False
 
         ebq.ebchange(self)
 
-    def link(self, netif1: CoreInterface, netif2: CoreInterface) -> None:
+    def link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         """
         Link two interfaces together, resulting in adding or removing
         ebtables filtering rules.
 
-        :param netif1: interface one
-        :param netif2: interface two
+        :param iface1: interface one
+        :param iface2: interface two
         :return: nothing
         """
         with self._linked_lock:
-            if self.linked(netif1, netif2):
+            if self.linked(iface1, iface2):
                 return
-            self._linked[netif1][netif2] = True
+            self._linked[iface1][iface2] = True
 
         ebq.ebchange(self)
 
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
-        :param netif: interface one
+        :param iface: interface one
         :param options: options for configuring link
-        :param netif2: interface two
+        :param iface2: interface two
         :return: nothing
         """
-        devname = netif.localname
-        tc = f"{TC_BIN} qdisc replace dev {devname}"
+        devname = iface.localname
+        tc = f"{TC} qdisc replace dev {devname}"
         parent = "root"
         changed = False
         bw = options.bandwidth
-        if netif.setparam("bw", bw):
+        if iface.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
-            burst = max(2 * netif.mtu, int(bw / 1000))
+            burst = max(2 * iface.mtu, int(bw / 1000))
             # max IP payload
             limit = 0xFFFF
             tbf = f"tbf rate {bw} burst {burst} limit {limit}"
             if bw > 0:
                 if self.up:
                     cmd = f"{tc} {parent} handle 1: {tbf}"
-                    netif.host_cmd(cmd)
-                netif.setparam("has_tbf", True)
+                    iface.host_cmd(cmd)
+                iface.setparam("has_tbf", True)
                 changed = True
-            elif netif.getparam("has_tbf") and bw <= 0:
+            elif iface.getparam("has_tbf") and bw <= 0:
                 if self.up:
-                    cmd = f"{TC_BIN} qdisc delete dev {devname} {parent}"
-                    netif.host_cmd(cmd)
-                netif.setparam("has_tbf", False)
+                    cmd = f"{TC} qdisc delete dev {devname} {parent}"
+                    iface.host_cmd(cmd)
+                iface.setparam("has_tbf", False)
                 # removing the parent removes the child
-                netif.setparam("has_netem", False)
+                iface.setparam("has_netem", False)
                 changed = True
-        if netif.getparam("has_tbf"):
+        if iface.getparam("has_tbf"):
             parent = "parent 1:1"
         netem = "netem"
         delay = options.delay
-        changed = max(changed, netif.setparam("delay", delay))
-        loss = options.per
+        changed = max(changed, iface.setparam("delay", delay))
+        loss = options.loss
         if loss is not None:
             loss = float(loss)
-        changed = max(changed, netif.setparam("loss", loss))
+        changed = max(changed, iface.setparam("loss", loss))
         duplicate = options.dup
         if duplicate is not None:
             duplicate = int(duplicate)
-        changed = max(changed, netif.setparam("duplicate", duplicate))
+        changed = max(changed, iface.setparam("duplicate", duplicate))
         jitter = options.jitter
-        changed = max(changed, netif.setparam("jitter", jitter))
+        changed = max(changed, iface.setparam("jitter", jitter))
         if not changed:
             return
         # jitter and delay use the same delay statement
@@ -514,19 +509,17 @@ class CoreNetwork(CoreNetworkBase):
         duplicate_check = duplicate is None or duplicate <= 0
         if all([delay_check, jitter_check, loss_check, duplicate_check]):
             # possibly remove netem if it exists and parent queue wasn't removed
-            if not netif.getparam("has_netem"):
+            if not iface.getparam("has_netem"):
                 return
             if self.up:
-                cmd = f"{TC_BIN} qdisc delete dev {devname} {parent} handle 10:"
-                netif.host_cmd(cmd)
-            netif.setparam("has_netem", False)
+                cmd = f"{TC} qdisc delete dev {devname} {parent} handle 10:"
+                iface.host_cmd(cmd)
+            iface.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                cmd = (
-                    f"{TC_BIN} qdisc replace dev {devname} {parent} handle 10: {netem}"
-                )
-                netif.host_cmd(cmd)
-            netif.setparam("has_netem", True)
+                cmd = f"{TC} qdisc replace dev {devname} {parent} handle 10: {netem}"
+                iface.host_cmd(cmd)
+            iface.setparam("has_netem", True)
 
     def linknet(self, net: CoreNetworkBase) -> CoreInterface:
         """
@@ -555,19 +548,19 @@ class CoreNetwork(CoreNetworkBase):
         if len(name) >= 16:
             raise ValueError(f"interface name {name} too long")
 
-        netif = Veth(self.session, None, name, localname, start=self.up)
-        self.attach(netif)
+        iface = Veth(self.session, None, name, localname, start=self.up)
+        self.attach(iface)
         if net.up and net.brname:
-            netif.net_client.set_interface_master(net.brname, netif.name)
-        i = net.newifindex()
-        net._netif[i] = netif
+            iface.net_client.set_iface_master(net.brname, iface.name)
+        i = net.next_iface_id()
+        net.ifaces[i] = iface
         with net._linked_lock:
-            net._linked[netif] = {}
-        netif.net = self
-        netif.othernet = net
-        return netif
+            net._linked[iface] = {}
+        iface.net = self
+        iface.othernet = net
+        return iface
 
-    def getlinknetif(self, net: CoreNetworkBase) -> Optional[CoreInterface]:
+    def get_linked_iface(self, net: CoreNetworkBase) -> Optional[CoreInterface]:
         """
         Return the interface of that links this net with another net
         (that were linked using linknet()).
@@ -575,23 +568,22 @@ class CoreNetwork(CoreNetworkBase):
         :param net: interface to get link for
         :return: interface the provided network is linked to
         """
-        for netif in self.netifs():
-            if netif.othernet == net:
-                return netif
+        for iface in self.get_ifaces():
+            if iface.othernet == net:
+                return iface
         return None
 
-    def addrconfig(self, addrlist: List[str]) -> None:
+    def add_ips(self, ips: List[str]) -> None:
         """
-        Set addresses on the bridge.
+        Add ip addresses on the bridge in the format "10.0.0.1/24".
 
-        :param addrlist: address list
+        :param ips: ip address to add
         :return: nothing
         """
         if not self.up:
             return
-
-        for addr in addrlist:
-            self.net_client.create_address(self.brname, str(addr))
+        for ip in ips:
+            self.net_client.create_address(self.brname, ip)
 
 
 class GreTapBridge(CoreNetwork):
@@ -610,7 +602,6 @@ class GreTapBridge(CoreNetwork):
         localip: str = None,
         ttl: int = 255,
         key: int = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -624,11 +615,10 @@ class GreTapBridge(CoreNetwork):
         :param localip: local address
         :param ttl: ttl value
         :param key: gre tap key
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         """
-        CoreNetwork.__init__(self, session, _id, name, False, server, policy)
+        CoreNetwork.__init__(self, session, _id, name, server, policy)
         if key is None:
             key = self.session.id ^ self.id
         self.grekey: int = key
@@ -647,8 +637,6 @@ class GreTapBridge(CoreNetwork):
                 ttl=ttl,
                 key=self.grekey,
             )
-        if start:
-            self.startup()
 
     def startup(self) -> None:
         """
@@ -672,22 +660,22 @@ class GreTapBridge(CoreNetwork):
             self.gretap = None
         super().shutdown()
 
-    def addrconfig(self, addrlist: List[str]) -> None:
+    def add_ips(self, ips: List[str]) -> None:
         """
         Set the remote tunnel endpoint. This is a one-time method for
         creating the GreTap device, which requires the remoteip at startup.
         The 1st address in the provided list is remoteip, 2nd optionally
         specifies localip.
 
-        :param addrlist: address list
+        :param ips: address list
         :return: nothing
         """
         if self.gretap:
             raise ValueError(f"gretap already exists for {self.name}")
-        remoteip = addrlist[0].split("/")[0]
+        remoteip = ips[0].split("/")[0]
         localip = None
-        if len(addrlist) > 1:
-            localip = addrlist[1].split("/")[0]
+        if len(ips) > 1:
+            localip = ips[1].split("/")[0]
         self.gretap = GreTap(
             session=self.session,
             remoteip=remoteip,
@@ -697,15 +685,19 @@ class GreTapBridge(CoreNetwork):
         )
         self.attach(self.gretap)
 
-    def setkey(self, key: int) -> None:
+    def setkey(self, key: int, iface_data: InterfaceData) -> None:
         """
         Set the GRE key used for the GreTap device. This needs to be set
         prior to instantiating the GreTap device (before addrconfig).
 
         :param key: gre key
+        :param iface_data: interface data for setting up tunnel key
         :return: nothing
         """
         self.grekey = key
+        ips = iface_data.get_ips()
+        if ips:
+            self.add_ips(ips)
 
 
 class CtrlNet(CoreNetwork):
@@ -730,7 +722,6 @@ class CtrlNet(CoreNetwork):
         _id: int = None,
         name: str = None,
         hostid: int = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         assign_address: bool = True,
         updown_script: str = None,
@@ -744,7 +735,6 @@ class CtrlNet(CoreNetwork):
         :param name: node namee
         :param prefix: control network ipv4 prefix
         :param hostid: host id
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param assign_address: assigned address
@@ -757,7 +747,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address: bool = assign_address
         self.updown_script: Optional[str] = updown_script
         self.serverintf: Optional[str] = serverintf
-        super().__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, server)
 
     def add_addresses(self, index: int) -> None:
         """
@@ -766,7 +756,7 @@ class CtrlNet(CoreNetwork):
         :param index: starting address index
         :return: nothing
         """
-        use_ovs = self.session.options.get_config("ovs") == "True"
+        use_ovs = self.session.use_ovs()
         address = self.prefix[index]
         current = f"{address}/{self.prefix.prefixlen}"
         net_client = get_net_client(use_ovs, utils.cmd)
@@ -807,7 +797,7 @@ class CtrlNet(CoreNetwork):
             self.host_cmd(f"{self.updown_script} {self.brname} startup")
 
         if self.serverintf:
-            self.net_client.set_interface_master(self.brname, self.serverintf)
+            self.net_client.set_iface_master(self.brname, self.serverintf)
 
     def shutdown(self) -> None:
         """
@@ -817,7 +807,7 @@ class CtrlNet(CoreNetwork):
         """
         if self.serverintf is not None:
             try:
-                self.net_client.delete_interface(self.brname, self.serverintf)
+                self.net_client.delete_iface(self.brname, self.serverintf)
             except CoreCommandError:
                 logging.exception(
                     "error deleting server interface %s from bridge %s",
@@ -838,7 +828,7 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Do not include CtrlNet in link messages describing this session.
 
@@ -855,33 +845,18 @@ class PtpNet(CoreNetwork):
 
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
 
-    def attach(self, netif: CoreInterface) -> None:
+    def attach(self, iface: CoreInterface) -> None:
         """
         Attach a network interface, but limit attachment to two interfaces.
 
-        :param netif: network interface
+        :param iface: network interface
         :return: nothing
         """
-        if len(self._netif) >= 2:
-            raise ValueError(
-                "Point-to-point links support at most 2 network interfaces"
-            )
-        super().attach(netif)
+        if len(self.ifaces) >= 2:
+            raise CoreError("ptp links support at most 2 network interfaces")
+        super().attach(iface)
 
-    def data(
-        self, message_type: MessageFlags = MessageFlags.NONE, source: str = None
-    ) -> Optional[NodeData]:
-        """
-        Do not generate a Node Message for point-to-point links. They are
-        built using a link message instead.
-
-        :param message_type: purpose for the data object we are creating
-        :param source: source of node data
-        :return: node data object
-        """
-        return None
-
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Build CORE API TLVs for a point-to-point link. One Link message
         describes this network.
@@ -890,91 +865,70 @@ class PtpNet(CoreNetwork):
         :return: list of link data
         """
         all_links = []
-
-        if len(self._netif) != 2:
+        if len(self.ifaces) != 2:
             return all_links
 
-        if1, if2 = self._netif.values()
+        ifaces = self.get_ifaces()
+        iface1 = ifaces[0]
+        iface2 = ifaces[1]
         unidirectional = 0
-        if if1.getparams() != if2.getparams():
+        if iface1.getparams() != iface2.getparams():
             unidirectional = 1
 
-        interface1_ip4 = None
-        interface1_ip4_mask = None
-        interface1_ip6 = None
-        interface1_ip6_mask = None
-        for address in if1.addrlist:
-            ip, _sep, mask = address.partition("/")
-            mask = int(mask)
-            if netaddr.valid_ipv4(ip):
-                interface1_ip4 = ip
-                interface1_ip4_mask = mask
-            else:
-                interface1_ip6 = ip
-                interface1_ip6_mask = mask
+        mac = str(iface1.mac) if iface1.mac else None
+        iface1_data = InterfaceData(
+            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=mac
+        )
+        ip4 = iface1.get_ip4()
+        if ip4:
+            iface1_data.ip4 = str(ip4.ip)
+            iface1_data.ip4_mask = ip4.prefixlen
+        ip6 = iface1.get_ip6()
+        if ip6:
+            iface1_data.ip6 = str(ip6.ip)
+            iface1_data.ip6_mask = ip6.prefixlen
 
-        interface2_ip4 = None
-        interface2_ip4_mask = None
-        interface2_ip6 = None
-        interface2_ip6_mask = None
-        for address in if2.addrlist:
-            ip, _sep, mask = address.partition("/")
-            mask = int(mask)
-            if netaddr.valid_ipv4(ip):
-                interface2_ip4 = ip
-                interface2_ip4_mask = mask
-            else:
-                interface2_ip6 = ip
-                interface2_ip6_mask = mask
+        mac = str(iface2.mac) if iface2.mac else None
+        iface2_data = InterfaceData(
+            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=mac
+        )
+        ip4 = iface2.get_ip4()
+        if ip4:
+            iface2_data.ip4 = str(ip4.ip)
+            iface2_data.ip4_mask = ip4.prefixlen
+        ip6 = iface2.get_ip6()
+        if ip6:
+            iface2_data.ip6 = str(ip6.ip)
+            iface2_data.ip6_mask = ip6.prefixlen
 
+        options_data = iface1.get_link_options(unidirectional)
         link_data = LinkData(
             message_type=flags,
-            node1_id=if1.node.id,
-            node2_id=if2.node.id,
-            link_type=self.linktype,
-            unidirectional=unidirectional,
-            delay=if1.getparam("delay"),
-            bandwidth=if1.getparam("bw"),
-            per=if1.getparam("loss"),
-            dup=if1.getparam("duplicate"),
-            jitter=if1.getparam("jitter"),
-            interface1_id=if1.node.getifindex(if1),
-            interface1_name=if1.name,
-            interface1_mac=if1.hwaddr,
-            interface1_ip4=interface1_ip4,
-            interface1_ip4_mask=interface1_ip4_mask,
-            interface1_ip6=interface1_ip6,
-            interface1_ip6_mask=interface1_ip6_mask,
-            interface2_id=if2.node.getifindex(if2),
-            interface2_name=if2.name,
-            interface2_mac=if2.hwaddr,
-            interface2_ip4=interface2_ip4,
-            interface2_ip4_mask=interface2_ip4_mask,
-            interface2_ip6=interface2_ip6,
-            interface2_ip6_mask=interface2_ip6_mask,
+            type=self.linktype,
+            node1_id=iface1.node.id,
+            node2_id=iface2.node.id,
+            iface1=iface1_data,
+            iface2=iface2_data,
+            options=options_data,
         )
-
         all_links.append(link_data)
 
         # build a 2nd link message for the upstream link parameters
         # (swap if1 and if2)
         if unidirectional:
+            iface1_data = InterfaceData(id=iface2.node.get_iface_id(iface2))
+            iface2_data = InterfaceData(id=iface1.node.get_iface_id(iface1))
+            options_data = iface2.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
-                link_type=self.linktype,
-                node1_id=if2.node.id,
-                node2_id=if1.node.id,
-                delay=if2.getparam("delay"),
-                bandwidth=if2.getparam("bw"),
-                per=if2.getparam("loss"),
-                dup=if2.getparam("duplicate"),
-                jitter=if2.getparam("jitter"),
-                unidirectional=1,
-                interface1_id=if2.node.getifindex(if2),
-                interface2_id=if1.node.getifindex(if1),
+                type=self.linktype,
+                node1_id=iface2.node.id,
+                node2_id=iface1.node.id,
+                iface1=iface1_data,
+                iface2=iface2_data,
+                options=options_data,
             )
             all_links.append(link_data)
-
         return all_links
 
 
@@ -1023,7 +977,6 @@ class WlanNode(CoreNetwork):
         session: "Session",
         _id: int = None,
         name: str = None,
-        start: bool = True,
         server: "DistributedServer" = None,
         policy: NetworkPolicy = None,
     ) -> None:
@@ -1033,12 +986,11 @@ class WlanNode(CoreNetwork):
         :param session: core session instance
         :param _id: node id
         :param name: node name
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param policy: wlan policy
         """
-        super().__init__(session, _id, name, start, server, policy)
+        super().__init__(session, _id, name, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.model: Optional[WirelessModel] = None
         self.mobility: Optional[WayPointMobility] = None
@@ -1053,17 +1005,17 @@ class WlanNode(CoreNetwork):
         self.net_client.disable_mac_learning(self.brname)
         ebq.ebchange(self)
 
-    def attach(self, netif: CoreInterface) -> None:
+    def attach(self, iface: CoreInterface) -> None:
         """
         Attach a network interface.
 
-        :param netif: network interface
+        :param iface: network interface
         :return: nothing
         """
-        super().attach(netif)
+        super().attach(iface)
         if self.model:
-            netif.poshook = self.model.position_callback
-            netif.setposition()
+            iface.poshook = self.model.position_callback
+            iface.setposition()
 
     def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
         """
@@ -1076,9 +1028,9 @@ class WlanNode(CoreNetwork):
         logging.debug("node(%s) setting model: %s", self.name, model.name)
         if model.config_type == RegisterTlvs.WIRELESS:
             self.model = model(session=self.session, _id=self.id)
-            for netif in self.netifs():
-                netif.poshook = self.model.position_callback
-                netif.setposition()
+            for iface in self.get_ifaces():
+                iface.poshook = self.model.position_callback
+                iface.setposition()
             self.updatemodel(config)
         elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
@@ -1086,30 +1038,30 @@ class WlanNode(CoreNetwork):
 
     def update_mobility(self, config: Dict[str, str]) -> None:
         if not self.mobility:
-            raise ValueError(f"no mobility set to update for node({self.id})")
+            raise CoreError(f"no mobility set to update for node({self.name})")
         self.mobility.update_config(config)
 
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
-            raise ValueError(f"no model set to update for node({self.id})")
+            raise CoreError(f"no model set to update for node({self.name})")
         logging.debug(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
         self.model.update_config(config)
-        for netif in self.netifs():
-            netif.setposition()
+        for iface in self.get_ifaces():
+            iface.setposition()
 
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
         Retrieve all link data.
 
         :param flags: message flags
         :return: list of link data
         """
-        all_links = super().all_link_data(flags)
+        links = super().links(flags)
         if self.model:
-            all_links.extend(self.model.all_link_data(flags))
-        return all_links
+            links.extend(self.model.links(flags))
+        return links
 
 
 class TunnelNode(GreTapBridge):

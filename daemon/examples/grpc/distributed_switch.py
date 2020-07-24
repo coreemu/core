@@ -44,11 +44,11 @@ def main(args):
         node = Node(position=position)
         response = core.add_node(session_id, node)
         logging.info("created node one: %s", response)
-        node_one_id = response.node_id
+        node1_id = response.node_id
 
         # create link
-        interface_one = interface_helper.create_interface(node_one_id, 0)
-        response = core.add_link(session_id, node_one_id, switch_id, interface_one)
+        interface1 = interface_helper.create_iface(node1_id, 0)
+        response = core.add_link(session_id, node1_id, switch_id, interface1)
         logging.info("created link from node one to switch: %s", response)
 
         # create node two
@@ -56,11 +56,11 @@ def main(args):
         node = Node(position=position, server=server_name)
         response = core.add_node(session_id, node)
         logging.info("created node two: %s", response)
-        node_two_id = response.node_id
+        node2_id = response.node_id
 
         # create link
-        interface_one = interface_helper.create_interface(node_two_id, 0)
-        response = core.add_link(session_id, node_two_id, switch_id, interface_one)
+        interface1 = interface_helper.create_iface(node2_id, 0)
+        response = core.add_link(session_id, node2_id, switch_id, interface1)
         logging.info("created link from node two to switch: %s", response)
 
         # change session state

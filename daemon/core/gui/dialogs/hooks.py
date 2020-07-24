@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
@@ -12,15 +12,15 @@ if TYPE_CHECKING:
 
 
 class HookDialog(Dialog):
-    def __init__(self, master: tk.BaseWidget, app: "Application"):
+    def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
         super().__init__(app, "Hook", master=master)
-        self.name = tk.StringVar()
-        self.codetext = None
-        self.hook = core_pb2.Hook()
-        self.state = tk.StringVar()
+        self.name: tk.StringVar = tk.StringVar()
+        self.codetext: Optional[CodeText] = None
+        self.hook: core_pb2.Hook = core_pb2.Hook()
+        self.state: tk.StringVar = tk.StringVar()
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
 
@@ -66,11 +66,11 @@ class HookDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=1, sticky="ew")
 
-    def state_change(self, event: tk.Event):
+    def state_change(self, event: tk.Event) -> None:
         state_name = self.state.get()
         self.name.set(f"{state_name.lower()}_hook.sh")
 
-    def set(self, hook: core_pb2.Hook):
+    def set(self, hook: core_pb2.Hook) -> None:
         self.hook = hook
         self.name.set(hook.file)
         self.codetext.text.delete(1.0, tk.END)
@@ -78,7 +78,7 @@ class HookDialog(Dialog):
         state_name = core_pb2.SessionState.Enum.Name(hook.state)
         self.state.set(state_name)
 
-    def save(self):
+    def save(self) -> None:
         data = self.codetext.text.get("1.0", tk.END).strip()
         state_value = core_pb2.SessionState.Enum.Value(self.state.get())
         self.hook.file = self.name.get()
@@ -88,15 +88,15 @@ class HookDialog(Dialog):
 
 
 class HooksDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Hooks")
-        self.listbox = None
-        self.edit_button = None
-        self.delete_button = None
-        self.selected = None
+        self.listbox: Optional[tk.Listbox] = None
+        self.edit_button: Optional[ttk.Button] = None
+        self.delete_button: Optional[ttk.Button] = None
+        self.selected: Optional[str] = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
@@ -124,7 +124,7 @@ class HooksDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=3, sticky="ew")
 
-    def click_create(self):
+    def click_create(self) -> None:
         dialog = HookDialog(self, self.app)
         dialog.show()
         hook = dialog.hook
@@ -132,19 +132,19 @@ class HooksDialog(Dialog):
             self.app.core.hooks[hook.file] = hook
             self.listbox.insert(tk.END, hook.file)
 
-    def click_edit(self):
+    def click_edit(self) -> None:
         hook = self.app.core.hooks[self.selected]
         dialog = HookDialog(self, self.app)
         dialog.set(hook)
         dialog.show()
 
-    def click_delete(self):
+    def click_delete(self) -> None:
         del self.app.core.hooks[self.selected]
         self.listbox.delete(tk.ANCHOR)
         self.edit_button.config(state=tk.DISABLED)
         self.delete_button.config(state=tk.DISABLED)
 
-    def select(self, event: tk.Event):
+    def select(self, event: tk.Event) -> None:
         if self.listbox.curselection():
             index = self.listbox.curselection()[0]
             self.selected = self.listbox.get(index)

@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.appconfig import CoreServer
 from core.gui.dialogs.dialog import Dialog
@@ -10,24 +10,24 @@ from core.gui.widgets import ListboxScroll
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-DEFAULT_NAME = "example"
-DEFAULT_ADDRESS = "127.0.0.1"
-DEFAULT_PORT = 50051
+DEFAULT_NAME: str = "example"
+DEFAULT_ADDRESS: str = "127.0.0.1"
+DEFAULT_PORT: int = 50051
 
 
 class ServersDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "CORE Servers")
-        self.name = tk.StringVar(value=DEFAULT_NAME)
-        self.address = tk.StringVar(value=DEFAULT_ADDRESS)
-        self.servers = None
-        self.selected_index = None
-        self.selected = None
-        self.save_button = None
-        self.delete_button = None
+        self.name: tk.StringVar = tk.StringVar(value=DEFAULT_NAME)
+        self.address: tk.StringVar = tk.StringVar(value=DEFAULT_ADDRESS)
+        self.servers: Optional[tk.Listbox] = None
+        self.selected_index: Optional[int] = None
+        self.selected: Optional[str] = None
+        self.save_button: Optional[ttk.Button] = None
+        self.delete_button: Optional[ttk.Button] = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.draw_servers()
@@ -35,7 +35,7 @@ class ServersDialog(Dialog):
         self.draw_server_configuration()
         self.draw_apply_buttons()
 
-    def draw_servers(self):
+    def draw_servers(self) -> None:
         listbox_scroll = ListboxScroll(self.top)
         listbox_scroll.grid(pady=PADY, sticky="nsew")
         listbox_scroll.columnconfigure(0, weight=1)
@@ -48,7 +48,7 @@ class ServersDialog(Dialog):
         for server in self.app.core.servers:
             self.servers.insert(tk.END, server)
 
-    def draw_server_configuration(self):
+    def draw_server_configuration(self) -> None:
         frame = ttk.LabelFrame(self.top, text="Server Configuration", padding=FRAME_PAD)
         frame.grid(pady=PADY, sticky="ew")
         frame.columnconfigure(1, weight=1)
@@ -64,7 +64,7 @@ class ServersDialog(Dialog):
         entry = ttk.Entry(frame, textvariable=self.address)
         entry.grid(row=0, column=3, sticky="ew")
 
-    def draw_servers_buttons(self):
+    def draw_servers_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(pady=PADY, sticky="ew")
         for i in range(3):
@@ -83,7 +83,7 @@ class ServersDialog(Dialog):
         )
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
-    def draw_apply_buttons(self):
+    def draw_apply_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
@@ -104,7 +104,7 @@ class ServersDialog(Dialog):
         self.app.save_config()
         self.destroy()
 
-    def click_create(self):
+    def click_create(self) -> None:
         name = self.name.get()
         if name not in self.app.core.servers:
             address = self.address.get()
@@ -112,7 +112,7 @@ class ServersDialog(Dialog):
             self.app.core.servers[name] = server
             self.servers.insert(tk.END, name)
 
-    def click_save(self):
+    def click_save(self) -> None:
         name = self.name.get()
         if self.selected:
             previous_name = self.selected
@@ -125,7 +125,7 @@ class ServersDialog(Dialog):
             self.servers.insert(self.selected_index, name)
             self.servers.selection_set(self.selected_index)
 
-    def click_delete(self):
+    def click_delete(self) -> None:
         if self.selected:
             self.servers.delete(self.selected_index)
             del self.app.core.servers[self.selected]
@@ -137,7 +137,7 @@ class ServersDialog(Dialog):
             self.save_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)
 
-    def handle_server_change(self, event: tk.Event):
+    def handle_server_change(self, event: tk.Event) -> None:
         selection = self.servers.curselection()
         if selection:
             self.selected_index = selection[0]

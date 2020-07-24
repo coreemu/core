@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core.emulator.emudata import IpPrefixes, LinkOptions, NodeOptions
+from core.emulator.data import IpPrefixes, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.errors import CoreError
@@ -48,7 +48,7 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session._hooks.get(state)
+        runtime_hooks = session.hooks.get(state)
         assert runtime_hooks
         runtime_hook = runtime_hooks[0]
         assert file_name == runtime_hook[0]
@@ -68,20 +68,20 @@ class TestXml:
         ptp_node = session.add_node(PtpNet)
 
         # create nodes
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
 
         # link nodes to ptp net
-        for node in [node_one, node_two]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface_one=interface)
+        for node in [node1, node2]:
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.id
-        n2_id = node_two.id
+        node1_id = node1.id
+        node2_id = node2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -97,16 +97,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, CoreNode)
+            assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, CoreNode)
 
     def test_xml_ptp_services(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -123,28 +123,28 @@ class TestXml:
 
         # create nodes
         options = NodeOptions(model="host")
-        node_one = session.add_node(CoreNode, options=options)
-        node_two = session.add_node(CoreNode)
+        node1 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode)
 
         # link nodes to ptp net
-        for node in [node_one, node_two]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, ptp_node.id, interface_one=interface)
+        for node in [node1, node2]:
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
 
         # set custom values for node service
-        session.services.set_service(node_one.id, SshService.name)
+        session.services.set_service(node1.id, SshService.name)
         service_file = SshService.configs[0]
         file_data = "# test"
         session.services.set_service_file(
-            node_one.id, SshService.name, service_file, file_data
+            node1.id, SshService.name, service_file, file_data
         )
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.id
-        n2_id = node_two.id
+        node1_id = node1.id
+        node2_id = node2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -160,19 +160,19 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, CoreNode)
+            assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
-        service = session.services.get_service(node_one.id, SshService.name)
+        service = session.services.get_service(node1.id, SshService.name)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, CoreNode)
         assert service.config_data.get(service_file) == file_data
 
     def test_xml_mobility(
@@ -192,21 +192,21 @@ class TestXml:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(CoreNode, options=options)
-        node_two = session.add_node(CoreNode, options=options)
+        node1 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode, options=options)
 
         # link nodes
-        for node in [node_one, node_two]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, wlan_node.id, interface_one=interface)
+        for node in [node1, node2]:
+            iface_data = ip_prefixes.create_iface(node)
+            session.add_link(node.id, wlan_node.id, iface1_data=iface_data)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
         wlan_id = wlan_node.id
-        n1_id = node_one.id
-        n2_id = node_two.id
+        node1_id = node1.id
+        node2_id = node2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -222,9 +222,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, CoreNode)
+            assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -233,8 +233,8 @@ class TestXml:
         value = str(session.mobility.get_config("test", wlan_id, BasicRangeModel.name))
 
         # verify nodes and configuration were restored
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, CoreNode)
         assert session.get_node(wlan_id, WlanNode)
         assert value == "1"
 
@@ -246,18 +246,18 @@ class TestXml:
         :param tmpdir: tmpdir to create data in
         """
         # create nodes
-        switch_one = session.add_node(SwitchNode)
-        switch_two = session.add_node(SwitchNode)
+        switch1 = session.add_node(SwitchNode)
+        switch2 = session.add_node(SwitchNode)
 
         # link nodes
-        session.add_link(switch_one.id, switch_two.id)
+        session.add_link(switch1.id, switch2.id)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = switch_one.id
-        n2_id = switch_two.id
+        node1_id = switch1.id
+        node2_id = switch2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -273,19 +273,19 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, SwitchNode)
+            assert not session.get_node(node1_id, SwitchNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, SwitchNode)
+            assert not session.get_node(node2_id, SwitchNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        switch_one = session.get_node(n1_id, SwitchNode)
-        switch_two = session.get_node(n2_id, SwitchNode)
-        assert switch_one
-        assert switch_two
-        assert len(switch_one.all_link_data() + switch_two.all_link_data()) == 1
+        switch1 = session.get_node(node1_id, SwitchNode)
+        switch2 = session.get_node(node2_id, SwitchNode)
+        assert switch1
+        assert switch2
+        assert len(switch1.links() + switch2.links()) == 1
 
     def test_link_options(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -298,25 +298,25 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
+        node1 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
         switch = session.add_node(SwitchNode)
 
         # create link
-        link_options = LinkOptions()
-        link_options.per = 10.5
-        link_options.bandwidth = 50000
-        link_options.jitter = 10
-        link_options.delay = 30
-        link_options.dup = 5
-        session.add_link(node_one.id, switch.id, interface_one, options=link_options)
+        options = LinkOptions()
+        options.loss = 10.5
+        options.bandwidth = 50000
+        options.jitter = 10
+        options.delay = 30
+        options.dup = 5
+        session.add_link(node1.id, switch.id, iface1_data, options=options)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.id
-        n2_id = switch.id
+        node1_id = node1.id
+        node2_id = switch.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -332,26 +332,26 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, SwitchNode)
+            assert not session.get_node(node2_id, SwitchNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, SwitchNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, SwitchNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         link = links[0]
-        assert link_options.per == link.per
-        assert link_options.bandwidth == link.bandwidth
-        assert link_options.jitter == link.jitter
-        assert link_options.delay == link.delay
-        assert link_options.dup == link.dup
+        assert options.loss == link.options.loss
+        assert options.bandwidth == link.options.bandwidth
+        assert options.jitter == link.options.jitter
+        assert options.delay == link.options.delay
+        assert options.dup == link.options.dup
 
     def test_link_options_ptp(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -364,28 +364,26 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node(CoreNode)
-        interface_two = ip_prefixes.create_interface(node_two)
+        node1 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        node2 = session.add_node(CoreNode)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # create link
-        link_options = LinkOptions()
-        link_options.per = 10.5
-        link_options.bandwidth = 50000
-        link_options.jitter = 10
-        link_options.delay = 30
-        link_options.dup = 5
-        session.add_link(
-            node_one.id, node_two.id, interface_one, interface_two, link_options
-        )
+        options = LinkOptions()
+        options.loss = 10.5
+        options.bandwidth = 50000
+        options.jitter = 10
+        options.delay = 30
+        options.dup = 5
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data, options)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.id
-        n2_id = node_two.id
+        node1_id = node1.id
+        node2_id = node2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -401,26 +399,26 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, CoreNode)
+            assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, CoreNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         link = links[0]
-        assert link_options.per == link.per
-        assert link_options.bandwidth == link.bandwidth
-        assert link_options.jitter == link.jitter
-        assert link_options.delay == link.delay
-        assert link_options.dup == link.dup
+        assert options.loss == link.options.loss
+        assert options.bandwidth == link.options.bandwidth
+        assert options.jitter == link.options.jitter
+        assert options.delay == link.options.delay
+        assert options.dup == link.options.dup
 
     def test_link_options_bidirectional(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -433,43 +431,37 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        node_one = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
-        node_two = session.add_node(CoreNode)
-        interface_two = ip_prefixes.create_interface(node_two)
+        node1 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        node2 = session.add_node(CoreNode)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # create link
-        link_options_one = LinkOptions()
-        link_options_one.unidirectional = 1
-        link_options_one.bandwidth = 5000
-        link_options_one.delay = 10
-        link_options_one.per = 10.5
-        link_options_one.dup = 5
-        link_options_one.jitter = 5
-        session.add_link(
-            node_one.id, node_two.id, interface_one, interface_two, link_options_one
-        )
-        link_options_two = LinkOptions()
-        link_options_two.unidirectional = 1
-        link_options_two.bandwidth = 10000
-        link_options_two.delay = 20
-        link_options_two.per = 10
-        link_options_two.dup = 10
-        link_options_two.jitter = 10
+        options1 = LinkOptions()
+        options1.unidirectional = 1
+        options1.bandwidth = 5000
+        options1.delay = 10
+        options1.loss = 10.5
+        options1.dup = 5
+        options1.jitter = 5
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data, options1)
+        options2 = LinkOptions()
+        options2.unidirectional = 1
+        options2.bandwidth = 10000
+        options2.delay = 20
+        options2.loss = 10
+        options2.dup = 10
+        options2.jitter = 10
         session.update_link(
-            node_two.id,
-            node_one.id,
-            interface_two.id,
-            interface_one.id,
-            link_options_two,
+            node2.id, node1.id, iface2_data.id, iface1_data.id, options2
         )
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.id
-        n2_id = node_two.id
+        node1_id = node1.id
+        node2_id = node2.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -485,30 +477,30 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(CoreError):
-            assert not session.get_node(n1_id, CoreNode)
+            assert not session.get_node(node1_id, CoreNode)
         with pytest.raises(CoreError):
-            assert not session.get_node(n2_id, CoreNode)
+            assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_node(n1_id, CoreNode)
-        assert session.get_node(n2_id, CoreNode)
+        assert session.get_node(node1_id, CoreNode)
+        assert session.get_node(node2_id, CoreNode)
         links = []
         for node_id in session.nodes:
             node = session.nodes[node_id]
-            links += node.all_link_data()
+            links += node.links()
         assert len(links) == 2
-        link_one = links[0]
-        link_two = links[1]
-        assert link_options_one.bandwidth == link_one.bandwidth
-        assert link_options_one.delay == link_one.delay
-        assert link_options_one.per == link_one.per
-        assert link_options_one.dup == link_one.dup
-        assert link_options_one.jitter == link_one.jitter
-        assert link_options_two.bandwidth == link_two.bandwidth
-        assert link_options_two.delay == link_two.delay
-        assert link_options_two.per == link_two.per
-        assert link_options_two.dup == link_two.dup
-        assert link_options_two.jitter == link_two.jitter
+        link1 = links[0]
+        link2 = links[1]
+        assert options1.bandwidth == link1.options.bandwidth
+        assert options1.delay == link1.options.delay
+        assert options1.loss == link1.options.loss
+        assert options1.dup == link1.options.dup
+        assert options1.jitter == link1.options.jitter
+        assert options2.bandwidth == link2.options.bandwidth
+        assert options2.delay == link2.options.delay
+        assert options2.loss == link2.options.loss
+        assert options2.dup == link2.options.dup
+        assert options2.jitter == link2.options.jitter

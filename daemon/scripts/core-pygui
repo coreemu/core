@@ -13,6 +13,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--level", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO",
                         help="logging level")
     parser.add_argument("-p", "--proxy", action="store_true", help="enable proxy")
+    parser.add_argument("-s", "--session", type=int, help="session id to join")
     args = parser.parse_args()
 
     # check home directory exists and create if necessary
@@ -28,5 +29,5 @@ if __name__ == "__main__":
 
     # start app
     Images.load_all()
-    app = Application(args.proxy)
+    app = Application(args.proxy, args.session)
     app.mainloop()

@@ -1,20 +1,22 @@
+from typing import Dict, List
+
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emulator.enumerations import ConfigDataTypes
 
 
 class SimpleService(ConfigService):
-    name = "Simple"
-    group = "SimpleGroup"
-    directories = ["/etc/quagga", "/usr/local/lib"]
-    files = ["test1.sh", "test2.sh"]
-    executables = []
-    dependencies = []
-    startup = []
-    validate = []
-    shutdown = []
-    validation_mode = ConfigServiceMode.BLOCKING
-    default_configs = [
+    name: str = "Simple"
+    group: str = "SimpleGroup"
+    directories: List[str] = ["/etc/quagga", "/usr/local/lib"]
+    files: List[str] = ["test1.sh", "test2.sh"]
+    executables: List[str] = []
+    dependencies: List[str] = []
+    startup: List[str] = []
+    validate: List[str] = []
+    shutdown: List[str] = []
+    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    default_configs: List[Configuration] = [
         Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Text"),
         Configuration(_id="value2", _type=ConfigDataTypes.BOOL, label="Boolean"),
         Configuration(
@@ -24,7 +26,7 @@ class SimpleService(ConfigService):
             options=["value1", "value2", "value3"],
         ),
     ]
-    modes = {
+    modes: Dict[str, Dict[str, str]] = {
         "mode1": {"value1": "value1", "value2": "0", "value3": "value2"},
         "mode2": {"value1": "value2", "value2": "1", "value3": "value3"},
         "mode3": {"value1": "value3", "value2": "0", "value3": "value1"},

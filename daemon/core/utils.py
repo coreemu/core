@@ -154,7 +154,7 @@ def which(command: str, required: bool) -> str:
     """
     found_path = shutil.which(command)
     if found_path is None and required:
-        raise ValueError(f"failed to find required executable({command}) in path")
+        raise CoreError(f"failed to find required executable({command}) in path")
     return found_path
 
 
@@ -430,31 +430,3 @@ def random_mac() -> str:
     value |= 0x00163E << 24
     mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
-
-
-def validate_mac(value: str) -> str:
-    """
-    Validate mac and return unix formatted version.
-
-    :param value: address to validate
-    :return: unix formatted mac
-    """
-    try:
-        mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
-        return str(mac)
-    except netaddr.AddrFormatError as e:
-        raise CoreError(f"invalid mac address {value}: {e}")
-
-
-def validate_ip(value: str) -> str:
-    """
-    Validate ip address with prefix and return formatted version.
-
-    :param value: address to validate
-    :return: formatted ip address
-    """
-    try:
-        ip = netaddr.IPNetwork(value)
-        return str(ip)
-    except (ValueError, netaddr.AddrFormatError) as e:
-        raise CoreError(f"invalid ip address {value}: {e}")

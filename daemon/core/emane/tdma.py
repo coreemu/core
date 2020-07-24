@@ -4,6 +4,7 @@ tdma.py: EMANE TDMA model bindings for CORE
 
 import logging
 import os
+from typing import Set
 
 from core import constants, utils
 from core.config import Configuration
@@ -13,18 +14,18 @@ from core.emulator.enumerations import ConfigDataTypes
 
 class EmaneTdmaModel(emanemodel.EmaneModel):
     # model name
-    name = "emane_tdma"
+    name: str = "emane_tdma"
 
     # mac configuration
-    mac_library = "tdmaeventschedulerradiomodel"
-    mac_xml = "tdmaeventschedulerradiomodel.xml"
+    mac_library: str = "tdmaeventschedulerradiomodel"
+    mac_xml: str = "tdmaeventschedulerradiomodel.xml"
 
     # add custom schedule options and ignore it when writing emane xml
-    schedule_name = "schedule"
-    default_schedule = os.path.join(
+    schedule_name: str = "schedule"
+    default_schedule: str = os.path.join(
         constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml"
     )
-    config_ignore = {schedule_name}
+    config_ignore: Set[str] = {schedule_name}
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

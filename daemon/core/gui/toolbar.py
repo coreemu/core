@@ -3,7 +3,7 @@ import tkinter as tk
 from enum import Enum
 from functools import partial
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, List, Optional
 
 from PIL.ImageTk import PhotoImage
 
@@ -23,8 +23,8 @@ from core.gui.tooltip import Tooltip
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-TOOLBAR_SIZE = 32
-PICKER_SIZE = 24
+TOOLBAR_SIZE: int = 32
+PICKER_SIZE: int = 24
 
 
 class NodeTypeEnum(Enum):
@@ -42,8 +42,8 @@ def enable_buttons(frame: ttk.Frame, enabled: bool) -> None:
 class PickerFrame(ttk.Frame):
     def __init__(self, app: "Application", button: ttk.Button) -> None:
         super().__init__(app)
-        self.app = app
-        self.button = button
+        self.app: "Application" = app
+        self.button: ttk.Button = button
 
     def create_node_button(self, node_draw: NodeDraw, func: Callable) -> None:
         self.create_button(
@@ -85,10 +85,10 @@ class PickerFrame(ttk.Frame):
 
 
 class ButtonBar(ttk.Frame):
-    def __init__(self, master: tk.Widget, app: "Application"):
+    def __init__(self, master: tk.Widget, app: "Application") -> None:
         super().__init__(master)
-        self.app = app
-        self.radio_buttons = []
+        self.app: "Application" = app
+        self.radio_buttons: List[ttk.Button] = []
 
     def create_button(
         self, image_enum: ImageEnum, func: Callable, tooltip: str, radio: bool = False
@@ -109,14 +109,14 @@ class ButtonBar(ttk.Frame):
 
 
 class MarkerFrame(ttk.Frame):
-    PAD = 3
+    PAD: int = 3
 
     def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
         super().__init__(master, padding=self.PAD)
-        self.app = app
-        self.color = "#000000"
-        self.size = tk.DoubleVar()
-        self.color_frame = None
+        self.app: "Application" = app
+        self.color: str = "#000000"
+        self.size: tk.DoubleVar = tk.DoubleVar()
+        self.color_frame: Optional[tk.Frame] = None
         self.draw()
 
     def draw(self) -> None:
@@ -144,7 +144,7 @@ class MarkerFrame(ttk.Frame):
         self.color_frame.bind("<Button-1>", self.click_color)
         Tooltip(self.color_frame, "Marker Color")
 
-    def click_clear(self):
+    def click_clear(self) -> None:
         self.app.canvas.delete(tags.MARKER)
 
     def click_color(self, _event: tk.Event) -> None:
@@ -163,37 +163,37 @@ class Toolbar(ttk.Frame):
         Create a CoreToolbar instance
         """
         super().__init__(app)
-        self.app = app
+        self.app: "Application" = app
 
         # design buttons
-        self.play_button = None
-        self.select_button = None
-        self.link_button = None
-        self.node_button = None
-        self.network_button = None
-        self.annotation_button = None
+        self.play_button: Optional[ttk.Button] = None
+        self.select_button: Optional[ttk.Button] = None
+        self.link_button: Optional[ttk.Button] = None
+        self.node_button: Optional[ttk.Button] = None
+        self.network_button: Optional[ttk.Button] = None
+        self.annotation_button: Optional[ttk.Button] = None
 
         # runtime buttons
-        self.runtime_select_button = None
-        self.stop_button = None
-        self.runtime_marker_button = None
-        self.run_command_button = None
+        self.runtime_select_button: Optional[ttk.Button] = None
+        self.stop_button: Optional[ttk.Button] = None
+        self.runtime_marker_button: Optional[ttk.Button] = None
+        self.run_command_button: Optional[ttk.Button] = None
 
         # frames
-        self.design_frame = None
-        self.runtime_frame = None
-        self.marker_frame = None
-        self.picker = None
+        self.design_frame: Optional[ButtonBar] = None
+        self.runtime_frame: Optional[ButtonBar] = None
+        self.marker_frame: Optional[MarkerFrame] = None
+        self.picker: Optional[PickerFrame] = None
 
         # observers
-        self.observers_menu = None
+        self.observers_menu: Optional[ObserversMenu] = None
 
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method
-        self.current_node = NodeUtils.NODES[0]
-        self.current_network = NodeUtils.NETWORK_NODES[0]
-        self.current_annotation = ShapeType.MARKER
-        self.annotation_enum = ImageEnum.MARKER
+        self.current_node: NodeDraw = NodeUtils.NODES[0]
+        self.current_network: NodeDraw = NodeUtils.NETWORK_NODES[0]
+        self.current_annotation: ShapeType = ShapeType.MARKER
+        self.annotation_enum: ImageEnum = ImageEnum.MARKER
 
         # draw components
         self.draw()
@@ -307,8 +307,9 @@ class Toolbar(ttk.Frame):
             self.app.core.show_mobility_players()
         else:
             enable_buttons(self.design_frame, enabled=True)
-            message = "\n".join(response.exceptions)
-            self.app.show_error("Start Session Error", message)
+            if response.exceptions:
+                message = "\n".join(response.exceptions)
+                self.app.show_error("Start Session Error", message)
 
     def set_runtime(self) -> None:
         enable_buttons(self.runtime_frame, enabled=True)

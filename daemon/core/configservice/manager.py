@@ -1,6 +1,6 @@
 import logging
 import pathlib
-from typing import List, Type
+from typing import Dict, List, Type
 
 from core import utils
 from core.configservice.base import ConfigService
@@ -16,7 +16,7 @@ class ConfigServiceManager:
         """
         Create a ConfigServiceManager instance.
         """
-        self.services = {}
+        self.services: Dict[str, Type[ConfigService]] = {}
 
     def get_service(self, name: str) -> Type[ConfigService]:
         """
@@ -31,7 +31,7 @@ class ConfigServiceManager:
             raise CoreError(f"service does not exit {name}")
         return service_class
 
-    def add(self, service: ConfigService) -> None:
+    def add(self, service: Type[ConfigService]) -> None:
         """
         Add service to manager, checking service requirements have been met.
 
@@ -40,7 +40,9 @@ class ConfigServiceManager:
         :raises CoreError: when service is a duplicate or has unmet executables
         """
         name = service.name
-        logging.debug("loading service: class(%s) name(%s)", service.__class__, name)
+        logging.debug(
+            "loading service: class(%s) name(%s)", service.__class__.__name__, name
+        )
 
         # avoid duplicate services
         if name in self.services:
@@ -50,10 +52,8 @@ class ConfigServiceManager:
         for executable in service.executables:
             try:
                 utils.which(executable, required=True)
-            except ValueError:
-                raise CoreError(
-                    f"service({service.name}) missing executable {executable}"
-                )
+            except CoreError as e:
+                raise CoreError(f"config service({service.name}): {e}")
 
             # make service available
         self.services[name] = service
@@ -73,7 +73,6 @@ class ConfigServiceManager:
             logging.debug("loading config services from: %s", subdir)
             services = utils.load_classes(str(subdir), ConfigService)
             for service in services:
-                logging.debug("found service: %s", service)
                 try:
                     self.add(service)
                 except CoreError as e:

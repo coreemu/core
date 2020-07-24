@@ -3,10 +3,11 @@ throughput dialog
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
+from core.gui.graph.graph import CanvasGraph
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
@@ -14,21 +15,23 @@ if TYPE_CHECKING:
 
 
 class ThroughputDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Throughput Config")
-        self.canvas = app.canvas
-        self.show_throughput = tk.IntVar(value=1)
-        self.exponential_weight = tk.IntVar(value=1)
-        self.transmission = tk.IntVar(value=1)
-        self.reception = tk.IntVar(value=1)
-        self.threshold = tk.DoubleVar(value=self.canvas.throughput_threshold)
-        self.width = tk.IntVar(value=self.canvas.throughput_width)
-        self.color = self.canvas.throughput_color
-        self.color_button = None
+        self.canvas: CanvasGraph = app.canvas
+        self.show_throughput: tk.IntVar = tk.IntVar(value=1)
+        self.exponential_weight: tk.IntVar = tk.IntVar(value=1)
+        self.transmission: tk.IntVar = tk.IntVar(value=1)
+        self.reception: tk.IntVar = tk.IntVar(value=1)
+        self.threshold: tk.DoubleVar = tk.DoubleVar(
+            value=self.canvas.throughput_threshold
+        )
+        self.width: tk.IntVar = tk.IntVar(value=self.canvas.throughput_width)
+        self.color: str = self.canvas.throughput_color
+        self.color_button: Optional[tk.Button] = None
         self.top.columnconfigure(0, weight=1)
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         button = ttk.Checkbutton(
             self.top,
             variable=self.show_throughput,
@@ -97,12 +100,12 @@ class ThroughputDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_color(self):
+    def click_color(self) -> None:
         color_picker = ColorPickerDialog(self, self.app, self.color)
         self.color = color_picker.askcolor()
         self.color_button.config(bg=self.color, text=self.color, bd=0)
 
-    def click_save(self):
+    def click_save(self) -> None:
         self.canvas.throughput_threshold = self.threshold.get()
         self.canvas.throughput_width = self.width.get()
         self.canvas.throughput_color = self.color

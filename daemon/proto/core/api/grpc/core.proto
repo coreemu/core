@@ -39,13 +39,19 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+    rpc SetSessionUser (SetSessionUserRequest) returns (SetSessionUserResponse) {
+    }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
+    }
+    rpc SessionAlert (SessionAlertRequest) returns (SessionAlertResponse) {
     }
 
     // streams
     rpc Events (EventsRequest) returns (stream Event) {
     }
     rpc Throughputs (ThroughputsRequest) returns (stream ThroughputsEvent) {
+    }
+    rpc CpuUsage (CpuUsageRequest) returns (stream CpuUsageEvent) {
     }
 
     // node rpc
@@ -297,6 +303,15 @@ message SetSessionStateResponse {
     bool result = 1;
 }
 
+message SetSessionUserRequest {
+    int32 session_id = 1;
+    string user = 2;
+}
+
+message SetSessionUserResponse {
+    bool result = 1;
+}
+
 message AddSessionServerRequest {
     int32 session_id = 1;
     string name = 2;
@@ -304,6 +319,18 @@ message AddSessionServerRequest {
 }
 
 message AddSessionServerResponse {
+    bool result = 1;
+}
+
+message SessionAlertRequest {
+    int32 session_id = 1;
+    ExceptionLevel.Enum level = 2;
+    string source = 3;
+    string text = 4;
+    int32 node_id = 5;
+}
+
+message SessionAlertResponse {
     bool result = 1;
 }
 
@@ -319,12 +346,20 @@ message ThroughputsRequest {
 message ThroughputsEvent {
     int32 session_id = 1;
     repeated BridgeThroughput bridge_throughputs = 2;
-    repeated InterfaceThroughput interface_throughputs = 3;
+    repeated InterfaceThroughput iface_throughputs = 3;
+}
+
+message CpuUsageRequest {
+    int32 delay = 1;
+}
+
+message CpuUsageEvent {
+    double usage = 1;
 }
 
 message InterfaceThroughput {
     int32 node_id = 1;
-    int32 interface_id = 2;
+    int32 iface_id = 2;
     double throughput = 3;
 }
 
@@ -343,11 +378,12 @@ message Event {
         FileEvent file_event = 6;
     }
     int32 session_id = 7;
+    string source = 8;
 }
 
 message NodeEvent {
     Node node = 1;
-    string source = 2;
+    MessageType.Enum message_type = 2;
 }
 
 message LinkEvent {
@@ -374,7 +410,7 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    int32 interface = 11;
+    int32 iface_id = 11;
     int32 network_id = 12;
     string opaque = 13;
 }
@@ -403,6 +439,7 @@ message FileEvent {
 message AddNodeRequest {
     int32 session_id = 1;
     Node node = 2;
+    string source = 3;
 }
 
 message AddNodeResponse {
@@ -416,7 +453,7 @@ message GetNodeRequest {
 
 message GetNodeResponse {
     Node node = 1;
-    repeated Interface interfaces = 2;
+    repeated Interface ifaces = 2;
 }
 
 message EditNodeRequest {
@@ -435,6 +472,7 @@ message EditNodeResponse {
 message DeleteNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
+    string source = 3;
 }
 
 message DeleteNodeResponse {
@@ -488,21 +526,23 @@ message GetNodeLinksResponse {
 message AddLinkRequest {
     int32 session_id = 1;
     Link link = 2;
+    string source = 3;
 }
 
 message AddLinkResponse {
     bool result = 1;
-    Interface interface_one = 2;
-    Interface interface_two = 3;
+    Interface iface1 = 2;
+    Interface iface2 = 3;
 }
 
 message EditLinkRequest {
     int32 session_id = 1;
-    int32 node_one_id = 2;
-    int32 node_two_id = 3;
-    int32 interface_one_id = 4;
-    int32 interface_two_id = 5;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
     LinkOptions options = 6;
+    string source = 7;
 }
 
 message EditLinkResponse {
@@ -511,10 +551,11 @@ message EditLinkResponse {
 
 message DeleteLinkRequest {
     int32 session_id = 1;
-    int32 node_one_id = 2;
-    int32 node_two_id = 3;
-    int32 interface_one_id = 4;
-    int32 interface_two_id = 5;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
+    string source = 6;
 }
 
 message DeleteLinkResponse {
@@ -561,7 +602,7 @@ message GetInterfacesRequest {
 }
 
 message GetInterfacesResponse {
-    repeated string interfaces = 1;
+    repeated string ifaces = 1;
 }
 
 message ExecuteScriptRequest {
@@ -692,21 +733,20 @@ message Node {
     repeated string services = 6;
     string emane = 7;
     string icon = 8;
-    string opaque = 9;
-    string image = 10;
-    string server = 11;
-    repeated string config_services = 12;
-    Geo geo = 13;
-    string dir = 14;
-    string channel = 15;
+    string image = 9;
+    string server = 10;
+    repeated string config_services = 11;
+    Geo geo = 12;
+    string dir = 13;
+    string channel = 14;
 }
 
 message Link {
-    int32 node_one_id = 1;
-    int32 node_two_id = 2;
+    int32 node1_id = 1;
+    int32 node2_id = 2;
     LinkType.Enum type = 3;
-    Interface interface_one = 4;
-    Interface interface_two = 5;
+    Interface iface1 = 4;
+    Interface iface2 = 5;
     LinkOptions options = 6;
     int32 network_id = 7;
     string label = 8;
@@ -714,17 +754,16 @@ message Link {
 }
 
 message LinkOptions {
-    string opaque = 1;
-    int64 jitter = 2;
-    int32 key = 3;
-    int32 mburst = 4;
-    int32 mer = 5;
-    float per = 6;
-    int64 bandwidth = 7;
-    int32 burst = 8;
-    int64 delay = 9;
-    int32 dup = 10;
-    bool unidirectional = 11;
+    int64 jitter = 1;
+    int32 key = 2;
+    int32 mburst = 3;
+    int32 mer = 4;
+    float loss = 5;
+    int64 bandwidth = 6;
+    int32 burst = 7;
+    int64 delay = 8;
+    int32 dup = 9;
+    bool unidirectional = 10;
 }
 
 message Interface {
@@ -732,12 +771,14 @@ message Interface {
     string name = 2;
     string mac = 3;
     string ip4 = 4;
-    int32 ip4mask = 5;
+    int32 ip4_mask = 5;
     string ip6 = 6;
-    int32 ip6mask = 7;
-    int32 netid = 8;
-    int32 flowid = 9;
+    int32 ip6_mask = 7;
+    int32 net_id = 8;
+    int32 flow_id = 9;
     int32 mtu = 10;
+    int32 node_id = 11;
+    int32 net2_id = 12;
 }
 
 message SessionLocation {

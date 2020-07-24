@@ -2,11 +2,12 @@ import logging
 import os
 import tkinter as tk
 from tkinter import filedialog, ttk
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import grpc
+from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.services_pb2 import ServiceValidationMode
+from core.api.grpc.services_pb2 import NodeServiceData, ServiceValidationMode
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
@@ -16,8 +17,9 @@ from core.gui.widgets import CodeText, ListboxScroll
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
+    from core.gui.coreclient import CoreClient
 
-ICON_SIZE = 16
+ICON_SIZE: int = 16
 
 
 class ServiceConfigDialog(Dialog):
@@ -28,54 +30,57 @@ class ServiceConfigDialog(Dialog):
         service_name: str,
         canvas_node: "CanvasNode",
         node_id: int,
-    ):
+    ) -> None:
         title = f"{service_name} Service"
         super().__init__(app, title, master=master)
-        self.core = app.core
-        self.canvas_node = canvas_node
-        self.node_id = node_id
-        self.service_name = service_name
-        self.radiovar = tk.IntVar()
-        self.radiovar.set(2)
-        self.metadata = ""
-        self.filenames = []
-        self.dependencies = []
-        self.executables = []
-        self.startup_commands = []
-        self.validation_commands = []
-        self.shutdown_commands = []
-        self.default_startup = []
-        self.default_validate = []
-        self.default_shutdown = []
-        self.validation_mode = None
-        self.validation_time = None
-        self.validation_period = None
-        self.directory_entry = None
-        self.default_directories = []
-        self.temp_directories = []
-        self.documentnew_img = self.app.get_icon(ImageEnum.DOCUMENTNEW, ICON_SIZE)
-        self.editdelete_img = self.app.get_icon(ImageEnum.EDITDELETE, ICON_SIZE)
-        self.notebook = None
-        self.metadata_entry = None
-        self.filename_combobox = None
-        self.dir_list = None
-        self.startup_commands_listbox = None
-        self.shutdown_commands_listbox = None
-        self.validate_commands_listbox = None
-        self.validation_time_entry = None
-        self.validation_mode_entry = None
-        self.service_file_data = None
-        self.validation_period_entry = None
-        self.original_service_files = {}
-        self.default_config = None
-        self.temp_service_files = {}
-        self.modified_files = set()
-        self.has_error = False
+        self.core: "CoreClient" = app.core
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node_id: int = node_id
+        self.service_name: str = service_name
+        self.radiovar: tk.IntVar = tk.IntVar(value=2)
+        self.metadata: str = ""
+        self.filenames: List[str] = []
+        self.dependencies: List[str] = []
+        self.executables: List[str] = []
+        self.startup_commands: List[str] = []
+        self.validation_commands: List[str] = []
+        self.shutdown_commands: List[str] = []
+        self.default_startup: List[str] = []
+        self.default_validate: List[str] = []
+        self.default_shutdown: List[str] = []
+        self.validation_mode: Optional[ServiceValidationMode] = None
+        self.validation_time: Optional[int] = None
+        self.validation_period: Optional[float] = None
+        self.directory_entry: Optional[ttk.Entry] = None
+        self.default_directories: List[str] = []
+        self.temp_directories: List[str] = []
+        self.documentnew_img: PhotoImage = self.app.get_icon(
+            ImageEnum.DOCUMENTNEW, ICON_SIZE
+        )
+        self.editdelete_img: PhotoImage = self.app.get_icon(
+            ImageEnum.EDITDELETE, ICON_SIZE
+        )
+        self.notebook: Optional[ttk.Notebook] = None
+        self.metadata_entry: Optional[ttk.Entry] = None
+        self.filename_combobox: Optional[ttk.Combobox] = None
+        self.dir_list: Optional[ListboxScroll] = None
+        self.startup_commands_listbox: Optional[tk.Listbox] = None
+        self.shutdown_commands_listbox: Optional[tk.Listbox] = None
+        self.validate_commands_listbox: Optional[tk.Listbox] = None
+        self.validation_time_entry: Optional[ttk.Entry] = None
+        self.validation_mode_entry: Optional[ttk.Entry] = None
+        self.service_file_data: Optional[CodeText] = None
+        self.validation_period_entry: Optional[ttk.Entry] = None
+        self.original_service_files: Dict[str, str] = {}
+        self.default_config: NodeServiceData = None
+        self.temp_service_files: Dict[str, str] = {}
+        self.modified_files: Set[str] = set()
+        self.has_error: bool = False
         self.load()
         if not self.has_error:
             self.draw()
 
-    def load(self):
+    def load(self) -> None:
         try:
             self.app.core.create_nodes_and_links()
             default_config = self.app.core.get_node_service(
@@ -119,7 +124,7 @@ class ServiceConfigDialog(Dialog):
             self.app.show_grpc_exception("Get Node Service Error", e)
             self.has_error = True
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
 
@@ -142,7 +147,7 @@ class ServiceConfigDialog(Dialog):
 
         self.draw_buttons()
 
-    def draw_tab_files(self):
+    def draw_tab_files(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -222,7 +227,7 @@ class ServiceConfigDialog(Dialog):
             "<FocusOut>", self.update_temp_service_file_data
         )
 
-    def draw_tab_directories(self):
+    def draw_tab_directories(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -257,7 +262,7 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Remove", command=self.remove_directory)
         button.grid(row=0, column=1, sticky="ew")
 
-    def draw_tab_startstop(self):
+    def draw_tab_startstop(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -311,7 +316,7 @@ class ServiceConfigDialog(Dialog):
             elif i == 2:
                 self.validate_commands_listbox = listbox_scroll.listbox
 
-    def draw_tab_configuration(self):
+    def draw_tab_configuration(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -370,7 +375,7 @@ class ServiceConfigDialog(Dialog):
         for dependency in self.dependencies:
             listbox_scroll.listbox.insert("end", dependency)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(4):
@@ -384,7 +389,7 @@ class ServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def add_filename(self):
+    def add_filename(self) -> None:
         filename = self.filename_combobox.get()
         if filename not in self.filename_combobox["values"]:
             self.filename_combobox["values"] += (filename,)
@@ -395,7 +400,7 @@ class ServiceConfigDialog(Dialog):
         else:
             logging.debug("file already existed")
 
-    def delete_filename(self):
+    def delete_filename(self) -> None:
         cbb = self.filename_combobox
         filename = cbb.get()
         if filename in cbb["values"]:
@@ -407,7 +412,7 @@ class ServiceConfigDialog(Dialog):
             self.modified_files.remove(filename)
 
     @classmethod
-    def add_command(cls, event: tk.Event):
+    def add_command(cls, event: tk.Event) -> None:
         frame_contains_button = event.widget.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
         command_to_add = frame_contains_button.grid_slaves(row=0, column=0)[0].get()
@@ -419,7 +424,7 @@ class ServiceConfigDialog(Dialog):
         listbox.insert(tk.END, command_to_add)
 
     @classmethod
-    def update_entry(cls, event: tk.Event):
+    def update_entry(cls, event: tk.Event) -> None:
         listbox = event.widget
         current_selection = listbox.curselection()
         if len(current_selection) > 0:
@@ -431,7 +436,7 @@ class ServiceConfigDialog(Dialog):
             entry.insert(0, cmd)
 
     @classmethod
-    def delete_command(cls, event: tk.Event):
+    def delete_command(cls, event: tk.Event) -> None:
         button = event.widget
         frame_contains_button = button.master
         listbox = frame_contains_button.master.grid_slaves(row=1, column=0)[0].listbox
@@ -441,7 +446,7 @@ class ServiceConfigDialog(Dialog):
             entry = frame_contains_button.grid_slaves(row=0, column=0)[0]
             entry.delete(0, tk.END)
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         if (
             not self.is_custom_command()
             and not self.is_custom_service_file()
@@ -484,12 +489,12 @@ class ServiceConfigDialog(Dialog):
             self.app.show_grpc_exception("Save Service Config Error", e)
         self.destroy()
 
-    def display_service_file_data(self, event: tk.Event):
+    def display_service_file_data(self, event: tk.Event) -> None:
         filename = self.filename_combobox.get()
         self.service_file_data.text.delete(1.0, "end")
         self.service_file_data.text.insert("end", self.temp_service_files[filename])
 
-    def update_temp_service_file_data(self, event: tk.Event):
+    def update_temp_service_file_data(self, event: tk.Event) -> None:
         filename = self.filename_combobox.get()
         self.temp_service_files[filename] = self.service_file_data.text.get(1.0, "end")
         if self.temp_service_files[filename] != self.original_service_files.get(
@@ -499,7 +504,7 @@ class ServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(filename)
 
-    def is_custom_command(self):
+    def is_custom_command(self) -> bool:
         startup, validate, shutdown = self.get_commands()
         return (
             set(self.default_startup) != set(startup)
@@ -507,16 +512,16 @@ class ServiceConfigDialog(Dialog):
             or set(self.default_shutdown) != set(shutdown)
         )
 
-    def has_new_files(self):
+    def has_new_files(self) -> bool:
         return set(self.filenames) != set(self.filename_combobox["values"])
 
-    def is_custom_service_file(self):
+    def is_custom_service_file(self) -> bool:
         return len(self.modified_files) > 0
 
-    def is_custom_directory(self):
+    def is_custom_directory(self) -> bool:
         return set(self.default_directories) != set(self.dir_list.listbox.get(0, "end"))
 
-    def click_defaults(self):
+    def click_defaults(self) -> None:
         """
         clears out any custom configuration permanently
         """
@@ -557,37 +562,41 @@ class ServiceConfigDialog(Dialog):
 
         self.current_service_color("")
 
-    def click_copy(self):
-        dialog = CopyServiceConfigDialog(self, self.app, self.node_id)
+    def click_copy(self) -> None:
+        file_name = self.filename_combobox.get()
+        name = self.canvas_node.core_node.name
+        dialog = CopyServiceConfigDialog(
+            self.app, self, name, self.service_name, file_name
+        )
         dialog.show()
 
     @classmethod
     def append_commands(
         cls, commands: List[str], listbox: tk.Listbox, to_add: List[str]
-    ):
+    ) -> None:
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)
 
-    def get_commands(self):
+    def get_commands(self) -> Tuple[List[str], List[str], List[str]]:
         startup = self.startup_commands_listbox.get(0, "end")
         shutdown = self.shutdown_commands_listbox.get(0, "end")
         validate = self.validate_commands_listbox.get(0, "end")
         return startup, validate, shutdown
 
-    def find_directory_button(self):
+    def find_directory_button(self) -> None:
         d = filedialog.askdirectory(initialdir="/")
         self.directory_entry.delete(0, "end")
         self.directory_entry.insert("end", d)
 
-    def add_directory(self):
+    def add_directory(self) -> None:
         d = self.directory_entry.get()
         if os.path.isdir(d):
             if d not in self.temp_directories:
                 self.dir_list.listbox.insert("end", d)
                 self.temp_directories.append(d)
 
-    def remove_directory(self):
+    def remove_directory(self) -> None:
         d = self.directory_entry.get()
         dirs = self.dir_list.listbox.get(0, "end")
         if d and d in self.temp_directories:
@@ -599,14 +608,14 @@ class ServiceConfigDialog(Dialog):
                 logging.debug("directory is not in the list")
         self.directory_entry.delete(0, "end")
 
-    def directory_select(self, event):
+    def directory_select(self, event) -> None:
         i = self.dir_list.listbox.curselection()
         if i:
             d = self.dir_list.listbox.get(i)
             self.directory_entry.delete(0, "end")
             self.directory_entry.insert("end", d)
 
-    def current_service_color(self, color=""):
+    def current_service_color(self, color="") -> None:
         """
         change the current service label color
         """

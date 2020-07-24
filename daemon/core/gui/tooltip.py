@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from typing import Optional
 
 from core.gui.themes import Styles
 
@@ -9,19 +10,19 @@ class Tooltip(object):
     Create tool tip for a given widget
     """
 
-    def __init__(self, widget: tk.Widget, text: str = "widget info"):
-        self.widget = widget
-        self.text = text
+    def __init__(self, widget: tk.BaseWidget, text: str = "widget info") -> None:
+        self.widget: tk.BaseWidget = widget
+        self.text: str = text
         self.widget.bind("<Enter>", self.on_enter)
         self.widget.bind("<Leave>", self.on_leave)
-        self.waittime = 400
-        self.id = None
-        self.tw = None
+        self.waittime: int = 400
+        self.id: Optional[str] = None
+        self.tw: Optional[tk.Toplevel] = None
 
-    def on_enter(self, event: tk.Event = None):
+    def on_enter(self, event: tk.Event = None) -> None:
         self.schedule()
 
-    def on_leave(self, event: tk.Event = None):
+    def on_leave(self, event: tk.Event = None) -> None:
         self.unschedule()
         self.close(event)
 
@@ -39,7 +40,6 @@ class Tooltip(object):
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx()
         y += self.widget.winfo_rooty() + 32
-
         self.tw = tk.Toplevel(self.widget)
         self.tw.wm_overrideredirect(True)
         self.tw.wm_geometry("+%d+%d" % (x, y))

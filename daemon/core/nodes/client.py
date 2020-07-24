@@ -5,7 +5,7 @@ The control channel can be accessed via calls using the vcmd shell.
 """
 
 from core import utils
-from core.constants import VCMD_BIN
+from core.executables import VCMD
 
 
 class VnodeClient:
@@ -50,7 +50,7 @@ class VnodeClient:
         pass
 
     def create_cmd(self, args: str) -> str:
-        return f"{VCMD_BIN} -c {self.ctrlchnlname} -- {args}"
+        return f"{VCMD} -c {self.ctrlchnlname} -- {args}"
 
     def check_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """

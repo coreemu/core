@@ -118,6 +118,9 @@ def get_merged_config(filename):
     # parse command line options
     args = parser.parse_args()
 
+    # convert ovs to internal format
+    args.ovs = "1" if args.ovs else "0"
+
     # read the config file
     if args.configfile is not None:
         filename = args.configfile

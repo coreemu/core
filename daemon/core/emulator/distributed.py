@@ -14,7 +14,8 @@ from fabric import Connection
 from invoke import UnexpectedExit
 
 from core import utils
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
+from core.executables import get_requirements
 from core.nodes.interface import GreTap
 from core.nodes.network import CoreNetwork, CtrlNet
 
@@ -131,8 +132,17 @@ class DistributedController:
         :param name: distributed server name
         :param host: distributed server host address
         :return: nothing
+        :raises CoreError: when there is an error validating server
         """
         server = DistributedServer(name, host)
+        for requirement in get_requirements(self.session.use_ovs()):
+            try:
+                server.remote_cmd(f"which {requirement}")
+            except CoreCommandError:
+                raise CoreError(
+                    f"server({server.name}) failed validation for "
+                    f"command({requirement})"
+                )
         self.servers[name] = server
         cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)
@@ -208,7 +218,7 @@ class DistributedController:
             "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
         )
         local_tap = GreTap(session=self.session, remoteip=host, key=key)
-        local_tap.net_client.set_interface_master(node.brname, local_tap.localname)
+        local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
 
         # server to local
         logging.info(
@@ -217,25 +227,27 @@ class DistributedController:
         remote_tap = GreTap(
             session=self.session, remoteip=self.address, key=key, server=server
         )
-        remote_tap.net_client.set_interface_master(node.brname, remote_tap.localname)
+        remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
 
         # save tunnels for shutdown
         tunnel = (local_tap, remote_tap)
         self.tunnels[key] = tunnel
         return tunnel
 
-    def tunnel_key(self, n1_id: int, n2_id: int) -> int:
+    def tunnel_key(self, node1_id: int, node2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
         The hash(n1num), hash(n2num) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
-        :param n1_id: node one id
-        :param n2_id: node two id
+        :param node1_id: node one id
+        :param node2_id: node two id
         :return: tunnel key for the node pair
         """
-        logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
+        logging.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
         key = (
-            (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
+            (self.session.id << 16)
+            ^ utils.hashkey(node1_id)
+            ^ (utils.hashkey(node2_id) << 8)
         )
         return key & 0xFFFFFFFF

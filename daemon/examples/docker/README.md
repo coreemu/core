@@ -44,3 +44,18 @@ newgrp docker
 
 This directory provides a few small examples creating Docker nodes
 and linking them to themselves or with standard CORE nodes.
+
+Images used by nodes need to have networking tools installed for CORE to automate
+setup and configuration of the container.
+
+Example Dockerfile:
+```
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y iproute2 ethtool
+```
+
+Build image:
+```shell
+sudo docker build -t <name> .
+```

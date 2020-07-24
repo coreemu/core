@@ -10,9 +10,7 @@ from lxml import etree
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest, emanemodel
-from core.emane.nodes import EmaneNet
-from core.emulator.emudata import LinkOptions
-from core.emulator.enumerations import TransportType
+from core.emulator.data import LinkOptions
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
@@ -22,6 +20,7 @@ except ImportError:
     try:
         from emanesh.events.commeffectevent import CommEffectEvent
     except ImportError:
+        CommEffectEvent = None
         logging.debug("compatible emane python bindings not installed")
 
 
@@ -38,16 +37,15 @@ def convert_none(x: float) -> int:
 
 
 class EmaneCommEffectModel(emanemodel.EmaneModel):
-    name = "emane_commeffect"
-
-    shim_library = "commeffectshim"
-    shim_xml = "commeffectshim.xml"
-    shim_defaults = {}
-    config_shim = []
+    name: str = "emane_commeffect"
+    shim_library: str = "commeffectshim"
+    shim_xml: str = "commeffectshim.xml"
+    shim_defaults: Dict[str, str] = {}
+    config_shim: List[Configuration] = []
 
     # comm effect does not need the default phy and external configurations
-    phy_config = []
-    external_config = []
+    phy_config: List[Configuration] = []
+    external_config: List[Configuration] = []
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:
@@ -62,9 +60,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     def config_groups(cls) -> List[ConfigGroup]:
         return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
 
-    def build_xml_files(
-        self, config: Dict[str, str], interface: CoreInterface = None
-    ) -> None:
+    def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
@@ -72,26 +68,19 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
 
         :param config: emane model configuration for the node and interface
-        :param interface: interface for the emane node
+        :param iface: interface for the emane node
         :return: nothing
         """
-        # retrieve xml names
-        nem_name = emanexml.nem_file_name(self, interface)
-        shim_name = emanexml.shim_file_name(self, interface)
-
         # create and write nem document
         nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
-        transport_type = TransportType.VIRTUAL
-        if interface and interface.transport_type == TransportType.RAW:
-            transport_type = TransportType.RAW
-        transport_file = emanexml.transport_file_name(self.id, transport_type)
-        etree.SubElement(nem_element, "transport", definition=transport_file)
+        transport_name = emanexml.transport_file_name(iface)
+        etree.SubElement(nem_element, "transport", definition=transport_name)
 
         # set shim configuration
+        nem_name = emanexml.nem_file_name(iface)
+        shim_name = emanexml.shim_file_name(iface)
         etree.SubElement(nem_element, "shim", definition=shim_name)
-
-        nem_file = os.path.join(self.session.session_dir, nem_name)
-        emanexml.create_file(nem_element, "nem", nem_file)
+        emanexml.create_iface_file(iface, nem_element, "nem", nem_name)
 
         # create and write shim document
         shim_element = etree.Element(
@@ -110,12 +99,13 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         ff = config["filterfile"]
         if ff.strip() != "":
             emanexml.add_param(shim_element, "filterfile", ff)
+        emanexml.create_iface_file(iface, shim_element, "shim", shim_name)
 
-        shim_file = os.path.join(self.session.session_dir, shim_name)
-        emanexml.create_file(shim_element, "shim", shim_file)
+        # create transport xml
+        emanexml.create_transport_xml(iface, config)
 
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Generate CommEffect events when a Link Message is received having
@@ -126,24 +116,23 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             logging.warning("%s: EMANE event service unavailable", self.name)
             return
 
-        if netif is None or netif2 is None:
+        if iface is None or iface2 is None:
             logging.warning("%s: missing NEM information", self.name)
             return
 
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_node(self.id, EmaneNet)
-        nemid = emane_node.getnemid(netif)
-        nemid2 = emane_node.getnemid(netif2)
+        nem1 = self.session.emane.get_nem_id(iface)
+        nem2 = self.session.emane.get_nem_id(iface2)
         logging.info("sending comm effect event")
         event.append(
-            nemid,
+            nem1,
             latency=convert_none(options.delay),
             jitter=convert_none(options.jitter),
-            loss=convert_none(options.per),
+            loss=convert_none(options.loss),
             duplicate=convert_none(options.dup),
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
         )
-        service.publish(nemid2, event)
+        service.publish(nem2, event)

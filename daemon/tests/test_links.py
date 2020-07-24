@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from core.emulator.emudata import IpPrefixes, LinkOptions
+from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -10,126 +10,222 @@ def create_ptp_network(
     session: Session, ip_prefixes: IpPrefixes
 ) -> Tuple[CoreNode, CoreNode]:
     # create nodes
-    node_one = session.add_node(CoreNode)
-    node_two = session.add_node(CoreNode)
+    node1 = session.add_node(CoreNode)
+    node2 = session.add_node(CoreNode)
 
     # link nodes to net node
-    interface_one = ip_prefixes.create_interface(node_one)
-    interface_two = ip_prefixes.create_interface(node_two)
-    session.add_link(node_one.id, node_two.id, interface_one, interface_two)
+    iface1_data = ip_prefixes.create_iface(node1)
+    iface2_data = ip_prefixes.create_iface(node2)
+    session.add_link(node1.id, node2.id, iface1_data, iface2_data)
 
     # instantiate session
     session.instantiate()
 
-    return node_one, node_two
+    return node1, node2
 
 
 class TestLinks:
-    def test_ptp(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_add_ptp(self, session: Session, ip_prefixes: IpPrefixes):
         # given
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
-        interface_two = ip_prefixes.create_interface(node_two)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # when
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data)
 
         # then
-        assert node_one.netif(interface_one.id)
-        assert node_two.netif(interface_two.id)
+        assert node1.get_iface(iface1_data.id)
+        assert node2.get_iface(iface2_data.id)
 
-    def test_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_add_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(SwitchNode)
-        interface_one = ip_prefixes.create_interface(node_one)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(SwitchNode)
+        iface1_data = ip_prefixes.create_iface(node1)
 
         # when
-        session.add_link(node_one.id, node_two.id, interface_one)
+        session.add_link(node1.id, node2.id, iface1_data=iface1_data)
 
         # then
-        assert node_two.all_link_data()
-        assert node_one.netif(interface_one.id)
+        assert node2.links()
+        assert node1.get_iface(iface1_data.id)
 
-    def test_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_add_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
-        node_one = session.add_node(SwitchNode)
-        node_two = session.add_node(CoreNode)
-        interface_two = ip_prefixes.create_interface(node_two)
+        node1 = session.add_node(SwitchNode)
+        node2 = session.add_node(CoreNode)
+        iface2_data = ip_prefixes.create_iface(node2)
 
         # when
-        session.add_link(node_one.id, node_two.id, interface_two=interface_two)
+        session.add_link(node1.id, node2.id, iface2_data=iface2_data)
 
         # then
-        assert node_one.all_link_data()
-        assert node_two.netif(interface_two.id)
+        assert node1.links()
+        assert node2.get_iface(iface2_data.id)
 
-    def test_net_to_net(self, session):
+    def test_add_net_to_net(self, session):
         # given
-        node_one = session.add_node(SwitchNode)
-        node_two = session.add_node(SwitchNode)
+        node1 = session.add_node(SwitchNode)
+        node2 = session.add_node(SwitchNode)
 
         # when
-        session.add_link(node_one.id, node_two.id)
+        session.add_link(node1.id, node2.id)
 
         # then
-        assert node_one.all_link_data()
+        assert node1.links()
 
-    def test_link_update(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_update_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         delay = 50
         bandwidth = 5000000
-        per = 25
+        loss = 25
         dup = 25
         jitter = 10
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(SwitchNode)
-        interface_one_data = ip_prefixes.create_interface(node_one)
-        session.add_link(node_one.id, node_two.id, interface_one_data)
-        interface_one = node_one.netif(interface_one_data.id)
-        assert interface_one.getparam("delay") != delay
-        assert interface_one.getparam("bw") != bandwidth
-        assert interface_one.getparam("loss") != per
-        assert interface_one.getparam("duplicate") != dup
-        assert interface_one.getparam("jitter") != jitter
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(SwitchNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        session.add_link(node1.id, node2.id, iface1_data)
+        iface1 = node1.get_iface(iface1_data.id)
+        assert iface1.getparam("delay") != delay
+        assert iface1.getparam("bw") != bandwidth
+        assert iface1.getparam("loss") != loss
+        assert iface1.getparam("duplicate") != dup
+        assert iface1.getparam("jitter") != jitter
 
         # when
-        link_options = LinkOptions()
-        link_options.delay = delay
-        link_options.bandwidth = bandwidth
-        link_options.per = per
-        link_options.dup = dup
-        link_options.jitter = jitter
+        options = LinkOptions(
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+        )
         session.update_link(
-            node_one.id,
-            node_two.id,
-            interface_one_id=interface_one_data.id,
-            options=link_options,
+            node1.id, node2.id, iface1_id=iface1_data.id, options=options
         )
 
         # then
-        assert interface_one.getparam("delay") == delay
-        assert interface_one.getparam("bw") == bandwidth
-        assert interface_one.getparam("loss") == per
-        assert interface_one.getparam("duplicate") == dup
-        assert interface_one.getparam("jitter") == jitter
+        assert iface1.getparam("delay") == delay
+        assert iface1.getparam("bw") == bandwidth
+        assert iface1.getparam("loss") == loss
+        assert iface1.getparam("duplicate") == dup
+        assert iface1.getparam("jitter") == jitter
 
-    def test_link_delete(self, session: Session, ip_prefixes: IpPrefixes):
+    def test_update_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
-        node_one = session.add_node(CoreNode)
-        node_two = session.add_node(CoreNode)
-        interface_one = ip_prefixes.create_interface(node_one)
-        interface_two = ip_prefixes.create_interface(node_two)
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
-        assert node_one.netif(interface_one.id)
-        assert node_two.netif(interface_two.id)
+        delay = 50
+        bandwidth = 5000000
+        loss = 25
+        dup = 25
+        jitter = 10
+        node1 = session.add_node(SwitchNode)
+        node2 = session.add_node(CoreNode)
+        iface2_data = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, node2.id, iface2_data=iface2_data)
+        iface2 = node2.get_iface(iface2_data.id)
+        assert iface2.getparam("delay") != delay
+        assert iface2.getparam("bw") != bandwidth
+        assert iface2.getparam("loss") != loss
+        assert iface2.getparam("duplicate") != dup
+        assert iface2.getparam("jitter") != jitter
 
         # when
-        session.delete_link(
-            node_one.id, node_two.id, interface_one.id, interface_two.id
+        options = LinkOptions(
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+        )
+        session.update_link(
+            node1.id, node2.id, iface2_id=iface2_data.id, options=options
         )
 
         # then
-        assert not node_one.netif(interface_one.id)
-        assert not node_two.netif(interface_two.id)
+        assert iface2.getparam("delay") == delay
+        assert iface2.getparam("bw") == bandwidth
+        assert iface2.getparam("loss") == loss
+        assert iface2.getparam("duplicate") == dup
+        assert iface2.getparam("jitter") == jitter
+
+    def test_update_ptp(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        delay = 50
+        bandwidth = 5000000
+        loss = 25
+        dup = 25
+        jitter = 10
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        iface2_data = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data)
+        iface1 = node1.get_iface(iface1_data.id)
+        iface2 = node2.get_iface(iface2_data.id)
+        assert iface1.getparam("delay") != delay
+        assert iface1.getparam("bw") != bandwidth
+        assert iface1.getparam("loss") != loss
+        assert iface1.getparam("duplicate") != dup
+        assert iface1.getparam("jitter") != jitter
+        assert iface2.getparam("delay") != delay
+        assert iface2.getparam("bw") != bandwidth
+        assert iface2.getparam("loss") != loss
+        assert iface2.getparam("duplicate") != dup
+        assert iface2.getparam("jitter") != jitter
+
+        # when
+        options = LinkOptions(
+            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+        )
+        session.update_link(node1.id, node2.id, iface1_data.id, iface2_data.id, options)
+
+        # then
+        assert iface1.getparam("delay") == delay
+        assert iface1.getparam("bw") == bandwidth
+        assert iface1.getparam("loss") == loss
+        assert iface1.getparam("duplicate") == dup
+        assert iface1.getparam("jitter") == jitter
+        assert iface2.getparam("delay") == delay
+        assert iface2.getparam("bw") == bandwidth
+        assert iface2.getparam("loss") == loss
+        assert iface2.getparam("duplicate") == dup
+        assert iface2.getparam("jitter") == jitter
+
+    def test_delete_ptp(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        iface2_data = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, node2.id, iface1_data, iface2_data)
+        assert node1.get_iface(iface1_data.id)
+        assert node2.get_iface(iface2_data.id)
+
+        # when
+        session.delete_link(node1.id, node2.id, iface1_data.id, iface2_data.id)
+
+        # then
+        assert iface1_data.id not in node1.ifaces
+        assert iface2_data.id not in node2.ifaces
+
+    def test_delete_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(SwitchNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        session.add_link(node1.id, node2.id, iface1_data)
+        assert node1.get_iface(iface1_data.id)
+
+        # when
+        session.delete_link(node1.id, node2.id, iface1_id=iface1_data.id)
+
+        # then
+        assert iface1_data.id not in node1.ifaces
+
+    def test_delete_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        node1 = session.add_node(SwitchNode)
+        node2 = session.add_node(CoreNode)
+        iface2_data = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, node2.id, iface2_data=iface2_data)
+        assert node2.get_iface(iface2_data.id)
+
+        # when
+        session.delete_link(node1.id, node2.id, iface2_id=iface2_data.id)
+
+        # then
+        assert iface2_data.id not in node2.ifaces

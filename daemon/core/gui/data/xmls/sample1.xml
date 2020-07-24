@@ -188,7 +188,7 @@
       <configuration name="error" value="0"/>
     </mobility_configuration>
     <mobility_configuration node="10" model="ns2script">
-      <configuration name="file" value="/home/developer/.coretk/mobility/sample1.scen"/>
+      <configuration name="file" value="sample1.scen"/>
       <configuration name="refresh_ms" value="50"/>
       <configuration name="loop" value="1"/>
       <configuration name="autostart" value="5"/>

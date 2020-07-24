@@ -3,13 +3,13 @@ Defines Emane Models used within CORE.
 """
 import logging
 import os
-from typing import Dict, List
+from typing import Dict, List, Optional, Set
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emane.nodes import EmaneNet
-from core.emulator.emudata import LinkOptions
-from core.emulator.enumerations import ConfigDataTypes, TransportType
+from core.emulator.data import LinkOptions
+from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.nodes.base import CoreNode
@@ -25,19 +25,23 @@ class EmaneModel(WirelessModel):
     """
 
     # default mac configuration settings
-    mac_library = None
-    mac_xml = None
-    mac_defaults = {}
-    mac_config = []
+    mac_library: Optional[str] = None
+    mac_xml: Optional[str] = None
+    mac_defaults: Dict[str, str] = {}
+    mac_config: List[Configuration] = []
 
     # default phy configuration settings, using the universal model
-    phy_library = None
-    phy_xml = "emanephy.xml"
-    phy_defaults = {"subid": "1", "propagationmodel": "2ray", "noisemode": "none"}
-    phy_config = []
+    phy_library: Optional[str] = None
+    phy_xml: str = "emanephy.xml"
+    phy_defaults: Dict[str, str] = {
+        "subid": "1",
+        "propagationmodel": "2ray",
+        "noisemode": "none",
+    }
+    phy_config: List[Configuration] = []
 
     # support for external configurations
-    external_config = [
+    external_config: List[Configuration] = [
         Configuration("external", ConfigDataTypes.BOOL, default="0"),
         Configuration(
             "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
@@ -47,7 +51,7 @@ class EmaneModel(WirelessModel):
         ),
     ]
 
-    config_ignore = set()
+    config_ignore: Set[str] = set()
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:
@@ -92,45 +96,20 @@ class EmaneModel(WirelessModel):
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
-    def build_xml_files(
-        self, config: Dict[str, str], interface: CoreInterface = None
-    ) -> None:
+    def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
         Builds xml files for this emane model. Creates a nem.xml file that points to
         both mac.xml and phy.xml definitions.
 
         :param config: emane model configuration for the node and interface
-        :param interface: interface for the emane node
+        :param iface: interface to run emane for
         :return: nothing
         """
-        nem_name = emanexml.nem_file_name(self, interface)
-        mac_name = emanexml.mac_file_name(self, interface)
-        phy_name = emanexml.phy_file_name(self, interface)
-
-        # remote server for file
-        server = None
-        if interface is not None:
-            server = interface.node.server
-
-        # check if this is external
-        transport_type = TransportType.VIRTUAL
-        if interface and interface.transport_type == TransportType.RAW:
-            transport_type = TransportType.RAW
-        transport_name = emanexml.transport_file_name(self.id, transport_type)
-
-        # create nem xml file
-        nem_file = os.path.join(self.session.session_dir, nem_name)
-        emanexml.create_nem_xml(
-            self, config, nem_file, transport_name, mac_name, phy_name, server
-        )
-
-        # create mac xml file
-        mac_file = os.path.join(self.session.session_dir, mac_name)
-        emanexml.create_mac_xml(self, config, mac_file, server)
-
-        # create phy xml file
-        phy_file = os.path.join(self.session.session_dir, phy_name)
-        emanexml.create_phy_xml(self, config, phy_file, server)
+        # create nem, mac, and phy xml files
+        emanexml.create_nem_xml(self, iface, config)
+        emanexml.create_mac_xml(self, iface, config)
+        emanexml.create_phy_xml(self, iface, config)
+        emanexml.create_transport_xml(iface, config)
 
     def post_startup(self) -> None:
         """
@@ -140,31 +119,31 @@ class EmaneModel(WirelessModel):
         """
         logging.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved: List[CoreNode], moved_netifs: List[CoreInterface]) -> None:
+    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved
         list, making EmaneModels compatible with Ns2ScriptedMobility.
 
         :param moved: moved nodes
-        :param moved_netifs: interfaces that were moved
+        :param moved_ifaces: interfaces that were moved
         :return: nothing
         """
         try:
             wlan = self.session.get_node(self.id, EmaneNet)
-            wlan.setnempositions(moved_netifs)
+            wlan.setnempositions(moved_ifaces)
         except CoreError:
             logging.exception("error during update")
 
     def linkconfig(
-        self, netif: CoreInterface, options: LinkOptions, netif2: CoreInterface = None
+        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
     ) -> None:
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param netif: interface one
+        :param iface: interface one
         :param options: options for configuring link
-        :param netif2: interface two
+        :param iface2: interface two
         :return: nothing
         """
         logging.warning("emane model(%s) does not support link config", self.name)

@@ -6,8 +6,7 @@ from lxml import etree
 import core.nodes.base
 import core.nodes.physical
 from core.emane.nodes import EmaneNet
-from core.emulator.data import LinkData
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, NodeBase
@@ -45,11 +44,11 @@ def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T
     return value
 
 
-def get_float(element: etree.Element, name: str) -> float:
+def get_float(element: etree.Element, name: str) -> Optional[float]:
     return get_type(element, name, float)
 
 
-def get_int(element: etree.Element, name: str) -> int:
+def get_int(element: etree.Element, name: str) -> Optional[int]:
     return get_type(element, name, int)
 
 
@@ -58,16 +57,16 @@ def add_attribute(element: etree.Element, name: str, value: Any) -> None:
         element.set(name, str(value))
 
 
-def create_interface_data(interface_element: etree.Element) -> InterfaceData:
-    interface_id = int(interface_element.get("id"))
-    name = interface_element.get("name")
-    mac = interface_element.get("mac")
-    ip4 = interface_element.get("ip4")
-    ip4_mask = get_int(interface_element, "ip4_mask")
-    ip6 = interface_element.get("ip6")
-    ip6_mask = get_int(interface_element, "ip6_mask")
+def create_iface_data(iface_element: etree.Element) -> InterfaceData:
+    iface_id = int(iface_element.get("id"))
+    name = iface_element.get("name")
+    mac = iface_element.get("mac")
+    ip4 = iface_element.get("ip4")
+    ip4_mask = get_int(iface_element, "ip4_mask")
+    ip6 = iface_element.get("ip6")
+    ip6_mask = get_int(iface_element, "ip6_mask")
     return InterfaceData(
-        id=interface_id,
+        id=iface_id,
         name=name,
         mac=mac,
         ip4=ip4,
@@ -124,11 +123,13 @@ def add_configuration(parent: etree.Element, name: str, value: str) -> None:
 
 class NodeElement:
     def __init__(self, session: "Session", node: NodeBase, element_name: str) -> None:
-        self.session = session
-        self.node = node
-        self.element = etree.Element(element_name)
+        self.session: "Session" = session
+        self.node: NodeBase = node
+        self.element: etree.Element = etree.Element(element_name)
         add_attribute(self.element, "id", node.id)
         add_attribute(self.element, "name", node.name)
+        server = self.node.server.name if self.node.server else None
+        add_attribute(self.element, "server", server)
         add_attribute(self.element, "icon", node.icon)
         add_attribute(self.element, "canvas", node.canvas)
         self.add_position()
@@ -151,8 +152,8 @@ class NodeElement:
 
 class ServiceElement:
     def __init__(self, service: Type[CoreService]) -> None:
-        self.service = service
-        self.element = etree.Element("service")
+        self.service: Type[CoreService] = service
+        self.element: etree.Element = etree.Element("service")
         add_attribute(self.element, "name", service.name)
         self.add_directories()
         self.add_startup()
@@ -268,10 +269,10 @@ class NetworkElement(NodeElement):
 
 class CoreXmlWriter:
     def __init__(self, session: "Session") -> None:
-        self.session = session
-        self.scenario = etree.Element("scenario")
-        self.networks = None
-        self.devices = None
+        self.session: "Session" = session
+        self.scenario: etree.Element = etree.Element("scenario")
+        self.networks: etree.SubElement = etree.SubElement(self.scenario, "networks")
+        self.devices: etree.SubElement = etree.SubElement(self.scenario, "devices")
         self.write_session()
 
     def write_session(self) -> None:
@@ -283,6 +284,7 @@ class CoreXmlWriter:
         self.write_service_configs()
         self.write_configservice_configs()
         self.write_session_origin()
+        self.write_servers()
         self.write_session_hooks()
         self.write_session_options()
         self.write_session_metadata()
@@ -317,11 +319,20 @@ class CoreXmlWriter:
                 add_attribute(origin, "y", y)
                 add_attribute(origin, "z", z)
 
+    def write_servers(self) -> None:
+        servers = etree.Element("servers")
+        for server in self.session.distributed.servers.values():
+            server_element = etree.SubElement(servers, "server")
+            add_attribute(server_element, "name", server.name)
+            add_attribute(server_element, "address", server.host)
+        if servers.getchildren():
+            self.scenario.append(servers)
+
     def write_session_hooks(self) -> None:
         # hook scripts
         hooks = etree.Element("session_hooks")
-        for state in sorted(self.session._hooks, key=lambda x: x.value):
-            for file_name, data in self.session._hooks[state]:
+        for state in sorted(self.session.hooks, key=lambda x: x.value):
+            for file_name, data in self.session.hooks[state]:
                 hook = etree.SubElement(hooks, "hook")
                 add_attribute(hook, "name", file_name)
                 add_attribute(hook, "state", state.value)
@@ -362,13 +373,11 @@ class CoreXmlWriter:
     def write_emane_configs(self) -> None:
         emane_global_configuration = create_emane_config(self.session)
         self.scenario.append(emane_global_configuration)
-
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
             if not all_configs:
                 continue
-
             for model_name in all_configs:
                 config = all_configs[model_name]
                 logging.debug(
@@ -453,9 +462,6 @@ class CoreXmlWriter:
             self.scenario.append(node_types)
 
     def write_nodes(self) -> List[LinkData]:
-        self.networks = etree.SubElement(self.scenario, "networks")
-        self.devices = etree.SubElement(self.scenario, "devices")
-
         links = []
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
@@ -471,8 +477,7 @@ class CoreXmlWriter:
                 self.write_device(node)
 
             # add known links
-            links.extend(node.all_link_data())
-
+            links.extend(node.links())
         return links
 
     def write_network(self, node: NodeBase) -> None:
@@ -488,12 +493,10 @@ class CoreXmlWriter:
         # add link data
         for link_data in links:
             # skip basic range links
-            if link_data.interface1_id is None and link_data.interface2_id is None:
+            if link_data.iface1 is None and link_data.iface2 is None:
                 continue
-
             link_element = self.create_link_element(link_data)
             link_elements.append(link_element)
-
         if link_elements.getchildren():
             self.scenario.append(link_elements)
 
@@ -501,94 +504,64 @@ class CoreXmlWriter:
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
 
-    def create_interface_element(
-        self,
-        element_name: str,
-        node_id: int,
-        interface_id: int,
-        mac: str,
-        ip4: str,
-        ip4_mask: int,
-        ip6: str,
-        ip6_mask: int,
+    def create_iface_element(
+        self, element_name: str, node_id: int, iface_data: InterfaceData
     ) -> etree.Element:
-        interface = etree.Element(element_name)
+        iface_element = etree.Element(element_name)
         node = self.session.get_node(node_id, NodeBase)
-        interface_name = None
         if isinstance(node, CoreNodeBase):
-            node_interface = node.netif(interface_id)
-            interface_name = node_interface.name
-
+            iface = node.get_iface(iface_data.id)
             # check if emane interface
-            if isinstance(node_interface.net, EmaneNet):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface, "nem", nem)
-
-        add_attribute(interface, "id", interface_id)
-        add_attribute(interface, "name", interface_name)
-        add_attribute(interface, "mac", mac)
-        add_attribute(interface, "ip4", ip4)
-        add_attribute(interface, "ip4_mask", ip4_mask)
-        add_attribute(interface, "ip6", ip6)
-        add_attribute(interface, "ip6_mask", ip6_mask)
-        return interface
+            if isinstance(iface.net, EmaneNet):
+                nem_id = self.session.emane.get_nem_id(iface)
+                add_attribute(iface_element, "nem", nem_id)
+        add_attribute(iface_element, "id", iface_data.id)
+        add_attribute(iface_element, "name", iface_data.name)
+        add_attribute(iface_element, "mac", iface_data.mac)
+        add_attribute(iface_element, "ip4", iface_data.ip4)
+        add_attribute(iface_element, "ip4_mask", iface_data.ip4_mask)
+        add_attribute(iface_element, "ip6", iface_data.ip6)
+        add_attribute(iface_element, "ip6_mask", iface_data.ip6_mask)
+        return iface_element
 
     def create_link_element(self, link_data: LinkData) -> etree.Element:
         link_element = etree.Element("link")
-        add_attribute(link_element, "node_one", link_data.node1_id)
-        add_attribute(link_element, "node_two", link_data.node2_id)
+        add_attribute(link_element, "node1", link_data.node1_id)
+        add_attribute(link_element, "node2", link_data.node2_id)
 
         # check for interface one
-        if link_data.interface1_id is not None:
-            interface_one = self.create_interface_element(
-                "interface_one",
-                link_data.node1_id,
-                link_data.interface1_id,
-                link_data.interface1_mac,
-                link_data.interface1_ip4,
-                link_data.interface1_ip4_mask,
-                link_data.interface1_ip6,
-                link_data.interface1_ip6_mask,
+        if link_data.iface1 is not None:
+            iface1 = self.create_iface_element(
+                "iface1", link_data.node1_id, link_data.iface1
             )
-            link_element.append(interface_one)
+            link_element.append(iface1)
 
         # check for interface two
-        if link_data.interface2_id is not None:
-            interface_two = self.create_interface_element(
-                "interface_two",
-                link_data.node2_id,
-                link_data.interface2_id,
-                link_data.interface2_mac,
-                link_data.interface2_ip4,
-                link_data.interface2_ip4_mask,
-                link_data.interface2_ip6,
-                link_data.interface2_ip6_mask,
+        if link_data.iface2 is not None:
+            iface2 = self.create_iface_element(
+                "iface2", link_data.node2_id, link_data.iface2
             )
-            link_element.append(interface_two)
+            link_element.append(iface2)
 
         # check for options, don't write for emane/wlan links
-        node_one = self.session.get_node(link_data.node1_id, NodeBase)
-        node_two = self.session.get_node(link_data.node2_id, NodeBase)
-        is_node_one_wireless = isinstance(node_one, (WlanNode, EmaneNet))
-        is_node_two_wireless = isinstance(node_two, (WlanNode, EmaneNet))
-        if not any([is_node_one_wireless, is_node_two_wireless]):
+        node1 = self.session.get_node(link_data.node1_id, NodeBase)
+        node2 = self.session.get_node(link_data.node2_id, NodeBase)
+        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
+        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
+        if not any([is_node1_wireless, is_node2_wireless]):
+            options_data = link_data.options
             options = etree.Element("options")
-            add_attribute(options, "delay", link_data.delay)
-            add_attribute(options, "bandwidth", link_data.bandwidth)
-            add_attribute(options, "per", link_data.per)
-            add_attribute(options, "dup", link_data.dup)
-            add_attribute(options, "jitter", link_data.jitter)
-            add_attribute(options, "mer", link_data.mer)
-            add_attribute(options, "burst", link_data.burst)
-            add_attribute(options, "mburst", link_data.mburst)
-            add_attribute(options, "type", link_data.link_type)
-            add_attribute(options, "gui_attributes", link_data.gui_attributes)
-            add_attribute(options, "unidirectional", link_data.unidirectional)
-            add_attribute(options, "emulation_id", link_data.emulation_id)
+            add_attribute(options, "delay", options_data.delay)
+            add_attribute(options, "bandwidth", options_data.bandwidth)
+            add_attribute(options, "loss", options_data.loss)
+            add_attribute(options, "dup", options_data.dup)
+            add_attribute(options, "jitter", options_data.jitter)
+            add_attribute(options, "mer", options_data.mer)
+            add_attribute(options, "burst", options_data.burst)
+            add_attribute(options, "mburst", options_data.mburst)
+            add_attribute(options, "unidirectional", options_data.unidirectional)
             add_attribute(options, "network_id", link_data.network_id)
-            add_attribute(options, "key", link_data.key)
-            add_attribute(options, "opaque", link_data.opaque)
-            add_attribute(options, "session", link_data.session)
+            add_attribute(options, "key", options_data.key)
             if options.items():
                 link_element.append(options)
 
@@ -597,8 +570,8 @@ class CoreXmlWriter:
 
 class CoreXmlReader:
     def __init__(self, session: "Session") -> None:
-        self.session = session
-        self.scenario = None
+        self.session: "Session" = session
+        self.scenario: Optional[etree.ElementTree] = None
 
     def read(self, file_name: str) -> None:
         xml_tree = etree.parse(file_name)
@@ -609,6 +582,7 @@ class CoreXmlReader:
         self.read_session_metadata()
         self.read_session_options()
         self.read_session_hooks()
+        self.read_servers()
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
@@ -671,6 +645,16 @@ class CoreXmlReader:
             data = hook.text
             logging.info("reading hook: state(%s) name(%s)", state, name)
             self.session.add_hook(state, name, data)
+
+    def read_servers(self) -> None:
+        servers = self.scenario.find("servers")
+        if servers is None:
+            return
+        for server in servers.iterchildren():
+            name = server.get("name")
+            address = server.get("address")
+            logging.info("reading server: name(%s) address(%s)", name, address)
+            self.session.distributed.add_server(name, address)
 
     def read_session_origin(self) -> None:
         session_origin = self.scenario.find("session_origin")
@@ -840,8 +824,10 @@ class CoreXmlReader:
         icon = device_element.get("icon")
         clazz = device_element.get("class")
         image = device_element.get("image")
-        options = NodeOptions(name=name, model=model, image=image, icon=icon)
-
+        server = device_element.get("server")
+        options = NodeOptions(
+            name=name, model=model, image=image, icon=icon, server=server
+        )
         node_type = NodeTypes.DEFAULT
         if clazz == "docker":
             node_type = NodeTypes.DOCKER
@@ -881,7 +867,8 @@ class CoreXmlReader:
         node_type = NodeTypes[network_element.get("type")]
         _class = self.session.get_node_class(node_type)
         icon = network_element.get("icon")
-        options = NodeOptions(name=name, icon=icon)
+        server = network_element.get("server")
+        options = NodeOptions(name=name, icon=icon, server=server)
 
         position_element = network_element.find("position")
         if position_element is not None:
@@ -938,52 +925,53 @@ class CoreXmlReader:
 
         node_sets = set()
         for link_element in link_elements.iterchildren():
-            node_one = get_int(link_element, "node_one")
-            node_two = get_int(link_element, "node_two")
-            node_set = frozenset((node_one, node_two))
+            node1_id = get_int(link_element, "node1")
+            if node1_id is None:
+                node1_id = get_int(link_element, "node_one")
+            node2_id = get_int(link_element, "node2")
+            if node2_id is None:
+                node2_id = get_int(link_element, "node_two")
+            node_set = frozenset((node1_id, node2_id))
 
-            interface_one_element = link_element.find("interface_one")
-            interface_one = None
-            if interface_one_element is not None:
-                interface_one = create_interface_data(interface_one_element)
+            iface1_element = link_element.find("iface1")
+            if iface1_element is None:
+                iface1_element = link_element.find("interface_one")
+            iface1_data = None
+            if iface1_element is not None:
+                iface1_data = create_iface_data(iface1_element)
 
-            interface_two_element = link_element.find("interface_two")
-            interface_two = None
-            if interface_two_element is not None:
-                interface_two = create_interface_data(interface_two_element)
+            iface2_element = link_element.find("iface2")
+            if iface2_element is None:
+                iface2_element = link_element.find("interface_two")
+            iface2_data = None
+            if iface2_element is not None:
+                iface2_data = create_iface_data(iface2_element)
 
             options_element = link_element.find("options")
-            link_options = LinkOptions()
+            options = LinkOptions()
             if options_element is not None:
-                link_options.bandwidth = get_int(options_element, "bandwidth")
-                link_options.burst = get_int(options_element, "burst")
-                link_options.delay = get_int(options_element, "delay")
-                link_options.dup = get_int(options_element, "dup")
-                link_options.mer = get_int(options_element, "mer")
-                link_options.mburst = get_int(options_element, "mburst")
-                link_options.jitter = get_int(options_element, "jitter")
-                link_options.key = get_int(options_element, "key")
-                link_options.per = get_float(options_element, "per")
-                link_options.unidirectional = get_int(options_element, "unidirectional")
-                link_options.session = options_element.get("session")
-                link_options.emulation_id = get_int(options_element, "emulation_id")
-                link_options.network_id = get_int(options_element, "network_id")
-                link_options.opaque = options_element.get("opaque")
-                link_options.gui_attributes = options_element.get("gui_attributes")
+                options.bandwidth = get_int(options_element, "bandwidth")
+                options.burst = get_int(options_element, "burst")
+                options.delay = get_int(options_element, "delay")
+                options.dup = get_int(options_element, "dup")
+                options.mer = get_int(options_element, "mer")
+                options.mburst = get_int(options_element, "mburst")
+                options.jitter = get_int(options_element, "jitter")
+                options.key = get_int(options_element, "key")
+                options.loss = get_float(options_element, "loss")
+                if options.loss is None:
+                    options.loss = get_float(options_element, "per")
+                options.unidirectional = get_int(options_element, "unidirectional")
 
-            if link_options.unidirectional == 1 and node_set in node_sets:
-                logging.info(
-                    "updating link node_one(%s) node_two(%s)", node_one, node_two
-                )
+            if options.unidirectional == 1 and node_set in node_sets:
+                logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.update_link(
-                    node_one, node_two, interface_one.id, interface_two.id, link_options
+                    node1_id, node2_id, iface1_data.id, iface2_data.id, options
                 )
             else:
-                logging.info(
-                    "adding link node_one(%s) node_two(%s)", node_one, node_two
-                )
+                logging.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.add_link(
-                    node_one, node_two, interface_one, interface_two, link_options
+                    node1_id, node2_id, iface1_data, iface2_data, options
                 )
 
             node_sets.add(node_set)

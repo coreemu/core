@@ -1,6 +1,7 @@
 """
 EMANE Bypass model for CORE
 """
+from typing import List, Set
 
 from core.config import Configuration
 from core.emane import emanemodel
@@ -8,14 +9,14 @@ from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(emanemodel.EmaneModel):
-    name = "emane_bypass"
+    name: str = "emane_bypass"
 
     # values to ignore, when writing xml files
-    config_ignore = {"none"}
+    config_ignore: Set[str] = {"none"}
 
     # mac definitions
-    mac_library = "bypassmaclayer"
-    mac_config = [
+    mac_library: str = "bypassmaclayer"
+    mac_config: List[Configuration] = [
         Configuration(
             _id="none",
             _type=ConfigDataTypes.BOOL,
@@ -25,8 +26,8 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     ]
 
     # phy definitions
-    phy_library = "bypassphylayer"
-    phy_config = []
+    phy_library: str = "bypassphylayer"
+    phy_config: List[Configuration] = []
 
     @classmethod
     def load(cls, emane_prefix: str) -> None:

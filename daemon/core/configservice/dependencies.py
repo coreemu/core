@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Set
 
 if TYPE_CHECKING:
     from core.configservice.base import ConfigService
@@ -17,9 +17,9 @@ class ConfigServiceDependencies:
         :param services: services for determining dependency sets
         """
         # helpers to check validity
-        self.dependents = {}
-        self.started = set()
-        self.node_services = {}
+        self.dependents: Dict[str, Set[str]] = {}
+        self.started: Set[str] = set()
+        self.node_services: Dict[str, "ConfigService"] = {}
         for service in services.values():
             self.node_services[service.name] = service
             for dependency in service.dependencies:
@@ -27,9 +27,9 @@ class ConfigServiceDependencies:
                 dependents.add(service.name)
 
         # used to find paths
-        self.path = []
-        self.visited = set()
-        self.visiting = set()
+        self.path: List["ConfigService"] = []
+        self.visited: Set[str] = set()
+        self.visiting: Set[str] = set()
 
     def startup_paths(self) -> List[List["ConfigService"]]:
         """

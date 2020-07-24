@@ -12,27 +12,27 @@ from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-SCALE_INTERVAL = 0.01
+SCALE_INTERVAL: float = 0.01
 
 
 class PreferencesDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Preferences")
-        self.gui_scale = tk.DoubleVar(value=self.app.app_scale)
+        self.gui_scale: tk.DoubleVar = tk.DoubleVar(value=self.app.app_scale)
         preferences = self.app.guiconfig.preferences
-        self.editor = tk.StringVar(value=preferences.editor)
-        self.theme = tk.StringVar(value=preferences.theme)
-        self.terminal = tk.StringVar(value=preferences.terminal)
-        self.gui3d = tk.StringVar(value=preferences.gui3d)
+        self.editor: tk.StringVar = tk.StringVar(value=preferences.editor)
+        self.theme: tk.StringVar = tk.StringVar(value=preferences.theme)
+        self.terminal: tk.StringVar = tk.StringVar(value=preferences.terminal)
+        self.gui3d: tk.StringVar = tk.StringVar(value=preferences.gui3d)
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.draw_preferences()
         self.draw_buttons()
 
-    def draw_preferences(self):
+    def draw_preferences(self) -> None:
         frame = ttk.LabelFrame(self.top, text="Preferences", padding=FRAME_PAD)
         frame.grid(sticky="nsew", pady=PADY)
         frame.columnconfigure(1, weight=1)
@@ -88,7 +88,7 @@ class PreferencesDialog(Dialog):
         scrollbar = ttk.Scrollbar(scale_frame, command=self.adjust_scale)
         scrollbar.grid(row=0, column=2)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
@@ -100,12 +100,12 @@ class PreferencesDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def theme_change(self, event: tk.Event):
+    def theme_change(self, event: tk.Event) -> None:
         theme = self.theme.get()
         logging.info("changing theme: %s", theme)
         self.app.style.theme_use(theme)
 
-    def click_save(self):
+    def click_save(self) -> None:
         preferences = self.app.guiconfig.preferences
         preferences.terminal = self.terminal.get()
         preferences.editor = self.editor.get()
@@ -118,7 +118,7 @@ class PreferencesDialog(Dialog):
         self.scale_adjust()
         self.destroy()
 
-    def scale_adjust(self):
+    def scale_adjust(self) -> None:
         app_scale = self.gui_scale.get()
         self.app.app_scale = app_scale
         self.app.master.tk.call("tk", "scaling", app_scale)
@@ -136,7 +136,7 @@ class PreferencesDialog(Dialog):
         self.app.toolbar.scale()
         self.app.canvas.scale_graph()
 
-    def adjust_scale(self, arg1: str, arg2: str, arg3: str):
+    def adjust_scale(self, arg1: str, arg2: str, arg3: str) -> None:
         scale_value = self.gui_scale.get()
         if arg2 == "-1":
             if scale_value <= LARGEST_SCALE - SCALE_INTERVAL:

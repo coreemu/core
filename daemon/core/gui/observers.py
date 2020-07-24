@@ -1,13 +1,13 @@
 import tkinter as tk
 from functools import partial
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from core.gui.dialogs.observers import ObserverDialog
 
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-OBSERVERS = {
+OBSERVERS: Dict[str, str] = {
     "List Processes": "ps",
     "Show Interfaces": "ip address",
     "IPV4 Routes": "ip -4 route",
@@ -23,9 +23,9 @@ OBSERVERS = {
 class ObserversMenu(tk.Menu):
     def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
         super().__init__(master)
-        self.app = app
-        self.observer = tk.StringVar(value=tk.NONE)
-        self.custom_index = 0
+        self.app: "Application" = app
+        self.observer: tk.StringVar = tk.StringVar(value=tk.NONE)
+        self.custom_index: int = 0
         self.draw()
 
     def draw(self) -> None:

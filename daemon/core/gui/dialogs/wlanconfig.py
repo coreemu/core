@@ -1,8 +1,10 @@
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
+from core.api.grpc.common_pb2 import ConfigOption
+from core.api.grpc.core_pb2 import Node
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
@@ -10,34 +12,36 @@ from core.gui.widgets import ConfigFrame
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
+    from core.gui.graph.graph import CanvasGraph
 
-RANGE_COLOR = "#009933"
-RANGE_WIDTH = 3
+RANGE_COLOR: str = "#009933"
+RANGE_WIDTH: int = 3
 
 
 class WlanConfigDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode"):
+    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
         super().__init__(app, f"{canvas_node.core_node.name} WLAN Configuration")
-        self.canvas_node = canvas_node
-        self.node = canvas_node.core_node
-        self.config_frame = None
-        self.range_entry = None
-        self.has_error = False
-        self.canvas = app.canvas
-        self.ranges = {}
-        self.positive_int = self.app.master.register(self.validate_and_update)
+        self.canvas: "CanvasGraph" = app.canvas
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node: Node = canvas_node.core_node
+        self.config_frame: Optional[ConfigFrame] = None
+        self.range_entry: Optional[ttk.Entry] = None
+        self.has_error: bool = False
+        self.ranges: Dict[int, int] = {}
+        self.positive_int: int = self.app.master.register(self.validate_and_update)
         try:
-            self.config = self.canvas_node.wlan_config
-            if not self.config:
-                self.config = self.app.core.get_wlan_config(self.node.id)
+            config = self.canvas_node.wlan_config
+            if not config:
+                config = self.app.core.get_wlan_config(self.node.id)
+            self.config: Dict[str, ConfigOption] = config
             self.init_draw_range()
             self.draw()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("WLAN Config Error", e)
-            self.has_error = True
+            self.has_error: bool = True
             self.destroy()
 
-    def init_draw_range(self):
+    def init_draw_range(self) -> None:
         if self.canvas_node.id in self.canvas.wireless_network:
             for cid in self.canvas.wireless_network[self.canvas_node.id]:
                 x, y = self.canvas.coords(cid)
@@ -46,7 +50,7 @@ class WlanConfigDialog(Dialog):
                 )
                 self.ranges[cid] = range_id
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
         self.config_frame = ConfigFrame(self.top, self.app, self.config)
@@ -55,7 +59,7 @@ class WlanConfigDialog(Dialog):
         self.draw_apply_buttons()
         self.top.bind("<Destroy>", self.remove_ranges)
 
-    def draw_apply_buttons(self):
+    def draw_apply_buttons(self) -> None:
         """
         create node configuration options
         """
@@ -75,7 +79,7 @@ class WlanConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         """
         retrieve user's wlan configuration and store the new configuration values
         """
@@ -87,7 +91,7 @@ class WlanConfigDialog(Dialog):
         self.remove_ranges()
         self.destroy()
 
-    def remove_ranges(self, event=None):
+    def remove_ranges(self, event=None) -> None:
         for cid in self.canvas.find_withtag("range"):
             self.canvas.delete(cid)
         self.ranges.clear()

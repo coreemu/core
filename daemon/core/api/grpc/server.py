@@ -6,7 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
-from typing import Iterable, Type
+from typing import Iterable, Optional, Pattern, Type
 
 import grpc
 from grpc import ServicerContext
@@ -108,18 +108,22 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkResponse,
 )
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import LinkData
-from core.emulator.emudata import LinkOptions, NodeOptions
-from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags
+from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
+from core.emulator.enumerations import (
+    EventTypes,
+    ExceptionLevels,
+    LinkTypes,
+    MessageFlags,
+)
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
-from core.nodes.network import WlanNode
+from core.nodes.network import PtpNet, WlanNode
 from core.services.coreservices import ServiceManager
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-_INTERFACE_REGEX = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
+_ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
+_INTERFACE_REGEX: Pattern = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -131,9 +135,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def __init__(self, coreemu: CoreEmu) -> None:
         super().__init__()
-        self.coreemu = coreemu
-        self.running = True
-        self.server = None
+        self.coreemu: CoreEmu = coreemu
+        self.running: bool = True
+        self.server: Optional[grpc.Server] = None
         atexit.register(self._exit_handler)
 
     def _exit_handler(self) -> None:
@@ -246,7 +250,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = session.emane.get_configs()
         config.update(request.emane_config)
         for config in request.emane_model_configs:
-            _id = get_emane_model_id(config.node_id, config.interface_id)
+            _id = get_emane_model_id(config.node_id, config.iface_id)
             session.emane.set_model_config(_id, config.model, config.config)
 
         # wlan configs
@@ -449,6 +453,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.SetSessionStateResponse(result=result)
 
+    def SetSessionUser(
+        self, request: core_pb2.SetSessionUserRequest, context: ServicerContext
+    ) -> core_pb2.SetSessionUserResponse:
+        """
+        Sets the user for a session.
+
+        :param request: set session user request
+        :param context: context object
+        :return: set session user response
+        """
+        logging.debug("set session user: %s", request)
+        session = self.get_session(request.session_id, context)
+        session.user = request.user
+        return core_pb2.SetSessionUserResponse(result=True)
+
     def GetSessionOptions(
         self, request: core_pb2.GetSessionOptionsRequest, context: ServicerContext
     ) -> core_pb2.GetSessionOptionsResponse:
@@ -544,10 +563,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for _id in session.nodes:
             node = session.nodes[_id]
-            if not isinstance(node.id, int):
-                continue
-            node_proto = grpcutils.get_node_proto(session, node)
-            nodes.append(node_proto)
+            if not isinstance(node, PtpNet):
+                node_proto = grpcutils.get_node_proto(session, node)
+                nodes.append(node_proto)
             node_links = get_links(node)
             links.extend(node_links)
 
@@ -570,6 +588,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         session.distributed.add_server(request.name, request.host)
         return core_pb2.AddSessionServerResponse(result=True)
+
+    def SessionAlert(
+        self, request: core_pb2.SessionAlertRequest, context: ServicerContext
+    ) -> core_pb2.SessionAlertResponse:
+        session = self.get_session(request.session_id, context)
+        level = ExceptionLevels(request.level)
+        node_id = request.node_id if request.node_id else None
+        session.exception(level, request.source, request.text, node_id)
+        return core_pb2.SessionAlertResponse(result=True)
 
     def Events(self, request: core_pb2.EventsRequest, context: ServicerContext) -> None:
         session = self.get_session(request.session_id, context)
@@ -625,16 +652,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         key = key.split(".")
                         node_id = _INTERFACE_REGEX.search(key[0]).group("node")
                         node_id = int(node_id, base=16)
-                        interface_id = int(key[1], base=16)
+                        iface_id = int(key[1], base=16)
                         session_id = int(key[2], base=16)
                         if session.id != session_id:
                             continue
-                        interface_throughput = (
-                            throughputs_event.interface_throughputs.add()
-                        )
-                        interface_throughput.node_id = node_id
-                        interface_throughput.interface_id = interface_id
-                        interface_throughput.throughput = throughput
+                        iface_throughput = throughputs_event.iface_throughputs.add()
+                        iface_throughput.node_id = node_id
+                        iface_throughput.iface_id = iface_id
+                        iface_throughput.throughput = throughput
                     elif key.startswith("b."):
                         try:
                             key = key.split(".")
@@ -656,6 +681,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             last_stats = stats
             time.sleep(delay)
 
+    def CpuUsage(
+        self, request: core_pb2.CpuUsageRequest, context: ServicerContext
+    ) -> None:
+        cpu_usage = grpcutils.CpuUsage()
+        while self._is_running(context):
+            usage = cpu_usage.run()
+            yield core_pb2.CpuUsageEvent(usage=usage)
+            time.sleep(request.delay)
+
     def AddNode(
         self, request: core_pb2.AddNodeRequest, context: ServicerContext
     ) -> core_pb2.AddNodeResponse:
@@ -671,6 +705,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         _type, _id, options = grpcutils.add_node_data(request.node)
         _class = session.get_node_class(_type)
         node = session.add_node(_class, _id, options)
+        source = request.source if request.source else None
+        session.broadcast_node(node, MessageFlags.ADD, source)
         return core_pb2.AddNodeResponse(node_id=node.id)
 
     def GetNode(
@@ -686,13 +722,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context, NodeBase)
-        interfaces = []
-        for interface_id in node._netif:
-            interface = node._netif[interface_id]
-            interface_proto = grpcutils.interface_to_proto(interface)
-            interfaces.append(interface_proto)
+        ifaces = []
+        for iface_id in node.ifaces:
+            iface = node.ifaces[iface_id]
+            iface_proto = grpcutils.iface_to_proto(request.node_id, iface)
+            ifaces.append(iface_proto)
         node_proto = grpcutils.get_node_proto(session, node)
-        return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
+        return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces)
 
     def MoveNodes(
         self,
@@ -778,7 +814,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("delete node: %s", request)
         session = self.get_session(request.session_id, context)
-        result = session.delete_node(request.node_id)
+        result = False
+        if request.node_id in session.nodes:
+            node = self.get_node(session, request.node_id, context, NodeBase)
+            result = session.delete_node(node.id)
+            source = request.source if request.source else None
+            session.broadcast_node(node, MessageFlags.DELETE, source)
         return core_pb2.DeleteNodeResponse(result=result)
 
     def NodeCommand(
@@ -845,27 +886,42 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: add-link response
         """
         logging.debug("add link: %s", request)
-        # validate session and nodes
         session = self.get_session(request.session_id, context)
-        self.get_node(session, request.link.node_one_id, context, NodeBase)
-        self.get_node(session, request.link.node_two_id, context, NodeBase)
-
-        node_one_id = request.link.node_one_id
-        node_two_id = request.link.node_two_id
-        interface_one, interface_two, options = grpcutils.add_link_data(request.link)
-        node_one_interface, node_two_interface = session.add_link(
-            node_one_id, node_two_id, interface_one, interface_two, options=options
+        node1_id = request.link.node1_id
+        node2_id = request.link.node2_id
+        self.get_node(session, node1_id, context, NodeBase)
+        self.get_node(session, node2_id, context, NodeBase)
+        iface1_data, iface2_data, options, link_type = grpcutils.add_link_data(
+            request.link
         )
-        interface_one_proto = None
-        interface_two_proto = None
-        if node_one_interface:
-            interface_one_proto = grpcutils.interface_to_proto(node_one_interface)
-        if node_two_interface:
-            interface_two_proto = grpcutils.interface_to_proto(node_two_interface)
+        node1_iface, node2_iface = session.add_link(
+            node1_id, node2_id, iface1_data, iface2_data, options, link_type
+        )
+        iface1_data = None
+        if node1_iface:
+            iface1_data = grpcutils.iface_to_data(node1_iface)
+        iface2_data = None
+        if node2_iface:
+            iface2_data = grpcutils.iface_to_data(node2_iface)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.ADD,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1_data,
+            iface2=iface2_data,
+            options=options,
+            source=source,
+        )
+        session.broadcast_link(link_data)
+        iface1_proto = None
+        iface2_proto = None
+        if node1_iface:
+            iface1_proto = grpcutils.iface_to_proto(node1_id, node1_iface)
+        if node2_iface:
+            iface2_proto = grpcutils.iface_to_proto(node2_id, node2_iface)
         return core_pb2.AddLinkResponse(
-            result=True,
-            interface_one=interface_one_proto,
-            interface_two=interface_two_proto,
+            result=True, iface1=iface1_proto, iface2=iface2_proto
         )
 
     def EditLink(
@@ -880,26 +936,37 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("edit link: %s", request)
         session = self.get_session(request.session_id, context)
-        node_one_id = request.node_one_id
-        node_two_id = request.node_two_id
-        interface_one_id = request.interface_one_id
-        interface_two_id = request.interface_two_id
-        options_data = request.options
-        link_options = LinkOptions()
-        link_options.delay = options_data.delay
-        link_options.bandwidth = options_data.bandwidth
-        link_options.per = options_data.per
-        link_options.dup = options_data.dup
-        link_options.jitter = options_data.jitter
-        link_options.mer = options_data.mer
-        link_options.burst = options_data.burst
-        link_options.mburst = options_data.mburst
-        link_options.unidirectional = options_data.unidirectional
-        link_options.key = options_data.key
-        link_options.opaque = options_data.opaque
-        session.update_link(
-            node_one_id, node_two_id, interface_one_id, interface_two_id, link_options
+        node1_id = request.node1_id
+        node2_id = request.node2_id
+        iface1_id = request.iface1_id
+        iface2_id = request.iface2_id
+        options_proto = request.options
+        options = LinkOptions(
+            delay=options_proto.delay,
+            bandwidth=options_proto.bandwidth,
+            loss=options_proto.loss,
+            dup=options_proto.dup,
+            jitter=options_proto.jitter,
+            mer=options_proto.mer,
+            burst=options_proto.burst,
+            mburst=options_proto.mburst,
+            unidirectional=options_proto.unidirectional,
+            key=options_proto.key,
         )
+        session.update_link(node1_id, node2_id, iface1_id, iface2_id, options)
+        iface1 = InterfaceData(id=iface1_id)
+        iface2 = InterfaceData(id=iface2_id)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.NONE,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1,
+            iface2=iface2,
+            options=options,
+            source=source,
+        )
+        session.broadcast_link(link_data)
         return core_pb2.EditLinkResponse(result=True)
 
     def DeleteLink(
@@ -914,13 +981,23 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("delete link: %s", request)
         session = self.get_session(request.session_id, context)
-        node_one_id = request.node_one_id
-        node_two_id = request.node_two_id
-        interface_one_id = request.interface_one_id
-        interface_two_id = request.interface_two_id
-        session.delete_link(
-            node_one_id, node_two_id, interface_one_id, interface_two_id
+        node1_id = request.node1_id
+        node2_id = request.node2_id
+        iface1_id = request.iface1_id
+        iface2_id = request.iface2_id
+        session.delete_link(node1_id, node2_id, iface1_id, iface2_id)
+        iface1 = InterfaceData(id=iface1_id)
+        iface2 = InterfaceData(id=iface2_id)
+        source = request.source if request.source else None
+        link_data = LinkData(
+            message_type=MessageFlags.DELETE,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1=iface1,
+            iface2=iface2,
+            source=source,
         )
+        session.broadcast_link(link_data)
         return core_pb2.DeleteLinkResponse(result=True)
 
     def GetHooks(
@@ -936,8 +1013,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session_id, context)
         hooks = []
-        for state in session._hooks:
-            state_hooks = session._hooks[state]
+        for state in session.hooks:
+            state_hooks = session.hooks[state]
             for file_name, file_data in state_hooks:
                 hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
                 hooks.append(hook)
@@ -1304,13 +1381,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
-        wlan_config = request.wlan_config
-        session.mobility.set_model_config(
-            wlan_config.node_id, BasicRangeModel.name, wlan_config.config
-        )
+        node_id = request.wlan_config.node_id
+        config = request.wlan_config.config
+        session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
         if session.state == EventTypes.RUNTIME_STATE:
-            node = self.get_node(session, wlan_config.node_id, context, WlanNode)
-            node.updatemodel(wlan_config.config)
+            node = self.get_node(session, node_id, context, WlanNode)
+            node.updatemodel(config)
         return SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(
@@ -1378,7 +1454,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         model = session.emane.models[request.model]
-        _id = get_emane_model_id(request.node_id, request.interface)
+        _id = get_emane_model_id(request.node_id, request.iface_id)
         current_config = session.emane.get_model_config(_id, request.model)
         config = get_config_options(current_config, model)
         return GetEmaneModelConfigResponse(config=config)
@@ -1397,7 +1473,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         model_config = request.emane_model_config
-        _id = get_emane_model_id(model_config.node_id, model_config.interface_id)
+        _id = get_emane_model_id(model_config.node_id, model_config.iface_id)
         session.emane.set_model_config(_id, model_config.model, model_config.config)
         return SetEmaneModelConfigResponse(result=True)
 
@@ -1426,12 +1502,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 model = session.emane.models[model_name]
                 current_config = session.emane.get_model_config(_id, model_name)
                 config = get_config_options(current_config, model)
-                node_id, interface = grpcutils.parse_emane_model_id(_id)
+                node_id, iface_id = grpcutils.parse_emane_model_id(_id)
                 model_config = GetEmaneModelConfigsResponse.ModelConfig(
-                    node_id=node_id,
-                    model=model_name,
-                    interface=interface,
-                    config=config,
+                    node_id=node_id, model=model_name, iface_id=iface_id, config=config
                 )
                 configs.append(model_config)
         return GetEmaneModelConfigsResponse(configs=configs)
@@ -1496,16 +1569,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param context: context object
         :return: get-interfaces response that has all the system's interfaces
         """
-        interfaces = []
-        for interface in os.listdir("/sys/class/net"):
-            if (
-                interface.startswith("b.")
-                or interface.startswith("veth")
-                or interface == "lo"
-            ):
+        ifaces = []
+        for iface in os.listdir("/sys/class/net"):
+            if iface.startswith("b.") or iface.startswith("veth") or iface == "lo":
                 continue
-            interfaces.append(interface)
-        return core_pb2.GetInterfacesResponse(interfaces=interfaces)
+            ifaces.append(iface)
+        return core_pb2.GetInterfacesResponse(ifaces=ifaces)
 
     def EmaneLink(
         self, request: EmaneLinkRequest, context: ServicerContext
@@ -1519,30 +1588,30 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("emane link: %s", request)
         session = self.get_session(request.session_id, context)
-        nem_one = request.nem_one
-        emane_one, netif = session.emane.nemlookup(nem_one)
-        if not emane_one or not netif:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem_one} not found")
-        node_one = netif.node
+        nem1 = request.nem1
+        iface1 = session.emane.get_iface(nem1)
+        if not iface1:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem1} not found")
+        node1 = iface1.node
 
-        nem_two = request.nem_two
-        emane_two, netif = session.emane.nemlookup(nem_two)
-        if not emane_two or not netif:
-            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem_two} not found")
-        node_two = netif.node
+        nem2 = request.nem2
+        iface2 = session.emane.get_iface(nem2)
+        if not iface2:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem2} not found")
+        node2 = iface2.node
 
-        if emane_one.id == emane_two.id:
+        if iface1.net == iface2.net:
             if request.linked:
                 flag = MessageFlags.ADD
             else:
                 flag = MessageFlags.DELETE
-            color = session.get_link_color(emane_one.id)
+            color = session.get_link_color(iface1.net.id)
             link = LinkData(
                 message_type=flag,
-                link_type=LinkTypes.WIRELESS,
-                node1_id=node_one.id,
-                node2_id=node_two.id,
-                network_id=emane_one.id,
+                type=LinkTypes.WIRELESS,
+                node1_id=node1.id,
+                node2_id=node2.id,
+                network_id=iface1.net.id,
                 color=color,
             )
             session.broadcast_link(link)
@@ -1739,21 +1808,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 grpc.StatusCode.NOT_FOUND,
                 f"wlan node {request.wlan} does not using BasicRangeModel",
             )
-        n1 = self.get_node(session, request.node_one, context, CoreNode)
-        n2 = self.get_node(session, request.node_two, context, CoreNode)
-        n1_netif, n2_netif = None, None
-        for net, netif1, netif2 in n1.commonnets(n2):
+        node1 = self.get_node(session, request.node1_id, context, CoreNode)
+        node2 = self.get_node(session, request.node2_id, context, CoreNode)
+        node1_iface, node2_iface = None, None
+        for net, iface1, iface2 in node1.commonnets(node2):
             if net == wlan:
-                n1_netif = netif1
-                n2_netif = netif2
+                node1_iface = iface1
+                node2_iface = iface2
                 break
         result = False
-        if n1_netif and n2_netif:
+        if node1_iface and node2_iface:
             if request.linked:
-                wlan.link(n1_netif, n2_netif)
+                wlan.link(node1_iface, node2_iface)
             else:
-                wlan.unlink(n1_netif, n2_netif)
-            wlan.model.sendlinkmsg(n1_netif, n2_netif, unlink=not request.linked)
+                wlan.unlink(node1_iface, node2_iface)
+            wlan.model.sendlinkmsg(node1_iface, node2_iface, unlink=not request.linked)
             result = True
         return WlanLinkResponse(result=result)
 
@@ -1764,9 +1833,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> EmanePathlossesResponse:
         for request in request_iterator:
             session = self.get_session(request.session_id, context)
-            n1 = self.get_node(session, request.node_one, context, CoreNode)
-            nem1 = grpcutils.get_nem_id(n1, request.interface_one_id, context)
-            n2 = self.get_node(session, request.node_two, context, CoreNode)
-            nem2 = grpcutils.get_nem_id(n2, request.interface_two_id, context)
-            session.emane.publish_pathloss(nem1, nem2, request.rx_one, request.rx_two)
+            node1 = self.get_node(session, request.node1_id, context, CoreNode)
+            nem1 = grpcutils.get_nem_id(session, node1, request.iface1_id, context)
+            node2 = self.get_node(session, request.node2_id, context, CoreNode)
+            nem2 = grpcutils.get_nem_id(session, node2, request.iface2_id, context)
+            session.emane.publish_pathloss(nem1, nem2, request.rx1, request.rx2)
         return EmanePathlossesResponse()

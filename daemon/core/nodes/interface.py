@@ -6,9 +6,12 @@ import logging
 import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
+import netaddr
+
 from core import utils
-from core.emulator.enumerations import MessageFlags, TransportType
-from core.errors import CoreCommandError
+from core.emulator.data import LinkOptions
+from core.emulator.enumerations import TransportType
+from core.errors import CoreCommandError, CoreError
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 if TYPE_CHECKING:
@@ -51,21 +54,23 @@ class CoreInterface:
         self.net: Optional[CoreNetworkBase] = None
         self.othernet: Optional[CoreNetworkBase] = None
         self._params: Dict[str, float] = {}
-        self.addrlist: List[str] = []
-        self.hwaddr: Optional[str] = None
+        self.ip4s: List[netaddr.IPNetwork] = []
+        self.ip6s: List[netaddr.IPNetwork] = []
+        self.mac: Optional[netaddr.EUI] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
         # used with EMANE
-        self.transport_type: Optional[TransportType] = None
-        # node interface index
-        self.netindex: Optional[int] = None
-        # net interface index
-        self.netifi: Optional[int] = None
-        # index used to find flow data
+        self.transport_type: TransportType = TransportType.VIRTUAL
+        # id of interface for node
+        self.node_id: Optional[int] = None
+        # id of interface for network
+        self.net_id: Optional[int] = None
+        # id used to find flow data
         self.flow_id: Optional[int] = None
         self.server: Optional["DistributedServer"] = server
-        use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client: LinuxNetClient = get_net_client(use_ovs, self.host_cmd)
+        self.net_client: LinuxNetClient = get_net_client(
+            self.session.use_ovs(), self.host_cmd
+        )
 
     def host_cmd(
         self,
@@ -130,35 +135,81 @@ class CoreInterface:
         if self.net is not None:
             self.net.detach(self)
 
-    def addaddr(self, addr: str) -> None:
+    def add_ip(self, ip: str) -> None:
         """
-        Add address.
+        Add ip address in the format "10.0.0.1/24".
 
-        :param addr: address to add
+        :param ip: ip address to add
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
         """
-        addr = utils.validate_ip(addr)
-        self.addrlist.append(addr)
+        try:
+            ip = netaddr.IPNetwork(ip)
+            address = str(ip.ip)
+            if netaddr.valid_ipv4(address):
+                self.ip4s.append(ip)
+            else:
+                self.ip6s.append(ip)
+        except netaddr.AddrFormatError as e:
+            raise CoreError(f"adding invalid address {ip}: {e}")
 
-    def deladdr(self, addr: str) -> None:
+    def remove_ip(self, ip: str) -> None:
         """
-        Delete address.
+        Remove ip address in the format "10.0.0.1/24".
 
-        :param addr: address to delete
+        :param ip: ip address to delete
         :return: nothing
+        :raises CoreError: when ip address provided is invalid
         """
-        self.addrlist.remove(addr)
+        try:
+            ip = netaddr.IPNetwork(ip)
+            address = str(ip.ip)
+            if netaddr.valid_ipv4(address):
+                self.ip4s.remove(ip)
+            else:
+                self.ip6s.remove(ip)
+        except (netaddr.AddrFormatError, ValueError) as e:
+            raise CoreError(f"deleting invalid address {ip}: {e}")
 
-    def sethwaddr(self, addr: str) -> None:
+    def get_ip4(self) -> Optional[netaddr.IPNetwork]:
         """
-        Set hardware address.
+        Looks for the first ip4 address.
 
-        :param addr: hardware address to set to.
+        :return: ip4 address, None otherwise
+        """
+        return next(iter(self.ip4s), None)
+
+    def get_ip6(self) -> Optional[netaddr.IPNetwork]:
+        """
+        Looks for the first ip6 address.
+
+        :return: ip6 address, None otherwise
+        """
+        return next(iter(self.ip6s), None)
+
+    def ips(self) -> List[netaddr.IPNetwork]:
+        """
+        Retrieve a list of all ip4 and ip6 addresses combined.
+
+        :return: ip4 and ip6 addresses
+        """
+        return self.ip4s + self.ip6s
+
+    def set_mac(self, mac: Optional[str]) -> None:
+        """
+        Set mac address.
+
+        :param mac: mac address to set, None for random mac
         :return: nothing
+        :raises CoreError: when there is an invalid mac address
         """
-        if addr is not None:
-            addr = utils.validate_mac(addr)
-        self.hwaddr = addr
+        if mac is None:
+            self.mac = mac
+        else:
+            try:
+                self.mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
+            except netaddr.AddrFormatError as e:
+                raise CoreError(f"invalid mac address({mac}): {e}")
 
     def getparam(self, key: str) -> float:
         """
@@ -168,6 +219,34 @@ class CoreInterface:
         :return: parameter value
         """
         return self._params.get(key)
+
+    def get_link_options(self, unidirectional: int) -> LinkOptions:
+        """
+        Get currently set params as link options.
+
+        :param unidirectional: unidirectional setting
+        :return: link options
+        """
+        delay = self.getparam("delay")
+        if delay is not None:
+            delay = int(delay)
+        bandwidth = self.getparam("bw")
+        if bandwidth is not None:
+            bandwidth = int(bandwidth)
+        dup = self.getparam("duplicate")
+        if dup is not None:
+            dup = int(dup)
+        jitter = self.getparam("jitter")
+        if jitter is not None:
+            jitter = int(jitter)
+        return LinkOptions(
+            delay=delay,
+            bandwidth=bandwidth,
+            dup=dup,
+            jitter=jitter,
+            loss=self.getparam("loss"),
+            unidirectional=unidirectional,
+        )
 
     def getparams(self) -> List[Tuple[str, float]]:
         """
@@ -231,6 +310,22 @@ class CoreInterface:
         """
         return id(self) < id(other)
 
+    def is_raw(self) -> bool:
+        """
+        Used to determine if this interface is considered a raw interface.
+
+        :return: True if raw interface, False otherwise
+        """
+        return self.transport_type == TransportType.RAW
+
+    def is_virtual(self) -> bool:
+        """
+        Used to determine if this interface is considered a virtual interface.
+
+        :return: True if virtual interface, False otherwise
+        """
+        return self.transport_type == TransportType.VIRTUAL
+
 
 class Veth(CoreInterface):
     """
@@ -284,19 +379,16 @@ class Veth(CoreInterface):
         """
         if not self.up:
             return
-
         if self.node:
             try:
                 self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
                 logging.exception("error shutting down interface")
-
         if self.localname:
             try:
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.info("link already removed: %s", self.localname)
-
         self.up = False
 
 
@@ -328,7 +420,6 @@ class TunTap(CoreInterface):
         :param start: start flag
         """
         super().__init__(session, node, name, localname, mtu, server)
-        self.transport_type = TransportType.VIRTUAL
         if start:
             self.startup()
 
@@ -459,15 +550,15 @@ class TunTap(CoreInterface):
         self.node.node_net_client.device_name(self.localname, self.name)
         self.node.node_net_client.device_up(self.name)
 
-    def setaddrs(self) -> None:
+    def set_ips(self) -> None:
         """
-        Set interface addresses based on self.addrlist.
+        Set interface ip addresses.
 
         :return: nothing
         """
         self.waitfordevicenode()
-        for addr in self.addrlist:
-            self.node.node_net_client.create_address(self.name, str(addr))
+        for ip in self.ips():
+            self.node.node_net_client.create_address(self.name, str(ip))
 
 
 class GreTap(CoreInterface):
@@ -518,7 +609,7 @@ class GreTap(CoreInterface):
         if not start:
             return
         if remoteip is None:
-            raise ValueError("missing remote IP required for GRE TAP device")
+            raise CoreError("missing remote IP required for GRE TAP device")
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True
@@ -535,23 +626,4 @@ class GreTap(CoreInterface):
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.exception("error during shutdown")
-
             self.localname = None
-
-    def data(self, message_type: int) -> None:
-        """
-        Data for a gre tap.
-
-        :param message_type: message type for data
-        :return: None
-        """
-        return None
-
-    def all_link_data(self, flags: MessageFlags = MessageFlags.NONE) -> List:
-        """
-        Retrieve link data.
-
-        :param flags: link flags
-        :return: link data
-        """
-        return []

@@ -1,17 +1,19 @@
-ANNOTATION = "annotation"
-GRIDLINE = "gridline"
-SHAPE = "shape"
-SHAPE_TEXT = "shapetext"
-EDGE = "edge"
-LINK_LABEL = "linklabel"
-WIRELESS_EDGE = "wireless"
-ANTENNA = "antenna"
-NODE_LABEL = "nodename"
-NODE = "node"
-WALLPAPER = "wallpaper"
-SELECTION = "selectednodes"
-MARKER = "marker"
-ORGANIZE_TAGS = [
+from typing import List
+
+ANNOTATION: str = "annotation"
+GRIDLINE: str = "gridline"
+SHAPE: str = "shape"
+SHAPE_TEXT: str = "shapetext"
+EDGE: str = "edge"
+LINK_LABEL: str = "linklabel"
+WIRELESS_EDGE: str = "wireless"
+ANTENNA: str = "antenna"
+NODE_LABEL: str = "nodename"
+NODE: str = "node"
+WALLPAPER: str = "wallpaper"
+SELECTION: str = "selectednodes"
+MARKER: str = "marker"
+ORGANIZE_TAGS: List[str] = [
     WALLPAPER,
     GRIDLINE,
     SHAPE,
@@ -25,7 +27,7 @@ ORGANIZE_TAGS = [
     SELECTION,
     MARKER,
 ]
-RESET_TAGS = [
+RESET_TAGS: List[str] = [
     EDGE,
     NODE,
     NODE_LABEL,

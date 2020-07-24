@@ -1,11 +1,12 @@
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 import grpc
 
 from core.api.grpc import core_pb2
+from core.api.grpc.core_pb2 import SessionSummary
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.task import ProgressTask
@@ -18,17 +19,17 @@ if TYPE_CHECKING:
 class SessionsDialog(Dialog):
     def __init__(self, app: "Application", is_start_app: bool = False) -> None:
         super().__init__(app, "Sessions")
-        self.is_start_app = is_start_app
-        self.selected_session = None
-        self.selected_id = None
-        self.tree = None
-        self.sessions = self.get_sessions()
-        self.connect_button = None
-        self.delete_button = None
+        self.is_start_app: bool = is_start_app
+        self.selected_session: Optional[int] = None
+        self.selected_id: Optional[int] = None
+        self.tree: Optional[ttk.Treeview] = None
+        self.sessions: List[SessionSummary] = self.get_sessions()
+        self.connect_button: Optional[ttk.Button] = None
+        self.delete_button: Optional[ttk.Button] = None
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.draw()
 
-    def get_sessions(self) -> List[core_pb2.SessionSummary]:
+    def get_sessions(self) -> List[SessionSummary]:
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)

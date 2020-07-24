@@ -40,24 +40,24 @@ def main():
 
         # create node one
         position = Position(x=100, y=100)
-        node1 = Node(type=NodeType.DEFAULT, position=position)
+        node1 = Node(type=NodeType.DEFAULT, position=position, model="PC")
         response = core.add_node(session_id, node1)
         logging.info("created node: %s", response)
         node1_id = response.node_id
 
         # create node two
         position = Position(x=300, y=100)
-        node2 = Node(type=NodeType.DEFAULT, position=position)
+        node2 = Node(type=NodeType.DEFAULT, position=position, model="PC")
         response = core.add_node(session_id, node2)
         logging.info("created node: %s", response)
         node2_id = response.node_id
 
         # links nodes to switch
-        interface_one = interface_helper.create_interface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, switch_id, interface_one)
+        interface1 = interface_helper.create_iface(node1_id, 0)
+        response = core.add_link(session_id, node1_id, switch_id, interface1)
         logging.info("created link: %s", response)
-        interface_one = interface_helper.create_interface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, switch_id, interface_one)
+        interface1 = interface_helper.create_iface(node2_id, 0)
+        response = core.add_link(session_id, node2_id, switch_id, interface1)
         logging.info("created link: %s", response)
 
         # change session state

@@ -1,21 +1,21 @@
 import logging
-from typing import TYPE_CHECKING, Any, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 import netaddr
 from netaddr import EUI, IPNetwork
 
+from core.api.grpc.core_pb2 import Interface, Link, Node
+from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.api.grpc import core_pb2
-    from core.gui.graph.node import CanvasNode
 
 
-def get_index(interface: "core_pb2.Interface") -> Optional[int]:
-    if not interface.ip4:
+def get_index(iface: Interface) -> Optional[int]:
+    if not iface.ip4:
         return None
-    net = netaddr.IPNetwork(f"{interface.ip4}/{interface.ip4mask}")
+    net = netaddr.IPNetwork(f"{iface.ip4}/{iface.ip4_mask}")
     ip_value = net.value
     cidr_value = net.cidr.value
     return ip_value - cidr_value
@@ -44,18 +44,18 @@ class Subnets:
 
 class InterfaceManager:
     def __init__(self, app: "Application") -> None:
-        self.app = app
+        self.app: "Application" = app
         ip4 = self.app.guiconfig.ips.ip4
         ip6 = self.app.guiconfig.ips.ip6
-        self.ip4_mask = 24
-        self.ip6_mask = 64
-        self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
-        self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
+        self.ip4_mask: int = 24
+        self.ip6_mask: int = 64
+        self.ip4_subnets: IPNetwork = IPNetwork(f"{ip4}/{self.ip4_mask}")
+        self.ip6_subnets: IPNetwork = IPNetwork(f"{ip6}/{self.ip6_mask}")
         mac = self.app.guiconfig.mac
-        self.mac = EUI(mac, dialect=netaddr.mac_unix_expanded)
-        self.current_mac = None
-        self.current_subnets = None
-        self.used_subnets = {}
+        self.mac: EUI = EUI(mac, dialect=netaddr.mac_unix_expanded)
+        self.current_mac: Optional[EUI] = None
+        self.current_subnets: Optional[Subnets] = None
+        self.used_subnets: Dict[Tuple[IPNetwork, IPNetwork], Subnets] = {}
 
     def update_ips(self, ip4: str, ip6: str) -> None:
         self.reset()
@@ -84,55 +84,55 @@ class InterfaceManager:
         self.current_subnets = None
         self.used_subnets.clear()
 
-    def removed(self, links: List["core_pb2.Link"]) -> None:
+    def removed(self, links: List[Link]) -> None:
         # get remaining subnets
         remaining_subnets = set()
         for edge in self.app.core.links.values():
             link = edge.link
-            if link.HasField("interface_one"):
-                subnets = self.get_subnets(link.interface_one)
+            if link.HasField("iface1"):
+                subnets = self.get_subnets(link.iface1)
                 remaining_subnets.add(subnets)
-            if link.HasField("interface_two"):
-                subnets = self.get_subnets(link.interface_two)
+            if link.HasField("iface2"):
+                subnets = self.get_subnets(link.iface2)
                 remaining_subnets.add(subnets)
 
         # remove all subnets from used subnets when no longer present
         # or remove used indexes from subnet
-        interfaces = []
+        ifaces = []
         for link in links:
-            if link.HasField("interface_one"):
-                interfaces.append(link.interface_one)
-            if link.HasField("interface_two"):
-                interfaces.append(link.interface_two)
-        for interface in interfaces:
-            subnets = self.get_subnets(interface)
+            if link.HasField("iface1"):
+                ifaces.append(link.iface1)
+            if link.HasField("iface2"):
+                ifaces.append(link.iface2)
+        for iface in ifaces:
+            subnets = self.get_subnets(iface)
             if subnets not in remaining_subnets:
                 self.used_subnets.pop(subnets.key(), None)
             else:
-                index = get_index(interface)
+                index = get_index(iface)
                 if index is not None:
                     subnets.used_indexes.discard(index)
         self.current_subnets = None
 
-    def joined(self, links: List["core_pb2.Link"]) -> None:
-        interfaces = []
+    def joined(self, links: List[Link]) -> None:
+        ifaces = []
         for link in links:
-            if link.HasField("interface_one"):
-                interfaces.append(link.interface_one)
-            if link.HasField("interface_two"):
-                interfaces.append(link.interface_two)
+            if link.HasField("iface1"):
+                ifaces.append(link.iface1)
+            if link.HasField("iface2"):
+                ifaces.append(link.iface2)
 
         # add to used subnets and mark used indexes
-        for interface in interfaces:
-            subnets = self.get_subnets(interface)
-            index = get_index(interface)
+        for iface in ifaces:
+            subnets = self.get_subnets(iface)
+            index = get_index(iface)
             if index is None:
                 continue
             subnets.used_indexes.add(index)
             if subnets.key() not in self.used_subnets:
                 self.used_subnets[subnets.key()] = subnets
 
-    def next_index(self, node: "core_pb2.Node") -> int:
+    def next_index(self, node: Node) -> int:
         if NodeUtils.is_router_node(node):
             index = 1
         else:
@@ -144,24 +144,24 @@ class InterfaceManager:
             index += 1
         return index
 
-    def get_ips(self, node: "core_pb2.Node") -> [str, str]:
+    def get_ips(self, node: Node) -> [str, str]:
         index = self.next_index(node)
         ip4 = self.current_subnets.ip4[index]
         ip6 = self.current_subnets.ip6[index]
         return str(ip4), str(ip6)
 
-    def get_subnets(self, interface: "core_pb2.Interface") -> Subnets:
+    def get_subnets(self, iface: Interface) -> Subnets:
         ip4_subnet = self.ip4_subnets
-        if interface.ip4:
-            ip4_subnet = IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
+        if iface.ip4:
+            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4_mask}").cidr
         ip6_subnet = self.ip6_subnets
-        if interface.ip6:
-            ip6_subnet = IPNetwork(f"{interface.ip6}/{interface.ip6mask}").cidr
+        if iface.ip6:
+            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6_mask}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 
     def determine_subnets(
-        self, canvas_src_node: "CanvasNode", canvas_dst_node: "CanvasNode"
+        self, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
     ) -> None:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
@@ -185,7 +185,7 @@ class InterfaceManager:
             logging.info("ignoring subnet change for link between network nodes")
 
     def find_subnets(
-        self, canvas_node: "CanvasNode", visited: Set[int] = None
+        self, canvas_node: CanvasNode, visited: Set[int] = None
     ) -> Optional[IPNetwork]:
         logging.info("finding subnet for node: %s", canvas_node.core_node.name)
         canvas = self.app.canvas
@@ -196,16 +196,16 @@ class InterfaceManager:
         for edge in canvas_node.edges:
             src_node = canvas.nodes[edge.src]
             dst_node = canvas.nodes[edge.dst]
-            interface = edge.src_interface
+            iface = edge.src_iface
             check_node = src_node
             if src_node == canvas_node:
-                interface = edge.dst_interface
+                iface = edge.dst_iface
                 check_node = dst_node
             if check_node.core_node.id in visited:
                 continue
             visited.add(check_node.core_node.id)
-            if interface:
-                subnets = self.get_subnets(interface)
+            if iface:
+                subnets = self.get_subnets(iface)
             else:
                 subnets = self.find_subnets(check_node, visited)
             if subnets:

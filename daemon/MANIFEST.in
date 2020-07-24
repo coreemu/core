@@ -1,2 +1,0 @@
-graft core/gui/data
-graft core/configservices/*/templates

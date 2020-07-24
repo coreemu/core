@@ -16,7 +16,6 @@ daemon. Here is a brief description of the source directories.
 |gui|Tcl/Tk GUI|
 |man|Template files for creating man pages for various CORE command line utilities|
 |netns|C program for creating CORE containers|
-|scripts|Template files used for running CORE as a service|
 
 ## Getting started
 
@@ -34,21 +33,11 @@ git checkout develop
 ## Install the Development Environment
 
 This command will automatically install system dependencies, clone and build OSPF-MDR,
-build CORE, setup the CORE pipenv environment, and install pre-commit hooks.
-
-This script is currently compatible with Ubuntu and CentOS, tested on Ubuntu 18.04 and
-CentOS 7.6. The script also currently defaults to using python3.6, but a different
-version of python can be targeted if python3.6 is not available on your system.
+build CORE, setup the CORE poetry environment, and install pre-commit hooks. You can
+refer to the [install docs](install.md) for issues related to different distributions.
 
 ```shell
-# default dev install using python3.6
-./install.sh -d
-
-# providing a newer python version for ubuntu
-./install.sh -d -v 3.7
-
-# providing a newer python version for centos
-./install.sh -d -v 37
+./install -d
 ```
 
 ### pre-commit
@@ -57,42 +46,24 @@ pre-commit hooks help automate running tools to check modified code. Every time 
 python utilities will be ran to check validity of code, potentially failing and backing out the commit.
 These changes are currently mandated as part of the current CI, so add the changes and commit again.
 
-### Adding EMANE to Pipenv
-
-EMANE bindings are not available through pip, you will need to build and install from source.
-
-[Build EMANE](https://github.com/adjacentlink/emane/wiki/Build#general-build-instructions)
-
-```shell
-# clone emane repo
-git clone https://github.com/adjacentlink/emane.git
-
-# install emane build deps
-sudo apt install libxml2-dev libprotobuf-dev uuid-dev libpcap-dev protobuf-compiler
-
-# build emane
-./autogen.sh
-./configure --prefix=/usr
-make -j8
-
-# install emane binding in pipenv
-# NOTE: this will mody pipenv Pipfiles and we do not want that, use git checkout -- Pipfile*, to remove changes
-python3 -m pipenv pip install $EMANEREPO/src/python
-```
-
 ## Running CORE
 
-Commands below can be used to run the core-daemon, the new core gui, and tests.
+You can now run core as you normally would, or leverage some of the invoke tasks to
+conveniently run tests, etc.
 
 ```shell
-# runs for daemon
-sudo python3 -m pipenv run core
+# run core-daemon
+sudo core-daemon
 
-# runs coretk gui
-python3 -m pipenv run core-pygui
+# run python gui
+core-pygui
 
-# runs mocked unit tests
-python3 -m pipenv run test-mock
+# run tcl gui
+core-gui
+
+# run mocked unit tests
+cd <CORE_REPO>
+inv test-mock
 ```
 
 ## Linux Network Namespace Commands

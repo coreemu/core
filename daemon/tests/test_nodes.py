@@ -1,6 +1,6 @@
 import pytest
 
-from core.emulator.emudata import InterfaceData, NodeOptions
+from core.emulator.data import InterfaceData, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
@@ -49,61 +49,76 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id, CoreNode)
 
-    def test_node_sethwaddr(self, session: Session):
+    @pytest.mark.parametrize(
+        "mac,expected",
+        [
+            ("AA-AA-AA-FF-FF-FF", "aa:aa:aa:ff:ff:ff"),
+            ("00:00:00:FF:FF:FF", "00:00:00:ff:ff:ff"),
+        ],
+    )
+    def test_node_set_mac(self, session: Session, mac: str, expected: str):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        interface = node.netif(index)
-        mac = "aa:aa:aa:ff:ff:ff"
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
 
         # when
-        node.sethwaddr(index, mac)
+        node.set_mac(iface.node_id, mac)
 
         # then
-        assert interface.hwaddr == mac
+        assert str(iface.mac) == expected
 
-    def test_node_sethwaddr_exception(self, session: Session):
+    @pytest.mark.parametrize(
+        "mac", ["AAA:AA:AA:FF:FF:FF", "AA:AA:AA:FF:FF", "AA/AA/AA/FF/FF/FF"]
+    )
+    def test_node_set_mac_exception(self, session: Session, mac: str):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        node.netif(index)
-        mac = "aa:aa:aa:ff:ff:fff"
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
 
         # when
         with pytest.raises(CoreError):
-            node.sethwaddr(index, mac)
+            node.set_mac(iface.node_id, mac)
 
-    def test_node_addaddr(self, session: Session):
+    @pytest.mark.parametrize(
+        "ip,expected,is_ip6",
+        [
+            ("127", "127.0.0.0/32", False),
+            ("10.0.0.1/24", "10.0.0.1/24", False),
+            ("2001::", "2001::/128", True),
+            ("2001::/64", "2001::/64", True),
+        ],
+    )
+    def test_node_add_ip(self, session: Session, ip: str, expected: str, is_ip6: bool):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        interface = node.netif(index)
-        addr = "192.168.0.1/24"
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
 
         # when
-        node.addaddr(index, addr)
+        node.add_ip(iface.node_id, ip)
 
         # then
-        assert interface.addrlist[0] == addr
+        if is_ip6:
+            assert str(iface.get_ip6()) == expected
+        else:
+            assert str(iface.get_ip4()) == expected
 
-    def test_node_addaddr_exception(self, session):
+    def test_node_add_ip_exception(self, session):
         # given
         node = session.add_node(CoreNode)
         switch = session.add_node(SwitchNode)
-        interface_data = InterfaceData()
-        index = node.newnetif(switch, interface_data)
-        node.netif(index)
-        addr = "256.168.0.1/24"
+        iface_data = InterfaceData()
+        iface = node.new_iface(switch, iface_data)
+        ip = "256.168.0.1/24"
 
         # when
         with pytest.raises(CoreError):
-            node.addaddr(index, addr)
+            node.add_ip(iface.node_id, ip)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):

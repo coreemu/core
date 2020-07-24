@@ -4,10 +4,11 @@ Service configuration dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 import grpc
 
+from core.api.grpc.common_pb2 import ConfigOption
 from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
@@ -16,6 +17,7 @@ from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
+    from core.gui.coreclient import CoreClient
 
 
 class ConfigServiceConfigDialog(Dialog):
@@ -26,56 +28,53 @@ class ConfigServiceConfigDialog(Dialog):
         service_name: str,
         canvas_node: "CanvasNode",
         node_id: int,
-    ):
+    ) -> None:
         title = f"{service_name} Config Service"
         super().__init__(app, title, master=master)
-        self.core = app.core
-        self.canvas_node = canvas_node
-        self.node_id = node_id
-        self.service_name = service_name
-        self.radiovar = tk.IntVar()
+        self.core: "CoreClient" = app.core
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node_id: int = node_id
+        self.service_name: str = service_name
+        self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(2)
-        self.directories = []
-        self.templates = []
-        self.dependencies = []
-        self.executables = []
-        self.startup_commands = []
-        self.validation_commands = []
-        self.shutdown_commands = []
-        self.default_startup = []
-        self.default_validate = []
-        self.default_shutdown = []
-        self.validation_mode = None
-        self.validation_time = None
-        self.validation_period = tk.StringVar()
-        self.modes = []
-        self.mode_configs = {}
+        self.directories: List[str] = []
+        self.templates: List[str] = []
+        self.dependencies: List[str] = []
+        self.executables: List[str] = []
+        self.startup_commands: List[str] = []
+        self.validation_commands: List[str] = []
+        self.shutdown_commands: List[str] = []
+        self.default_startup: List[str] = []
+        self.default_validate: List[str] = []
+        self.default_shutdown: List[str] = []
+        self.validation_mode: Optional[ServiceValidationMode] = None
+        self.validation_time: Optional[int] = None
+        self.validation_period: tk.StringVar = tk.StringVar()
+        self.modes: List[str] = []
+        self.mode_configs: Dict[str, str] = {}
 
-        self.notebook = None
-        self.templates_combobox = None
-        self.modes_combobox = None
-        self.startup_commands_listbox = None
-        self.shutdown_commands_listbox = None
-        self.validate_commands_listbox = None
-        self.validation_time_entry = None
-        self.validation_mode_entry = None
-        self.template_text = None
-        self.validation_period_entry = None
-        self.original_service_files = {}
-        self.temp_service_files = {}
-        self.modified_files = set()
-        self.config_frame = None
-        self.default_config = None
-        self.config = None
-
-        self.has_error = False
-
+        self.notebook: Optional[ttk.Notebook] = None
+        self.templates_combobox: Optional[ttk.Combobox] = None
+        self.modes_combobox: Optional[ttk.Combobox] = None
+        self.startup_commands_listbox: Optional[tk.Listbox] = None
+        self.shutdown_commands_listbox: Optional[tk.Listbox] = None
+        self.validate_commands_listbox: Optional[tk.Listbox] = None
+        self.validation_time_entry: Optional[ttk.Entry] = None
+        self.validation_mode_entry: Optional[ttk.Entry] = None
+        self.template_text: Optional[CodeText] = None
+        self.validation_period_entry: Optional[ttk.Entry] = None
+        self.original_service_files: Dict[str, str] = {}
+        self.temp_service_files: Dict[str, str] = {}
+        self.modified_files: Set[str] = set()
+        self.config_frame: Optional[ConfigFrame] = None
+        self.default_config: Dict[str, str] = {}
+        self.config: Dict[str, ConfigOption] = {}
+        self.has_error: bool = False
         self.load()
-
         if not self.has_error:
             self.draw()
 
-    def load(self):
+    def load(self) -> None:
         try:
             self.core.create_nodes_and_links()
             service = self.core.config_services[self.service_name]
@@ -116,7 +115,7 @@ class ConfigServiceConfigDialog(Dialog):
             self.app.show_grpc_exception("Get Config Service Error", e)
             self.has_error = True
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
 
@@ -130,7 +129,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.draw_tab_validation()
         self.draw_buttons()
 
-    def draw_tab_files(self):
+    def draw_tab_files(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -174,7 +173,7 @@ class ConfigServiceConfigDialog(Dialog):
             )
         self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
 
-    def draw_tab_config(self):
+    def draw_tab_config(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -198,7 +197,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.config_frame.grid(sticky="nsew", pady=PADY)
         tab.rowconfigure(self.config_frame.grid_info()["row"], weight=1)
 
-    def draw_tab_startstop(self):
+    def draw_tab_startstop(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="nsew")
         tab.columnconfigure(0, weight=1)
@@ -239,7 +238,7 @@ class ConfigServiceConfigDialog(Dialog):
             elif i == 2:
                 self.validate_commands_listbox = listbox_scroll.listbox
 
-    def draw_tab_validation(self):
+    def draw_tab_validation(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky="ew")
         tab.columnconfigure(0, weight=1)
@@ -298,7 +297,7 @@ class ConfigServiceConfigDialog(Dialog):
         for dependency in self.dependencies:
             listbox_scroll.listbox.insert("end", dependency)
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(4):
@@ -312,7 +311,7 @@ class ConfigServiceConfigDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="ew")
 
-    def click_apply(self):
+    def click_apply(self) -> None:
         current_listbox = self.master.current.listbox
         if not self.is_custom():
             self.canvas_node.config_service_configs.pop(self.service_name, None)
@@ -333,18 +332,18 @@ class ConfigServiceConfigDialog(Dialog):
         current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         self.destroy()
 
-    def handle_template_changed(self, event: tk.Event):
+    def handle_template_changed(self, event: tk.Event) -> None:
         template = self.templates_combobox.get()
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[template])
 
-    def handle_mode_changed(self, event: tk.Event):
+    def handle_mode_changed(self, event: tk.Event) -> None:
         mode = self.modes_combobox.get()
         config = self.mode_configs[mode]
         logging.info("mode config: %s", config)
         self.config_frame.set_values(config)
 
-    def update_template_file_data(self, event: tk.Event):
+    def update_template_file_data(self, event: tk.Event) -> None:
         scrolledtext = event.widget
         template = self.templates_combobox.get()
         self.temp_service_files[template] = scrolledtext.get(1.0, "end")
@@ -353,7 +352,7 @@ class ConfigServiceConfigDialog(Dialog):
         else:
             self.modified_files.discard(template)
 
-    def is_custom(self):
+    def is_custom(self) -> bool:
         has_custom_templates = len(self.modified_files) > 0
         has_custom_config = False
         if self.config_frame:
@@ -361,7 +360,7 @@ class ConfigServiceConfigDialog(Dialog):
             has_custom_config = self.default_config != current
         return has_custom_templates or has_custom_config
 
-    def click_defaults(self):
+    def click_defaults(self) -> None:
         self.canvas_node.config_service_configs.pop(self.service_name, None)
         logging.info(
             "cleared config service config: %s", self.canvas_node.config_service_configs
@@ -374,12 +373,12 @@ class ConfigServiceConfigDialog(Dialog):
             logging.info("resetting defaults: %s", self.default_config)
             self.config_frame.set_values(self.default_config)
 
-    def click_copy(self):
+    def click_copy(self) -> None:
         pass
 
     def append_commands(
         self, commands: List[str], listbox: tk.Listbox, to_add: List[str]
-    ):
+    ) -> None:
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)

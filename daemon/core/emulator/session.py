@@ -6,28 +6,29 @@ that manages a CORE session.
 import logging
 import os
 import pwd
-import random
 import shutil
 import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
-from core.emane.emanemanager import EmaneManager
+from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
     EventData,
     ExceptionData,
     FileData,
+    InterfaceData,
     LinkData,
+    LinkOptions,
     NodeData,
+    NodeOptions,
 )
 from core.emulator.distributed import DistributedController
-from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
@@ -60,7 +61,7 @@ from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 # maps for converting from API call node type values to classes and vice versa
-NODES = {
+NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.DEFAULT: CoreNode,
     NodeTypes.PHYSICAL: PhysicalNode,
     NodeTypes.SWITCH: SwitchNode,
@@ -75,11 +76,11 @@ NODES = {
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
 }
-NODES_TYPE = {NODES[x]: x for x in NODES}
-CONTAINER_NODES = {DockerNode, LxcNode}
-CTRL_NET_ID = 9001
-LINK_COLORS = ["green", "blue", "orange", "purple", "turquoise"]
-NT = TypeVar("NT", bound=NodeBase)
+NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
+CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
+CTRL_NET_ID: int = 9001
+LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
+NT: TypeVar = TypeVar("NT", bound=NodeBase)
 
 
 class Session:
@@ -113,15 +114,13 @@ class Session:
 
         # dict of nodes: all nodes and nets
         self.nodes: Dict[int, NodeBase] = {}
-        self._nodes_lock = threading.Lock()
+        self.nodes_lock = threading.Lock()
 
+        # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
-        self._state_time: float = time.monotonic()
-        self._state_file: str = os.path.join(self.session_dir, "state")
-
-        # hooks handlers
-        self._hooks: Dict[EventTypes, Tuple[str, str]] = {}
-        self._state_hooks: Dict[EventTypes, Callable[[int], None]] = {}
+        self.state_time: float = time.monotonic()
+        self.hooks: Dict[EventTypes, Tuple[str, str]] = {}
+        self.state_hooks: Dict[EventTypes, List[Callable[[EventTypes], None]]] = {}
         self.add_state_hook(
             state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
         )
@@ -154,15 +153,6 @@ class Session:
         self.emane: EmaneManager = EmaneManager(self)
         self.sdt: Sdt = Sdt(self)
 
-        # initialize default node services
-        self.services.default_services = {
-            "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
-            "PC": ("DefaultRoute",),
-            "prouter": (),
-            "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
-            "host": ("DefaultRoute", "SSH"),
-        }
-
         # config services
         self.service_manager: Optional[ConfigServiceManager] = None
 
@@ -193,423 +183,286 @@ class Session:
             raise CoreError(f"invalid node class: {_class}")
         return node_type
 
-    def _link_nodes(
-        self, node_one_id: int, node_two_id: int
-    ) -> Tuple[
-        Optional[CoreNode],
-        Optional[CoreNode],
-        Optional[CoreNetworkBase],
-        Optional[CoreNetworkBase],
-    ]:
-        """
-        Convenience method for retrieving nodes within link data.
-
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :return: nodes, network nodes if present, and tunnel if present
-        """
-        logging.debug(
-            "link message between node1(%s) and node2(%s)", node_one_id, node_two_id
-        )
-
-        # values to fill
-        net_one = None
-        net_two = None
-
-        # retrieve node one
-        node_one = self.get_node(node_one_id, NodeBase)
-        node_two = self.get_node(node_two_id, NodeBase)
-
-        if isinstance(node_one, CoreNetworkBase):
-            if not net_one:
-                net_one = node_one
-            else:
-                net_two = node_one
-            node_one = None
-
-        if isinstance(node_two, CoreNetworkBase):
-            if not net_one:
-                net_one = node_two
-            else:
-                net_two = node_two
-            node_two = None
-
-        logging.debug(
-            "link node types n1(%s) n2(%s) net1(%s) net2(%s)",
-            node_one,
-            node_two,
-            net_one,
-            net_two,
-        )
-        return node_one, node_two, net_one, net_two
-
-    def _link_wireless(self, objects: Iterable[CoreNodeBase], connect: bool) -> None:
+    def _link_wireless(
+        self, node1: CoreNodeBase, node2: CoreNodeBase, connect: bool
+    ) -> None:
         """
         Objects to deal with when connecting/disconnecting wireless links.
 
-        :param objects: possible objects to deal with
+        :param node1: node one for wireless link
+        :param node2: node two for wireless link
         :param connect: link interfaces if True, unlink otherwise
         :return: nothing
         :raises core.CoreError: when objects to link is less than 2, or no common
             networks are found
         """
-        objects = [x for x in objects if x]
-        if len(objects) < 2:
-            raise CoreError(f"wireless link failure: {objects}")
-        logging.debug(
-            "handling wireless linking objects(%s) connect(%s)", objects, connect
+        logging.info(
+            "handling wireless linking node1(%s) node2(%s): %s",
+            node1.name,
+            node2.name,
+            connect,
         )
-        common_networks = objects[0].commonnets(objects[1])
+        common_networks = node1.commonnets(node1)
         if not common_networks:
             raise CoreError("no common network found for wireless link/unlink")
-
-        for common_network, interface_one, interface_two in common_networks:
+        for common_network, iface1, iface2 in common_networks:
             if not isinstance(common_network, (WlanNode, EmaneNet)):
                 logging.info(
                     "skipping common network that is not wireless/emane: %s",
                     common_network,
                 )
                 continue
-
-            logging.info(
-                "wireless linking connect(%s): %s - %s",
-                connect,
-                interface_one,
-                interface_two,
-            )
             if connect:
-                common_network.link(interface_one, interface_two)
+                common_network.link(iface1, iface2)
             else:
-                common_network.unlink(interface_one, interface_two)
+                common_network.unlink(iface1, iface2)
+
+    def use_ovs(self) -> bool:
+        return self.options.get_config("ovs") == "1"
 
     def add_link(
         self,
-        node_one_id: int,
-        node_two_id: int,
-        interface_one: InterfaceData = None,
-        interface_two: InterfaceData = None,
+        node1_id: int,
+        node2_id: int,
+        iface1_data: InterfaceData = None,
+        iface2_data: InterfaceData = None,
         options: LinkOptions = None,
+        link_type: LinkTypes = LinkTypes.WIRED,
     ) -> Tuple[CoreInterface, CoreInterface]:
         """
         Add a link between nodes.
 
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :param interface_one: node one interface
+        :param node1_id: node one id
+        :param node2_id: node two id
+        :param iface1_data: node one interface
             data, defaults to none
-        :param interface_two: node two interface
+        :param iface2_data: node two interface
             data, defaults to none
         :param options: data for creating link,
             defaults to no options
+        :param link_type: type of link to add
         :return: tuple of created core interfaces, depending on link
         """
         if not options:
             options = LinkOptions()
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
+        iface1 = None
+        iface2 = None
 
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
-        )
-
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        node_one_interface = None
-        node_two_interface = None
-
-        try:
-            # wireless link
-            if options.type == LinkTypes.WIRELESS:
-                objects = [node_one, node_two, net_one, net_two]
-                self._link_wireless(objects, connect=True)
-            # wired link
+        # wireless link
+        if link_type == LinkTypes.WIRELESS:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                self._link_wireless(node1, node2, connect=True)
             else:
-                # 2 nodes being linked, ptp network
-                if all([node_one, node_two]) and not net_one:
-                    logging.info(
-                        "adding link for peer to peer nodes: %s - %s",
-                        node_one.name,
-                        node_two.name,
-                    )
-                    start = self.state.should_start()
-                    net_one = self.create_node(PtpNet, start=start)
+                raise CoreError(
+                    f"cannot wireless link node1({type(node1)}) node2({type(node2)})"
+                )
+        # wired link
+        else:
+            # peer to peer link
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                logging.info("linking ptp: %s - %s", node1.name, node2.name)
+                start = self.state.should_start()
+                ptp = self.create_node(PtpNet, start)
+                iface1 = node1.new_iface(ptp, iface1_data)
+                iface2 = node2.new_iface(ptp, iface2_data)
+                ptp.linkconfig(iface1, options)
+                if not options.unidirectional:
+                    ptp.linkconfig(iface2, options)
+            # link node to net
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                iface1 = node1.new_iface(node2, iface1_data)
+                if not isinstance(node2, (EmaneNet, WlanNode)):
+                    node2.linkconfig(iface1, options)
+            # link net to node
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                iface2 = node2.new_iface(node1, iface2_data)
+                wireless_net = isinstance(node1, (EmaneNet, WlanNode))
+                if not options.unidirectional and not wireless_net:
+                    node1.linkconfig(iface2, options)
+            # network to network
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                logging.info(
+                    "linking network to network: %s - %s", node1.name, node2.name
+                )
+                iface1 = node1.linknet(node2)
+                node1.linkconfig(iface1, options)
+                if not options.unidirectional:
+                    iface1.swapparams("_params_up")
+                    node2.linkconfig(iface1, options)
+                    iface1.swapparams("_params_up")
+            else:
+                raise CoreError(
+                    f"cannot link node1({type(node1)}) node2({type(node2)})"
+                )
 
-                # node to network
-                if node_one and net_one:
-                    logging.info(
-                        "adding link from node to network: %s - %s",
-                        node_one.name,
-                        net_one.name,
-                    )
-                    ifindex = node_one.newnetif(net_one, interface_one)
-                    node_one_interface = node_one.netif(ifindex)
-                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not wireless_net:
-                        net_one.linkconfig(node_one_interface, options)
-
-                # network to node
-                if node_two and net_one:
-                    logging.info(
-                        "adding link from network to node: %s - %s",
-                        node_two.name,
-                        net_one.name,
-                    )
-                    ifindex = node_two.newnetif(net_one, interface_two)
-                    node_two_interface = node_two.netif(ifindex)
-                    wireless_net = isinstance(net_one, (EmaneNet, WlanNode))
-                    if not options.unidirectional and not wireless_net:
-                        net_one.linkconfig(node_two_interface, options)
-
-                # network to network
-                if net_one and net_two:
-                    logging.info(
-                        "adding link from network to network: %s - %s",
-                        net_one.name,
-                        net_two.name,
-                    )
-                    interface = net_one.linknet(net_two)
-                    node_one_interface = interface
-                    net_one.linkconfig(interface, options)
-                    if not options.unidirectional:
-                        interface.swapparams("_params_up")
-                        net_two.linkconfig(interface, options)
-                        interface.swapparams("_params_up")
-
-                # a tunnel node was found for the nodes
-                addresses = []
-                if not node_one and all([net_one, interface_one]):
-                    addresses.extend(interface_one.get_addresses())
-                if not node_two and all([net_two, interface_two]):
-                    addresses.extend(interface_two.get_addresses())
-
-                # tunnel node logic
-                key = options.key
-                if key and isinstance(net_one, TunnelNode):
-                    logging.info("setting tunnel key for: %s", net_one.name)
-                    net_one.setkey(key)
-                    if addresses:
-                        net_one.addrconfig(addresses)
-                if key and isinstance(net_two, TunnelNode):
-                    logging.info("setting tunnel key for: %s", net_two.name)
-                    net_two.setkey(key)
-                    if addresses:
-                        net_two.addrconfig(addresses)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
-
-        self.sdt.add_link(node_one_id, node_two_id)
-        return node_one_interface, node_two_interface
+            # configure tunnel nodes
+            key = options.key
+            if isinstance(node1, TunnelNode):
+                logging.info("setting tunnel key for: %s", node1.name)
+                node1.setkey(key, iface1_data)
+            if isinstance(node2, TunnelNode):
+                logging.info("setting tunnel key for: %s", node2.name)
+                node2.setkey(key, iface2_data)
+        self.sdt.add_link(node1_id, node2_id)
+        return iface1, iface2
 
     def delete_link(
         self,
-        node_one_id: int,
-        node_two_id: int,
-        interface_one_id: int,
-        interface_two_id: int,
+        node1_id: int,
+        node2_id: int,
+        iface1_id: int = None,
+        iface2_id: int = None,
         link_type: LinkTypes = LinkTypes.WIRED,
     ) -> None:
         """
         Delete a link between nodes.
 
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :param interface_one_id: interface id for node one
-        :param interface_two_id: interface id for node two
+        :param node1_id: node one id
+        :param node2_id: node two id
+        :param iface1_id: interface id for node one
+        :param iface2_id: interface id for node two
         :param link_type: link type to delete
         :return: nothing
         :raises core.CoreError: when no common network is found for link being deleted
         """
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
+        logging.info(
+            "deleting link(%s) node(%s):interface(%s) node(%s):interface(%s)",
+            link_type.name,
+            node1.name,
+            iface1_id,
+            node2.name,
+            iface2_id,
         )
 
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        try:
-            # wireless link
-            if link_type == LinkTypes.WIRELESS:
-                objects = [node_one, node_two, net_one, net_two]
-                self._link_wireless(objects, connect=False)
-            # wired link
+        # wireless link
+        if link_type == LinkTypes.WIRELESS:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                self._link_wireless(node1, node2, connect=False)
             else:
-                if all([node_one, node_two]):
-                    # TODO: fix this for the case where ifindex[1,2] are not specified
-                    # a wired unlink event, delete the connecting bridge
-                    interface_one = node_one.netif(interface_one_id)
-                    interface_two = node_two.netif(interface_two_id)
-
-                    # get interfaces from common network, if no network node
-                    # otherwise get interfaces between a node and network
-                    if not interface_one and not interface_two:
-                        common_networks = node_one.commonnets(node_two)
-                        for (
-                            network,
-                            common_interface_one,
-                            common_interface_two,
-                        ) in common_networks:
-                            if (net_one and network == net_one) or not net_one:
-                                interface_one = common_interface_one
-                                interface_two = common_interface_two
-                                break
-
-                    if all([interface_one, interface_two]) and any(
-                        [interface_one.net, interface_two.net]
-                    ):
-                        if interface_one.net != interface_two.net and all(
-                            [interface_one.up, interface_two.up]
-                        ):
-                            raise CoreError("no common network found")
-
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s):interface(%s)",
-                            node_one.name,
-                            interface_one.name,
-                            node_two.name,
-                            interface_two.name,
-                        )
-                        net_one = interface_one.net
-                        interface_one.detachnet()
-                        interface_two.detachnet()
-                        if net_one.numnetif() == 0:
-                            self.delete_node(net_one.id)
-                        node_one.delnetif(interface_one.netindex)
-                        node_two.delnetif(interface_two.netindex)
-                elif node_one and net_one:
-                    interface = node_one.netif(interface_one_id)
-                    if interface:
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s)",
-                            node_one.name,
-                            interface.name,
-                            net_one.name,
-                        )
-                        interface.detachnet()
-                        node_one.delnetif(interface.netindex)
-                elif node_two and net_one:
-                    interface = node_two.netif(interface_two_id)
-                    if interface:
-                        logging.info(
-                            "deleting link node(%s):interface(%s) node(%s)",
-                            node_two.name,
-                            interface.name,
-                            net_one.name,
-                        )
-                        interface.detachnet()
-                        node_two.delnetif(interface.netindex)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
-
-        self.sdt.delete_link(node_one_id, node_two_id)
+                raise CoreError(
+                    "cannot delete wireless link "
+                    f"node1({type(node1)}) node2({type(node2)})"
+                )
+        # wired link
+        else:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                iface1 = node1.get_iface(iface1_id)
+                iface2 = node2.get_iface(iface2_id)
+                if iface1.net != iface2.net:
+                    raise CoreError(
+                        f"node1({node1.name}) node2({node2.name}) "
+                        "not connected to same net"
+                    )
+                ptp = iface1.net
+                node1.delete_iface(iface1_id)
+                node2.delete_iface(iface2_id)
+                self.delete_node(ptp.id)
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                node1.delete_iface(iface1_id)
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                node2.delete_iface(iface2_id)
+        self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
         self,
-        node_one_id: int,
-        node_two_id: int,
-        interface_one_id: int = None,
-        interface_two_id: int = None,
+        node1_id: int,
+        node2_id: int,
+        iface1_id: int = None,
+        iface2_id: int = None,
         options: LinkOptions = None,
+        link_type: LinkTypes = LinkTypes.WIRED,
     ) -> None:
         """
         Update link information between nodes.
 
-        :param node_one_id: node one id
-        :param node_two_id: node two id
-        :param interface_one_id: interface id for node one
-        :param interface_two_id: interface id for node two
+        :param node1_id: node one id
+        :param node2_id: node two id
+        :param iface1_id: interface id for node one
+        :param iface2_id: interface id for node two
         :param options: data to update link with
+        :param link_type: type of link to update
         :return: nothing
-        :raises core.CoreError: when updating a wireless type link, when there is a unknown
-            link between networks
+        :raises core.CoreError: when updating a wireless type link, when there is a
+            unknown link between networks
         """
         if not options:
             options = LinkOptions()
-
-        # get node objects identified by link data
-        node_one, node_two, net_one, net_two = self._link_nodes(
-            node_one_id, node_two_id
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
+        logging.info(
+            "update link(%s) node(%s):interface(%s) node(%s):interface(%s)",
+            link_type.name,
+            node1.name,
+            iface1_id,
+            node2.name,
+            iface2_id,
         )
 
-        if node_one:
-            node_one.lock.acquire()
-        if node_two:
-            node_two.lock.acquire()
-
-        try:
-            # wireless link
-            if options.type == LinkTypes.WIRELESS:
-                raise CoreError("cannot update wireless link")
-            else:
-                if not node_one and not node_two:
-                    if net_one and net_two:
-                        # modify link between nets
-                        interface = net_one.getlinknetif(net_two)
-                        upstream = False
-
-                        if not interface:
-                            upstream = True
-                            interface = net_two.getlinknetif(net_one)
-
-                        if not interface:
-                            raise CoreError("modify unknown link between nets")
-
-                        if upstream:
-                            interface.swapparams("_params_up")
-                            net_one.linkconfig(interface, options)
-                            interface.swapparams("_params_up")
-                        else:
-                            net_one.linkconfig(interface, options)
-
-                        if not options.unidirectional:
-                            if upstream:
-                                net_two.linkconfig(interface, options)
-                            else:
-                                interface.swapparams("_params_up")
-                                net_two.linkconfig(interface, options)
-                                interface.swapparams("_params_up")
-                    else:
-                        raise CoreError("modify link for unknown nodes")
-                elif not node_one:
-                    # node1 = layer 2node, node2 = layer3 node
-                    interface = node_two.netif(interface_two_id)
-                    net_one.linkconfig(interface, options)
-                elif not node_two:
-                    # node2 = layer 2node, node1 = layer3 node
-                    interface = node_one.netif(interface_one_id)
-                    net_one.linkconfig(interface, options)
+        # wireless link
+        if link_type == LinkTypes.WIRELESS:
+            raise CoreError("cannot update wireless link")
+        else:
+            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
+                iface1 = node1.ifaces.get(iface1_id)
+                iface2 = node2.ifaces.get(iface2_id)
+                if not iface1:
+                    raise CoreError(
+                        f"node({node1.name}) missing interface({iface1_id})"
+                    )
+                if not iface2:
+                    raise CoreError(
+                        f"node({node2.name}) missing interface({iface2_id})"
+                    )
+                if iface1.net != iface2.net:
+                    raise CoreError(
+                        f"node1({node1.name}) node2({node2.name}) "
+                        "not connected to same net"
+                    )
+                ptp = iface1.net
+                ptp.linkconfig(iface1, options, iface2)
+                if not options.unidirectional:
+                    ptp.linkconfig(iface2, options, iface1)
+            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                iface = node1.get_iface(iface1_id)
+                node2.linkconfig(iface, options)
+            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                iface = node2.get_iface(iface2_id)
+                node1.linkconfig(iface, options)
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                iface = node1.get_linked_iface(node2)
+                upstream = False
+                if not iface:
+                    upstream = True
+                    iface = node2.get_linked_iface(node1)
+                if not iface:
+                    raise CoreError("modify unknown link between nets")
+                if upstream:
+                    iface.swapparams("_params_up")
+                    node1.linkconfig(iface, options)
+                    iface.swapparams("_params_up")
                 else:
-                    common_networks = node_one.commonnets(node_two)
-                    if not common_networks:
-                        raise CoreError("no common network found")
+                    node1.linkconfig(iface, options)
+                if not options.unidirectional:
+                    if upstream:
+                        node2.linkconfig(iface, options)
+                    else:
+                        iface.swapparams("_params_up")
+                        node2.linkconfig(iface, options)
+                        iface.swapparams("_params_up")
+            else:
+                raise CoreError(
+                    f"cannot update link node1({type(node1)}) node2({type(node2)})"
+                )
 
-                    for net_one, interface_one, interface_two in common_networks:
-                        if (
-                            interface_one_id is not None
-                            and interface_one_id != node_one.getifindex(interface_one)
-                        ):
-                            continue
-
-                        net_one.linkconfig(interface_one, options, interface_two)
-                        if not options.unidirectional:
-                            net_one.linkconfig(interface_two, options, interface_one)
-        finally:
-            if node_one:
-                node_one.lock.release()
-            if node_two:
-                node_two.lock.release()
-
-    def _next_node_id(self) -> int:
+    def next_node_id(self) -> int:
         """
         Find the next valid node id, starting from 1.
 
@@ -642,7 +495,7 @@ class Session:
 
         # determine node id
         if not _id:
-            _id = self._next_node_id()
+            _id = self.next_node_id()
 
         # generate name if not provided
         if not options:
@@ -665,21 +518,20 @@ class Session:
             name,
             start,
         )
-        kwargs = dict(_id=_id, name=name, start=start, server=server)
+        kwargs = dict(_id=_id, name=name, server=server)
         if _class in CONTAINER_NODES:
             kwargs["image"] = options.image
-        node = self.create_node(_class, **kwargs)
+        node = self.create_node(_class, start, **kwargs)
 
         # set node attributes
         node.icon = options.icon
         node.canvas = options.canvas
-        node.opaque = options.opaque
 
         # set node position and broadcast it
         self.set_node_position(node, options)
 
         # add services to needed nodes
-        if isinstance(node, (CoreNode, PhysicalNode, DockerNode, LxcNode)):
+        if isinstance(node, (CoreNode, PhysicalNode)):
             node.type = options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
@@ -693,6 +545,8 @@ class Session:
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
             self.emane.set_model_config(_id, options.emane)
+            if self.state == EventTypes.RUNTIME_STATE:
+                self.emane.add_node(node)
         # set default wlan config if needed
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(_id, BasicRangeModel.name)
@@ -701,7 +555,7 @@ class Session:
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
         if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
             self.write_nodes()
-            self.add_remove_control_interface(node=node, remove=False)
+            self.add_remove_control_iface(node=node, remove=False)
             self.services.boot_services(node)
 
         self.sdt.add_node(node)
@@ -788,19 +642,16 @@ class Session:
         # clear out existing session
         self.clear()
 
-        if start:
-            state = EventTypes.CONFIGURATION_STATE
-        else:
-            state = EventTypes.DEFINITION_STATE
+        # set state and read xml
+        state = EventTypes.CONFIGURATION_STATE if start else EventTypes.DEFINITION_STATE
         self.set_state(state)
         self.name = os.path.basename(file_name)
         self.file_name = file_name
-
-        # write out xml file
         CoreXmlReader(self).read(file_name)
 
         # start session if needed
         if start:
+            self.set_state(EventTypes.INSTANTIATION_STATE)
             self.instantiate()
 
     def save_xml(self, file_name: str) -> None:
@@ -828,7 +679,7 @@ class Session:
             "setting state hook: %s - %s source(%s)", state, file_name, source_name
         )
         hook = file_name, data
-        state_hooks = self._hooks.setdefault(state, [])
+        state_hooks = self.hooks.setdefault(state, [])
         state_hooks.append(hook)
 
         # immediately run a hook if it is in the current state
@@ -863,7 +714,7 @@ class Session:
         self.emane.shutdown()
         self.delete_nodes()
         self.distributed.shutdown()
-        self.del_hooks()
+        self.hooks.clear()
         self.emane.reset()
         self.emane.config_reset()
         self.location.reset()
@@ -931,7 +782,6 @@ class Session:
         :param event_data: event data to send out
         :return: nothing
         """
-
         for handler in self.event_handlers:
             handler(event_data)
 
@@ -942,7 +792,6 @@ class Session:
         :param exception_data: exception data to send out
         :return: nothing
         """
-
         for handler in self.exception_handlers:
             handler(exception_data)
 
@@ -960,9 +809,9 @@ class Session:
         :param source: source of broadcast, None by default
         :return: nothing
         """
-        node_data = node.data(message_type, source)
-        if not node_data:
+        if not node.apitype:
             return
+        node_data = NodeData(node=node, message_type=message_type, source=source)
         for handler in self.node_handlers:
             handler(node_data)
 
@@ -973,7 +822,6 @@ class Session:
         :param file_data: file data to send out
         :return: nothing
         """
-
         for handler in self.file_handlers:
             handler(file_data)
 
@@ -984,7 +832,6 @@ class Session:
         :param config_data: config data to send out
         :return: nothing
         """
-
         for handler in self.config_handlers:
             handler(config_data)
 
@@ -995,7 +842,6 @@ class Session:
         :param link_data: link data to send out
         :return: nothing
         """
-
         for handler in self.link_handlers:
             handler(link_data)
 
@@ -1007,22 +853,14 @@ class Session:
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
-        state_name = state.name
         if self.state == state:
-            logging.info(
-                "session(%s) is already in state: %s, skipping change",
-                self.id,
-                state_name,
-            )
             return
-
         self.state = state
-        self._state_time = time.monotonic()
-        logging.info("changing session(%s) to state %s", self.id, state_name)
+        self.state_time = time.monotonic()
+        logging.info("changing session(%s) to state %s", self.id, state.name)
         self.write_state(state)
         self.run_hooks(state)
         self.run_state_hooks(state)
-
         if send_event:
             event_data = EventData(event_type=state, time=str(time.monotonic()))
             self.broadcast_event(event_data)
@@ -1034,10 +872,10 @@ class Session:
         :param state: state to write to file
         :return: nothing
         """
+        state_file = os.path.join(self.session_dir, "state")
         try:
-            state_file = open(self._state_file, "w")
-            state_file.write(f"{state.value} {state.name}\n")
-            state_file.close()
+            with open(state_file, "w") as f:
+                f.write(f"{state.value} {state.name}\n")
         except IOError:
             logging.exception("error writing state file: %s", state.name)
 
@@ -1049,60 +887,9 @@ class Session:
         :param state: state to run hooks for
         :return: nothing
         """
-
-        # check that state change hooks exist
-        if state not in self._hooks:
-            return
-
-        # retrieve all state hooks
-        hooks = self._hooks.get(state, [])
-
-        # execute all state hooks
-        if hooks:
-            for hook in hooks:
-                self.run_hook(hook)
-        else:
-            logging.info("no state hooks for %s", state)
-
-    def set_hook(
-        self, hook_type: str, file_name: str, source_name: str, data: str
-    ) -> None:
-        """
-        Store a hook from a received file message.
-
-        :param hook_type: hook type
-        :param file_name: file name for hook
-        :param source_name: source name
-        :param data: hook data
-        :return: nothing
-        """
-        logging.info(
-            "setting state hook: %s - %s from %s", hook_type, file_name, source_name
-        )
-
-        _hook_id, state = hook_type.split(":")[:2]
-        if not state.isdigit():
-            logging.error("error setting hook having state '%s'", state)
-            return
-
-        state = int(state)
-        hook = file_name, data
-
-        # append hook to current state hooks
-        state_hooks = self._hooks.setdefault(state, [])
-        state_hooks.append(hook)
-
-        # immediately run a hook if it is in the current state
-        # (this allows hooks in the definition and configuration states)
-        if self.state == state:
-            logging.info("immediately running new state hook")
+        hooks = self.hooks.get(state, [])
+        for hook in hooks:
             self.run_hook(hook)
-
-    def del_hooks(self) -> None:
-        """
-        Clear the hook scripts dict.
-        """
-        self._hooks.clear()
 
     def run_hook(self, hook: Tuple[str, str]) -> None:
         """
@@ -1113,37 +900,23 @@ class Session:
         """
         file_name, data = hook
         logging.info("running hook %s", file_name)
-
-        # write data to hook file
+        file_path = os.path.join(self.session_dir, file_name)
+        log_path = os.path.join(self.session_dir, f"{file_name}.log")
         try:
-            hook_file = open(os.path.join(self.session_dir, file_name), "w")
-            hook_file.write(data)
-            hook_file.close()
-        except IOError:
-            logging.exception("error writing hook '%s'", file_name)
-
-        # setup hook stdout and stderr
-        try:
-            stdout = open(os.path.join(self.session_dir, file_name + ".log"), "w")
-            stderr = subprocess.STDOUT
-        except IOError:
-            logging.exception("error setting up hook stderr and stdout")
-            stdout = None
-            stderr = None
-
-        # execute hook file
-        try:
-            args = ["/bin/sh", file_name]
-            subprocess.check_call(
-                args,
-                stdout=stdout,
-                stderr=stderr,
-                close_fds=True,
-                cwd=self.session_dir,
-                env=self.get_environment(),
-            )
-        except (OSError, subprocess.CalledProcessError):
-            logging.exception("error running hook: %s", file_name)
+            with open(file_path, "w") as f:
+                f.write(data)
+            with open(log_path, "w") as f:
+                args = ["/bin/sh", file_name]
+                subprocess.check_call(
+                    args,
+                    stdout=f,
+                    stderr=subprocess.STDOUT,
+                    close_fds=True,
+                    cwd=self.session_dir,
+                    env=self.get_environment(),
+                )
+        except (IOError, subprocess.CalledProcessError):
+            logging.exception("error running hook: %s", file_path)
 
     def run_state_hooks(self, state: EventTypes) -> None:
         """
@@ -1152,17 +925,16 @@ class Session:
         :param state: state to run hooks for
         :return: nothing
         """
-        for hook in self._state_hooks.get(state, []):
-            try:
-                hook(state)
-            except Exception:
-                message = (
-                    f"exception occured when running {state.name} state hook: {hook}"
-                )
-                logging.exception(message)
-                self.exception(
-                    ExceptionLevels.ERROR, "Session.run_state_hooks", message
-                )
+        for hook in self.state_hooks.get(state, []):
+            self.run_state_hook(state, hook)
+
+    def run_state_hook(self, state: EventTypes, hook: Callable[[EventTypes], None]):
+        try:
+            hook(state)
+        except Exception:
+            message = f"exception occurred when running {state.name} state hook: {hook}"
+            logging.exception(message)
+            self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", message)
 
     def add_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -1174,15 +946,16 @@ class Session:
         :param hook: hook callback for the state
         :return: nothing
         """
-        hooks = self._state_hooks.setdefault(state, [])
+        hooks = self.state_hooks.setdefault(state, [])
         if hook in hooks:
             raise CoreError("attempting to add duplicate state hook")
         hooks.append(hook)
-
         if self.state == state:
-            hook(state)
+            self.run_state_hook(state, hook)
 
-    def del_state_hook(self, state: int, hook: Callable[[int], None]) -> None:
+    def del_state_hook(
+        self, state: EventTypes, hook: Callable[[EventTypes], None]
+    ) -> None:
         """
         Delete a state hook.
 
@@ -1190,24 +963,23 @@ class Session:
         :param hook: hook to delete
         :return: nothing
         """
-        hooks = self._state_hooks.setdefault(state, [])
-        hooks.remove(hook)
+        hooks = self.state_hooks.get(state, [])
+        if hook in hooks:
+            hooks.remove(hook)
 
-    def runtime_state_hook(self, state: EventTypes) -> None:
+    def runtime_state_hook(self, _state: EventTypes) -> None:
         """
         Runtime state hook check.
 
-        :param state: state to check
+        :param _state: state to check
         :return: nothing
         """
-        if state == EventTypes.RUNTIME_STATE:
-            self.emane.poststartup()
-
-            # create session deployed xml
-            xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
-            xml_writer = corexml.CoreXmlWriter(self)
-            corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-            xml_writer.write(xml_file_name)
+        self.emane.poststartup()
+        # create session deployed xml
+        xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
+        xml_writer = corexml.CoreXmlWriter(self)
+        corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
+        xml_writer.write(xml_file_name)
 
     def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
@@ -1225,11 +997,8 @@ class Session:
         env["SESSION_NAME"] = str(self.name)
         env["SESSION_FILENAME"] = str(self.file_name)
         env["SESSION_USER"] = str(self.user)
-        env["SESSION_NODE_COUNT"] = str(self.get_node_count())
-
         if state:
             env["SESSION_STATE"] = str(self.state)
-
         # attempt to read and add environment config file
         environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
         try:
@@ -1240,7 +1009,6 @@ class Session:
                 "environment configuration file does not exist: %s",
                 environment_config_file,
             )
-
         # attempt to read and add user environment file
         if self.user:
             environment_user_file = os.path.join(
@@ -1253,7 +1021,6 @@ class Session:
                     "user core environment settings file not present: %s",
                     environment_user_file,
                 )
-
         return env
 
     def set_thumbnail(self, thumb_file: str) -> None:
@@ -1267,7 +1034,6 @@ class Session:
             logging.error("thumbnail file to set does not exist: %s", thumb_file)
             self.thumbnail = None
             return
-
         destination_file = os.path.join(self.session_dir, os.path.basename(thumb_file))
         shutil.copy(thumb_file, destination_file)
         self.thumbnail = destination_file
@@ -1287,36 +1053,29 @@ class Session:
                 os.chown(self.session_dir, uid, gid)
             except IOError:
                 logging.exception("failed to set permission on %s", self.session_dir)
-
         self.user = user
 
-    def get_node_id(self) -> int:
-        """
-        Return a unique, new node id.
-        """
-        with self._nodes_lock:
-            while True:
-                node_id = random.randint(1, 0xFFFF)
-                if node_id not in self.nodes:
-                    break
-        return node_id
-
-    def create_node(self, _class: Type[NT], *args: Any, **kwargs: Any) -> NT:
+    def create_node(
+        self, _class: Type[NT], start: bool, *args: Any, **kwargs: Any
+    ) -> NT:
         """
         Create an emulation node.
 
         :param _class: node class to create
+        :param start: True to start node, False otherwise
         :param args: list of arguments for the class to create
         :param kwargs: dictionary of arguments for the class to create
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
-        node = _class(self, *args, **kwargs)
-        with self._nodes_lock:
+        with self.nodes_lock:
+            node = _class(self, *args, **kwargs)
             if node.id in self.nodes:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
+        if start:
+            node.startup()
         return node
 
     def get_node(self, _id: int, _class: Type[NT]) -> NT:
@@ -1328,9 +1087,9 @@ class Session:
         :return: node for the given id
         :raises core.CoreError: when node does not exist
         """
-        if _id not in self.nodes:
+        node = self.nodes.get(_id)
+        if node is None:
             raise CoreError(f"unknown node id {_id}")
-        node = self.nodes[_id]
         if not isinstance(node, _class):
             actual = node.__class__.__name__
             expected = _class.__name__
@@ -1345,24 +1104,22 @@ class Session:
         :return: True if node deleted, False otherwise
         """
         # delete node and check for session shutdown if a node was removed
-        logging.info("deleting node(%s)", _id)
         node = None
-        with self._nodes_lock:
+        with self.nodes_lock:
             if _id in self.nodes:
                 node = self.nodes.pop(_id)
-
+                logging.info("deleted node(%s)", node.name)
         if node:
             node.shutdown()
             self.sdt.delete_node(_id)
             self.check_shutdown()
-
         return node is not None
 
     def delete_nodes(self) -> None:
         """
         Clear the nodes dictionary, and call shutdown for each node.
         """
-        with self._nodes_lock:
+        with self.nodes_lock:
             funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
@@ -1375,28 +1132,14 @@ class Session:
         Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
         """
+        file_path = os.path.join(self.session_dir, "nodes")
         try:
-            with self._nodes_lock:
-                file_path = os.path.join(self.session_dir, "nodes")
+            with self.nodes_lock:
                 with open(file_path, "w") as f:
-                    for _id in self.nodes.keys():
-                        node = self.nodes[_id]
+                    for _id, node in self.nodes.items():
                         f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
         except IOError:
             logging.exception("error writing nodes file")
-
-    def dump_session(self) -> None:
-        """
-        Log information about the session in its current state.
-        """
-        logging.info("session id=%s name=%s state=%s", self.id, self.name, self.state)
-        logging.info(
-            "file=%s thumbnail=%s node_count=%s/%s",
-            self.file_name,
-            self.thumbnail,
-            self.get_node_count(),
-            len(self.nodes),
-        )
 
     def exception(
         self, level: ExceptionLevels, source: str, text: str, node_id: int = None
@@ -1440,7 +1183,7 @@ class Session:
         self.distributed.start()
 
         # instantiate will be invoked again upon emane configure
-        if self.emane.startup() == self.emane.NOT_READY:
+        if self.emane.startup() == EmaneState.NOT_READY:
             return []
 
         # boot node services and then start mobility
@@ -1465,17 +1208,15 @@ class Session:
 
         :return: created node count
         """
-        with self._nodes_lock:
+        with self.nodes_lock:
             count = 0
-            for node_id in self.nodes:
-                node = self.nodes[node_id]
+            for node in self.nodes.values():
                 is_p2p_ctrlnet = isinstance(node, (PtpNet, CtrlNet))
                 is_tap = isinstance(node, GreTapBridge) and not isinstance(
                     node, TunnelNode
                 )
                 if is_p2p_ctrlnet or is_tap:
                     continue
-
                 count += 1
         return count
 
@@ -1497,7 +1238,6 @@ class Session:
         if self.state == EventTypes.RUNTIME_STATE:
             logging.info("valid runtime state found, returning")
             return
-
         # start event loop and set to runtime
         self.event_loop.run()
         self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
@@ -1513,7 +1253,7 @@ class Session:
         self.event_loop.stop()
 
         # stop node services
-        with self._nodes_lock:
+        with self.nodes_lock:
             funcs = []
             for node_id in self.nodes:
                 node = self.nodes[node_id]
@@ -1527,7 +1267,7 @@ class Session:
         self.emane.shutdown()
 
         # update control interface hosts
-        self.update_control_interface_hosts(remove=True)
+        self.update_control_iface_hosts(remove=True)
 
         # remove all four possible control networks
         self.add_remove_control_net(0, remove=True)
@@ -1573,7 +1313,7 @@ class Session:
         :return: nothing
         """
         logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
-        self.add_remove_control_interface(node=node, remove=False)
+        self.add_remove_control_iface(node=node, remove=False)
         self.services.boot_services(node)
         node.start_config_services()
 
@@ -1585,7 +1325,7 @@ class Session:
 
         :return: service boot exceptions
         """
-        with self._nodes_lock:
+        with self.nodes_lock:
             funcs = []
             start = time.monotonic()
             for _id in self.nodes:
@@ -1597,7 +1337,7 @@ class Session:
             total = time.monotonic() - start
             logging.debug("boot run time: %s", total)
         if not exceptions:
-            self.update_control_interface_hosts()
+            self.update_control_iface_hosts()
         return exceptions
 
     def get_control_net_prefixes(self) -> List[str]:
@@ -1615,7 +1355,7 @@ class Session:
             p0 = p
         return [p0, p1, p2, p3]
 
-    def get_control_net_server_interfaces(self) -> List[str]:
+    def get_control_net_server_ifaces(self) -> List[str]:
         """
         Retrieve control net server interfaces.
 
@@ -1683,8 +1423,7 @@ class Session:
             else:
                 prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
         logging.debug("prefix spec: %s", prefix_spec)
-
-        server_interface = self.get_control_net_server_interfaces()[net_index]
+        server_iface = self.get_control_net_server_ifaces()[net_index]
 
         # return any existing controlnet bridge
         try:
@@ -1725,18 +1464,19 @@ class Session:
             _id,
             prefix,
             updown_script,
-            server_interface,
+            server_iface,
         )
         control_net = self.create_node(
             CtrlNet,
+            True,
             prefix,
             _id=_id,
             updown_script=updown_script,
-            serverintf=server_interface,
+            serverintf=server_iface,
         )
         return control_net
 
-    def add_remove_control_interface(
+    def add_remove_control_iface(
         self,
         node: CoreNode,
         net_index: int = 0,
@@ -1762,27 +1502,27 @@ class Session:
         if not node:
             return
         # ctrl# already exists
-        if node.netif(control_net.CTRLIF_IDX_BASE + net_index):
+        if node.ifaces.get(control_net.CTRLIF_IDX_BASE + net_index):
             return
         try:
             ip4 = control_net.prefix[node.id]
             ip4_mask = control_net.prefix.prefixlen
-            interface = InterfaceData(
+            iface_data = InterfaceData(
                 id=control_net.CTRLIF_IDX_BASE + net_index,
                 name=f"ctrl{net_index}",
                 mac=utils.random_mac(),
                 ip4=ip4,
                 ip4_mask=ip4_mask,
             )
-            ifindex = node.newnetif(control_net, interface)
-            node.netif(ifindex).control = True
+            iface = node.new_iface(control_net, iface_data)
+            iface.control = True
         except ValueError:
             msg = f"Control interface not added to node {node.id}. "
             msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)
 
-    def update_control_interface_hosts(
+    def update_control_iface_hosts(
         self, net_index: int = 0, remove: bool = False
     ) -> None:
         """
@@ -1808,11 +1548,10 @@ class Session:
             return
 
         entries = []
-        for interface in control_net.netifs():
-            name = interface.node.name
-            for address in interface.addrlist:
-                address = address.split("/")[0]
-                entries.append(f"{address} {name}")
+        for iface in control_net.get_ifaces():
+            name = iface.node.name
+            for ip in iface.ips():
+                entries.append(f"{ip.ip} {name}")
 
         logging.info("Adding %d /etc/hosts file entries.", len(entries))
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
@@ -1823,30 +1562,24 @@ class Session:
         if not in runtime.
         """
         if self.state == EventTypes.RUNTIME_STATE:
-            return time.monotonic() - self._state_time
+            return time.monotonic() - self.state_time
         else:
             return 0.0
 
     def add_event(
-        self,
-        event_time: float,
-        node: CoreNode = None,
-        name: str = None,
-        data: str = None,
+        self, event_time: float, node_id: int = None, name: str = None, data: str = None
     ) -> None:
         """
         Add an event to the event queue, with a start time relative to the
         start of the runtime state.
 
         :param event_time: event time
-        :param node: node to add event for
+        :param node_id: node to add event for
         :param name: name of event
         :param data: data for event
         :return: nothing
         """
-        event_time = float(event_time)
         current_time = self.runtime()
-
         if current_time > 0:
             if event_time <= current_time:
                 logging.warning(
@@ -1856,11 +1589,9 @@ class Session:
                 )
                 return
             event_time = event_time - current_time
-
         self.event_loop.add_event(
-            event_time, self.run_event, node=node, name=name, data=data
+            event_time, self.run_event, node_id=node_id, name=name, data=data
         )
-
         if not name:
             name = ""
         logging.info(
@@ -1870,8 +1601,6 @@ class Session:
             data,
         )
 
-    # TODO: if data is None, this blows up, but this ties into how event functions
-    #  are ran, need to clean that up
     def run_event(
         self, node_id: int = None, name: str = None, data: str = None
     ) -> None:
@@ -1883,10 +1612,12 @@ class Session:
         :param data: event data
         :return: nothing
         """
+        if data is None:
+            logging.warning("no data for event node(%s) name(%s)", node_id, name)
+            return
         now = self.runtime()
         if not name:
             name = ""
-
         logging.info("running event %s at time %s cmd=%s", name, now, data)
         if not node_id:
             utils.mute_detach(data)

@@ -38,8 +38,8 @@ message SetWlanConfigResponse {
 message WlanLinkRequest {
     int32 session_id = 1;
     int32 wlan = 2;
-    int32 node_one = 3;
-    int32 node_two = 4;
+    int32 node1_id = 3;
+    int32 node2_id = 4;
     bool linked = 5;
 }
 

@@ -1,12 +1,14 @@
 import functools
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 import grpc
+from PIL.ImageTk import PhotoImage
 
-from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import NodeType
+from core.api.grpc.common_pb2 import ConfigOption
+from core.api.grpc.core_pb2 import Interface, Node, NodeType
+from core.api.grpc.services_pb2 import NodeServiceData
 from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
@@ -14,81 +16,81 @@ from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
+from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
-from core.gui.graph.edges import CanvasEdge
+from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from PIL.ImageTk import PhotoImage
+    from core.gui.graph.graph import CanvasGraph
 
-NODE_TEXT_OFFSET = 5
+NODE_TEXT_OFFSET: int = 5
 
 
 class CanvasNode:
     def __init__(
-        self,
-        app: "Application",
-        x: float,
-        y: float,
-        core_node: core_pb2.Node,
-        image: "PhotoImage",
+        self, app: "Application", x: float, y: float, core_node: Node, image: PhotoImage
     ):
-        self.app = app
-        self.canvas = app.canvas
-        self.image = image
-        self.core_node = core_node
-        self.id = self.canvas.create_image(
+        self.app: "Application" = app
+        self.canvas: "CanvasGraph" = app.canvas
+        self.image: PhotoImage = image
+        self.core_node: Node = core_node
+        self.id: int = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
         )
         label_y = self._get_label_y()
-        self.text_id = self.canvas.create_text(
+        label = self.get_label()
+        self.text_id: int = self.canvas.create_text(
             x,
             label_y,
-            text=self.core_node.name,
+            text=label,
             tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
             state=self.canvas.show_node_labels.state(),
         )
-        self.tooltip = CanvasTooltip(self.canvas)
-        self.edges = set()
-        self.interfaces = {}
-        self.wireless_edges = set()
-        self.antennas = []
-        self.antenna_images = {}
+        self.tooltip: CanvasTooltip = CanvasTooltip(self.canvas)
+        self.edges: Set[CanvasEdge] = set()
+        self.ifaces: Dict[int, Interface] = {}
+        self.wireless_edges: Set[CanvasWirelessEdge] = set()
+        self.antennas: List[int] = []
+        self.antenna_images: Dict[int, PhotoImage] = {}
         # possible configurations
-        self.emane_model_configs = {}
-        self.wlan_config = {}
-        self.mobility_config = {}
-        self.service_configs = {}
-        self.service_file_configs = {}
-        self.config_service_configs = {}
+        self.emane_model_configs: Dict[
+            Tuple[str, Optional[int]], Dict[str, ConfigOption]
+        ] = {}
+        self.wlan_config: Dict[str, ConfigOption] = {}
+        self.mobility_config: Dict[str, ConfigOption] = {}
+        self.service_configs: Dict[str, NodeServiceData] = {}
+        self.service_file_configs: Dict[str, Dict[str, str]] = {}
+        self.config_service_configs: Dict[str, Any] = {}
         self.setup_bindings()
-        self.context = tk.Menu(self.canvas)
+        self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
 
-    def next_interface_id(self) -> int:
+    def next_iface_id(self) -> int:
         i = 0
-        while i in self.interfaces:
+        while i in self.ifaces:
             i += 1
         return i
 
-    def setup_bindings(self):
+    def setup_bindings(self) -> None:
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
+        self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
-    def delete(self):
+    def delete(self) -> None:
         logging.debug("Delete canvas node for %s", self.core_node)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
         self.delete_antennas()
 
-    def add_antenna(self):
+    def add_antenna(self) -> None:
         x, y = self.canvas.coords(self.id)
         offset = len(self.antennas) * 8 * self.app.app_scale
         img = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
@@ -102,7 +104,7 @@ class CanvasNode:
         self.antennas.append(antenna_id)
         self.antenna_images[antenna_id] = img
 
-    def delete_antenna(self):
+    def delete_antenna(self) -> None:
         """
         delete one antenna
         """
@@ -112,7 +114,7 @@ class CanvasNode:
             self.canvas.delete(antenna_id)
             self.antenna_images.pop(antenna_id, None)
 
-    def delete_antennas(self):
+    def delete_antennas(self) -> None:
         """
         delete all antennas
         """
@@ -122,30 +124,37 @@ class CanvasNode:
         self.antennas.clear()
         self.antenna_images.clear()
 
-    def redraw(self):
+    def get_label(self) -> str:
+        label = self.core_node.name
+        if self.core_node.server:
+            label = f"{self.core_node.name}({self.core_node.server})"
+        return label
+
+    def redraw(self) -> None:
         self.canvas.itemconfig(self.id, image=self.image)
-        self.canvas.itemconfig(self.text_id, text=self.core_node.name)
+        label = self.get_label()
+        self.canvas.itemconfig(self.text_id, text=label)
         for edge in self.edges:
             edge.redraw()
 
-    def _get_label_y(self):
+    def _get_label_y(self) -> int:
         image_box = self.canvas.bbox(self.id)
         return image_box[3] + NODE_TEXT_OFFSET
 
-    def scale_text(self):
+    def scale_text(self) -> None:
         text_bound = self.canvas.bbox(self.text_id)
         prev_y = (text_bound[3] + text_bound[1]) / 2
         new_y = self._get_label_y()
         self.canvas.move(self.text_id, 0, new_y - prev_y)
 
-    def move(self, x: int, y: int):
+    def move(self, x: float, y: float) -> None:
         x, y = self.canvas.get_scaled_coords(x, y)
         current_x, current_y = self.canvas.coords(self.id)
         x_offset = x - current_x
         y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
-    def motion(self, x_offset: int, y_offset: int, update: bool = True):
+    def motion(self, x_offset: float, y_offset: float, update: bool = True) -> None:
         original_position = self.canvas.coords(self.id)
         self.canvas.move(self.id, x_offset, y_offset)
         pos = self.canvas.coords(self.id)
@@ -177,8 +186,11 @@ class CanvasNode:
         if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node)
 
-    def on_enter(self, event: tk.Event):
-        if self.app.core.is_runtime() and self.app.core.observer:
+    def on_enter(self, event: tk.Event) -> None:
+        is_runtime = self.app.core.is_runtime()
+        has_observer = self.app.core.observer is not None
+        is_container = NodeUtils.is_container_node(self.core_node.type)
+        if is_runtime and has_observer and is_container:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
             try:
@@ -187,14 +199,18 @@ class CanvasNode:
             except grpc.RpcError as e:
                 self.app.show_grpc_exception("Observer Error", e)
 
-    def on_leave(self, event: tk.Event):
+    def on_leave(self, event: tk.Event) -> None:
         self.tooltip.on_leave(event)
 
-    def double_click(self, event: tk.Event):
+    def double_click(self, event: tk.Event) -> None:
         if self.app.core.is_runtime():
-            self.canvas.core.launch_terminal(self.core_node.id)
+            if NodeUtils.is_container_node(self.core_node.type):
+                self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
+
+    def show_info(self, _event: tk.Event) -> None:
+        self.app.display_info(NodeInfoFrame, app=self.app, canvas_node=self)
 
     def show_context(self, event: tk.Event) -> None:
         # clear existing menu
@@ -203,6 +219,10 @@ class CanvasNode:
         is_emane = self.core_node.type == NodeType.EMANE
         if self.app.core.is_runtime():
             self.context.add_command(label="Configure", command=self.show_config)
+            if is_emane:
+                self.context.add_command(
+                    label="EMANE Config", command=self.show_emane_config
+                )
             if is_wlan:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
@@ -259,57 +279,58 @@ class CanvasNode:
 
     def click_unlink(self, edge: CanvasEdge) -> None:
         self.canvas.delete_edge(edge)
+        self.app.default_info()
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
-        self.canvas.selection[self.id] = self
+        self.canvas.select_object(self.id)
         self.canvas.delete_selected_objects()
 
     def canvas_copy(self) -> None:
         self.canvas.clear_selection()
-        self.canvas.selection[self.id] = self
+        self.canvas.select_object(self.id)
         self.canvas.copy()
 
-    def show_config(self):
+    def show_config(self) -> None:
         dialog = NodeConfigDialog(self.app, self)
         dialog.show()
 
-    def show_wlan_config(self):
+    def show_wlan_config(self) -> None:
         dialog = WlanConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
-    def show_mobility_config(self):
+    def show_mobility_config(self) -> None:
         dialog = MobilityConfigDialog(self.app, self)
         if not dialog.has_error:
             dialog.show()
 
-    def show_mobility_player(self):
+    def show_mobility_player(self) -> None:
         mobility_player = self.app.core.mobility_players[self.core_node.id]
         mobility_player.show()
 
-    def show_emane_config(self):
+    def show_emane_config(self) -> None:
         dialog = EmaneConfigDialog(self.app, self)
         dialog.show()
 
-    def show_services(self):
+    def show_services(self) -> None:
         dialog = NodeServiceDialog(self.app, self)
         dialog.show()
 
-    def show_config_services(self):
+    def show_config_services(self) -> None:
         dialog = NodeConfigServiceDialog(self.app, self)
         dialog.show()
 
-    def has_emane_link(self, interface_id: int) -> core_pb2.Node:
+    def has_emane_link(self, iface_id: int) -> Node:
         result = None
         for edge in self.edges:
             if self.id == edge.src:
                 other_id = edge.dst
-                edge_interface_id = edge.src_interface.id
+                edge_iface_id = edge.src_iface.id
             else:
                 other_id = edge.src
-                edge_interface_id = edge.dst_interface.id
-            if edge_interface_id != interface_id:
+                edge_iface_id = edge.dst_iface.id
+            if edge_iface_id != iface_id:
                 continue
             other_node = self.canvas.nodes[other_id]
             if other_node.core_node.type == NodeType.EMANE:
@@ -317,14 +338,14 @@ class CanvasNode:
                 break
         return result
 
-    def wireless_link_selected(self):
+    def wireless_link_selected(self) -> None:
         nodes = [x for x in self.canvas.selection if x in self.canvas.nodes]
         for node_id in nodes:
             canvas_node = self.canvas.nodes[node_id]
             self.canvas.create_edge(self, canvas_node)
         self.canvas.clear_selection()
 
-    def scale_antennas(self):
+    def scale_antennas(self) -> None:
         for i in range(len(self.antennas)):
             antenna_id = self.antennas[i]
             image = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)

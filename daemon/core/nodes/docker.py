@@ -77,9 +77,8 @@ class DockerNode(CoreNode):
         _id: int = None,
         name: str = None,
         nodedir: str = None,
-        start: bool = True,
         server: DistributedServer = None,
-        image: str = None
+        image: str = None,
     ) -> None:
         """
         Create a DockerNode instance.
@@ -88,7 +87,6 @@ class DockerNode(CoreNode):
         :param _id: object id
         :param name: object name
         :param nodedir: node directory
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
@@ -96,7 +94,7 @@ class DockerNode(CoreNode):
         if image is None:
             image = "ubuntu"
         self.image: str = image
-        super().__init__(session, _id, name, nodedir, start, server)
+        super().__init__(session, _id, name, nodedir, server)
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
@@ -143,7 +141,7 @@ class DockerNode(CoreNode):
             return
 
         with self.lock:
-            self._netif.clear()
+            self.ifaces.clear()
             self.client.stop_container()
             self.up = False
 
@@ -211,9 +209,7 @@ class DockerNode(CoreNode):
         if self.server is not None:
             self.host_cmd(f"rm -f {temp.name}")
         os.unlink(temp.name)
-        logging.debug(
-            "node(%s) added file: %s; mode: 0%o", self.name, filename, mode
-        )
+        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, filename, mode)
 
     def nodefilecopy(self, filename: str, srcfilename: str, mode: int = None) -> None:
         """

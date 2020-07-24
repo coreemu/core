@@ -6,7 +6,7 @@ interact with the GUI.
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
@@ -35,8 +35,8 @@ def main():
     options.set_position(0, 0)
     for _ in range(NODES):
         node = session.add_node(CoreNode, options=options)
-        interface = prefixes.create_interface(node)
-        session.add_link(node.id, wlan.id, interface_one=interface)
+        interface = prefixes.create_iface(node)
+        session.add_link(node.id, wlan.id, iface1_data=interface)
 
     # instantiate session
     session.instantiate()
@@ -44,7 +44,7 @@ def main():
     # get nodes for example run
     first_node = session.get_node(1, CoreNode)
     last_node = session.get_node(NODES, CoreNode)
-    address = prefixes.ip4_address(first_node)
+    address = prefixes.ip4_address(first_node.id)
     logging.info("node %s pinging %s", last_node.name, address)
     output = last_node.cmd(f"ping -c 3 {address}")
     logging.info(output)

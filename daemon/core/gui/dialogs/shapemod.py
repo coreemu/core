@@ -3,7 +3,7 @@ shape input dialog
 """
 import tkinter as tk
 from tkinter import font, ttk
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Optional, Union
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
@@ -13,40 +13,41 @@ from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+    from core.gui.graph.graph import CanvasGraph
     from core.gui.graph.shape import Shape
 
-FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
-BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+FONT_SIZES: List[int] = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72]
+BORDER_WIDTH: List[int] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 class ShapeDialog(Dialog):
-    def __init__(self, app: "Application", shape: "Shape"):
+    def __init__(self, app: "Application", shape: "Shape") -> None:
         if is_draw_shape(shape.shape_type):
             title = "Add Shape"
         else:
             title = "Add Text"
         super().__init__(app, title)
-        self.canvas = app.canvas
-        self.fill = None
-        self.border = None
-        self.shape = shape
+        self.canvas: "CanvasGraph" = app.canvas
+        self.fill: Optional[ttk.Label] = None
+        self.border: Optional[ttk.Label] = None
+        self.shape: "Shape" = shape
         data = shape.shape_data
-        self.shape_text = tk.StringVar(value=data.text)
-        self.font = tk.StringVar(value=data.font)
-        self.font_size = tk.IntVar(value=data.font_size)
-        self.text_color = data.text_color
+        self.shape_text: tk.StringVar = tk.StringVar(value=data.text)
+        self.font: tk.StringVar = tk.StringVar(value=data.font)
+        self.font_size: tk.IntVar = tk.IntVar(value=data.font_size)
+        self.text_color: str = data.text_color
         fill_color = data.fill_color
         if not fill_color:
             fill_color = "#CFCFFF"
-        self.fill_color = fill_color
-        self.border_color = data.border_color
-        self.border_width = tk.IntVar(value=0)
-        self.bold = tk.BooleanVar(value=data.bold)
-        self.italic = tk.BooleanVar(value=data.italic)
-        self.underline = tk.BooleanVar(value=data.underline)
+        self.fill_color: str = fill_color
+        self.border_color: str = data.border_color
+        self.border_width: tk.IntVar = tk.IntVar(value=0)
+        self.bold: tk.BooleanVar = tk.BooleanVar(value=data.bold)
+        self.italic: tk.BooleanVar = tk.BooleanVar(value=data.italic)
+        self.underline: tk.BooleanVar = tk.BooleanVar(value=data.underline)
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.draw_label_options()
         if is_draw_shape(self.shape.shape_type):
@@ -54,7 +55,7 @@ class ShapeDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
-    def draw_label_options(self):
+    def draw_label_options(self) -> None:
         label_frame = ttk.LabelFrame(self.top, text="Label", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
@@ -94,7 +95,7 @@ class ShapeDialog(Dialog):
         button = ttk.Checkbutton(frame, variable=self.underline, text="Underline")
         button.grid(row=0, column=2, sticky="ew")
 
-    def draw_shape_options(self):
+    def draw_shape_options(self) -> None:
         label_frame = ttk.LabelFrame(self.top, text="Shape", padding=FRAME_PAD)
         label_frame.grid(sticky="ew", pady=PADY)
         label_frame.columnconfigure(0, weight=1)
@@ -129,7 +130,7 @@ class ShapeDialog(Dialog):
         )
         combobox.grid(row=0, column=1, sticky="nsew")
 
-    def draw_buttons(self):
+    def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky="nsew")
         frame.columnconfigure(0, weight=1)
@@ -139,28 +140,28 @@ class ShapeDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.cancel)
         button.grid(row=0, column=1, sticky="ew")
 
-    def choose_text_color(self):
+    def choose_text_color(self) -> None:
         color_picker = ColorPickerDialog(self, self.app, self.text_color)
         self.text_color = color_picker.askcolor()
 
-    def choose_fill_color(self):
+    def choose_fill_color(self) -> None:
         color_picker = ColorPickerDialog(self, self.app, self.fill_color)
         color = color_picker.askcolor()
         self.fill_color = color
         self.fill.config(background=color, text=color)
 
-    def choose_border_color(self):
+    def choose_border_color(self) -> None:
         color_picker = ColorPickerDialog(self, self.app, self.border_color)
         color = color_picker.askcolor()
         self.border_color = color
         self.border.config(background=color, text=color)
 
-    def cancel(self):
+    def cancel(self) -> None:
         self.shape.delete()
         self.canvas.shapes.pop(self.shape.id)
         self.destroy()
 
-    def click_add(self):
+    def click_add(self) -> None:
         if is_draw_shape(self.shape.shape_type):
             self.add_shape()
         elif is_shape_text(self.shape.shape_type):
@@ -181,7 +182,7 @@ class ShapeDialog(Dialog):
             text_font.append("underline")
         return text_font
 
-    def save_text(self):
+    def save_text(self) -> None:
         """
         save info related to text or shape label
         """
@@ -194,7 +195,7 @@ class ShapeDialog(Dialog):
         data.italic = self.italic.get()
         data.underline = self.underline.get()
 
-    def save_shape(self):
+    def save_shape(self) -> None:
         """
         save info related to shape
         """
@@ -203,7 +204,7 @@ class ShapeDialog(Dialog):
         data.border_color = self.border_color
         data.border_width = int(self.border_width.get())
 
-    def add_text(self):
+    def add_text(self) -> None:
         """
         add text to canvas
         """
@@ -214,7 +215,7 @@ class ShapeDialog(Dialog):
         )
         self.save_text()
 
-    def add_shape(self):
+    def add_shape(self) -> None:
         self.canvas.itemconfig(
             self.shape.id,
             fill=self.fill_color,

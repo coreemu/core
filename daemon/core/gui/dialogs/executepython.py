@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.appconfig import SCRIPT_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -12,15 +12,15 @@ if TYPE_CHECKING:
 
 
 class ExecutePythonDialog(Dialog):
-    def __init__(self, app: "Application"):
+    def __init__(self, app: "Application") -> None:
         super().__init__(app, "Execute Python Script")
-        self.with_options = tk.IntVar(value=0)
-        self.options = tk.StringVar(value="")
-        self.option_entry = None
-        self.file_entry = None
+        self.with_options: tk.IntVar = tk.IntVar(value=0)
+        self.options: tk.StringVar = tk.StringVar(value="")
+        self.option_entry: Optional[ttk.Entry] = None
+        self.file_entry: Optional[ttk.Entry] = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         i = 0
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
         frame.columnconfigure(0, weight=1)
@@ -63,13 +63,13 @@ class ExecutePythonDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
-    def add_options(self):
+    def add_options(self) -> None:
         if self.with_options.get():
             self.option_entry.configure(state="normal")
         else:
             self.option_entry.configure(state="disabled")
 
-    def select_file(self):
+    def select_file(self) -> None:
         file = filedialog.askopenfilename(
             parent=self.top,
             initialdir=str(SCRIPT_PATH),
@@ -80,7 +80,7 @@ class ExecutePythonDialog(Dialog):
             self.file_entry.delete(0, "end")
             self.file_entry.insert("end", file)
 
-    def script_execute(self):
+    def script_execute(self) -> None:
         file = self.file_entry.get()
         options = self.option_entry.get()
         logging.info("Execute %s with options %s", file, options)

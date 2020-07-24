@@ -1,9 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
+from core.api.grpc.common_pb2 import ConfigOption
+from core.api.grpc.core_pb2 import Node
 from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum
@@ -13,18 +15,23 @@ if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
 
-ICON_SIZE = 16
+ICON_SIZE: int = 16
 
 
 class MobilityPlayer:
-    def __init__(self, app: "Application", canvas_node: "CanvasNode", config):
-        self.app = app
-        self.canvas_node = canvas_node
-        self.config = config
-        self.dialog = None
-        self.state = None
+    def __init__(
+        self,
+        app: "Application",
+        canvas_node: "CanvasNode",
+        config: Dict[str, ConfigOption],
+    ) -> None:
+        self.app: "Application" = app
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.config: Dict[str, ConfigOption] = config
+        self.dialog: Optional[MobilityPlayerDialog] = None
+        self.state: Optional[MobilityAction] = None
 
-    def show(self):
+    def show(self) -> None:
         if self.dialog:
             self.dialog.destroy()
         self.dialog = MobilityPlayerDialog(self.app, self.canvas_node, self.config)
@@ -37,44 +44,49 @@ class MobilityPlayer:
             self.set_stop()
         self.dialog.show()
 
-    def close(self):
+    def close(self) -> None:
         if self.dialog:
             self.dialog.destroy()
             self.dialog = None
 
-    def set_play(self):
+    def set_play(self) -> None:
         self.state = MobilityAction.START
         if self.dialog:
             self.dialog.set_play()
 
-    def set_pause(self):
+    def set_pause(self) -> None:
         self.state = MobilityAction.PAUSE
         if self.dialog:
             self.dialog.set_pause()
 
-    def set_stop(self):
+    def set_stop(self) -> None:
         self.state = MobilityAction.STOP
         if self.dialog:
             self.dialog.set_stop()
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode", config):
+    def __init__(
+        self,
+        app: "Application",
+        canvas_node: "CanvasNode",
+        config: Dict[str, ConfigOption],
+    ) -> None:
         super().__init__(
             app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )
         self.resizable(False, False)
         self.geometry("")
-        self.canvas_node = canvas_node
-        self.node = canvas_node.core_node
-        self.config = config
-        self.play_button = None
-        self.pause_button = None
-        self.stop_button = None
-        self.progressbar = None
+        self.canvas_node: "CanvasNode" = canvas_node
+        self.node: Node = canvas_node.core_node
+        self.config: Dict[str, ConfigOption] = config
+        self.play_button: Optional[ttk.Button] = None
+        self.pause_button: Optional[ttk.Button] = None
+        self.stop_button: Optional[ttk.Button] = None
+        self.progressbar: Optional[ttk.Progressbar] = None
         self.draw()
 
-    def draw(self):
+    def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
 
         file_name = self.config["file"].value
@@ -114,27 +126,27 @@ class MobilityPlayerDialog(Dialog):
         label = ttk.Label(frame, text=f"rate {rate} ms")
         label.grid(row=0, column=4)
 
-    def clear_buttons(self):
+    def clear_buttons(self) -> None:
         self.play_button.state(["!pressed"])
         self.pause_button.state(["!pressed"])
         self.stop_button.state(["!pressed"])
 
-    def set_play(self):
+    def set_play(self) -> None:
         self.clear_buttons()
         self.play_button.state(["pressed"])
         self.progressbar.start()
 
-    def set_pause(self):
+    def set_pause(self) -> None:
         self.clear_buttons()
         self.pause_button.state(["pressed"])
         self.progressbar.stop()
 
-    def set_stop(self):
+    def set_stop(self) -> None:
         self.clear_buttons()
         self.stop_button.state(["pressed"])
         self.progressbar.stop()
 
-    def click_play(self):
+    def click_play(self) -> None:
         self.set_play()
         session_id = self.app.core.session_id
         try:
@@ -144,7 +156,7 @@ class MobilityPlayerDialog(Dialog):
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Mobility Error", e)
 
-    def click_pause(self):
+    def click_pause(self) -> None:
         self.set_pause()
         session_id = self.app.core.session_id
         try:
@@ -154,7 +166,7 @@ class MobilityPlayerDialog(Dialog):
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Mobility Error", e)
 
-    def click_stop(self):
+    def click_stop(self) -> None:
         self.set_stop()
         session_id = self.app.core.session_id
         try:
