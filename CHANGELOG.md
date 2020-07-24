@@ -1,3 +1,53 @@
+## 2020-07-23 CORE 7.0.0
+
+* Breaking Changes
+    * core.emudata and core.data combined and cleaned up into core.data
+    * updates to consistently use mac instead of hwaddr/mac
+    * \#468 - code related to adding/editing/deleting links cleaned up
+    * \#469 - usages of per all changed to loss to be consistent
+    * \#470 - variables with numbered names now use numbers directly
+    * \#471 - node startup is no longer embedded within its constructor
+    * \#472 - code updated to refer to interfaces consistently as iface
+    * \#475 - code updates changing how ip addresses are stored on interfaces
+    * \#476 - executables to check for moved into own module core.executables
+    * \#486 - core will now install into its own python virtual environment managed by poetry
+* core-daemon
+    * updates to properly save/load distributed servers to xml
+    * \#474 - added type hinting to all service files
+    * \#478 - fixed typo in config service directory
+    * \#479 - opening an xml file will now cycle through states like a normal session
+    * \#480 - ovs configuration will now save/load from xml and display in guis
+    * \#484 - changes to support adding emane links during runtime
+* core-pygui
+    * fixed issue not displaying services for the default group in service dialogs
+    * fixed issue starting a session when the daemon is not present
+    * fixed issue attempting to open terminals for invalid nodes
+    * fixed issue syncing session location
+    * fixed issue joining a session with mobility, not in runtime
+    * added cpu usage monitor to status bar
+    * emane configurations can now be seen during runtime
+    * rj45 nodes can only have one link
+    * disabling throughputs will clear labels
+    * improvements to custom service copy
+    * link options will now be drawn on as a label
+    * updates to handle runtime link events
+    * \#477 - added optional details pane for a quick view of node/link details
+    * \#485 - pygui fixed observer widget for invalid nodes
+    * \#496 - improved alert handling
+* core-gui
+    * \#493 - increased frame size to show all emane configuration options
+* gRPC API
+    * added set session user rpc
+    * added cpu usage stream
+    * interface objects returned from get_node will now provide node_id, net_id, and net2_id data
+    * peer to peer nodes will not be included in get_session calls
+    * pathloss events will now throw an error when nem id not found
+    * \#481 - link rpc calls will broadcast out
+    * \#496 - added alert rpc call
+* Services
+    * fixed issue reading files in security services
+    * \#494 - add staticd to daemons list for frr services
+
 ## 2020-06-11 CORE 6.5.0
 * Breaking Changes
     * CoreNode.newnetif - both parameters are required and now takes an InterfaceData object as its second parameter
