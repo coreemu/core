@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc import core_pb2
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
+from core.gui.wrappers import Hook, SessionState
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -16,8 +16,9 @@ class HookDialog(Dialog):
         super().__init__(app, "Hook", master=master)
         self.name: tk.StringVar = tk.StringVar()
         self.codetext: Optional[CodeText] = None
-        self.hook: core_pb2.Hook = core_pb2.Hook()
+        self.hook: Optional[Hook] = None
         self.state: tk.StringVar = tk.StringVar()
+        self.editing: bool = False
         self.draw()
 
     def draw(self) -> None:
@@ -34,8 +35,8 @@ class HookDialog(Dialog):
         label.grid(row=0, column=0, sticky="ew", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
-        values = tuple(x for x in core_pb2.SessionState.Enum.keys() if x != "NONE")
-        initial_state = core_pb2.SessionState.Enum.Name(core_pb2.SessionState.RUNTIME)
+        values = tuple(x.name for x in SessionState)
+        initial_state = SessionState.RUNTIME.name
         self.state.set(initial_state)
         self.name.set(f"{initial_state.lower()}_hook.sh")
         combobox = ttk.Combobox(
@@ -67,23 +68,30 @@ class HookDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def state_change(self, event: tk.Event) -> None:
+        if self.editing:
+            return
         state_name = self.state.get()
         self.name.set(f"{state_name.lower()}_hook.sh")
 
-    def set(self, hook: core_pb2.Hook) -> None:
+    def set(self, hook: Hook) -> None:
+        self.editing = True
         self.hook = hook
         self.name.set(hook.file)
         self.codetext.text.delete(1.0, tk.END)
         self.codetext.text.insert(tk.END, hook.data)
-        state_name = core_pb2.SessionState.Enum.Name(hook.state)
+        state_name = hook.state.name
         self.state.set(state_name)
 
     def save(self) -> None:
         data = self.codetext.text.get("1.0", tk.END).strip()
-        state_value = core_pb2.SessionState.Enum.Value(self.state.get())
-        self.hook.file = self.name.get()
-        self.hook.data = data
-        self.hook.state = state_value
+        state = SessionState[self.state.get()]
+        file_name = self.name.get()
+        if self.editing:
+            self.hook.state = state
+            self.hook.file = file_name
+            self.hook.data = data
+        else:
+            self.hook = Hook(state=state, file=file_name, data=data)
         self.destroy()
 
 
@@ -94,6 +102,7 @@ class HooksDialog(Dialog):
         self.edit_button: Optional[ttk.Button] = None
         self.delete_button: Optional[ttk.Button] = None
         self.selected: Optional[str] = None
+        self.selected_index: Optional[int] = None
         self.draw()
 
     def draw(self) -> None:
@@ -133,10 +142,13 @@ class HooksDialog(Dialog):
             self.listbox.insert(tk.END, hook.file)
 
     def click_edit(self) -> None:
-        hook = self.app.core.hooks[self.selected]
+        hook = self.app.core.hooks.pop(self.selected)
         dialog = HookDialog(self, self.app)
         dialog.set(hook)
         dialog.show()
+        self.app.core.hooks[hook.file] = hook
+        self.listbox.delete(self.selected_index)
+        self.listbox.insert(self.selected_index, hook.file)
 
     def click_delete(self) -> None:
         del self.app.core.hooks[self.selected]
@@ -146,11 +158,12 @@ class HooksDialog(Dialog):
 
     def select(self, event: tk.Event) -> None:
         if self.listbox.curselection():
-            index = self.listbox.curselection()[0]
-            self.selected = self.listbox.get(index)
+            self.selected_index = self.listbox.curselection()[0]
+            self.selected = self.listbox.get(self.selected_index)
             self.edit_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)
         else:
             self.selected = None
+            self.selected_index = None
             self.edit_button.config(state=tk.DISABLED)
             self.delete_button.config(state=tk.DISABLED)

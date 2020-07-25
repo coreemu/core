@@ -19,7 +19,6 @@ from core.api.grpc.core_pb2 import (
     CpuUsageEvent,
     Event,
     ExceptionEvent,
-    Hook,
     Interface,
     Link,
     LinkEvent,
@@ -51,6 +50,7 @@ from core.gui.graph.shape import AnnotationData, Shape
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.wrappers import Hook
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -332,7 +332,8 @@ class CoreClient:
 
             # get hooks
             response = self.client.get_hooks(self.session_id)
-            for hook in response.hooks:
+            for hook_proto in response.hooks:
+                hook = Hook.from_proto(hook_proto)
                 self.hooks[hook.file] = hook
 
             # get emane config
@@ -570,7 +571,7 @@ class CoreClient:
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
-        hooks = list(self.hooks.values())
+        hooks = [x.to_proto() for x in self.hooks.values()]
         service_configs = self.get_service_configs_proto()
         file_configs = self.get_service_file_configs_proto()
         asymmetric_links = [
@@ -823,7 +824,9 @@ class CoreClient:
                 config_proto.data,
             )
         for hook in self.hooks.values():
-            self.client.add_hook(self.session_id, hook.state, hook.file, hook.data)
+            self.client.add_hook(
+                self.session_id, hook.state.value, hook.file, hook.data
+            )
         for config_proto in self.get_emane_model_configs_proto():
             self.client.set_emane_model_config(
                 self.session_id,
