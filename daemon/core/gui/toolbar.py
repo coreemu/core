@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc import core_pb2
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph import tags
@@ -300,15 +299,15 @@ class Toolbar(ttk.Frame):
         )
         task.start()
 
-    def start_callback(self, response: core_pb2.StartSessionResponse) -> None:
-        if response.result:
+    def start_callback(self, result: bool, exceptions: List[str]) -> None:
+        if result:
             self.set_runtime()
             self.app.core.set_metadata()
             self.app.core.show_mobility_players()
         else:
             enable_buttons(self.design_frame, enabled=True)
-            if response.exceptions:
-                message = "\n".join(response.exceptions)
+            if exceptions:
+                message = "\n".join(exceptions)
                 self.app.show_error("Start Session Error", message)
 
     def set_runtime(self) -> None:
@@ -405,7 +404,7 @@ class Toolbar(ttk.Frame):
         )
         task.start()
 
-    def stop_callback(self, response: core_pb2.StopSessionResponse) -> None:
+    def stop_callback(self, result: bool) -> None:
         self.set_design()
         self.app.canvas.stopped_session()
 

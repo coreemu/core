@@ -5,10 +5,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
-from core.api.grpc.core_pb2 import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
+from core.gui.wrappers import ExceptionEvent, ExceptionLevel
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -49,9 +49,8 @@ class AlertsDialog(Dialog):
         self.tree.heading("source", text="Source")
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
-        for alarm in self.app.statusbar.core_alarms:
-            exception = alarm.exception_event
-            level_name = ExceptionLevel.Enum.Name(exception.level)
+        for exception in self.app.statusbar.core_alarms:
+            level_name = exception.level.name
             node_id = exception.node_id if exception.node_id else ""
             insert_id = self.tree.insert(
                 "",
@@ -60,21 +59,21 @@ class AlertsDialog(Dialog):
                 values=(
                     exception.date,
                     level_name,
-                    alarm.session_id,
+                    exception.session_id,
                     node_id,
                     exception.source,
                 ),
                 tags=(level_name,),
             )
-            self.alarm_map[insert_id] = alarm
+            self.alarm_map[insert_id] = exception
 
-        error_name = ExceptionLevel.Enum.Name(ExceptionLevel.ERROR)
+        error_name = ExceptionLevel.ERROR.name
         self.tree.tag_configure(error_name, background="#ff6666")
-        fatal_name = ExceptionLevel.Enum.Name(ExceptionLevel.FATAL)
+        fatal_name = ExceptionLevel.FATAL.name
         self.tree.tag_configure(fatal_name, background="#d9d9d9")
-        warning_name = ExceptionLevel.Enum.Name(ExceptionLevel.WARNING)
+        warning_name = ExceptionLevel.WARNING.name
         self.tree.tag_configure(warning_name, background="#ffff99")
-        notice_name = ExceptionLevel.Enum.Name(ExceptionLevel.NOTICE)
+        notice_name = ExceptionLevel.NOTICE.name
         self.tree.tag_configure(notice_name, background="#85e085")
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
@@ -108,8 +107,8 @@ class AlertsDialog(Dialog):
 
     def click_select(self, event: tk.Event) -> None:
         current = self.tree.selection()[0]
-        alarm = self.alarm_map[current]
+        exception = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)
         self.codetext.text.delete(1.0, tk.END)
-        self.codetext.text.insert(1.0, alarm.exception_event.text)
+        self.codetext.text.insert(1.0, exception.text)
         self.codetext.text.config(state=tk.DISABLED)

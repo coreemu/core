@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 import grpc
 
-from core.api.grpc.common_pb2 import ConfigOption
 from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
+from core.gui.wrappers import ConfigOption
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -99,7 +99,7 @@ class ConfigServiceConfigDialog(Dialog):
             service_config = self.canvas_node.config_service_configs.get(
                 self.service_name, {}
             )
-            self.config = response.config
+            self.config = ConfigOption.from_dict(response.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
             custom_config = service_config.get("config")
             if custom_config:

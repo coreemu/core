@@ -5,12 +5,10 @@ from pathlib import Path
 from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
 
-from core.api.grpc import core_pb2
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import ConfigOptionType
 from core.gui import themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.wrappers import ConfigOption, ConfigOptionType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -110,7 +108,7 @@ class ConfigFrame(ttk.Notebook):
                 label = ttk.Label(tab.frame, text=option.label)
                 label.grid(row=index, pady=PADY, padx=PADX, sticky="w")
                 value = tk.StringVar()
-                if option.type == core_pb2.ConfigOptionType.BOOL:
+                if option.type == ConfigOptionType.BOOL:
                     select = ("On", "Off")
                     state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
@@ -129,7 +127,7 @@ class ConfigFrame(ttk.Notebook):
                         tab.frame, textvariable=value, values=select, state=state
                     )
                     combobox.grid(row=index, column=1, sticky="ew")
-                elif option.type == core_pb2.ConfigOptionType.STRING:
+                elif option.type == ConfigOptionType.STRING:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
                     if "file" in option.label:
@@ -153,7 +151,7 @@ class ConfigFrame(ttk.Notebook):
                         tab.frame, textvariable=value, state=state
                     )
                     entry.grid(row=index, column=1, sticky="ew")
-                elif option.type == core_pb2.ConfigOptionType.FLOAT:
+                elif option.type == ConfigOptionType.FLOAT:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
                     entry = validation.PositiveFloatEntry(
@@ -169,7 +167,7 @@ class ConfigFrame(ttk.Notebook):
             option = self.config[key]
             value = self.values[key]
             config_value = value.get()
-            if option.type == core_pb2.ConfigOptionType.BOOL:
+            if option.type == ConfigOptionType.BOOL:
                 if config_value == "On":
                     option.value = "1"
                 else:
@@ -182,7 +180,7 @@ class ConfigFrame(ttk.Notebook):
         for name, data in config.items():
             option = self.config[name]
             value = self.values[name]
-            if option.type == core_pb2.ConfigOptionType.BOOL:
+            if option.type == ConfigOptionType.BOOL:
                 if data == "1":
                     data = "On"
                 else:

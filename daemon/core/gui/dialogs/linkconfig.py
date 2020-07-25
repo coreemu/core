@@ -5,11 +5,11 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc import core_pb2
 from core.gui import validation
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
+from core.gui.wrappers import Interface, Link, LinkOptions
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -21,7 +21,7 @@ def get_int(var: tk.StringVar) -> Optional[int]:
     if value != "":
         return int(value)
     else:
-        return None
+        return 0
 
 
 def get_float(var: tk.StringVar) -> Optional[float]:
@@ -29,14 +29,15 @@ def get_float(var: tk.StringVar) -> Optional[float]:
     if value != "":
         return float(value)
     else:
-        return None
+        return 0.0
 
 
 class LinkConfigurationDialog(Dialog):
     def __init__(self, app: "Application", edge: "CanvasEdge") -> None:
         super().__init__(app, "Link Configuration")
         self.edge: "CanvasEdge" = edge
-        self.is_symmetric: bool = edge.link.options.unidirectional is False
+
+        self.is_symmetric: bool = edge.link.is_symmetric()
         if self.is_symmetric:
             symmetry_var = tk.StringVar(value=">>")
         else:
@@ -223,32 +224,32 @@ class LinkConfigurationDialog(Dialog):
         delay = get_int(self.delay)
         duplicate = get_int(self.duplicate)
         loss = get_float(self.loss)
-        options = core_pb2.LinkOptions(
+        options = LinkOptions(
             bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, loss=loss
         )
-        link.options.CopyFrom(options)
+        link.options = options
 
         iface1_id = None
-        if link.HasField("iface1"):
+        if link.iface1:
             iface1_id = link.iface1.id
         iface2_id = None
-        if link.HasField("iface2"):
+        if link.iface2:
             iface2_id = link.iface2.id
 
         if not self.is_symmetric:
             link.options.unidirectional = True
             asym_iface1 = None
             if iface1_id:
-                asym_iface1 = core_pb2.Interface(id=iface1_id)
+                asym_iface1 = Interface(id=iface1_id)
             asym_iface2 = None
             if iface2_id:
-                asym_iface2 = core_pb2.Interface(id=iface2_id)
+                asym_iface2 = Interface(id=iface2_id)
             down_bandwidth = get_int(self.down_bandwidth)
             down_jitter = get_int(self.down_jitter)
             down_delay = get_int(self.down_delay)
             down_duplicate = get_int(self.down_duplicate)
             down_loss = get_float(self.down_loss)
-            options = core_pb2.LinkOptions(
+            options = LinkOptions(
                 bandwidth=down_bandwidth,
                 jitter=down_jitter,
                 delay=down_delay,
@@ -256,7 +257,7 @@ class LinkConfigurationDialog(Dialog):
                 loss=down_loss,
                 unidirectional=True,
             )
-            self.edge.asymmetric_link = core_pb2.Link(
+            self.edge.asymmetric_link = Link(
                 node1_id=link.node2_id,
                 node2_id=link.node1_id,
                 iface1=asym_iface1,
@@ -267,7 +268,7 @@ class LinkConfigurationDialog(Dialog):
             link.options.unidirectional = False
             self.edge.asymmetric_link = None
 
-        if self.app.core.is_runtime() and link.HasField("options"):
+        if self.app.core.is_runtime() and link.options:
             session_id = self.app.core.session_id
             self.app.core.client.edit_link(
                 session_id,
@@ -316,7 +317,7 @@ class LinkConfigurationDialog(Dialog):
         color = self.app.canvas.itemcget(self.edge.id, "fill")
         self.color.set(color)
         link = self.edge.link
-        if link.HasField("options"):
+        if link.options:
             self.bandwidth.set(str(link.options.bandwidth))
             self.jitter.set(str(link.options.jitter))
             self.duplicate.set(str(link.options.dup))

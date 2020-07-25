@@ -13,27 +13,8 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 import grpc
 
 from core.api.grpc import client
-from core.api.grpc.common_pb2 import ConfigOption
 from core.api.grpc.configservices_pb2 import ConfigService, ConfigServiceConfig
-from core.api.grpc.core_pb2 import (
-    CpuUsageEvent,
-    Event,
-    ExceptionEvent,
-    Interface,
-    Link,
-    LinkEvent,
-    LinkType,
-    MessageType,
-    Node,
-    NodeEvent,
-    NodeType,
-    Position,
-    SessionLocation,
-    SessionState,
-    StartSessionResponse,
-    StopSessionResponse,
-    ThroughputsEvent,
-)
+from core.api.grpc.core_pb2 import CpuUsageEvent, Event, ThroughputsEvent
 from core.api.grpc.emane_pb2 import EmaneModelConfig
 from core.api.grpc.mobility_pb2 import MobilityConfig
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
@@ -50,7 +31,22 @@ from core.gui.graph.shape import AnnotationData, Shape
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
-from core.gui.wrappers import Hook
+from core.gui.wrappers import (
+    ConfigOption,
+    ExceptionEvent,
+    Hook,
+    Interface,
+    Link,
+    LinkEvent,
+    LinkType,
+    MessageType,
+    Node,
+    NodeEvent,
+    NodeType,
+    Position,
+    SessionLocation,
+    SessionState,
+)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -165,12 +161,13 @@ class CoreClient:
             return
 
         if event.HasField("link_event"):
-            self.app.after(0, self.handle_link_event, event.link_event)
+            link_event = LinkEvent.from_proto(event.link_event)
+            self.app.after(0, self.handle_link_event, link_event)
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
             session_event = event.session_event
-            if session_event.event <= SessionState.SHUTDOWN:
-                self.state = event.session_event.event
+            if session_event.event <= SessionState.SHUTDOWN.value:
+                self.state = SessionState(session_event.event)
             elif session_event.event in {7, 8, 9}:
                 node_id = session_event.node_id
                 dialog = self.mobility_players.get(node_id)
@@ -184,10 +181,12 @@ class CoreClient:
             else:
                 logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
-            self.app.after(0, self.handle_node_event, event.node_event)
+            node_event = NodeEvent.from_proto(event.node_event)
+            self.app.after(0, self.handle_node_event, node_event)
         elif event.HasField("config_event"):
             logging.info("config event: %s", event)
         elif event.HasField("exception_event"):
+            event = ExceptionEvent.from_proto(event.session_id, event.exception_event)
             self.handle_exception_event(event)
         else:
             logging.info("unhandled event: %s", event)
@@ -307,7 +306,7 @@ class CoreClient:
         try:
             response = self.client.get_session(self.session_id)
             session = response.session
-            self.state = session.state
+            self.state = SessionState(session.state)
             self.handling_events = self.client.events(
                 self.session_id, self.handle_events
             )
@@ -324,7 +323,7 @@ class CoreClient:
             # get location
             if query_location:
                 response = self.client.get_session_location(self.session_id)
-                self.location = response.location
+                self.location = SessionLocation.from_proto(response.location)
 
             # get emane models
             response = self.client.get_emane_models(self.session_id)
@@ -338,20 +337,22 @@ class CoreClient:
 
             # get emane config
             response = self.client.get_emane_config(self.session_id)
-            self.emane_config = response.config
+            self.emane_config = ConfigOption.from_dict(response.config)
 
             # update interface manager
             self.ifaces_manager.joined(session.links)
 
             # draw session
-            self.app.canvas.reset_and_redraw(session)
+            nodes = [Node.from_proto(x) for x in session.nodes]
+            links = [Link.from_proto(x) for x in session.links]
+            self.app.canvas.reset_and_redraw(nodes, links)
 
             # get mobility configs
             response = self.client.get_mobility_configs(self.session_id)
             for node_id in response.configs:
                 config = response.configs[node_id].config
                 canvas_node = self.canvas_nodes[node_id]
-                canvas_node.mobility_config = dict(config)
+                canvas_node.mobility_config = ConfigOption.from_dict(config)
 
             # get emane model config
             response = self.client.get_emane_model_configs(self.session_id)
@@ -360,16 +361,16 @@ class CoreClient:
                 if config.iface_id != -1:
                     iface_id = config.iface_id
                 canvas_node = self.canvas_nodes[config.node_id]
-                canvas_node.emane_model_configs[(config.model, iface_id)] = dict(
-                    config.config
-                )
+                canvas_node.emane_model_configs[
+                    (config.model, iface_id)
+                ] = ConfigOption.from_dict(config.config)
 
             # get wlan configurations
             response = self.client.get_wlan_configs(self.session_id)
             for _id in response.configs:
                 mapped_config = response.configs[_id]
                 canvas_node = self.canvas_nodes[_id]
-                canvas_node.wlan_config = dict(mapped_config.config)
+                canvas_node.wlan_config = ConfigOption.from_dict(mapped_config.config)
 
             # get service configurations
             response = self.client.get_node_service_configs(self.session_id)
@@ -501,7 +502,6 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            self.setup_cpu_usage()
 
             # get service information
             response = self.client.get_services()
@@ -546,8 +546,9 @@ class CoreClient:
 
     def edit_node(self, core_node: Node) -> None:
         try:
+            position = core_node.position.to_proto()
             self.client.edit_node(
-                self.session_id, core_node.id, core_node.position, source=GUI_SOURCE
+                self.session_id, core_node.id, position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
@@ -556,18 +557,17 @@ class CoreClient:
         for server in self.servers.values():
             self.client.add_session_server(self.session_id, server.name, server.address)
 
-    def start_session(self) -> StartSessionResponse:
+    def start_session(self) -> Tuple[bool, List[str]]:
         self.ifaces_manager.reset_mac()
-        nodes = [x.core_node for x in self.canvas_nodes.values()]
+        nodes = [x.core_node.to_proto() for x in self.canvas_nodes.values()]
         links = []
         for edge in self.links.values():
-            link = Link()
-            link.CopyFrom(edge.link)
-            if link.HasField("iface1") and not link.iface1.mac:
+            link = edge.link
+            if link.iface1 and not link.iface1.mac:
                 link.iface1.mac = self.ifaces_manager.next_mac()
-            if link.HasField("iface2") and not link.iface2.mac:
+            if link.iface2 and not link.iface2.mac:
                 link.iface2.mac = self.ifaces_manager.next_mac()
-            links.append(link)
+            links.append(link.to_proto())
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
@@ -582,14 +582,15 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
-        response = StartSessionResponse(result=False)
+        result = False
+        exceptions = []
         try:
             self.send_servers()
             response = self.client.start_session(
                 self.session_id,
                 nodes,
                 links,
-                self.location,
+                self.location.to_proto(),
                 hooks,
                 emane_config,
                 emane_model_configs,
@@ -605,20 +606,23 @@ class CoreClient:
             )
             if response.result:
                 self.set_metadata()
+            result = response.result
+            exceptions = response.exceptions
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Start Session Error", e)
-        return response
+        return result, exceptions
 
-    def stop_session(self, session_id: int = None) -> StopSessionResponse:
+    def stop_session(self, session_id: int = None) -> bool:
         if not session_id:
             session_id = self.session_id
-        response = StopSessionResponse(result=False)
+        result = False
         try:
             response = self.client.stop_session(session_id)
             logging.info("stopped session(%s), result: %s", session_id, response)
+            result = response.result
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Stop Session Error", e)
-        return response
+        return result
 
     def show_mobility_players(self) -> None:
         for canvas_node in self.canvas_nodes.values():
@@ -920,7 +924,7 @@ class CoreClient:
         )
         return node
 
-    def deleted_graph_nodes(self, canvas_nodes: List[Node]) -> None:
+    def deleted_graph_nodes(self, canvas_nodes: List[CanvasNode]) -> None:
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
@@ -951,13 +955,7 @@ class CoreClient:
             ip6=ip6,
             ip6_mask=ip6_mask,
         )
-        logging.info(
-            "create node(%s) interface(%s) IPv4(%s) IPv6(%s)",
-            node.name,
-            iface.name,
-            iface.ip4,
-            iface.ip6,
-        )
+        logging.info("create node(%s) interface(%s)", node.name, iface)
         return iface
 
     def create_link(
@@ -1010,8 +1008,7 @@ class CoreClient:
                 continue
             if not canvas_node.wlan_config:
                 continue
-            config = canvas_node.wlan_config
-            config = {x: config[x].value for x in config}
+            config = ConfigOption.to_dict(canvas_node.wlan_config)
             node_id = canvas_node.core_node.id
             wlan_config = WlanConfig(node_id=node_id, config=config)
             configs.append(wlan_config)
@@ -1024,8 +1021,7 @@ class CoreClient:
                 continue
             if not canvas_node.mobility_config:
                 continue
-            config = canvas_node.mobility_config
-            config = {x: config[x].value for x in config}
+            config = ConfigOption.to_dict(canvas_node.mobility_config)
             node_id = canvas_node.core_node.id
             mobility_config = MobilityConfig(node_id=node_id, config=config)
             configs.append(mobility_config)
@@ -1039,7 +1035,7 @@ class CoreClient:
             node_id = canvas_node.core_node.id
             for key, config in canvas_node.emane_model_configs.items():
                 model, iface_id = key
-                config = {x: config[x].value for x in config}
+                config = ConfigOption.to_dict(config)
                 if iface_id is None:
                     iface_id = -1
                 config_proto = EmaneModelConfig(
@@ -1116,7 +1112,7 @@ class CoreClient:
             node_id,
             config,
         )
-        return dict(config)
+        return ConfigOption.from_dict(config)
 
     def get_mobility_config(self, node_id: int) -> Dict[str, ConfigOption]:
         response = self.client.get_mobility_config(self.session_id, node_id)
@@ -1126,7 +1122,7 @@ class CoreClient:
             node_id,
             config,
         )
-        return dict(config)
+        return ConfigOption.from_dict(config)
 
     def get_emane_model_config(
         self, node_id: int, model: str, iface_id: int = None
@@ -1145,7 +1141,7 @@ class CoreClient:
             iface_id,
             config,
         )
-        return dict(config)
+        return ConfigOption.from_dict(config)
 
     def execute_script(self, script) -> None:
         response = self.client.execute_script(script)

@@ -6,11 +6,10 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import Node
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
+from core.gui.wrappers import ConfigOption, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
