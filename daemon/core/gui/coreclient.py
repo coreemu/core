@@ -12,9 +12,9 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import grpc
 
-from core.api.grpc import client
+from core.api.grpc import client, core_pb2
 from core.api.grpc.configservices_pb2 import ConfigService, ConfigServiceConfig
-from core.api.grpc.core_pb2 import CpuUsageEvent, Event, ThroughputsEvent
+from core.api.grpc.core_pb2 import CpuUsageEvent, Event
 from core.api.grpc.emane_pb2 import EmaneModelConfig
 from core.api.grpc.mobility_pb2 import MobilityConfig
 from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig, ServiceFileConfig
@@ -46,6 +46,7 @@ from core.gui.wrappers import (
     Position,
     SessionLocation,
     SessionState,
+    ThroughputsEvent,
 )
 
 if TYPE_CHECKING:
@@ -275,7 +276,8 @@ class CoreClient:
             CPU_USAGE_DELAY, self.handle_cpu_event
         )
 
-    def handle_throughputs(self, event: ThroughputsEvent) -> None:
+    def handle_throughputs(self, event: core_pb2.ThroughputsEvent) -> None:
+        event = ThroughputsEvent.from_proto(event)
         if event.session_id != self.session_id:
             logging.warning(
                 "ignoring throughput event session(%s) current(%s)",
@@ -776,12 +778,9 @@ class CoreClient:
         """
         create nodes and links that have not been created yet
         """
-        node_protos = [x.core_node for x in self.canvas_nodes.values()]
-        link_protos = [x.link for x in self.links.values()]
-        if self.state != SessionState.DEFINITION:
-            self.client.set_session_state(self.session_id, SessionState.DEFINITION)
-
-        self.client.set_session_state(self.session_id, SessionState.DEFINITION)
+        node_protos = [x.core_node.to_proto() for x in self.canvas_nodes.values()]
+        link_protos = [x.link.to_proto() for x in self.links.values()]
+        self.client.set_session_state(self.session_id, SessionState.DEFINITION.value)
         for node_proto in node_protos:
             response = self.client.add_node(self.session_id, node_proto)
             logging.debug("create node: %s", response)

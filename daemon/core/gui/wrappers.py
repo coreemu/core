@@ -69,6 +69,46 @@ class MessageType(Enum):
 
 
 @dataclass
+class BridgeThroughput:
+    node_id: int
+    throughput: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.BridgeThroughput) -> "BridgeThroughput":
+        return BridgeThroughput(node_id=proto.node_id, throughput=proto.throughput)
+
+
+@dataclass
+class InterfaceThroughput:
+    node_id: int
+    iface_id: int
+    throughput: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.InterfaceThroughput) -> "InterfaceThroughput":
+        return InterfaceThroughput(
+            node_id=proto.node_id, iface_id=proto.iface_id, throughput=proto.throughput
+        )
+
+
+@dataclass
+class ThroughputsEvent:
+    session_id: int
+    bridge_throughputs: List[BridgeThroughput]
+    iface_throughputs: List[InterfaceThroughput]
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.ThroughputsEvent) -> "ThroughputsEvent":
+        bridges = [BridgeThroughput.from_proto(x) for x in proto.bridge_throughputs]
+        ifaces = [InterfaceThroughput.from_proto(x) for x in proto.iface_throughputs]
+        return ThroughputsEvent(
+            session_id=proto.session_id,
+            bridge_throughputs=bridges,
+            iface_throughputs=ifaces,
+        )
+
+
+@dataclass
 class SessionLocation:
     x: float
     y: float
