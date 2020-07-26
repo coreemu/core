@@ -2,7 +2,25 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List
 
-from core.api.grpc import common_pb2, core_pb2
+from core.api.grpc import common_pb2, configservices_pb2, core_pb2, services_pb2
+
+
+class ConfigServiceValidationMode(Enum):
+    BLOCKING = 0
+    NON_BLOCKING = 1
+    TIMER = 2
+
+
+class ServiceValidationMode(Enum):
+    BLOCKING = 0
+    NON_BLOCKING = 1
+    TIMER = 2
+
+
+class MobilityAction(Enum):
+    START = 0
+    PAUSE = 1
+    STOP = 2
 
 
 class ConfigOptionType(Enum):
@@ -69,6 +87,68 @@ class MessageType(Enum):
 
 
 @dataclass
+class ConfigService:
+    group: str
+    name: str
+    executables: List[str]
+    dependencies: List[str]
+    directories: List[str]
+    files: List[str]
+    startup: List[str]
+    validate: List[str]
+    shutdown: List[str]
+    validation_mode: ConfigServiceValidationMode
+    validation_timer: int
+    validation_period: float
+
+    @classmethod
+    def from_proto(cls, proto: configservices_pb2.ConfigService) -> "ConfigService":
+        return ConfigService(
+            group=proto.group,
+            name=proto.name,
+            executables=proto.executables,
+            dependencies=proto.dependencies,
+            directories=proto.directories,
+            files=proto.files,
+            startup=proto.startup,
+            validate=proto.validate,
+            shutdown=proto.shutdown,
+            validation_mode=ConfigServiceValidationMode(proto.validation_mode),
+            validation_timer=proto.validation_timer,
+            validation_period=proto.validation_period,
+        )
+
+
+@dataclass
+class NodeServiceData:
+    executables: List[str]
+    dependencies: List[str]
+    dirs: List[str]
+    configs: List[str]
+    startup: List[str]
+    validate: List[str]
+    validation_mode: ServiceValidationMode
+    validation_timer: int
+    shutdown: List[str]
+    meta: str
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.NodeServiceData) -> "NodeServiceData":
+        return NodeServiceData(
+            executables=proto.executables,
+            dependencies=proto.dependencies,
+            dirs=proto.dirs,
+            configs=proto.configs,
+            startup=proto.startup,
+            validate=proto.validate,
+            validation_mode=proto.validation_mode,
+            validation_timer=proto.validation_timer,
+            shutdown=proto.shutdown,
+            meta=proto.meta,
+        )
+
+
+@dataclass
 class BridgeThroughput:
     node_id: int
     throughput: float
@@ -119,15 +199,15 @@ class SessionLocation:
     scale: float
 
     @classmethod
-    def from_proto(cls, location: core_pb2.SessionLocation) -> "SessionLocation":
+    def from_proto(cls, proto: core_pb2.SessionLocation) -> "SessionLocation":
         return SessionLocation(
-            x=location.x,
-            y=location.y,
-            z=location.z,
-            lat=location.lat,
-            lon=location.lon,
-            alt=location.alt,
-            scale=location.scale,
+            x=proto.x,
+            y=proto.y,
+            z=proto.z,
+            lat=proto.lat,
+            lon=proto.lon,
+            alt=proto.alt,
+            scale=proto.scale,
         )
 
     def to_proto(self) -> core_pb2.SessionLocation:
@@ -154,16 +234,16 @@ class ExceptionEvent:
 
     @classmethod
     def from_proto(
-        cls, session_id: int, event: core_pb2.ExceptionEvent
+        cls, session_id: int, proto: core_pb2.ExceptionEvent
     ) -> "ExceptionEvent":
         return ExceptionEvent(
             session_id=session_id,
-            node_id=event.node_id,
-            level=ExceptionLevel(event.level),
-            source=event.source,
-            date=event.date,
-            text=event.text,
-            opaque=event.opaque,
+            node_id=proto.node_id,
+            level=ExceptionLevel(proto.level),
+            source=proto.source,
+            date=proto.date,
+            text=proto.text,
+            opaque=proto.opaque,
         )
 
 
@@ -190,14 +270,14 @@ class ConfigOption:
         return {k: v.value for k, v in config.items()}
 
     @classmethod
-    def from_proto(cls, option: common_pb2.ConfigOption) -> "ConfigOption":
+    def from_proto(cls, proto: common_pb2.ConfigOption) -> "ConfigOption":
         return ConfigOption(
-            label=option.label,
-            name=option.name,
-            value=option.value,
-            type=ConfigOptionType(option.type),
-            group=option.group,
-            select=option.select,
+            label=proto.label,
+            name=proto.name,
+            value=proto.value,
+            type=ConfigOptionType(proto.type),
+            group=proto.group,
+            select=proto.select,
         )
 
 
@@ -217,20 +297,20 @@ class Interface:
     net2_id: int = None
 
     @classmethod
-    def from_proto(cls, iface: core_pb2.Interface) -> "Interface":
+    def from_proto(cls, proto: core_pb2.Interface) -> "Interface":
         return Interface(
-            id=iface.id,
-            name=iface.name,
-            mac=iface.mac,
-            ip4=iface.ip4,
-            ip4_mask=iface.ip4_mask,
-            ip6=iface.ip6,
-            ip6_mask=iface.ip6_mask,
-            net_id=iface.net_id,
-            flow_id=iface.flow_id,
-            mtu=iface.mtu,
-            node_id=iface.node_id,
-            net2_id=iface.net2_id,
+            id=proto.id,
+            name=proto.name,
+            mac=proto.mac,
+            ip4=proto.ip4,
+            ip4_mask=proto.ip4_mask,
+            ip6=proto.ip6,
+            ip6_mask=proto.ip6_mask,
+            net_id=proto.net_id,
+            flow_id=proto.flow_id,
+            mtu=proto.mtu,
+            node_id=proto.node_id,
+            net2_id=proto.net2_id,
         )
 
     def to_proto(self) -> core_pb2.Interface:
@@ -264,18 +344,18 @@ class LinkOptions:
     unidirectional: bool = False
 
     @classmethod
-    def from_proto(cls, options: core_pb2.LinkOptions) -> "LinkOptions":
+    def from_proto(cls, proto: core_pb2.LinkOptions) -> "LinkOptions":
         return LinkOptions(
-            jitter=options.jitter,
-            key=options.key,
-            mburst=options.mburst,
-            mer=options.mer,
-            loss=options.loss,
-            bandwidth=options.bandwidth,
-            burst=options.burst,
-            delay=options.delay,
-            dup=options.dup,
-            unidirectional=options.unidirectional,
+            jitter=proto.jitter,
+            key=proto.key,
+            mburst=proto.mburst,
+            mer=proto.mer,
+            loss=proto.loss,
+            bandwidth=proto.bandwidth,
+            burst=proto.burst,
+            delay=proto.delay,
+            dup=proto.dup,
+            unidirectional=proto.unidirectional,
         )
 
     def to_proto(self) -> core_pb2.LinkOptions:
@@ -306,26 +386,26 @@ class Link:
     color: str = None
 
     @classmethod
-    def from_proto(cls, link: core_pb2.Link) -> "Link":
+    def from_proto(cls, proto: core_pb2.Link) -> "Link":
         iface1 = None
-        if link.HasField("iface1"):
-            iface1 = Interface.from_proto(link.iface1)
+        if proto.HasField("iface1"):
+            iface1 = Interface.from_proto(proto.iface1)
         iface2 = None
-        if link.HasField("iface2"):
-            iface2 = Interface.from_proto(link.iface2)
+        if proto.HasField("iface2"):
+            iface2 = Interface.from_proto(proto.iface2)
         options = None
-        if link.HasField("options"):
-            options = LinkOptions.from_proto(link.options)
+        if proto.HasField("options"):
+            options = LinkOptions.from_proto(proto.options)
         return Link(
-            type=LinkType(link.type),
-            node1_id=link.node1_id,
-            node2_id=link.node2_id,
+            type=LinkType(proto.type),
+            node1_id=proto.node1_id,
+            node2_id=proto.node2_id,
             iface1=iface1,
             iface2=iface2,
             options=options,
-            network_id=link.network_id,
-            label=link.label,
-            color=link.color,
+            network_id=proto.network_id,
+            label=proto.label,
+            color=proto.color,
         )
 
     def to_proto(self) -> core_pb2.Link:
@@ -360,13 +440,13 @@ class SessionSummary:
     dir: str
 
     @classmethod
-    def from_proto(cls, summary: core_pb2.SessionSummary) -> "SessionSummary":
+    def from_proto(cls, proto: core_pb2.SessionSummary) -> "SessionSummary":
         return SessionSummary(
-            id=summary.id,
-            state=SessionState(summary.state),
-            nodes=summary.nodes,
-            file=summary.file,
-            dir=summary.dir,
+            id=proto.id,
+            state=SessionState(proto.state),
+            nodes=proto.nodes,
+            file=proto.file,
+            dir=proto.dir,
         )
 
 
@@ -377,8 +457,8 @@ class Hook:
     data: str
 
     @classmethod
-    def from_proto(cls, hook: core_pb2.Hook) -> "Hook":
-        return Hook(state=SessionState(hook.state), file=hook.file, data=hook.data)
+    def from_proto(cls, proto: core_pb2.Hook) -> "Hook":
+        return Hook(state=SessionState(proto.state), file=proto.file, data=proto.data)
 
     def to_proto(self) -> core_pb2.Hook:
         return core_pb2.Hook(state=self.state.value, file=self.file, data=self.data)
@@ -390,8 +470,8 @@ class Position:
     y: float
 
     @classmethod
-    def from_proto(cls, position: core_pb2.Position) -> "Position":
-        return Position(x=position.x, y=position.y)
+    def from_proto(cls, proto: core_pb2.Position) -> "Position":
+        return Position(x=proto.x, y=proto.y)
 
     def to_proto(self) -> core_pb2.Position:
         return core_pb2.Position(x=self.x, y=self.y)
@@ -404,8 +484,8 @@ class Geo:
     alt: float = None
 
     @classmethod
-    def from_proto(cls, geo: core_pb2.Geo) -> "Geo":
-        return Geo(lat=geo.lat, lon=geo.lon, alt=geo.alt)
+    def from_proto(cls, proto: core_pb2.Geo) -> "Geo":
+        return Geo(lat=proto.lat, lon=proto.lon, alt=proto.alt)
 
     def to_proto(self) -> core_pb2.Geo:
         return core_pb2.Geo(lat=self.lat, lon=self.lon, alt=self.alt)
@@ -429,22 +509,22 @@ class Node:
     channel: str = None
 
     @classmethod
-    def from_proto(cls, node: core_pb2.Node) -> "Node":
+    def from_proto(cls, proto: core_pb2.Node) -> "Node":
         return Node(
-            id=node.id,
-            name=node.name,
-            type=NodeType(node.type),
-            model=node.model,
-            position=Position.from_proto(node.position),
-            services=list(node.services),
-            config_services=list(node.config_services),
-            emane=node.emane,
-            icon=node.icon,
-            image=node.image,
-            server=node.server,
-            geo=Geo.from_proto(node.geo),
-            dir=node.dir,
-            channel=node.channel,
+            id=proto.id,
+            name=proto.name,
+            type=NodeType(proto.type),
+            model=proto.model,
+            position=Position.from_proto(proto.position),
+            services=list(proto.services),
+            config_services=list(proto.config_services),
+            emane=proto.emane,
+            icon=proto.icon,
+            image=proto.image,
+            server=proto.server,
+            geo=Geo.from_proto(proto.geo),
+            dir=proto.dir,
+            channel=proto.channel,
         )
 
     def to_proto(self) -> core_pb2.Node:
@@ -471,10 +551,10 @@ class LinkEvent:
     link: Link
 
     @classmethod
-    def from_proto(cls, event: core_pb2.LinkEvent) -> "LinkEvent":
+    def from_proto(cls, proto: core_pb2.LinkEvent) -> "LinkEvent":
         return LinkEvent(
-            message_type=MessageType(event.message_type),
-            link=Link.from_proto(event.link),
+            message_type=MessageType(proto.message_type),
+            link=Link.from_proto(proto.link),
         )
 
 
@@ -484,8 +564,8 @@ class NodeEvent:
     node: Node
 
     @classmethod
-    def from_proto(cls, event: core_pb2.NodeEvent) -> "NodeEvent":
+    def from_proto(cls, proto: core_pb2.NodeEvent) -> "NodeEvent":
         return NodeEvent(
-            message_type=MessageType(event.message_type),
-            node=Node.from_proto(event.node),
+            message_type=MessageType(proto.message_type),
+            node=Node.from_proto(proto.node),
         )

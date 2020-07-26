@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
-from core.api.grpc.mobility_pb2 import MobilityAction
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum
 from core.gui.themes import PADX, PADY
-from core.gui.wrappers import ConfigOption, Node
+from core.gui.wrappers import ConfigOption, MobilityAction, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -150,7 +149,7 @@ class MobilityPlayerDialog(Dialog):
         session_id = self.app.core.session_id
         try:
             self.app.core.client.mobility_action(
-                session_id, self.node.id, MobilityAction.START
+                session_id, self.node.id, MobilityAction.START.value
             )
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Mobility Error", e)
@@ -160,7 +159,7 @@ class MobilityPlayerDialog(Dialog):
         session_id = self.app.core.session_id
         try:
             self.app.core.client.mobility_action(
-                session_id, self.node.id, MobilityAction.PAUSE
+                session_id, self.node.id, MobilityAction.PAUSE.value
             )
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Mobility Error", e)
@@ -170,7 +169,7 @@ class MobilityPlayerDialog(Dialog):
         session_id = self.app.core.session_id
         try:
             self.app.core.client.mobility_action(
-                session_id, self.node.id, MobilityAction.STOP
+                session_id, self.node.id, MobilityAction.STOP.value
             )
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Mobility Error", e)

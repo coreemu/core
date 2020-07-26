@@ -8,11 +8,10 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 import grpc
 
-from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
-from core.gui.wrappers import ConfigOption
+from core.gui.wrappers import ConfigOption, ServiceValidationMode
 
 if TYPE_CHECKING:
     from core.gui.app import Application
