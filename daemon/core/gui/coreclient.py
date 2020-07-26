@@ -48,6 +48,7 @@ from core.gui.wrappers import (
     NodeServiceData,
     NodeType,
     Position,
+    Session,
     SessionLocation,
     SessionState,
     ThroughputsEvent,
@@ -311,8 +312,8 @@ class CoreClient:
         # get session data
         try:
             response = self.client.get_session(self.session_id)
-            session = response.session
-            self.state = SessionState(session.state)
+            session = Session.from_proto(response.session)
+            self.state = session.state
             self.handling_events = self.client.events(
                 self.session_id, self.handle_events
             )
@@ -349,9 +350,7 @@ class CoreClient:
             self.ifaces_manager.joined(session.links)
 
             # draw session
-            nodes = [Node.from_proto(x) for x in session.nodes]
-            links = [Link.from_proto(x) for x in session.links]
-            self.app.canvas.reset_and_redraw(nodes, links)
+            self.app.canvas.reset_and_redraw(session)
 
             # get mobility configs
             response = self.client.get_mobility_configs(self.session_id)

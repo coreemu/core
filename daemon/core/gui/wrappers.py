@@ -546,6 +546,27 @@ class Node:
 
 
 @dataclass
+class Session:
+    id: int
+    state: SessionState
+    nodes: List[Node]
+    links: List[Link]
+    dir: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.Session) -> "Session":
+        nodes = [Node.from_proto(x) for x in proto.nodes]
+        links = [Link.from_proto(x) for x in proto.links]
+        return Session(
+            id=proto.id,
+            state=SessionState(proto.state),
+            nodes=nodes,
+            links=links,
+            dir=proto.dir,
+        )
+
+
+@dataclass
 class LinkEvent:
     message_type: MessageType
     link: Link

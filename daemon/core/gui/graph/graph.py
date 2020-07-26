@@ -22,7 +22,7 @@ from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeDraw, NodeUtils
-from core.gui.wrappers import Interface, Link, LinkType, Node, ThroughputsEvent
+from core.gui.wrappers import Interface, Link, LinkType, Node, Session, ThroughputsEvent
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -127,7 +127,7 @@ class CanvasGraph(tk.Canvas):
         )
         self.configure(scrollregion=self.bbox(tk.ALL))
 
-    def reset_and_redraw(self, nodes: List[Node], links: List[Link]) -> None:
+    def reset_and_redraw(self, session: Session) -> None:
         # reset view options to default state
         self.show_node_labels.set(True)
         self.show_link_labels.set(True)
@@ -152,7 +152,7 @@ class CanvasGraph(tk.Canvas):
         self.wireless_edges.clear()
         self.wireless_network.clear()
         self.drawing_edge = None
-        self.draw_session(nodes, links)
+        self.draw_session(session)
 
     def setup_bindings(self) -> None:
         """
@@ -325,19 +325,20 @@ class CanvasGraph(tk.Canvas):
         self.nodes[node.id] = node
         self.core.canvas_nodes[core_node.id] = node
 
-    def draw_session(self, nodes: List[Node], links: List[Link]) -> None:
+    def draw_session(self, session: Session) -> None:
         """
         Draw existing session.
         """
         # draw existing nodes
-        for core_node in nodes:
+        for core_node in session.nodes:
+            logging.debug("drawing node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
             self.add_core_node(core_node)
 
             # draw existing links
-        for link in links:
+        for link in session.links:
             logging.debug("drawing link: %s", link)
             canvas_node1 = self.core.canvas_nodes[link.node1_id]
             canvas_node2 = self.core.canvas_nodes[link.node2_id]
