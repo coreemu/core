@@ -5,9 +5,9 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, List, Optional
 
-from core.api.grpc.core_pb2 import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
+from core.gui.wrappers import ExceptionEvent, ExceptionLevel
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -69,7 +69,7 @@ class StatusBar(ttk.Frame):
 
     def add_alert(self, event: ExceptionEvent) -> None:
         self.core_alarms.append(event)
-        level = event.exception_event.level
+        level = event.level
         self._set_alert_style(level)
         label = f"Alerts ({len(self.core_alarms)})"
         self.alerts_button.config(text=label, style=self.alert_style)

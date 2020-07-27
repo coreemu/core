@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.services_pb2 import NodeServiceData, ServiceValidationMode
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
+from core.gui.wrappers import NodeServiceData, ServiceValidationMode
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -72,7 +72,7 @@ class ServiceConfigDialog(Dialog):
         self.service_file_data: Optional[CodeText] = None
         self.validation_period_entry: Optional[ttk.Entry] = None
         self.original_service_files: Dict[str, str] = {}
-        self.default_config: NodeServiceData = None
+        self.default_config: Optional[NodeServiceData] = None
         self.temp_service_files: Dict[str, str] = {}
         self.modified_files: Set[str] = set()
         self.has_error: bool = False

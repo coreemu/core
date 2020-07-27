@@ -6,9 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import Interface, Node, NodeType
-from core.api.grpc.services_pb2 import NodeServiceData
 from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
@@ -22,6 +19,7 @@ from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
+from core.gui.wrappers import ConfigOption, Interface, Node, NodeServiceData, NodeType
 
 if TYPE_CHECKING:
     from core.gui.app import Application

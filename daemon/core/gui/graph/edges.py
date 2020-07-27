@@ -3,14 +3,13 @@ import math
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
 from core.gui.utils import bandwidth_text
+from core.gui.wrappers import Interface, Link
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
@@ -305,7 +304,7 @@ class CanvasEdge(Edge):
         self.link = link
         self.draw_labels()
 
-    def iface_label(self, iface: core_pb2.Interface) -> str:
+    def iface_label(self, iface: Interface) -> str:
         label = ""
         if iface.name and self.canvas.show_iface_names.get():
             label = f"{iface.name}"
@@ -319,10 +318,10 @@ class CanvasEdge(Edge):
 
     def create_node_labels(self) -> Tuple[str, str]:
         label1 = None
-        if self.link.HasField("iface1"):
+        if self.link.iface1:
             label1 = self.iface_label(self.link.iface1)
         label2 = None
-        if self.link.HasField("iface2"):
+        if self.link.iface2:
             label2 = self.iface_label(self.link.iface2)
         return label1, label2
 
@@ -417,6 +416,8 @@ class CanvasEdge(Edge):
         dialog.show()
 
     def draw_link_options(self):
+        if not self.link.options:
+            return
         options = self.link.options
         lines = []
         bandwidth = options.bandwidth

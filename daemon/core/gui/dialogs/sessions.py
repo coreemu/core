@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, List, Optional
 
 import grpc
 
-from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import SessionSummary
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
+from core.gui.wrappers import SessionState, SessionSummary
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -33,7 +32,7 @@ class SessionsDialog(Dialog):
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
-            return response.sessions
+            return [SessionSummary.from_proto(x) for x in response.sessions]
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Sessions Error", e)
             self.destroy()
@@ -82,7 +81,7 @@ class SessionsDialog(Dialog):
         self.tree.heading("nodes", text="Node Count")
 
         for index, session in enumerate(self.sessions):
-            state_name = core_pb2.SessionState.Enum.Name(session.state)
+            state_name = SessionState(session.state).name
             self.tree.insert(
                 "",
                 tk.END,

@@ -1,9 +1,9 @@
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc.core_pb2 import Interface
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
 from core.gui.utils import bandwidth_text
+from core.gui.wrappers import Interface
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -62,7 +62,7 @@ class EdgeInfoFrame(InfoFrameBase):
             ip6 = f"{iface2.ip6}/{iface2.ip6_mask}" if iface2.ip6 else ""
             frame.add_detail("IP6", ip6)
 
-        if link.HasField("options"):
+        if link.options:
             frame.add_separator()
             bandwidth = bandwidth_text(options.bandwidth)
             frame.add_detail("Bandwidth", bandwidth)

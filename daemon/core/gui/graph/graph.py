@@ -7,14 +7,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.core_pb2 import (
-    Interface,
-    Link,
-    LinkType,
-    Node,
-    Session,
-    ThroughputsEvent,
-)
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -30,6 +22,7 @@ from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.wrappers import Interface, Link, LinkType, Node, Session, ThroughputsEvent
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -135,11 +128,6 @@ class CanvasGraph(tk.Canvas):
         self.configure(scrollregion=self.bbox(tk.ALL))
 
     def reset_and_redraw(self, session: Session) -> None:
-        """
-        Reset the private variables CanvasGraph object, redraw nodes given the new grpc
-        client.
-        :param session: session to draw
-        """
         # reset view options to default state
         self.show_node_labels.set(True)
         self.show_link_labels.set(True)
@@ -251,12 +239,12 @@ class CanvasGraph(tk.Canvas):
             dst.edges.add(edge)
             self.edges[edge.token] = edge
             self.core.links[edge.token] = edge
-            if link.HasField("iface1"):
+            if link.iface1:
                 iface1 = link.iface1
                 self.core.iface_to_edge[(node1.id, iface1.id)] = token
                 src.ifaces[iface1.id] = iface1
                 edge.src_iface = iface1
-            if link.HasField("iface2"):
+            if link.iface2:
                 iface2 = link.iface2
                 self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
                 dst.ifaces[iface2.id] = iface2
@@ -343,6 +331,7 @@ class CanvasGraph(tk.Canvas):
         """
         # draw existing nodes
         for core_node in session.nodes:
+            logging.debug("drawing node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
@@ -987,12 +976,12 @@ class CanvasGraph(tk.Canvas):
             copy_edge = self.edges[token]
             copy_link = copy_edge.link
             options = edge.link.options
-            copy_link.options.CopyFrom(options)
+            copy_link.options = deepcopy(options)
             iface1_id = None
-            if copy_link.HasField("iface1"):
+            if copy_link.iface1:
                 iface1_id = copy_link.iface1.id
             iface2_id = None
-            if copy_link.HasField("iface2"):
+            if copy_link.iface2:
                 iface2_id = copy_link.iface2.id
             if not options.unidirectional:
                 copy_edge.asymmetric_link = None

@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
-from core.api.grpc.common_pb2 import ConfigOption
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
+from core.gui.wrappers import ConfigOption
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -28,7 +28,7 @@ class SessionOptionsDialog(Dialog):
         try:
             session_id = self.app.core.session_id
             response = self.app.core.client.get_session_options(session_id)
-            return response.config
+            return ConfigOption.from_dict(response.config)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Session Options Error", e)
             self.has_error = True
