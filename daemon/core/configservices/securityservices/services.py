@@ -14,7 +14,7 @@ class VpnClient(ConfigService):
     files: List[str] = ["vpnclient.sh"]
     executables: List[str] = ["openvpn", "ip", "killall"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh vpnclient.sh"]
+    startup: List[str] = ["bash vpnclient.sh"]
     validate: List[str] = ["pidof openvpn"]
     shutdown: List[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -48,7 +48,7 @@ class VpnServer(ConfigService):
     files: List[str] = ["vpnserver.sh"]
     executables: List[str] = ["openvpn", "ip", "killall"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh vpnserver.sh"]
+    startup: List[str] = ["bash vpnserver.sh"]
     validate: List[str] = ["pidof openvpn"]
     shutdown: List[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -91,7 +91,7 @@ class IPsec(ConfigService):
     files: List[str] = ["ipsec.sh"]
     executables: List[str] = ["racoon", "ip", "setkey", "killall"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh ipsec.sh"]
+    startup: List[str] = ["bash ipsec.sh"]
     validate: List[str] = ["pidof racoon"]
     shutdown: List[str] = ["killall racoon"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -106,7 +106,7 @@ class Firewall(ConfigService):
     files: List[str] = ["firewall.sh"]
     executables: List[str] = ["iptables"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh firewall.sh"]
+    startup: List[str] = ["bash firewall.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -121,7 +121,7 @@ class Nat(ConfigService):
     files: List[str] = ["nat.sh"]
     executables: List[str] = ["iptables"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh nat.sh"]
+    startup: List[str] = ["bash nat.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING

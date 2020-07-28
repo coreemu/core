@@ -26,7 +26,7 @@ class FRRZebra(CoreService):
         "/usr/local/etc/frr/vtysh.conf",
         "/usr/local/etc/frr/daemons",
     )
-    startup: Tuple[str, ...] = ("sh frrboot.sh zebra",)
+    startup: Tuple[str, ...] = ("bash frrboot.sh zebra",)
     shutdown: Tuple[str, ...] = ("killall zebra",)
     validate: Tuple[str, ...] = ("pidof zebra",)
 

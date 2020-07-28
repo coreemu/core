@@ -19,7 +19,7 @@ class Ucarp(CoreService):
         UCARP_ETC + "/default-down.sh",
         "ucarpboot.sh",
     )
-    startup: Tuple[str, ...] = ("sh ucarpboot.sh",)
+    startup: Tuple[str, ...] = ("bash ucarpboot.sh",)
     shutdown: Tuple[str, ...] = ("killall ucarp",)
     validate: Tuple[str, ...] = ("pidof ucarp",)
 

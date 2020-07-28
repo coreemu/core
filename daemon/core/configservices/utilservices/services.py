@@ -16,7 +16,7 @@ class DefaultRouteService(ConfigService):
     files: List[str] = ["defaultroute.sh"]
     executables: List[str] = ["ip"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh defaultroute.sh"]
+    startup: List[str] = ["bash defaultroute.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -44,7 +44,7 @@ class DefaultMulticastRouteService(ConfigService):
     files: List[str] = ["defaultmroute.sh"]
     executables: List[str] = []
     dependencies: List[str] = []
-    startup: List[str] = ["sh defaultmroute.sh"]
+    startup: List[str] = ["bash defaultmroute.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -66,7 +66,7 @@ class StaticRouteService(ConfigService):
     files: List[str] = ["staticroute.sh"]
     executables: List[str] = []
     dependencies: List[str] = []
-    startup: List[str] = ["sh staticroute.sh"]
+    startup: List[str] = ["bash staticroute.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -94,7 +94,7 @@ class IpForwardService(ConfigService):
     files: List[str] = ["ipforward.sh"]
     executables: List[str] = ["sysctl"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh ipforward.sh"]
+    startup: List[str] = ["bash ipforward.sh"]
     validate: List[str] = []
     shutdown: List[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -116,7 +116,7 @@ class SshService(ConfigService):
     files: List[str] = ["startsshd.sh", "/etc/ssh/sshd_config"]
     executables: List[str] = ["sshd"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh startsshd.sh"]
+    startup: List[str] = ["bash startsshd.sh"]
     validate: List[str] = []
     shutdown: List[str] = ["killall sshd"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -164,7 +164,7 @@ class DhcpClientService(ConfigService):
     files: List[str] = ["startdhcpclient.sh"]
     executables: List[str] = ["dhclient"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh startdhcpclient.sh"]
+    startup: List[str] = ["bash startdhcpclient.sh"]
     validate: List[str] = ["pidof dhclient"]
     shutdown: List[str] = ["killall dhclient"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -200,9 +200,9 @@ class PcapService(ConfigService):
     files: List[str] = ["pcap.sh"]
     executables: List[str] = ["tcpdump"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh pcap.sh start"]
+    startup: List[str] = ["bash pcap.sh start"]
     validate: List[str] = ["pidof tcpdump"]
-    shutdown: List[str] = ["sh pcap.sh stop"]
+    shutdown: List[str] = ["bash pcap.sh stop"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = []
     modes: Dict[str, Dict[str, str]] = {}
@@ -249,7 +249,7 @@ class AtdService(ConfigService):
     files: List[str] = ["startatd.sh"]
     executables: List[str] = ["atd"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh startatd.sh"]
+    startup: List[str] = ["bash startatd.sh"]
     validate: List[str] = ["pidof atd"]
     shutdown: List[str] = ["pkill atd"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING

@@ -28,7 +28,7 @@ class UtilService(CoreService):
 class IPForwardService(UtilService):
     name: str = "IPForward"
     configs: Tuple[str, ...] = ("ipforward.sh",)
-    startup: Tuple[str, ...] = ("sh ipforward.sh",)
+    startup: Tuple[str, ...] = ("bash ipforward.sh",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -61,7 +61,7 @@ class IPForwardService(UtilService):
 class DefaultRouteService(UtilService):
     name: str = "DefaultRoute"
     configs: Tuple[str, ...] = ("defaultroute.sh",)
-    startup: Tuple[str, ...] = ("sh defaultroute.sh",)
+    startup: Tuple[str, ...] = ("bash defaultroute.sh",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -84,7 +84,7 @@ class DefaultRouteService(UtilService):
 class DefaultMulticastRouteService(UtilService):
     name: str = "DefaultMulticastRoute"
     configs: Tuple[str, ...] = ("defaultmroute.sh",)
-    startup: Tuple[str, ...] = ("sh defaultmroute.sh",)
+    startup: Tuple[str, ...] = ("bash defaultmroute.sh",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -103,7 +103,7 @@ class DefaultMulticastRouteService(UtilService):
 class StaticRouteService(UtilService):
     name: str = "StaticRoute"
     configs: Tuple[str, ...] = ("staticroute.sh",)
-    startup: Tuple[str, ...] = ("sh staticroute.sh",)
+    startup: Tuple[str, ...] = ("bash staticroute.sh",)
     custom_needed: bool = True
 
     @classmethod
@@ -135,7 +135,7 @@ class SshService(UtilService):
     name: str = "SSH"
     configs: Tuple[str, ...] = ("startsshd.sh", "/etc/ssh/sshd_config")
     dirs: Tuple[str, ...] = ("/etc/ssh", "/var/run/sshd")
-    startup: Tuple[str, ...] = ("sh startsshd.sh",)
+    startup: Tuple[str, ...] = ("bash startsshd.sh",)
     shutdown: Tuple[str, ...] = ("killall sshd",)
     validation_mode: ServiceMode = ServiceMode.BLOCKING
 
@@ -278,7 +278,7 @@ class DhcpClientService(UtilService):
 
     name: str = "DHCPClient"
     configs: Tuple[str, ...] = ("startdhcpclient.sh",)
-    startup: Tuple[str, ...] = ("sh startdhcpclient.sh",)
+    startup: Tuple[str, ...] = ("bash startdhcpclient.sh",)
     shutdown: Tuple[str, ...] = ("killall dhclient",)
     validate: Tuple[str, ...] = ("pidof dhclient",)
 
@@ -561,8 +561,8 @@ class PcapService(UtilService):
 
     name: str = "pcap"
     configs: Tuple[str, ...] = ("pcap.sh",)
-    startup: Tuple[str, ...] = ("sh pcap.sh start",)
-    shutdown: Tuple[str, ...] = ("sh pcap.sh stop",)
+    startup: Tuple[str, ...] = ("bash pcap.sh start",)
+    shutdown: Tuple[str, ...] = ("bash pcap.sh stop",)
     validate: Tuple[str, ...] = ("pidof tcpdump",)
     meta: str = "logs network traffic to pcap packet capture files"
 
@@ -671,7 +671,7 @@ class AtdService(UtilService):
     name: str = "atd"
     configs: Tuple[str, ...] = ("startatd.sh",)
     dirs: Tuple[str, ...] = ("/var/spool/cron/atjobs", "/var/spool/cron/atspool")
-    startup: Tuple[str, ...] = ("sh startatd.sh",)
+    startup: Tuple[str, ...] = ("bash startatd.sh",)
     shutdown: Tuple[str, ...] = ("pkill atd",)
 
     @classmethod

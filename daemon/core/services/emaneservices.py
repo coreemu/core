@@ -13,7 +13,7 @@ class EmaneTransportService(CoreService):
     dependencies: Tuple[str, ...] = ()
     dirs: Tuple[str, ...] = ()
     configs: Tuple[str, ...] = ("emanetransport.sh",)
-    startup: Tuple[str, ...] = (f"sh {configs[0]}",)
+    startup: Tuple[str, ...] = (f"bash {configs[0]}",)
     validate: Tuple[str, ...] = (f"pidof {executables[0]}",)
     validation_timer: float = 0.5
     shutdown: Tuple[str, ...] = (f"killall {executables[0]}",)

@@ -14,7 +14,7 @@ class MgenSinkService(ConfigService):
     files: List[str] = ["mgensink.sh", "sink.mgen"]
     executables: List[str] = ["mgen"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh mgensink.sh"]
+    startup: List[str] = ["bash mgensink.sh"]
     validate: List[str] = ["pidof mgen"]
     shutdown: List[str] = ["killall mgen"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -36,7 +36,7 @@ class NrlNhdp(ConfigService):
     files: List[str] = ["nrlnhdp.sh"]
     executables: List[str] = ["nrlnhdp"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh nrlnhdp.sh"]
+    startup: List[str] = ["bash nrlnhdp.sh"]
     validate: List[str] = ["pidof nrlnhdp"]
     shutdown: List[str] = ["killall nrlnhdp"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -58,7 +58,7 @@ class NrlSmf(ConfigService):
     files: List[str] = ["startsmf.sh"]
     executables: List[str] = ["nrlsmf", "killall"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh startsmf.sh"]
+    startup: List[str] = ["bash startsmf.sh"]
     validate: List[str] = ["pidof nrlsmf"]
     shutdown: List[str] = ["killall nrlsmf"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -93,7 +93,7 @@ class NrlOlsr(ConfigService):
     files: List[str] = ["nrlolsrd.sh"]
     executables: List[str] = ["nrlolsrd"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh nrlolsrd.sh"]
+    startup: List[str] = ["bash nrlolsrd.sh"]
     validate: List[str] = ["pidof nrlolsrd"]
     shutdown: List[str] = ["killall nrlolsrd"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -117,7 +117,7 @@ class NrlOlsrv2(ConfigService):
     files: List[str] = ["nrlolsrv2.sh"]
     executables: List[str] = ["nrlolsrv2"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh nrlolsrv2.sh"]
+    startup: List[str] = ["bash nrlolsrv2.sh"]
     validate: List[str] = ["pidof nrlolsrv2"]
     shutdown: List[str] = ["killall nrlolsrv2"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -139,7 +139,7 @@ class OlsrOrg(ConfigService):
     files: List[str] = ["olsrd.sh", "/etc/olsrd/olsrd.conf"]
     executables: List[str] = ["olsrd"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh olsrd.sh"]
+    startup: List[str] = ["bash olsrd.sh"]
     validate: List[str] = ["pidof olsrd"]
     shutdown: List[str] = ["killall olsrd"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -161,7 +161,7 @@ class MgenActor(ConfigService):
     files: List[str] = ["start_mgen_actor.sh"]
     executables: List[str] = ["mgen"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh start_mgen_actor.sh"]
+    startup: List[str] = ["bash start_mgen_actor.sh"]
     validate: List[str] = ["pidof mgen"]
     shutdown: List[str] = ["killall mgen"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
@@ -176,7 +176,7 @@ class Arouted(ConfigService):
     files: List[str] = ["startarouted.sh"]
     executables: List[str] = ["arouted"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh startarouted.sh"]
+    startup: List[str] = ["bash startarouted.sh"]
     validate: List[str] = ["pidof arouted"]
     shutdown: List[str] = ["pkill arouted"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
