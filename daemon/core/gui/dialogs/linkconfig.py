@@ -269,7 +269,7 @@ class LinkConfigurationDialog(Dialog):
             self.edge.asymmetric_link = None
 
         if self.app.core.is_runtime() and link.options:
-            session_id = self.app.core.session_id
+            session_id = self.app.core.session.id
             self.app.core.client.edit_link(
                 session_id,
                 link.node1_id,

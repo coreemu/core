@@ -940,16 +940,19 @@ class CanvasGraph(tk.Canvas):
             if not copy:
                 continue
             node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
-
             # copy configurations and services
-            node.core_node.services[:] = canvas_node.core_node.services
-            node.core_node.config_services[:] = canvas_node.core_node.config_services
-            node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
-            node.wlan_config = deepcopy(canvas_node.wlan_config)
-            node.mobility_config = deepcopy(canvas_node.mobility_config)
-            node.service_configs = deepcopy(canvas_node.service_configs)
-            node.service_file_configs = deepcopy(canvas_node.service_file_configs)
-            node.config_service_configs = deepcopy(canvas_node.config_service_configs)
+            node.core_node.services = core_node.services.copy()
+            node.core_node.config_services = core_node.config_services.copy()
+            node.core_node.emane_model_configs = deepcopy(core_node.emane_model_configs)
+            node.core_node.wlan_config = deepcopy(core_node.wlan_config)
+            node.core_node.mobility_config = deepcopy(core_node.mobility_config)
+            node.core_node.service_configs = deepcopy(core_node.service_configs)
+            node.core_node.service_file_configs = deepcopy(
+                core_node.service_file_configs
+            )
+            node.core_node.config_service_configs = deepcopy(
+                core_node.config_service_configs
+            )
 
             copy_map[canvas_node.id] = node.id
             self.core.canvas_nodes[copy.id] = node

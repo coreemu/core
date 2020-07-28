@@ -33,7 +33,6 @@ class ProgressTask:
         thread.start()
 
     def run(self) -> None:
-        logging.info("running task")
         try:
             values = self.task(*self.args)
             if values is None:
@@ -41,7 +40,6 @@ class ProgressTask:
             elif values and not isinstance(values, tuple):
                 values = (values,)
             if self.callback:
-                logging.info("calling callback")
                 self.app.after(0, self.callback, *values)
         except Exception as e:
             logging.exception("progress task exception")

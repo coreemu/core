@@ -113,8 +113,9 @@ class HooksDialog(Dialog):
         listbox_scroll.grid(sticky="nsew", pady=PADY)
         self.listbox = listbox_scroll.listbox
         self.listbox.bind("<<ListboxSelect>>", self.select)
-        for hook_file in self.app.core.hooks:
-            self.listbox.insert(tk.END, hook_file)
+        session = self.app.core.session
+        for file in session.hooks:
+            self.listbox.insert(tk.END, file)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -138,20 +139,22 @@ class HooksDialog(Dialog):
         dialog.show()
         hook = dialog.hook
         if hook:
-            self.app.core.hooks[hook.file] = hook
+            self.app.core.session.hooks[hook.file] = hook
             self.listbox.insert(tk.END, hook.file)
 
     def click_edit(self) -> None:
-        hook = self.app.core.hooks.pop(self.selected)
+        session = self.app.core.session
+        hook = session.hooks.pop(self.selected)
         dialog = HookDialog(self, self.app)
         dialog.set(hook)
         dialog.show()
-        self.app.core.hooks[hook.file] = hook
+        session.hooks[hook.file] = hook
         self.listbox.delete(self.selected_index)
         self.listbox.insert(self.selected_index, hook.file)
 
     def click_delete(self) -> None:
-        del self.app.core.hooks[self.selected]
+        session = self.app.core.session
+        del session.hooks[self.selected]
         self.listbox.delete(tk.ANCHOR)
         self.edit_button.config(state=tk.DISABLED)
         self.delete_button.config(state=tk.DISABLED)

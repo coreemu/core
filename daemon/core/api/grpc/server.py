@@ -580,6 +580,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         service_configs = grpcutils.get_node_service_configs(session)
         config_service_configs = grpcutils.get_node_config_service_configs(session)
         session_proto = core_pb2.Session(
+            id=session.id,
             state=session.state.value,
             nodes=nodes,
             links=links,

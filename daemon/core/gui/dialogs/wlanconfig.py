@@ -29,7 +29,7 @@ class WlanConfigDialog(Dialog):
         self.ranges: Dict[int, int] = {}
         self.positive_int: int = self.app.master.register(self.validate_and_update)
         try:
-            config = self.canvas_node.wlan_config
+            config = self.node.wlan_config
             if not config:
                 config = self.app.core.get_wlan_config(self.node.id)
             self.config: Dict[str, ConfigOption] = config
@@ -83,9 +83,9 @@ class WlanConfigDialog(Dialog):
         retrieve user's wlan configuration and store the new configuration values
         """
         config = self.config_frame.parse_config()
-        self.canvas_node.wlan_config = self.config
+        self.node.wlan_config = self.config
         if self.app.core.is_runtime():
-            session_id = self.app.core.session_id
+            session_id = self.app.core.session.id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)
         self.remove_ranges()
         self.destroy()

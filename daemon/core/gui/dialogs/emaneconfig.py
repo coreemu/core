@@ -16,7 +16,6 @@ from core.gui.wrappers import ConfigOption, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
 
 
 class GlobalEmaneDialog(Dialog):
@@ -29,8 +28,9 @@ class GlobalEmaneDialog(Dialog):
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
+        session = self.app.core.session
         self.config_frame = ConfigFrame(
-            self.top, self.app, self.app.core.emane_config, self.enabled
+            self.top, self.app, session.emane_config, self.enabled
         )
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew", pady=PADY)
@@ -58,24 +58,19 @@ class EmaneModelDialog(Dialog):
         self,
         master: tk.BaseWidget,
         app: "Application",
-        canvas_node: "CanvasNode",
+        node: Node,
         model: str,
         iface_id: int = None,
     ) -> None:
-        super().__init__(
-            app, f"{canvas_node.core_node.name} {model} Configuration", master=master
-        )
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node: Node = canvas_node.core_node
+        super().__init__(app, f"{node.name} {model} Configuration", master=master)
+        self.node: Node = node
         self.model: str = f"emane_{model}"
         self.iface_id: int = iface_id
         self.config_frame: Optional[ConfigFrame] = None
         self.enabled: bool = not self.app.core.is_runtime()
         self.has_error: bool = False
         try:
-            config = self.canvas_node.emane_model_configs.get(
-                (self.model, self.iface_id)
-            )
+            config = self.node.emane_model_configs.get((self.model, self.iface_id))
             if not config:
                 config = self.app.core.get_emane_model_config(
                     self.node.id, self.model, self.iface_id
@@ -110,19 +105,18 @@ class EmaneModelDialog(Dialog):
     def click_apply(self) -> None:
         self.config_frame.parse_config()
         key = (self.model, self.iface_id)
-        self.canvas_node.emane_model_configs[key] = self.config
+        self.node.emane_model_configs[key] = self.config
         self.destroy()
 
 
 class EmaneConfigDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
-        super().__init__(app, f"{canvas_node.core_node.name} EMANE Configuration")
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node: Node = canvas_node.core_node
+    def __init__(self, app: "Application", node: Node) -> None:
+        super().__init__(app, f"{node.name} EMANE Configuration")
+        self.node: Node = node
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(1)
         self.emane_models: List[str] = [
-            x.split("_")[1] for x in self.app.core.emane_models
+            x.split("_")[1] for x in self.app.core.session.emane_models
         ]
         model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)
@@ -231,7 +225,7 @@ class EmaneConfigDialog(Dialog):
         draw emane model configuration
         """
         model_name = self.emane_model.get()
-        dialog = EmaneModelDialog(self, self.app, self.canvas_node, model_name)
+        dialog = EmaneModelDialog(self, self.app, self.node, model_name)
         if not dialog.has_error:
             dialog.show()
 

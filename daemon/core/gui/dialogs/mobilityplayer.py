@@ -1,38 +1,31 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum
 from core.gui.themes import PADX, PADY
-from core.gui.wrappers import ConfigOption, MobilityAction, Node
+from core.gui.wrappers import MobilityAction, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
 
 ICON_SIZE: int = 16
 
 
 class MobilityPlayer:
-    def __init__(
-        self,
-        app: "Application",
-        canvas_node: "CanvasNode",
-        config: Dict[str, ConfigOption],
-    ) -> None:
+    def __init__(self, app: "Application", node: Node) -> None:
         self.app: "Application" = app
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.config: Dict[str, ConfigOption] = config
+        self.node: Node = node
         self.dialog: Optional[MobilityPlayerDialog] = None
         self.state: Optional[MobilityAction] = None
 
     def show(self) -> None:
         if self.dialog:
             self.dialog.destroy()
-        self.dialog = MobilityPlayerDialog(self.app, self.canvas_node, self.config)
+        self.dialog = MobilityPlayerDialog(self.app, self.node)
         self.dialog.protocol("WM_DELETE_WINDOW", self.close)
         if self.state == MobilityAction.START:
             self.set_play()
@@ -64,20 +57,11 @@ class MobilityPlayer:
 
 
 class MobilityPlayerDialog(Dialog):
-    def __init__(
-        self,
-        app: "Application",
-        canvas_node: "CanvasNode",
-        config: Dict[str, ConfigOption],
-    ) -> None:
-        super().__init__(
-            app, f"{canvas_node.core_node.name} Mobility Player", modal=False
-        )
+    def __init__(self, app: "Application", node: Node) -> None:
+        super().__init__(app, f"{node.name} Mobility Player", modal=False)
         self.resizable(False, False)
         self.geometry("")
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node: Node = canvas_node.core_node
-        self.config: Dict[str, ConfigOption] = config
+        self.node: Node = node
         self.play_button: Optional[ttk.Button] = None
         self.pause_button: Optional[ttk.Button] = None
         self.stop_button: Optional[ttk.Button] = None
@@ -85,9 +69,10 @@ class MobilityPlayerDialog(Dialog):
         self.draw()
 
     def draw(self) -> None:
+        config = self.node.mobility_config
         self.top.columnconfigure(0, weight=1)
 
-        file_name = self.config["file"].value
+        file_name = config["file"].value
         label = ttk.Label(self.top, text=file_name)
         label.grid(sticky="ew", pady=PADY)
 
@@ -114,13 +99,13 @@ class MobilityPlayerDialog(Dialog):
         self.stop_button.image = image
         self.stop_button.grid(row=0, column=2, sticky="ew", padx=PADX)
 
-        loop = tk.IntVar(value=int(self.config["loop"].value == "1"))
+        loop = tk.IntVar(value=int(config["loop"].value == "1"))
         checkbutton = ttk.Checkbutton(
             frame, text="Loop?", variable=loop, state=tk.DISABLED
         )
         checkbutton.grid(row=0, column=3, padx=PADX)
 
-        rate = self.config["refresh_ms"].value
+        rate = config["refresh_ms"].value
         label = ttk.Label(frame, text=f"rate {rate} ms")
         label.grid(row=0, column=4)
 
@@ -146,7 +131,7 @@ class MobilityPlayerDialog(Dialog):
 
     def click_play(self) -> None:
         self.set_play()
-        session_id = self.app.core.session_id
+        session_id = self.app.core.session.id
         try:
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.START.value
@@ -156,7 +141,7 @@ class MobilityPlayerDialog(Dialog):
 
     def click_pause(self) -> None:
         self.set_pause()
-        session_id = self.app.core.session_id
+        session_id = self.app.core.session.id
         try:
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.PAUSE.value
@@ -166,7 +151,7 @@ class MobilityPlayerDialog(Dialog):
 
     def click_stop(self) -> None:
         self.set_stop()
-        session_id = self.app.core.session_id
+        session_id = self.app.core.session.id
         try:
             self.app.core.client.mobility_action(
                 session_id, self.node.id, MobilityAction.STOP.value

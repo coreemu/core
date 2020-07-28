@@ -13,18 +13,16 @@ from core.gui.wrappers import ConfigOption, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
 
 
 class MobilityConfigDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
-        super().__init__(app, f"{canvas_node.core_node.name} Mobility Configuration")
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node: Node = canvas_node.core_node
+    def __init__(self, app: "Application", node: Node) -> None:
+        super().__init__(app, f"{node.name} Mobility Configuration")
+        self.node: Node = node
         self.config_frame: Optional[ConfigFrame] = None
         self.has_error: bool = False
         try:
-            config = self.canvas_node.mobility_config
+            config = self.node.mobility_config
             if not config:
                 config = self.app.core.get_mobility_config(self.node.id)
             self.config: Dict[str, ConfigOption] = config
@@ -56,5 +54,5 @@ class MobilityConfigDialog(Dialog):
 
     def click_apply(self) -> None:
         self.config_frame.parse_config()
-        self.canvas_node.mobility_config = self.config
+        self.node.mobility_config = self.config
         self.destroy()

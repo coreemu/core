@@ -43,16 +43,15 @@ class CopyServiceConfigDialog(Dialog):
         listbox_scroll = ListboxScroll(self.top)
         listbox_scroll.grid(sticky="nsew", pady=PADY)
         self.listbox = listbox_scroll.listbox
-        for canvas_node in self.app.canvas.nodes.values():
-            file_configs = canvas_node.service_file_configs.get(self.service)
+        for node in self.app.core.session.nodes.values():
+            file_configs = node.service_file_configs.get(self.service)
             if not file_configs:
                 continue
             data = file_configs.get(self.file_name)
             if not data:
                 continue
-            name = canvas_node.core_node.name
-            self.nodes[name] = canvas_node.id
-            self.listbox.insert(tk.END, name)
+            self.nodes[node.name] = node.id
+            self.listbox.insert(tk.END, node.name)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
@@ -70,9 +69,9 @@ class CopyServiceConfigDialog(Dialog):
         if not selection:
             return
         name = self.listbox.get(selection)
-        canvas_node_id = self.nodes[name]
-        canvas_node = self.app.canvas.nodes[canvas_node_id]
-        data = canvas_node.service_file_configs[self.service][self.file_name]
+        node_id = self.nodes[name]
+        node = self.app.core.session.nodes[node_id]
+        data = node.service_file_configs[self.service][self.file_name]
         self.dialog.temp_service_files[self.file_name] = data
         self.dialog.modified_files.add(self.file_name)
         self.dialog.service_file_data.text.delete(1.0, tk.END)
@@ -84,9 +83,9 @@ class CopyServiceConfigDialog(Dialog):
         if not selection:
             return
         name = self.listbox.get(selection)
-        canvas_node_id = self.nodes[name]
-        canvas_node = self.app.canvas.nodes[canvas_node_id]
-        data = canvas_node.service_file_configs[self.service][self.file_name]
+        node_id = self.nodes[name]
+        node = self.app.core.session.nodes[node_id]
+        data = node.service_file_configs[self.service][self.file_name]
         dialog = ViewConfigDialog(
             self.app, self, name, self.service, self.file_name, data
         )
