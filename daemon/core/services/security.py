@@ -16,7 +16,7 @@ class VPNClient(CoreService):
     name: str = "VPNClient"
     group: str = "Security"
     configs: Tuple[str, ...] = ("vpnclient.sh",)
-    startup: Tuple[str, ...] = ("sh vpnclient.sh",)
+    startup: Tuple[str, ...] = ("bash vpnclient.sh",)
     shutdown: Tuple[str, ...] = ("killall openvpn",)
     validate: Tuple[str, ...] = ("pidof openvpn",)
     custom_needed: bool = True
@@ -43,7 +43,7 @@ class VPNServer(CoreService):
     name: str = "VPNServer"
     group: str = "Security"
     configs: Tuple[str, ...] = ("vpnserver.sh",)
-    startup: Tuple[str, ...] = ("sh vpnserver.sh",)
+    startup: Tuple[str, ...] = ("bash vpnserver.sh",)
     shutdown: Tuple[str, ...] = ("killall openvpn",)
     validate: Tuple[str, ...] = ("pidof openvpn",)
     custom_needed: bool = True
@@ -71,7 +71,7 @@ class IPsec(CoreService):
     name: str = "IPsec"
     group: str = "Security"
     configs: Tuple[str, ...] = ("ipsec.sh",)
-    startup: Tuple[str, ...] = ("sh ipsec.sh",)
+    startup: Tuple[str, ...] = ("bash ipsec.sh",)
     shutdown: Tuple[str, ...] = ("killall racoon",)
     custom_needed: bool = True
 
@@ -97,7 +97,7 @@ class Firewall(CoreService):
     name: str = "Firewall"
     group: str = "Security"
     configs: Tuple[str, ...] = ("firewall.sh",)
-    startup: Tuple[str, ...] = ("sh firewall.sh",)
+    startup: Tuple[str, ...] = ("bash firewall.sh",)
     custom_needed: bool = True
 
     @classmethod
@@ -127,7 +127,7 @@ class Nat(CoreService):
     group: str = "Security"
     executables: Tuple[str, ...] = ("iptables",)
     configs: Tuple[str, ...] = ("nat.sh",)
-    startup: Tuple[str, ...] = ("sh nat.sh",)
+    startup: Tuple[str, ...] = ("bash nat.sh",)
     custom_needed: bool = False
 
     @classmethod

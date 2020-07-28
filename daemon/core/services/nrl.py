@@ -97,7 +97,7 @@ class NrlSmf(NrlService):
 
     name: str = "SMF"
     executables: Tuple[str, ...] = ("nrlsmf",)
-    startup: Tuple[str, ...] = ("sh startsmf.sh",)
+    startup: Tuple[str, ...] = ("bash startsmf.sh",)
     shutdown: Tuple[str, ...] = ("killall nrlsmf",)
     validate: Tuple[str, ...] = ("pidof nrlsmf",)
     configs: Tuple[str, ...] = ("startsmf.sh",)
@@ -566,7 +566,7 @@ class MgenActor(NrlService):
     group: str = "ProtoSvc"
     executables: Tuple[str, ...] = ("mgen",)
     configs: Tuple[str, ...] = ("start_mgen_actor.sh",)
-    startup: Tuple[str, ...] = ("sh start_mgen_actor.sh",)
+    startup: Tuple[str, ...] = ("bash start_mgen_actor.sh",)
     validate: Tuple[str, ...] = ("pidof mgen",)
     shutdown: Tuple[str, ...] = ("killall mgen",)
 
@@ -596,7 +596,7 @@ class Arouted(NrlService):
     name: str = "arouted"
     executables: Tuple[str, ...] = ("arouted",)
     configs: Tuple[str, ...] = ("startarouted.sh",)
-    startup: Tuple[str, ...] = ("sh startarouted.sh",)
+    startup: Tuple[str, ...] = ("bash startarouted.sh",)
     shutdown: Tuple[str, ...] = ("pkill arouted",)
     validate: Tuple[str, ...] = ("pidof arouted",)
 

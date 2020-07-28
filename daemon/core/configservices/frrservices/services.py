@@ -65,7 +65,7 @@ class FRRZebra(ConfigService):
     ]
     executables: List[str] = ["zebra"]
     dependencies: List[str] = []
-    startup: List[str] = ["sh frrboot.sh zebra"]
+    startup: List[str] = ["bash frrboot.sh zebra"]
     validate: List[str] = ["pidof zebra"]
     shutdown: List[str] = ["killall zebra"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING

@@ -599,7 +599,7 @@ class CoreNode(CoreNodeBase):
         if self.server is None:
             return self.client.check_cmd(args, wait=wait, shell=shell)
         else:
-            args = self.client.create_cmd(args)
+            args = self.client.create_cmd(args, shell)
             return self.server.remote_cmd(args, wait=wait)
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
