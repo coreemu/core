@@ -87,22 +87,19 @@ class FindDialog(Dialog):
         """
         node_name = self.find_text.get().strip()
         self.clear_treeview_items()
-        for node_id, node in sorted(
-            self.app.core.canvas_nodes.items(), key=lambda x: x[0]
-        ):
-            name = node.core_node.name
+        for node in self.app.core.session.nodes.values():
+            name = node.name
             if not node_name or node_name == name:
-                pos_x = round(node.core_node.position.x, 1)
-                pos_y = round(node.core_node.position.y, 1)
+                pos_x = round(node.position.x, 1)
+                pos_y = round(node.position.y, 1)
                 # TODO: I am not sure what to insert for Detail column
                 #  leaving it blank for now
                 self.tree.insert(
                     "",
                     tk.END,
-                    text=str(node_id),
-                    values=(node_id, name, f"<{pos_x}, {pos_y}>", ""),
+                    text=str(node.id),
+                    values=(node.id, name, f"<{pos_x}, {pos_y}>", ""),
                 )
-
         results = self.tree.get_children("")
         if results:
             self.tree.selection_set(results[0])
@@ -121,7 +118,7 @@ class FindDialog(Dialog):
         if item:
             self.app.canvas.delete("find")
             node_id = int(self.tree.item(item, "text"))
-            canvas_node = self.app.core.canvas_nodes[node_id]
+            canvas_node = self.app.core.get_canvas_node(node_id)
 
             x0, y0, x1, y1 = self.app.canvas.bbox(canvas_node.id)
             dist = 5 * self.app.guiconfig.scale

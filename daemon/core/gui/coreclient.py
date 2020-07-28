@@ -118,6 +118,12 @@ class CoreClient:
             self.setup_cpu_usage()
         return self._client
 
+    def set_canvas_node(self, node: Node, canvas_node: CanvasNode) -> None:
+        self.canvas_nodes[node.id] = canvas_node
+
+    def get_canvas_node(self, node_id: int) -> CanvasNode:
+        return self.canvas_nodes[node_id]
+
     def reset(self) -> None:
         # helpers
         self.ifaces_manager.reset()
@@ -231,18 +237,21 @@ class CoreClient:
 
     def handle_node_event(self, event: NodeEvent) -> None:
         logging.debug("node event: %s", event)
+        node = event.node
         if event.message_type == MessageType.NONE:
-            canvas_node = self.canvas_nodes[event.node.id]
-            x = event.node.position.x
-            y = event.node.position.y
+            canvas_node = self.canvas_nodes[node.id]
+            x = node.position.x
+            y = node.position.y
             canvas_node.move(x, y)
         elif event.message_type == MessageType.DELETE:
-            canvas_node = self.canvas_nodes[event.node.id]
+            canvas_node = self.canvas_nodes[node.id]
             self.app.canvas.clear_selection()
             self.app.canvas.select_object(canvas_node.id)
             self.app.canvas.delete_selected_objects()
         elif event.message_type == MessageType.ADD:
-            self.app.canvas.add_core_node(event.node)
+            if node.id in self.session.nodes:
+                logging.error("core node already exists: %s", node)
+            self.app.canvas.add_core_node(node)
         else:
             logging.warning("unknown node event: %s", event)
 
@@ -463,10 +472,9 @@ class CoreClient:
 
     def start_session(self) -> Tuple[bool, List[str]]:
         self.ifaces_manager.reset_mac()
-        nodes = [x.core_node.to_proto() for x in self.canvas_nodes.values()]
+        nodes = [x.to_proto() for x in self.session.nodes.values()]
         links = []
-        for edge in self.links.values():
-            link = edge.link
+        for link in self.session.links:
             if link.iface1 and not link.iface1.mac:
                 link.iface1.mac = self.ifaces_manager.next_mac()
             if link.iface2 and not link.iface2.mac:
@@ -674,13 +682,12 @@ class CoreClient:
         """
         create nodes and links that have not been created yet
         """
-        node_protos = [x.core_node.to_proto() for x in self.canvas_nodes.values()]
-        link_protos = [x.link.to_proto() for x in self.links.values()]
         self.client.set_session_state(self.session.id, SessionState.DEFINITION.value)
-        for node_proto in node_protos:
-            response = self.client.add_node(self.session.id, node_proto)
-            logging.debug("create node: %s", response)
-        for link_proto in link_protos:
+        for node in self.session.nodes.values():
+            response = self.client.add_node(self.session.id, node.to_proto())
+            logging.debug("created node: %s", response)
+        for link in self.session.links:
+            link_proto = link.to_proto()
             response = self.client.add_link(
                 self.session.id,
                 link_proto.node1_id,
@@ -689,7 +696,7 @@ class CoreClient:
                 link_proto.iface2,
                 link_proto.options,
             )
-            logging.debug("create link: %s", response)
+            logging.debug("created link: %s", response)
 
     def send_data(self) -> None:
         """
@@ -762,7 +769,7 @@ class CoreClient:
         """
         i = 1
         while True:
-            if i not in self.canvas_nodes:
+            if i not in self.session.nodes:
                 break
             i += 1
         return i
@@ -816,18 +823,20 @@ class CoreClient:
             x,
             y,
         )
+        self.session.nodes[node.id] = node
         return node
 
-    def deleted_graph_nodes(self, canvas_nodes: List[CanvasNode]) -> None:
+    def deleted_canvas_nodes(self, canvas_nodes: List[CanvasNode]) -> None:
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
         """
         for canvas_node in canvas_nodes:
-            node_id = canvas_node.core_node.id
-            del self.canvas_nodes[node_id]
+            node = canvas_node.core_node
+            del self.canvas_nodes[node.id]
+            del self.session.nodes[node.id]
 
-    def deleted_graph_edges(self, edges: Iterable[CanvasEdge]) -> None:
+    def deleted_canvas_edges(self, edges: Iterable[CanvasEdge]) -> None:
         links = []
         for edge in edges:
             del self.links[edge.token]
@@ -861,20 +870,19 @@ class CoreClient:
         """
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
-
-        # determine subnet
         self.ifaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
-
         src_iface = None
         if NodeUtils.is_container_node(src_node.type):
             src_iface = self.create_iface(canvas_src_node)
             self.iface_to_edge[(src_node.id, src_iface.id)] = edge.token
-
+            edge.src_iface = src_iface
+            canvas_src_node.ifaces[src_iface.id] = src_iface
         dst_iface = None
         if NodeUtils.is_container_node(dst_node.type):
             dst_iface = self.create_iface(canvas_dst_node)
             self.iface_to_edge[(dst_node.id, dst_iface.id)] = edge.token
-
+            edge.dst_iface = dst_iface
+            canvas_dst_node.ifaces[dst_iface.id] = dst_iface
         link = Link(
             type=LinkType.WIRED,
             node1_id=src_node.id,
@@ -882,17 +890,9 @@ class CoreClient:
             iface1=src_iface,
             iface2=dst_iface,
         )
-        # assign after creating link proto, since interfaces are copied
-        if src_iface:
-            iface1 = link.iface1
-            edge.src_iface = iface1
-            canvas_src_node.ifaces[iface1.id] = iface1
-        if dst_iface:
-            iface2 = link.iface2
-            edge.dst_iface = iface2
-            canvas_dst_node.ifaces[iface2.id] = iface2
         edge.set_link(link)
         self.links[edge.token] = edge
+        self.session.links.append(link)
         logging.info("Add link between %s and %s", src_node.name, dst_node.name)
 
     def get_wlan_configs_proto(self) -> List[wlan_pb2.WlanConfig]:

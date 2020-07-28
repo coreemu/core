@@ -311,10 +311,7 @@ class CanvasGraph(tk.Canvas):
             edge.middle_label_text(link.label)
 
     def add_core_node(self, core_node: Node) -> None:
-        if core_node.id in self.core.canvas_nodes:
-            logging.error("core node already exists: %s", core_node)
-            return
-        logging.debug("adding node %s", core_node)
+        logging.debug("adding node: %s", core_node)
         # if the gui can't find node's image, default to the "edit-node" image
         image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
         if not image:
@@ -323,7 +320,7 @@ class CanvasGraph(tk.Canvas):
         y = core_node.position.y
         node = CanvasNode(self.app, x, y, core_node, image)
         self.nodes[node.id] = node
-        self.core.canvas_nodes[core_node.id] = node
+        self.core.set_canvas_node(core_node, node)
 
     def draw_session(self, session: Session) -> None:
         """
@@ -336,12 +333,11 @@ class CanvasGraph(tk.Canvas):
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
             self.add_core_node(core_node)
-
-            # draw existing links
+        # draw existing links
         for link in session.links:
             logging.debug("drawing link: %s", link)
-            canvas_node1 = self.core.canvas_nodes[link.node1_id]
-            canvas_node2 = self.core.canvas_nodes[link.node2_id]
+            canvas_node1 = self.core.get_canvas_node(link.node1_id)
+            canvas_node2 = self.core.get_canvas_node(link.node2_id)
             if link.type == LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node1, canvas_node2, link)
             else:
@@ -544,8 +540,8 @@ class CanvasGraph(tk.Canvas):
                 shape.delete()
 
         self.selection.clear()
-        self.core.deleted_graph_nodes(nodes)
-        self.core.deleted_graph_edges(edges)
+        self.core.deleted_canvas_nodes(nodes)
+        self.core.deleted_canvas_edges(edges)
 
     def delete_edge(self, edge: CanvasEdge) -> None:
         edge.delete()
@@ -564,7 +560,7 @@ class CanvasGraph(tk.Canvas):
         dst_wireless = NodeUtils.is_wireless_node(dst_node.core_node.type)
         if dst_wireless:
             src_node.delete_antenna()
-        self.core.deleted_graph_edges([edge])
+        self.core.deleted_canvas_edges([edge])
 
     def zoom(self, event: tk.Event, factor: float = None) -> None:
         if not factor:
@@ -750,8 +746,8 @@ class CanvasGraph(tk.Canvas):
             image_file = self.node_draw.image_file
             self.node_draw.image = self.app.get_custom_icon(image_file, ICON_SIZE)
         node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
-        self.core.canvas_nodes[core_node.id] = node
         self.nodes[node.id] = node
+        self.core.set_canvas_node(core_node, node)
 
     def width_and_height(self) -> Tuple[int, int]:
         """
@@ -955,8 +951,8 @@ class CanvasGraph(tk.Canvas):
             )
 
             copy_map[canvas_node.id] = node.id
-            self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
+            self.core.set_canvas_node(copy, node)
             for edge in canvas_node.edges:
                 if edge.src not in self.to_copy or edge.dst not in self.to_copy:
                     if canvas_node.id == edge.src:
