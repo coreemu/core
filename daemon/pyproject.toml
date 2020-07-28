@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "7.0.0"
+version = "7.0.1"
 description = "CORE Common Open Research Emulator"
 authors = ["Boeing Research and Technology"]
 license = "BSD-2-Clause"
@@ -10,7 +10,7 @@ include = ["core/gui/data/**/*", "core/configservices/*/templates"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
-dataclasses = { version = "*", python = "3.6" }
+dataclasses = { version = "*", python = "~3.6" }
 fabric = "*"
 grpcio = "1.27.2"
 invoke = "*"

@@ -1,3 +1,9 @@
+## 2020-07-28 CORE 7.0.1
+
+* Bugfixes
+    * \#500 - fixed issue running node commands with shell=True
+    * fixed issue for poetry based install not properly vetting requirements for dataclasses dependency
+
 ## 2020-07-23 CORE 7.0.0
 
 * Breaking Changes

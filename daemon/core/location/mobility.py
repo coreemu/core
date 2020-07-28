@@ -22,6 +22,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreError
+from core.executables import BASH
 from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
@@ -1167,7 +1168,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == "":
             return
         filename = self.findfile(filename)
-        args = f"/bin/sh {filename} {typestr}"
+        args = f"{BASH} {filename} {typestr}"
         utils.cmd(
             args, cwd=self.session.session_dir, env=self.session.get_environment()
         )

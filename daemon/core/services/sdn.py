@@ -31,7 +31,7 @@ class OvsService(SdnService):
         "/var/log/openvswitch",
     )
     configs: Tuple[str, ...] = ("OvsService.sh",)
-    startup: Tuple[str, ...] = ("sh OvsService.sh",)
+    startup: Tuple[str, ...] = ("bash OvsService.sh",)
     shutdown: Tuple[str, ...] = ("killall ovs-vswitchd", "killall ovsdb-server")
 
     @classmethod
@@ -119,7 +119,7 @@ class RyuService(SdnService):
     group: str = "SDN"
     executables: Tuple[str, ...] = ("ryu-manager",)
     configs: Tuple[str, ...] = ("ryuService.sh",)
-    startup: Tuple[str, ...] = ("sh ryuService.sh",)
+    startup: Tuple[str, ...] = ("bash ryuService.sh",)
     shutdown: Tuple[str, ...] = ("killall ryu-manager",)
 
     @classmethod

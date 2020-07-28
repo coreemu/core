@@ -383,12 +383,12 @@ class Veth(CoreInterface):
             try:
                 self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
-                logging.exception("error shutting down interface")
+                pass
         if self.localname:
             try:
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
-                logging.info("link already removed: %s", self.localname)
+                pass
         self.up = False
 
 

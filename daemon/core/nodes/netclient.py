@@ -121,11 +121,7 @@ class LinuxNetClient:
         :param device: device to flush
         :return: nothing
         """
-        self.run(
-            f"[ -e /sys/class/net/{device} ] && "
-            f"{IP} address flush dev {device} || true",
-            shell=True,
-        )
+        self.run(f"{IP} address flush dev {device}")
 
     def device_mac(self, device: str, mac: str) -> None:
         """
