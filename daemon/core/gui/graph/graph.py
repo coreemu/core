@@ -330,7 +330,7 @@ class CanvasGraph(tk.Canvas):
         Draw existing session.
         """
         # draw existing nodes
-        for core_node in session.nodes:
+        for core_node in session.nodes.values():
             logging.debug("drawing node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):

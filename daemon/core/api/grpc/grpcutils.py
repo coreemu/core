@@ -8,13 +8,22 @@ from grpc import ServicerContext
 
 from core import utils
 from core.api.grpc import common_pb2, core_pb2
-from core.api.grpc.services_pb2 import NodeServiceData, ServiceConfig
+from core.api.grpc.common_pb2 import MappedConfig
+from core.api.grpc.configservices_pb2 import ConfigServiceConfig
+from core.api.grpc.emane_pb2 import EmaneModelConfig
+from core.api.grpc.services_pb2 import (
+    NodeServiceConfig,
+    NodeServiceData,
+    ServiceConfig,
+    ServiceDefaults,
+)
 from core.config import ConfigurableOptions
 from core.emane.nodes import EmaneNet
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
-from core.nodes.base import CoreNode, NodeBase
+from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
@@ -536,3 +545,119 @@ def get_nem_id(
         message = f"{node.name} interface {iface_id} nem id does not exist"
         context.abort(grpc.StatusCode.INVALID_ARGUMENT, message)
     return nem_id
+
+
+def get_emane_model_configs(session: Session) -> List[EmaneModelConfig]:
+    configs = []
+    for _id in session.emane.node_configurations:
+        if _id == -1:
+            continue
+        model_configs = session.emane.node_configurations[_id]
+        for model_name in model_configs:
+            model = session.emane.models[model_name]
+            current_config = session.emane.get_model_config(_id, model_name)
+            config = get_config_options(current_config, model)
+            node_id, iface_id = parse_emane_model_id(_id)
+            model_config = EmaneModelConfig(
+                node_id=node_id, model=model_name, iface_id=iface_id, config=config
+            )
+            configs.append(model_config)
+    return configs
+
+
+def get_wlan_configs(session: Session) -> Dict[int, MappedConfig]:
+    configs = {}
+    for node_id in session.mobility.node_configurations:
+        model_config = session.mobility.node_configurations[node_id]
+        if node_id == -1:
+            continue
+        for model_name in model_config:
+            if model_name != BasicRangeModel.name:
+                continue
+            current_config = session.mobility.get_model_config(node_id, model_name)
+            config = get_config_options(current_config, BasicRangeModel)
+            mapped_config = MappedConfig(config=config)
+            configs[node_id] = mapped_config
+    return configs
+
+
+def get_mobility_configs(session: Session) -> Dict[int, MappedConfig]:
+    configs = {}
+    for node_id in session.mobility.node_configurations:
+        model_config = session.mobility.node_configurations[node_id]
+        if node_id == -1:
+            continue
+        for model_name in model_config:
+            if model_name != Ns2ScriptedMobility.name:
+                continue
+            current_config = session.mobility.get_model_config(node_id, model_name)
+            config = get_config_options(current_config, Ns2ScriptedMobility)
+            mapped_config = MappedConfig(config=config)
+            configs[node_id] = mapped_config
+    return configs
+
+
+def get_hooks(session: Session) -> List[core_pb2.Hook]:
+    hooks = []
+    for state in session.hooks:
+        state_hooks = session.hooks[state]
+        for file_name, file_data in state_hooks:
+            hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
+            hooks.append(hook)
+    return hooks
+
+
+def get_emane_models(session: Session) -> List[str]:
+    emane_models = []
+    for model in session.emane.models.keys():
+        if len(model.split("_")) != 2:
+            continue
+        emane_models.append(model)
+    return emane_models
+
+
+def get_default_services(session: Session) -> List[ServiceDefaults]:
+    default_services = []
+    for name, services in session.services.default_services.items():
+        default_service = ServiceDefaults(node_type=name, services=services)
+        default_services.append(default_service)
+    return default_services
+
+
+def get_node_service_configs(session: Session) -> List[NodeServiceConfig]:
+    configs = []
+    for node_id, service_configs in session.services.custom_services.items():
+        for name in service_configs:
+            service = session.services.get_service(node_id, name)
+            service_proto = get_service_configuration(service)
+            config = NodeServiceConfig(
+                node_id=node_id,
+                service=name,
+                data=service_proto,
+                files=service.config_data,
+            )
+            configs.append(config)
+    return configs
+
+
+def get_node_config_service_configs(session: Session) -> List[ConfigServiceConfig]:
+    configs = []
+    for node in session.nodes.values():
+        if not isinstance(node, CoreNodeBase):
+            continue
+        for name, service in node.config_services.items():
+            if not service.custom_templates and not service.custom_config:
+                continue
+            config_proto = ConfigServiceConfig(
+                node_id=node.id,
+                name=name,
+                templates=service.custom_templates,
+                config=service.custom_config,
+            )
+            configs.append(config_proto)
+    return configs
+
+
+def get_emane_config(session: Session) -> Dict[str, common_pb2.ConfigOption]:
+    current_config = session.emane.get_configs()
+    return get_config_options(current_config, session.emane.emane_config)
