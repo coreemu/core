@@ -10,7 +10,7 @@ include = ["core/gui/data/**/*", "core/configservices/*/templates"]
 
 [tool.poetry.dependencies]
 python = "^3.6"
-dataclasses = { version = "*", python = "3.6" }
+dataclasses = { version = "*", python = "~3.6" }
 fabric = "*"
 grpcio = "1.27.2"
 invoke = "*"
