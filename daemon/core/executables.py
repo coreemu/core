@@ -1,5 +1,6 @@
 from typing import List
 
+BASH: str = "bash"
 VNODED: str = "vnoded"
 VCMD: str = "vcmd"
 SYSCTL: str = "sysctl"
@@ -11,7 +12,16 @@ MOUNT: str = "mount"
 UMOUNT: str = "umount"
 OVS_VSCTL: str = "ovs-vsctl"
 
-COMMON_REQUIREMENTS: List[str] = [SYSCTL, IP, ETHTOOL, TC, EBTABLES, MOUNT, UMOUNT]
+COMMON_REQUIREMENTS: List[str] = [
+    BASH,
+    EBTABLES,
+    ETHTOOL,
+    IP,
+    MOUNT,
+    SYSCTL,
+    TC,
+    UMOUNT,
+]
 VCMD_REQUIREMENTS: List[str] = [VNODED, VCMD]
 OVS_REQUIREMENTS: List[str] = [OVS_VSCTL]
 

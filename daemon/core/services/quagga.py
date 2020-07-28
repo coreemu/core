@@ -25,7 +25,7 @@ class Zebra(CoreService):
         "quaggaboot.sh",
         "/usr/local/etc/quagga/vtysh.conf",
     )
-    startup: Tuple[str, ...] = ("sh quaggaboot.sh zebra",)
+    startup: Tuple[str, ...] = ("bash quaggaboot.sh zebra",)
     shutdown: Tuple[str, ...] = ("killall zebra",)
     validate: Tuple[str, ...] = ("pidof zebra",)
 

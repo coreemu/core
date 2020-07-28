@@ -120,14 +120,14 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev ebtables "
-            "iproute2 ethtool tk python3-tk",
+            "iproute2 ethtool tk python3-tk bash",
             hide=hide
         )
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
             "libev-devel iptables-ebtables iproute python3-devel python3-tkinter "
-            "tk ethtool make",
+            "tk ethtool make bash",
             hide=hide
         )
         # centos 8+ does not support netem by default
