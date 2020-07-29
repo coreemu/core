@@ -228,21 +228,15 @@ class LinkConfigurationDialog(Dialog):
             bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, loss=loss
         )
         link.options = options
-
-        iface1_id = None
-        if link.iface1:
-            iface1_id = link.iface1.id
-        iface2_id = None
-        if link.iface2:
-            iface2_id = link.iface2.id
-
+        iface1_id = link.iface1.id if link.iface1 else None
+        iface2_id = link.iface2.id if link.iface2 else None
         if not self.is_symmetric:
             link.options.unidirectional = True
             asym_iface1 = None
-            if iface1_id:
+            if iface1_id is not None:
                 asym_iface1 = Interface(id=iface1_id)
             asym_iface2 = None
-            if iface2_id:
+            if iface2_id is not None:
                 asym_iface2 = Interface(id=iface2_id)
             down_bandwidth = get_int(self.down_bandwidth)
             down_jitter = get_int(self.down_jitter)
@@ -260,8 +254,8 @@ class LinkConfigurationDialog(Dialog):
             self.edge.asymmetric_link = Link(
                 node1_id=link.node2_id,
                 node2_id=link.node1_id,
-                iface1=asym_iface1,
-                iface2=asym_iface2,
+                iface1=asym_iface2,
+                iface2=asym_iface1,
                 options=options,
             )
         else:
@@ -269,24 +263,9 @@ class LinkConfigurationDialog(Dialog):
             self.edge.asymmetric_link = None
 
         if self.app.core.is_runtime() and link.options:
-            session_id = self.app.core.session.id
-            self.app.core.client.edit_link(
-                session_id,
-                link.node1_id,
-                link.node2_id,
-                link.options,
-                iface1_id,
-                iface2_id,
-            )
+            self.app.core.edit_link(link)
             if self.edge.asymmetric_link:
-                self.app.core.client.edit_link(
-                    session_id,
-                    link.node2_id,
-                    link.node1_id,
-                    self.edge.asymmetric_link.options,
-                    iface1_id,
-                    iface2_id,
-                )
+                self.app.core.edit_link(self.edge.asymmetric_link)
 
         # update edge label
         self.edge.draw_link_options()

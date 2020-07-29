@@ -474,21 +474,22 @@ class CoreClient:
         self.ifaces_manager.reset_mac()
         nodes = [x.to_proto() for x in self.session.nodes.values()]
         links = []
-        for link in self.session.links:
+        asymmetric_links = []
+        for edge in self.links.values():
+            link = edge.link
             if link.iface1 and not link.iface1.mac:
                 link.iface1.mac = self.ifaces_manager.next_mac()
             if link.iface2 and not link.iface2.mac:
                 link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link.to_proto())
+            if edge.asymmetric_link:
+                asymmetric_links.append(edge.asymmetric_link.to_proto())
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = [x.to_proto() for x in self.session.hooks.values()]
         service_configs = self.get_service_configs_proto()
         file_configs = self.get_service_file_configs_proto()
-        asymmetric_links = [
-            x.asymmetric_link for x in self.links.values() if x.asymmetric_link
-        ]
         config_service_configs = self.get_config_service_configs_proto()
         emane_config = to_dict(self.session.emane_config)
         result = False
@@ -686,17 +687,32 @@ class CoreClient:
         for node in self.session.nodes.values():
             response = self.client.add_node(self.session.id, node.to_proto())
             logging.debug("created node: %s", response)
-        for link in self.session.links:
-            link_proto = link.to_proto()
+        asymmetric_links = []
+        for edge in self.links.values():
+            link = edge.link
             response = self.client.add_link(
                 self.session.id,
-                link_proto.node1_id,
-                link_proto.node2_id,
-                link_proto.iface1,
-                link_proto.iface2,
-                link_proto.options,
+                link.node1_id,
+                link.node2_id,
+                link.iface1,
+                link.iface2,
+                link.options,
+                source=GUI_SOURCE,
             )
             logging.debug("created link: %s", response)
+            if edge.asymmetric_link:
+                asymmetric_links.append(edge.asymmetric_link)
+        for link in asymmetric_links:
+            response = self.client.add_link(
+                self.session.id,
+                link.node1_id,
+                link.node2_id,
+                link.iface1,
+                link.iface2,
+                link.options,
+                source=GUI_SOURCE,
+            )
+            logging.debug("created asymmetric link: %s", response)
 
     def send_data(self) -> None:
         """
@@ -892,8 +908,7 @@ class CoreClient:
         )
         edge.set_link(link)
         self.links[edge.token] = edge
-        self.session.links.append(link)
-        logging.info("Add link between %s and %s", src_node.name, dst_node.name)
+        logging.info("added link between %s and %s", src_node.name, dst_node.name)
 
     def get_wlan_configs_proto(self) -> List[wlan_pb2.WlanConfig]:
         configs = []
@@ -1039,3 +1054,18 @@ class CoreClient:
         logging.info("execute python script %s", response)
         if response.session_id != -1:
             self.join_session(response.session_id)
+
+    def edit_link(self, link: Link) -> None:
+        iface1_id = link.iface1.id if link.iface1 else None
+        iface2_id = link.iface2.id if link.iface2 else None
+        response = self.client.edit_link(
+            self.session.id,
+            link.node1_id,
+            link.node2_id,
+            link.options.to_proto(),
+            iface1_id,
+            iface2_id,
+            source=GUI_SOURCE,
+        )
+        if not response.result:
+            logging.error("error editing link: %s", link)

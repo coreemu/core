@@ -262,7 +262,7 @@ class CanvasGraph(tk.Canvas):
         edge = self.edges.get(token)
         if not edge:
             return
-        edge.link.options.CopyFrom(link.options)
+        edge.link.options = deepcopy(link.options)
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
@@ -924,7 +924,8 @@ class CanvasGraph(tk.Canvas):
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
-        to_copy_edges = []
+        to_copy_edges = set()
+        to_copy_ids = {x.id for x in self.to_copy}
         for canvas_node in self.to_copy:
             core_node = canvas_node.core_node
             actual_x = core_node.position.x + 50
@@ -954,15 +955,39 @@ class CanvasGraph(tk.Canvas):
             self.nodes[node.id] = node
             self.core.set_canvas_node(copy, node)
             for edge in canvas_node.edges:
-                if edge.src not in self.to_copy or edge.dst not in self.to_copy:
+                if edge.src not in to_copy_ids or edge.dst not in to_copy_ids:
                     if canvas_node.id == edge.src:
                         dst_node = self.nodes[edge.dst]
                         self.create_edge(node, dst_node)
+                        token = create_edge_token(node.id, dst_node.id)
                     elif canvas_node.id == edge.dst:
                         src_node = self.nodes[edge.src]
                         self.create_edge(src_node, node)
+                        token = create_edge_token(src_node.id, node.id)
+                    copy_edge = self.edges[token]
+                    copy_link = copy_edge.link
+                    iface1_id = copy_link.iface1.id if copy_link.iface1 else None
+                    iface2_id = copy_link.iface2.id if copy_link.iface2 else None
+                    options = edge.link.options
+                    if options:
+                        copy_edge.link.options = deepcopy(options)
+                    if options and options.unidirectional:
+                        asym_iface1 = None
+                        if iface1_id is not None:
+                            asym_iface1 = Interface(id=iface1_id)
+                        asym_iface2 = None
+                        if iface2_id is not None:
+                            asym_iface2 = Interface(id=iface2_id)
+                        copy_edge.asymmetric_link = Link(
+                            node1_id=copy_link.node2_id,
+                            node2_id=copy_link.node1_id,
+                            iface1=asym_iface2,
+                            iface2=asym_iface1,
+                            options=deepcopy(edge.asymmetric_link.options),
+                        )
+                    copy_edge.redraw()
                 else:
-                    to_copy_edges.append(edge)
+                    to_copy_edges.add(edge)
 
         # copy link and link config
         for edge in to_copy_edges:
@@ -974,30 +999,26 @@ class CanvasGraph(tk.Canvas):
             token = create_edge_token(src_node_copy.id, dst_node_copy.id)
             copy_edge = self.edges[token]
             copy_link = copy_edge.link
+            iface1_id = copy_link.iface1.id if copy_link.iface1 else None
+            iface2_id = copy_link.iface2.id if copy_link.iface2 else None
             options = edge.link.options
-            copy_link.options = deepcopy(options)
-            iface1_id = None
-            if copy_link.iface1:
-                iface1_id = copy_link.iface1.id
-            iface2_id = None
-            if copy_link.iface2:
-                iface2_id = copy_link.iface2.id
-            if not options.unidirectional:
-                copy_edge.asymmetric_link = None
-            else:
+            if options:
+                copy_link.options = deepcopy(options)
+            if options and options.unidirectional:
                 asym_iface1 = None
-                if iface1_id:
+                if iface1_id is not None:
                     asym_iface1 = Interface(id=iface1_id)
                 asym_iface2 = None
-                if iface2_id:
+                if iface2_id is not None:
                     asym_iface2 = Interface(id=iface2_id)
                 copy_edge.asymmetric_link = Link(
                     node1_id=copy_link.node2_id,
                     node2_id=copy_link.node1_id,
-                    iface1=asym_iface1,
-                    iface2=asym_iface2,
-                    options=edge.asymmetric_link.options,
+                    iface1=asym_iface2,
+                    iface2=asym_iface1,
+                    options=deepcopy(edge.asymmetric_link.options),
                 )
+            copy_edge.redraw()
             self.itemconfig(
                 copy_edge.id,
                 width=self.itemcget(edge.id, "width"),
