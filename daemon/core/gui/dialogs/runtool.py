@@ -25,9 +25,9 @@ class RunToolDialog(Dialog):
         """
         store all CORE nodes (nodes that execute commands) from all existing nodes
         """
-        for nid, node in self.app.core.canvas_nodes.items():
-            if NodeUtils.is_container_node(node.core_node.type):
-                self.executable_nodes[node.core_node.name] = nid
+        for node in self.app.core.session.nodes.values():
+            if NodeUtils.is_container_node(node.type):
+                self.executable_nodes[node.name] = node.id
 
     def draw(self) -> None:
         self.top.rowconfigure(0, weight=1)
@@ -107,7 +107,7 @@ class RunToolDialog(Dialog):
             node_name = self.node_list.listbox.get(selection)
             node_id = self.executable_nodes[node_name]
             response = self.app.core.client.node_command(
-                self.app.core.session_id, node_id, command
+                self.app.core.session.id, node_id, command
             )
             self.result.text.insert(
                 tk.END, f"> {node_name} > {command}:\n{response.output}\n"

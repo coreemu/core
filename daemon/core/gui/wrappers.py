@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Optional, Set, Tuple
 
 from core.api.grpc import common_pb2, configservices_pb2, core_pb2, services_pb2
 
@@ -117,6 +117,12 @@ class ConfigService:
             validation_timer=proto.validation_timer,
             validation_period=proto.validation_period,
         )
+
+
+@dataclass
+class ConfigServiceData:
+    templates: Dict[str, str] = field(default_factory=dict)
+    config: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -498,8 +504,8 @@ class Node:
     type: NodeType
     model: str = None
     position: Position = None
-    services: List[str] = field(default_factory=list)
-    config_services: List[str] = field(default_factory=list)
+    services: Set[str] = field(default_factory=set)
+    config_services: Set[str] = field(default_factory=set)
     emane: str = None
     icon: str = None
     image: str = None
@@ -507,6 +513,22 @@ class Node:
     geo: Geo = None
     dir: str = None
     channel: str = None
+
+    # configurations
+    emane_model_configs: Dict[
+        Tuple[str, Optional[int]], Dict[str, ConfigOption]
+    ] = field(default_factory=dict, repr=False)
+    wlan_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
+    mobility_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
+    service_configs: Dict[str, NodeServiceData] = field(
+        default_factory=dict, repr=False
+    )
+    service_file_configs: Dict[str, Dict[str, str]] = field(
+        default_factory=dict, repr=False
+    )
+    config_service_configs: Dict[str, ConfigServiceData] = field(
+        default_factory=dict, repr=False
+    )
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Node) -> "Node":
@@ -516,8 +538,8 @@ class Node:
             type=NodeType(proto.type),
             model=proto.model,
             position=Position.from_proto(proto.position),
-            services=list(proto.services),
-            config_services=list(proto.config_services),
+            services=set(proto.services),
+            config_services=set(proto.config_services),
             emane=proto.emane,
             icon=proto.icon,
             image=proto.image,
@@ -549,20 +571,64 @@ class Node:
 class Session:
     id: int
     state: SessionState
-    nodes: List[Node]
+    nodes: Dict[int, Node]
     links: List[Link]
     dir: str
+    user: str
+    default_services: Dict[str, Set[str]]
+    location: SessionLocation
+    hooks: Dict[str, Hook]
+    emane_models: List[str]
+    emane_config: Dict[str, ConfigOption]
+    metadata: Dict[str, str]
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
-        nodes = [Node.from_proto(x) for x in proto.nodes]
+        nodes: Dict[int, Node] = {x.id: Node.from_proto(x) for x in proto.nodes}
         links = [Link.from_proto(x) for x in proto.links]
+        default_services = {
+            x.node_type: set(x.services) for x in proto.default_services
+        }
+        hooks = {x.file: Hook.from_proto(x) for x in proto.hooks}
+        # update nodes with their current configurations
+        for model in proto.emane_model_configs:
+            iface_id = None
+            if model.iface_id != -1:
+                iface_id = model.iface_id
+            node = nodes[model.node_id]
+            key = (model.model, iface_id)
+            node.emane_model_configs[key] = ConfigOption.from_dict(model.config)
+        for node_id, mapped_config in proto.wlan_configs.items():
+            node = nodes[node_id]
+            node.wlan_config = ConfigOption.from_dict(mapped_config.config)
+        for config in proto.service_configs:
+            service = config.service
+            node = nodes[config.node_id]
+            node.service_configs[service] = NodeServiceData.from_proto(config.data)
+            for file, data in config.files.items():
+                files = node.service_file_configs.setdefault(service, {})
+                files[file] = data
+        for config in proto.config_service_configs:
+            node = nodes[config.node_id]
+            node.config_service_configs[config.name] = ConfigServiceData(
+                templates=dict(config.templates), config=dict(config.config)
+            )
+        for node_id, mapped_config in proto.mobility_configs.items():
+            node = nodes[node_id]
+            node.mobility_config = ConfigOption.from_dict(mapped_config.config)
         return Session(
             id=proto.id,
             state=SessionState(proto.state),
             nodes=nodes,
             links=links,
             dir=proto.dir,
+            user=proto.user,
+            default_services=default_services,
+            location=SessionLocation.from_proto(proto.location),
+            hooks=hooks,
+            emane_models=list(proto.emane_models),
+            emane_config=ConfigOption.from_dict(proto.emane_config),
+            metadata=dict(proto.metadata),
         )
 
 

@@ -201,7 +201,7 @@ class SessionsDialog(Dialog):
         logging.debug("delete session: %s", self.selected_session)
         self.tree.delete(self.selected_id)
         self.app.core.delete_session(self.selected_session)
-        if self.selected_session == self.app.core.session_id:
+        if self.selected_session == self.app.core.session.id:
             self.click_new()
             self.destroy()
         self.click_select()

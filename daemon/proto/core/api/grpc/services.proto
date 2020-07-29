@@ -59,6 +59,13 @@ message NodeServiceData {
     string meta = 10;
 }
 
+message NodeServiceConfig {
+    int32 node_id = 1;
+    string service = 2;
+    NodeServiceData data = 3;
+    map<string, string> files = 4;
+}
+
 message GetServicesRequest {
 
 }
@@ -89,13 +96,7 @@ message GetNodeServiceConfigsRequest {
 }
 
 message GetNodeServiceConfigsResponse {
-    message ServiceConfig {
-        int32 node_id = 1;
-        string service = 2;
-        NodeServiceData data = 3;
-        map<string, string> files = 4;
-    }
-    repeated ServiceConfig configs = 1;
+    repeated NodeServiceConfig configs = 1;
 }
 
 message GetNodeServiceRequest {

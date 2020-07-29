@@ -27,7 +27,7 @@ class SizeAndScaleDialog(Dialog):
         width, height = self.canvas.current_dimensions
         self.pixel_width: tk.IntVar = tk.IntVar(value=width)
         self.pixel_height: tk.IntVar = tk.IntVar(value=height)
-        location = self.app.core.location
+        location = self.app.core.session.location
         self.x: tk.DoubleVar = tk.DoubleVar(value=location.x)
         self.y: tk.DoubleVar = tk.DoubleVar(value=location.y)
         self.lat: tk.DoubleVar = tk.DoubleVar(value=location.lat)
@@ -192,7 +192,7 @@ class SizeAndScaleDialog(Dialog):
         self.canvas.redraw_canvas((width, height))
         if self.canvas.wallpaper:
             self.canvas.redraw_wallpaper()
-        location = self.app.core.location
+        location = self.app.core.session.location
         location.x = self.x.get()
         location.y = self.y.get()
         location.lat = self.lat.get()

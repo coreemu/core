@@ -19,7 +19,6 @@ from core.api.grpc import (
     core_pb2_grpc,
     grpcutils,
 )
-from core.api.grpc.common_pb2 import MappedConfig
 from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServiceDefaultsRequest,
@@ -89,7 +88,6 @@ from core.api.grpc.services_pb2 import (
     ServiceAction,
     ServiceActionRequest,
     ServiceActionResponse,
-    ServiceDefaults,
     SetNodeServiceFileRequest,
     SetNodeServiceFileResponse,
     SetNodeServiceRequest,
@@ -118,7 +116,7 @@ from core.emulator.enumerations import (
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import PtpNet, WlanNode
 from core.services.coreservices import ServiceManager
 
@@ -558,7 +556,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get session: %s", request)
         session = self.get_session(request.session_id, context)
-
         links = []
         nodes = []
         for _id in session.nodes:
@@ -568,9 +565,38 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 nodes.append(node_proto)
             node_links = get_links(node)
             links.extend(node_links)
-
+        default_services = grpcutils.get_default_services(session)
+        x, y, z = session.location.refxyz
+        lat, lon, alt = session.location.refgeo
+        location = core_pb2.SessionLocation(
+            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
+        )
+        hooks = grpcutils.get_hooks(session)
+        emane_models = grpcutils.get_emane_models(session)
+        emane_config = grpcutils.get_emane_config(session)
+        emane_model_configs = grpcutils.get_emane_model_configs(session)
+        wlan_configs = grpcutils.get_wlan_configs(session)
+        mobility_configs = grpcutils.get_mobility_configs(session)
+        service_configs = grpcutils.get_node_service_configs(session)
+        config_service_configs = grpcutils.get_node_config_service_configs(session)
         session_proto = core_pb2.Session(
-            state=session.state.value, nodes=nodes, links=links, dir=session.session_dir
+            id=session.id,
+            state=session.state.value,
+            nodes=nodes,
+            links=links,
+            dir=session.session_dir,
+            user=session.user,
+            default_services=default_services,
+            location=location,
+            hooks=hooks,
+            emane_models=emane_models,
+            emane_config=emane_config,
+            emane_model_configs=emane_model_configs,
+            wlan_configs=wlan_configs,
+            service_configs=service_configs,
+            config_service_configs=config_service_configs,
+            mobility_configs=mobility_configs,
+            metadata=session.metadata,
         )
         return core_pb2.GetSessionResponse(session=session_proto)
 
@@ -1012,12 +1038,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session_id, context)
-        hooks = []
-        for state in session.hooks:
-            state_hooks = session.hooks[state]
-            for file_name, file_data in state_hooks:
-                hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
-                hooks.append(hook)
+        hooks = grpcutils.get_hooks(session)
         return core_pb2.GetHooksResponse(hooks=hooks)
 
     def AddHook(
@@ -1050,19 +1071,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get mobility configs: %s", request)
         session = self.get_session(request.session_id, context)
-        response = GetMobilityConfigsResponse()
-        for node_id in session.mobility.node_configurations:
-            model_config = session.mobility.node_configurations[node_id]
-            if node_id == -1:
-                continue
-            for model_name in model_config:
-                if model_name != Ns2ScriptedMobility.name:
-                    continue
-                current_config = session.mobility.get_model_config(node_id, model_name)
-                config = get_config_options(current_config, Ns2ScriptedMobility)
-                mapped_config = MappedConfig(config=config)
-                response.configs[node_id].CopyFrom(mapped_config)
-        return response
+        configs = grpcutils.get_mobility_configs(session)
+        return GetMobilityConfigsResponse(configs=configs)
 
     def GetMobilityConfig(
         self, request: GetMobilityConfigRequest, context: ServicerContext
@@ -1157,12 +1167,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get service defaults: %s", request)
         session = self.get_session(request.session_id, context)
-        all_service_defaults = []
-        for node_type in session.services.default_services:
-            services = session.services.default_services[node_type]
-            service_defaults = ServiceDefaults(node_type=node_type, services=services)
-            all_service_defaults.append(service_defaults)
-        return GetServiceDefaultsResponse(defaults=all_service_defaults)
+        defaults = grpcutils.get_default_services(session)
+        return GetServiceDefaultsResponse(defaults=defaults)
 
     def SetServiceDefaults(
         self, request: SetServiceDefaultsRequest, context: ServicerContext
@@ -1196,18 +1202,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get node service configs: %s", request)
         session = self.get_session(request.session_id, context)
-        configs = []
-        for node_id, service_configs in session.services.custom_services.items():
-            for name in service_configs:
-                service = session.services.get_service(node_id, name)
-                service_proto = grpcutils.get_service_configuration(service)
-                config = GetNodeServiceConfigsResponse.ServiceConfig(
-                    node_id=node_id,
-                    service=name,
-                    data=service_proto,
-                    files=service.config_data,
-                )
-                configs.append(config)
+        configs = grpcutils.get_node_service_configs(session)
         return GetNodeServiceConfigsResponse(configs=configs)
 
     def GetNodeService(
@@ -1337,19 +1332,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get wlan configs: %s", request)
         session = self.get_session(request.session_id, context)
-        response = GetWlanConfigsResponse()
-        for node_id in session.mobility.node_configurations:
-            model_config = session.mobility.node_configurations[node_id]
-            if node_id == -1:
-                continue
-            for model_name in model_config:
-                if model_name != BasicRangeModel.name:
-                    continue
-                current_config = session.mobility.get_model_config(node_id, model_name)
-                config = get_config_options(current_config, BasicRangeModel)
-                mapped_config = MappedConfig(config=config)
-                response.configs[node_id].CopyFrom(mapped_config)
-        return response
+        configs = grpcutils.get_wlan_configs(session)
+        return GetWlanConfigsResponse(configs=configs)
 
     def GetWlanConfig(
         self, request: GetWlanConfigRequest, context: ServicerContext
@@ -1401,8 +1385,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane config: %s", request)
         session = self.get_session(request.session_id, context)
-        current_config = session.emane.get_configs()
-        config = get_config_options(current_config, session.emane.emane_config)
+        config = grpcutils.get_emane_config(session)
         return GetEmaneConfigResponse(config=config)
 
     def SetEmaneConfig(
@@ -1433,11 +1416,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane models: %s", request)
         session = self.get_session(request.session_id, context)
-        models = []
-        for model in session.emane.models.keys():
-            if len(model.split("_")) != 2:
-                continue
-            models.append(model)
+        models = grpcutils.get_emane_models(session)
         return GetEmaneModelsResponse(models=models)
 
     def GetEmaneModelConfig(
@@ -1491,22 +1470,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session_id, context)
-
-        configs = []
-        for _id in session.emane.node_configurations:
-            if _id == -1:
-                continue
-
-            model_configs = session.emane.node_configurations[_id]
-            for model_name in model_configs:
-                model = session.emane.models[model_name]
-                current_config = session.emane.get_model_config(_id, model_name)
-                config = get_config_options(current_config, model)
-                node_id, iface_id = grpcutils.parse_emane_model_id(_id)
-                model_config = GetEmaneModelConfigsResponse.ModelConfig(
-                    node_id=node_id, model=model_name, iface_id=iface_id, config=config
-                )
-                configs.append(model_config)
+        configs = grpcutils.get_emane_model_configs(session)
         return GetEmaneModelConfigsResponse(configs=configs)
 
     def SaveXml(
@@ -1713,21 +1677,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: get node config service configs response
         """
         session = self.get_session(request.session_id, context)
-        configs = []
-        for node in session.nodes.values():
-            if not isinstance(node, CoreNodeBase):
-                continue
-
-            for name, service in node.config_services.items():
-                if not service.custom_templates and not service.custom_config:
-                    continue
-                config_proto = configservices_pb2.ConfigServiceConfig(
-                    node_id=node.id,
-                    name=name,
-                    templates=service.custom_templates,
-                    config=service.custom_config,
-                )
-                configs.append(config_proto)
+        configs = grpcutils.get_node_config_service_configs(session)
         return GetNodeConfigServiceConfigsResponse(configs=configs)
 
     def GetNodeConfigServices(

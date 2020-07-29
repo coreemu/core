@@ -26,7 +26,7 @@ class SessionOptionsDialog(Dialog):
 
     def get_config(self) -> Dict[str, ConfigOption]:
         try:
-            session_id = self.app.core.session_id
+            session_id = self.app.core.session.id
             response = self.app.core.client.get_session_options(session_id)
             return ConfigOption.from_dict(response.config)
         except grpc.RpcError as e:
@@ -54,7 +54,7 @@ class SessionOptionsDialog(Dialog):
     def save(self) -> None:
         config = self.config_frame.parse_config()
         try:
-            session_id = self.app.core.session_id
+            session_id = self.app.core.session.id
             response = self.app.core.client.set_session_options(session_id, config)
             logging.info("saved session config: %s", response)
         except grpc.RpcError as e:

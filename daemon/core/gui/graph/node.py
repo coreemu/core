@@ -1,7 +1,7 @@
 import functools
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Set
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -19,7 +19,7 @@ from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
-from core.gui.wrappers import ConfigOption, Interface, Node, NodeServiceData, NodeType
+from core.gui.wrappers import Interface, Node, NodeType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -56,15 +56,6 @@ class CanvasNode:
         self.wireless_edges: Set[CanvasWirelessEdge] = set()
         self.antennas: List[int] = []
         self.antenna_images: Dict[int, PhotoImage] = {}
-        # possible configurations
-        self.emane_model_configs: Dict[
-            Tuple[str, Optional[int]], Dict[str, ConfigOption]
-        ] = {}
-        self.wlan_config: Dict[str, ConfigOption] = {}
-        self.mobility_config: Dict[str, ConfigOption] = {}
-        self.service_configs: Dict[str, NodeServiceData] = {}
-        self.service_file_configs: Dict[str, Dict[str, str]] = {}
-        self.config_service_configs: Dict[str, Any] = {}
         self.setup_bindings()
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
@@ -299,7 +290,7 @@ class CanvasNode:
             dialog.show()
 
     def show_mobility_config(self) -> None:
-        dialog = MobilityConfigDialog(self.app, self)
+        dialog = MobilityConfigDialog(self.app, self.core_node)
         if not dialog.has_error:
             dialog.show()
 
@@ -308,15 +299,15 @@ class CanvasNode:
         mobility_player.show()
 
     def show_emane_config(self) -> None:
-        dialog = EmaneConfigDialog(self.app, self)
+        dialog = EmaneConfigDialog(self.app, self.core_node)
         dialog.show()
 
     def show_services(self) -> None:
-        dialog = NodeServiceDialog(self.app, self)
+        dialog = NodeServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def show_config_services(self) -> None:
-        dialog = NodeConfigServiceDialog(self.app, self)
+        dialog = NodeConfigServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def has_emane_link(self, iface_id: int) -> Node:

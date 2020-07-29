@@ -34,10 +34,8 @@ class EdgeInfoFrame(InfoFrameBase):
         self.columnconfigure(0, weight=1)
         link = self.edge.link
         options = link.options
-        src_canvas_node = self.app.core.canvas_nodes[link.node1_id]
-        src_node = src_canvas_node.core_node
-        dst_canvas_node = self.app.core.canvas_nodes[link.node2_id]
-        dst_node = dst_canvas_node.core_node
+        src_node = self.app.core.session.nodes[link.node1_id]
+        dst_node = self.app.core.session.nodes[link.node2_id]
 
         frame = DetailsFrame(self)
         frame.grid(sticky="ew")
@@ -81,9 +79,9 @@ class WirelessEdgeInfoFrame(InfoFrameBase):
 
     def draw(self) -> None:
         link = self.edge.link
-        src_canvas_node = self.app.core.canvas_nodes[link.node1_id]
+        src_canvas_node = self.app.canvas.nodes[self.edge.src]
         src_node = src_canvas_node.core_node
-        dst_canvas_node = self.app.core.canvas_nodes[link.node2_id]
+        dst_canvas_node = self.app.canvas.nodes[self.edge.dst]
         dst_node = dst_canvas_node.core_node
 
         # find interface for each node connected to network

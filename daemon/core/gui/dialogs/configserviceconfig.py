@@ -11,28 +11,26 @@ import grpc
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
-from core.gui.wrappers import ConfigOption, ServiceValidationMode
+from core.gui.wrappers import (
+    ConfigOption,
+    ConfigServiceData,
+    Node,
+    ServiceValidationMode,
+)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
     from core.gui.coreclient import CoreClient
 
 
 class ConfigServiceConfigDialog(Dialog):
     def __init__(
-        self,
-        master: tk.BaseWidget,
-        app: "Application",
-        service_name: str,
-        canvas_node: "CanvasNode",
-        node_id: int,
+        self, master: tk.BaseWidget, app: "Application", service_name: str, node: Node
     ) -> None:
         title = f"{service_name} Config Service"
         super().__init__(app, title, master=master)
         self.core: "CoreClient" = app.core
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node_id: int = node_id
+        self.node: Node = node
         self.service_name: str = service_name
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(2)
@@ -50,7 +48,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.validation_time: Optional[int] = None
         self.validation_period: tk.StringVar = tk.StringVar()
         self.modes: List[str] = []
-        self.mode_configs: Dict[str, str] = {}
+        self.mode_configs: Dict[str, Dict[str, str]] = {}
 
         self.notebook: Optional[ttk.Notebook] = None
         self.templates_combobox: Optional[ttk.Combobox] = None
@@ -91,25 +89,18 @@ class ConfigServiceConfigDialog(Dialog):
             response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
-
             self.modes = sorted(x.name for x in response.modes)
             self.mode_configs = {x.name: x.config for x in response.modes}
-
-            service_config = self.canvas_node.config_service_configs.get(
-                self.service_name, {}
-            )
             self.config = ConfigOption.from_dict(response.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
-            custom_config = service_config.get("config")
-            if custom_config:
-                for key, value in custom_config.items():
+            service_config = self.node.config_service_configs.get(self.service_name)
+            if service_config:
+                for key, value in service_config.config.items():
                     self.config[key].value = value
-            logging.info("default config: %s", self.default_config)
-
-            custom_templates = service_config.get("templates", {})
-            for file, data in custom_templates.items():
-                self.modified_files.add(file)
-                self.temp_service_files[file] = data
+                logging.info("default config: %s", self.default_config)
+                for file, data in service_config.templates.items():
+                    self.modified_files.add(file)
+                    self.temp_service_files[file] = data
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Config Service Error", e)
             self.has_error = True
@@ -313,20 +304,18 @@ class ConfigServiceConfigDialog(Dialog):
     def click_apply(self) -> None:
         current_listbox = self.master.current.listbox
         if not self.is_custom():
-            self.canvas_node.config_service_configs.pop(self.service_name, None)
+            self.node.config_service_configs.pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-
-        service_config = self.canvas_node.config_service_configs.setdefault(
-            self.service_name, {}
-        )
+        service_config = self.node.config_service_configs.get(self.service_name)
+        if not service_config:
+            service_config = ConfigServiceData()
         if self.config_frame:
             self.config_frame.parse_config()
-            service_config["config"] = {x.name: x.value for x in self.config.values()}
-        templates_config = service_config.setdefault("templates", {})
+            service_config.config = {x.name: x.value for x in self.config.values()}
         for file in self.modified_files:
-            templates_config[file] = self.temp_service_files[file]
+            service_config.templates[file] = self.temp_service_files[file]
         all_current = current_listbox.get(0, tk.END)
         current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         self.destroy()
@@ -360,9 +349,9 @@ class ConfigServiceConfigDialog(Dialog):
         return has_custom_templates or has_custom_config
 
     def click_defaults(self) -> None:
-        self.canvas_node.config_service_configs.pop(self.service_name, None)
+        self.node.config_service_configs.pop(self.service_name, None)
         logging.info(
-            "cleared config service config: %s", self.canvas_node.config_service_configs
+            "cleared config service config: %s", self.node.config_service_configs
         )
         self.temp_service_files = dict(self.original_service_files)
         filename = self.templates_combobox.get()

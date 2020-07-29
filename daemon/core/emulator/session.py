@@ -119,7 +119,7 @@ class Session:
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
         self.state_time: float = time.monotonic()
-        self.hooks: Dict[EventTypes, Tuple[str, str]] = {}
+        self.hooks: Dict[EventTypes, List[Tuple[str, str]]] = {}
         self.state_hooks: Dict[EventTypes, List[Callable[[EventTypes], None]]] = {}
         self.add_state_hook(
             state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
