@@ -10,7 +10,7 @@ from core import utils
 from core.api.grpc import common_pb2, core_pb2
 from core.api.grpc.common_pb2 import MappedConfig
 from core.api.grpc.configservices_pb2 import ConfigServiceConfig
-from core.api.grpc.emane_pb2 import EmaneModelConfig
+from core.api.grpc.emane_pb2 import GetEmaneModelConfig
 from core.api.grpc.services_pb2 import (
     NodeServiceConfig,
     NodeServiceData,
@@ -547,7 +547,7 @@ def get_nem_id(
     return nem_id
 
 
-def get_emane_model_configs(session: Session) -> List[EmaneModelConfig]:
+def get_emane_model_configs(session: Session) -> List[GetEmaneModelConfig]:
     configs = []
     for _id in session.emane.node_configurations:
         if _id == -1:
@@ -558,7 +558,7 @@ def get_emane_model_configs(session: Session) -> List[EmaneModelConfig]:
             current_config = session.emane.get_model_config(_id, model_name)
             config = get_config_options(current_config, model)
             node_id, iface_id = parse_emane_model_id(_id)
-            model_config = EmaneModelConfig(
+            model_config = GetEmaneModelConfig(
                 node_id=node_id, model=model_name, iface_id=iface_id, config=config
             )
             configs.append(model_config)

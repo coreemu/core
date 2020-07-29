@@ -720,7 +720,7 @@ message Session {
     repeated Hook hooks = 9;
     repeated string emane_models = 10;
     map<string, common.ConfigOption> emane_config = 11;
-    repeated emane.EmaneModelConfig emane_model_configs = 12;
+    repeated emane.GetEmaneModelConfig emane_model_configs = 12;
     map<int32, common.MappedConfig> wlan_configs = 13;
     repeated services.NodeServiceConfig service_configs = 14;
     repeated configservices.ConfigServiceConfig config_service_configs = 15;

@@ -53,8 +53,15 @@ message GetEmaneModelConfigsRequest {
     int32 session_id = 1;
 }
 
+message GetEmaneModelConfig {
+    int32 node_id = 1;
+    string model = 2;
+    int32 iface_id = 3;
+    map<string, common.ConfigOption> config = 4;
+}
+
 message GetEmaneModelConfigsResponse {
-    repeated EmaneModelConfig configs = 1;
+    repeated GetEmaneModelConfig configs = 1;
 }
 
 message GetEmaneEventChannelRequest {

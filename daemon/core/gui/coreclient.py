@@ -404,6 +404,8 @@ class CoreClient:
             self.app.show_grpc_exception("New Session Error", e)
 
     def delete_session(self, session_id: int = None) -> None:
+        if session_id is None and not self.session:
+            return
         if session_id is None:
             session_id = self.session.id
         try:
