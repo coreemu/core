@@ -9,10 +9,11 @@ import threading
 import time
 from functools import total_ordering
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
+from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     ConfigDataTypes,
@@ -29,6 +30,13 @@ from core.nodes.network import WlanNode
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
+
+
+def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, EmaneNet]:
+    try:
+        return session.get_node(node_id, WlanNode)
+    except CoreError:
+        return session.get_node(node_id, EmaneNet)
 
 
 class MobilityManager(ModelManager):
@@ -69,30 +77,25 @@ class MobilityManager(ModelManager):
         """
         if node_ids is None:
             node_ids = self.nodes()
-
         for node_id in node_ids:
-            logging.debug("checking mobility startup for node: %s", node_id)
             logging.debug(
-                "node mobility configurations: %s", self.get_all_configs(node_id)
+                "node(%s) mobility startup: %s", node_id, self.get_all_configs(node_id)
             )
-
             try:
-                node = self.session.get_node(node_id, WlanNode)
+                node = get_mobility_node(self.session, node_id)
+                # TODO: may be an issue if there are multiple mobility models
+                for model in self.models.values():
+                    config = self.get_configs(node_id, model.name)
+                    if not config:
+                        continue
+                    self.set_model(node, model, config)
+                if node.mobility:
+                    self.session.event_loop.add_event(0.0, node.mobility.startup)
             except CoreError:
+                logging.exception("mobility startup error")
                 logging.warning(
                     "skipping mobility configuration for unknown node: %s", node_id
                 )
-                continue
-
-            for model_name in self.models:
-                config = self.get_configs(node_id, model_name)
-                if not config:
-                    continue
-                model_class = self.models[model_name]
-                self.set_model(node, model_class, config)
-
-            if node.mobility:
-                self.session.event_loop.add_event(0.0, node.mobility.startup)
 
     def handleevent(self, event_data: EventData) -> None:
         """
@@ -106,40 +109,35 @@ class MobilityManager(ModelManager):
         node_id = event_data.node
         name = event_data.name
         try:
-            node = self.session.get_node(node_id, WlanNode)
+            node = get_mobility_node(self.session, node_id)
         except CoreError:
             logging.exception(
-                "Ignoring event for model '%s', unknown node '%s'", name, node_id
+                "ignoring event for model(%s), unknown node(%s)", name, node_id
             )
             return
 
         # name is e.g. "mobility:ns2script"
         models = name[9:].split(",")
         for model in models:
-            try:
-                cls = self.models[model]
-            except KeyError:
-                logging.warning("Ignoring event for unknown model '%s'", model)
+            cls = self.models.get(model)
+            if not cls:
+                logging.warning("ignoring event for unknown model '%s'", model)
                 continue
-
             if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
-
             if model is None:
-                logging.warning("Ignoring event, %s has no model", node.name)
+                logging.warning("ignoring event, %s has no model", node.name)
                 continue
-
             if cls.name != model.name:
                 logging.warning(
-                    "Ignoring event for %s wrong model %s,%s",
+                    "ignoring event for %s wrong model %s,%s",
                     node.name,
                     cls.name,
                     model.name,
                 )
                 continue
-
             if event_type in [EventTypes.STOP, EventTypes.RESTART]:
                 model.stop(move_initial=True)
             if event_type in [EventTypes.START, EventTypes.RESTART]:
@@ -162,11 +160,9 @@ class MobilityManager(ModelManager):
             event_type = EventTypes.START
         elif model.state == model.STATE_PAUSED:
             event_type = EventTypes.PAUSE
-
         start_time = int(model.lasttime - model.timezero)
         end_time = int(model.endtime)
         data = f"start={start_time} end={end_time}"
-
         event_data = EventData(
             node=model.id,
             event_type=event_type,
@@ -174,7 +170,6 @@ class MobilityManager(ModelManager):
             data=data,
             time=str(time.monotonic()),
         )
-
         self.session.broadcast_event(event_data)
 
     def updatewlans(
@@ -593,13 +588,16 @@ class WayPointMobility(WirelessModel):
         self.lasttime: Optional[float] = None
         self.endtime: Optional[int] = None
         self.timezero: float = 0.0
-        self.wlan: WlanNode = session.get_node(_id, WlanNode)
+        self.net: Union[WlanNode, EmaneNet] = get_mobility_node(self.session, self.id)
         # these are really set in child class via confmatrix
         self.loop: bool = False
         self.refresh_ms: int = 50
         # flag whether to stop scheduling when queue is empty
         #  (ns-3 sets this to False as new waypoints may be added from trace)
         self.empty_queue_stop: bool = True
+
+    def startup(self):
+        raise NotImplementedError
 
     def runround(self) -> None:
         """
@@ -643,7 +641,7 @@ class WayPointMobility(WirelessModel):
         # only move interfaces attached to self.wlan, or all nodenum in script?
         moved = []
         moved_ifaces = []
-        for iface in self.wlan.get_ifaces():
+        for iface in self.net.get_ifaces():
             node = iface.node
             if self.movenode(node, dt):
                 moved.append(node)
@@ -723,7 +721,7 @@ class WayPointMobility(WirelessModel):
         """
         moved = []
         moved_ifaces = []
-        for iface in self.wlan.get_ifaces():
+        for iface in self.net.get_ifaces():
             node = iface.node
             if node.id not in self.initial:
                 continue
@@ -1094,7 +1092,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :return: nothing
         """
         if self.autostart == "":
-            logging.info("not auto-starting ns-2 script for %s", self.wlan.name)
+            logging.info("not auto-starting ns-2 script for %s", self.net.name)
             return
         try:
             t = float(self.autostart)
@@ -1102,11 +1100,11 @@ class Ns2ScriptedMobility(WayPointMobility):
             logging.exception(
                 "Invalid auto-start seconds specified '%s' for %s",
                 self.autostart,
-                self.wlan.name,
+                self.net.name,
             )
             return
         self.movenodesinitial()
-        logging.info("scheduling ns-2 script for %s autostart at %s", self.wlan.name, t)
+        logging.info("scheduling ns-2 script for %s autostart at %s", self.net.name, t)
         self.state = self.STATE_RUNNING
         self.session.event_loop.add_event(t, self.run)
 

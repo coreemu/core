@@ -63,9 +63,14 @@ class NodeUtils:
     WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
     IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
+    MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
     ROUTER_NODES: Set[str] = {"router", "mdr"}
     ANTENNA_ICON: PhotoImage = None
+
+    @classmethod
+    def is_mobility(cls, node: Node) -> bool:
+        return node.type in cls.MOBILITY_NODES
 
     @classmethod
     def is_router_node(cls, node: Node) -> bool:

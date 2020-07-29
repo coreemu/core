@@ -22,9 +22,11 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.session import Session
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.interface import CoreInterface
+from core.nodes.network import WlanNode
 from core.services.coreservices import CoreService
 
 WORKERS = 10
@@ -661,3 +663,15 @@ def get_node_config_service_configs(session: Session) -> List[ConfigServiceConfi
 def get_emane_config(session: Session) -> Dict[str, common_pb2.ConfigOption]:
     current_config = session.emane.get_configs()
     return get_config_options(current_config, session.emane.emane_config)
+
+
+def get_mobility_node(
+    session: Session, node_id: int, context: ServicerContext
+) -> Union[WlanNode, EmaneNet]:
+    try:
+        return session.get_node(node_id, WlanNode)
+    except CoreError:
+        try:
+            return session.get_node(node_id, EmaneNet)
+        except CoreError:
+            context.abort(grpc.StatusCode.NOT_FOUND, "node id is not for wlan or emane")

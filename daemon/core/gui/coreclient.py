@@ -538,7 +538,7 @@ class CoreClient:
 
     def show_mobility_players(self) -> None:
         for node in self.session.nodes.values():
-            if node.type != NodeType.WIRELESS_LAN:
+            if not NodeUtils.is_mobility(node):
                 continue
             if node.mobility_config:
                 mobility_player = MobilityPlayer(self.app, node)
@@ -927,7 +927,7 @@ class CoreClient:
     def get_mobility_configs_proto(self) -> List[mobility_pb2.MobilityConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if node.type != NodeType.WIRELESS_LAN:
+            if not NodeUtils.is_mobility(node):
                 continue
             if not node.mobility_config:
                 continue
