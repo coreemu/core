@@ -206,6 +206,7 @@ class CanvasNode:
         self.context.delete(0, tk.END)
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
+        is_mobility = is_wlan or is_emane
         if self.app.core.is_runtime():
             self.context.add_command(label="Configure", command=self.show_config)
             if is_emane:
@@ -216,7 +217,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
                 )
-            if is_wlan and self.core_node.id in self.app.core.mobility_players:
+            if is_mobility and self.core_node.id in self.app.core.mobility_players:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
@@ -235,6 +236,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
                 )
+            if is_mobility:
                 self.context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )

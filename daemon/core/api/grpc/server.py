@@ -1125,7 +1125,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("mobility action: %s", request)
         session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, WlanNode)
+        node = grpcutils.get_mobility_node(session, request.node_id, context)
+        if not node.mobility:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND, f"node({node.name}) does not have mobility"
+            )
         result = True
         if request.action == MobilityAction.START:
             node.mobility.start()
