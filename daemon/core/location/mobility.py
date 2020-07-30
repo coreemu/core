@@ -100,7 +100,7 @@ class MobilityManager(ModelManager):
     def handleevent(self, event_data: EventData) -> None:
         """
         Handle an Event Message used to start, stop, or pause
-        mobility scripts for a given WlanNode.
+        mobility scripts for a given mobility network.
 
         :param event_data: event data to handle
         :return: nothing
@@ -172,12 +172,12 @@ class MobilityManager(ModelManager):
         )
         self.session.broadcast_event(event_data)
 
-    def updatewlans(
+    def update_nets(
         self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]
     ) -> None:
         """
         A mobility script has caused nodes in the 'moved' list to move.
-        Update every WlanNode. This saves range calculations if the model
+        Update every mobility network. This saves range calculations if the model
         were to recalculate for each individual node movement.
 
         :param moved: moved nodes
@@ -186,11 +186,11 @@ class MobilityManager(ModelManager):
         """
         for node_id in self.nodes():
             try:
-                node = self.session.get_node(node_id, WlanNode)
+                node = get_mobility_node(self.session, node_id)
+                if node.model:
+                    node.model.update(moved, moved_ifaces)
             except CoreError:
-                continue
-            if node.model:
-                node.model.update(moved, moved_ifaces)
+                logging.exception("error updating mobility node")
 
 
 class WirelessModel(ConfigurableOptions):
@@ -648,7 +648,7 @@ class WayPointMobility(WirelessModel):
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.session.mobility.updatewlans(moved, moved_ifaces)
+        self.session.mobility.update_nets(moved, moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -729,7 +729,7 @@ class WayPointMobility(WirelessModel):
             self.setnodeposition(node, x, y, z)
             moved.append(node)
             moved_ifaces.append(iface)
-        self.session.mobility.updatewlans(moved, moved_ifaces)
+        self.session.mobility.update_nets(moved, moved_ifaces)
 
     def addwaypoint(
         self,

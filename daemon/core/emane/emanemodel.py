@@ -130,8 +130,8 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         try:
-            wlan = self.session.get_node(self.id, EmaneNet)
-            wlan.setnempositions(moved_ifaces)
+            emane_net = self.session.get_node(self.id, EmaneNet)
+            emane_net.setnempositions(moved_ifaces)
         except CoreError:
             logging.exception("error during update")
 
