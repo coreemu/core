@@ -5,7 +5,7 @@ from pathlib import Path
 from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
 
-from core.gui import themes, validation
+from core.gui import appconfig, themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.wrappers import ConfigOption, ConfigOptionType
@@ -26,7 +26,9 @@ INT_TYPES: Set[ConfigOptionType] = {
 
 
 def file_button_click(value: tk.StringVar, parent: tk.Widget) -> None:
-    file_path = filedialog.askopenfilename(title="Select File", parent=parent)
+    file_path = filedialog.askopenfilename(
+        title="Select File", initialdir=str(appconfig.HOME_PATH), parent=parent
+    )
     if file_path:
         value.set(file_path)
 
