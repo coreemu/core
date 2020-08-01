@@ -77,10 +77,7 @@ class LinkConfigurationDialog(Dialog):
 
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
         frame.grid(row=1, column=0, sticky="ew", pady=PADY)
-        button = ttk.Button(frame, text="Unlimited")
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
         if self.is_symmetric:
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
@@ -89,7 +86,7 @@ class LinkConfigurationDialog(Dialog):
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
             )
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(sticky="ew")
 
         if self.is_symmetric:
             self.symmetric_frame = self.get_frame()
