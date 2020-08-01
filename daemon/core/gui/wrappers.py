@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from core.api.grpc import common_pb2, configservices_pb2, core_pb2, services_pb2
@@ -581,6 +582,7 @@ class Session:
     emane_models: List[str]
     emane_config: Dict[str, ConfigOption]
     metadata: Dict[str, str]
+    file: Path
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
@@ -616,6 +618,7 @@ class Session:
         for node_id, mapped_config in proto.mobility_configs.items():
             node = nodes[node_id]
             node.mobility_config = ConfigOption.from_dict(mapped_config.config)
+        file_path = Path(proto.file) if proto.file else None
         return Session(
             id=proto.id,
             state=SessionState(proto.state),
@@ -629,6 +632,7 @@ class Session:
             emane_models=list(proto.emane_models),
             emane_config=ConfigOption.from_dict(proto.emane_config),
             metadata=dict(proto.metadata),
+            file=file_path,
         )
 
 

@@ -181,8 +181,6 @@ class SessionsDialog(Dialog):
 
     def join_session(self, session_id: int) -> None:
         self.destroy()
-        if self.app.core.xml_file:
-            self.app.core.xml_file = None
         task = ProgressTask(
             self.app, "Join", self.app.core.join_session, args=(session_id,)
         )

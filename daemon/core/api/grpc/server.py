@@ -597,6 +597,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             config_service_configs=config_service_configs,
             mobility_configs=mobility_configs,
             metadata=session.metadata,
+            file=session.file_name,
         )
         return core_pb2.GetSessionResponse(session=session_proto)
 

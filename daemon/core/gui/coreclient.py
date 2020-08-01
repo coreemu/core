@@ -22,7 +22,7 @@ from core.api.grpc import (
     wlan_pb2,
 )
 from core.gui import appconfig
-from core.gui.appconfig import CoreServer, Observer
+from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
@@ -98,8 +98,6 @@ class CoreClient:
         self.handling_throughputs: Optional[grpc.Future] = None
         self.handling_cpu_usage: Optional[grpc.Future] = None
         self.handling_events: Optional[grpc.Future] = None
-        self.xml_dir: Optional[str] = None
-        self.xml_file: Optional[str] = None
 
     @property
     def client(self) -> client.CoreGrpcClient:
@@ -311,7 +309,8 @@ class CoreClient:
             response = self.client.get_session(session_id)
             self.session = Session.from_proto(response.session)
             self.client.set_session_user(self.session.id, self.user)
-            self.master.title(f"CORE Session({self.session.id})")
+            title_file = self.session.file.name if self.session.file else ""
+            self.master.title(f"CORE Session({self.session.id}) {title_file}")
             self.handling_events = self.client.events(
                 self.session.id, self.handle_events
             )
@@ -586,10 +585,18 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Node Terminal Error", e)
 
-    def save_xml(self, file_path: str) -> None:
+    def get_xml_dir(self) -> str:
+        return str(self.session.file.parent) if self.session.file else str(XMLS_PATH)
+
+    def save_xml(self, file_path: str = None) -> None:
         """
         Save core session as to an xml file
         """
+        if not file_path and not self.session.file:
+            logging.error("trying to save xml for session with no file")
+            return
+        if not file_path:
+            file_path = str(self.session.file)
         try:
             if not self.is_runtime():
                 logging.debug("Send session data to the daemon")
@@ -687,34 +694,17 @@ class CoreClient:
         """
         self.client.set_session_state(self.session.id, SessionState.DEFINITION.value)
         for node in self.session.nodes.values():
-            response = self.client.add_node(self.session.id, node.to_proto())
+            response = self.client.add_node(
+                self.session.id, node.to_proto(), source=GUI_SOURCE
+            )
             logging.debug("created node: %s", response)
         asymmetric_links = []
         for edge in self.links.values():
-            link = edge.link
-            response = self.client.add_link(
-                self.session.id,
-                link.node1_id,
-                link.node2_id,
-                link.iface1,
-                link.iface2,
-                link.options,
-                source=GUI_SOURCE,
-            )
-            logging.debug("created link: %s", response)
+            self.add_link(edge.link)
             if edge.asymmetric_link:
                 asymmetric_links.append(edge.asymmetric_link)
         for link in asymmetric_links:
-            response = self.client.add_link(
-                self.session.id,
-                link.node1_id,
-                link.node2_id,
-                link.iface1,
-                link.iface2,
-                link.options,
-                source=GUI_SOURCE,
-            )
-            logging.debug("created asymmetric link: %s", response)
+            self.add_link(link)
 
     def send_data(self) -> None:
         """
@@ -1056,6 +1046,23 @@ class CoreClient:
         logging.info("execute python script %s", response)
         if response.session_id != -1:
             self.join_session(response.session_id)
+
+    def add_link(self, link: Link) -> None:
+        iface1 = link.iface1.to_proto() if link.iface1 else None
+        iface2 = link.iface2.to_proto() if link.iface2 else None
+        options = link.options.to_proto() if link.options else None
+        response = self.client.add_link(
+            self.session.id,
+            link.node1_id,
+            link.node2_id,
+            iface1,
+            iface2,
+            options,
+            source=GUI_SOURCE,
+        )
+        logging.debug("added link: %s", response)
+        if not response.result:
+            logging.error("error adding link: %s", link)
 
     def edit_link(self, link: Link) -> None:
         iface1_id = link.iface1.id if link.iface1 else None

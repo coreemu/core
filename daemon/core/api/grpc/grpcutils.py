@@ -229,7 +229,7 @@ def get_config_options(
     """
     results = {}
     for configuration in configurable_options.configurations():
-        value = config[configuration.id]
+        value = config.get(configuration.id, configuration.default)
         config_option = common_pb2.ConfigOption(
             label=configuration.label,
             name=configuration.id,

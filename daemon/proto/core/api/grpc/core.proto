@@ -726,6 +726,7 @@ message Session {
     repeated configservices.ConfigServiceConfig config_service_configs = 15;
     map<int32, common.MappedConfig> mobility_configs = 16;
     map<string, string> metadata = 17;
+    string file = 18;
 }
 
 message SessionSummary {
