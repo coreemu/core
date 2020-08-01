@@ -232,8 +232,10 @@ class NodeConfigDialog(Dialog):
             label = ttk.Label(tab, text="MAC")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             auto_set = not iface.mac
-            mac_state = tk.DISABLED if auto_set else tk.NORMAL
             is_auto = tk.BooleanVar(value=auto_set)
+            mac_state = tk.DISABLED if auto_set else tk.NORMAL
+            if state == tk.DISABLED:
+                mac_state = tk.DISABLED
             checkbutton = ttk.Checkbutton(
                 tab, text="Auto?", variable=is_auto, state=state
             )
