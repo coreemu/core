@@ -149,13 +149,15 @@ class HooksDialog(Dialog):
         dialog.set(hook)
         dialog.show()
         session.hooks[hook.file] = hook
+        self.selected = hook.file
         self.listbox.delete(self.selected_index)
         self.listbox.insert(self.selected_index, hook.file)
+        self.listbox.select_set(self.selected_index)
 
     def click_delete(self) -> None:
         session = self.app.core.session
         del session.hooks[self.selected]
-        self.listbox.delete(tk.ANCHOR)
+        self.listbox.delete(self.selected_index)
         self.edit_button.config(state=tk.DISABLED)
         self.delete_button.config(state=tk.DISABLED)
 
