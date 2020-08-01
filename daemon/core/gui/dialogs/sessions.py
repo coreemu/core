@@ -190,7 +190,7 @@ class SessionsDialog(Dialog):
 
     def double_click_join(self, _event: tk.Event) -> None:
         item = self.tree.selection()
-        if item is None:
+        if not item:
             return
         session_id = int(self.tree.item(item, "text"))
         self.join_session(session_id)
