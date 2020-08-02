@@ -111,13 +111,13 @@ class Application(ttk.Frame):
         self.master.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
-        self.grid(sticky="nsew")
+        self.grid(sticky=tk.NSEW)
         self.toolbar = Toolbar(self)
-        self.toolbar.grid(sticky="ns")
+        self.toolbar.grid(sticky=tk.NS)
         self.right_frame = ttk.Frame(self)
         self.right_frame.columnconfigure(0, weight=1)
         self.right_frame.rowconfigure(0, weight=1)
-        self.right_frame.grid(row=0, column=1, sticky="nsew")
+        self.right_frame.grid(row=0, column=1, sticky=tk.NSEW)
         self.draw_canvas()
         self.draw_infobar()
         self.draw_status()
@@ -139,21 +139,21 @@ class Application(ttk.Frame):
         canvas_frame = ttk.Frame(self.right_frame)
         canvas_frame.rowconfigure(0, weight=1)
         canvas_frame.columnconfigure(0, weight=1)
-        canvas_frame.grid(row=0, column=0, sticky="nsew", pady=1)
+        canvas_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=1)
         self.canvas = CanvasGraph(canvas_frame, self, self.core)
-        self.canvas.grid(sticky="nsew")
+        self.canvas.grid(sticky=tk.NSEW)
         scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
-        scroll_y.grid(row=0, column=1, sticky="ns")
+        scroll_y.grid(row=0, column=1, sticky=tk.NS)
         scroll_x = ttk.Scrollbar(
             canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview
         )
-        scroll_x.grid(row=1, column=0, sticky="ew")
+        scroll_x.grid(row=1, column=0, sticky=tk.EW)
         self.canvas.configure(xscrollcommand=scroll_x.set)
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
     def draw_status(self) -> None:
         self.statusbar = StatusBar(self.right_frame, self)
-        self.statusbar.grid(sticky="ew", columnspan=2)
+        self.statusbar.grid(sticky=tk.EW, columnspan=2)
 
     def display_info(self, frame_class: Type[InfoFrameBase], **kwargs: Any) -> None:
         if not self.show_infobar.get():
@@ -161,7 +161,7 @@ class Application(ttk.Frame):
         self.clear_info()
         self.info_frame = frame_class(self.infobar, **kwargs)
         self.info_frame.draw()
-        self.info_frame.grid(sticky="nsew")
+        self.info_frame.grid(sticky=tk.NSEW)
 
     def clear_info(self) -> None:
         if self.info_frame:
@@ -174,7 +174,7 @@ class Application(ttk.Frame):
 
     def show_info(self) -> None:
         self.default_info()
-        self.infobar.grid(row=0, column=1, sticky="nsew")
+        self.infobar.grid(row=0, column=1, sticky=tk.NSEW)
 
     def hide_info(self) -> None:
         self.infobar.grid_forget()

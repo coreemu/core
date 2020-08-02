@@ -33,60 +33,60 @@ class ObserverDialog(Dialog):
 
     def draw_listbox(self) -> None:
         listbox_scroll = ListboxScroll(self.top)
-        listbox_scroll.grid(sticky="nsew", pady=PADY)
+        listbox_scroll.grid(sticky=tk.NSEW, pady=PADY)
         listbox_scroll.columnconfigure(0, weight=1)
         listbox_scroll.rowconfigure(0, weight=1)
         self.observers = listbox_scroll.listbox
-        self.observers.grid(row=0, column=0, sticky="nsew")
+        self.observers.grid(row=0, column=0, sticky=tk.NSEW)
         self.observers.bind("<<ListboxSelect>>", self.handle_observer_change)
         for name in sorted(self.app.core.custom_observers):
             self.observers.insert(tk.END, name)
 
     def draw_form_fields(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky=tk.EW)
 
         label = ttk.Label(frame, text="Command")
-        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        label.grid(row=1, column=0, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.cmd)
-        entry.grid(row=1, column=1, sticky="ew")
+        entry.grid(row=1, column=1, sticky=tk.EW)
 
     def draw_config_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         self.save_button = ttk.Button(
             frame, text="Save", state=tk.DISABLED, command=self.click_save
         )
-        self.save_button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        self.save_button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
-        self.delete_button.grid(row=0, column=2, sticky="ew")
+        self.delete_button.grid(row=0, column=2, sticky=tk.EW)
 
     def draw_apply_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Save", command=self.click_save_config)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_save_config(self) -> None:
         self.app.guiconfig.observers.clear()

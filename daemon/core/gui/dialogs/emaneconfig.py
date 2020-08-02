@@ -33,20 +33,20 @@ class GlobalEmaneDialog(Dialog):
             self.top, self.app, session.emane_config, self.enabled
         )
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         state = tk.NORMAL if self.enabled else tk.DISABLED
         button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_apply(self) -> None:
         self.config_frame.parse_config()
@@ -87,20 +87,20 @@ class EmaneModelDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
         self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         state = tk.NORMAL if self.enabled else tk.DISABLED
         button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_apply(self) -> None:
         self.config_frame.parse_config()
@@ -156,30 +156,30 @@ class EmaneConfigDialog(Dialog):
             ),
         )
         button.image = image
-        button.grid(sticky="ew", pady=PADY)
+        button.grid(sticky=tk.EW, pady=PADY)
 
     def draw_emane_models(self) -> None:
         """
         create a combobox that has all the known emane models
         """
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Model")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky=tk.W)
 
         # create combo box and its binding
         state = "readonly" if self.enabled else tk.DISABLED
         combobox = ttk.Combobox(
             frame, textvariable=self.emane_model, values=self.emane_models, state=state
         )
-        combobox.grid(row=0, column=1, sticky="ew")
+        combobox.grid(row=0, column=1, sticky=tk.EW)
         combobox.bind("<<ComboboxSelected>>", self.emane_model_change)
 
     def draw_emane_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
@@ -192,7 +192,7 @@ class EmaneConfigDialog(Dialog):
             command=self.click_model_config,
         )
         self.emane_model_button.image = image
-        self.emane_model_button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        self.emane_model_button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.EDITNODE, 16)
         button = ttk.Button(
@@ -203,18 +203,18 @@ class EmaneConfigDialog(Dialog):
             command=self.click_emane_config,
         )
         button.image = image
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def draw_apply_and_cancel(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         state = tk.NORMAL if self.enabled else tk.DISABLED
         button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
-        button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_emane_config(self) -> None:
         dialog = GlobalEmaneDialog(self, self.app)

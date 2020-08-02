@@ -74,30 +74,30 @@ class MobilityPlayerDialog(Dialog):
 
         file_name = config["file"].value
         label = ttk.Label(self.top, text=file_name)
-        label.grid(sticky="ew", pady=PADY)
+        label.grid(sticky=tk.EW, pady=PADY)
 
         self.progressbar = ttk.Progressbar(self.top, mode="indeterminate")
-        self.progressbar.grid(sticky="ew", pady=PADY)
+        self.progressbar.grid(sticky=tk.EW, pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         image = self.app.get_icon(ImageEnum.START, ICON_SIZE)
         self.play_button = ttk.Button(frame, image=image, command=self.click_play)
         self.play_button.image = image
-        self.play_button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        self.play_button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         image = self.app.get_icon(ImageEnum.PAUSE, ICON_SIZE)
         self.pause_button = ttk.Button(frame, image=image, command=self.click_pause)
         self.pause_button.image = image
-        self.pause_button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        self.pause_button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         image = self.app.get_icon(ImageEnum.STOP, ICON_SIZE)
         self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
         self.stop_button.image = image
-        self.stop_button.grid(row=0, column=2, sticky="ew", padx=PADX)
+        self.stop_button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
 
         loop = tk.IntVar(value=int(config["loop"].value == "1"))
         checkbutton = ttk.Checkbutton(

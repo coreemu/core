@@ -34,7 +34,7 @@ class StatusBar(ttk.Frame):
         self.columnconfigure(3, weight=1)
 
         frame = ttk.Frame(self, borderwidth=1, relief=tk.RIDGE)
-        frame.grid(row=0, column=0, sticky="ew")
+        frame.grid(row=0, column=0, sticky=tk.EW)
         frame.columnconfigure(0, weight=1)
 
         self.status = ttk.Label(
@@ -44,22 +44,22 @@ class StatusBar(ttk.Frame):
             borderwidth=1,
             relief=tk.RIDGE,
         )
-        self.status.grid(row=0, column=0, sticky="ew")
+        self.status.grid(row=0, column=0, sticky=tk.EW)
 
         self.zoom = ttk.Label(self, anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE)
-        self.zoom.grid(row=0, column=1, sticky="ew")
+        self.zoom.grid(row=0, column=1, sticky=tk.EW)
         self.set_zoom(self.app.canvas.ratio)
 
         self.cpu_label = ttk.Label(
             self, anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE
         )
-        self.cpu_label.grid(row=0, column=2, sticky="ew")
+        self.cpu_label.grid(row=0, column=2, sticky=tk.EW)
         self.set_cpu(0.0)
 
         self.alerts_button = ttk.Button(
             self, text="Alerts", command=self.click_alerts, style=self.alert_style
         )
-        self.alerts_button.grid(row=0, column=3, sticky="ew")
+        self.alerts_button.grid(row=0, column=3, sticky=tk.EW)
 
     def set_cpu(self, usage: float) -> None:
         self.cpu_label.config(text=f"CPU {usage * 100:.2f}%")

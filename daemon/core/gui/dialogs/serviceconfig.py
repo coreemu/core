@@ -119,16 +119,16 @@ class ServiceConfigDialog(Dialog):
 
         # draw metadata
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Meta-data")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         self.metadata_entry = ttk.Entry(frame, textvariable=self.metadata)
-        self.metadata_entry.grid(row=0, column=1, sticky="ew")
+        self.metadata_entry.grid(row=0, column=1, sticky=tk.EW)
 
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
-        self.notebook.grid(sticky="nsew", pady=PADY)
+        self.notebook.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_tab_files()
         self.draw_tab_directories()
         self.draw_tab_startstop()
@@ -138,7 +138,7 @@ class ServiceConfigDialog(Dialog):
 
     def draw_tab_files(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         self.notebook.add(tab, text="Files")
 
@@ -148,15 +148,15 @@ class ServiceConfigDialog(Dialog):
         label.grid()
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="File Name")
-        label.grid(row=0, column=0, padx=PADX, sticky="w")
+        label.grid(row=0, column=0, padx=PADX, sticky=tk.W)
         self.filename_combobox = ttk.Combobox(frame, values=self.filenames)
         self.filename_combobox.bind(
             "<<ComboboxSelected>>", self.display_service_file_data
         )
-        self.filename_combobox.grid(row=0, column=1, sticky="ew", padx=PADX)
+        self.filename_combobox.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(
             frame, image=self.documentnew_img, command=self.add_filename
         )
@@ -167,7 +167,7 @@ class ServiceConfigDialog(Dialog):
         button.grid(row=0, column=3)
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         button = ttk.Radiobutton(
             frame,
@@ -176,16 +176,16 @@ class ServiceConfigDialog(Dialog):
             value=1,
             state=tk.DISABLED,
         )
-        button.grid(row=0, column=0, sticky="w", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, state=tk.DISABLED)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         image = Images.get(ImageEnum.FILEOPEN, 16)
         button = ttk.Button(frame, image=image)
         button.image = image
         button.grid(row=0, column=2)
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(0, weight=1)
         button = ttk.Radiobutton(
             frame,
@@ -193,7 +193,7 @@ class ServiceConfigDialog(Dialog):
             text="Use text below for file contents",
             value=2,
         )
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky=tk.EW)
         image = Images.get(ImageEnum.FILEOPEN, 16)
         button = ttk.Button(frame, image=image)
         button.image = image
@@ -204,7 +204,7 @@ class ServiceConfigDialog(Dialog):
         button.grid(row=0, column=2)
 
         self.service_file_data = CodeText(tab)
-        self.service_file_data.grid(sticky="nsew")
+        self.service_file_data.grid(sticky=tk.NSEW)
         tab.rowconfigure(self.service_file_data.grid_info()["row"], weight=1)
         if len(self.filenames) > 0:
             self.filename_combobox.current(0)
@@ -218,7 +218,7 @@ class ServiceConfigDialog(Dialog):
 
     def draw_tab_directories(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(2, weight=1)
         self.notebook.add(tab, text="Directories")
@@ -227,33 +227,33 @@ class ServiceConfigDialog(Dialog):
             tab,
             text="Directories required by this service that are unique for each node.",
         )
-        label.grid(row=0, column=0, sticky="ew")
+        label.grid(row=0, column=0, sticky=tk.EW)
         frame = ttk.Frame(tab, padding=FRAME_PAD)
         frame.columnconfigure(0, weight=1)
-        frame.grid(row=1, column=0, sticky="nsew")
+        frame.grid(row=1, column=0, sticky=tk.NSEW)
         var = tk.StringVar(value="")
         self.directory_entry = ttk.Entry(frame, textvariable=var)
-        self.directory_entry.grid(row=0, column=0, sticky="ew", padx=PADX)
+        self.directory_entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="...", command=self.find_directory_button)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
         self.dir_list = ListboxScroll(tab)
-        self.dir_list.grid(row=2, column=0, sticky="nsew", pady=PADY)
+        self.dir_list.grid(row=2, column=0, sticky=tk.NSEW, pady=PADY)
         self.dir_list.listbox.bind("<<ListboxSelect>>", self.directory_select)
         for d in self.temp_directories:
             self.dir_list.listbox.insert("end", d)
 
         frame = ttk.Frame(tab)
-        frame.grid(row=3, column=0, sticky="nsew")
+        frame.grid(row=3, column=0, sticky=tk.NSEW)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Add", command=self.add_directory)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.remove_directory)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def draw_tab_startstop(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         for i in range(3):
             tab.rowconfigure(i, weight=1)
@@ -279,25 +279,25 @@ class ServiceConfigDialog(Dialog):
                 commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
             label_frame.rowconfigure(1, weight=1)
-            label_frame.grid(row=i, column=0, sticky="nsew", pady=PADY)
+            label_frame.grid(row=i, column=0, sticky=tk.NSEW, pady=PADY)
 
             frame = ttk.Frame(label_frame)
-            frame.grid(row=0, column=0, sticky="nsew", pady=PADY)
+            frame.grid(row=0, column=0, sticky=tk.NSEW, pady=PADY)
             frame.columnconfigure(0, weight=1)
             entry = ttk.Entry(frame, textvariable=tk.StringVar())
             entry.grid(row=0, column=0, stick="ew", padx=PADX)
             button = ttk.Button(frame, image=self.documentnew_img)
             button.bind("<Button-1>", self.add_command)
-            button.grid(row=0, column=1, sticky="ew", padx=PADX)
+            button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
             button = ttk.Button(frame, image=self.editdelete_img)
-            button.grid(row=0, column=2, sticky="ew")
+            button.grid(row=0, column=2, sticky=tk.EW)
             button.bind("<Button-1>", self.delete_command)
             listbox_scroll = ListboxScroll(label_frame)
             listbox_scroll.listbox.bind("<<ListboxSelect>>", self.update_entry)
             for command in commands:
                 listbox_scroll.listbox.insert("end", command)
             listbox_scroll.listbox.config(height=4)
-            listbox_scroll.grid(row=1, column=0, sticky="nsew")
+            listbox_scroll.grid(row=1, column=0, sticky=tk.NSEW)
             if i == 0:
                 self.startup_commands_listbox = listbox_scroll.listbox
             elif i == 1:
@@ -307,23 +307,23 @@ class ServiceConfigDialog(Dialog):
 
     def draw_tab_configuration(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
-        self.notebook.add(tab, text="Configuration", sticky="nsew")
+        self.notebook.add(tab, text="Configuration", sticky=tk.NSEW)
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Validation Time")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         self.validation_time_entry = ttk.Entry(frame)
         self.validation_time_entry.insert("end", self.validation_time)
         self.validation_time_entry.config(state=tk.DISABLED)
-        self.validation_time_entry.grid(row=0, column=1, sticky="ew", pady=PADY)
+        self.validation_time_entry.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
         label = ttk.Label(frame, text="Validation Mode")
-        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        label.grid(row=1, column=0, sticky=tk.W, padx=PADX)
         if self.validation_mode == ServiceValidationMode.BLOCKING:
             mode = "BLOCKING"
         elif self.validation_mode == ServiceValidationMode.NON_BLOCKING:
@@ -335,48 +335,48 @@ class ServiceConfigDialog(Dialog):
         )
         self.validation_mode_entry.insert("end", mode)
         self.validation_mode_entry.config(state=tk.DISABLED)
-        self.validation_mode_entry.grid(row=1, column=1, sticky="ew", pady=PADY)
+        self.validation_mode_entry.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
 
         label = ttk.Label(frame, text="Validation Period")
-        label.grid(row=2, column=0, sticky="w", padx=PADX)
+        label.grid(row=2, column=0, sticky=tk.W, padx=PADX)
         self.validation_period_entry = ttk.Entry(
             frame, state=tk.DISABLED, textvariable=tk.StringVar()
         )
-        self.validation_period_entry.grid(row=2, column=1, sticky="ew", pady=PADY)
+        self.validation_period_entry.grid(row=2, column=1, sticky=tk.EW, pady=PADY)
 
         label_frame = ttk.LabelFrame(tab, text="Executables", padding=FRAME_PAD)
-        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.grid(sticky=tk.NSEW, pady=PADY)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         listbox_scroll = ListboxScroll(label_frame)
-        listbox_scroll.grid(sticky="nsew")
+        listbox_scroll.grid(sticky=tk.NSEW)
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for executable in self.executables:
             listbox_scroll.listbox.insert("end", executable)
 
         label_frame = ttk.LabelFrame(tab, text="Dependencies", padding=FRAME_PAD)
-        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.grid(sticky=tk.NSEW, pady=PADY)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         listbox_scroll = ListboxScroll(label_frame)
-        listbox_scroll.grid(sticky="nsew")
+        listbox_scroll.grid(sticky=tk.NSEW)
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for dependency in self.dependencies:
             listbox_scroll.listbox.insert("end", dependency)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Copy...", command=self.click_copy)
-        button.grid(row=0, column=2, sticky="ew", padx=PADX)
+        button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=3, sticky=tk.EW)
 
     def add_filename(self) -> None:
         filename = self.filename_combobox.get()

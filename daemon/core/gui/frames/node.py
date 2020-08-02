@@ -1,3 +1,4 @@
+import tkinter as tk
 from typing import TYPE_CHECKING
 
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
@@ -18,7 +19,7 @@ class NodeInfoFrame(InfoFrameBase):
         self.columnconfigure(0, weight=1)
         node = self.canvas_node.core_node
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("ID", node.id)
         frame.add_detail("Name", node.name)
         if NodeUtils.is_model_node(node.type):

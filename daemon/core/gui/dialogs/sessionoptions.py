@@ -39,17 +39,17 @@ class SessionOptionsDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
         self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         state = tk.NORMAL if self.enabled else tk.DISABLED
         button = ttk.Button(frame, text="Save", command=self.save, state=state)
-        button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def save(self) -> None:
         config = self.config_frame.parse_config()

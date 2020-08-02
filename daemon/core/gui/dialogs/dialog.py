@@ -30,7 +30,7 @@ class Dialog(tk.Toplevel):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.top: ttk.Frame = ttk.Frame(self, padding=DIALOG_PAD)
-        self.top.grid(sticky="nsew")
+        self.top.grid(sticky=tk.NSEW)
 
     def show(self) -> None:
         self.transient(self.master)
@@ -44,6 +44,6 @@ class Dialog(tk.Toplevel):
 
     def draw_spacer(self, row: int = None) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(row=row, sticky="nsew")
+        frame.grid(row=row, sticky=tk.NSEW)
         frame.rowconfigure(0, weight=1)
         self.top.rowconfigure(frame.grid_info()["row"], weight=1)

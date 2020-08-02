@@ -25,13 +25,13 @@ class ExecutePythonDialog(Dialog):
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.grid(row=i, column=0, sticky="nsew")
+        frame.grid(row=i, column=0, sticky=tk.NSEW)
         i = i + 1
         var = tk.StringVar(value="")
         self.file_entry = ttk.Entry(frame, textvariable=var)
-        self.file_entry.grid(row=0, column=0, sticky="ew")
+        self.file_entry.grid(row=0, column=0, sticky=tk.EW)
         button = ttk.Button(frame, text="...", command=self.select_file)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
         self.top.columnconfigure(0, weight=1)
         button = ttk.Checkbutton(
@@ -40,18 +40,18 @@ class ExecutePythonDialog(Dialog):
             variable=self.with_options,
             command=self.add_options,
         )
-        button.grid(row=i, column=0, sticky="ew")
+        button.grid(row=i, column=0, sticky=tk.EW)
         i = i + 1
 
         label = ttk.Label(
             self.top, text="Any command-line options for running the Python script"
         )
-        label.grid(row=i, column=0, sticky="ew")
+        label.grid(row=i, column=0, sticky=tk.EW)
         i = i + 1
         self.option_entry = ttk.Entry(
             self.top, textvariable=self.options, state="disabled"
         )
-        self.option_entry.grid(row=i, column=0, sticky="ew")
+        self.option_entry.grid(row=i, column=0, sticky=tk.EW)
         i = i + 1
 
         frame = ttk.Frame(self.top, padding=FRAME_PAD)
@@ -59,9 +59,9 @@ class ExecutePythonDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.grid(row=i, column=0)
         button = ttk.Button(frame, text="Execute", command=self.script_execute)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
     def add_options(self) -> None:
         if self.with_options.get():

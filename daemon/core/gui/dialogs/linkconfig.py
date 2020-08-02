@@ -73,11 +73,11 @@ class LinkConfigurationDialog(Dialog):
         label = ttk.Label(
             self.top, text=f"Link from {source_name} to {dest_name}", anchor=tk.CENTER
         )
-        label.grid(row=0, column=0, sticky="ew", pady=PADY)
+        label.grid(row=0, column=0, sticky=tk.EW, pady=PADY)
 
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        frame.grid(row=1, column=0, sticky="ew", pady=PADY)
+        frame.grid(row=1, column=0, sticky=tk.EW, pady=PADY)
         if self.is_symmetric:
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
@@ -86,25 +86,25 @@ class LinkConfigurationDialog(Dialog):
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
             )
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
 
         if self.is_symmetric:
             self.symmetric_frame = self.get_frame()
-            self.symmetric_frame.grid(row=2, column=0, sticky="ew", pady=PADY)
+            self.symmetric_frame.grid(row=2, column=0, sticky=tk.EW, pady=PADY)
         else:
             self.asymmetric_frame = self.get_frame()
-            self.asymmetric_frame.grid(row=2, column=0, sticky="ew", pady=PADY)
+            self.asymmetric_frame.grid(row=2, column=0, sticky=tk.EW, pady=PADY)
 
         self.draw_spacer(row=3)
 
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.grid(row=4, column=0, sticky="ew")
+        frame.grid(row=4, column=0, sticky=tk.EW)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def get_frame(self) -> ttk.Frame:
         frame = ttk.Frame(self.top)
@@ -115,76 +115,76 @@ class LinkConfigurationDialog(Dialog):
             label_name = "Asymmetric Effects: Downstream / Upstream "
         row = 0
         label = ttk.Label(frame, text=label_name, anchor=tk.CENTER)
-        label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=PADY)
+        label.grid(row=row, column=0, columnspan=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Bandwidth (bps)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.bandwidth
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_bandwidth
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Delay (us)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.delay
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_delay
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Jitter (us)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.jitter
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_jitter
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Loss (%)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveFloatEntry(
             frame, empty_enabled=False, textvariable=self.loss
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveFloatEntry(
                 frame, empty_enabled=False, textvariable=self.down_loss
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Duplicate (%)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.duplicate
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_duplicate
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Color")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         self.color_button = tk.Button(
             frame,
             textvariable=self.color,
@@ -194,15 +194,15 @@ class LinkConfigurationDialog(Dialog):
             highlightthickness=0,
             command=self.click_color,
         )
-        self.color_button.grid(row=row, column=1, sticky="ew", pady=PADY)
+        self.color_button.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Width")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveFloatEntry(
             frame, empty_enabled=False, textvariable=self.width
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
 
         return frame
 

@@ -37,12 +37,12 @@ class ServersDialog(Dialog):
 
     def draw_servers(self) -> None:
         listbox_scroll = ListboxScroll(self.top)
-        listbox_scroll.grid(pady=PADY, sticky="nsew")
+        listbox_scroll.grid(pady=PADY, sticky=tk.NSEW)
         listbox_scroll.columnconfigure(0, weight=1)
         listbox_scroll.rowconfigure(0, weight=1)
 
         self.servers = listbox_scroll.listbox
-        self.servers.grid(row=0, column=0, sticky="nsew")
+        self.servers.grid(row=0, column=0, sticky=tk.NSEW)
         self.servers.bind("<<ListboxSelect>>", self.handle_server_change)
 
         for server in self.app.core.servers:
@@ -50,52 +50,52 @@ class ServersDialog(Dialog):
 
     def draw_server_configuration(self) -> None:
         frame = ttk.LabelFrame(self.top, text="Server Configuration", padding=FRAME_PAD)
-        frame.grid(pady=PADY, sticky="ew")
+        frame.grid(pady=PADY, sticky=tk.EW)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
 
         label = ttk.Label(frame, text="Name")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky=tk.EW)
 
         label = ttk.Label(frame, text="Address")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.address)
-        entry.grid(row=0, column=3, sticky="ew")
+        entry.grid(row=0, column=3, sticky=tk.EW)
 
     def draw_servers_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(pady=PADY, sticky="ew")
+        frame.grid(pady=PADY, sticky=tk.EW)
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Create", command=self.click_create)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         self.save_button = ttk.Button(
             frame, text="Save", state=tk.DISABLED, command=self.click_save
         )
-        self.save_button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        self.save_button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
-        self.delete_button.grid(row=0, column=2, sticky="ew")
+        self.delete_button.grid(row=0, column=2, sticky=tk.EW)
 
     def draw_apply_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(
             frame, text="Save Configuration", command=self.click_save_configuration
         )
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_save_configuration(self):
         self.app.guiconfig.servers.clear()

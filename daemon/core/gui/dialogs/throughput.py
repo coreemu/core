@@ -37,25 +37,25 @@ class ThroughputDialog(Dialog):
             variable=self.show_throughput,
             text="Show Throughput Level On Every Link",
         )
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
         button = ttk.Checkbutton(
             self.top,
             variable=self.exponential_weight,
             text="Use Exponential Weighted Moving Average",
         )
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
         button = ttk.Checkbutton(
             self.top, variable=self.transmission, text="Include Transmissions"
         )
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
         button = ttk.Checkbutton(
             self.top, variable=self.reception, text="Include Receptions"
         )
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
 
         label_frame = ttk.LabelFrame(self.top, text="Link Highlight", padding=FRAME_PAD)
         label_frame.columnconfigure(0, weight=1)
-        label_frame.grid(sticky="ew")
+        label_frame.grid(sticky=tk.EW)
 
         scale = ttk.Scale(
             label_frame,
@@ -65,21 +65,21 @@ class ThroughputDialog(Dialog):
             orient=tk.HORIZONTAL,
             variable=self.threshold,
         )
-        scale.grid(sticky="ew", pady=PADY)
+        scale.grid(sticky=tk.EW, pady=PADY)
 
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Threshold Kbps (0 disabled)")
-        label.grid(row=0, column=0, sticky="ew", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.threshold)
-        entry.grid(row=0, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=1, column=0, sticky="ew", padx=PADX)
+        label.grid(row=1, column=0, sticky=tk.EW, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.width)
-        entry.grid(row=1, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
         label = ttk.Label(frame, text="Color")
-        label.grid(row=2, column=0, sticky="ew", padx=PADX)
+        label.grid(row=2, column=0, sticky=tk.EW, padx=PADX)
         self.color_button = tk.Button(
             frame,
             text=self.color,
@@ -87,18 +87,18 @@ class ThroughputDialog(Dialog):
             bg=self.color,
             highlightthickness=0,
         )
-        self.color_button.grid(row=2, column=1, sticky="ew")
+        self.color_button.grid(row=2, column=1, sticky=tk.EW)
 
         self.draw_spacer()
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_color(self) -> None:
         color_picker = ColorPickerDialog(self, self.app, self.color)

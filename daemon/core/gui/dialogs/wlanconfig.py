@@ -1,3 +1,4 @@
+import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
@@ -54,7 +55,7 @@ class WlanConfigDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
         self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_apply_buttons()
         self.top.bind("<Destroy>", self.remove_ranges)
 
@@ -63,7 +64,7 @@ class WlanConfigDialog(Dialog):
         create node configuration options
         """
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
@@ -73,10 +74,10 @@ class WlanConfigDialog(Dialog):
         self.range_entry.config(validatecommand=(self.positive_int, "%P"))
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_apply(self) -> None:
         """

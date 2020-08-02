@@ -37,31 +37,31 @@ class NodeServiceDialog(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
         label_frame = ttk.LabelFrame(frame, text="Groups", padding=FRAME_PAD)
-        label_frame.grid(row=0, column=0, sticky="nsew")
+        label_frame.grid(row=0, column=0, sticky=tk.NSEW)
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
-        self.groups.grid(sticky="nsew")
+        self.groups.grid(sticky=tk.NSEW)
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
 
         label_frame = ttk.LabelFrame(frame, text="Services")
-        label_frame.grid(row=0, column=1, sticky="nsew")
+        label_frame.grid(row=0, column=1, sticky=tk.NSEW)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         self.services = CheckboxList(
             label_frame, self.app, clicked=self.service_clicked, padding=FRAME_PAD
         )
-        self.services.grid(sticky="nsew")
+        self.services.grid(sticky=tk.NSEW)
 
         label_frame = ttk.LabelFrame(frame, text="Selected", padding=FRAME_PAD)
-        label_frame.grid(row=0, column=2, sticky="nsew")
+        label_frame.grid(row=0, column=2, sticky=tk.NSEW)
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
         self.current = ListboxScroll(label_frame)
-        self.current.grid(sticky="nsew")
+        self.current.grid(sticky=tk.NSEW)
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
             if self.is_custom_service(service):
@@ -72,13 +72,13 @@ class NodeServiceDialog(Dialog):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.click_remove)
-        button.grid(row=0, column=2, sticky="ew", padx=PADX)
+        button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=3, sticky=tk.EW)
 
         # trigger group change
         self.handle_group_change()

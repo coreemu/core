@@ -34,42 +34,42 @@ class PreferencesDialog(Dialog):
 
     def draw_preferences(self) -> None:
         frame = ttk.LabelFrame(self.top, text="Preferences", padding=FRAME_PAD)
-        frame.grid(sticky="nsew", pady=PADY)
+        frame.grid(sticky=tk.NSEW, pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Theme")
-        label.grid(row=0, column=0, pady=PADY, padx=PADX, sticky="w")
+        label.grid(row=0, column=0, pady=PADY, padx=PADX, sticky=tk.W)
         themes = self.app.style.theme_names()
         combobox = ttk.Combobox(
             frame, textvariable=self.theme, values=themes, state="readonly"
         )
         combobox.set(self.theme.get())
-        combobox.grid(row=0, column=1, sticky="ew")
+        combobox.grid(row=0, column=1, sticky=tk.EW)
         combobox.bind("<<ComboboxSelected>>", self.theme_change)
 
         label = ttk.Label(frame, text="Editor")
-        label.grid(row=1, column=0, pady=PADY, padx=PADX, sticky="w")
+        label.grid(row=1, column=0, pady=PADY, padx=PADX, sticky=tk.W)
         combobox = ttk.Combobox(
             frame, textvariable=self.editor, values=appconfig.EDITORS, state="readonly"
         )
-        combobox.grid(row=1, column=1, sticky="ew")
+        combobox.grid(row=1, column=1, sticky=tk.EW)
 
         label = ttk.Label(frame, text="Terminal")
-        label.grid(row=2, column=0, pady=PADY, padx=PADX, sticky="w")
+        label.grid(row=2, column=0, pady=PADY, padx=PADX, sticky=tk.W)
         terminals = sorted(appconfig.TERMINALS.values())
         combobox = ttk.Combobox(frame, textvariable=self.terminal, values=terminals)
-        combobox.grid(row=2, column=1, sticky="ew")
+        combobox.grid(row=2, column=1, sticky=tk.EW)
 
         label = ttk.Label(frame, text="3D GUI")
-        label.grid(row=3, column=0, pady=PADY, padx=PADX, sticky="w")
+        label.grid(row=3, column=0, pady=PADY, padx=PADX, sticky=tk.W)
         entry = ttk.Entry(frame, textvariable=self.gui3d)
-        entry.grid(row=3, column=1, sticky="ew")
+        entry.grid(row=3, column=1, sticky=tk.EW)
 
         label = ttk.Label(frame, text="Scaling")
-        label.grid(row=4, column=0, pady=PADY, padx=PADX, sticky="w")
+        label.grid(row=4, column=0, pady=PADY, padx=PADX, sticky=tk.W)
 
         scale_frame = ttk.Frame(frame)
-        scale_frame.grid(row=4, column=1, sticky="ew")
+        scale_frame.grid(row=4, column=1, sticky=tk.EW)
         scale_frame.columnconfigure(0, weight=1)
         scale = ttk.Scale(
             scale_frame,
@@ -79,7 +79,7 @@ class PreferencesDialog(Dialog):
             orient=tk.HORIZONTAL,
             variable=self.gui_scale,
         )
-        scale.grid(row=0, column=0, sticky="ew")
+        scale.grid(row=0, column=0, sticky=tk.EW)
         entry = validation.AppScaleEntry(
             scale_frame, textvariable=self.gui_scale, width=4
         )
@@ -90,15 +90,15 @@ class PreferencesDialog(Dialog):
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def theme_change(self, event: tk.Event) -> None:
         theme = self.theme.get()

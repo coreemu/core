@@ -95,7 +95,7 @@ class ButtonBar(ttk.Frame):
         image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
         button = ttk.Button(self, image=image, command=func)
         button.image = image
-        button.grid(sticky="ew")
+        button.grid(sticky=tk.EW)
         Tooltip(button, tooltip)
         if radio:
             self.radio_buttons.append(button)
@@ -124,7 +124,7 @@ class MarkerFrame(ttk.Frame):
         image = self.app.get_icon(ImageEnum.DELETE, 16)
         button = ttk.Button(self, image=image, width=2, command=self.click_clear)
         button.image = image
-        button.grid(sticky="ew", pady=self.PAD)
+        button.grid(sticky=tk.EW, pady=self.PAD)
         Tooltip(button, "Delete Marker")
 
         sizes = [1, 3, 8, 10]
@@ -132,14 +132,14 @@ class MarkerFrame(ttk.Frame):
         sizes = ttk.Combobox(
             self, state="readonly", textvariable=self.size, value=sizes, width=2
         )
-        sizes.grid(sticky="ew", pady=self.PAD)
+        sizes.grid(sticky=tk.EW, pady=self.PAD)
         Tooltip(sizes, "Marker Size")
 
         frame_size = TOOLBAR_SIZE
         self.color_frame = tk.Frame(
             self, background=self.color, height=frame_size, width=frame_size
         )
-        self.color_frame.grid(sticky="ew")
+        self.color_frame.grid(sticky=tk.EW)
         self.color_frame.bind("<Button-1>", self.click_color)
         Tooltip(self.color_frame, "Marker Color")
 
@@ -207,7 +207,7 @@ class Toolbar(ttk.Frame):
 
     def draw_design_frame(self) -> None:
         self.design_frame = ButtonBar(self, self.app)
-        self.design_frame.grid(row=0, column=0, sticky="nsew")
+        self.design_frame.grid(row=0, column=0, sticky=tk.NSEW)
         self.design_frame.columnconfigure(0, weight=1)
         self.play_button = self.design_frame.create_button(
             ImageEnum.START, self.click_start, "Start Session"
@@ -239,7 +239,7 @@ class Toolbar(ttk.Frame):
 
     def draw_runtime_frame(self) -> None:
         self.runtime_frame = ButtonBar(self, self.app)
-        self.runtime_frame.grid(row=0, column=0, sticky="nsew")
+        self.runtime_frame.grid(row=0, column=0, sticky=tk.NSEW)
         self.runtime_frame.columnconfigure(0, weight=1)
         self.stop_button = self.runtime_frame.create_button(
             ImageEnum.STOP, self.click_stop, "Stop Session"
@@ -387,7 +387,7 @@ class Toolbar(ttk.Frame):
             self.runtime_frame, image=image, direction=tk.RIGHT
         )
         menu_button.image = image
-        menu_button.grid(sticky="ew")
+        menu_button.grid(sticky=tk.EW)
         self.observers_menu = ObserversMenu(menu_button, self.app)
         menu_button["menu"] = self.observers_menu
 

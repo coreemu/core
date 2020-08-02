@@ -38,7 +38,7 @@ class EdgeInfoFrame(InfoFrameBase):
         dst_node = self.app.core.session.nodes[link.node2_id]
 
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("Source", src_node.name)
         iface1 = link.iface1
         if iface1:
@@ -90,7 +90,7 @@ class WirelessEdgeInfoFrame(InfoFrameBase):
         iface2 = get_iface(dst_canvas_node, net_id)
 
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("Source", src_node.name)
         if iface1:
             mac = iface1.mac if iface1.mac else "auto"

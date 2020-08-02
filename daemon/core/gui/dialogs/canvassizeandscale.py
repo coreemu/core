@@ -23,7 +23,7 @@ class SizeAndScaleDialog(Dialog):
         """
         super().__init__(app, "Canvas Size and Scale")
         self.canvas: CanvasGraph = self.app.canvas
-        self.section_font: font.Font = font.Font(weight="bold")
+        self.section_font: font.Font = font.Font(weight=font.BOLD)
         width, height = self.canvas.current_dimensions
         self.pixel_width: tk.IntVar = tk.IntVar(value=width)
         self.pixel_height: tk.IntVar = tk.IntVar(value=height)
@@ -54,68 +54,68 @@ class SizeAndScaleDialog(Dialog):
 
     def draw_size(self) -> None:
         label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_PAD)
-        label_frame.grid(sticky="ew")
+        label_frame.grid(sticky=tk.EW)
         label_frame.columnconfigure(0, weight=1)
 
         # draw size row 1
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_width)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky=tk.W, padx=PADX)
         entry = validation.PositiveIntEntry(frame, textvariable=self.pixel_height)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky=tk.EW, padx=PADX)
         entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="Pixels")
-        label.grid(row=0, column=4, sticky="w")
+        label.grid(row=0, column=4, sticky=tk.W)
 
         # draw size row 2
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = validation.PositiveFloatEntry(
             frame, textvariable=self.meters_width, state=tk.DISABLED
         )
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky=tk.W, padx=PADX)
         entry = validation.PositiveFloatEntry(
             frame, textvariable=self.meters_height, state=tk.DISABLED
         )
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky=tk.EW, padx=PADX)
         label = ttk.Label(frame, text="Meters")
-        label.grid(row=0, column=4, sticky="w")
+        label.grid(row=0, column=4, sticky=tk.W)
 
     def draw_scale(self) -> None:
         label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_PAD)
-        label_frame.grid(sticky="ew")
+        label_frame.grid(sticky=tk.EW)
         label_frame.columnconfigure(0, weight=1)
 
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text=f"{PIXEL_SCALE} Pixels =")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = validation.PositiveFloatEntry(frame, textvariable=self.scale)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         entry.bind("<KeyRelease>", self.size_scale_keyup)
         label = ttk.Label(frame, text="Meters")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky=tk.W)
 
     def draw_reference_point(self) -> None:
         label_frame = ttk.Labelframe(
             self.top, text="Reference Point", padding=FRAME_PAD
         )
-        label_frame.grid(sticky="ew")
+        label_frame.grid(sticky=tk.EW)
         label_frame.columnconfigure(0, weight=1)
 
         label = ttk.Label(
@@ -124,61 +124,61 @@ class SizeAndScaleDialog(Dialog):
         label.grid()
 
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
 
         label = ttk.Label(frame, text="X")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = validation.PositiveFloatEntry(frame, textvariable=self.x)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         label = ttk.Label(frame, text="Y")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky=tk.W, padx=PADX)
         entry = validation.PositiveFloatEntry(frame, textvariable=self.y)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky=tk.EW, padx=PADX)
 
         label = ttk.Label(label_frame, text="Translates To")
         label.grid()
 
         frame = ttk.Frame(label_frame)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(5, weight=1)
 
         label = ttk.Label(frame, text="Lat")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = validation.FloatEntry(frame, textvariable=self.lat)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         label = ttk.Label(frame, text="Lon")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky=tk.W, padx=PADX)
         entry = validation.FloatEntry(frame, textvariable=self.lon)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky=tk.EW, padx=PADX)
 
         label = ttk.Label(frame, text="Alt")
-        label.grid(row=0, column=4, sticky="w", padx=PADX)
+        label.grid(row=0, column=4, sticky=tk.W, padx=PADX)
         entry = validation.FloatEntry(frame, textvariable=self.alt)
-        entry.grid(row=0, column=5, sticky="ew")
+        entry.grid(row=0, column=5, sticky=tk.EW)
 
     def draw_save_as_default(self) -> None:
         button = ttk.Checkbutton(
             self.top, text="Save as default?", variable=self.save_default
         )
-        button.grid(sticky="w", pady=PADY)
+        button.grid(sticky=tk.W, pady=PADY)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def size_scale_keyup(self, _event: tk.Event) -> None:
         scale = self.scale.get()

@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+import tkinter as tk
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ class ProgressTask:
         self.time: Optional[float] = None
 
     def start(self) -> None:
-        self.app.progress.grid(sticky="ew", columnspan=2)
+        self.app.progress.grid(sticky=tk.EW, columnspan=2)
         self.app.progress.start()
         self.time = time.perf_counter()
         thread = threading.Thread(target=self.run, daemon=True)

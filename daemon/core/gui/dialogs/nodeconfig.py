@@ -126,12 +126,12 @@ class NodeConfigDialog(Dialog):
 
         # field frame
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(1, weight=1)
 
         # icon field
         label = ttk.Label(frame, text="Icon")
-        label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
+        label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
         self.image_button = ttk.Button(
             frame,
             text="Icon",
@@ -139,49 +139,49 @@ class NodeConfigDialog(Dialog):
             compound=tk.NONE,
             command=self.click_icon,
         )
-        self.image_button.grid(row=row, column=1, sticky="ew")
+        self.image_button.grid(row=row, column=1, sticky=tk.EW)
         row += 1
 
         # name field
         label = ttk.Label(frame, text="Name")
-        label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
+        label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
         entry = validation.NodeNameEntry(frame, textvariable=self.name, state=state)
-        entry.grid(row=row, column=1, sticky="ew")
+        entry.grid(row=row, column=1, sticky=tk.EW)
         row += 1
 
         # node type field
         if NodeUtils.is_model_node(self.node.type):
             label = ttk.Label(frame, text="Type")
-            label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
+            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             combobox = ttk.Combobox(
                 frame,
                 textvariable=self.type,
                 values=list(NodeUtils.NODE_MODELS),
                 state=combo_state,
             )
-            combobox.grid(row=row, column=1, sticky="ew")
+            combobox.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
         # container image field
         if NodeUtils.is_image_node(self.node.type):
             label = ttk.Label(frame, text="Image")
-            label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
+            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             entry = ttk.Entry(frame, textvariable=self.container_image, state=state)
-            entry.grid(row=row, column=1, sticky="ew")
+            entry.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
         if NodeUtils.is_container_node(self.node.type):
             # server
-            frame.grid(sticky="ew")
+            frame.grid(sticky=tk.EW)
             frame.columnconfigure(1, weight=1)
             label = ttk.Label(frame, text="Server")
-            label.grid(row=row, column=0, sticky="ew", padx=PADX, pady=PADY)
+            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             servers = ["localhost"]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
                 frame, textvariable=self.server, values=servers, state=combo_state
             )
-            combobox.grid(row=row, column=1, sticky="ew")
+            combobox.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
         if NodeUtils.is_rj45_node(self.node.type):
@@ -190,7 +190,7 @@ class NodeConfigDialog(Dialog):
             ifaces = ListboxScroll(frame)
             ifaces.listbox.config(state=state)
             ifaces.grid(
-                row=row, column=0, columnspan=2, sticky="ew", padx=PADX, pady=PADY
+                row=row, column=0, columnspan=2, sticky=tk.EW, padx=PADX, pady=PADY
             )
             for inf in sorted(response.ifaces[:]):
                 ifaces.listbox.insert(tk.END, inf)
@@ -206,13 +206,13 @@ class NodeConfigDialog(Dialog):
 
     def draw_ifaces(self) -> None:
         notebook = ttk.Notebook(self.top)
-        notebook.grid(sticky="nsew", pady=PADY)
+        notebook.grid(sticky=tk.NSEW, pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
         state = tk.DISABLED if self.app.core.is_runtime() else tk.NORMAL
         for iface_id in sorted(self.canvas_node.ifaces):
             iface = self.canvas_node.ifaces[iface_id]
             tab = ttk.Frame(notebook, padding=FRAME_PAD)
-            tab.grid(sticky="nsew", pady=PADY)
+            tab.grid(sticky=tk.NSEW, pady=PADY)
             tab.columnconfigure(1, weight=1)
             tab.columnconfigure(2, weight=1)
             notebook.add(tab, text=iface.name)
@@ -226,7 +226,7 @@ class NodeConfigDialog(Dialog):
                     text=f"Configure EMANE {emane_model}",
                     command=lambda: self.click_emane_config(emane_model, iface.id),
                 )
-                button.grid(row=row, sticky="ew", columnspan=3, pady=PADY)
+                button.grid(row=row, sticky=tk.EW, columnspan=3, pady=PADY)
                 row += 1
 
             label = ttk.Label(tab, text="MAC")
@@ -243,7 +243,7 @@ class NodeConfigDialog(Dialog):
             checkbutton.grid(row=row, column=1, padx=PADX)
             mac = tk.StringVar(value=iface.mac)
             entry = ttk.Entry(tab, textvariable=mac, state=mac_state)
-            entry.grid(row=row, column=2, sticky="ew")
+            entry.grid(row=row, column=2, sticky=tk.EW)
             func = partial(mac_auto, is_auto, entry, mac)
             checkbutton.config(command=func)
             row += 1
@@ -255,7 +255,7 @@ class NodeConfigDialog(Dialog):
                 ip4_net = f"{iface.ip4}/{iface.ip4_mask}"
             ip4 = tk.StringVar(value=ip4_net)
             entry = ttk.Entry(tab, textvariable=ip4, state=state)
-            entry.grid(row=row, column=1, columnspan=2, sticky="ew")
+            entry.grid(row=row, column=1, columnspan=2, sticky=tk.EW)
             row += 1
 
             label = ttk.Label(tab, text="IPv6")
@@ -265,21 +265,21 @@ class NodeConfigDialog(Dialog):
                 ip6_net = f"{iface.ip6}/{iface.ip6_mask}"
             ip6 = tk.StringVar(value=ip6_net)
             entry = ttk.Entry(tab, textvariable=ip6, state=state)
-            entry.grid(row=row, column=1, columnspan=2, sticky="ew")
+            entry.grid(row=row, column=1, columnspan=2, sticky=tk.EW)
 
             self.ifaces[iface.id] = InterfaceData(is_auto, mac, ip4, ip6)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_emane_config(self, emane_model: str, iface_id: int) -> None:
         dialog = EmaneModelDialog(

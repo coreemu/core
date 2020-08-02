@@ -62,7 +62,7 @@ class SessionsDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew", pady=PADY)
+        frame.grid(sticky=tk.NSEW, pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("id", "state", "nodes"),
@@ -72,7 +72,7 @@ class SessionsDialog(Dialog):
         style = ttk.Style()
         heading_size = int(self.app.guiconfig.scale * 10)
         style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
-        self.tree.grid(sticky="nsew")
+        self.tree.grid(sticky=tk.NSEW)
         self.tree.column("id", stretch=tk.YES, anchor="center")
         self.tree.heading("id", text="ID")
         self.tree.column("state", stretch=tk.YES, anchor="center")
@@ -92,25 +92,25 @@ class SessionsDialog(Dialog):
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
-        yscrollbar.grid(row=0, column=1, sticky="ns")
+        yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        xscrollbar.grid(row=1, sticky="ew")
+        xscrollbar.grid(row=1, sticky=tk.EW)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
 
         image = Images.get(ImageEnum.DOCUMENTNEW, 16)
         b = ttk.Button(
             frame, image=image, text="New", compound=tk.LEFT, command=self.click_new
         )
         b.image = image
-        b.grid(row=0, padx=PADX, sticky="ew")
+        b.grid(row=0, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.FILEOPEN, 16)
         self.connect_button = ttk.Button(
@@ -122,7 +122,7 @@ class SessionsDialog(Dialog):
             state=tk.DISABLED,
         )
         self.connect_button.image = image
-        self.connect_button.grid(row=0, column=1, padx=PADX, sticky="ew")
+        self.connect_button.grid(row=0, column=1, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.DELETE, 16)
         self.delete_button = ttk.Button(
@@ -134,7 +134,7 @@ class SessionsDialog(Dialog):
             state=tk.DISABLED,
         )
         self.delete_button.image = image
-        self.delete_button.grid(row=0, column=2, padx=PADX, sticky="ew")
+        self.delete_button.grid(row=0, column=2, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.CANCEL, 16)
         if self.is_start_app:
@@ -154,7 +154,7 @@ class SessionsDialog(Dialog):
                 command=self.destroy,
             )
         b.image = image
-        b.grid(row=0, column=3, sticky="ew")
+        b.grid(row=0, column=3, sticky=tk.EW)
 
     def click_new(self) -> None:
         self.app.core.create_new_session()

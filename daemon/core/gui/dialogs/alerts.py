@@ -30,13 +30,13 @@ class AlertsDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew", pady=PADY)
+        frame.grid(sticky=tk.NSEW, pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("time", "level", "session_id", "node", "source"),
             show="headings",
         )
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.grid(row=0, column=0, sticky=tk.NSEW)
         self.tree.column("time", stretch=tk.YES)
         self.tree.heading("time", text="Time")
         self.tree.column("level", stretch=tk.YES, width=100)
@@ -77,25 +77,25 @@ class AlertsDialog(Dialog):
         self.tree.tag_configure(notice_name, background="#85e085")
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
-        yscrollbar.grid(row=0, column=1, sticky="ns")
+        yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        xscrollbar.grid(row=1, sticky="ew")
+        xscrollbar.grid(row=1, sticky=tk.EW)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
         self.codetext = CodeText(self.top)
         self.codetext.text.config(state=tk.DISABLED, height=11)
-        self.codetext.grid(sticky="nsew", pady=PADY)
+        self.codetext.grid(sticky=tk.NSEW, pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Reset", command=self.reset_alerts)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Close", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def reset_alerts(self) -> None:
         self.codetext.text.config(state=tk.NORMAL)
