@@ -34,7 +34,6 @@ class GlobalEmaneDialog(Dialog):
         )
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
-        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self) -> None:
@@ -88,7 +87,6 @@ class EmaneModelDialog(Dialog):
         self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
-        self.draw_spacer()
         self.draw_buttons()
 
     def draw_buttons(self) -> None:
