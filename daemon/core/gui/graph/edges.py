@@ -8,7 +8,7 @@ from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
-from core.gui.utils import bandwidth_text
+from core.gui.utils import bandwidth_text, delay_jitter_text
 from core.gui.wrappers import Interface, Link
 
 if TYPE_CHECKING:
@@ -419,21 +419,35 @@ class CanvasEdge(Edge):
         if not self.link.options:
             return
         options = self.link.options
+        asym_options = None
+        if self.asymmetric_link and self.asymmetric_link.options:
+            asym_options = self.asymmetric_link.options
         lines = []
-        bandwidth = options.bandwidth
-        if bandwidth > 0:
-            lines.append(bandwidth_text(bandwidth))
-        delay = options.delay
-        jitter = options.jitter
-        if delay > 0 and jitter > 0:
-            lines.append(f"{delay} us (\u00B1{jitter} us)")
-        elif jitter > 0:
-            lines.append(f"0 us (\u00B1{jitter} us)")
-        loss = options.loss
-        if loss > 0:
-            lines.append(f"loss={loss}%")
-        dup = options.dup
-        if dup > 0:
-            lines.append(f"dup={dup}%")
+        # bandwidth
+        if options.bandwidth > 0:
+            bandwidth_line = bandwidth_text(options.bandwidth)
+            if asym_options and asym_options.bandwidth > 0:
+                bandwidth_line += f" / {bandwidth_text(asym_options.bandwidth)}"
+            lines.append(bandwidth_line)
+        # delay/jitter
+        dj_line = delay_jitter_text(options.delay, options.jitter)
+        if dj_line and asym_options:
+            asym_dj_line = delay_jitter_text(asym_options.delay, asym_options.jitter)
+            if asym_dj_line:
+                dj_line += f" / {asym_dj_line}"
+        if dj_line:
+            lines.append(dj_line)
+        # loss
+        if options.loss > 0:
+            loss_line = f"loss={options.loss}%"
+            if asym_options and asym_options.loss > 0:
+                loss_line += f" / loss={asym_options.loss}%"
+            lines.append(loss_line)
+        # duplicate
+        if options.dup > 0:
+            dup_line = f"dup={options.dup}%"
+            if asym_options and asym_options.dup > 0:
+                dup_line += f" / dup={asym_options.dup}%"
+            lines.append(dup_line)
         label = "\n".join(lines)
         self.middle_label_text(label)
