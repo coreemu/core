@@ -8,6 +8,7 @@ import os
 import pwd
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -991,6 +992,7 @@ class Session:
         :return: environment variables
         """
         env = os.environ.copy()
+        env["CORE_PYTHON"] = sys.executable
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
         env["SESSION_DIR"] = self.session_dir
