@@ -312,7 +312,7 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
         install_service(c, hide, prefix)
     with p.start("installing ospf mdr"):
         install_ospf_mdr(c, os_info, hide)
-    print("\nyou may need to open a new terminal to leverage invoke for running core")
+    print("\ninstall complete!")
 
 
 @task(
