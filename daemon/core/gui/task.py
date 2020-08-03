@@ -38,7 +38,7 @@ class ProgressTask:
             values = self.task(*self.args)
             if values is None:
                 values = ()
-            elif values and not isinstance(values, tuple):
+            elif values is not None and not isinstance(values, tuple):
                 values = (values,)
             if self.callback:
                 self.app.after(0, self.callback, *values)
