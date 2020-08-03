@@ -22,7 +22,7 @@ from core.api.grpc import (
     wlan_pb2,
 )
 from core.gui import appconfig
-from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
+from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
@@ -546,11 +546,15 @@ class CoreClient:
 
     def set_metadata(self) -> None:
         # create canvas data
-        wallpaper = None
+        wallpaper_path = None
         if self.app.canvas.wallpaper_file:
-            wallpaper = Path(self.app.canvas.wallpaper_file).name
+            wallpaper = Path(self.app.canvas.wallpaper_file)
+            if BACKGROUNDS_PATH == wallpaper.parent:
+                wallpaper_path = wallpaper.name
+            else:
+                wallpaper_path = str(wallpaper)
         canvas_config = {
-            "wallpaper": wallpaper,
+            "wallpaper": wallpaper_path,
             "wallpaper-style": self.app.canvas.scale_option.get(),
             "gridlines": self.app.canvas.show_grid.get(),
             "fit_image": self.app.canvas.adjust_to_dim.get(),
