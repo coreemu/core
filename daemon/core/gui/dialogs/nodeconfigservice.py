@@ -101,7 +101,7 @@ class NodeConfigServiceDialog(Dialog):
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
         self.draw_current_services()
-        self.node.config_services[:] = self.current_services
+        self.node.config_services = self.current_services.copy()
 
     def click_configure(self) -> None:
         current_selection = self.current.listbox.curselection()
@@ -130,7 +130,7 @@ class NodeConfigServiceDialog(Dialog):
                 self.current.listbox.itemconfig(tk.END, bg="green")
 
     def click_save(self) -> None:
-        self.node.config_services[:] = self.current_services
+        self.node.config_services = self.current_services.copy()
         logging.info("saved node config services: %s", self.node.config_services)
         self.destroy()
 

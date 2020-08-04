@@ -126,7 +126,7 @@ class NodeServiceDialog(Dialog):
             )
 
     def click_save(self) -> None:
-        self.node.services[:] = self.current_services
+        self.node.services = self.current_services.copy()
         self.destroy()
 
     def click_remove(self) -> None:
