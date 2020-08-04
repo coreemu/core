@@ -97,6 +97,7 @@ class CanvasGraph(tk.Canvas):
         # drawing related
         self.show_node_labels: ShowVar = ShowVar(self, tags.NODE_LABEL, value=True)
         self.show_link_labels: ShowVar = ShowVar(self, tags.LINK_LABEL, value=True)
+        self.show_links: ShowVar = ShowVar(self, tags.EDGE, value=True)
         self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
         self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)

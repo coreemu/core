@@ -381,6 +381,7 @@ class CanvasEdge(Edge):
     def check_wireless(self) -> None:
         if self.is_wireless():
             self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+            self.canvas.dtag(self.id, tags.EDGE)
             self._check_antenna()
 
     def _check_antenna(self) -> None:
