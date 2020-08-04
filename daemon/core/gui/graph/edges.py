@@ -110,7 +110,9 @@ class Edge:
         arc_y = (perp_m * arc_x) + b
         return arc_x, arc_y
 
-    def draw(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
+    def draw(
+        self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float], state: str
+    ) -> None:
         arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.id = self.canvas.create_line(
             *src_pos,
@@ -120,6 +122,7 @@ class Edge:
             tags=self.tag,
             width=self.scaled_width(),
             fill=self.color,
+            state=state,
         )
 
     def redraw(self) -> None:
@@ -249,7 +252,7 @@ class CanvasWirelessEdge(Edge):
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
-        self.draw(src_pos, dst_pos)
+        self.draw(src_pos, dst_pos, self.canvas.show_wireless.state())
         if link.label:
             self.middle_label_text(link.label)
         self.set_binding()
@@ -286,7 +289,7 @@ class CanvasEdge(Edge):
         self.link: Optional[Link] = None
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
-        self.draw(src_pos, dst_pos)
+        self.draw(src_pos, dst_pos, tk.NORMAL)
         self.set_binding()
         self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()

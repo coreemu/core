@@ -168,6 +168,11 @@ class Menubar(tk.Menu):
             variable=self.canvas.show_link_labels,
         )
         menu.add_checkbutton(
+            label="Wireless Links",
+            command=self.canvas.show_wireless.click_handler,
+            variable=self.canvas.show_wireless,
+        )
+        menu.add_checkbutton(
             label="Annotations",
             command=self.canvas.show_annotations.click_handler,
             variable=self.canvas.show_annotations,
