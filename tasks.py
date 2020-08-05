@@ -271,6 +271,18 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
         else:
             c.run(f"sudo cp {script} {dest}", hide=hide)
 
+    # setup core python helper
+    core_python = bin_dir.joinpath("core-python")
+    temp = NamedTemporaryFile("w", delete=False)
+    temp.writelines([
+        "#!/bin/bash\n",
+        f'exec "{python}" "$@"\n',
+    ])
+    temp.close()
+    c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
+    c.run(f"sudo chmod 755 {core_python}", hide=hide)
+    os.unlink(temp.name)
+
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
@@ -401,6 +413,10 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
         for script in Path("daemon/scripts").iterdir():
             dest = bin_dir.joinpath(script.name)
             c.run(f"sudo rm -f {dest}", hide=hide)
+
+    # remove core-python symlink
+    core_python = bin_dir.joinpath("core-python")
+    c.run(f"sudo rm -f {core_python}", hide=hide)
 
     # install service
     systemd_dir = Path("/lib/systemd/system/")
