@@ -241,6 +241,8 @@ class CoreClient:
             x = node.position.x
             y = node.position.y
             canvas_node.move(x, y)
+            if node.icon and node.icon != canvas_node.core_node.icon:
+                canvas_node.update_icon(node.icon)
         elif event.message_type == MessageType.DELETE:
             canvas_node = self.canvas_nodes[node.id]
             self.app.canvas.clear_selection()

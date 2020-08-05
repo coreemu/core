@@ -32,6 +32,7 @@ def handle_node_event(node_data: NodeData) -> core_pb2.Event:
         id=node.id,
         name=node.name,
         model=node.type,
+        icon=node.icon,
         position=position,
         geo=geo,
         services=services,

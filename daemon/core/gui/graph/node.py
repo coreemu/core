@@ -1,12 +1,13 @@
 import functools
 import logging
 import tkinter as tk
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Set
 
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.gui import themes
+from core.gui import nodeutils, themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
@@ -17,7 +18,7 @@ from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.images import ImageEnum
+from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
 from core.gui.wrappers import Interface, Node, NodeType
 
@@ -347,3 +348,11 @@ class CanvasNode:
             dx = node_x - 16 + (i * 8 * self.app.app_scale) - x
             dy = node_y - int(23 * self.app.app_scale) - y
             self.canvas.move(antenna_id, dx, dy)
+
+    def update_icon(self, icon_path: str) -> None:
+        if not Path(icon_path).exists():
+            logging.error(f"node icon does not exist: {icon_path}")
+            return
+        self.core_node.icon = icon_path
+        self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
+        self.canvas.itemconfig(self.id, image=self.image)
