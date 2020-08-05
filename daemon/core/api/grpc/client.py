@@ -552,11 +552,12 @@ class CoreGrpcClient:
         source: str = None,
     ) -> core_pb2.EditNodeResponse:
         """
-        Edit a node, currently only changes position.
+        Edit a node's icon and/or location, can only use position(x,y) or
+        geo(lon, lat, alt), not both.
 
         :param session_id: session id
         :param node_id: node id
-        :param position: position to set node to
+        :param position: x,y location for node
         :param icon: path to icon for gui to use for node
         :param geo: lon,lat,alt location for node
         :param source: application source
