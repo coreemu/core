@@ -132,30 +132,14 @@ After the installation complete it will have installed the following scripts.
 
 If you create your own python scripts to run CORE directly or using the gRPC/TLV
 APIs you will need to make sure you are running them within context of the
-installed virtual environment.
+installed virtual environment. To help support this CORE provides the `core-python`
+executable. This executable will allow you to enter CORE's python virtual
+environment interpreter or to run a script within it.
 
 > **NOTE:** the following assumes CORE has been installed successfully
 
-There is an invoke task to help with this case.
 ```shell
-cd <CORE_REPO>
-inv -h run
-Usage: inv[oke] [--core-opts] run [--options] [other tasks here ...]
-
-Docstring:
-  runs a user script in the core virtual environment
-
-Options:
-  -f STRING, --file=STRING   script file to run in the core virtual environment
-  -s, --sudo                 run script as sudo
-```
-
-Another way would be to enable the core virtual environment shell. Which
-would allow you to run scripts in a more **normal** way.
-```shell
-cd <CORE_REPO>/daemon
-poetry shell
-python run /path/to/script.py
+core-python <script>
 ```
 
 ## Manually Install EMANE
@@ -199,7 +183,6 @@ Available tasks:
   install-emane     install emane and the python bindings
   install-scripts   install core script files, modified to leverage virtual environment
   install-service   install systemd core service
-  run               runs a user script in the core virtual environment
   test              run core tests
   test-emane        run core emane tests
   test-mock         run core tests using mock to avoid running as sudo

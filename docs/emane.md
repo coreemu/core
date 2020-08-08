@@ -50,23 +50,6 @@ can also subscribe to EMANE location events and move the nodes on the canvas
 as they are moved in the EMANE emulation. This would occur when an Emulation
 Script Generator, for example, is running a mobility script.
 
-## EMANE Installation
-
-EMANE can be installed from deb or RPM packages or from source. See the
-[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
-
-Here are quick instructions for installing all EMANE packages for Ubuntu 18.04:
-```shell
-# install dependencies
-sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-wget https://adjacentlink.com/downloads/emane/emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
-tar xzf emane-1.2.5-release-1.ubuntu-18_04.amd64.tar.gz
-# install base emane packages
-sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/emane*.deb
-# install python3 bindings
-sudo dpkg -i emane-1.2.5-release-1/deb/ubuntu-18_04/amd64/python3*.deb
-```
-
 ## EMANE Configuration
 
 The CORE configuration file **/etc/core/core.conf** has options specific to

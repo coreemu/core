@@ -469,28 +469,6 @@ def daemon(c):
         )
 
 
-@task(
-    help={
-        "sudo": "run script as sudo",
-        "file": "script file to run in the core virtual environment"
-    },
-)
-def run(c, file, sudo=False):
-    """
-    runs a user script in the core virtual environment
-    """
-    if not file:
-        print("no script was provided")
-        return
-    python = get_python(c)
-    path = Path(file).absolute()
-    with c.cd(DAEMON_DIR):
-        cmd = f"{python} {path}"
-        if sudo:
-            cmd = f"sudo {cmd}"
-        c.run(cmd, pty=True)
-
-
 @task
 def test(c):
     """
