@@ -679,9 +679,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         key = key.split(".")
                         node_id = _INTERFACE_REGEX.search(key[0]).group("node")
                         node_id = int(node_id, base=16)
-                        iface_id = int(key[1], base=16)
-                        session_id = int(key[2], base=16)
-                        if session.id != session_id:
+                        iface_id = int(key[1])
+                        session_id = key[2]
+                        if session.short_session_id() != session_id:
                             continue
                         iface_throughput = throughputs_event.iface_throughputs.add()
                         iface_throughput.node_id = node_id
@@ -691,8 +691,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         try:
                             key = key.split(".")
                             node_id = int(key[1], base=16)
-                            session_id = int(key[2], base=16)
-                            if session.id != session_id:
+                            session_id = key[2]
+                            if session.short_session_id() != session_id:
                                 continue
                             bridge_throughput = (
                                 throughputs_event.bridge_throughputs.add()
