@@ -84,8 +84,8 @@ class LinkTlvs(Enum):
     IFACE2_MAC = 0x39
     IFACE2_IP6 = 0x40
     IFACE2_IP6_MASK = 0x41
-    INTERFACE1_NAME = 0x42
-    INTERFACE2_NAME = 0x43
+    IFACE1_NAME = 0x42
+    IFACE2_NAME = 0x43
     OPAQUE = 0x50
 
 

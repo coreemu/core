@@ -520,8 +520,8 @@ class CoreLinkTlv(CoreTlv):
         LinkTlvs.IFACE2_MAC.value: CoreTlvDataMacAddr,
         LinkTlvs.IFACE2_IP6.value: CoreTlvDataIPv6Addr,
         LinkTlvs.IFACE2_IP6_MASK.value: CoreTlvDataUint16,
-        LinkTlvs.INTERFACE1_NAME.value: CoreTlvDataString,
-        LinkTlvs.INTERFACE2_NAME.value: CoreTlvDataString,
+        LinkTlvs.IFACE1_NAME.value: CoreTlvDataString,
+        LinkTlvs.IFACE2_NAME.value: CoreTlvDataString,
         LinkTlvs.OPAQUE.value: CoreTlvDataString,
     }
 
