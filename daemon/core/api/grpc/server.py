@@ -122,6 +122,7 @@ from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
 _INTERFACE_REGEX: Pattern = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
+_MAX_WORKERS = 1000
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -150,7 +151,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def listen(self, address: str) -> None:
         logging.info("CORE gRPC API listening on: %s", address)
-        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=_MAX_WORKERS))
         core_pb2_grpc.add_CoreApiServicer_to_server(self, self.server)
         self.server.add_insecure_port(address)
         self.server.start()
