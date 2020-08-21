@@ -9,6 +9,7 @@
 * core-daemon
     * \#503 - EMANE networks will now work with mobility again
     * \#506 - fixed service dependency resolution issue
+    * fixed issue sending hooks to core-gui when joining session
 * core-pygui
     * fixed issues editing hooks
     * fixed issue with cpu usage when joining a session
