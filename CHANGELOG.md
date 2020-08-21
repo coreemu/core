@@ -1,3 +1,29 @@
+## 2020-08-21 CORE 7.1.0
+
+* Installation
+    * added core-python script that gets installed to help globally reference the virtual environment
+* gRPC API
+    * GetSession will now return all configuration information for a session and the file it was opened from, if applicable
+    * node update events will now include icon information
+    * fixed issue with getting session throughputs for sessions with a high id
+* core-daemon
+    * \#503 - EMANE networks will now work with mobility again
+    * \#506 - fixed service dependency resolution issue
+* core-pygui
+    * fixed issues editing hooks
+    * fixed issue with cpu usage when joining a session
+    * fixed mac field not being disabled during runtime when configuring a node
+    * removed unlimited button from link config dialog
+    * fixed issue with copy/paste links and their options
+    * fixed issue with adding nodes/links and editing links during runtime
+    * updated open file dialog in config dialogs to open to ~/.coregui home directory
+    * fixed issue double clicking sessions dialog in invalid areas
+    * added display of asymmetric link options on links
+    * fixed emane config dialog display
+    * fixed issue saving backgrounds in xml files
+    * added view toggle for wired/wireless links
+    * node events will now update icons
+
 ## 2020-07-28 CORE 7.0.1
 
 * Bugfixes
