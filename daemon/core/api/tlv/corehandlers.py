@@ -1903,12 +1903,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         # TODO: send location info
 
         # send hook scripts
-        for state in sorted(self.session.hooks.keys()):
+        for state in sorted(self.session.hooks):
             for file_name, config_data in self.session.hooks[state]:
                 file_data = FileData(
                     message_type=MessageFlags.ADD,
                     name=str(file_name),
-                    type=f"hook:{state}",
+                    type=f"hook:{state.value}",
                     data=str(config_data),
                 )
                 self.session.broadcast_file(file_data)

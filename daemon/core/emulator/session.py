@@ -622,7 +622,8 @@ class Session:
 
     def is_active(self) -> bool:
         """
-        Determine if this session is considered to be active. (Runtime or Data collect states)
+        Determine if this session is considered to be active.
+        (Runtime or Data collect states)
 
         :return: True if active, False otherwise
         """
@@ -1100,7 +1101,8 @@ class Session:
 
     def delete_node(self, _id: int) -> bool:
         """
-        Delete a node from the session and check if session should shutdown, if no nodes are left.
+        Delete a node from the session and check if session should shutdown, if no nodes
+        are left.
 
         :param _id: id of node to delete
         :return: True if node deleted, False otherwise
