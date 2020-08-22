@@ -5,11 +5,11 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc import core_pb2
 from core.gui import validation
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
+from core.gui.wrappers import Interface, Link, LinkOptions
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -21,7 +21,7 @@ def get_int(var: tk.StringVar) -> Optional[int]:
     if value != "":
         return int(value)
     else:
-        return None
+        return 0
 
 
 def get_float(var: tk.StringVar) -> Optional[float]:
@@ -29,14 +29,15 @@ def get_float(var: tk.StringVar) -> Optional[float]:
     if value != "":
         return float(value)
     else:
-        return None
+        return 0.0
 
 
 class LinkConfigurationDialog(Dialog):
     def __init__(self, app: "Application", edge: "CanvasEdge") -> None:
         super().__init__(app, "Link Configuration")
         self.edge: "CanvasEdge" = edge
-        self.is_symmetric: bool = edge.link.options.unidirectional is False
+
+        self.is_symmetric: bool = edge.link.is_symmetric()
         if self.is_symmetric:
             symmetry_var = tk.StringVar(value=">>")
         else:
@@ -72,14 +73,11 @@ class LinkConfigurationDialog(Dialog):
         label = ttk.Label(
             self.top, text=f"Link from {source_name} to {dest_name}", anchor=tk.CENTER
         )
-        label.grid(row=0, column=0, sticky="ew", pady=PADY)
+        label.grid(row=0, column=0, sticky=tk.EW, pady=PADY)
 
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.grid(row=1, column=0, sticky="ew", pady=PADY)
-        button = ttk.Button(frame, text="Unlimited")
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        frame.grid(row=1, column=0, sticky=tk.EW, pady=PADY)
         if self.is_symmetric:
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
@@ -88,25 +86,25 @@ class LinkConfigurationDialog(Dialog):
             button = ttk.Button(
                 frame, textvariable=self.symmetry_var, command=self.change_symmetry
             )
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(sticky=tk.EW)
 
         if self.is_symmetric:
             self.symmetric_frame = self.get_frame()
-            self.symmetric_frame.grid(row=2, column=0, sticky="ew", pady=PADY)
+            self.symmetric_frame.grid(row=2, column=0, sticky=tk.EW, pady=PADY)
         else:
             self.asymmetric_frame = self.get_frame()
-            self.asymmetric_frame.grid(row=2, column=0, sticky="ew", pady=PADY)
+            self.asymmetric_frame.grid(row=2, column=0, sticky=tk.EW, pady=PADY)
 
         self.draw_spacer(row=3)
 
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
-        frame.grid(row=4, column=0, sticky="ew")
+        frame.grid(row=4, column=0, sticky=tk.EW)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def get_frame(self) -> ttk.Frame:
         frame = ttk.Frame(self.top)
@@ -117,76 +115,76 @@ class LinkConfigurationDialog(Dialog):
             label_name = "Asymmetric Effects: Downstream / Upstream "
         row = 0
         label = ttk.Label(frame, text=label_name, anchor=tk.CENTER)
-        label.grid(row=row, column=0, columnspan=2, sticky="ew", pady=PADY)
+        label.grid(row=row, column=0, columnspan=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Bandwidth (bps)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.bandwidth
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_bandwidth
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Delay (us)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.delay
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_delay
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Jitter (us)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.jitter
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_jitter
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Loss (%)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveFloatEntry(
             frame, empty_enabled=False, textvariable=self.loss
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveFloatEntry(
                 frame, empty_enabled=False, textvariable=self.down_loss
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Duplicate (%)")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveIntEntry(
             frame, empty_enabled=False, textvariable=self.duplicate
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         if not self.is_symmetric:
             entry = validation.PositiveIntEntry(
                 frame, empty_enabled=False, textvariable=self.down_duplicate
             )
-            entry.grid(row=row, column=2, sticky="ew", pady=PADY)
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Color")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         self.color_button = tk.Button(
             frame,
             textvariable=self.color,
@@ -196,15 +194,15 @@ class LinkConfigurationDialog(Dialog):
             highlightthickness=0,
             command=self.click_color,
         )
-        self.color_button.grid(row=row, column=1, sticky="ew", pady=PADY)
+        self.color_button.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
         row = row + 1
 
         label = ttk.Label(frame, text="Width")
-        label.grid(row=row, column=0, sticky="ew")
+        label.grid(row=row, column=0, sticky=tk.EW)
         entry = validation.PositiveFloatEntry(
             frame, empty_enabled=False, textvariable=self.width
         )
-        entry.grid(row=row, column=1, sticky="ew", pady=PADY)
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
 
         return frame
 
@@ -223,32 +221,26 @@ class LinkConfigurationDialog(Dialog):
         delay = get_int(self.delay)
         duplicate = get_int(self.duplicate)
         loss = get_float(self.loss)
-        options = core_pb2.LinkOptions(
+        options = LinkOptions(
             bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, loss=loss
         )
-        link.options.CopyFrom(options)
-
-        iface1_id = None
-        if link.HasField("iface1"):
-            iface1_id = link.iface1.id
-        iface2_id = None
-        if link.HasField("iface2"):
-            iface2_id = link.iface2.id
-
+        link.options = options
+        iface1_id = link.iface1.id if link.iface1 else None
+        iface2_id = link.iface2.id if link.iface2 else None
         if not self.is_symmetric:
             link.options.unidirectional = True
             asym_iface1 = None
-            if iface1_id:
-                asym_iface1 = core_pb2.Interface(id=iface1_id)
+            if iface1_id is not None:
+                asym_iface1 = Interface(id=iface1_id)
             asym_iface2 = None
-            if iface2_id:
-                asym_iface2 = core_pb2.Interface(id=iface2_id)
+            if iface2_id is not None:
+                asym_iface2 = Interface(id=iface2_id)
             down_bandwidth = get_int(self.down_bandwidth)
             down_jitter = get_int(self.down_jitter)
             down_delay = get_int(self.down_delay)
             down_duplicate = get_int(self.down_duplicate)
             down_loss = get_float(self.down_loss)
-            options = core_pb2.LinkOptions(
+            options = LinkOptions(
                 bandwidth=down_bandwidth,
                 jitter=down_jitter,
                 delay=down_delay,
@@ -256,36 +248,21 @@ class LinkConfigurationDialog(Dialog):
                 loss=down_loss,
                 unidirectional=True,
             )
-            self.edge.asymmetric_link = core_pb2.Link(
+            self.edge.asymmetric_link = Link(
                 node1_id=link.node2_id,
                 node2_id=link.node1_id,
-                iface1=asym_iface1,
-                iface2=asym_iface2,
+                iface1=asym_iface2,
+                iface2=asym_iface1,
                 options=options,
             )
         else:
             link.options.unidirectional = False
             self.edge.asymmetric_link = None
 
-        if self.app.core.is_runtime() and link.HasField("options"):
-            session_id = self.app.core.session_id
-            self.app.core.client.edit_link(
-                session_id,
-                link.node1_id,
-                link.node2_id,
-                link.options,
-                iface1_id,
-                iface2_id,
-            )
+        if self.app.core.is_runtime() and link.options:
+            self.app.core.edit_link(link)
             if self.edge.asymmetric_link:
-                self.app.core.client.edit_link(
-                    session_id,
-                    link.node2_id,
-                    link.node1_id,
-                    self.edge.asymmetric_link.options,
-                    iface1_id,
-                    iface2_id,
-                )
+                self.app.core.edit_link(self.edge.asymmetric_link)
 
         # update edge label
         self.edge.draw_link_options()
@@ -316,7 +293,7 @@ class LinkConfigurationDialog(Dialog):
         color = self.app.canvas.itemcget(self.edge.id, "fill")
         self.color.set(color)
         link = self.edge.link
-        if link.HasField("options"):
+        if link.options:
             self.bandwidth.set(str(link.options.bandwidth))
             self.jitter.set(str(link.options.jitter))
             self.duplicate.set(str(link.options.dup))

@@ -759,7 +759,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         node2_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
         iface1_data = InterfaceData(
             id=message.get_tlv(LinkTlvs.IFACE1_NUMBER.value),
-            name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
+            name=message.get_tlv(LinkTlvs.IFACE1_NAME.value),
             mac=message.get_tlv(LinkTlvs.IFACE1_MAC.value),
             ip4=message.get_tlv(LinkTlvs.IFACE1_IP4.value),
             ip4_mask=message.get_tlv(LinkTlvs.IFACE1_IP4_MASK.value),
@@ -768,7 +768,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         )
         iface2_data = InterfaceData(
             id=message.get_tlv(LinkTlvs.IFACE2_NUMBER.value),
-            name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
+            name=message.get_tlv(LinkTlvs.IFACE2_NAME.value),
             mac=message.get_tlv(LinkTlvs.IFACE2_MAC.value),
             ip4=message.get_tlv(LinkTlvs.IFACE2_IP4.value),
             ip4_mask=message.get_tlv(LinkTlvs.IFACE2_IP4_MASK.value),
@@ -1903,12 +1903,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         # TODO: send location info
 
         # send hook scripts
-        for state in sorted(self.session.hooks.keys()):
+        for state in sorted(self.session.hooks):
             for file_name, config_data in self.session.hooks[state]:
                 file_data = FileData(
                     message_type=MessageFlags.ADD,
                     name=str(file_name),
-                    type=f"hook:{state}",
+                    type=f"hook:{state.value}",
                     data=str(config_data),
                 )
                 self.session.broadcast_file(file_data)

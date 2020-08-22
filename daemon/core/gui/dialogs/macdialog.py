@@ -28,7 +28,7 @@ class MacConfigDialog(Dialog):
             "provided value below and increment by value in order."
         )
         label = ttk.Label(self.top, text=text)
-        label.grid(sticky="ew", pady=PADY)
+        label.grid(sticky=tk.EW, pady=PADY)
 
         # draw input
         frame = ttk.Frame(self.top)
@@ -36,9 +36,9 @@ class MacConfigDialog(Dialog):
         frame.columnconfigure(1, weight=3)
         frame.grid(stick="ew", pady=PADY)
         label = ttk.Label(frame, text="Starting MAC")
-        label.grid(row=0, column=0, sticky="ew", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.mac_var)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky=tk.EW)
 
         # draw buttons
         frame = ttk.Frame(self.top)
@@ -46,9 +46,9 @@ class MacConfigDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_save(self) -> None:
         mac = self.mac_var.get()

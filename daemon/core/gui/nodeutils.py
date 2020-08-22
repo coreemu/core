@@ -3,9 +3,9 @@ from typing import List, Optional, Set
 
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.core_pb2 import Node, NodeType
 from core.gui.appconfig import CustomNode, GuiConfig
 from core.gui.images import ImageEnum, Images, TypeToImage
+from core.gui.wrappers import Node, NodeType
 
 ICON_SIZE: int = 48
 ANTENNA_SIZE: int = 32
@@ -17,7 +17,7 @@ class NodeDraw:
         self.image: Optional[PhotoImage] = None
         self.image_enum: Optional[ImageEnum] = None
         self.image_file: Optional[str] = None
-        self.node_type: NodeType = None
+        self.node_type: Optional[NodeType] = None
         self.model: Optional[str] = None
         self.services: Set[str] = set()
         self.label: Optional[str] = None
@@ -63,9 +63,14 @@ class NodeUtils:
     WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
     IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
+    MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
     ROUTER_NODES: Set[str] = {"router", "mdr"}
     ANTENNA_ICON: PhotoImage = None
+
+    @classmethod
+    def is_mobility(cls, node: Node) -> bool:
+        return node.type in cls.MOBILITY_NODES
 
     @classmethod
     def is_router_node(cls, node: Node) -> bool:

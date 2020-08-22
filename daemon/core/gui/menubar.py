@@ -6,7 +6,6 @@ from functools import partial
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Optional
 
-from core.gui.appconfig import XMLS_PATH
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
@@ -169,6 +168,16 @@ class Menubar(tk.Menu):
             variable=self.canvas.show_link_labels,
         )
         menu.add_checkbutton(
+            label="Links",
+            command=self.canvas.show_links.click_handler,
+            variable=self.canvas.show_links,
+        )
+        menu.add_checkbutton(
+            label="Wireless Links",
+            command=self.canvas.show_wireless.click_handler,
+            variable=self.canvas.show_wireless,
+        )
+        menu.add_checkbutton(
             label="Annotations",
             command=self.canvas.show_annotations.click_handler,
             variable=self.canvas.show_annotations,
@@ -265,16 +274,13 @@ class Menubar(tk.Menu):
             )
 
     def click_save(self, _event=None) -> None:
-        xml_file = self.core.xml_file
-        if xml_file:
-            self.core.save_xml(xml_file)
+        if self.core.session.file:
+            self.core.save_xml()
         else:
             self.click_save_xml()
 
     def click_save_xml(self, _event: tk.Event = None) -> None:
-        init_dir = self.core.xml_dir
-        if not init_dir:
-            init_dir = str(XMLS_PATH)
+        init_dir = self.core.get_xml_dir()
         file_path = filedialog.asksaveasfilename(
             initialdir=init_dir,
             title="Save As",
@@ -284,12 +290,9 @@ class Menubar(tk.Menu):
         if file_path:
             self.add_recent_file_to_gui_config(file_path)
             self.core.save_xml(file_path)
-            self.core.xml_file = file_path
 
     def click_open_xml(self, _event: tk.Event = None) -> None:
-        init_dir = self.core.xml_dir
-        if not init_dir:
-            init_dir = str(XMLS_PATH)
+        init_dir = self.core.get_xml_dir()
         file_path = filedialog.askopenfilename(
             initialdir=init_dir,
             title="Open",
@@ -298,12 +301,10 @@ class Menubar(tk.Menu):
         if file_path:
             self.open_xml_task(file_path)
 
-    def open_xml_task(self, filename: str) -> None:
-        self.add_recent_file_to_gui_config(filename)
-        self.core.xml_file = filename
-        self.core.xml_dir = str(os.path.dirname(filename))
+    def open_xml_task(self, file_path: str) -> None:
+        self.add_recent_file_to_gui_config(file_path)
         self.prompt_save_running_session()
-        task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(filename,))
+        task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(file_path,))
         task.start()
 
     def execute_python(self) -> None:
@@ -357,7 +358,6 @@ class Menubar(tk.Menu):
     def click_new(self) -> None:
         self.prompt_save_running_session()
         self.core.create_new_session()
-        self.core.xml_file = None
 
     def click_find(self, _event: tk.Event = None) -> None:
         dialog = FindDialog(self.app)

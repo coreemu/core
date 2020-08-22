@@ -8,32 +8,29 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 import grpc
 
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.services_pb2 import ServiceValidationMode
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
+from core.gui.wrappers import (
+    ConfigOption,
+    ConfigServiceData,
+    Node,
+    ServiceValidationMode,
+)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
     from core.gui.coreclient import CoreClient
 
 
 class ConfigServiceConfigDialog(Dialog):
     def __init__(
-        self,
-        master: tk.BaseWidget,
-        app: "Application",
-        service_name: str,
-        canvas_node: "CanvasNode",
-        node_id: int,
+        self, master: tk.BaseWidget, app: "Application", service_name: str, node: Node
     ) -> None:
         title = f"{service_name} Config Service"
         super().__init__(app, title, master=master)
         self.core: "CoreClient" = app.core
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node_id: int = node_id
+        self.node: Node = node
         self.service_name: str = service_name
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(2)
@@ -51,7 +48,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.validation_time: Optional[int] = None
         self.validation_period: tk.StringVar = tk.StringVar()
         self.modes: List[str] = []
-        self.mode_configs: Dict[str, str] = {}
+        self.mode_configs: Dict[str, Dict[str, str]] = {}
 
         self.notebook: Optional[ttk.Notebook] = None
         self.templates_combobox: Optional[ttk.Combobox] = None
@@ -92,25 +89,18 @@ class ConfigServiceConfigDialog(Dialog):
             response = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = response.templates
             self.temp_service_files = dict(self.original_service_files)
-
             self.modes = sorted(x.name for x in response.modes)
             self.mode_configs = {x.name: x.config for x in response.modes}
-
-            service_config = self.canvas_node.config_service_configs.get(
-                self.service_name, {}
-            )
-            self.config = response.config
+            self.config = ConfigOption.from_dict(response.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
-            custom_config = service_config.get("config")
-            if custom_config:
-                for key, value in custom_config.items():
+            service_config = self.node.config_service_configs.get(self.service_name)
+            if service_config:
+                for key, value in service_config.config.items():
                     self.config[key].value = value
-            logging.info("default config: %s", self.default_config)
-
-            custom_templates = service_config.get("templates", {})
-            for file, data in custom_templates.items():
-                self.modified_files.add(file)
-                self.temp_service_files[file] = data
+                logging.info("default config: %s", self.default_config)
+                for file, data in service_config.templates.items():
+                    self.modified_files.add(file)
+                    self.temp_service_files[file] = data
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Config Service Error", e)
             self.has_error = True
@@ -121,7 +111,7 @@ class ConfigServiceConfigDialog(Dialog):
 
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
-        self.notebook.grid(sticky="nsew", pady=PADY)
+        self.notebook.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_tab_files()
         if self.config:
             self.draw_tab_config()
@@ -131,7 +121,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def draw_tab_files(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         self.notebook.add(tab, text="Directories/Files")
 
@@ -141,29 +131,29 @@ class ConfigServiceConfigDialog(Dialog):
         label.grid(pady=PADY)
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Directories")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         directories_combobox = ttk.Combobox(
             frame, values=self.directories, state="readonly"
         )
-        directories_combobox.grid(row=0, column=1, sticky="ew", pady=PADY)
+        directories_combobox.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
         if self.directories:
             directories_combobox.current(0)
 
         label = ttk.Label(frame, text="Templates")
-        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        label.grid(row=1, column=0, sticky=tk.W, padx=PADX)
         self.templates_combobox = ttk.Combobox(
             frame, values=self.templates, state="readonly"
         )
         self.templates_combobox.bind(
             "<<ComboboxSelected>>", self.handle_template_changed
         )
-        self.templates_combobox.grid(row=1, column=1, sticky="ew", pady=PADY)
+        self.templates_combobox.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
 
         self.template_text = CodeText(tab)
-        self.template_text.grid(sticky="nsew")
+        self.template_text.grid(sticky=tk.NSEW)
         tab.rowconfigure(self.template_text.grid_info()["row"], weight=1)
         if self.templates:
             self.templates_combobox.current(0)
@@ -175,13 +165,13 @@ class ConfigServiceConfigDialog(Dialog):
 
     def draw_tab_config(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         self.notebook.add(tab, text="Configuration")
 
         if self.modes:
             frame = ttk.Frame(tab)
-            frame.grid(sticky="ew", pady=PADY)
+            frame.grid(sticky=tk.EW, pady=PADY)
             frame.columnconfigure(1, weight=1)
             label = ttk.Label(frame, text="Modes")
             label.grid(row=0, column=0, padx=PADX)
@@ -189,17 +179,17 @@ class ConfigServiceConfigDialog(Dialog):
                 frame, values=self.modes, state="readonly"
             )
             self.modes_combobox.bind("<<ComboboxSelected>>", self.handle_mode_changed)
-            self.modes_combobox.grid(row=0, column=1, sticky="ew", pady=PADY)
+            self.modes_combobox.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
         logging.info("config service config: %s", self.config)
         self.config_frame = ConfigFrame(tab, self.app, self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
         tab.rowconfigure(self.config_frame.grid_info()["row"], weight=1)
 
     def draw_tab_startstop(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="nsew")
+        tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         for i in range(3):
             tab.rowconfigure(i, weight=1)
@@ -225,12 +215,12 @@ class ConfigServiceConfigDialog(Dialog):
                 commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
             label_frame.rowconfigure(0, weight=1)
-            label_frame.grid(row=i, column=0, sticky="nsew", pady=PADY)
+            label_frame.grid(row=i, column=0, sticky=tk.NSEW, pady=PADY)
             listbox_scroll = ListboxScroll(label_frame)
             for command in commands:
                 listbox_scroll.listbox.insert("end", command)
             listbox_scroll.listbox.config(height=4)
-            listbox_scroll.grid(sticky="nsew")
+            listbox_scroll.grid(sticky=tk.NSEW)
             if i == 0:
                 self.startup_commands_listbox = listbox_scroll.listbox
             elif i == 1:
@@ -240,23 +230,23 @@ class ConfigServiceConfigDialog(Dialog):
 
     def draw_tab_validation(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
-        tab.grid(sticky="ew")
+        tab.grid(sticky=tk.EW)
         tab.columnconfigure(0, weight=1)
-        self.notebook.add(tab, text="Validation", sticky="nsew")
+        self.notebook.add(tab, text="Validation", sticky=tk.NSEW)
 
         frame = ttk.Frame(tab)
-        frame.grid(sticky="ew", pady=PADY)
+        frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(1, weight=1)
 
         label = ttk.Label(frame, text="Validation Time")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         self.validation_time_entry = ttk.Entry(frame)
         self.validation_time_entry.insert("end", self.validation_time)
         self.validation_time_entry.config(state=tk.DISABLED)
-        self.validation_time_entry.grid(row=0, column=1, sticky="ew", pady=PADY)
+        self.validation_time_entry.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
         label = ttk.Label(frame, text="Validation Mode")
-        label.grid(row=1, column=0, sticky="w", padx=PADX)
+        label.grid(row=1, column=0, sticky=tk.W, padx=PADX)
         if self.validation_mode == ServiceValidationMode.BLOCKING:
             mode = "BLOCKING"
         elif self.validation_mode == ServiceValidationMode.NON_BLOCKING:
@@ -268,66 +258,64 @@ class ConfigServiceConfigDialog(Dialog):
         )
         self.validation_mode_entry.insert("end", mode)
         self.validation_mode_entry.config(state=tk.DISABLED)
-        self.validation_mode_entry.grid(row=1, column=1, sticky="ew", pady=PADY)
+        self.validation_mode_entry.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
 
         label = ttk.Label(frame, text="Validation Period")
-        label.grid(row=2, column=0, sticky="w", padx=PADX)
+        label.grid(row=2, column=0, sticky=tk.W, padx=PADX)
         self.validation_period_entry = ttk.Entry(
             frame, state=tk.DISABLED, textvariable=self.validation_period
         )
-        self.validation_period_entry.grid(row=2, column=1, sticky="ew", pady=PADY)
+        self.validation_period_entry.grid(row=2, column=1, sticky=tk.EW, pady=PADY)
 
         label_frame = ttk.LabelFrame(tab, text="Executables", padding=FRAME_PAD)
-        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.grid(sticky=tk.NSEW, pady=PADY)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         listbox_scroll = ListboxScroll(label_frame)
-        listbox_scroll.grid(sticky="nsew")
+        listbox_scroll.grid(sticky=tk.NSEW)
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for executable in self.executables:
             listbox_scroll.listbox.insert("end", executable)
 
         label_frame = ttk.LabelFrame(tab, text="Dependencies", padding=FRAME_PAD)
-        label_frame.grid(sticky="nsew", pady=PADY)
+        label_frame.grid(sticky=tk.NSEW, pady=PADY)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         listbox_scroll = ListboxScroll(label_frame)
-        listbox_scroll.grid(sticky="nsew")
+        listbox_scroll.grid(sticky=tk.NSEW)
         tab.rowconfigure(listbox_scroll.grid_info()["row"], weight=1)
         for dependency in self.dependencies:
             listbox_scroll.listbox.insert("end", dependency)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Copy...", command=self.click_copy)
-        button.grid(row=0, column=2, sticky="ew", padx=PADX)
+        button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=3, sticky=tk.EW)
 
     def click_apply(self) -> None:
         current_listbox = self.master.current.listbox
         if not self.is_custom():
-            self.canvas_node.config_service_configs.pop(self.service_name, None)
+            self.node.config_service_configs.pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-
-        service_config = self.canvas_node.config_service_configs.setdefault(
-            self.service_name, {}
-        )
+        service_config = self.node.config_service_configs.get(self.service_name)
+        if not service_config:
+            service_config = ConfigServiceData()
         if self.config_frame:
             self.config_frame.parse_config()
-            service_config["config"] = {x.name: x.value for x in self.config.values()}
-        templates_config = service_config.setdefault("templates", {})
+            service_config.config = {x.name: x.value for x in self.config.values()}
         for file in self.modified_files:
-            templates_config[file] = self.temp_service_files[file]
+            service_config.templates[file] = self.temp_service_files[file]
         all_current = current_listbox.get(0, tk.END)
         current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         self.destroy()
@@ -361,9 +349,9 @@ class ConfigServiceConfigDialog(Dialog):
         return has_custom_templates or has_custom_config
 
     def click_defaults(self) -> None:
-        self.canvas_node.config_service_configs.pop(self.service_name, None)
+        self.node.config_service_configs.pop(self.service_name, None)
         logging.info(
-            "cleared config service config: %s", self.canvas_node.config_service_configs
+            "cleared config service config: %s", self.node.config_service_configs
         )
         self.temp_service_files = dict(self.original_service_files)
         filename = self.templates_combobox.get()

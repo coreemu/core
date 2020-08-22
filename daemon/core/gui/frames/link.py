@@ -1,9 +1,9 @@
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc.core_pb2 import Interface
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
 from core.gui.utils import bandwidth_text
+from core.gui.wrappers import Interface
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -34,13 +34,11 @@ class EdgeInfoFrame(InfoFrameBase):
         self.columnconfigure(0, weight=1)
         link = self.edge.link
         options = link.options
-        src_canvas_node = self.app.core.canvas_nodes[link.node1_id]
-        src_node = src_canvas_node.core_node
-        dst_canvas_node = self.app.core.canvas_nodes[link.node2_id]
-        dst_node = dst_canvas_node.core_node
+        src_node = self.app.core.session.nodes[link.node1_id]
+        dst_node = self.app.core.session.nodes[link.node2_id]
 
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("Source", src_node.name)
         iface1 = link.iface1
         if iface1:
@@ -62,7 +60,7 @@ class EdgeInfoFrame(InfoFrameBase):
             ip6 = f"{iface2.ip6}/{iface2.ip6_mask}" if iface2.ip6 else ""
             frame.add_detail("IP6", ip6)
 
-        if link.HasField("options"):
+        if link.options:
             frame.add_separator()
             bandwidth = bandwidth_text(options.bandwidth)
             frame.add_detail("Bandwidth", bandwidth)
@@ -81,9 +79,9 @@ class WirelessEdgeInfoFrame(InfoFrameBase):
 
     def draw(self) -> None:
         link = self.edge.link
-        src_canvas_node = self.app.core.canvas_nodes[link.node1_id]
+        src_canvas_node = self.app.canvas.nodes[self.edge.src]
         src_node = src_canvas_node.core_node
-        dst_canvas_node = self.app.core.canvas_nodes[link.node2_id]
+        dst_canvas_node = self.app.canvas.nodes[self.edge.dst]
         dst_node = dst_canvas_node.core_node
 
         # find interface for each node connected to network
@@ -92,7 +90,7 @@ class WirelessEdgeInfoFrame(InfoFrameBase):
         iface2 = get_iface(dst_canvas_node, net_id)
 
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("Source", src_node.name)
         if iface1:
             mac = iface1.mac if iface1.mac else "auto"

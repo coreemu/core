@@ -1,3 +1,4 @@
+import itertools
 import os
 
 import pytest
@@ -13,40 +14,6 @@ _SERVICES_PATH = os.path.join(_PATH, "myservices")
 
 SERVICE_ONE = "MyService"
 SERVICE_TWO = "MyService2"
-
-
-class ServiceA(CoreService):
-    name = "A"
-    dependencies = ("B",)
-
-
-class ServiceB(CoreService):
-    name = "B"
-    dependencies = ()
-
-
-class ServiceC(CoreService):
-    name = "C"
-    dependencies = ("B", "D")
-
-
-class ServiceD(CoreService):
-    name = "D"
-    dependencies = ()
-
-
-class ServiceBadDependency(CoreService):
-    name = "E"
-    dependencies = ("Z",)
-
-
-class ServiceF(CoreService):
-    name = "F"
-    dependencies = ()
-
-
-class ServiceCycleDependency(CoreService):
-    name = "G"
 
 
 class TestServices:
@@ -253,37 +220,157 @@ class TestServices:
         assert default_service == my_service
         assert custom_service and custom_service != my_service
 
-    def test_services_dependencies(self):
+    def test_services_dependency(self):
         # given
-        services = [ServiceA, ServiceB, ServiceC, ServiceD, ServiceF]
+        service_a = CoreService()
+        service_a.name = "a"
+        service_b = CoreService()
+        service_b.name = "b"
+        service_c = CoreService()
+        service_c.name = "c"
+        service_d = CoreService()
+        service_d.name = "d"
+        service_e = CoreService()
+        service_e.name = "e"
+        service_a.dependencies = (service_b.name,)
+        service_b.dependencies = ()
+        service_c.dependencies = (service_b.name, service_d.name)
+        service_d.dependencies = ()
+        service_e.dependencies = ()
+        services = [service_a, service_b, service_c, service_d, service_e]
+        expected1 = {service_a.name, service_b.name, service_c.name, service_d.name}
+        expected2 = [service_e]
 
         # when
-        boot_paths = ServiceDependencies(services).boot_paths()
+        permutations = itertools.permutations(services)
+        for permutation in permutations:
+            permutation = list(permutation)
+            results = ServiceDependencies(permutation).boot_order()
+            # then
+            for result in results:
+                result_set = {x.name for x in result}
+                if len(result) == 4:
+                    a_index = result.index(service_a)
+                    b_index = result.index(service_b)
+                    c_index = result.index(service_c)
+                    d_index = result.index(service_d)
+                    assert b_index < a_index
+                    assert b_index < c_index
+                    assert d_index < c_index
+                    assert result_set == expected1
+                elif len(result) == 1:
+                    assert expected2 == result
+                else:
+                    raise ValueError(
+                        f"unexpected result: {results}, perm({permutation})"
+                    )
 
-        # then
-        assert len(boot_paths) == 2
-
-    def test_services_dependencies_not_present(self):
+    def test_services_dependency_missing(self):
         # given
-        services = [
-            ServiceA,
-            ServiceB,
-            ServiceC,
-            ServiceD,
-            ServiceF,
-            ServiceBadDependency,
-        ]
+        service_a = CoreService()
+        service_a.name = "a"
+        service_b = CoreService()
+        service_b.name = "b"
+        service_c = CoreService()
+        service_c.name = "c"
+        service_a.dependencies = (service_b.name,)
+        service_b.dependencies = (service_c.name,)
+        service_c.dependencies = ("d",)
+        services = [service_a, service_b, service_c]
 
         # when, then
-        with pytest.raises(ValueError):
-            ServiceDependencies(services).boot_paths()
+        permutations = itertools.permutations(services)
+        for permutation in permutations:
+            permutation = list(permutation)
+            with pytest.raises(ValueError):
+                ServiceDependencies(permutation).boot_order()
 
-    def test_services_dependencies_cycle(self):
+    def test_services_dependency_cycle(self):
         # given
-        service_d = ServiceD()
-        service_d.dependencies = ("C",)
-        services = [ServiceA, ServiceB, ServiceC, service_d, ServiceF]
+        service_a = CoreService()
+        service_a.name = "a"
+        service_b = CoreService()
+        service_b.name = "b"
+        service_c = CoreService()
+        service_c.name = "c"
+        service_a.dependencies = (service_b.name,)
+        service_b.dependencies = (service_c.name,)
+        service_c.dependencies = (service_a.name,)
+        services = [service_a, service_b, service_c]
 
         # when, then
-        with pytest.raises(ValueError):
-            ServiceDependencies(services).boot_paths()
+        permutations = itertools.permutations(services)
+        for permutation in permutations:
+            permutation = list(permutation)
+            with pytest.raises(ValueError):
+                ServiceDependencies(permutation).boot_order()
+
+    def test_services_dependency_common(self):
+        # given
+        service_a = CoreService()
+        service_a.name = "a"
+        service_b = CoreService()
+        service_b.name = "b"
+        service_c = CoreService()
+        service_c.name = "c"
+        service_d = CoreService()
+        service_d.name = "d"
+        service_a.dependencies = (service_b.name,)
+        service_c.dependencies = (service_d.name, service_b.name)
+        services = [service_a, service_b, service_c, service_d]
+        expected = {service_a.name, service_b.name, service_c.name, service_d.name}
+
+        # when
+        permutations = itertools.permutations(services)
+        for permutation in permutations:
+            permutation = list(permutation)
+            results = ServiceDependencies(permutation).boot_order()
+
+            # then
+            for result in results:
+                assert len(result) == 4
+                result_set = {x.name for x in result}
+                a_index = result.index(service_a)
+                b_index = result.index(service_b)
+                c_index = result.index(service_c)
+                d_index = result.index(service_d)
+                assert b_index < a_index
+                assert d_index < c_index
+                assert b_index < c_index
+                assert expected == result_set
+
+    def test_services_dependency_common2(self):
+        # given
+        service_a = CoreService()
+        service_a.name = "a"
+        service_b = CoreService()
+        service_b.name = "b"
+        service_c = CoreService()
+        service_c.name = "c"
+        service_d = CoreService()
+        service_d.name = "d"
+        service_a.dependencies = (service_b.name,)
+        service_b.dependencies = (service_c.name, service_d.name)
+        service_c.dependencies = (service_d.name,)
+        services = [service_a, service_b, service_c, service_d]
+        expected = {service_a.name, service_b.name, service_c.name, service_d.name}
+
+        # when
+        permutations = itertools.permutations(services)
+        for permutation in permutations:
+            permutation = list(permutation)
+            results = ServiceDependencies(permutation).boot_order()
+
+            # then
+            for result in results:
+                assert len(result) == 4
+                result_set = {x.name for x in result}
+                a_index = result.index(service_a)
+                b_index = result.index(service_b)
+                c_index = result.index(service_c)
+                d_index = result.index(service_d)
+                assert b_index < a_index
+                assert c_index < b_index
+                assert d_index < b_index
+                assert d_index < c_index
+                assert expected == result_set

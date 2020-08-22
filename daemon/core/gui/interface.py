@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 import netaddr
 from netaddr import EUI, IPNetwork
 
-from core.api.grpc.core_pb2 import Interface, Link, Node
 from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
+from core.gui.wrappers import Interface, Link, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -89,10 +89,10 @@ class InterfaceManager:
         remaining_subnets = set()
         for edge in self.app.core.links.values():
             link = edge.link
-            if link.HasField("iface1"):
+            if link.iface1:
                 subnets = self.get_subnets(link.iface1)
                 remaining_subnets.add(subnets)
-            if link.HasField("iface2"):
+            if link.iface2:
                 subnets = self.get_subnets(link.iface2)
                 remaining_subnets.add(subnets)
 
@@ -100,9 +100,9 @@ class InterfaceManager:
         # or remove used indexes from subnet
         ifaces = []
         for link in links:
-            if link.HasField("iface1"):
+            if link.iface1:
                 ifaces.append(link.iface1)
-            if link.HasField("iface2"):
+            if link.iface2:
                 ifaces.append(link.iface2)
         for iface in ifaces:
             subnets = self.get_subnets(iface)
@@ -117,9 +117,9 @@ class InterfaceManager:
     def joined(self, links: List[Link]) -> None:
         ifaces = []
         for link in links:
-            if link.HasField("iface1"):
+            if link.iface1:
                 ifaces.append(link.iface1)
-            if link.HasField("iface2"):
+            if link.iface2:
                 ifaces.append(link.iface2)
 
         # add to used subnets and mark used indexes

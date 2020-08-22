@@ -5,8 +5,8 @@ from typing import Dict, Optional, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.core_pb2 import NodeType
 from core.gui.appconfig import LOCAL_ICONS_PATH
+from core.gui.wrappers import NodeType
 
 
 class Images:

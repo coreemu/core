@@ -5,10 +5,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
-from core.api.grpc.core_pb2 import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
+from core.gui.wrappers import ExceptionEvent, ExceptionLevel
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -30,13 +30,13 @@ class AlertsDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew", pady=PADY)
+        frame.grid(sticky=tk.NSEW, pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("time", "level", "session_id", "node", "source"),
             show="headings",
         )
-        self.tree.grid(row=0, column=0, sticky="nsew")
+        self.tree.grid(row=0, column=0, sticky=tk.NSEW)
         self.tree.column("time", stretch=tk.YES)
         self.tree.heading("time", text="Time")
         self.tree.column("level", stretch=tk.YES, width=100)
@@ -49,9 +49,8 @@ class AlertsDialog(Dialog):
         self.tree.heading("source", text="Source")
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
-        for alarm in self.app.statusbar.core_alarms:
-            exception = alarm.exception_event
-            level_name = ExceptionLevel.Enum.Name(exception.level)
+        for exception in self.app.statusbar.core_alarms:
+            level_name = exception.level.name
             node_id = exception.node_id if exception.node_id else ""
             insert_id = self.tree.insert(
                 "",
@@ -60,43 +59,43 @@ class AlertsDialog(Dialog):
                 values=(
                     exception.date,
                     level_name,
-                    alarm.session_id,
+                    exception.session_id,
                     node_id,
                     exception.source,
                 ),
                 tags=(level_name,),
             )
-            self.alarm_map[insert_id] = alarm
+            self.alarm_map[insert_id] = exception
 
-        error_name = ExceptionLevel.Enum.Name(ExceptionLevel.ERROR)
+        error_name = ExceptionLevel.ERROR.name
         self.tree.tag_configure(error_name, background="#ff6666")
-        fatal_name = ExceptionLevel.Enum.Name(ExceptionLevel.FATAL)
+        fatal_name = ExceptionLevel.FATAL.name
         self.tree.tag_configure(fatal_name, background="#d9d9d9")
-        warning_name = ExceptionLevel.Enum.Name(ExceptionLevel.WARNING)
+        warning_name = ExceptionLevel.WARNING.name
         self.tree.tag_configure(warning_name, background="#ffff99")
-        notice_name = ExceptionLevel.Enum.Name(ExceptionLevel.NOTICE)
+        notice_name = ExceptionLevel.NOTICE.name
         self.tree.tag_configure(notice_name, background="#85e085")
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
-        yscrollbar.grid(row=0, column=1, sticky="ns")
+        yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        xscrollbar.grid(row=1, sticky="ew")
+        xscrollbar.grid(row=1, sticky=tk.EW)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
         self.codetext = CodeText(self.top)
         self.codetext.text.config(state=tk.DISABLED, height=11)
-        self.codetext.grid(sticky="nsew", pady=PADY)
+        self.codetext.grid(sticky=tk.NSEW, pady=PADY)
 
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         button = ttk.Button(frame, text="Reset", command=self.reset_alerts)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Close", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def reset_alerts(self) -> None:
         self.codetext.text.config(state=tk.NORMAL)
@@ -108,8 +107,8 @@ class AlertsDialog(Dialog):
 
     def click_select(self, event: tk.Event) -> None:
         current = self.tree.selection()[0]
-        alarm = self.alarm_map[current]
+        exception = self.alarm_map[current]
         self.codetext.text.config(state=tk.NORMAL)
         self.codetext.text.delete(1.0, tk.END)
-        self.codetext.text.insert(1.0, alarm.exception_event.text)
+        self.codetext.text.insert(1.0, exception.text)
         self.codetext.text.config(state=tk.DISABLED)

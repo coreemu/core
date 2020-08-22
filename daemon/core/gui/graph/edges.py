@@ -3,14 +3,13 @@ import math
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
-from core.gui.utils import bandwidth_text
+from core.gui.utils import bandwidth_text, delay_jitter_text
+from core.gui.wrappers import Interface, Link
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
@@ -111,7 +110,9 @@ class Edge:
         arc_y = (perp_m * arc_x) + b
         return arc_x, arc_y
 
-    def draw(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
+    def draw(
+        self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float], state: str
+    ) -> None:
         arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.id = self.canvas.create_line(
             *src_pos,
@@ -121,6 +122,7 @@ class Edge:
             tags=self.tag,
             width=self.scaled_width(),
             fill=self.color,
+            state=state,
         )
 
     def redraw(self) -> None:
@@ -250,7 +252,7 @@ class CanvasWirelessEdge(Edge):
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
-        self.draw(src_pos, dst_pos)
+        self.draw(src_pos, dst_pos, self.canvas.show_wireless.state())
         if link.label:
             self.middle_label_text(link.label)
         self.set_binding()
@@ -287,7 +289,7 @@ class CanvasEdge(Edge):
         self.link: Optional[Link] = None
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
-        self.draw(src_pos, dst_pos)
+        self.draw(src_pos, dst_pos, tk.NORMAL)
         self.set_binding()
         self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()
@@ -305,7 +307,7 @@ class CanvasEdge(Edge):
         self.link = link
         self.draw_labels()
 
-    def iface_label(self, iface: core_pb2.Interface) -> str:
+    def iface_label(self, iface: Interface) -> str:
         label = ""
         if iface.name and self.canvas.show_iface_names.get():
             label = f"{iface.name}"
@@ -319,10 +321,10 @@ class CanvasEdge(Edge):
 
     def create_node_labels(self) -> Tuple[str, str]:
         label1 = None
-        if self.link.HasField("iface1"):
+        if self.link.iface1:
             label1 = self.iface_label(self.link.iface1)
         label2 = None
-        if self.link.HasField("iface2"):
+        if self.link.iface2:
             label2 = self.iface_label(self.link.iface2)
         return label1, label2
 
@@ -379,6 +381,7 @@ class CanvasEdge(Edge):
     def check_wireless(self) -> None:
         if self.is_wireless():
             self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+            self.canvas.dtag(self.id, tags.EDGE)
             self._check_antenna()
 
     def _check_antenna(self) -> None:
@@ -417,22 +420,38 @@ class CanvasEdge(Edge):
         dialog.show()
 
     def draw_link_options(self):
+        if not self.link.options:
+            return
         options = self.link.options
+        asym_options = None
+        if self.asymmetric_link and self.asymmetric_link.options:
+            asym_options = self.asymmetric_link.options
         lines = []
-        bandwidth = options.bandwidth
-        if bandwidth > 0:
-            lines.append(bandwidth_text(bandwidth))
-        delay = options.delay
-        jitter = options.jitter
-        if delay > 0 and jitter > 0:
-            lines.append(f"{delay} us (\u00B1{jitter} us)")
-        elif jitter > 0:
-            lines.append(f"0 us (\u00B1{jitter} us)")
-        loss = options.loss
-        if loss > 0:
-            lines.append(f"loss={loss}%")
-        dup = options.dup
-        if dup > 0:
-            lines.append(f"dup={dup}%")
+        # bandwidth
+        if options.bandwidth > 0:
+            bandwidth_line = bandwidth_text(options.bandwidth)
+            if asym_options and asym_options.bandwidth > 0:
+                bandwidth_line += f" / {bandwidth_text(asym_options.bandwidth)}"
+            lines.append(bandwidth_line)
+        # delay/jitter
+        dj_line = delay_jitter_text(options.delay, options.jitter)
+        if dj_line and asym_options:
+            asym_dj_line = delay_jitter_text(asym_options.delay, asym_options.jitter)
+            if asym_dj_line:
+                dj_line += f" / {asym_dj_line}"
+        if dj_line:
+            lines.append(dj_line)
+        # loss
+        if options.loss > 0:
+            loss_line = f"loss={options.loss}%"
+            if asym_options and asym_options.loss > 0:
+                loss_line += f" / loss={asym_options.loss}%"
+            lines.append(loss_line)
+        # duplicate
+        if options.dup > 0:
+            dup_line = f"dup={options.dup}%"
+            if asym_options and asym_options.dup > 0:
+                dup_line += f" / dup={asym_options.dup}%"
+            lines.append(dup_line)
         label = "\n".join(lines)
         self.middle_label_text(label)

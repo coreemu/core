@@ -271,6 +271,18 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
         else:
             c.run(f"sudo cp {script} {dest}", hide=hide)
 
+    # setup core python helper
+    core_python = bin_dir.joinpath("core-python")
+    temp = NamedTemporaryFile("w", delete=False)
+    temp.writelines([
+        "#!/bin/bash\n",
+        f'exec "{python}" "$@"\n',
+    ])
+    temp.close()
+    c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
+    c.run(f"sudo chmod 755 {core_python}", hide=hide)
+    os.unlink(temp.name)
+
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
@@ -312,7 +324,7 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
         install_service(c, hide, prefix)
     with p.start("installing ospf mdr"):
         install_ospf_mdr(c, os_info, hide)
-    print("\nyou may need to open a new terminal to leverage invoke for running core")
+    print("\ninstall complete!")
 
 
 @task(
@@ -402,6 +414,10 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
             dest = bin_dir.joinpath(script.name)
             c.run(f"sudo rm -f {dest}", hide=hide)
 
+    # remove core-python symlink
+    core_python = bin_dir.joinpath("core-python")
+    c.run(f"sudo rm -f {core_python}", hide=hide)
+
     # install service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"
@@ -451,28 +467,6 @@ def daemon(c):
             "-f data/core.conf -l data/logging.conf",
             pty=True
         )
-
-
-@task(
-    help={
-        "sudo": "run script as sudo",
-        "file": "script file to run in the core virtual environment"
-    },
-)
-def run(c, file, sudo=False):
-    """
-    runs a user script in the core virtual environment
-    """
-    if not file:
-        print("no script was provided")
-        return
-    python = get_python(c)
-    path = Path(file).absolute()
-    with c.cd(DAEMON_DIR):
-        cmd = f"{python} {path}"
-        if sudo:
-            cmd = f"sudo {cmd}"
-        c.run(cmd, pty=True)
 
 
 @task

@@ -51,7 +51,7 @@ class CanvasWallpaperDialog(Dialog):
 
     def draw_image_label(self) -> None:
         label = ttk.Label(self.top, text="Image filename: ")
-        label.grid(sticky="ew")
+        label.grid(sticky=tk.EW)
         if self.filename.get():
             self.draw_preview()
 
@@ -60,17 +60,17 @@ class CanvasWallpaperDialog(Dialog):
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW, pady=PADY)
 
         entry = ttk.Entry(frame, textvariable=self.filename)
         entry.focus()
-        entry.grid(row=0, column=0, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="...", command=self.click_open_image)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Clear", command=self.click_clear)
-        button.grid(row=0, column=2, sticky="ew")
+        button.grid(row=0, column=2, sticky=tk.EW)
 
     def draw_options(self) -> None:
         frame = ttk.Frame(self.top)
@@ -78,30 +78,30 @@ class CanvasWallpaperDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW, pady=PADY)
 
         button = ttk.Radiobutton(
             frame, text="upper-left", value=1, variable=self.scale_option
         )
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky=tk.EW)
         self.options.append(button)
 
         button = ttk.Radiobutton(
             frame, text="centered", value=2, variable=self.scale_option
         )
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
         self.options.append(button)
 
         button = ttk.Radiobutton(
             frame, text="scaled", value=3, variable=self.scale_option
         )
-        button.grid(row=0, column=2, sticky="ew")
+        button.grid(row=0, column=2, sticky=tk.EW)
         self.options.append(button)
 
         button = ttk.Radiobutton(
             frame, text="titled", value=4, variable=self.scale_option
         )
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=3, sticky=tk.EW)
         self.options.append(button)
 
     def draw_additional_options(self) -> None:
@@ -111,19 +111,19 @@ class CanvasWallpaperDialog(Dialog):
             variable=self.adjust_to_dim,
             command=self.click_adjust_canvas,
         )
-        checkbutton.grid(sticky="ew", padx=PADX)
+        checkbutton.grid(sticky=tk.EW, padx=PADX, pady=PADY)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
-        frame.grid(pady=PADY, sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_open_image(self) -> None:
         filename = image_chooser(self, BACKGROUNDS_PATH)

@@ -10,7 +10,17 @@ services.
 import enum
 import logging
 import time
-from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple, Type
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 
 from core import utils
 from core.emulator.data import FileData
@@ -20,6 +30,8 @@ from core.nodes.base import CoreNode
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
+
+    CoreServiceType = Union["CoreService", Type["CoreService"]]
 
 
 class ServiceBootError(Exception):
@@ -39,95 +51,56 @@ class ServiceDependencies:
     provided.
     """
 
-    def __init__(self, services: List["CoreService"]) -> None:
-        # helpers to check validity
-        self.dependents: Dict[str, Set[str]] = {}
-        self.booted: Set[str] = set()
-        self.node_services: Dict[str, "CoreService"] = {}
-        for service in services:
-            self.node_services[service.name] = service
-            for dependency in service.dependencies:
-                dependents = self.dependents.setdefault(dependency, set())
-                dependents.add(service.name)
-
-        # used to find paths
-        self.path: List["CoreService"] = []
+    def __init__(self, services: List["CoreServiceType"]) -> None:
         self.visited: Set[str] = set()
-        self.visiting: Set[str] = set()
+        self.services: Dict[str, "CoreServiceType"] = {}
+        self.paths: Dict[str, List["CoreServiceType"]] = {}
+        self.boot_paths: List[List["CoreServiceType"]] = []
+        roots = set([x.name for x in services])
+        for service in services:
+            self.services[service.name] = service
+            roots -= set(service.dependencies)
+        self.roots: List["CoreServiceType"] = [x for x in services if x.name in roots]
+        if services and not self.roots:
+            raise ValueError("circular dependency is present")
 
-    def boot_paths(self) -> List[List["CoreService"]]:
-        """
-        Generates the boot paths for the services provided to the class.
+    def _search(
+        self,
+        service: "CoreServiceType",
+        visiting: Set[str] = None,
+        path: List[str] = None,
+    ) -> List["CoreServiceType"]:
+        if service.name in self.visited:
+            return self.paths[service.name]
+        self.visited.add(service.name)
+        if visiting is None:
+            visiting = set()
+        visiting.add(service.name)
+        if path is None:
+            for dependency in service.dependencies:
+                path = self.paths.get(dependency)
+                if path is not None:
+                    break
+        for dependency in service.dependencies:
+            service_dependency = self.services.get(dependency)
+            if not service_dependency:
+                raise ValueError(f"required dependency was not provided: {dependency}")
+            if dependency in visiting:
+                raise ValueError(f"circular dependency, already visited: {dependency}")
+            else:
+                path = self._search(service_dependency, visiting, path)
+        visiting.remove(service.name)
+        if path is None:
+            path = []
+            self.boot_paths.append(path)
+        path.append(service)
+        self.paths[service.name] = path
+        return path
 
-        :return: list of services to boot, in order
-        """
-        paths = []
-        for name in self.node_services:
-            service = self.node_services[name]
-            if service.name in self.booted:
-                logging.debug(
-                    "skipping service that will already be booted: %s", service.name
-                )
-                continue
-
-            path = self._start(service)
-            if path:
-                paths.append(path)
-
-        if self.booted != set(self.node_services):
-            raise ValueError(
-                "failure to boot all services: %s != %s"
-                % (self.booted, self.node_services.keys())
-            )
-
-        return paths
-
-    def _reset(self) -> None:
-        self.path = []
-        self.visited.clear()
-        self.visiting.clear()
-
-    def _start(self, service: "CoreService") -> List["CoreService"]:
-        logging.debug("starting service dependency check: %s", service.name)
-        self._reset()
-        return self._visit(service)
-
-    def _visit(self, current_service: "CoreService") -> List["CoreService"]:
-        logging.debug("visiting service(%s): %s", current_service.name, self.path)
-        self.visited.add(current_service.name)
-        self.visiting.add(current_service.name)
-
-        # dive down
-        for service_name in current_service.dependencies:
-            if service_name not in self.node_services:
-                raise ValueError(
-                    "required dependency was not included in node services: %s"
-                    % service_name
-                )
-
-            if service_name in self.visiting:
-                raise ValueError(
-                    "cyclic dependency at service(%s): %s"
-                    % (current_service.name, service_name)
-                )
-
-            if service_name not in self.visited:
-                service = self.node_services[service_name]
-                self._visit(service)
-
-        # add service when bottom is found
-        logging.debug("adding service to boot path: %s", current_service.name)
-        self.booted.add(current_service.name)
-        self.path.append(current_service)
-        self.visiting.remove(current_service.name)
-
-        # rise back up
-        for service_name in self.dependents.get(current_service.name, []):
-            if service_name not in self.visited:
-                service = self.node_services[service_name]
-                self._visit(service)
-
-        return self.path
+    def boot_order(self) -> List[List["CoreServiceType"]]:
+        for service in self.roots:
+            self._search(service)
+        return self.boot_paths
 
 
 class ServiceShim:
@@ -470,23 +443,16 @@ class CoreServices:
         :param node: node to start services on
         :return: nothing
         """
-        boot_paths = ServiceDependencies(node.services).boot_paths()
+        boot_paths = ServiceDependencies(node.services).boot_order()
         funcs = []
         for boot_path in boot_paths:
             args = (node, boot_path)
-            funcs.append((self._start_boot_paths, args, {}))
+            funcs.append((self._boot_service_path, args, {}))
         result, exceptions = utils.threadpool(funcs)
         if exceptions:
             raise ServiceBootError(*exceptions)
 
-    def _start_boot_paths(self, node: CoreNode, boot_path: List["CoreService"]) -> None:
-        """
-        Start all service boot paths found, based on dependencies.
-
-        :param node: node to start services on
-        :param boot_path: service to start in dependent order
-        :return: nothing
-        """
+    def _boot_service_path(self, node: CoreNode, boot_path: List["CoreServiceType"]):
         logging.info(
             "booting node(%s) services: %s",
             node.name,
@@ -496,11 +462,11 @@ class CoreServices:
             service = self.get_service(node.id, service.name, default_service=True)
             try:
                 self.boot_service(node, service)
-            except Exception:
+            except Exception as e:
                 logging.exception("exception booting service: %s", service.name)
-                raise
+                raise ServiceBootError(e)
 
-    def boot_service(self, node: CoreNode, service: "CoreService") -> None:
+    def boot_service(self, node: CoreNode, service: "CoreServiceType") -> None:
         """
         Start a service on a node. Create private dirs, generate config
         files, and execute startup commands.
@@ -584,7 +550,7 @@ class CoreServices:
             return True
         return False
 
-    def validate_service(self, node: CoreNode, service: "CoreService") -> int:
+    def validate_service(self, node: CoreNode, service: "CoreServiceType") -> int:
         """
         Run the validation command(s) for a service.
 
@@ -622,7 +588,7 @@ class CoreServices:
         for service in node.services:
             self.stop_service(node, service)
 
-    def stop_service(self, node: CoreNode, service: "CoreService") -> int:
+    def stop_service(self, node: CoreNode, service: "CoreServiceType") -> int:
         """
         Stop a service on a node.
 
@@ -724,7 +690,7 @@ class CoreServices:
         service.config_data[file_name] = data
 
     def startup_service(
-        self, node: CoreNode, service: "CoreService", wait: bool = False
+        self, node: CoreNode, service: "CoreServiceType", wait: bool = False
     ) -> int:
         """
         Startup a node service.
@@ -747,7 +713,7 @@ class CoreServices:
                 status = -1
         return status
 
-    def create_service_files(self, node: CoreNode, service: "CoreService") -> None:
+    def create_service_files(self, node: CoreNode, service: "CoreServiceType") -> None:
         """
         Creates node service files.
 

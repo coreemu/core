@@ -1,8 +1,9 @@
+import tkinter as tk
 from typing import TYPE_CHECKING
 
-from core.api.grpc.core_pb2 import NodeType
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
 from core.gui.nodeutils import NodeUtils
+from core.gui.wrappers import NodeType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -18,7 +19,7 @@ class NodeInfoFrame(InfoFrameBase):
         self.columnconfigure(0, weight=1)
         node = self.canvas_node.core_node
         frame = DetailsFrame(self)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         frame.add_detail("ID", node.id)
         frame.add_detail("Name", node.name)
         if NodeUtils.is_model_node(node.type):

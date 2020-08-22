@@ -1,15 +1,13 @@
 import functools
 import logging
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List, Set
 
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import Interface, Node, NodeType
-from core.api.grpc.services_pb2 import NodeServiceData
-from core.gui import themes
+from core.gui import nodeutils, themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
@@ -20,8 +18,9 @@ from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.images import ImageEnum
+from core.gui.images import ImageEnum, Images
 from core.gui.nodeutils import ANTENNA_SIZE, NodeUtils
+from core.gui.wrappers import Interface, Node, NodeType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -58,15 +57,6 @@ class CanvasNode:
         self.wireless_edges: Set[CanvasWirelessEdge] = set()
         self.antennas: List[int] = []
         self.antenna_images: Dict[int, PhotoImage] = {}
-        # possible configurations
-        self.emane_model_configs: Dict[
-            Tuple[str, Optional[int]], Dict[str, ConfigOption]
-        ] = {}
-        self.wlan_config: Dict[str, ConfigOption] = {}
-        self.mobility_config: Dict[str, ConfigOption] = {}
-        self.service_configs: Dict[str, NodeServiceData] = {}
-        self.service_file_configs: Dict[str, Dict[str, str]] = {}
-        self.config_service_configs: Dict[str, Any] = {}
         self.setup_bindings()
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
@@ -217,6 +207,7 @@ class CanvasNode:
         self.context.delete(0, tk.END)
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
         is_emane = self.core_node.type == NodeType.EMANE
+        is_mobility = is_wlan or is_emane
         if self.app.core.is_runtime():
             self.context.add_command(label="Configure", command=self.show_config)
             if is_emane:
@@ -227,7 +218,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
                 )
-            if is_wlan and self.core_node.id in self.app.core.mobility_players:
+            if is_mobility and self.core_node.id in self.app.core.mobility_players:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
@@ -246,6 +237,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
                 )
+            if is_mobility:
                 self.context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )
@@ -301,7 +293,7 @@ class CanvasNode:
             dialog.show()
 
     def show_mobility_config(self) -> None:
-        dialog = MobilityConfigDialog(self.app, self)
+        dialog = MobilityConfigDialog(self.app, self.core_node)
         if not dialog.has_error:
             dialog.show()
 
@@ -310,15 +302,15 @@ class CanvasNode:
         mobility_player.show()
 
     def show_emane_config(self) -> None:
-        dialog = EmaneConfigDialog(self.app, self)
+        dialog = EmaneConfigDialog(self.app, self.core_node)
         dialog.show()
 
     def show_services(self) -> None:
-        dialog = NodeServiceDialog(self.app, self)
+        dialog = NodeServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def show_config_services(self) -> None:
-        dialog = NodeConfigServiceDialog(self.app, self)
+        dialog = NodeConfigServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def has_emane_link(self, iface_id: int) -> Node:
@@ -356,3 +348,11 @@ class CanvasNode:
             dx = node_x - 16 + (i * 8 * self.app.app_scale) - x
             dy = node_y - int(23 * self.app.app_scale) - y
             self.canvas.move(antenna_id, dx, dy)
+
+    def update_icon(self, icon_path: str) -> None:
+        if not Path(icon_path).exists():
+            logging.error(f"node icon does not exist: {icon_path}")
+            return
+        self.core_node.icon = icon_path
+        self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
+        self.canvas.itemconfig(self.id, image=self.image)

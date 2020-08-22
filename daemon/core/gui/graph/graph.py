@@ -7,14 +7,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.core_pb2 import (
-    Interface,
-    Link,
-    LinkType,
-    Node,
-    Session,
-    ThroughputsEvent,
-)
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -30,6 +22,7 @@ from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.wrappers import Interface, Link, LinkType, Node, Session, ThroughputsEvent
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -104,6 +97,8 @@ class CanvasGraph(tk.Canvas):
         # drawing related
         self.show_node_labels: ShowVar = ShowVar(self, tags.NODE_LABEL, value=True)
         self.show_link_labels: ShowVar = ShowVar(self, tags.LINK_LABEL, value=True)
+        self.show_links: ShowVar = ShowVar(self, tags.EDGE, value=True)
+        self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
         self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)
         self.show_iface_names: BooleanVar = BooleanVar(value=False)
@@ -135,11 +130,6 @@ class CanvasGraph(tk.Canvas):
         self.configure(scrollregion=self.bbox(tk.ALL))
 
     def reset_and_redraw(self, session: Session) -> None:
-        """
-        Reset the private variables CanvasGraph object, redraw nodes given the new grpc
-        client.
-        :param session: session to draw
-        """
         # reset view options to default state
         self.show_node_labels.set(True)
         self.show_link_labels.set(True)
@@ -251,12 +241,12 @@ class CanvasGraph(tk.Canvas):
             dst.edges.add(edge)
             self.edges[edge.token] = edge
             self.core.links[edge.token] = edge
-            if link.HasField("iface1"):
+            if link.iface1:
                 iface1 = link.iface1
                 self.core.iface_to_edge[(node1.id, iface1.id)] = token
                 src.ifaces[iface1.id] = iface1
                 edge.src_iface = iface1
-            if link.HasField("iface2"):
+            if link.iface2:
                 iface2 = link.iface2
                 self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
                 dst.ifaces[iface2.id] = iface2
@@ -274,7 +264,7 @@ class CanvasGraph(tk.Canvas):
         edge = self.edges.get(token)
         if not edge:
             return
-        edge.link.options.CopyFrom(link.options)
+        edge.link.options = deepcopy(link.options)
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
@@ -323,10 +313,7 @@ class CanvasGraph(tk.Canvas):
             edge.middle_label_text(link.label)
 
     def add_core_node(self, core_node: Node) -> None:
-        if core_node.id in self.core.canvas_nodes:
-            logging.error("core node already exists: %s", core_node)
-            return
-        logging.debug("adding node %s", core_node)
+        logging.debug("adding node: %s", core_node)
         # if the gui can't find node's image, default to the "edit-node" image
         image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
         if not image:
@@ -335,24 +322,24 @@ class CanvasGraph(tk.Canvas):
         y = core_node.position.y
         node = CanvasNode(self.app, x, y, core_node, image)
         self.nodes[node.id] = node
-        self.core.canvas_nodes[core_node.id] = node
+        self.core.set_canvas_node(core_node, node)
 
     def draw_session(self, session: Session) -> None:
         """
         Draw existing session.
         """
         # draw existing nodes
-        for core_node in session.nodes:
+        for core_node in session.nodes.values():
+            logging.debug("drawing node: %s", core_node)
             # peer to peer node is not drawn on the GUI
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
             self.add_core_node(core_node)
-
-            # draw existing links
+        # draw existing links
         for link in session.links:
             logging.debug("drawing link: %s", link)
-            canvas_node1 = self.core.canvas_nodes[link.node1_id]
-            canvas_node2 = self.core.canvas_nodes[link.node2_id]
+            canvas_node1 = self.core.get_canvas_node(link.node1_id)
+            canvas_node2 = self.core.get_canvas_node(link.node2_id)
             if link.type == LinkType.WIRELESS:
                 self.add_wireless_edge(canvas_node1, canvas_node2, link)
             else:
@@ -555,8 +542,8 @@ class CanvasGraph(tk.Canvas):
                 shape.delete()
 
         self.selection.clear()
-        self.core.deleted_graph_nodes(nodes)
-        self.core.deleted_graph_edges(edges)
+        self.core.deleted_canvas_nodes(nodes)
+        self.core.deleted_canvas_edges(edges)
 
     def delete_edge(self, edge: CanvasEdge) -> None:
         edge.delete()
@@ -575,7 +562,7 @@ class CanvasGraph(tk.Canvas):
         dst_wireless = NodeUtils.is_wireless_node(dst_node.core_node.type)
         if dst_wireless:
             src_node.delete_antenna()
-        self.core.deleted_graph_edges([edge])
+        self.core.deleted_canvas_edges([edge])
 
     def zoom(self, event: tk.Event, factor: float = None) -> None:
         if not factor:
@@ -761,8 +748,8 @@ class CanvasGraph(tk.Canvas):
             image_file = self.node_draw.image_file
             self.node_draw.image = self.app.get_custom_icon(image_file, ICON_SIZE)
         node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
-        self.core.canvas_nodes[core_node.id] = node
         self.nodes[node.id] = node
+        self.core.set_canvas_node(core_node, node)
 
     def width_and_height(self) -> Tuple[int, int]:
         """
@@ -939,7 +926,8 @@ class CanvasGraph(tk.Canvas):
         # maps original node canvas id to copy node canvas id
         copy_map = {}
         # the edges that will be copy over
-        to_copy_edges = []
+        to_copy_edges = set()
+        to_copy_ids = {x.id for x in self.to_copy}
         for canvas_node in self.to_copy:
             core_node = canvas_node.core_node
             actual_x = core_node.position.x + 50
@@ -951,30 +939,57 @@ class CanvasGraph(tk.Canvas):
             if not copy:
                 continue
             node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
-
             # copy configurations and services
-            node.core_node.services[:] = canvas_node.core_node.services
-            node.core_node.config_services[:] = canvas_node.core_node.config_services
-            node.emane_model_configs = deepcopy(canvas_node.emane_model_configs)
-            node.wlan_config = deepcopy(canvas_node.wlan_config)
-            node.mobility_config = deepcopy(canvas_node.mobility_config)
-            node.service_configs = deepcopy(canvas_node.service_configs)
-            node.service_file_configs = deepcopy(canvas_node.service_file_configs)
-            node.config_service_configs = deepcopy(canvas_node.config_service_configs)
+            node.core_node.services = core_node.services.copy()
+            node.core_node.config_services = core_node.config_services.copy()
+            node.core_node.emane_model_configs = deepcopy(core_node.emane_model_configs)
+            node.core_node.wlan_config = deepcopy(core_node.wlan_config)
+            node.core_node.mobility_config = deepcopy(core_node.mobility_config)
+            node.core_node.service_configs = deepcopy(core_node.service_configs)
+            node.core_node.service_file_configs = deepcopy(
+                core_node.service_file_configs
+            )
+            node.core_node.config_service_configs = deepcopy(
+                core_node.config_service_configs
+            )
 
             copy_map[canvas_node.id] = node.id
-            self.core.canvas_nodes[copy.id] = node
             self.nodes[node.id] = node
+            self.core.set_canvas_node(copy, node)
             for edge in canvas_node.edges:
-                if edge.src not in self.to_copy or edge.dst not in self.to_copy:
+                if edge.src not in to_copy_ids or edge.dst not in to_copy_ids:
                     if canvas_node.id == edge.src:
                         dst_node = self.nodes[edge.dst]
                         self.create_edge(node, dst_node)
+                        token = create_edge_token(node.id, dst_node.id)
                     elif canvas_node.id == edge.dst:
                         src_node = self.nodes[edge.src]
                         self.create_edge(src_node, node)
+                        token = create_edge_token(src_node.id, node.id)
+                    copy_edge = self.edges[token]
+                    copy_link = copy_edge.link
+                    iface1_id = copy_link.iface1.id if copy_link.iface1 else None
+                    iface2_id = copy_link.iface2.id if copy_link.iface2 else None
+                    options = edge.link.options
+                    if options:
+                        copy_edge.link.options = deepcopy(options)
+                    if options and options.unidirectional:
+                        asym_iface1 = None
+                        if iface1_id is not None:
+                            asym_iface1 = Interface(id=iface1_id)
+                        asym_iface2 = None
+                        if iface2_id is not None:
+                            asym_iface2 = Interface(id=iface2_id)
+                        copy_edge.asymmetric_link = Link(
+                            node1_id=copy_link.node2_id,
+                            node2_id=copy_link.node1_id,
+                            iface1=asym_iface2,
+                            iface2=asym_iface1,
+                            options=deepcopy(edge.asymmetric_link.options),
+                        )
+                    copy_edge.redraw()
                 else:
-                    to_copy_edges.append(edge)
+                    to_copy_edges.add(edge)
 
         # copy link and link config
         for edge in to_copy_edges:
@@ -986,30 +1001,26 @@ class CanvasGraph(tk.Canvas):
             token = create_edge_token(src_node_copy.id, dst_node_copy.id)
             copy_edge = self.edges[token]
             copy_link = copy_edge.link
+            iface1_id = copy_link.iface1.id if copy_link.iface1 else None
+            iface2_id = copy_link.iface2.id if copy_link.iface2 else None
             options = edge.link.options
-            copy_link.options.CopyFrom(options)
-            iface1_id = None
-            if copy_link.HasField("iface1"):
-                iface1_id = copy_link.iface1.id
-            iface2_id = None
-            if copy_link.HasField("iface2"):
-                iface2_id = copy_link.iface2.id
-            if not options.unidirectional:
-                copy_edge.asymmetric_link = None
-            else:
+            if options:
+                copy_link.options = deepcopy(options)
+            if options and options.unidirectional:
                 asym_iface1 = None
-                if iface1_id:
+                if iface1_id is not None:
                     asym_iface1 = Interface(id=iface1_id)
                 asym_iface2 = None
-                if iface2_id:
+                if iface2_id is not None:
                     asym_iface2 = Interface(id=iface2_id)
                 copy_edge.asymmetric_link = Link(
                     node1_id=copy_link.node2_id,
                     node2_id=copy_link.node1_id,
-                    iface1=asym_iface1,
-                    iface2=asym_iface2,
-                    options=edge.asymmetric_link.options,
+                    iface1=asym_iface2,
+                    iface2=asym_iface1,
+                    options=deepcopy(edge.asymmetric_link.options),
                 )
+            copy_edge.redraw()
             self.itemconfig(
                 copy_edge.id,
                 width=self.itemcget(edge.id, "width"),

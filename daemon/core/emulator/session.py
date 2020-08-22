@@ -8,6 +8,7 @@ import os
 import pwd
 import shutil
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -119,7 +120,7 @@ class Session:
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
         self.state_time: float = time.monotonic()
-        self.hooks: Dict[EventTypes, Tuple[str, str]] = {}
+        self.hooks: Dict[EventTypes, List[Tuple[str, str]]] = {}
         self.state_hooks: Dict[EventTypes, List[Callable[[EventTypes], None]]] = {}
         self.add_state_hook(
             state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
@@ -621,7 +622,8 @@ class Session:
 
     def is_active(self) -> bool:
         """
-        Determine if this session is considered to be active. (Runtime or Data collect states)
+        Determine if this session is considered to be active.
+        (Runtime or Data collect states)
 
         :return: True if active, False otherwise
         """
@@ -991,6 +993,7 @@ class Session:
         :return: environment variables
         """
         env = os.environ.copy()
+        env["CORE_PYTHON"] = sys.executable
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
         env["SESSION_DIR"] = self.session_dir
@@ -1098,7 +1101,8 @@ class Session:
 
     def delete_node(self, _id: int) -> bool:
         """
-        Delete a node from the session and check if session should shutdown, if no nodes are left.
+        Delete a node from the session and check if session should shutdown, if no nodes
+        are left.
 
         :param _id: id of node to delete
         :return: True if node deleted, False otherwise

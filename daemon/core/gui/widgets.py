@@ -5,12 +5,10 @@ from pathlib import Path
 from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
 
-from core.api.grpc import core_pb2
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import ConfigOptionType
-from core.gui import themes, validation
+from core.gui import appconfig, themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.wrappers import ConfigOption, ConfigOptionType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -28,7 +26,9 @@ INT_TYPES: Set[ConfigOptionType] = {
 
 
 def file_button_click(value: tk.StringVar, parent: tk.Widget) -> None:
-    file_path = filedialog.askopenfilename(title="Select File", parent=parent)
+    file_path = filedialog.askopenfilename(
+        title="Select File", initialdir=str(appconfig.HOME_PATH), parent=parent
+    )
     if file_path:
         value.set(file_path)
 
@@ -47,13 +47,13 @@ class FrameScroll(ttk.Frame):
         self.columnconfigure(0, weight=1)
         bg = self.app.style.lookup(".", "background")
         self.canvas: tk.Canvas = tk.Canvas(self, highlightthickness=0, background=bg)
-        self.canvas.grid(row=0, sticky="nsew", padx=2, pady=2)
+        self.canvas.grid(row=0, sticky=tk.NSEW, padx=2, pady=2)
         self.canvas.columnconfigure(0, weight=1)
         self.canvas.rowconfigure(0, weight=1)
         self.scrollbar: ttk.Scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
-        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.scrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.frame: ttk.Frame = _cls(self.canvas)
         self.frame_id: int = self.canvas.create_window(
             0, 0, anchor="nw", window=self.frame
@@ -108,15 +108,15 @@ class ConfigFrame(ttk.Notebook):
             self.add(tab, text=group_name)
             for index, option in enumerate(sorted(group, key=lambda x: x.name)):
                 label = ttk.Label(tab.frame, text=option.label)
-                label.grid(row=index, pady=PADY, padx=PADX, sticky="w")
+                label.grid(row=index, pady=PADY, padx=PADX, sticky=tk.W)
                 value = tk.StringVar()
-                if option.type == core_pb2.ConfigOptionType.BOOL:
+                if option.type == ConfigOptionType.BOOL:
                     select = ("On", "Off")
                     state = "readonly" if self.enabled else tk.DISABLED
                     combobox = ttk.Combobox(
                         tab.frame, textvariable=value, values=select, state=state
                     )
-                    combobox.grid(row=index, column=1, sticky="ew")
+                    combobox.grid(row=index, column=1, sticky=tk.EW)
                     if option.value == "1":
                         value.set("On")
                     else:
@@ -128,16 +128,16 @@ class ConfigFrame(ttk.Notebook):
                     combobox = ttk.Combobox(
                         tab.frame, textvariable=value, values=select, state=state
                     )
-                    combobox.grid(row=index, column=1, sticky="ew")
-                elif option.type == core_pb2.ConfigOptionType.STRING:
+                    combobox.grid(row=index, column=1, sticky=tk.EW)
+                elif option.type == ConfigOptionType.STRING:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
                     if "file" in option.label:
                         file_frame = ttk.Frame(tab.frame)
-                        file_frame.grid(row=index, column=1, sticky="ew")
+                        file_frame.grid(row=index, column=1, sticky=tk.EW)
                         file_frame.columnconfigure(0, weight=1)
                         entry = ttk.Entry(file_frame, textvariable=value, state=state)
-                        entry.grid(row=0, column=0, sticky="ew", padx=PADX)
+                        entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
                         func = partial(file_button_click, value, self)
                         button = ttk.Button(
                             file_frame, text="...", command=func, state=state
@@ -145,21 +145,21 @@ class ConfigFrame(ttk.Notebook):
                         button.grid(row=0, column=1)
                     else:
                         entry = ttk.Entry(tab.frame, textvariable=value, state=state)
-                        entry.grid(row=index, column=1, sticky="ew")
+                        entry.grid(row=index, column=1, sticky=tk.EW)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
                     entry = validation.PositiveIntEntry(
                         tab.frame, textvariable=value, state=state
                     )
-                    entry.grid(row=index, column=1, sticky="ew")
-                elif option.type == core_pb2.ConfigOptionType.FLOAT:
+                    entry.grid(row=index, column=1, sticky=tk.EW)
+                elif option.type == ConfigOptionType.FLOAT:
                     value.set(option.value)
                     state = tk.NORMAL if self.enabled else tk.DISABLED
                     entry = validation.PositiveFloatEntry(
                         tab.frame, textvariable=value, state=state
                     )
-                    entry.grid(row=index, column=1, sticky="ew")
+                    entry.grid(row=index, column=1, sticky=tk.EW)
                 else:
                     logging.error("unhandled config option type: %s", option.type)
                 self.values[option.name] = value
@@ -169,7 +169,7 @@ class ConfigFrame(ttk.Notebook):
             option = self.config[key]
             value = self.values[key]
             config_value = value.get()
-            if option.type == core_pb2.ConfigOptionType.BOOL:
+            if option.type == ConfigOptionType.BOOL:
                 if config_value == "On":
                     option.value = "1"
                 else:
@@ -182,7 +182,7 @@ class ConfigFrame(ttk.Notebook):
         for name, data in config.items():
             option = self.config[name]
             value = self.values[name]
-            if option.type == core_pb2.ConfigOptionType.BOOL:
+            if option.type == ConfigOptionType.BOOL:
                 if data == "1":
                     data = "On"
                 else:
@@ -196,7 +196,7 @@ class ListboxScroll(ttk.Frame):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.scrollbar: ttk.Scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
-        self.scrollbar.grid(row=0, column=1, sticky="ns")
+        self.scrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.listbox: tk.Listbox = tk.Listbox(
             self,
             selectmode=tk.BROWSE,
@@ -204,7 +204,7 @@ class ListboxScroll(ttk.Frame):
             exportselection=False,
         )
         themes.style_listbox(self.listbox)
-        self.listbox.grid(row=0, column=0, sticky="nsew")
+        self.listbox.grid(row=0, column=0, sticky=tk.NSEW)
         self.scrollbar.config(command=self.listbox.yview)
 
 
@@ -224,7 +224,7 @@ class CheckboxList(FrameScroll):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
-        checkbox.grid(sticky="w")
+        checkbox.grid(sticky=tk.W)
 
 
 class CodeFont(font.Font):
@@ -250,9 +250,9 @@ class CodeText(ttk.Frame):
             selectforeground="black",
             relief=tk.FLAT,
         )
-        self.text.grid(row=0, column=0, sticky="nsew")
+        self.text.grid(row=0, column=0, sticky=tk.NSEW)
         yscrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.text.yview)
-        yscrollbar.grid(row=0, column=1, sticky="ns")
+        yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.text.configure(yscrollcommand=yscrollbar.set)
 
 

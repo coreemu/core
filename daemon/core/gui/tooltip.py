@@ -46,7 +46,7 @@ class Tooltip(object):
         self.tw.rowconfigure(0, weight=1)
         self.tw.columnconfigure(0, weight=1)
         frame = ttk.Frame(self.tw, style=Styles.tooltip_frame, padding=3)
-        frame.grid(sticky="nsew")
+        frame.grid(sticky=tk.NSEW)
         label = ttk.Label(frame, text=self.text, style=Styles.tooltip)
         label.grid()
 

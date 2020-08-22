@@ -1,13 +1,13 @@
+import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
 import grpc
 
-from core.api.grpc.common_pb2 import ConfigOption
-from core.api.grpc.core_pb2 import Node
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
+from core.gui.wrappers import ConfigOption, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -30,7 +30,7 @@ class WlanConfigDialog(Dialog):
         self.ranges: Dict[int, int] = {}
         self.positive_int: int = self.app.master.register(self.validate_and_update)
         try:
-            config = self.canvas_node.wlan_config
+            config = self.node.wlan_config
             if not config:
                 config = self.app.core.get_wlan_config(self.node.id)
             self.config: Dict[str, ConfigOption] = config
@@ -55,7 +55,7 @@ class WlanConfigDialog(Dialog):
         self.top.rowconfigure(0, weight=1)
         self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
-        self.config_frame.grid(sticky="nsew", pady=PADY)
+        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
         self.draw_apply_buttons()
         self.top.bind("<Destroy>", self.remove_ranges)
 
@@ -64,7 +64,7 @@ class WlanConfigDialog(Dialog):
         create node configuration options
         """
         frame = ttk.Frame(self.top)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
@@ -74,19 +74,19 @@ class WlanConfigDialog(Dialog):
         self.range_entry.config(validatecommand=(self.positive_int, "%P"))
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, padx=PADX, sticky="ew")
+        button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_apply(self) -> None:
         """
         retrieve user's wlan configuration and store the new configuration values
         """
         config = self.config_frame.parse_config()
-        self.canvas_node.wlan_config = self.config
+        self.node.wlan_config = self.config
         if self.app.core.is_runtime():
-            session_id = self.app.core.session_id
+            session_id = self.app.core.session.id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)
         self.remove_ranges()
         self.destroy()

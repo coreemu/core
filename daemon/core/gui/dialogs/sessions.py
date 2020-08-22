@@ -5,12 +5,11 @@ from typing import TYPE_CHECKING, List, Optional
 
 import grpc
 
-from core.api.grpc import core_pb2
-from core.api.grpc.core_pb2 import SessionSummary
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
+from core.gui.wrappers import SessionState, SessionSummary
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -33,7 +32,7 @@ class SessionsDialog(Dialog):
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
-            return response.sessions
+            return [SessionSummary.from_proto(x) for x in response.sessions]
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Sessions Error", e)
             self.destroy()
@@ -63,7 +62,7 @@ class SessionsDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
-        frame.grid(sticky="nsew", pady=PADY)
+        frame.grid(sticky=tk.NSEW, pady=PADY)
         self.tree = ttk.Treeview(
             frame,
             columns=("id", "state", "nodes"),
@@ -73,7 +72,7 @@ class SessionsDialog(Dialog):
         style = ttk.Style()
         heading_size = int(self.app.guiconfig.scale * 10)
         style.configure("Treeview.Heading", font=(None, heading_size, "bold"))
-        self.tree.grid(sticky="nsew")
+        self.tree.grid(sticky=tk.NSEW)
         self.tree.column("id", stretch=tk.YES, anchor="center")
         self.tree.heading("id", text="ID")
         self.tree.column("state", stretch=tk.YES, anchor="center")
@@ -82,7 +81,7 @@ class SessionsDialog(Dialog):
         self.tree.heading("nodes", text="Node Count")
 
         for index, session in enumerate(self.sessions):
-            state_name = core_pb2.SessionState.Enum.Name(session.state)
+            state_name = SessionState(session.state).name
             self.tree.insert(
                 "",
                 tk.END,
@@ -93,25 +92,25 @@ class SessionsDialog(Dialog):
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
         yscrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
-        yscrollbar.grid(row=0, column=1, sticky="ns")
+        yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
-        xscrollbar.grid(row=1, sticky="ew")
+        xscrollbar.grid(row=1, sticky=tk.EW)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
-        frame.grid(sticky="ew")
+        frame.grid(sticky=tk.EW)
 
         image = Images.get(ImageEnum.DOCUMENTNEW, 16)
         b = ttk.Button(
             frame, image=image, text="New", compound=tk.LEFT, command=self.click_new
         )
         b.image = image
-        b.grid(row=0, padx=PADX, sticky="ew")
+        b.grid(row=0, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.FILEOPEN, 16)
         self.connect_button = ttk.Button(
@@ -123,7 +122,7 @@ class SessionsDialog(Dialog):
             state=tk.DISABLED,
         )
         self.connect_button.image = image
-        self.connect_button.grid(row=0, column=1, padx=PADX, sticky="ew")
+        self.connect_button.grid(row=0, column=1, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.DELETE, 16)
         self.delete_button = ttk.Button(
@@ -135,7 +134,7 @@ class SessionsDialog(Dialog):
             state=tk.DISABLED,
         )
         self.delete_button.image = image
-        self.delete_button.grid(row=0, column=2, padx=PADX, sticky="ew")
+        self.delete_button.grid(row=0, column=2, padx=PADX, sticky=tk.EW)
 
         image = Images.get(ImageEnum.CANCEL, 16)
         if self.is_start_app:
@@ -155,7 +154,7 @@ class SessionsDialog(Dialog):
                 command=self.destroy,
             )
         b.image = image
-        b.grid(row=0, column=3, sticky="ew")
+        b.grid(row=0, column=3, sticky=tk.EW)
 
     def click_new(self) -> None:
         self.app.core.create_new_session()
@@ -182,8 +181,6 @@ class SessionsDialog(Dialog):
 
     def join_session(self, session_id: int) -> None:
         self.destroy()
-        if self.app.core.xml_file:
-            self.app.core.xml_file = None
         task = ProgressTask(
             self.app, "Join", self.app.core.join_session, args=(session_id,)
         )
@@ -191,7 +188,7 @@ class SessionsDialog(Dialog):
 
     def double_click_join(self, _event: tk.Event) -> None:
         item = self.tree.selection()
-        if item is None:
+        if not item:
             return
         session_id = int(self.tree.item(item, "text"))
         self.join_session(session_id)
@@ -202,7 +199,7 @@ class SessionsDialog(Dialog):
         logging.debug("delete session: %s", self.selected_session)
         self.tree.delete(self.selected_id)
         self.app.core.delete_session(self.selected_session)
-        if self.selected_session == self.app.core.session_id:
+        if self.selected_session == self.app.core.session.id:
             self.click_new()
             self.destroy()
         self.click_select()

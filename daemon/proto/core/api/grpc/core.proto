@@ -714,6 +714,19 @@ message Session {
     repeated Node nodes = 3;
     repeated Link links = 4;
     string dir = 5;
+    string user = 6;
+    repeated services.ServiceDefaults default_services = 7;
+    SessionLocation location = 8;
+    repeated Hook hooks = 9;
+    repeated string emane_models = 10;
+    map<string, common.ConfigOption> emane_config = 11;
+    repeated emane.GetEmaneModelConfig emane_model_configs = 12;
+    map<int32, common.MappedConfig> wlan_configs = 13;
+    repeated services.NodeServiceConfig service_configs = 14;
+    repeated configservices.ConfigServiceConfig config_service_configs = 15;
+    map<int32, common.MappedConfig> mobility_configs = 16;
+    map<string, string> metadata = 17;
+    string file = 18;
 }
 
 message SessionSummary {

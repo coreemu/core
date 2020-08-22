@@ -46,9 +46,9 @@ class AboutDialog(Dialog):
         codetext = CodeText(self.top)
         codetext.text.insert("1.0", LICENSE)
         codetext.text.config(state=tk.DISABLED)
-        codetext.grid(sticky="nsew")
+        codetext.grid(sticky=tk.NSEW)
 
         label = ttk.Label(
             self.top, text="Icons from https://icons8.com", anchor=tk.CENTER
         )
-        label.grid(sticky="ew")
+        label.grid(sticky=tk.EW)

@@ -9,22 +9,21 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
+from core.gui.wrappers import Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
-    from core.gui.graph.node import CanvasNode
 
 
 class NodeServiceDialog(Dialog):
-    def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
-        title = f"{canvas_node.core_node.name} Services"
+    def __init__(self, app: "Application", node: Node) -> None:
+        title = f"{node.name} Services"
         super().__init__(app, title)
-        self.canvas_node: "CanvasNode" = canvas_node
-        self.node_id: int = canvas_node.core_node.id
+        self.node: Node = node
         self.groups: Optional[ListboxScroll] = None
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
-        services = set(canvas_node.core_node.services)
+        services = set(node.services)
         self.current_services: Set[str] = services
         self.draw()
 
@@ -38,31 +37,31 @@ class NodeServiceDialog(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
         label_frame = ttk.LabelFrame(frame, text="Groups", padding=FRAME_PAD)
-        label_frame.grid(row=0, column=0, sticky="nsew")
+        label_frame.grid(row=0, column=0, sticky=tk.NSEW)
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
-        self.groups.grid(sticky="nsew")
+        self.groups.grid(sticky=tk.NSEW)
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
 
         label_frame = ttk.LabelFrame(frame, text="Services")
-        label_frame.grid(row=0, column=1, sticky="nsew")
+        label_frame.grid(row=0, column=1, sticky=tk.NSEW)
         label_frame.columnconfigure(0, weight=1)
         label_frame.rowconfigure(0, weight=1)
         self.services = CheckboxList(
             label_frame, self.app, clicked=self.service_clicked, padding=FRAME_PAD
         )
-        self.services.grid(sticky="nsew")
+        self.services.grid(sticky=tk.NSEW)
 
         label_frame = ttk.LabelFrame(frame, text="Selected", padding=FRAME_PAD)
-        label_frame.grid(row=0, column=2, sticky="nsew")
+        label_frame.grid(row=0, column=2, sticky=tk.NSEW)
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
         self.current = ListboxScroll(label_frame)
-        self.current.grid(sticky="nsew")
+        self.current.grid(sticky=tk.NSEW)
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
             if self.is_custom_service(service):
@@ -73,13 +72,13 @@ class NodeServiceDialog(Dialog):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Save", command=self.click_save)
-        button.grid(row=0, column=1, sticky="ew", padx=PADX)
+        button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.click_remove)
-        button.grid(row=0, column=2, sticky="ew", padx=PADX)
+        button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=3, sticky="ew")
+        button.grid(row=0, column=3, sticky=tk.EW)
 
         # trigger group change
         self.handle_group_change()
@@ -104,7 +103,7 @@ class NodeServiceDialog(Dialog):
             self.current.listbox.insert(tk.END, name)
             if self.is_custom_service(name):
                 self.current.listbox.itemconfig(tk.END, bg="green")
-        self.canvas_node.core_node.services[:] = self.current_services
+        self.node.services = self.current_services.copy()
 
     def click_configure(self) -> None:
         current_selection = self.current.listbox.curselection()
@@ -113,8 +112,7 @@ class NodeServiceDialog(Dialog):
                 self,
                 self.app,
                 self.current.listbox.get(current_selection[0]),
-                self.canvas_node,
-                self.node_id,
+                self.node,
             )
 
             # if error occurred when creating ServiceConfigDialog, don't show the dialog
@@ -128,8 +126,7 @@ class NodeServiceDialog(Dialog):
             )
 
     def click_save(self) -> None:
-        core_node = self.canvas_node.core_node
-        core_node.services[:] = self.current_services
+        self.node.services = self.current_services.copy()
         self.destroy()
 
     def click_remove(self) -> None:
@@ -144,6 +141,6 @@ class NodeServiceDialog(Dialog):
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        has_service_config = service in self.canvas_node.service_configs
-        has_file_config = service in self.canvas_node.service_file_configs
+        has_service_config = service in self.node.service_configs
+        has_file_config = service in self.node.service_file_configs
         return has_service_config or has_file_config
