@@ -38,3 +38,11 @@ class CoreServiceError(Exception):
     """
 
     pass
+
+
+class CoreServiceBootError(Exception):
+    """
+    Used when there is an error booting a service.
+    """
+
+    pass
