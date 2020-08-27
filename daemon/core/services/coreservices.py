@@ -25,7 +25,7 @@ from typing import (
 from core import utils
 from core.emulator.data import FileData
 from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
-from core.errors import CoreCommandError, CoreError
+from core.errors import CoreCommandError, CoreError, CoreServiceError
 from core.nodes.base import CoreNode
 
 if TYPE_CHECKING:
@@ -257,7 +257,10 @@ class ServiceManager:
         :param name: name of the service to retrieve
         :return: service if it exists, None otherwise
         """
-        return cls.services.get(name)
+        service = cls.services.get(name)
+        if service is None:
+            raise CoreServiceError(f"service({name}) does not exist")
+        return service
 
     @classmethod
     def add_services(cls, path: str) -> List[str]:
