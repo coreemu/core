@@ -3,13 +3,13 @@ import math
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional, Tuple
 
+from core.api.grpc.wrappers import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.nodeutils import NodeUtils
 from core.gui.utils import bandwidth_text, delay_jitter_text
-from core.gui.wrappers import Interface, Link
 
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph

@@ -21,19 +21,7 @@ from core.api.grpc import (
     services_pb2,
     wlan_pb2,
 )
-from core.gui import appconfig
-from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
-from core.gui.dialogs.emaneinstall import EmaneInstallDialog
-from core.gui.dialogs.error import ErrorDialog
-from core.gui.dialogs.mobilityplayer import MobilityPlayer
-from core.gui.dialogs.sessions import SessionsDialog
-from core.gui.graph.edges import CanvasEdge
-from core.gui.graph.node import CanvasNode
-from core.gui.graph.shape import AnnotationData, Shape
-from core.gui.graph.shapeutils import ShapeType
-from core.gui.interface import InterfaceManager
-from core.gui.nodeutils import NodeDraw, NodeUtils
-from core.gui.wrappers import (
+from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
     ExceptionEvent,
@@ -52,6 +40,18 @@ from core.gui.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
+from core.gui import appconfig
+from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
+from core.gui.dialogs.emaneinstall import EmaneInstallDialog
+from core.gui.dialogs.error import ErrorDialog
+from core.gui.dialogs.mobilityplayer import MobilityPlayer
+from core.gui.dialogs.sessions import SessionsDialog
+from core.gui.graph.edges import CanvasEdge
+from core.gui.graph.node import CanvasNode
+from core.gui.graph.shape import AnnotationData, Shape
+from core.gui.graph.shapeutils import ShapeType
+from core.gui.interface import InterfaceManager
+from core.gui.nodeutils import NodeDraw, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application

@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
+from core.api.grpc.wrappers import Hook, SessionState
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
-from core.gui.wrappers import Hook, SessionState
 
 if TYPE_CHECKING:
     from core.gui.app import Application

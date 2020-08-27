@@ -5,11 +5,11 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
+from core.api.grpc.wrappers import Interface, Link, LinkOptions
 from core.gui import validation
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
-from core.gui.wrappers import Interface, Link, LinkOptions
 
 if TYPE_CHECKING:
     from core.gui.app import Application

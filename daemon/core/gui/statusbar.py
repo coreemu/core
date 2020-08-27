@@ -5,9 +5,9 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, List, Optional
 
+from core.api.grpc.wrappers import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
-from core.gui.wrappers import ExceptionEvent, ExceptionLevel
 
 if TYPE_CHECKING:
     from core.gui.app import Application

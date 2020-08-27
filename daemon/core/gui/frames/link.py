@@ -1,9 +1,9 @@
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional
 
+from core.api.grpc.wrappers import Interface
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
 from core.gui.utils import bandwidth_text
-from core.gui.wrappers import Interface
 
 if TYPE_CHECKING:
     from core.gui.app import Application

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 import netaddr
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.wrappers import Node
 from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -15,7 +16,6 @@ from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
-from core.gui.wrappers import Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application

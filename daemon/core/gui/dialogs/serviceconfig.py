@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.wrappers import Node, NodeServiceData, ServiceValidationMode
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
-from core.gui.wrappers import Node, NodeServiceData, ServiceValidationMode
 
 if TYPE_CHECKING:
     from core.gui.app import Application

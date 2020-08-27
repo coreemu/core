@@ -7,6 +7,14 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.wrappers import (
+    Interface,
+    Link,
+    LinkType,
+    Node,
+    Session,
+    ThroughputsEvent,
+)
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -22,7 +30,6 @@ from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, TypeToImage
 from core.gui.nodeutils import NodeDraw, NodeUtils
-from core.gui.wrappers import Interface, Link, LinkType, Node, Session, ThroughputsEvent
 
 if TYPE_CHECKING:
     from core.gui.app import Application
