@@ -212,7 +212,7 @@ class ConfigurableManager:
 
     def get_configs(
         self, node_id: int = _default_node, config_type: str = _default_type
-    ) -> Dict[str, str]:
+    ) -> Optional[Dict[str, str]]:
         """
         Retrieve configurations for a node and configuration type.
 

@@ -91,10 +91,14 @@ def create_emane_config(session: "Session") -> etree.Element:
 
 
 def create_emane_model_config(
-    node_id: int, model: "EmaneModelType", config: Dict[str, str]
+    node_id: int,
+    model: "EmaneModelType",
+    config: Dict[str, str],
+    iface_id: Optional[int],
 ) -> etree.Element:
     emane_element = etree.Element("emane_configuration")
     add_attribute(emane_element, "node", node_id)
+    add_attribute(emane_element, "iface", iface_id)
     add_attribute(emane_element, "model", model.name)
 
     mac_element = etree.SubElement(emane_element, "mac")
@@ -378,13 +382,19 @@ class CoreXmlWriter:
             all_configs = self.session.emane.get_all_configs(node_id)
             if not all_configs:
                 continue
+            iface_id = None
+            if node_id >= 1000:
+                iface_id = node_id % 1000
+                node_id = node_id // 1000
             for model_name in all_configs:
                 config = all_configs[model_name]
                 logging.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
                 model = self.session.emane.models[model_name]
-                emane_configuration = create_emane_model_config(node_id, model, config)
+                emane_configuration = create_emane_model_config(
+                    node_id, model, config, iface_id
+                )
                 emane_configurations.append(emane_configuration)
         if emane_configurations.getchildren():
             self.scenario.append(emane_configurations)
@@ -588,9 +598,9 @@ class CoreXmlReader:
         self.read_mobility_configs()
         self.read_emane_global_config()
         self.read_nodes()
+        self.read_links()
         self.read_emane_configs()
         self.read_configservice_configs()
-        self.read_links()
 
     def read_default_services(self) -> None:
         default_services = self.scenario.find("default_services")
@@ -748,6 +758,7 @@ class CoreXmlReader:
 
         for emane_configuration in emane_configurations.iterchildren():
             node_id = get_int(emane_configuration, "node")
+            iface_id = get_int(emane_configuration, "iface")
             model_name = emane_configuration.get("model")
             configs = {}
 
@@ -755,12 +766,13 @@ class CoreXmlReader:
             node = self.session.nodes.get(node_id)
             if not node:
                 raise CoreXmlError(f"node for emane config doesn't exist: {node_id}")
-            if not isinstance(node, EmaneNet):
-                raise CoreXmlError(f"invalid node for emane config: {node.name}")
             model = self.session.emane.models.get(model_name)
             if not model:
                 raise CoreXmlError(f"invalid emane model: {model_name}")
-            node.setmodel(model, {})
+            if iface_id is not None and iface_id not in node.ifaces:
+                raise CoreXmlError(
+                    f"invalid interface id({iface_id}) for node({node.name})"
+                )
 
             # read and set emane model configuration
             mac_configuration = emane_configuration.find("mac")
@@ -784,7 +796,10 @@ class CoreXmlReader:
             logging.info(
                 "reading emane configuration node(%s) model(%s)", node_id, model_name
             )
-            self.session.emane.set_model_config(node_id, model_name, configs)
+            key = node_id
+            if iface_id is not None:
+                key = node_id * 1000 + iface_id
+            self.session.emane.set_model_config(key, model_name, configs)
 
     def read_mobility_configs(self) -> None:
         mobility_configurations = self.scenario.find("mobility_configurations")
@@ -869,6 +884,9 @@ class CoreXmlReader:
         icon = network_element.get("icon")
         server = network_element.get("server")
         options = NodeOptions(name=name, icon=icon, server=server)
+        if node_type == NodeTypes.EMANE:
+            model = network_element.get("model")
+            options.emane = model
 
         position_element = network_element.find("position")
         if position_element is not None:

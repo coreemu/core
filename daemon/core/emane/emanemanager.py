@@ -145,14 +145,17 @@ class EmaneManager(ModelManager):
             key += iface.node_id
         # try retrieve interface specific configuration, avoid getting defaults
         config = self.get_configs(node_id=key, config_type=model_name)
-        # otherwise retrieve the interfaces node configuration, avoid using defaults
+        # attempt to retrieve node specific conifg, when iface config is not present
         if not config:
             config = self.get_configs(node_id=iface.node.id, config_type=model_name)
-        # get non interface config, when none found
+        # attempt to get emane net specific config, when node config is not present
         if not config:
             # with EMANE 0.9.2+, we need an extra NEM XML from
             # model.buildnemxmlfiles(), so defaults are returned here
             config = self.get_configs(node_id=emane_net.id, config_type=model_name)
+        # return default config values, when a config is not present
+        if not config:
+            config = emane_net.model.default_values()
         return config
 
     def config_reset(self, node_id: int = None) -> None:

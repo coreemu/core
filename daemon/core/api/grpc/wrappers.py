@@ -3,7 +3,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from core.api.grpc import common_pb2, configservices_pb2, core_pb2, services_pb2
+from core.api.grpc import (
+    common_pb2,
+    configservices_pb2,
+    core_pb2,
+    emane_pb2,
+    services_pb2,
+)
 
 
 class ConfigServiceValidationMode(Enum):
@@ -87,6 +93,13 @@ class MessageType(Enum):
     TTY = 64
 
 
+class ServiceAction(Enum):
+    START = 0
+    STOP = 1
+    RESTART = 2
+    VALIDATE = 3
+
+
 @dataclass
 class ConfigService:
     group: str
@@ -121,9 +134,64 @@ class ConfigService:
 
 
 @dataclass
+class ConfigServiceConfig:
+    node_id: int
+    name: str
+    templates: Dict[str, str]
+    config: Dict[str, str]
+
+    @classmethod
+    def from_proto(
+        cls, proto: configservices_pb2.ConfigServiceConfig
+    ) -> "ConfigServiceConfig":
+        return ConfigServiceConfig(
+            node_id=proto.node_id,
+            name=proto.name,
+            templates=dict(proto.templates),
+            config=dict(proto.config),
+        )
+
+
+@dataclass
 class ConfigServiceData:
     templates: Dict[str, str] = field(default_factory=dict)
     config: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class ConfigServiceDefaults:
+    templates: Dict[str, str]
+    config: Dict[str, "ConfigOption"]
+    modes: List[str]
+
+    @classmethod
+    def from_proto(
+        cls, proto: configservices_pb2.GetConfigServicesResponse
+    ) -> "ConfigServiceDefaults":
+        config = ConfigOption.from_dict(proto.config)
+        return ConfigServiceDefaults(
+            templates=dict(proto.templates), config=config, modes=list(proto.modes)
+        )
+
+
+@dataclass
+class Service:
+    group: str
+    name: str
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.Service) -> "Service":
+        return Service(group=proto.group, name=proto.name)
+
+
+@dataclass
+class ServiceDefault:
+    node_type: str
+    services: List[str]
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
+        return ServiceDefault(node_type=proto.node_type, services=list(proto.services))
 
 
 @dataclass
@@ -152,6 +220,28 @@ class NodeServiceData:
             validation_timer=proto.validation_timer,
             shutdown=proto.shutdown,
             meta=proto.meta,
+        )
+
+
+@dataclass
+class ServiceConfig:
+    node_id: int
+    service: str
+    files: List[str] = None
+    directories: List[str] = None
+    startup: List[str] = None
+    validate: List[str] = None
+    shutdown: List[str] = None
+
+    def to_proto(self) -> services_pb2.ServiceConfig:
+        return services_pb2.ServiceConfig(
+            node_id=self.node_id,
+            service=self.service,
+            files=self.files,
+            directories=self.directories,
+            startup=self.startup,
+            validate=self.validate,
+            shutdown=self.shutdown,
         )
 
 
@@ -472,6 +562,30 @@ class Hook:
 
 
 @dataclass
+class EmaneModelConfig:
+    node_id: int
+    model: str
+    iface_id: int = -1
+    config: Dict[str, ConfigOption] = None
+
+    @classmethod
+    def from_proto(cls, proto: emane_pb2.GetEmaneModelConfig) -> "EmaneModelConfig":
+        iface_id = proto.iface_id if proto.iface_id != -1 else None
+        config = ConfigOption.from_dict(proto.config)
+        return EmaneModelConfig(
+            node_id=proto.node_id, iface_id=iface_id, model=proto.model, config=config
+        )
+
+    def to_proto(self) -> emane_pb2.EmaneModelConfig:
+        return emane_pb2.EmaneModelConfig(
+            node_id=self.node_id,
+            model=self.model,
+            iface_id=self.iface_id,
+            config=self.config,
+        )
+
+
+@dataclass
 class Position:
     x: float
     y: float
@@ -659,4 +773,19 @@ class NodeEvent:
         return NodeEvent(
             message_type=MessageType(proto.message_type),
             node=Node.from_proto(proto.node),
+        )
+
+
+@dataclass
+class EmaneEventChannel:
+    group: str
+    port: int
+    device: str
+
+    @classmethod
+    def from_proto(
+        cls, proto: emane_pb2.GetEmaneEventChannelResponse
+    ) -> "EmaneEventChannel":
+        return EmaneEventChannel(
+            group=proto.group, port=proto.port, device=proto.device
         )

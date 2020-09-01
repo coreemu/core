@@ -937,8 +937,6 @@ class CoreClient:
     def get_emane_model_configs_proto(self) -> List[emane_pb2.EmaneModelConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if node.type != NodeType.EMANE:
-                continue
             for key, config in node.emane_model_configs.items():
                 model, iface_id = key
                 config = ConfigOption.to_dict(config)

@@ -282,9 +282,7 @@ class NodeConfigDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_emane_config(self, emane_model: str, iface_id: int) -> None:
-        dialog = EmaneModelDialog(
-            self, self.app, self.canvas_node, emane_model, iface_id
-        )
+        dialog = EmaneModelDialog(self, self.app, self.node, emane_model, iface_id)
         dialog.show()
 
     def click_icon(self) -> None:

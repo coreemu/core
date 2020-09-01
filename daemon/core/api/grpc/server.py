@@ -1438,7 +1438,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane model config: %s", request)
         session = self.get_session(request.session_id, context)
-        model = session.emane.models[request.model]
+        model = session.emane.models.get(request.model)
+        if not model:
+            raise CoreError(f"invalid emane model: {request.model}")
         _id = get_emane_model_id(request.node_id, request.iface_id)
         current_config = session.emane.get_model_config(_id, request.model)
         config = get_config_options(current_config, model)
@@ -1483,7 +1485,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: core_pb2.SaveXmlRequest, context: ServicerContext
     ) -> core_pb2.SaveXmlResponse:
         """
-        Export the session nto the EmulationScript XML format
+        Export the session into the EmulationScript XML format
 
         :param request: save xml request
         :param context: context object
