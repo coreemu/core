@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 DEVNULL = open(os.devnull, "wb")
+IFACE_CONFIG_FACTOR: int = 1000
 
 
 def execute_file(
@@ -430,3 +431,34 @@ def random_mac() -> str:
     value |= 0x00163E << 24
     mac = netaddr.EUI(value, dialect=netaddr.mac_unix_expanded)
     return str(mac)
+
+
+def iface_config_id(node_id: int, iface_id: int = None) -> int:
+    """
+    Common utility to generate a configuration id, in case an interface is being
+    targeted.
+
+    :param node_id: node for config id
+    :param iface_id: interface for config id
+    :return: generated config id when interface is present, node id otherwise
+    """
+    if iface_id is not None and iface_id >= 0:
+        return node_id * IFACE_CONFIG_FACTOR + iface_id
+    else:
+        return node_id
+
+
+def parse_iface_config_id(config_id: int) -> Tuple[int, Optional[int]]:
+    """
+    Parses configuration id, that may be potentially derived from an interface for a
+    node.
+
+    :param config_id: configuration id to parse
+    :return:
+    """
+    iface_id = None
+    node_id = config_id
+    if config_id >= IFACE_CONFIG_FACTOR:
+        iface_id = config_id % IFACE_CONFIG_FACTOR
+        node_id = config_id // IFACE_CONFIG_FACTOR
+    return node_id, iface_id

@@ -5,6 +5,7 @@ from lxml import etree
 
 import core.nodes.base
 import core.nodes.physical
+from core import utils
 from core.emane.nodes import EmaneNet
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
@@ -382,10 +383,7 @@ class CoreXmlWriter:
             all_configs = self.session.emane.get_all_configs(node_id)
             if not all_configs:
                 continue
-            iface_id = None
-            if node_id >= 1000:
-                iface_id = node_id % 1000
-                node_id = node_id // 1000
+            node_id, iface_id = utils.parse_iface_config_id(node_id)
             for model_name in all_configs:
                 config = all_configs[model_name]
                 logging.debug(
@@ -796,10 +794,8 @@ class CoreXmlReader:
             logging.info(
                 "reading emane configuration node(%s) model(%s)", node_id, model_name
             )
-            key = node_id
-            if iface_id is not None:
-                key = node_id * 1000 + iface_id
-            self.session.emane.set_model_config(key, model_name, configs)
+            node_id = utils.iface_config_id(node_id, iface_id)
+            self.session.emane.set_model_config(node_id, model_name, configs)
 
     def read_mobility_configs(self) -> None:
         mobility_configurations = self.scenario.find("mobility_configurations")

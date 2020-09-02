@@ -8,6 +8,7 @@ from xml.etree import ElementTree
 
 import pytest
 
+from core import utils
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
@@ -244,8 +245,9 @@ class TestEmane:
 
         # set node specific conifg
         datarate = "101"
+        config_id = utils.iface_config_id(node1.id, iface1_data.id)
         session.emane.set_model_config(
-            node1.id * 1000, EmaneRfPipeModel.name, {"datarate": datarate}
+            config_id, EmaneRfPipeModel.name, {"datarate": datarate}
         )
 
         # instantiate session
@@ -283,5 +285,5 @@ class TestEmane:
             node = session.nodes[node_id]
             links += node.links()
         assert len(links) == 2
-        config = session.emane.get_model_config(node1.id * 1000, EmaneRfPipeModel.name)
+        config = session.emane.get_model_config(config_id, EmaneRfPipeModel.name)
         assert config["datarate"] == datarate

@@ -140,12 +140,12 @@ class EmaneManager(ModelManager):
         # Adamson change: first check for iface config keyed by "node:iface.name"
         # (so that nodes w/ multiple interfaces of same conftype can have
         #  different configs for each separate interface)
-        key = 1000 * iface.node.id
+        config = None
+        # try to retrieve interface specific configuration
         if iface.node_id is not None:
-            key += iface.node_id
-        # try retrieve interface specific configuration, avoid getting defaults
-        config = self.get_configs(node_id=key, config_type=model_name)
-        # attempt to retrieve node specific conifg, when iface config is not present
+            key = utils.iface_config_id(iface.node.id, iface.node_id)
+            config = self.get_configs(node_id=key, config_type=model_name)
+        # attempt to retrieve node specific config, when iface config is not present
         if not config:
             config = self.get_configs(node_id=iface.node.id, config_type=model_name)
         # attempt to get emane net specific config, when node config is not present

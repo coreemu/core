@@ -56,12 +56,7 @@ from core.api.grpc.emane_pb2 import (
     SetEmaneModelConfigResponse,
 )
 from core.api.grpc.events import EventStreamer
-from core.api.grpc.grpcutils import (
-    get_config_options,
-    get_emane_model_id,
-    get_links,
-    get_net_stats,
-)
+from core.api.grpc.grpcutils import get_config_options, get_links, get_net_stats
 from core.api.grpc.mobility_pb2 import (
     GetMobilityConfigRequest,
     GetMobilityConfigResponse,
@@ -249,7 +244,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = session.emane.get_configs()
         config.update(request.emane_config)
         for config in request.emane_model_configs:
-            _id = get_emane_model_id(config.node_id, config.iface_id)
+            _id = utils.iface_config_id(config.node_id, config.iface_id)
             session.emane.set_model_config(_id, config.model, config.config)
 
         # wlan configs
@@ -1441,7 +1436,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         model = session.emane.models.get(request.model)
         if not model:
             raise CoreError(f"invalid emane model: {request.model}")
-        _id = get_emane_model_id(request.node_id, request.iface_id)
+        _id = utils.iface_config_id(request.node_id, request.iface_id)
         current_config = session.emane.get_model_config(_id, request.model)
         config = get_config_options(current_config, model)
         return GetEmaneModelConfigResponse(config=config)
@@ -1460,7 +1455,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         model_config = request.emane_model_config
-        _id = get_emane_model_id(model_config.node_id, model_config.iface_id)
+        _id = utils.iface_config_id(model_config.node_id, model_config.iface_id)
         session.emane.set_model_config(_id, model_config.model, model_config.config)
         return SetEmaneModelConfigResponse(result=True)
 
