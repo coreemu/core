@@ -550,7 +550,7 @@ class Session:
                 raise CoreError(
                     f"node({node.name}) emane model({options.emane}) does not exist"
                 )
-            node.setmodel(model, {})
+            node.model = model(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
         # set default wlan config if needed
