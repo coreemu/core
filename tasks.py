@@ -495,4 +495,4 @@ def test_emane(c):
     """
     pytest = get_pytest(c)
     with c.cd(DAEMON_DIR):
-        c.run(f"{pytest} -v --lf -x tests/emane", pty=True)
+        c.run(f"sudo {pytest} -v --lf -x tests/emane", pty=True)

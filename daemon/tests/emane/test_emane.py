@@ -161,3 +161,127 @@ class TestEmane:
         assert session.get_node(node2_id, CoreNode)
         assert session.get_node(emane_id, EmaneNet)
         assert value == config_value
+
+    def test_xml_emane_node_config(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
+        # create nodes
+        options = NodeOptions(model="mdr", x=50, y=50)
+        node1 = session.add_node(CoreNode, options=options)
+        iface1_data = ip_prefixes.create_iface(node1)
+        node2 = session.add_node(CoreNode, options=options)
+        iface2_data = ip_prefixes.create_iface(node2)
+
+        # create emane node
+        options = NodeOptions(model=None, emane=EmaneRfPipeModel.name)
+        emane_node = session.add_node(EmaneNet, options=options)
+
+        # create links
+        session.add_link(node1.id, emane_node.id, iface1_data)
+        session.add_link(node2.id, emane_node.id, iface2_data)
+
+        # set node specific conifg
+        datarate = "101"
+        session.emane.set_model_config(
+            node1.id, EmaneRfPipeModel.name, {"datarate": datarate}
+        )
+
+        # instantiate session
+        session.instantiate()
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(CoreError):
+            assert not session.get_node(node1.id, CoreNode)
+        with pytest.raises(CoreError):
+            assert not session.get_node(node2.id, CoreNode)
+        with pytest.raises(CoreError):
+            assert not session.get_node(emane_node.id, EmaneNet)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(node1.id, CoreNode)
+        assert session.get_node(node2.id, CoreNode)
+        assert session.get_node(emane_node.id, EmaneNet)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.links()
+        assert len(links) == 2
+        config = session.emane.get_model_config(node1.id, EmaneRfPipeModel.name)
+        assert config["datarate"] == datarate
+
+    def test_xml_emane_interface_config(
+        self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
+    ):
+        # create nodes
+        options = NodeOptions(model="mdr", x=50, y=50)
+        node1 = session.add_node(CoreNode, options=options)
+        iface1_data = ip_prefixes.create_iface(node1)
+        node2 = session.add_node(CoreNode, options=options)
+        iface2_data = ip_prefixes.create_iface(node2)
+
+        # create emane node
+        options = NodeOptions(model=None, emane=EmaneRfPipeModel.name)
+        emane_node = session.add_node(EmaneNet, options=options)
+
+        # create links
+        session.add_link(node1.id, emane_node.id, iface1_data)
+        session.add_link(node2.id, emane_node.id, iface2_data)
+
+        # set node specific conifg
+        datarate = "101"
+        session.emane.set_model_config(
+            node1.id * 1000, EmaneRfPipeModel.name, {"datarate": datarate}
+        )
+
+        # instantiate session
+        session.instantiate()
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(CoreError):
+            assert not session.get_node(node1.id, CoreNode)
+        with pytest.raises(CoreError):
+            assert not session.get_node(node2.id, CoreNode)
+        with pytest.raises(CoreError):
+            assert not session.get_node(emane_node.id, EmaneNet)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(node1.id, CoreNode)
+        assert session.get_node(node2.id, CoreNode)
+        assert session.get_node(emane_node.id, EmaneNet)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.links()
+        assert len(links) == 2
+        config = session.emane.get_model_config(node1.id * 1000, EmaneRfPipeModel.name)
+        assert config["datarate"] == datarate
