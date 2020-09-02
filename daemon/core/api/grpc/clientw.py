@@ -108,36 +108,65 @@ class InterfaceHelper:
         )
 
 
-def stream_listener(stream: Any, handler: Callable[[core_pb2.Event], None]) -> None:
+def throughput_listener(
+    stream: Any, handler: Callable[[wrappers.ThroughputsEvent], None]
+) -> None:
     """
-    Listen for stream events and provide them to the handler.
+        Listen for throughput events and provide them to the handler.
+
+        :param stream: grpc stream that will provide events
+        :param handler: function that handles an event
+        :return: nothing
+        """
+    try:
+        for event_proto in stream:
+            event = wrappers.ThroughputsEvent.from_proto(event_proto)
+            handler(event)
+    except grpc.RpcError as e:
+        if e.code() == grpc.StatusCode.CANCELLED:
+            logging.debug("throughput stream closed")
+        else:
+            logging.exception("throughput stream error")
+
+
+def cpu_listener(
+    stream: Any, handler: Callable[[wrappers.CpuUsageEvent], None]
+) -> None:
+    """
+    Listen for cpu events and provide them to the handler.
 
     :param stream: grpc stream that will provide events
     :param handler: function that handles an event
     :return: nothing
     """
     try:
-        for event in stream:
+        for event_proto in stream:
+            event = wrappers.CpuUsageEvent.from_proto(event_proto)
             handler(event)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.CANCELLED:
-            logging.debug("stream closed")
+            logging.debug("cpu stream closed")
         else:
-            logging.exception("stream error")
+            logging.exception("cpu stream error")
 
 
-def start_streamer(stream: Any, handler: Callable[[core_pb2.Event], None]) -> None:
+def event_listener(stream: Any, handler: Callable[[wrappers.Event], None]) -> None:
     """
-    Convenience method for starting a grpc stream thread for handling streamed events.
+    Listen for session events and provide them to the handler.
 
     :param stream: grpc stream that will provide events
     :param handler: function that handles an event
     :return: nothing
     """
-    thread = threading.Thread(
-        target=stream_listener, args=(stream, handler), daemon=True
-    )
-    thread.start()
+    try:
+        for event_proto in stream:
+            event = wrappers.Event.from_proto(event_proto)
+            handler(event)
+    except grpc.RpcError as e:
+        if e.code() == grpc.StatusCode.CANCELLED:
+            logging.debug("session stream closed")
+        else:
+            logging.exception("session stream error")
 
 
 class CoreGrpcClient:
@@ -469,12 +498,11 @@ class CoreGrpcClient:
         response = self.stub.SessionAlert(request)
         return response.result
 
-    # TODO: determine best path for handling non proto events
     def events(
         self,
         session_id: int,
-        handler: Callable[[core_pb2.Event], None],
-        events: List[core_pb2.Event] = None,
+        handler: Callable[[wrappers.Event], None],
+        events: List[wrappers.EventType] = None,
     ) -> grpc.Future:
         """
         Listen for session events.
@@ -487,12 +515,14 @@ class CoreGrpcClient:
         """
         request = core_pb2.EventsRequest(session_id=session_id, events=events)
         stream = self.stub.Events(request)
-        start_streamer(stream, handler)
+        thread = threading.Thread(
+            target=event_listener, args=(stream, handler), daemon=True
+        )
+        thread.start()
         return stream
 
-    # TODO: determine best path for handling non proto events
     def throughputs(
-        self, session_id: int, handler: Callable[[core_pb2.ThroughputsEvent], None]
+        self, session_id: int, handler: Callable[[wrappers.ThroughputsEvent], None]
     ) -> grpc.Future:
         """
         Listen for throughput events with information for interfaces and bridges.
@@ -504,12 +534,14 @@ class CoreGrpcClient:
         """
         request = core_pb2.ThroughputsRequest(session_id=session_id)
         stream = self.stub.Throughputs(request)
-        start_streamer(stream, handler)
+        thread = threading.Thread(
+            target=throughput_listener, args=(stream, handler), daemon=True
+        )
+        thread.start()
         return stream
 
-    # TODO: determine best path for handling non proto events
     def cpu_usage(
-        self, delay: int, handler: Callable[[core_pb2.CpuUsageEvent], None]
+        self, delay: int, handler: Callable[[wrappers.CpuUsageEvent], None]
     ) -> grpc.Future:
         """
         Listen for cpu usage events with the given repeat delay.
@@ -520,7 +552,10 @@ class CoreGrpcClient:
         """
         request = core_pb2.CpuUsageRequest(delay=delay)
         stream = self.stub.CpuUsage(request)
-        start_streamer(stream, handler)
+        thread = threading.Thread(
+            target=cpu_listener, args=(stream, handler), daemon=True
+        )
+        thread.start()
         return stream
 
     def add_node(self, session_id: int, node: wrappers.Node, source: str = None) -> int:

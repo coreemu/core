@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from core.api.grpc import (
     common_pb2,
@@ -98,6 +98,15 @@ class ServiceAction(Enum):
     STOP = 1
     RESTART = 2
     VALIDATE = 3
+
+
+class EventType:
+    SESSION = 0
+    NODE = 1
+    LINK = 2
+    CONFIG = 3
+    EXCEPTION = 4
+    FILE = 5
 
 
 @dataclass
@@ -283,6 +292,15 @@ class ThroughputsEvent:
             bridge_throughputs=bridges,
             iface_throughputs=ifaces,
         )
+
+
+@dataclass
+class CpuUsageEvent:
+    usage: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.CpuUsageEvent) -> "CpuUsageEvent":
+        return CpuUsageEvent(usage=proto.usage)
 
 
 @dataclass
@@ -773,6 +791,133 @@ class NodeEvent:
         return NodeEvent(
             message_type=MessageType(proto.message_type),
             node=Node.from_proto(proto.node),
+        )
+
+
+@dataclass
+class SessionEvent:
+    node_id: int
+    event: int
+    name: str
+    data: str
+    time: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.SessionEvent) -> "SessionEvent":
+        return SessionEvent(
+            node_id=proto.node_id,
+            event=proto.event,
+            name=proto.name,
+            data=proto.data,
+            time=proto.time,
+        )
+
+
+@dataclass
+class FileEvent:
+    message_type: MessageType
+    node_id: int
+    name: str
+    mode: str
+    number: int
+    type: str
+    source: str
+    data: str
+    compressed_data: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.FileEvent) -> "FileEvent":
+        return FileEvent(
+            message_type=MessageType(proto.message_type),
+            node_id=proto.node_id,
+            name=proto.name,
+            mode=proto.mode,
+            number=proto.number,
+            type=proto.type,
+            source=proto.source,
+            data=proto.data,
+            compressed_data=proto.compressed_data,
+        )
+
+
+@dataclass
+class ConfigEvent:
+    message_type: MessageType
+    node_id: int
+    object: str
+    type: int
+    data_types: List[int]
+    data_values: str
+    captions: str
+    bitmap: str
+    possible_values: str
+    groups: str
+    iface_id: int
+    network_id: int
+    opaque: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.ConfigEvent) -> "ConfigEvent":
+        return ConfigEvent(
+            message_type=MessageType(proto.message_type),
+            node_id=proto.node_id,
+            object=proto.object,
+            type=proto.type,
+            data_types=list(proto.data_types),
+            data_values=proto.data_values,
+            captions=proto.captions,
+            bitmap=proto.bitmap,
+            possible_values=proto.possible_values,
+            groups=proto.groups,
+            iface_id=proto.iface_id,
+            network_id=proto.network_id,
+            opaque=proto.opaque,
+        )
+
+
+@dataclass
+class Event:
+    session_id: int
+    source: str = None
+    session_event: SessionEvent = None
+    node_event: NodeEvent = None
+    link_event: LinkEvent = None
+    config_event: Any = None
+    exception_event: ExceptionEvent = None
+    file_event: FileEvent = None
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.Event) -> "Event":
+        source = proto.source if proto.source else None
+        node_event = None
+        link_event = None
+        exception_event = None
+        session_event = None
+        file_event = None
+        config_event = None
+        if proto.HasField("node_event"):
+            node_event = NodeEvent.from_proto(proto.node_event)
+        elif proto.HasField("link_event"):
+            link_event = LinkEvent.from_proto(proto.link_event)
+        elif proto.HasField("exception_event"):
+            exception_event = ExceptionEvent.from_proto(
+                proto.session_id, proto.exception_event
+            )
+        elif proto.HasField("session_event"):
+            session_event = SessionEvent.from_proto(proto.session_event)
+        elif proto.HasField("file_event"):
+            file_event = FileEvent.from_proto(proto.file_event)
+        elif proto.HasField("config_event"):
+            config_event = ConfigEvent.from_proto(proto.config_event)
+        return Event(
+            session_id=proto.session_id,
+            source=source,
+            node_event=node_event,
+            link_event=link_event,
+            exception_event=exception_event,
+            session_event=session_event,
+            file_event=file_event,
+            config_event=config_event,
         )
 
 
