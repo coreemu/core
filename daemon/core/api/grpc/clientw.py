@@ -6,7 +6,7 @@ import logging
 import threading
 from contextlib import contextmanager
 from queue import Queue
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
 import grpc
 
@@ -70,11 +70,33 @@ from core.emulator.data import IpPrefixes
 
 
 class MoveNodesStreamer:
-    def __init__(self) -> None:
+    def __init__(self, session_id: int = None, source: str = None) -> None:
+        self.session_id = session_id
+        self.source = source
         self.queue: Queue = Queue()
 
-    def send(self, request: Optional[wrappers.MoveNodesRequest]) -> None:
+    def send_position(self, node_id: int, x: float, y: float) -> None:
+        position = wrappers.Position(x=x, y=y)
+        request = wrappers.MoveNodesRequest(
+            session_id=self.session_id,
+            node_id=node_id,
+            source=self.source,
+            position=position,
+        )
+        self.send(request)
+
+    def send_geo(self, node_id: int, lon: float, lat: float, alt: float) -> None:
+        geo = wrappers.Geo(lon=lon, lat=lat, alt=alt)
+        request = wrappers.MoveNodesRequest(
+            session_id=self.session_id, node_id=node_id, source=self.source, geo=geo
+        )
+        self.send(request)
+
+    def send(self, request: wrappers.MoveNodesRequest) -> None:
         self.queue.put(request)
+
+    def stop(self) -> None:
+        self.queue.put(None)
 
     def next(self) -> Optional[core_pb2.MoveNodesRequest]:
         request: Optional[wrappers.MoveNodesRequest] = self.queue.get()
@@ -83,7 +105,7 @@ class MoveNodesStreamer:
         else:
             return request
 
-    def iter(self):
+    def iter(self) -> Iterable:
         return iter(self.next, None)
 
 
