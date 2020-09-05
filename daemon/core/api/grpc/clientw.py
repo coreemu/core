@@ -5,7 +5,8 @@ gRpc client for interfacing with CORE.
 import logging
 import threading
 from contextlib import contextmanager
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
+from queue import Queue
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 import grpc
 
@@ -30,7 +31,6 @@ from core.api.grpc.configservices_pb2 import (
 from core.api.grpc.core_pb2 import ExecuteScriptRequest
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
-    EmanePathlossesRequest,
     GetEmaneConfigRequest,
     GetEmaneEventChannelRequest,
     GetEmaneModelConfigRequest,
@@ -67,6 +67,42 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
 )
 from core.emulator.data import IpPrefixes
+
+
+class MoveNodesStreamer:
+    def __init__(self) -> None:
+        self.queue: Queue = Queue()
+
+    def send(self, request: Optional[wrappers.MoveNodesRequest]) -> None:
+        self.queue.put(request)
+
+    def next(self) -> Optional[core_pb2.MoveNodesRequest]:
+        request: Optional[wrappers.MoveNodesRequest] = self.queue.get()
+        if request:
+            return request.to_proto()
+        else:
+            return request
+
+    def iter(self):
+        return iter(self.next, None)
+
+
+class EmanePathlossesStreamer:
+    def __init__(self) -> None:
+        self.queue: Queue = Queue()
+
+    def send(self, request: Optional[wrappers.EmanePathlossesRequest]) -> None:
+        self.queue.put(request)
+
+    def next(self) -> Optional[emane_pb2.EmanePathlossesRequest]:
+        request: Optional[wrappers.EmanePathlossesRequest] = self.queue.get()
+        if request:
+            return request.to_proto()
+        else:
+            return request
+
+    def iter(self):
+        return iter(self.next, None)
 
 
 class InterfaceHelper:
@@ -627,16 +663,15 @@ class CoreGrpcClient:
         response = self.stub.EditNode(request)
         return response.result
 
-    # TODO: determine path to stream non proto requests
-    def move_nodes(self, move_iterator: Iterable[core_pb2.MoveNodesRequest]) -> None:
+    def move_nodes(self, streamer: MoveNodesStreamer) -> None:
         """
         Stream node movements using the provided iterator.
 
-        :param move_iterator: iterator for generating node movements
+        :param streamer: move nodes streamer
         :return: nothing
         :raises grpc.RpcError: when session or nodes do not exist
         """
-        self.stub.MoveNodes(move_iterator)
+        self.stub.MoveNodes(streamer.iter())
 
     def delete_node(self, session_id: int, node_id: int, source: str = None) -> bool:
         """
@@ -1396,19 +1431,16 @@ class CoreGrpcClient:
         response = self.stub.WlanLink(request)
         return response.result
 
-    # TODO: determine path to stream non proto requests
-    def emane_pathlosses(
-        self, pathloss_iterator: Iterable[EmanePathlossesRequest]
-    ) -> None:
+    def emane_pathlosses(self, streamer: EmanePathlossesStreamer) -> None:
         """
         Stream EMANE pathloss events.
 
-        :param pathloss_iterator: iterator for sending emane pathloss events
+        :param streamer: emane pathlosses streamer
         :return: nothing
         :raises grpc.RpcError: when a pathloss event session or one of the nodes do not
             exist
         """
-        self.stub.EmanePathlosses(pathloss_iterator)
+        self.stub.EmanePathlosses(streamer.iter())
 
     def connect(self) -> None:
         """

@@ -934,3 +934,45 @@ class EmaneEventChannel:
         return EmaneEventChannel(
             group=proto.group, port=proto.port, device=proto.device
         )
+
+
+@dataclass
+class EmanePathlossesRequest:
+    session_id: int
+    node1_id: int
+    rx1: float
+    iface1_id: int
+    node2_id: int
+    rx2: float
+    iface2_id: int
+
+    def to_proto(self) -> emane_pb2.EmanePathlossesRequest:
+        return emane_pb2.EmanePathlossesRequest(
+            session_id=self.session_id,
+            node1_id=self.node1_id,
+            rx1=self.rx1,
+            iface1_id=self.iface1_id,
+            node2_id=self.node2_id,
+            rx2=self.rx2,
+            iface2_id=self.iface2_id,
+        )
+
+
+@dataclass
+class MoveNodesRequest:
+    session_id: int
+    node_id: int
+    source: str = None
+    position: Position = None
+    geo: Geo = None
+
+    def to_proto(self) -> core_pb2.MoveNodesRequest:
+        position = self.position.to_proto() if self.position else None
+        geo = self.geo.to_proto() if self.geo else None
+        return core_pb2.MoveNodesRequest(
+            session_id=self.session_id,
+            node_id=self.node_id,
+            source=self.source,
+            position=position,
+            geo=geo,
+        )
