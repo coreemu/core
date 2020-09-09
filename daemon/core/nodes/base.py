@@ -16,7 +16,7 @@ from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
-from core.executables import MOUNT, VNODED
+from core.executables import MOUNT, TEST, VNODED
 from core.nodes.client import VnodeClient
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
@@ -291,6 +291,16 @@ class CoreNodeBase(NodeBase):
         :param net: network to associate with
         :param iface_data: interface data for new interface
         :return: interface index
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def path_exists(self, path: str) -> bool:
+        """
+        Determines if a file or directory path exists.
+
+        :param path: path to file or directory
+        :return: True if path exists, False otherwise
         """
         raise NotImplementedError
 
@@ -601,6 +611,19 @@ class CoreNode(CoreNodeBase):
         else:
             args = self.client.create_cmd(args, shell)
             return self.server.remote_cmd(args, wait=wait)
+
+    def path_exists(self, path: str) -> bool:
+        """
+        Determines if a file or directory path exists.
+
+        :param path: path to file or directory
+        :return: True if path exists, False otherwise
+        """
+        try:
+            self.cmd(f"{TEST} -e {path}")
+            return True
+        except CoreCommandError:
+            return False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
         """

@@ -11,7 +11,7 @@ from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
-from core.executables import MOUNT, UMOUNT
+from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
@@ -54,6 +54,19 @@ class PhysicalNode(CoreNodeBase):
                 iface.shutdown()
 
             self.rmnodedir()
+
+    def path_exists(self, path: str) -> bool:
+        """
+        Determines if a file or directory path exists.
+
+        :param path: path to file or directory
+        :return: True if path exists, False otherwise
+        """
+        try:
+            self.host_cmd(f"{TEST} -e {path}")
+            return True
+        except CoreCommandError:
+            return False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
         """
@@ -290,6 +303,19 @@ class Rj45Node(CoreNodeBase):
             pass
         self.up = False
         self.restorestate()
+
+    def path_exists(self, path: str) -> bool:
+        """
+        Determines if a file or directory path exists.
+
+        :param path: path to file or directory
+        :return: True if path exists, False otherwise
+        """
+        try:
+            self.host_cmd(f"{TEST} -e {path}")
+            return True
+        except CoreCommandError:
+            return False
 
     def new_iface(
         self, net: CoreNetworkBase, iface_data: InterfaceData

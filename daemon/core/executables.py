@@ -11,6 +11,7 @@ EBTABLES: str = "ebtables"
 MOUNT: str = "mount"
 UMOUNT: str = "umount"
 OVS_VSCTL: str = "ovs-vsctl"
+TEST: str = "test"
 
 COMMON_REQUIREMENTS: List[str] = [
     BASH,
@@ -21,6 +22,7 @@ COMMON_REQUIREMENTS: List[str] = [
     SYSCTL,
     TC,
     UMOUNT,
+    TEST,
 ]
 VCMD_REQUIREMENTS: List[str] = [VNODED, VCMD]
 OVS_REQUIREMENTS: List[str] = [OVS_VSCTL]

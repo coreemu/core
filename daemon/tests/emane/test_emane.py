@@ -44,6 +44,47 @@ def ping(
 
 
 class TestEmane:
+    def test_two_emane_interfaces(self, session: Session):
+        """
+        Test nodes running multiple emane interfaces.
+
+        :param core.emulator.coreemu.EmuSession session: session for test
+        """
+        # create emane node for networking the core nodes
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        options = NodeOptions()
+        options.set_position(80, 50)
+        options.emane = EmaneIeee80211abgModel.name
+        emane_net1 = session.add_node(EmaneNet, options=options)
+        options.emane = EmaneRfPipeModel.name
+        emane_net2 = session.add_node(EmaneNet, options=options)
+
+        # create nodes
+        options = NodeOptions(model="mdr")
+        options.set_position(150, 150)
+        node1 = session.add_node(CoreNode, options=options)
+        options.set_position(300, 150)
+        node2 = session.add_node(CoreNode, options=options)
+
+        # create interfaces
+        ip_prefix1 = IpPrefixes("10.0.0.0/24")
+        ip_prefix2 = IpPrefixes("10.0.1.0/24")
+        for i, node in enumerate([node1, node2]):
+            node.setposition(x=150 * (i + 1), y=150)
+            iface_data = ip_prefix1.create_iface(node)
+            session.add_link(node.id, emane_net1.id, iface1_data=iface_data)
+            iface_data = ip_prefix2.create_iface(node)
+            session.add_link(node.id, emane_net2.id, iface1_data=iface_data)
+
+        # instantiate session
+        session.instantiate()
+
+        # ping node2 from node1 on both interfaces and check success
+        status = ping(node1, node2, ip_prefix1, count=5)
+        assert not status
+        status = ping(node1, node2, ip_prefix2, count=5)
+        assert not status
+
     @pytest.mark.parametrize("model", _EMANE_MODELS)
     def test_models(
         self, session: Session, model: Type[EmaneModel], ip_prefixes: IpPrefixes
