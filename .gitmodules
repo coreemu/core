@@ -1,0 +1,3 @@
+[submodule "ospf-mdr"]
+	path = ospf-mdr
+	url = https://github.com/USNavalResearchLaboratory/ospf-mdr.git

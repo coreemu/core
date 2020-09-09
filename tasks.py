@@ -186,12 +186,9 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo apt install -y libtool gawk libreadline-dev git", hide=hide)
     elif os_info.like == OsLike.REDHAT:
         c.run("sudo yum install -y libtool gawk readline-devel git", hide=hide)
-    clone_dir = "/tmp/ospf-mdr"
-    c.run(
-        f"git clone https://github.com/USNavalResearchLaboratory/ospf-mdr {clone_dir}",
-        hide=hide
-    )
-    with c.cd(clone_dir):
+    ospf_mdr_dir = "ospf-mdr"
+    c.run(f"git submodule update --init -- {ospf_mdr_dir}", hide=hide)
+    with c.cd(ospf_mdr_dir):
         c.run("./bootstrap.sh", hide=hide)
         c.run(
             "./configure --disable-doc --enable-user=root --enable-group=root "
