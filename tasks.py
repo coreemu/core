@@ -14,6 +14,8 @@ from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
+EMANE_CHECKOUT: str = "v1.2.5"
+OSPFMDR_CHECKOUT: str = "26fe5a4401a26760c553fcadfde5311199e89450"
 
 
 class Progress:
@@ -190,7 +192,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     ospf_url = "https://github.com/USNavalResearchLaboratory/ospf-mdr.git"
     c.run(f"git clone {ospf_url} {ospf_dir}", hide=hide)
     with c.cd(ospf_dir):
-        c.run("git checkout 26fe5a4401a26760c553fcadfde5311199e89450", hide=hide)
+        c.run(f"git checkout {OSPFMDR_CHECKOUT}", hide=hide)
         c.run("./bootstrap.sh", hide=hide)
         c.run(
             "./configure --disable-doc --enable-user=root --enable-group=root "
@@ -339,7 +341,7 @@ def install_emane(c, verbose=False):
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os()
-    emane_dir = "/tmp/emane"
+    emane_dir = "../emane"
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
@@ -357,13 +359,12 @@ def install_emane(c, verbose=False):
                 "protobuf-devel python3-setuptools",
                 hide=hide,
             )
+    emane_url = "https://github.com/adjacentlink/emane.git"
     with p.start("cloning emane"):
-        c.run(
-            f"git clone https://github.com/adjacentlink/emane.git {emane_dir}",
-            hide=hide
-        )
+        c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
     with p.start("building emane"):
         with c.cd(emane_dir):
+            c.run(f"git checkout {EMANE_CHECKOUT}", hide=hide)
             c.run("./autogen.sh", hide=hide)
             c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
             c.run("make -j$(nproc)", hide=hide)
