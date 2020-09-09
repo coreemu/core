@@ -189,8 +189,8 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
     ospf_dir = "../ospf-mdr"
     ospf_url = "https://github.com/USNavalResearchLaboratory/ospf-mdr.git"
     c.run(f"git clone {ospf_url} {ospf_dir}", hide=hide)
-    c.run("git checkout 26fe5a4401a26760c553fcadfde5311199e89450", hide=hide)
     with c.cd(ospf_dir):
+        c.run("git checkout 26fe5a4401a26760c553fcadfde5311199e89450", hide=hide)
         c.run("./bootstrap.sh", hide=hide)
         c.run(
             "./configure --disable-doc --enable-user=root --enable-group=root "
