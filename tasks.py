@@ -341,7 +341,6 @@ def install_emane(c, verbose=False):
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os()
-    emane_dir = "../emane"
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
@@ -359,6 +358,7 @@ def install_emane(c, verbose=False):
                 "protobuf-devel python3-setuptools",
                 hide=hide,
             )
+    emane_dir = Path("../emane")
     emane_url = "https://github.com/adjacentlink/emane.git"
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
@@ -371,9 +371,10 @@ def install_emane(c, verbose=False):
     with p.start("installing emane"):
         with c.cd(emane_dir):
             c.run("sudo make install", hide=hide)
+    emane_python_dir = emane_dir.joinpath("src/python")
     with p.start("installing python binding for core"):
         with c.cd(DAEMON_DIR):
-            c.run(f"poetry run pip install {emane_dir}/src/python", hide=hide)
+            c.run(f"poetry run pip install {emane_python_dir.absolute()}", hide=hide)
 
 
 @task(
