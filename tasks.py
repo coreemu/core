@@ -358,7 +358,8 @@ def install_emane(c, verbose=False):
                 "protobuf-devel python3-setuptools",
                 hide=hide,
             )
-    emane_dir = Path("../emane")
+    emane_dir = "../emane"
+    emane_python_dir = Path(emane_dir).joinpath("src/python")
     emane_url = "https://github.com/adjacentlink/emane.git"
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
@@ -371,7 +372,6 @@ def install_emane(c, verbose=False):
     with p.start("installing emane"):
         with c.cd(emane_dir):
             c.run("sudo make install", hide=hide)
-    emane_python_dir = emane_dir.joinpath("src/python")
     with p.start("installing python binding for core"):
         with c.cd(DAEMON_DIR):
             c.run(f"poetry run pip install {emane_python_dir.absolute()}", hide=hide)
