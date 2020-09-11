@@ -30,7 +30,7 @@ while getopts "dvlp:" opt; do
     prefix="-p ${OPTARG}"
     ;;
   \?)
-    echo "script usage: $(basename $0) [-d] [-v]" >&2
+    echo "script usage: $(basename $0) [-v] [-d] [-l] [-p <prefix>]" >&2
     echo "" >&2
     echo "-v enable verbose install" >&2
     echo "-d enable developer install" >&2

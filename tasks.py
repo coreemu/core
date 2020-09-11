@@ -449,11 +449,14 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     help={
         "dev": "reinstall development mode",
         "verbose": "enable verbose",
+        "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "branch": "branch to install latest code from, default is current branch"
     },
 )
-def reinstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX, branch=None):
+def reinstall(
+    c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX, branch=None
+):
     """
     run the uninstall task, get latest from specified branch, and run install task
     """
@@ -469,7 +472,7 @@ def reinstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX, branch=None):
         c.run("git pull", hide=hide)
         if not Path("tasks.py").exists():
             raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
-    install(c, dev, verbose, prefix)
+    install(c, dev, verbose, local, prefix)
 
 
 @task
