@@ -418,7 +418,7 @@ def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
 
     if local:
         with p.start("uninstalling core"):
-            c.run("sudo python3 -m pip uninstall -y core")
+            c.run("sudo python3 -m pip uninstall -y core", hide=hide)
     else:
         python = get_python(c, warn=True)
         if python:
