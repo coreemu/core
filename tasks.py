@@ -340,9 +340,10 @@ def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
 @task(
     help={
         "verbose": "enable verbose",
+        "local": "used determine if core is installed locally, default is False",
     },
 )
-def install_emane(c, verbose=False):
+def install_emane(c, verbose=False, local=False):
     """
     install emane and the python bindings
     """
@@ -382,8 +383,14 @@ def install_emane(c, verbose=False):
         with c.cd(emane_dir):
             c.run("sudo make install", hide=hide)
     with p.start("installing python binding for core"):
-        with c.cd(DAEMON_DIR):
-            c.run(f"poetry run pip install {emane_python_dir.absolute()}", hide=hide)
+        if local:
+            with c.cd(str(emane_python_dir)):
+                c.run("sudo python3 -m pip install .", hide=hide)
+        else:
+            with c.cd(DAEMON_DIR):
+                c.run(
+                    f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
+                )
 
 
 @task(
