@@ -326,7 +326,8 @@ def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
         build_core(c, hide, prefix)
     with p.start("installing vcmd/gui"):
         install_core(c, hide)
-    with p.start("installing poetry virtual environment"):
+    install_type = "core" if local else "core virtual environment"
+    with p.start(f"installing {install_type}"):
         install_poetry(c, dev, local, hide)
     with p.start("installing scripts and /etc/core"):
         install_scripts(c, local, hide, prefix)
