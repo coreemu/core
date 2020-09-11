@@ -397,10 +397,11 @@ def install_emane(c, verbose=False, local=False):
     help={
         "dev": "uninstall development mode",
         "verbose": "enable verbose",
+        "local": "determines if core was installed local to system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
     },
 )
-def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
+def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
@@ -415,14 +416,18 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
         c.run("make clean", hide=hide)
         c.run("./bootstrap.sh clean", hide=hide)
 
-    python = get_python(c, warn=True)
-    if python:
-        with c.cd(DAEMON_DIR):
-            if dev:
-                with p.start("uninstalling pre-commit"):
-                    c.run("poetry run pre-commit uninstall", hide=hide)
-            with p.start("uninstalling poetry virtual environment"):
-                c.run(f"poetry env remove {python}", hide=hide)
+    if local:
+        with p.start("uninstalling core"):
+            c.run("sudo python3 -m pip uninstall -y core")
+    else:
+        python = get_python(c, warn=True)
+        if python:
+            with c.cd(DAEMON_DIR):
+                if dev:
+                    with p.start("uninstalling pre-commit"):
+                        c.run("poetry run pre-commit uninstall", hide=hide)
+                with p.start("uninstalling poetry virtual environment"):
+                    c.run(f"poetry env remove {python}", hide=hide)
 
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
@@ -432,10 +437,11 @@ def uninstall(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
             c.run(f"sudo rm -f {dest}", hide=hide)
 
     # remove core-python symlink
-    core_python = bin_dir.joinpath("core-python")
-    c.run(f"sudo rm -f {core_python}", hide=hide)
+    if not local:
+        core_python = bin_dir.joinpath("core-python")
+        c.run(f"sudo rm -f {core_python}", hide=hide)
 
-    # install service
+    # remove service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"
     service_file = systemd_dir.joinpath(service_name)
@@ -460,7 +466,7 @@ def reinstall(
     """
     run the uninstall task, get latest from specified branch, and run install task
     """
-    uninstall(c, dev, verbose, prefix)
+    uninstall(c, dev, verbose, local, prefix)
     hide = not verbose
     p = Progress(verbose)
     with p.start("pulling latest code"):
