@@ -74,6 +74,8 @@ sudo apt remove core
 
 ## Automated Installation
 
+> **NOTE:** installing globally can have issues with dependency conflicts etc
+
 The automated install will install do the following:
 * install base tools needed for installation
   * python3, pip, pipx, invoke, poetry
