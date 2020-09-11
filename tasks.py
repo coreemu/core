@@ -176,7 +176,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)
-            c.run("python3 -m pip install dist/*")
+            c.run("sudo python3 -m pip install dist/*")
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
