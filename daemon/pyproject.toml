@@ -6,7 +6,14 @@ authors = ["Boeing Research and Technology"]
 license = "BSD-2-Clause"
 repository = "https://github.com/coreemu/core"
 documentation = "https://coreemu.github.io/core/"
-include = ["core/gui/data/**/*", "core/configservices/*/templates"]
+include = [
+    "core/api/grpc/*",
+    "core/configservices/*/templates",
+    "core/constants.py",
+    "core/gui/data/**/*",
+]
+exclude = ["core/constants.py.in"]
+
 
 [tool.poetry.dependencies]
 python = "^3.6"

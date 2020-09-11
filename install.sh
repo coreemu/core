@@ -14,7 +14,8 @@ fi
 dev=""
 verbose=""
 prefix=""
-while getopts "dvp:" opt; do
+local=""
+while getopts "dvlp:" opt; do
   case ${opt} in
   d)
     dev="-d"
@@ -22,14 +23,18 @@ while getopts "dvp:" opt; do
   v)
     verbose="-v"
     ;;
+  l)
+    local="-l"
+    ;;
   p)
     prefix="-p ${OPTARG}"
     ;;
   \?)
-    echo "script usage: $(basename $0) [-d] [-v]" >&2
+    echo "script usage: $(basename $0) [-v] [-d] [-l] [-p <prefix>]" >&2
     echo "" >&2
     echo "-v enable verbose install" >&2
     echo "-d enable developer install" >&2
+    echo "-l enable local install, not compatible with developer install" >&2
     echo "-p install prefix, defaults to /usr/local" >&2
     exit 1
     ;;
@@ -54,4 +59,4 @@ python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke
-inv install ${dev} ${verbose} ${prefix}
+inv install ${dev} ${verbose} ${local} ${prefix}
