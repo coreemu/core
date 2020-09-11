@@ -171,13 +171,18 @@ def install_core(c: Context, hide: bool) -> None:
     c.run("sudo make install", hide=hide)
 
 
-def install_poetry(c: Context, dev: bool, hide: bool) -> None:
+def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     c.run("pipx install poetry", hide=hide)
-    args = "" if dev else "--no-dev"
-    with c.cd(DAEMON_DIR):
-        c.run(f"poetry install {args}", hide=hide)
-        if dev:
-            c.run("poetry run pre-commit install", hide=hide)
+    if local:
+        with c.cd(DAEMON_DIR):
+            c.run("poetry build -f wheel", hide=hide)
+            c.run("python3 -m pip install dist/*")
+    else:
+        args = "" if dev else "--no-dev"
+        with c.cd(DAEMON_DIR):
+            c.run(f"poetry install {args}", hide=hide)
+            if dev:
+                c.run("poetry run pre-commit install", hide=hide)
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
@@ -243,10 +248,11 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
 @task(
     help={
         "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
+        "local": "determines if core will install to local system, default is False",
     },
 )
-def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
+def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core script files, modified to leverage virtual environment
     """
@@ -259,7 +265,7 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
             lines = f.readlines()
         first = lines[0].strip()
         # modify python scripts to point to virtual environment
-        if first == "#!/usr/bin/env python3":
+        if not local and first == "#!/usr/bin/env python3":
             lines[0] = f"#!{python}\n"
             temp = NamedTemporaryFile("w", delete=False)
             for line in lines:
@@ -273,16 +279,17 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
             c.run(f"sudo cp {script} {dest}", hide=hide)
 
     # setup core python helper
-    core_python = bin_dir.joinpath("core-python")
-    temp = NamedTemporaryFile("w", delete=False)
-    temp.writelines([
-        "#!/bin/bash\n",
-        f'exec "{python}" "$@"\n',
-    ])
-    temp.close()
-    c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
-    c.run(f"sudo chmod 755 {core_python}", hide=hide)
-    os.unlink(temp.name)
+    if not local:
+        core_python = bin_dir.joinpath("core-python")
+        temp = NamedTemporaryFile("w", delete=False)
+        temp.writelines([
+            "#!/bin/bash\n",
+            f'exec "{python}" "$@"\n',
+        ])
+        temp.close()
+        c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
+        c.run(f"sudo chmod 755 {core_python}", hide=hide)
+        os.unlink(temp.name)
 
     # install core configuration file
     config_dir = "/etc/core"
@@ -295,13 +302,15 @@ def install_scripts(c, verbose=False, prefix=DEFAULT_PREFIX):
     help={
         "dev": "install development mode",
         "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+        "local": "determines if core will install to local system, default is False",
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
     },
 )
-def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
+def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
     """
     install core, poetry, scripts, service, and ospf mdr
     """
+    print(f"installing core locally: {local}")
     print(f"installing core with prefix: {prefix}")
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
@@ -318,9 +327,9 @@ def install(c, dev=False, verbose=False, prefix=DEFAULT_PREFIX):
     with p.start("installing vcmd/gui"):
         install_core(c, hide)
     with p.start("installing poetry virtual environment"):
-        install_poetry(c, dev, hide)
+        install_poetry(c, dev, local, hide)
     with p.start("installing scripts and /etc/core"):
-        install_scripts(c, hide, prefix)
+        install_scripts(c, local, hide, prefix)
     with p.start("installing systemd service"):
         install_service(c, hide, prefix)
     with p.start("installing ospf mdr"):
