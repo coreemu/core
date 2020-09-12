@@ -6,97 +6,326 @@
 ## Overview
 
 Writing your own Python scripts offers a rich programming environment with
-complete control over all aspects of the emulation. This chapter provides a
-brief introduction to scripting. Most of the documentation is available from
-sample scripts, or online via interactive Python.
+complete control over all aspects of the emulation.
 
-The best starting point is the sample scripts that are included with CORE.
-If you have a CORE source tree, the example script files can be found under
-*core/daemon/examples/python/*. When CORE is installed from packages, the example
-script files will be in */usr/share/core/examples/python/* (or */usr/local/*
-prefix when installed from source.) For the most part, the example scripts are
-self-documenting; see the comments contained within the Python code.
-
-The scripts should be run with root privileges because they create new network
+The scripts need to be ran with root privileges because they create new network
 namespaces. In general, a CORE Python script does not connect to the CORE
 daemon, in fact the *core-daemon* is just another Python script that uses
-the CORE Python modules and exchanges messages with the GUI. To connect the
-GUI to your scripts, see the included sample scripts that allow for GUI
-connections.
+the CORE Python modules and exchanges messages with the GUI.
 
-Here are the basic elements of a CORE Python script:
+## Examples
 
+### Node Models
+
+When creating nodes of type `core.nodes.base.CoreNode` these are the default models
+and the services they map to.
+
+* mdr
+  * zebra, OSPFv3MDR, IPForward
+* PC
+  * DefaultRoute
+* router
+  * zebra, OSPFv2, OSPFv3, IPForward
+* host
+  * DefaultRoute, SSH
+
+### Interface Helper
+
+There is an interface helper class that can be leveraged for convenience
+when creating interface data for nodes. Alternatively one can manually create
+a `core.emulator.data.InterfaceData` class instead with appropriate information.
+
+Manually creating interface data:
 ```python
-"""
-This is a standalone script to run a small switch based scenario and will not
-interact with the GUI.
-"""
+from core.emulator.data import InterfaceData
+# id is optional and will set to the next available id
+# name is optional and will default to eth<id>
+# mac is optional and will result in a randomly generated mac
+iface_data = InterfaceData(
+    id=0,
+    name="eth0",
+    ip4="10.0.0.1",
+    ip4_mask=24,
+    ip6="2001::",
+    ip6_mask=64,
+)
+```
 
-import logging
-
-from core.emulator.coreemu import CoreEmu
+Leveraging the interface prefixes helper class:
+```python
 from core.emulator.data import IpPrefixes
+
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+# node is used to get an ip4/ip6 address indexed from within the above prefixes
+# name is optional and would default to eth<id>
+# mac is optional and will result in a randomly generated mac
+iface_data = ip_prefixes.create_iface(
+    node=node, name="eth0", mac="00:00:00:00:aa:00"
+)
+```
+
+### Listening to Events
+
+TBD
+
+### Configuring Links
+
+TBD
+
+### Peer to Peer Example
+```python
+# required imports
+from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
+
+# ip nerator for example
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
+
+# create emulator instance for creating sessions and utility methods
+coreemu = CoreEmu()
+session = coreemu.create_session()
+
+# must be in configuration state for nodes to start, when using "node_add" below
+session.set_state(EventTypes.CONFIGURATION_STATE)
+
+# create nodes
+options = NodeOptions(x=100, y=100)
+n1 = session.add_node(CoreNode, options=options)
+options = NodeOptions(x=300, y=100)
+n2 = session.add_node(CoreNode, options=options)
+
+# link nodes together
+iface1 = ip_prefixes.create_iface(n1)
+iface2 = ip_prefixes.create_iface(n2)
+session.add_link(n1.id, n2.id, iface1, iface2)
+
+# start session
+session.instantiate()
+
+# do whatever you like here
+input("press enter to shutdown")
+
+# stop session
+session.shutdown()
+```
+
+### Switch/Hub Example
+```python
+# required imports
+from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
 
-NODES = 2
+# ip nerator for example
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
 
+# create emulator instance for creating sessions and utility methods
+coreemu = CoreEmu()
+session = coreemu.create_session()
 
-def main():
-    # ip generator for example
-    prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
+# must be in configuration state for nodes to start, when using "node_add" below
+session.set_state(EventTypes.CONFIGURATION_STATE)
 
-    # create emulator instance for creating sessions and utility methods
-    coreemu = CoreEmu()
-    session = coreemu.create_session()
+# create switch
+options = NodeOptions(x=200, y=200)
+switch = session.add_node(SwitchNode, options=options)
 
-    # must be in configuration state for nodes to start, when using "node_add" below
-    session.set_state(EventTypes.CONFIGURATION_STATE)
+# create nodes
+options = NodeOptions(x=100, y=100)
+n1 = session.add_node(CoreNode, options=options)
+options = NodeOptions(x=300, y=100)
+n2 = session.add_node(CoreNode, options=options)
 
-    # create switch network node
-    switch = session.add_node(SwitchNode, _id=100)
+# link nodes to switch
+iface1 = ip_prefixes.create_iface(n1)
+session.add_link(n1.id, switch.id, iface1)
+iface1 = ip_prefixes.create_iface(n2)
+session.add_link(n2.id, switch.id, iface1)
 
-    # create nodes
-    for _ in range(NODES):
-        node = session.add_node(CoreNode)
-        iface_data = prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface1_data=iface_data)
+# start session
+session.instantiate()
 
-    # instantiate session
-    session.instantiate()
+# do whatever you like here
+input("press enter to shutdown")
 
-    # run any desired logic here
-
-    # shutdown session
-    coreemu.shutdown()
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    main()
+# stop session
+session.shutdown()
 ```
 
-The above script creates a CORE session having two nodes connected with a
-switch, Then immediately shutsdown.
+### WLAN Example
+```python
+# required imports
+from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.enumerations import EventTypes
+from core.location.mobility import BasicRangeModel
+from core.nodes.base import CoreNode
+from core.nodes.network import WlanNode
 
-The CORE Python modules are documented with comments in the code. From an
-interactive Python shell, you can retrieve online help about the various
-classes and methods; for example *help(CoreNode)* or *help(Session)*.
+# ip nerator for example
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
 
-> **NOTE:** The CORE daemon *core-daemon* manages a list of sessions and allows
-the GUI to connect and control sessions. Your Python script uses the same CORE
-modules but runs independently of the daemon. The daemon does not need to be
-running for your script to work.
+# create emulator instance for creating sessions and utility methods
+coreemu = CoreEmu()
+session = coreemu.create_session()
 
-The session created by a Python script may be viewed in the GUI if certain
-steps are followed. The GUI has a *File Menu*, *Execute Python script...*
-option for running a script and automatically connecting to it. Once connected,
-normal GUI interaction is possible, such as moving and double-clicking nodes,
-activating Widgets, etc.
+# must be in configuration state for nodes to start, when using "node_add" below
+session.set_state(EventTypes.CONFIGURATION_STATE)
 
-The script should have a line such as the following for running it from the GUI.
+# create wlan
+options = NodeOptions(x=200, y=200)
+wlan = session.add_node(WlanNode, options=options)
 
+# create nodes
+options = NodeOptions(model="mdr", x=100, y=100)
+n1 = session.add_node(CoreNode, options=options)
+options = NodeOptions(model="mdr", x=300, y=100)
+n2 = session.add_node(CoreNode, options=options)
+
+# configuring wlan
+session.mobility.set_model_config(wlan.id, BasicRangeModel.name, {
+    "range": "280",
+    "bandwidth": "55000000",
+    "delay": "6000",
+    "jitter": "5",
+    "error": "5",
+})
+
+# link nodes to wlan
+iface1 = ip_prefixes.create_iface(n1)
+session.add_link(n1.id, wlan.id, iface1)
+iface1 = ip_prefixes.create_iface(n2)
+session.add_link(n2.id, wlan.id, iface1)
+
+# start session
+session.instantiate()
+
+# do whatever you like here
+input("press enter to shutdown")
+
+# stop session
+session.shutdown()
+```
+
+### EMANE Example
+
+For EMANE you can import and use one of the existing models and
+use its name for configuration.
+
+Current models:
+* core.emane.ieee80211abg.EmaneIeee80211abgModel
+* core.emane.rfpipe.EmaneRfPipeModel
+* core.emane.tdma.EmaneTdmaModel
+* core.emane.bypass.EmaneBypassModel
+
+Their configurations options are driven dynamically from parsed EMANE manifest files
+from the installed version of EMANE.
+
+Options and their purpose can be found at the [EMANE Wiki](https://github.com/adjacentlink/emane/wiki).
+
+If configuring EMANE global settings or model mac/phy specific settings, any value not provided
+will use the defaults. When no configuration is used, the defaults are used.
+
+```python
+# required imports
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNet
+from core.emulator.coreemu import CoreEmu
+from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.enumerations import EventTypes
+from core.nodes.base import CoreNode
+
+# ip nerator for example
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
+
+# create emulator instance for creating sessions and utility methods
+coreemu = CoreEmu()
+session = coreemu.create_session()
+
+# location information is required to be set for emane
+session.location.setrefgeo(47.57917, -122.13232, 2.0)
+session.location.refscale = 150.0
+
+# must be in configuration state for nodes to start, when using "node_add" below
+session.set_state(EventTypes.CONFIGURATION_STATE)
+
+# create emane
+options = NodeOptions(x=200, y=200, emane=EmaneIeee80211abgModel.name)
+emane = session.add_node(EmaneNet, options=options)
+
+# create nodes
+options = NodeOptions(model="mdr", x=100, y=100)
+n1 = session.add_node(CoreNode, options=options)
+options = NodeOptions(model="mdr", x=300, y=100)
+n2 = session.add_node(CoreNode, options=options)
+
+# configure general emane settings
+config = session.emane.get_configs()
+config.update({
+    "eventservicettl": "2"
+})
+
+# configure emane model settings
+# using a dict mapping currently support values as strings
+session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
+    "unicastrate": "3",
+})
+
+# link nodes to emane
+iface1 = ip_prefixes.create_iface(n1)
+session.add_link(n1.id, emane.id, iface1)
+iface1 = ip_prefixes.create_iface(n2)
+session.add_link(n2.id, emane.id, iface1)
+
+# start session
+session.instantiate()
+
+# do whatever you like here
+input("press enter to shutdown")
+
+# stop session
+session.shutdown()
+```
+
+EMANE Model Configuration:
+```python
+from core import utils
+
+# emane network specific config
+session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
+    "unicastrate": "3",
+})
+
+# node specific config
+session.emane.set_model_config(node.id, EmaneIeee80211abgModel.name, {
+    "unicastrate": "3",
+})
+
+# node interface specific config
+config_id = utils.iface_config_id(node.id, iface_id)
+session.emane.set_model_config(config_id, EmaneIeee80211abgModel.name, {
+    "unicastrate": "3",
+})
+```
+
+## Configuring a Service
+
+TBD
+
+## File Examples
+
+File versions of these examples can be found
+[here](https://github.com/coreemu/core/tree/master/daemon/examples/python).
+
+## Executing Scripts from GUI
+To execute a python script from a GUI you need have the following.
+
+The builtin name check here to know it is being executed from the GUI, this can
+be avoided if your script does not use a name check.
 ```python
 if __name__ in ["__main__", "__builtin__"]:
     main()
@@ -111,50 +340,4 @@ like to run the script standalone, outside of the core-daemon.
 ```python
 coreemu = globals().get("coreemu", CoreEmu())
 session = coreemu.create_session()
-```
-
-Finally, nodes and networks need to have their coordinates set to something,
-otherwise they will be grouped at the coordinates *<0, 0>*. First sketching
-the topology in the GUI and then using the *Export Python script* option may
-help here.
-
-```python
-switch.setposition(x=80,y=50)
-```
-
-A fully-worked example script that you can launch from the GUI is available
-in the examples directory.
-
-## Configuring Services
-
-Examples setting or configuring custom services for a node.
-
-```python
-# create session and node
-coreemu = CoreEmu()
-session = coreemu.create_session()
-
-# create node with custom services
-options = NodeOptions(services=["ServiceName"])
-node = session.add_node(CoreNode, options=options)
-
-# set custom file data
-session.services.set_service_file(node.id, "ServiceName", "FileName", "custom file data")
-```
-
-# Configuring EMANE Models
-
-Examples for configuring custom emane model settings.
-
-```python
-# create session and emane network
-coreemu = CoreEmu()
-session = coreemu.create_session()
-session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-options = NodeOptions()
-options.set_position(80, 50)
-emane_network = session.add_node(EmaneNet, options=options)
-
-# set custom emane model config defaults
-session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 ```

@@ -1,12 +1,4 @@
-"""
-This is a standalone script to run a small EMANE scenario and will not interact
-with the GUI. You also must have installed OSPF MDR as noted in the documentation
-installation page.
-"""
-
-import logging
-import time
-
+# required imports
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
@@ -14,56 +6,51 @@ from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 
-NODES = 2
-EMANE_DELAY = 10
+# ip nerator for example
+ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
 
+# create emulator instance for creating sessions and utility methods
+coreemu = CoreEmu()
+session = coreemu.create_session()
 
-def main():
-    # ip generator for example
-    prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
+# location information is required to be set for emane
+session.location.setrefgeo(47.57917, -122.13232, 2.0)
+session.location.refscale = 150.0
 
-    # create emulator instance for creating sessions and utility methods
-    coreemu = CoreEmu()
-    session = coreemu.create_session()
+# must be in configuration state for nodes to start, when using "node_add" below
+session.set_state(EventTypes.CONFIGURATION_STATE)
 
-    # must be in configuration state for nodes to start, when using "node_add" below
-    session.set_state(EventTypes.CONFIGURATION_STATE)
+# create emane
+options = NodeOptions(x=200, y=200, emane=EmaneIeee80211abgModel.name)
+emane = session.add_node(EmaneNet, options=options)
 
-    # create emane network node, emane determines connectivity based on
-    # location, so the session and nodes must be configured to provide one
-    session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-    options = NodeOptions()
-    options.set_position(80, 50)
-    emane_network = session.add_node(EmaneNet, options=options, _id=100)
-    session.emane.set_model(emane_network, EmaneIeee80211abgModel)
+# create nodes
+options = NodeOptions(model="mdr", x=100, y=100)
+n1 = session.add_node(CoreNode, options=options)
+options = NodeOptions(model="mdr", x=300, y=100)
+n2 = session.add_node(CoreNode, options=options)
 
-    # create nodes
-    options = NodeOptions(model="mdr")
-    for i in range(NODES):
-        node = session.add_node(CoreNode, options=options)
-        node.setposition(x=150 * (i + 1), y=150)
-        interface = prefixes.create_iface(node)
-        session.add_link(node.id, emane_network.id, iface1_data=interface)
+# configure general emane settings
+config = session.emane.get_configs()
+config.update({"eventservicettl": "2"})
 
-    # instantiate session
-    session.instantiate()
+# configure emane model settings
+# using a dict mapping currently support values as strings
+session.emane.set_model_config(
+    emane.id, EmaneIeee80211abgModel.name, {"unicastrate": "3"}
+)
 
-    # OSPF MDR requires some time for routes to be created
-    logging.info("waiting %s seconds for OSPF MDR to create routes", EMANE_DELAY)
-    time.sleep(EMANE_DELAY)
+# link nodes to emane
+iface1 = ip_prefixes.create_iface(n1)
+session.add_link(n1.id, emane.id, iface1)
+iface1 = ip_prefixes.create_iface(n2)
+session.add_link(n2.id, emane.id, iface1)
 
-    # get nodes to run example
-    first_node = session.get_node(1, CoreNode)
-    last_node = session.get_node(NODES, CoreNode)
-    address = prefixes.ip4_address(first_node.id)
-    logging.info("node %s pinging %s", last_node.name, address)
-    output = last_node.cmd(f"ping -c 3 {address}")
-    logging.info(output)
+# start session
+session.instantiate()
 
-    # shutdown session
-    coreemu.shutdown()
+# do whatever you like here
+input("press enter to shutdown")
 
-
-if __name__ == "__main__" or __name__ == "__builtin__":
-    logging.basicConfig(level=logging.INFO)
-    main()
+# stop session
+session.shutdown()

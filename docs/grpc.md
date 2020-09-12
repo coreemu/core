@@ -77,7 +77,7 @@ from core.api.grpc import client
 
 iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
 # node_id is used to get an ip4/ip6 address indexed from within the above prefixes
-# face_id is required and used exactly for that
+# iface_id is required and used exactly for that
 # name is optional and would default to eth<id>
 # mac is optional and will result in a randomly generated mac
 iface_data = iface_helper.create_iface(
@@ -335,6 +335,10 @@ core.set_emane_model_config(session_id, node_id, EmaneIeee80211abgModel.name, {
     "unicastrate": "3",
 }, iface_id)
 ```
+
+## Configuring a Service
+
+TBD
 
 ## File Examples
 
