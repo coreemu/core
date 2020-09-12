@@ -1,4 +1,3 @@
-# required imports
 from core.api.grpc import client
 from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
 
@@ -16,12 +15,6 @@ session_id = response.session_id
 # change session state to configuration so that nodes get started when added
 core.set_session_state(session_id, SessionState.CONFIGURATION)
 
-# create switch node
-position = Position(x=200, y=200)
-switch = Node(type=NodeType.SWITCH, position=position)
-response = core.add_node(session_id, switch)
-switch_id = response.node_id
-
 # create node one
 position = Position(x=100, y=100)
 n1 = Node(type=NodeType.DEFAULT, position=position, model="PC")
@@ -34,11 +27,10 @@ n2 = Node(type=NodeType.DEFAULT, position=position, model="PC")
 response = core.add_node(session_id, n2)
 n2_id = response.node_id
 
-# links nodes to switch
+# links nodes together
 iface1 = iface_helper.create_iface(n1_id, 0)
-core.add_link(session_id, n1_id, switch_id, iface1)
-iface1 = iface_helper.create_iface(n2_id, 0)
-core.add_link(session_id, n2_id, switch_id, iface1)
+iface2 = iface_helper.create_iface(n2_id, 0)
+core.add_link(session_id, n1_id, n2_id, iface1, iface2)
 
 # change session state
 core.set_session_state(session_id, SessionState.INSTANTIATION)

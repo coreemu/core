@@ -1,5 +1,4 @@
-
-# CORE Python Scripting
+# Python API
 
 * Table of Contents
 {:toc}

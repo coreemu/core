@@ -1,74 +1,51 @@
-"""
-Example using gRPC API to create a simple EMANE 80211 network.
-"""
-
-import logging
-
+# required imports
 from core.api.grpc import client
 from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 
+# interface helper
+iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
 
-def log_event(event):
-    logging.info("event: %s", event)
+# create grpc client and connect
+core = client.CoreGrpcClient()
+core.connect()
 
+# create session and get id
+response = core.create_session()
+session_id = response.session_id
 
-def main():
-    # helper to create interface addresses
-    interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/24")
+# change session state to configuration so that nodes get started when added
+core.set_session_state(session_id, SessionState.CONFIGURATION)
 
-    # create grpc client and start connection context, which auto closes connection
-    core = client.CoreGrpcClient()
-    with core.context_connect():
-        # create session
-        response = core.create_session()
-        logging.info("created session: %s", response)
+# create emane node
+position = Position(x=200, y=200)
+emane = Node(type=NodeType.EMANE, position=position, emane=EmaneIeee80211abgModel.name)
+response = core.add_node(session_id, emane)
+emane_id = response.node_id
 
-        # handle events session may broadcast
-        session_id = response.session_id
-        core.events(session_id, log_event)
+# create node one
+position = Position(x=100, y=100)
+n1 = Node(type=NodeType.DEFAULT, position=position, model="mdr")
+response = core.add_node(session_id, n1)
+n1_id = response.node_id
 
-        # change session state to configuration so that nodes get started when added
-        response = core.set_session_state(session_id, SessionState.CONFIGURATION)
-        logging.info("set session state: %s", response)
+# create node two
+position = Position(x=300, y=100)
+n2 = Node(type=NodeType.DEFAULT, position=position, model="mdr")
+response = core.add_node(session_id, n2)
+n2_id = response.node_id
 
-        # create emane node
-        position = Position(x=200, y=200)
-        emane = Node(type=NodeType.EMANE, position=position)
-        response = core.add_node(session_id, emane)
-        logging.info("created emane: %s", response)
-        emane_id = response.node_id
+# configure general emane settings
+core.set_emane_config(session_id, {"eventservicettl": "2"})
 
-        # an emane model must be configured for use, by the emane node
-        core.set_emane_model_config(session_id, emane_id, EmaneIeee80211abgModel.name)
+# configure emane model settings
+# using a dict mapping currently support values as strings
+core.set_emane_model_config(
+    session_id, emane_id, EmaneIeee80211abgModel.name, {"unicastrate": "3"}
+)
 
-        # create node one
-        position = Position(x=100, y=100)
-        node1 = Node(type=NodeType.DEFAULT, position=position)
-        response = core.add_node(session_id, node1)
-        logging.info("created node: %s", response)
-        node1_id = response.node_id
-
-        # create node two
-        position = Position(x=300, y=100)
-        node2 = Node(type=NodeType.DEFAULT, position=position)
-        response = core.add_node(session_id, node2)
-        logging.info("created node: %s", response)
-        node2_id = response.node_id
-
-        # links nodes to switch
-        interface1 = interface_helper.create_iface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, emane_id, interface1)
-        logging.info("created link: %s", response)
-        interface1 = interface_helper.create_iface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, emane_id, interface1)
-        logging.info("created link: %s", response)
-
-        # change session state
-        response = core.set_session_state(session_id, SessionState.INSTANTIATION)
-        logging.info("set session state: %s", response)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    main()
+# links nodes to emane
+iface1 = iface_helper.create_iface(n1_id, 0)
+core.add_link(session_id, n1_id, emane_id, iface1)
+iface1 = iface_helper.create_iface(n2_id, 0)
+core.add_link(session_id, n2_id, emane_id, iface1)

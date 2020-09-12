@@ -112,7 +112,7 @@ from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import PtpNet, WlanNode
+from core.nodes.network import CtrlNet, PtpNet, WlanNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
@@ -335,7 +335,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.create_session(request.session_id)
         session.set_state(EventTypes.DEFINITION_STATE)
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
-        session.location.refscale = 150000.0
+        session.location.refscale = 150.0
         return core_pb2.CreateSessionResponse(
             session_id=session.id, state=session.state.value
         )
@@ -556,7 +556,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for _id in session.nodes:
             node = session.nodes[_id]
-            if not isinstance(node, PtpNet):
+            if not isinstance(node, (PtpNet, CtrlNet)):
                 node_proto = grpcutils.get_node_proto(session, node)
                 nodes.append(node_proto)
             node_links = get_links(node)

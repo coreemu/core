@@ -24,9 +24,9 @@ networking scenarios, security studies, and increasing the size of physical test
 |[Installation](install.md)|How to install CORE and its requirements|
 |[GUI](gui.md)|How to use the GUI|
 |[(BETA) Python GUI](pygui.md)|How to use the BETA python based GUI|
+|[Python API](python.md)|Covers how to control core directly using python|
+|[gRPC API](grpc.md)|Covers how control core using gRPC|
 |[Distributed](distributed.md)|Details for running CORE across multiple servers|
-|[Python Scripting](scripting.md)|How to write python scripts for creating a CORE session|
-|[gRPC API](grpc.md)|How to enable and use the gRPC API|
 |[Node Types](nodetypes.md)|Overview of node types supported within CORE|
 |[CTRLNET](ctrlnet.md)|How to use control networks to communicate with nodes from host|
 |[Services](services.md)|Overview of provided services and creating custom ones|
