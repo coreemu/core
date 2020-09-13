@@ -70,7 +70,30 @@ TBD
 
 ### Configuring Links
 
-TBD
+Links can be configured at the time of creation or during runtime.
+
+```python
+from core.emulator.data import LinkOptions
+
+# configuring when creating a link
+# below are the currently supported configuration options
+# bandwidth in bps
+# delay in us
+# duplicate in %
+# jitter in us
+# loss in %
+options = LinkOptions(
+    bandwidth=54_000_000,
+    delay=5000,
+    dup=5,
+    loss=5.5,
+    jitter=0,
+)
+session.add_link(n1_id, n2_id, iface1_data, iface2_data, options)
+
+# configuring during runtime
+session.update_link(n1_id, n2_id, iface1_id, iface2_id, options)
+```
 
 ### Peer to Peer Example
 ```python

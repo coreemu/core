@@ -91,7 +91,30 @@ TBD
 
 ### Configuring Links
 
-TBD
+Links can be configured at the time of creation or during runtime.
+
+```python
+from core.api.grpc import core_pb2
+
+# configuring when creating a link
+# below are the currently supported configuration options
+# bandwidth in bps
+# delay in us
+# duplicate in %
+# jitter in us
+# loss in %
+options = core_pb2.LinkOptions(
+    bandwidth=54_000_000,
+    delay=5000,
+    dup=5,
+    loss=5.5,
+    jitter=0,
+)
+core.add_link(session_id, n1_id, n2_id, iface1_data, iface2_data, options)
+
+# configuring during runtime
+core.edit_link(session_id, n1_id, n2_id, iface1_id, iface2_id, options)
+```
 
 ### Peer to Peer Example
 ```python
