@@ -66,7 +66,29 @@ iface_data = ip_prefixes.create_iface(
 
 ### Listening to Events
 
-TBD
+Various events that can occur within a session can be listened to.
+
+Event types:
+* session - events for changes in session state and mobility start/stop/pause
+* node - events for node movements and icon changes
+* link - events for link configuration changes and wireless link add/delete
+* config - configuration events when legacy gui joins a session
+* exception - alert/error events
+* file - file events when the legacy gui joins a session
+
+```python
+def event_listener(event):
+    print(event)
+
+# add an event listener to event type you want to listen to
+# each handler will receive an object unique to that type
+session.event_handlers.append(event_listener)
+session.exception_handlers.append(event_listener)
+session.node_handlers.append(event_listener)
+session.link_handlers.append(event_listener)
+session.file_handlers.append(event_listener)
+session.config_handlers.append(event_listener)
+```
 
 ### Configuring Links
 

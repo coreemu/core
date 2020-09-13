@@ -87,7 +87,28 @@ iface_data = iface_helper.create_iface(
 
 ### Listening to Events
 
-TBD
+Various events that can occur within a session can be listened to.
+
+Event types:
+* session - events for changes in session state and mobility start/stop/pause
+* node - events for node movements and icon changes
+* link - events for link configuration changes and wireless link add/delete
+* config - configuration events when legacy gui joins a session
+* exception - alert/error events
+* file - file events when the legacy gui joins a session
+
+```python
+from core.api.grpc import core_pb2
+
+def event_listener(event):
+    print(event)
+
+# provide no events to listen to all events
+core.events(session_id, event_listener)
+
+# provide events to listen to specific events
+core.events(session_id, event_listener, [core_pb2.EventType.NODE])
+```
 
 ### Configuring Links
 
