@@ -359,11 +359,46 @@ session.emane.set_model_config(config_id, EmaneIeee80211abgModel.name, {
 
 ## Configuring a Service
 
-TBD
+Services help generate and run bash scripts on nodes for a given purpose.
+
+Configuring the files of a service results in a specific hard coded script being
+generated, instead of the default scripts, that may leverage dynamic generation.
+
+Editing service properties:
+```python
+# configure a service, for a node, for a given session
+# modify any of the following features
+# the files and the names that will be generated, called configs here
+# the directories that will be mounted unique to the node
+# startup commands to run
+# validation commands to run
+# shutdown commands to run
+session.services.set_service(node_id, service_name)
+service = session.services.get_service(node_id, service_name)
+service.configs = ("file1.sh", "file2.sh")
+service.dirs = ("/etc/node",)
+service.startup = ("bash file1.sh",)
+service.validate = ()
+service.shutdown = ()
+```
+
+Editing a service file:
+```python
+# to edit the contents of a generated file you can specify
+# the service, the file name, and its contents
+# the file name must map to one of the files the service
+# supports by default or one added from a command above
+session.services.set_service_file(
+    node_id,
+    service_name,
+    file_name,
+    "echo hello",
+)
+```
 
 ## File Examples
 
-File versions of these examples can be found
+File versions of the network examples can be found
 [here](https://github.com/coreemu/core/tree/master/daemon/examples/python).
 
 ## Executing Scripts from GUI
