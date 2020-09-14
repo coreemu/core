@@ -94,16 +94,17 @@ session.config_handlers.append(event_listener)
 
 Links can be configured at the time of creation or during runtime.
 
+Currently supported configuration options:
+* bandwidth (bps)
+* delay (us)
+* dup (%)
+* jitter (us)
+* loss (%)
+
 ```python
 from core.emulator.data import LinkOptions
 
 # configuring when creating a link
-# below are the currently supported configuration options
-# bandwidth in bps
-# delay in us
-# duplicate in %
-# jitter in us
-# loss in %
 options = LinkOptions(
     bandwidth=54_000_000,
     delay=5000,
@@ -364,15 +365,16 @@ Services help generate and run bash scripts on nodes for a given purpose.
 Configuring the files of a service results in a specific hard coded script being
 generated, instead of the default scripts, that may leverage dynamic generation.
 
+The following features can be configured for a service:
+* configs - files that will be generated
+* dirs - directories that will be mounted unique to the node
+* startup - commands to run start a service
+* validate - commands to run to validate a service
+* shutdown - commands to run to stop a service
+
 Editing service properties:
 ```python
 # configure a service, for a node, for a given session
-# modify any of the following features
-# the files and the names that will be generated, called configs here
-# the directories that will be mounted unique to the node
-# startup commands to run
-# validation commands to run
-# shutdown commands to run
 session.services.set_service(node_id, service_name)
 service = session.services.get_service(node_id, service_name)
 service.configs = ("file1.sh", "file2.sh")
@@ -382,12 +384,13 @@ service.validate = ()
 service.shutdown = ()
 ```
 
+When editing a service file, it must be the name of `config`
+file that the service will generate.
+
 Editing a service file:
 ```python
 # to edit the contents of a generated file you can specify
 # the service, the file name, and its contents
-# the file name must map to one of the files the service
-# supports by default or one added from a command above
 session.services.set_service_file(
     node_id,
     service_name,
