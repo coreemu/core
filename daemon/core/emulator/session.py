@@ -763,7 +763,9 @@ class Session:
         """
         Shutdown all session nodes and remove the session directory.
         """
-        logging.info("session(%s) shutting down", self.id)
+        if self.state == EventTypes.SHUTDOWN_STATE:
+            return
+        logging.info("session(%s) state(%s) shutting down", self.id, self.state)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
 
