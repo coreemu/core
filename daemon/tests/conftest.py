@@ -130,6 +130,7 @@ def session(global_session):
 @pytest.fixture
 def coretlv(module_coretlv):
     session = module_coretlv.session
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     coreemu = module_coretlv.coreemu
     coreemu.sessions[session.id] = session
     yield module_coretlv
