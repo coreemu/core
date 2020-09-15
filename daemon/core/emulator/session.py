@@ -576,17 +576,10 @@ class Session:
         :return: nothing
         :raises core.CoreError: when node to update does not exist
         """
-        # get node to update
         node = self.get_node(node_id, NodeBase)
-
-        # set node position and broadcast it
-        self.set_node_position(node, options)
-
-        # update attributes
         node.canvas = options.canvas
         node.icon = options.icon
-
-        # provide edits to sdt
+        self.set_node_position(node, options)
         self.sdt.edit_node(node, options.lon, options.lat, options.alt)
 
     def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
