@@ -5,10 +5,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
+from core.api.grpc.wrappers import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import CodeText
-from core.gui.wrappers import ExceptionEvent, ExceptionLevel
 
 if TYPE_CHECKING:
     from core.gui.app import Application

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 import netaddr
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.wrappers import Node
 from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -15,7 +16,6 @@ from core.gui.images import Images
 from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
-from core.gui.wrappers import Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -282,9 +282,7 @@ class NodeConfigDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_emane_config(self, emane_model: str, iface_id: int) -> None:
-        dialog = EmaneModelDialog(
-            self, self.app, self.canvas_node, emane_model, iface_id
-        )
+        dialog = EmaneModelDialog(self, self.app, self.node, emane_model, iface_id)
         dialog.show()
 
     def click_icon(self) -> None:

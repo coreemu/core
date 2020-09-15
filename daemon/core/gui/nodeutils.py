@@ -3,9 +3,9 @@ from typing import List, Optional, Set
 
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.wrappers import Node, NodeType
 from core.gui.appconfig import CustomNode, GuiConfig
 from core.gui.images import ImageEnum, Images, TypeToImage
-from core.gui.wrappers import Node, NodeType
 
 ICON_SIZE: int = 48
 ANTENNA_SIZE: int = 32

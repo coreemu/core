@@ -30,3 +30,19 @@ class CoreXmlError(Exception):
     """
 
     pass
+
+
+class CoreServiceError(Exception):
+    """
+    Used when there is an error related to accessing a service.
+    """
+
+    pass
+
+
+class CoreServiceBootError(Exception):
+    """
+    Used when there is an error booting a service.
+    """
+
+    pass

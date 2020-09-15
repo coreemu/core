@@ -1,9 +1,9 @@
 import tkinter as tk
 from typing import TYPE_CHECKING
 
+from core.api.grpc.wrappers import NodeType
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
 from core.gui.nodeutils import NodeUtils
-from core.gui.wrappers import NodeType
 
 if TYPE_CHECKING:
     from core.gui.app import Application

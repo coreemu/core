@@ -1,9 +1,15 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
-from core.api.grpc import common_pb2, configservices_pb2, core_pb2, services_pb2
+from core.api.grpc import (
+    common_pb2,
+    configservices_pb2,
+    core_pb2,
+    emane_pb2,
+    services_pb2,
+)
 
 
 class ConfigServiceValidationMode(Enum):
@@ -87,6 +93,22 @@ class MessageType(Enum):
     TTY = 64
 
 
+class ServiceAction(Enum):
+    START = 0
+    STOP = 1
+    RESTART = 2
+    VALIDATE = 3
+
+
+class EventType:
+    SESSION = 0
+    NODE = 1
+    LINK = 2
+    CONFIG = 3
+    EXCEPTION = 4
+    FILE = 5
+
+
 @dataclass
 class ConfigService:
     group: str
@@ -121,9 +143,64 @@ class ConfigService:
 
 
 @dataclass
+class ConfigServiceConfig:
+    node_id: int
+    name: str
+    templates: Dict[str, str]
+    config: Dict[str, str]
+
+    @classmethod
+    def from_proto(
+        cls, proto: configservices_pb2.ConfigServiceConfig
+    ) -> "ConfigServiceConfig":
+        return ConfigServiceConfig(
+            node_id=proto.node_id,
+            name=proto.name,
+            templates=dict(proto.templates),
+            config=dict(proto.config),
+        )
+
+
+@dataclass
 class ConfigServiceData:
     templates: Dict[str, str] = field(default_factory=dict)
     config: Dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
+class ConfigServiceDefaults:
+    templates: Dict[str, str]
+    config: Dict[str, "ConfigOption"]
+    modes: List[str]
+
+    @classmethod
+    def from_proto(
+        cls, proto: configservices_pb2.GetConfigServicesResponse
+    ) -> "ConfigServiceDefaults":
+        config = ConfigOption.from_dict(proto.config)
+        return ConfigServiceDefaults(
+            templates=dict(proto.templates), config=config, modes=list(proto.modes)
+        )
+
+
+@dataclass
+class Service:
+    group: str
+    name: str
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.Service) -> "Service":
+        return Service(group=proto.group, name=proto.name)
+
+
+@dataclass
+class ServiceDefault:
+    node_type: str
+    services: List[str]
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
+        return ServiceDefault(node_type=proto.node_type, services=list(proto.services))
 
 
 @dataclass
@@ -152,6 +229,28 @@ class NodeServiceData:
             validation_timer=proto.validation_timer,
             shutdown=proto.shutdown,
             meta=proto.meta,
+        )
+
+
+@dataclass
+class ServiceConfig:
+    node_id: int
+    service: str
+    files: List[str] = None
+    directories: List[str] = None
+    startup: List[str] = None
+    validate: List[str] = None
+    shutdown: List[str] = None
+
+    def to_proto(self) -> services_pb2.ServiceConfig:
+        return services_pb2.ServiceConfig(
+            node_id=self.node_id,
+            service=self.service,
+            files=self.files,
+            directories=self.directories,
+            startup=self.startup,
+            validate=self.validate,
+            shutdown=self.shutdown,
         )
 
 
@@ -193,6 +292,15 @@ class ThroughputsEvent:
             bridge_throughputs=bridges,
             iface_throughputs=ifaces,
         )
+
+
+@dataclass
+class CpuUsageEvent:
+    usage: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.CpuUsageEvent) -> "CpuUsageEvent":
+        return CpuUsageEvent(usage=proto.usage)
 
 
 @dataclass
@@ -472,6 +580,30 @@ class Hook:
 
 
 @dataclass
+class EmaneModelConfig:
+    node_id: int
+    model: str
+    iface_id: int = -1
+    config: Dict[str, ConfigOption] = None
+
+    @classmethod
+    def from_proto(cls, proto: emane_pb2.GetEmaneModelConfig) -> "EmaneModelConfig":
+        iface_id = proto.iface_id if proto.iface_id != -1 else None
+        config = ConfigOption.from_dict(proto.config)
+        return EmaneModelConfig(
+            node_id=proto.node_id, iface_id=iface_id, model=proto.model, config=config
+        )
+
+    def to_proto(self) -> emane_pb2.EmaneModelConfig:
+        return emane_pb2.EmaneModelConfig(
+            node_id=self.node_id,
+            model=self.model,
+            iface_id=self.iface_id,
+            config=self.config,
+        )
+
+
+@dataclass
 class Position:
     x: float
     y: float
@@ -659,4 +791,188 @@ class NodeEvent:
         return NodeEvent(
             message_type=MessageType(proto.message_type),
             node=Node.from_proto(proto.node),
+        )
+
+
+@dataclass
+class SessionEvent:
+    node_id: int
+    event: int
+    name: str
+    data: str
+    time: float
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.SessionEvent) -> "SessionEvent":
+        return SessionEvent(
+            node_id=proto.node_id,
+            event=proto.event,
+            name=proto.name,
+            data=proto.data,
+            time=proto.time,
+        )
+
+
+@dataclass
+class FileEvent:
+    message_type: MessageType
+    node_id: int
+    name: str
+    mode: str
+    number: int
+    type: str
+    source: str
+    data: str
+    compressed_data: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.FileEvent) -> "FileEvent":
+        return FileEvent(
+            message_type=MessageType(proto.message_type),
+            node_id=proto.node_id,
+            name=proto.name,
+            mode=proto.mode,
+            number=proto.number,
+            type=proto.type,
+            source=proto.source,
+            data=proto.data,
+            compressed_data=proto.compressed_data,
+        )
+
+
+@dataclass
+class ConfigEvent:
+    message_type: MessageType
+    node_id: int
+    object: str
+    type: int
+    data_types: List[int]
+    data_values: str
+    captions: str
+    bitmap: str
+    possible_values: str
+    groups: str
+    iface_id: int
+    network_id: int
+    opaque: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.ConfigEvent) -> "ConfigEvent":
+        return ConfigEvent(
+            message_type=MessageType(proto.message_type),
+            node_id=proto.node_id,
+            object=proto.object,
+            type=proto.type,
+            data_types=list(proto.data_types),
+            data_values=proto.data_values,
+            captions=proto.captions,
+            bitmap=proto.bitmap,
+            possible_values=proto.possible_values,
+            groups=proto.groups,
+            iface_id=proto.iface_id,
+            network_id=proto.network_id,
+            opaque=proto.opaque,
+        )
+
+
+@dataclass
+class Event:
+    session_id: int
+    source: str = None
+    session_event: SessionEvent = None
+    node_event: NodeEvent = None
+    link_event: LinkEvent = None
+    config_event: Any = None
+    exception_event: ExceptionEvent = None
+    file_event: FileEvent = None
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.Event) -> "Event":
+        source = proto.source if proto.source else None
+        node_event = None
+        link_event = None
+        exception_event = None
+        session_event = None
+        file_event = None
+        config_event = None
+        if proto.HasField("node_event"):
+            node_event = NodeEvent.from_proto(proto.node_event)
+        elif proto.HasField("link_event"):
+            link_event = LinkEvent.from_proto(proto.link_event)
+        elif proto.HasField("exception_event"):
+            exception_event = ExceptionEvent.from_proto(
+                proto.session_id, proto.exception_event
+            )
+        elif proto.HasField("session_event"):
+            session_event = SessionEvent.from_proto(proto.session_event)
+        elif proto.HasField("file_event"):
+            file_event = FileEvent.from_proto(proto.file_event)
+        elif proto.HasField("config_event"):
+            config_event = ConfigEvent.from_proto(proto.config_event)
+        return Event(
+            session_id=proto.session_id,
+            source=source,
+            node_event=node_event,
+            link_event=link_event,
+            exception_event=exception_event,
+            session_event=session_event,
+            file_event=file_event,
+            config_event=config_event,
+        )
+
+
+@dataclass
+class EmaneEventChannel:
+    group: str
+    port: int
+    device: str
+
+    @classmethod
+    def from_proto(
+        cls, proto: emane_pb2.GetEmaneEventChannelResponse
+    ) -> "EmaneEventChannel":
+        return EmaneEventChannel(
+            group=proto.group, port=proto.port, device=proto.device
+        )
+
+
+@dataclass
+class EmanePathlossesRequest:
+    session_id: int
+    node1_id: int
+    rx1: float
+    iface1_id: int
+    node2_id: int
+    rx2: float
+    iface2_id: int
+
+    def to_proto(self) -> emane_pb2.EmanePathlossesRequest:
+        return emane_pb2.EmanePathlossesRequest(
+            session_id=self.session_id,
+            node1_id=self.node1_id,
+            rx1=self.rx1,
+            iface1_id=self.iface1_id,
+            node2_id=self.node2_id,
+            rx2=self.rx2,
+            iface2_id=self.iface2_id,
+        )
+
+
+@dataclass
+class MoveNodesRequest:
+    session_id: int
+    node_id: int
+    source: str = None
+    position: Position = None
+    geo: Geo = None
+
+    def to_proto(self) -> core_pb2.MoveNodesRequest:
+        position = self.position.to_proto() if self.position else None
+        geo = self.geo.to_proto() if self.geo else None
+        return core_pb2.MoveNodesRequest(
+            session_id=self.session_id,
+            node_id=self.node_id,
+            source=self.source,
+            position=position,
+            geo=geo,
         )

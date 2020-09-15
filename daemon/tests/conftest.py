@@ -117,6 +117,8 @@ def module_coretlv(patcher, global_coreemu, global_session):
 @pytest.fixture
 def grpc_server(module_grpc):
     yield module_grpc
+    for session in module_grpc.coreemu.sessions.values():
+        session.set_state(EventTypes.CONFIGURATION_STATE)
     module_grpc.coreemu.shutdown()
 
 
@@ -130,6 +132,7 @@ def session(global_session):
 @pytest.fixture
 def coretlv(module_coretlv):
     session = module_coretlv.session
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     coreemu = module_coretlv.coreemu
     coreemu.sessions[session.id] = session
     yield module_coretlv

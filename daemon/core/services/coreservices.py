@@ -25,17 +25,18 @@ from typing import (
 from core import utils
 from core.emulator.data import FileData
 from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
-from core.errors import CoreCommandError, CoreError
+from core.errors import (
+    CoreCommandError,
+    CoreError,
+    CoreServiceBootError,
+    CoreServiceError,
+)
 from core.nodes.base import CoreNode
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
     CoreServiceType = Union["CoreService", Type["CoreService"]]
-
-
-class ServiceBootError(Exception):
-    pass
 
 
 class ServiceMode(enum.Enum):
@@ -257,7 +258,10 @@ class ServiceManager:
         :param name: name of the service to retrieve
         :return: service if it exists, None otherwise
         """
-        return cls.services.get(name)
+        service = cls.services.get(name)
+        if service is None:
+            raise CoreServiceError(f"service({name}) does not exist")
+        return service
 
     @classmethod
     def add_services(cls, path: str) -> List[str]:
@@ -450,7 +454,7 @@ class CoreServices:
             funcs.append((self._boot_service_path, args, {}))
         result, exceptions = utils.threadpool(funcs)
         if exceptions:
-            raise ServiceBootError(*exceptions)
+            raise CoreServiceBootError(*exceptions)
 
     def _boot_service_path(self, node: CoreNode, boot_path: List["CoreServiceType"]):
         logging.info(
@@ -464,7 +468,7 @@ class CoreServices:
                 self.boot_service(node, service)
             except Exception as e:
                 logging.exception("exception booting service: %s", service.name)
-                raise ServiceBootError(e)
+                raise CoreServiceBootError(e)
 
     def boot_service(self, node: CoreNode, service: "CoreServiceType") -> None:
         """
@@ -501,7 +505,7 @@ class CoreServices:
         wait = service.validation_mode == ServiceMode.BLOCKING
         status = self.startup_service(node, service, wait)
         if status:
-            raise ServiceBootError(
+            raise CoreServiceBootError(
                 "node(%s) service(%s) error during startup" % (node.name, service.name)
             )
 
@@ -526,7 +530,7 @@ class CoreServices:
                 time.sleep(service.validation_period)
 
             if status:
-                raise ServiceBootError(
+                raise CoreServiceBootError(
                     "node(%s) service(%s) failed validation" % (node.name, service.name)
                 )
 

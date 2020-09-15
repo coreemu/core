@@ -1331,9 +1331,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if iface_id is not None:
-            node_id = node_id * 1000 + iface_id
-
+        node_id = utils.iface_config_id(node_id, iface_id)
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
         )
@@ -1381,9 +1379,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if iface_id is not None:
-            node_id = node_id * 1000 + iface_id
-
+        node_id = utils.iface_config_id(node_id, iface_id)
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
         )
@@ -1413,9 +1409,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         iface_id = config_data.iface_id
         values_str = config_data.data_values
 
-        if iface_id is not None:
-            node_id = node_id * 1000 + iface_id
-
+        node_id = utils.iface_config_id(node_id, iface_id)
         logging.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
         )

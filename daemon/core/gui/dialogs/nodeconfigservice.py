@@ -6,11 +6,11 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional, Set
 
+from core.api.grpc.wrappers import Node
 from core.gui.dialogs.configserviceconfig import ConfigServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
-from core.gui.wrappers import Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application

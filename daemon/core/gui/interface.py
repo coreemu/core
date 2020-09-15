@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 import netaddr
 from netaddr import EUI, IPNetwork
 
+from core.api.grpc.wrappers import Interface, Link, Node
 from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
-from core.gui.wrappers import Interface, Link, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application

@@ -7,15 +7,15 @@ from lxml import etree
 
 from core import utils
 from core.config import Configuration
-from core.emane.nodes import EmaneNet
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreError
+from core.nodes.base import CoreNode, CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
 from core.xml import corexml
 
 if TYPE_CHECKING:
-    from core.emane.emanemanager import EmaneManager
+    from core.emane.emanemanager import EmaneManager, StartData
     from core.emane.emanemodel import EmaneModel
 
 _MAC_PREFIX = "02:02"
@@ -78,23 +78,22 @@ def create_file(
         corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
 
-def create_iface_file(
-    iface: CoreInterface, xml_element: etree.Element, doc_name: str, file_name: str
+def create_node_file(
+    node: CoreNodeBase, xml_element: etree.Element, doc_name: str, file_name: str
 ) -> None:
     """
     Create emane xml for an interface.
 
-    :param iface: interface running emane
+    :param node: node running emane
     :param xml_element: root element to write to file
     :param doc_name: name to use in the emane doctype
     :param file_name: name of xml file
     :return:
     """
-    node = iface.node
-    if iface.is_raw():
-        file_path = os.path.join(node.session.session_dir, file_name)
-    else:
+    if isinstance(node, CoreNode):
         file_path = os.path.join(node.nodedir, file_name)
+    else:
+        file_path = os.path.join(node.session.session_dir, file_name)
     create_file(xml_element, doc_name, file_path, node.server)
 
 
@@ -143,11 +142,7 @@ def add_configurations(
 
 
 def build_platform_xml(
-    emane_manager: "EmaneManager",
-    control_net: CtrlNet,
-    emane_net: EmaneNet,
-    iface: CoreInterface,
-    nem_id: int,
+    emane_manager: "EmaneManager", control_net: CtrlNet, data: "StartData"
 ) -> None:
     """
     Create platform xml for a specific node.
@@ -156,50 +151,62 @@ def build_platform_xml(
         configurations
     :param control_net: control net node for this emane
         network
-    :param emane_net: emane network associated with interface
-    :param iface: interface running emane
-    :param nem_id: nem id to use for this interface
+    :param data: start data for a node connected to emane and associated interfaces
     :return: the next nem id that can be used for creating platform xml files
     """
-    # build nem xml
-    nem_definition = nem_file_name(iface)
-    nem_element = etree.Element(
-        "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
-    )
-
-    # check if this is an external transport, get default config if an interface
-    # specific one does not exist
-    config = emane_manager.get_iface_config(emane_net, iface)
-    if is_external(config):
-        nem_element.set("transport", "external")
-        platform_endpoint = "platformendpoint"
-        add_param(nem_element, platform_endpoint, config[platform_endpoint])
-        transport_endpoint = "transportendpoint"
-        add_param(nem_element, transport_endpoint, config[transport_endpoint])
-    else:
-        transport_name = transport_file_name(iface)
-        transport_element = etree.SubElement(
-            nem_element, "transport", definition=transport_name
-        )
-        add_param(transport_element, "device", iface.name)
-
+    # create top level platform element
     transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
     for configuration in emane_manager.emane_config.emulator_config:
         name = configuration.id
-        if iface.is_raw() and name in transport_configs:
+        if not isinstance(data.node, CoreNode) and name in transport_configs:
             value = control_net.brname
         else:
             value = emane_manager.get_config(name)
         add_param(platform_element, name, value)
-    platform_element.append(nem_element)
-    mac = _MAC_PREFIX + ":00:00:"
-    mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-    iface.set_mac(mac)
+
+    # create nem xml entries for all interfaces
+    emane_net = data.emane_net
+    for iface in data.ifaces:
+        nem_id = emane_manager.next_nem_id()
+        emane_manager.set_nem(nem_id, iface)
+        emane_manager.write_nem(iface, nem_id)
+        config = emane_manager.get_iface_config(emane_net, iface)
+        emane_net.model.build_xml_files(config, iface)
+
+        # build nem xml
+        nem_definition = nem_file_name(iface)
+        nem_element = etree.Element(
+            "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
+        )
+
+        # check if this is an external transport, get default config if an interface
+        # specific one does not exist
+        config = emane_manager.get_iface_config(emane_net, iface)
+        if is_external(config):
+            nem_element.set("transport", "external")
+            platform_endpoint = "platformendpoint"
+            add_param(nem_element, platform_endpoint, config[platform_endpoint])
+            transport_endpoint = "transportendpoint"
+            add_param(nem_element, transport_endpoint, config[transport_endpoint])
+        else:
+            transport_name = transport_file_name(iface)
+            transport_element = etree.SubElement(
+                nem_element, "transport", definition=transport_name
+            )
+            add_param(transport_element, "device", iface.name)
+
+        # add nem element to platform element
+        platform_element.append(nem_element)
+
+        # generate and assign interface mac address based on nem id
+        mac = _MAC_PREFIX + ":00:00:"
+        mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
+        iface.set_mac(mac)
 
     doc_name = "platform"
-    file_name = f"{iface.name}-platform.xml"
-    create_iface_file(iface, platform_element, doc_name, file_name)
+    file_name = f"{data.node.name}-platform.xml"
+    create_node_file(data.node, platform_element, doc_name, file_name)
 
 
 def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
@@ -220,16 +227,16 @@ def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
 
     # get emane model cnfiguration
     flowcontrol = config.get("flowcontrolenable", "0") == "1"
-    if iface.is_virtual():
+    if isinstance(iface.node, CoreNode):
         device_path = "/dev/net/tun_flowctl"
-        if not os.path.exists(device_path):
+        if not iface.node.path_exists(device_path):
             device_path = "/dev/net/tun"
         add_param(transport_element, "devicepath", device_path)
         if flowcontrol:
             add_param(transport_element, "flowcontrolenable", "on")
     doc_name = "transport"
     transport_name = transport_file_name(iface)
-    create_iface_file(iface, transport_element, doc_name, transport_name)
+    create_node_file(iface.node, transport_element, doc_name, transport_name)
 
 
 def create_phy_xml(
@@ -250,7 +257,7 @@ def create_phy_xml(
         phy_element, emane_model.phy_config, config, emane_model.config_ignore
     )
     file_name = phy_file_name(iface)
-    create_iface_file(iface, phy_element, "phy", file_name)
+    create_node_file(iface.node, phy_element, "phy", file_name)
 
 
 def create_mac_xml(
@@ -273,7 +280,7 @@ def create_mac_xml(
         mac_element, emane_model.mac_config, config, emane_model.config_ignore
     )
     file_name = mac_file_name(iface)
-    create_iface_file(iface, mac_element, "mac", file_name)
+    create_node_file(iface.node, mac_element, "mac", file_name)
 
 
 def create_nem_xml(
@@ -298,7 +305,7 @@ def create_nem_xml(
     phy_name = phy_file_name(iface)
     etree.SubElement(nem_element, "phy", definition=phy_name)
     nem_name = nem_file_name(iface)
-    create_iface_file(iface, nem_element, "nem", nem_name)
+    create_node_file(iface.node, nem_element, "nem", nem_name)
 
 
 def create_event_service_xml(
@@ -351,7 +358,7 @@ def nem_file_name(iface: CoreInterface) -> str:
     :param iface: interface running emane
     :return: nem xm file name
     """
-    append = "-raw" if iface.is_raw() else ""
+    append = "-raw" if not isinstance(iface.node, CoreNode) else ""
     return f"{iface.name}-nem{append}.xml"
 
 

@@ -1,82 +1,58 @@
-"""
-Example using gRPC API to create a simple wlan network.
-"""
-
-import logging
-
+# required imports
 from core.api.grpc import client
 from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
 
+# interface helper
+iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
 
-def log_event(event):
-    logging.info("event: %s", event)
+# create grpc client and connect
+core = client.CoreGrpcClient()
+core.connect()
 
+# create session and get id
+response = core.create_session()
+session_id = response.session_id
 
-def main():
-    # helper to create interface addresses
-    interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/24")
+# change session state to configuration so that nodes get started when added
+core.set_session_state(session_id, SessionState.CONFIGURATION)
 
-    # create grpc client and start connection context, which auto closes connection
-    core = client.CoreGrpcClient()
-    with core.context_connect():
-        # create session
-        response = core.create_session()
-        logging.info("created session: %s", response)
+# create wlan node
+position = Position(x=200, y=200)
+wlan = Node(type=NodeType.WIRELESS_LAN, position=position)
+response = core.add_node(session_id, wlan)
+wlan_id = response.node_id
 
-        # handle events session may broadcast
-        session_id = response.session_id
-        core.events(session_id, log_event)
+# create node one
+position = Position(x=100, y=100)
+n1 = Node(type=NodeType.DEFAULT, position=position, model="mdr")
+response = core.add_node(session_id, n1)
+n1_id = response.node_id
 
-        # change session state to configuration so that nodes get started when added
-        response = core.set_session_state(session_id, SessionState.CONFIGURATION)
-        logging.info("set session state: %s", response)
+# create node two
+position = Position(x=300, y=100)
+n2 = Node(type=NodeType.DEFAULT, position=position, model="mdr")
+response = core.add_node(session_id, n2)
+n2_id = response.node_id
 
-        # create wlan node
-        position = Position(x=200, y=200)
-        wlan = Node(type=NodeType.WIRELESS_LAN, position=position)
-        response = core.add_node(session_id, wlan)
-        logging.info("created wlan: %s", response)
-        wlan_id = response.node_id
+# configure wlan using a dict mapping currently
+# support values as strings
+core.set_wlan_config(
+    session_id,
+    wlan_id,
+    {
+        "range": "280",
+        "bandwidth": "55000000",
+        "delay": "6000",
+        "jitter": "5",
+        "error": "5",
+    },
+)
 
-        # change/configure wlan if desired
-        # NOTE: error = loss, and named this way for legacy purposes for now
-        config = {
-            "bandwidth": "54000000",
-            "range": "500",
-            "jitter": "0",
-            "delay": "5000",
-            "error": "0",
-        }
-        response = core.set_wlan_config(session_id, wlan_id, config)
-        logging.info("set wlan config: %s", response)
+# links nodes to wlan
+iface1 = iface_helper.create_iface(n1_id, 0)
+core.add_link(session_id, n1_id, wlan_id, iface1)
+iface1 = iface_helper.create_iface(n2_id, 0)
+core.add_link(session_id, n2_id, wlan_id, iface1)
 
-        # create node one
-        position = Position(x=100, y=100)
-        node1 = Node(type=NodeType.DEFAULT, position=position)
-        response = core.add_node(session_id, node1)
-        logging.info("created node: %s", response)
-        node1_id = response.node_id
-
-        # create node two
-        position = Position(x=300, y=100)
-        node2 = Node(type=NodeType.DEFAULT, position=position)
-        response = core.add_node(session_id, node2)
-        logging.info("created node: %s", response)
-        node2_id = response.node_id
-
-        # links nodes to switch
-        interface1 = interface_helper.create_iface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, wlan_id, interface1)
-        logging.info("created link: %s", response)
-        interface1 = interface_helper.create_iface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, wlan_id, interface1)
-        logging.info("created link: %s", response)
-
-        # change session state
-        response = core.set_session_state(session_id, SessionState.INSTANTIATION)
-        logging.info("set session state: %s", response)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    main()
+# change session state
+core.set_session_state(session_id, SessionState.INSTANTIATION)

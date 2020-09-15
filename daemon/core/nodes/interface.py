@@ -528,8 +528,9 @@ class TunTap(CoreInterface):
             # check if this is an EMANE interface; if so, continue
             # waiting if EMANE is still running
             should_retry = count < 5
-            is_emane_running = self.node.session.emane.emanerunning(self.node)
-            if all([should_retry, self.net.is_emane, is_emane_running]):
+            is_emane = self.session.emane.is_emane_net(self.net)
+            is_emane_running = self.session.emane.emanerunning(self.node)
+            if all([should_retry, is_emane, is_emane_running]):
                 count += 1
             else:
                 raise RuntimeError("node device failed to exist")

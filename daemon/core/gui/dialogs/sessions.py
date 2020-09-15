@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, List, Optional
 
 import grpc
 
+from core.api.grpc.wrappers import SessionState, SessionSummary
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum, Images
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
-from core.gui.wrappers import SessionState, SessionSummary
 
 if TYPE_CHECKING:
     from core.gui.app import Application

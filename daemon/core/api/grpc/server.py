@@ -56,12 +56,7 @@ from core.api.grpc.emane_pb2 import (
     SetEmaneModelConfigResponse,
 )
 from core.api.grpc.events import EventStreamer
-from core.api.grpc.grpcutils import (
-    get_config_options,
-    get_emane_model_id,
-    get_links,
-    get_net_stats,
-)
+from core.api.grpc.grpcutils import get_config_options, get_links, get_net_stats
 from core.api.grpc.mobility_pb2 import (
     GetMobilityConfigRequest,
     GetMobilityConfigResponse,
@@ -117,7 +112,7 @@ from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import PtpNet, WlanNode
+from core.nodes.network import CtrlNet, PtpNet, WlanNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
@@ -249,7 +244,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config = session.emane.get_configs()
         config.update(request.emane_config)
         for config in request.emane_model_configs:
-            _id = get_emane_model_id(config.node_id, config.iface_id)
+            _id = utils.iface_config_id(config.node_id, config.iface_id)
             session.emane.set_model_config(_id, config.model, config.config)
 
         # wlan configs
@@ -340,7 +335,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.create_session(request.session_id)
         session.set_state(EventTypes.DEFINITION_STATE)
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
-        session.location.refscale = 150000.0
+        session.location.refscale = 150.0
         return core_pb2.CreateSessionResponse(
             session_id=session.id, state=session.state.value
         )
@@ -561,7 +556,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for _id in session.nodes:
             node = session.nodes[_id]
-            if not isinstance(node, PtpNet):
+            if not isinstance(node, (PtpNet, CtrlNet)):
                 node_proto = grpcutils.get_node_proto(session, node)
                 nodes.append(node_proto)
             node_links = get_links(node)
@@ -1438,8 +1433,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane model config: %s", request)
         session = self.get_session(request.session_id, context)
-        model = session.emane.models[request.model]
-        _id = get_emane_model_id(request.node_id, request.iface_id)
+        model = session.emane.models.get(request.model)
+        if not model:
+            raise CoreError(f"invalid emane model: {request.model}")
+        _id = utils.iface_config_id(request.node_id, request.iface_id)
         current_config = session.emane.get_model_config(_id, request.model)
         config = get_config_options(current_config, model)
         return GetEmaneModelConfigResponse(config=config)
@@ -1458,7 +1455,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         model_config = request.emane_model_config
-        _id = get_emane_model_id(model_config.node_id, model_config.iface_id)
+        _id = utils.iface_config_id(model_config.node_id, model_config.iface_id)
         session.emane.set_model_config(_id, model_config.model, model_config.config)
         return SetEmaneModelConfigResponse(result=True)
 
@@ -1483,7 +1480,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: core_pb2.SaveXmlRequest, context: ServicerContext
     ) -> core_pb2.SaveXmlResponse:
         """
-        Export the session nto the EmulationScript XML format
+        Export the session into the EmulationScript XML format
 
         :param request: save xml request
         :param context: context object

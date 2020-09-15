@@ -545,7 +545,12 @@ class Session:
 
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
-            self.emane.set_model_config(_id, options.emane)
+            model = self.emane.models.get(options.emane)
+            if not model:
+                raise CoreError(
+                    f"node({node.name}) emane model({options.emane}) does not exist"
+                )
+            node.model = model(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
         # set default wlan config if needed
@@ -571,17 +576,10 @@ class Session:
         :return: nothing
         :raises core.CoreError: when node to update does not exist
         """
-        # get node to update
         node = self.get_node(node_id, NodeBase)
-
-        # set node position and broadcast it
-        self.set_node_position(node, options)
-
-        # update attributes
         node.canvas = options.canvas
         node.icon = options.icon
-
-        # provide edits to sdt
+        self.set_node_position(node, options)
         self.sdt.edit_node(node, options.lon, options.lat, options.alt)
 
     def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
@@ -758,7 +756,9 @@ class Session:
         """
         Shutdown all session nodes and remove the session directory.
         """
-        logging.info("session(%s) shutting down", self.id)
+        if self.state == EventTypes.SHUTDOWN_STATE:
+            return
+        logging.info("session(%s) state(%s) shutting down", self.id, self.state)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
 

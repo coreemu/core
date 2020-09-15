@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Optional
 
 import grpc
 
+from core.api.grpc.wrappers import MobilityAction, Node
 from core.gui.dialogs.dialog import Dialog
 from core.gui.images import ImageEnum
 from core.gui.themes import PADX, PADY
-from core.gui.wrappers import MobilityAction, Node
 
 if TYPE_CHECKING:
     from core.gui.app import Application

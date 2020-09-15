@@ -1,3 +1,24 @@
+## 2020-09-15 CORE 7.2.0
+
+* Installation
+    * locked down version of ospf-mdr installed in automated install
+    * locked down version of emane to v1.2.5 in automated emane install
+    * added option to install locally using the -l option
+* core-daemon
+    * improve error when retrieving services that do not exist, or failed to load
+    * fixed issue with writing/reading emane node interface configurations to xml
+    * fixed issue with not setting the emane model when creating a node
+    * added common utility method for getting a emane node interface config id in core.utils
+    * fixed issue running emane on more than one interface for a node
+    * fixed issue validating paths when creating emane transport xml for a node
+    * fixed issue avoiding multiple calls to shutdown, if already in shutdown state
+* core-pygui
+    * fixed issue configuring emane for a node interface
+* gRPC API
+    * added wrapper client that can provide type hinting and a simpler interface at core.api.grpc.clientw
+    * fixed issue creating sessions that default to having a very large reference scale
+    * fixed issue with GetSession returning control net nodes
+
 ## 2020-08-21 CORE 7.1.0
 
 * Installation

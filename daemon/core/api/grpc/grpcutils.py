@@ -306,35 +306,6 @@ def get_links(node: NodeBase):
     return links
 
 
-def get_emane_model_id(node_id: int, iface_id: int) -> int:
-    """
-    Get EMANE model id
-
-    :param node_id: node id
-    :param iface_id: interface id
-    :return: EMANE model id
-    """
-    if iface_id >= 0:
-        return node_id * 1000 + iface_id
-    else:
-        return node_id
-
-
-def parse_emane_model_id(_id: int) -> Tuple[int, int]:
-    """
-    Parses EMANE model id to get true node id and interface id.
-
-    :param _id: id to parse
-    :return: node id and interface id
-    """
-    iface_id = -1
-    node_id = _id
-    if _id >= 1000:
-        iface_id = _id % 1000
-        node_id = int(_id / 1000)
-    return node_id, iface_id
-
-
 def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
     return core_pb2.Interface(
         id=iface_data.id,
@@ -559,7 +530,8 @@ def get_emane_model_configs(session: Session) -> List[GetEmaneModelConfig]:
             model = session.emane.models[model_name]
             current_config = session.emane.get_model_config(_id, model_name)
             config = get_config_options(current_config, model)
-            node_id, iface_id = parse_emane_model_id(_id)
+            node_id, iface_id = utils.parse_iface_config_id(_id)
+            iface_id = iface_id if iface_id is not None else -1
             model_config = GetEmaneModelConfig(
                 node_id=node_id, model=model_name, iface_id=iface_id, config=config
             )

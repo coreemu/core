@@ -80,7 +80,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nem_name = emanexml.nem_file_name(iface)
         shim_name = emanexml.shim_file_name(iface)
         etree.SubElement(nem_element, "shim", definition=shim_name)
-        emanexml.create_iface_file(iface, nem_element, "nem", nem_name)
+        emanexml.create_node_file(iface.node, nem_element, "nem", nem_name)
 
         # create and write shim document
         shim_element = etree.Element(
@@ -99,7 +99,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         ff = config["filterfile"]
         if ff.strip() != "":
             emanexml.add_param(shim_element, "filterfile", ff)
-        emanexml.create_iface_file(iface, shim_element, "shim", shim_name)
+        emanexml.create_node_file(iface.node, shim_element, "shim", shim_name)
 
         # create transport xml
         emanexml.create_transport_xml(iface, config)

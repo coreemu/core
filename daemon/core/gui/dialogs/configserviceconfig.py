@@ -8,15 +8,15 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set
 
 import grpc
 
-from core.gui.dialogs.dialog import Dialog
-from core.gui.themes import FRAME_PAD, PADX, PADY
-from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
-from core.gui.wrappers import (
+from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigServiceData,
     Node,
     ServiceValidationMode,
 )
+from core.gui.dialogs.dialog import Dialog
+from core.gui.themes import FRAME_PAD, PADX, PADY
+from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
 if TYPE_CHECKING:
     from core.gui.app import Application

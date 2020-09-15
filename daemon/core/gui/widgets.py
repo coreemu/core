@@ -5,10 +5,10 @@ from pathlib import Path
 from tkinter import filedialog, font, ttk
 from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
 
+from core.api.grpc.wrappers import ConfigOption, ConfigOptionType
 from core.gui import appconfig, themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
-from core.gui.wrappers import ConfigOption, ConfigOptionType
 
 if TYPE_CHECKING:
     from core.gui.app import Application
