@@ -1293,8 +1293,10 @@ class Session:
         shutdown = False
         if node_count == 0:
             shutdown = True
+            # shutting down and clearing data for legacy gui
             self.set_state(EventTypes.SHUTDOWN_STATE)
-            # clearing sdt saved data here for legacy gui
+            self.delete_nodes()
+            self.distributed.shutdown()
             self.sdt.shutdown()
         return shutdown
 
