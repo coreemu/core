@@ -15,7 +15,7 @@ from invoke import task, Context
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
 EMANE_CHECKOUT: str = "v1.2.5"
-OSPFMDR_CHECKOUT: str = "f4295dbdc37c6834485aa894fc5e49d04315b107"
+OSPFMDR_CHECKOUT: str = "e2b4e416b7001c5dca0224fe728249c9688e4c7a"
 REDHAT_LIKE = {
     "redhat",
     "fedora",
