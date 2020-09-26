@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from enum import Enum
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Optional
+from typing import Optional, List
 
 from invoke import task, Context
 
@@ -16,6 +16,14 @@ DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
 EMANE_CHECKOUT: str = "v1.2.5"
 OSPFMDR_CHECKOUT: str = "26fe5a4401a26760c553fcadfde5311199e89450"
+REDHAT_LIKE = {
+    "redhat",
+    "fedora",
+}
+DEBIAN_LIKE = {
+    "ubuntu",
+    "debian",
+}
 
 
 class Progress:
@@ -55,11 +63,28 @@ class Progress:
 class OsName(Enum):
     UBUNTU = "ubuntu"
     CENTOS = "centos"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def get(cls, name: str) -> "OsName":
+        try:
+            return OsName(name)
+        except ValueError:
+            return OsName.UNKNOWN
 
 
 class OsLike(Enum):
     DEBIAN = "debian"
-    REDHAT = "rhel fedora"
+    REDHAT = "rhel"
+
+    @classmethod
+    def get(cls, values: List[str]) -> Optional["OsLike"]:
+        for value in values:
+            if value in DEBIAN_LIKE:
+                return OsLike.DEBIAN
+            elif value in REDHAT_LIKE:
+                return OsLike.REDHAT
+        return None
 
 
 class OsInfo:
@@ -67,6 +92,22 @@ class OsInfo:
         self.name: OsName = name
         self.like: OsLike = like
         self.version: float = version
+
+    @classmethod
+    def get(cls, name: str, like: List[str], version: Optional[str]) -> "OsInfo":
+        os_name = OsName.get(name)
+        os_like = OsLike.get(like)
+        if not os_like:
+            like = " ".join(like)
+            print(f"unsupported os install type({like})")
+            sys.exit(1)
+        if version:
+            try:
+                version = float(version)
+            except ValueError:
+                print(f"os version is not a float: {version}")
+                sys.exit(1)
+        return OsInfo(os_name, os_like, version)
 
 
 def get_python(c: Context, warn: bool = False) -> str:
@@ -85,28 +126,24 @@ def get_pytest(c: Context) -> str:
         return os.path.join(venv, "bin", "pytest")
 
 
-def get_os() -> OsInfo:
-    d = {}
-    with open("/etc/os-release", "r") as f:
-        for line in f.readlines():
-            line = line.strip()
-            if not line:
-                continue
-            key, value = line.split("=")
-            d[key] = value.strip("\"")
-    name_value = d["ID"]
-    like_value = d["ID_LIKE"]
-    version_value = d["VERSION_ID"]
-    try:
-        name = OsName(name_value)
-        like = OsLike(like_value)
-        version = float(version_value)
-    except ValueError:
-        print(
-            f"unsupported os({name_value}) like({like_value}) version({version_value}"
-        )
-        sys.exit(1)
-    return OsInfo(name, like, version)
+def get_os(install_type: Optional[str]) -> OsInfo:
+    if install_type:
+        name_value = OsName.UNKNOWN.value
+        like_value = install_type
+        version_value = None
+    else:
+        d = {}
+        with open("/etc/os-release", "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                if not line:
+                    continue
+                key, value = line.split("=")
+                d[key] = value.strip("\"")
+        name_value = d["ID"]
+        like_value = d["ID_LIKE"]
+        version_value = d["VERSION_ID"]
+    return OsInfo.get(name_value, like_value.split(), version_value)
 
 
 def check_existing_core(c: Context, hide: bool) -> None:
@@ -304,9 +341,13 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "verbose": "enable verbose",
         "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
     },
 )
-def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
+def install(
+    c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX, install_type=None
+):
     """
     install core, poetry, scripts, service, and ospf mdr
     """
@@ -315,9 +356,10 @@ def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
     hide = not verbose
-    os_info = get_os()
-    with p.start("checking for old installations"):
-        check_existing_core(c, hide)
+    os_info = get_os(install_type)
+    if not c["run"]["dry"]:
+        with p.start("checking for old installations"):
+            check_existing_core(c, hide)
     with p.start("installing system dependencies"):
         install_system(c, os_info, hide)
     with p.start("installing system grpcio-tools"):
@@ -342,16 +384,18 @@ def install(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
     help={
         "verbose": "enable verbose",
         "local": "used determine if core is installed locally, default is False",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
     },
 )
-def install_emane(c, verbose=False, local=False):
+def install_emane(c, verbose=False, local=False, install_type=None):
     """
     install emane and the python bindings
     """
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
     hide = not verbose
-    os_info = get_os()
+    os_info = get_os(install_type)
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
@@ -458,11 +502,19 @@ def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
         "verbose": "enable verbose",
         "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
-        "branch": "branch to install latest code from, default is current branch"
+        "branch": "branch to install latest code from, default is current branch",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
     },
 )
 def reinstall(
-    c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX, branch=None
+    c,
+    dev=False,
+    verbose=False,
+    local=False,
+    prefix=DEFAULT_PREFIX,
+    branch=None,
+    install_type=None
 ):
     """
     run the uninstall task, get latest from specified branch, and run install task
@@ -479,7 +531,7 @@ def reinstall(
         c.run("git pull", hide=hide)
         if not Path("tasks.py").exists():
             raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
-    install(c, dev, verbose, local, prefix)
+    install(c, dev, verbose, local, prefix, install_type)
 
 
 @task
