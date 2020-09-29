@@ -7,6 +7,8 @@ CORE provides a script to help automate the installation of dependencies,
 build and install, and either generate a CORE specific python virtual environment
 or build and install a python wheel.
 
+> **WARNING:** if Docker is installed, the default iptable rules will block CORE traffic
+
 ### Tools Used
 The following tools will be leveraged during installation:
 
