@@ -756,23 +756,18 @@ class Session:
         """
         Shutdown all session nodes and remove the session directory.
         """
-        if self.state == EventTypes.SHUTDOWN_STATE:
-            return
         logging.info("session(%s) state(%s) shutting down", self.id, self.state)
-        self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
-        self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
-
+        if self.state != EventTypes.SHUTDOWN_STATE:
+            self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
+            self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         # clear out current core session
         self.clear()
-
         # shutdown sdt
         self.sdt.shutdown()
-
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
-
         # call session shutdown handlers
         for handler in self.shutdown_handlers:
             handler(self)
@@ -1116,7 +1111,6 @@ class Session:
         if node:
             node.shutdown()
             self.sdt.delete_node(_id)
-            self.check_shutdown()
         return node is not None
 
     def delete_nodes(self) -> None:
@@ -1278,25 +1272,6 @@ class Session:
         self.add_remove_control_net(1, remove=True)
         self.add_remove_control_net(2, remove=True)
         self.add_remove_control_net(3, remove=True)
-
-    def check_shutdown(self) -> bool:
-        """
-        Check if we have entered the shutdown state, when no running nodes
-        and links remain.
-
-        :return: True if should shutdown, False otherwise
-        """
-        node_count = self.get_node_count()
-        logging.debug(
-            "session(%s) checking shutdown: %s nodes remaining", self.id, node_count
-        )
-        shutdown = False
-        if node_count == 0:
-            shutdown = True
-            self.set_state(EventTypes.SHUTDOWN_STATE)
-            # clearing sdt saved data here for legacy gui
-            self.sdt.shutdown()
-        return shutdown
 
     def short_session_id(self) -> str:
         """

@@ -7,6 +7,7 @@ from lxml import etree
 
 from core import utils
 from core.config import Configuration
+from core.emane.nodes import EmaneNet
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreError
 from core.nodes.base import CoreNode, CoreNodeBase
@@ -166,8 +167,12 @@ def build_platform_xml(
         add_param(platform_element, name, value)
 
     # create nem xml entries for all interfaces
-    emane_net = data.emane_net
     for iface in data.ifaces:
+        emane_net = iface.net
+        if not isinstance(emane_net, EmaneNet):
+            raise CoreError(
+                f"emane interface not connected to emane net: {emane_net.name}"
+            )
         nem_id = emane_manager.next_nem_id()
         emane_manager.set_nem(nem_id, iface)
         emane_manager.write_nem(iface, nem_id)
@@ -180,9 +185,7 @@ def build_platform_xml(
             "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
         )
 
-        # check if this is an external transport, get default config if an interface
-        # specific one does not exist
-        config = emane_manager.get_iface_config(emane_net, iface)
+        # check if this is an external transport
         if is_external(config):
             nem_element.set("transport", "external")
             platform_endpoint = "platformendpoint"

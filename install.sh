@@ -3,13 +3,6 @@
 # exit on error
 set -e
 
-# detect os/ver for install type
-os=""
-if [[ -f /etc/os-release ]]; then
-  . /etc/os-release
-  os=${ID}
-fi
-
 # parse arguments
 dev=""
 verbose=""
@@ -42,19 +35,23 @@ while getopts "dvlp:" opt; do
 done
 shift $((OPTIND - 1))
 
-echo "installing CORE for ${os}"
-case ${os} in
-"ubuntu")
+# install pre-reqs using yum/apt
+if command -v apt &> /dev/null
+then
+  echo "setup to install CORE using apt"
   sudo apt install -y python3-pip python3-venv
-  ;;
-"centos")
+elif command -v yum &> /dev/null
+then
+  echo "setup to install CORE using yum"
   sudo yum install -y python3-pip
-  ;;
-*)
-  echo "unknown OS ID ${os} cannot install"
-  ;;
-esac
+else
+  echo "apt/yum was not found"
+  echo "install python3 and invoke to run the automated install"
+  echo "inv -h install"
+  exit 1
+fi
 
+# install pip/invoke to run install with provided options
 python3 -m pip install --user pipx
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin

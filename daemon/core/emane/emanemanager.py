@@ -71,7 +71,6 @@ class EmaneState(Enum):
 
 @dataclass
 class StartData:
-    emane_net: EmaneNet
     node: CoreNodeBase
     ifaces: List[CoreInterface] = field(default_factory=list)
 
@@ -370,9 +369,7 @@ class EmaneManager(ModelManager):
                         iface.name,
                     )
                     continue
-                start_node = node_map.setdefault(
-                    iface.node, StartData(emane_net, iface.node)
-                )
+                start_node = node_map.setdefault(iface.node, StartData(iface.node))
                 start_node.ifaces.append(iface)
         start_nodes = sorted(node_map.values(), key=lambda x: x.node.id)
         for start_node in start_nodes:
@@ -386,7 +383,7 @@ class EmaneManager(ModelManager):
         emanexml.build_platform_xml(self, control_net, data)
         self.start_daemon(data.node)
         for iface in data.ifaces:
-            self.install_iface(data.emane_net, iface)
+            self.install_iface(iface)
 
     def set_nem(self, nem_id: int, iface: CoreInterface) -> None:
         if nem_id in self.nems_to_ifaces:
@@ -606,7 +603,12 @@ class EmaneManager(ModelManager):
             node.host_cmd(emanecmd, cwd=path)
             logging.info("node(%s) host emane daemon running: %s", node.name, emanecmd)
 
-    def install_iface(self, emane_net: EmaneNet, iface: CoreInterface) -> None:
+    def install_iface(self, iface: CoreInterface) -> None:
+        emane_net = iface.net
+        if not isinstance(emane_net, EmaneNet):
+            raise CoreError(
+                f"emane interface not connected to emane net: {emane_net.name}"
+            )
         config = self.get_iface_config(emane_net, iface)
         external = config.get("external", "0")
         if isinstance(iface, TunTap) and external == "0":

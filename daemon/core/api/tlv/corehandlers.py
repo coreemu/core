@@ -735,6 +735,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
+                if result and self.session.get_node_count() == 0:
+                    self.session.set_state(EventTypes.SHUTDOWN_STATE)
+                    self.session.delete_nodes()
+                    self.session.distributed.shutdown()
+                    self.session.sdt.shutdown()
 
                 # if we deleted a node broadcast out its removal
                 if result and message.flags & MessageFlags.STRING.value:
