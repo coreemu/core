@@ -1,3 +1,13 @@
+## 2020-09-29 CORE 7.2.1
+
+* core-daemon
+    * fixed issue where shutting down sessions may not have removed session directories
+    * fixed issue with multiple emane interfaces on the same node not getting the right configuration
+* Installation
+    * updated automated install to be a bit more robust for alternative distros
+    * added force install type to try and leverage a redhat/debian like install
+    * locked ospf mdr version installed to older commit to avoid issues with multiple interfaces on same node
+
 ## 2020-09-15 CORE 7.2.0
 
 * Installation
