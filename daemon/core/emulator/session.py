@@ -978,6 +978,15 @@ class Session:
         corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
         xml_writer.write(xml_file_name)
 
+    @staticmethod
+    def merge_environment(f, env, title):
+        try:
+            if os.path.isfile(f):
+                utils.load_config(f, env)
+        except IOError:
+            logging.warning(f"{title} file does not exist: {f}")
+        return env
+
     def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
         Get an environment suitable for a subprocess.Popen call.
@@ -997,28 +1006,17 @@ class Session:
         env["SESSION_USER"] = str(self.user)
         if state:
             env["SESSION_STATE"] = str(self.state)
-        # attempt to read and add environment config file
-        environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
-        try:
-            if os.path.isfile(environment_config_file):
-                utils.load_config(environment_config_file, env)
-        except IOError:
-            logging.warning(
-                "environment configuration file does not exist: %s",
-                environment_config_file,
-            )
-        # attempt to read and add user environment file
+        # try reading and merging optional environments from:
+        #    /etc/core/environment
+        #    /home/user/.core/environment
+        #    /tmp/session.nnnnn/environment
+        env_file = os.path.join(constants.CORE_CONF_DIR, "environment")
+        env = self.merge_environment(env_file, env, "environment configuration")
         if self.user:
-            environment_user_file = os.path.join(
-                "/home", self.user, ".core", "environment"
-            )
-            try:
-                utils.load_config(environment_user_file, env)
-            except IOError:
-                logging.debug(
-                    "user core environment settings file not present: %s",
-                    environment_user_file,
-                )
+            env_user_file = os.path.join("/home", self.user, ".core", "environment")
+            env = self.merge_environment(env_user_file, env, "user environemnt")
+        session_env_file = os.path.join(self.session_dir, "environment")
+        env = self.merge_environment(session_env_file, env, "session environemnt")
         return env
 
     def set_thumbnail(self, thumb_file: str) -> None:
