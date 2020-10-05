@@ -50,6 +50,25 @@ can also subscribe to EMANE location events and move the nodes on the canvas
 as they are moved in the EMANE emulation. This would occur when an Emulation
 Script Generator, for example, is running a mobility script.
 
+## EMANE in CORE
+
+This section will cover some high level topics and examples for running and
+using EMANE in CORE.
+
+You can find more detailed tutorials and examples at the
+[EMANE Tutorial](https://github.com/adjacentlink/emane-tutorial/wiki).
+
+Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
+
+> **WARNING:** demo files will be found within the new `core-pygui`
+
+|Topic|Model|Description|
+|---|---|---|
+|[XML Files](emane/files.md)|RF Pipe|Overview of generated XML files used to drive EMANE|
+|[GPSD](emane/gpsd.md)|RF Pipe|Overview of running and integrating gpsd with EMANE|
+|[Precomputed](emane/precomputed.md)|RF Pipe|Overview of using the precomputed propagation model|
+|[EEL](emane/eel.md)|RF Pipe|Overview of using the Emulation Event Log (EEL) Generator|
+
 ## EMANE Configuration
 
 The CORE configuration file **/etc/core/core.conf** has options specific to

@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<scenario name="/home/developer/.core/configs/emane-demo-files.xml">
+  <networks>
+    <network id="3" name="wlan3" model="emane_rfpipe" type="EMANE">
+      <position x="282" y="317" lat="47.57628519861569" lon="-122.12852212634816" alt="2.0"/>
+    </network>
+  </networks>
+  <devices>
+    <device id="1" name="n1" type="mdr" class="" image="">
+      <position x="153" y="173" lat="47.57759416527324" lon="-122.13026036642295" alt="2.0"/>
+      <services>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </services>
+    </device>
+    <device id="2" name="n2" type="mdr" class="" image="">
+      <position x="393" y="171" lat="47.57761234513531" lon="-122.12702643140011" alt="2.0"/>
+      <services>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </services>
+    </device>
+  </devices>
+  <links>
+    <link node1="3" node2="1">
+      <iface2 nem="1" id="0" name="eth0" mac="02:02:00:00:00:01" ip4="10.0.0.1" ip4_mask="32" ip6="2001::1" ip6_mask="128"/>
+    </link>
+    <link node1="3" node2="2">
+      <iface2 nem="2" id="0" name="eth0" mac="02:02:00:00:00:02" ip4="10.0.0.2" ip4_mask="32" ip6="2001::2" ip6_mask="128"/>
+    </link>
+  </links>
+  <emane_global_configuration>
+    <emulator>
+      <configuration name="antennaprofilemanifesturi" value=""/>
+      <configuration name="controlportendpoint" value="0.0.0.0:47000"/>
+      <configuration name="eventservicedevice" value="ctrl0"/>
+      <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+      <configuration name="eventservicettl" value="1"/>
+      <configuration name="otamanagerchannelenable" value="1"/>
+      <configuration name="otamanagerdevice" value="ctrl0"/>
+      <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+      <configuration name="otamanagerloopback" value="0"/>
+      <configuration name="otamanagermtu" value="0"/>
+      <configuration name="otamanagerpartcheckthreshold" value="2"/>
+      <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+      <configuration name="otamanagerttl" value="1"/>
+      <configuration name="stats.event.maxeventcountrows" value="0"/>
+      <configuration name="stats.ota.maxeventcountrows" value="0"/>
+      <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+    </emulator>
+    <core>
+      <configuration name="platform_id_start" value="1"/>
+      <configuration name="nem_id_start" value="1"/>
+      <configuration name="link_enabled" value="1"/>
+      <configuration name="loss_threshold" value="30"/>
+      <configuration name="link_interval" value="1"/>
+      <configuration name="link_timeout" value="4"/>
+    </core>
+  </emane_global_configuration>
+  <emane_configurations>
+    <emane_configuration node="3" model="emane_rfpipe">
+      <mac>
+        <configuration name="datarate" value="1000000"/>
+        <configuration name="delay" value="0.000000"/>
+        <configuration name="enablepromiscuousmode" value="0"/>
+        <configuration name="flowcontrolenable" value="0"/>
+        <configuration name="flowcontroltokens" value="10"/>
+        <configuration name="jitter" value="0.000000"/>
+        <configuration name="neighbormetricdeletetime" value="60.000000"/>
+        <configuration name="pcrcurveuri" value="/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"/>
+        <configuration name="radiometricenable" value="0"/>
+        <configuration name="radiometricreportinterval" value="1.000000"/>
+      </mac>
+      <phy>
+        <configuration name="bandwidth" value="1000000"/>
+        <configuration name="fading.model" value="none"/>
+        <configuration name="fading.nakagami.distance0" value="100.000000"/>
+        <configuration name="fading.nakagami.distance1" value="250.000000"/>
+        <configuration name="fading.nakagami.m0" value="0.750000"/>
+        <configuration name="fading.nakagami.m1" value="1.000000"/>
+        <configuration name="fading.nakagami.m2" value="200.000000"/>
+        <configuration name="fixedantennagain" value="0.000000"/>
+        <configuration name="fixedantennagainenable" value="1"/>
+        <configuration name="frequency" value="2347000000"/>
+        <configuration name="frequencyofinterest" value="2347000000"/>
+        <configuration name="noisebinsize" value="20"/>
+        <configuration name="noisemaxclampenable" value="0"/>
+        <configuration name="noisemaxmessagepropagation" value="200000"/>
+        <configuration name="noisemaxsegmentduration" value="1000000"/>
+        <configuration name="noisemaxsegmentoffset" value="300000"/>
+        <configuration name="noisemode" value="none"/>
+        <configuration name="propagationmodel" value="2ray"/>
+        <configuration name="subid" value="1"/>
+        <configuration name="systemnoisefigure" value="4.000000"/>
+        <configuration name="timesyncthreshold" value="10000"/>
+        <configuration name="txpower" value="0.000000"/>
+      </phy>
+      <external>
+        <configuration name="external" value="0"/>
+        <configuration name="platformendpoint" value="127.0.0.1:40001"/>
+        <configuration name="transportendpoint" value="127.0.0.1:50002"/>
+      </external>
+    </emane_configuration>
+  </emane_configurations>
+  <session_origin lat="47.5791667" lon="-122.132322" alt="2.0" scale="150.0"/>
+  <session_options>
+    <configuration name="controlnet" value="172.16.0.0/24"/>
+    <configuration name="controlnet0" value=""/>
+    <configuration name="controlnet1" value=""/>
+    <configuration name="controlnet2" value=""/>
+    <configuration name="controlnet3" value=""/>
+    <configuration name="controlnet_updown_script" value=""/>
+    <configuration name="enablerj45" value="1"/>
+    <configuration name="preservedir" value="0"/>
+    <configuration name="enablesdt" value="0"/>
+    <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
+    <configuration name="ovs" value="0"/>
+  </session_options>
+  <session_metadata>
+    <configuration name="canvas c1" value="{name {Canvas1}}"/>
+    <configuration name="global_options" value="interface_names=no ip_addresses=yes ipv6_addresses=yes node_labels=yes link_labels=yes show_api=no background_images=no annotations=yes grid=yes traffic_start=0"/>
+  </session_metadata>
+  <default_services>
+    <node type="mdr">
+      <service name="zebra"/>
+      <service name="OSPFv3MDR"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="PC">
+      <service name="DefaultRoute"/>
+    </node>
+    <node type="prouter"/>
+    <node type="router">
+      <service name="zebra"/>
+      <service name="OSPFv2"/>
+      <service name="OSPFv3"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="host">
+      <service name="DefaultRoute"/>
+      <service name="SSH"/>
+    </node>
+  </default_services>
+</scenario>
