@@ -8,7 +8,7 @@ Introduction to using the EMANE event service and eel files to provide events.
 [EMANE Demo 1](https://github.com/adjacentlink/emane-tutorial/wiki/Demonstration-1)
 for more specifics.
 
-### Run Demo
+## Run Demo
 1. Select `Open...` within the GUI
 1. Load `emane-demo-eel.xml`
 1. Click ![Start Button](../static/gui/start.gif)
@@ -32,7 +32,7 @@ EMANE event service targeting the control network.
 > network value
 
 Create `eventservice.xml` with the following contents.
-```shell
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventservice SYSTEM "file:///usr/share/emane/dtd/eventservice.dtd">
 <eventservice>
@@ -57,7 +57,7 @@ These configuration items tell the EEL Generator which sentences to map to
 which plugin and whether to issue delta or full updates.
 
 Create `eelgenerator.xml` with the following contents.
-```shell
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventgenerator SYSTEM "file:///usr/share/emane/dtd/eventgenerator.dtd">
 <eventgenerator library="eelgenerator">

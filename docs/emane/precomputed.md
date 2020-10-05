@@ -8,7 +8,7 @@ Introduction to using the precomputed propagation model.
 [EMANE Demo 1](https://github.com/adjacentlink/emane-tutorial/wiki/Demonstration-1)
 for more specifics.
 
-### Run Demo
+## Run Demo
 1. Select `Open...` within the GUI
 1. Load `emane-demo-precomputed.xml`
 1. Click ![Start Button](../static/gui/start.gif)

@@ -23,7 +23,7 @@ gpsd server and make EMANE location events available to gpsd clients.
 
 ### EMANE GPSD Event Daemon
 First create an `eventdaemon.xml` file on n1 with the following contents.
-```shell
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventdaemon SYSTEM "file:///usr/share/emane/dtd/eventdaemon.dtd">
 <eventdaemon nemid="1">
@@ -34,7 +34,7 @@ First create an `eventdaemon.xml` file on n1 with the following contents.
 ```
 
 Then create the `gpsdlocationagent.xml` file on n1 with the following contents.
-```shell
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventagent SYSTEM "file:///usr/share/emane/dtd/eventagent.dtd">
 <eventagent library="gpsdlocationagent">
@@ -59,12 +59,11 @@ EEL Events will be played out from the actual host machine over the designated
 control network interface. Create the following files in the same directory
 somewhere on your host.
 
-Create `eventservice.xml` on the host machine with the following contents.
-
 > **NOTE:** make sure the below eventservicedevice matches the control network
 > device being used on the host for EMANE
 
-```shell
+Create `eventservice.xml` on the host machine with the following contents.
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventservice SYSTEM "file:///usr/share/emane/dtd/eventservice.dtd">
 <eventservice>
@@ -75,7 +74,7 @@ Create `eventservice.xml` on the host machine with the following contents.
 ```
 
 Create `eelgenerator.xml` on the host machine with the following contents.
-```shell
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE eventgenerator SYSTEM "file:///usr/share/emane/dtd/eventgenerator.dtd">
 <eventgenerator library="eelgenerator">
