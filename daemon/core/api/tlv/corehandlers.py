@@ -1851,7 +1851,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 )
                 self.session.broadcast_config(config_data)
 
-        # send emane model info
+        # send global emane config
+        config = self.session.emane.get_configs()
+        logging.debug("global emane config: values(%s)", config)
+        config_data = ConfigShim.config_data(
+            0, None, ConfigFlags.UPDATE.value, self.session.emane.emane_config, config
+        )
+        self.session.broadcast_config(config_data)
+
+        # send emane model configs
         for node_id in self.session.emane.nodes():
             emane_configs = self.session.emane.get_all_configs(node_id)
             for model_name in emane_configs:

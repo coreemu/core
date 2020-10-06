@@ -333,7 +333,6 @@ Create `/tmp/emane/blockageaft.xml` with the following contents.
 ```
 
 ## Run Demo
-> **WARNING:** if using core-gui, you will need to open nd save the emane configuration
 1. Select `Open...` within the GUI
 1. Load `emane-demo-antenna.xml`
 1. Click ![Start Button](../static/gui/start.gif)
