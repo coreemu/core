@@ -603,7 +603,7 @@ fi;
 class RadvdService(UtilService):
     name: str = "radvd"
     configs: Tuple[str, ...] = ("/etc/radvd/radvd.conf",)
-    dirs: Tuple[str, ...] = ("/etc/radvd",)
+    dirs: Tuple[str, ...] = ("/etc/radvd", "/var/run/radvd",)
     startup: Tuple[str, ...] = (
         "radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log",
     )
