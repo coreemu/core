@@ -1447,12 +1447,14 @@ class Session:
         )
         control_net = self.create_node(
             CtrlNet,
-            True,
-            prefix,
+            start=False,
+            prefix=prefix,
             _id=_id,
             updown_script=updown_script,
             serverintf=server_iface,
         )
+        control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
+        control_net.startup()
         return control_net
 
     def add_remove_control_iface(
