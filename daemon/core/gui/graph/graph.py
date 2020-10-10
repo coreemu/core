@@ -240,6 +240,7 @@ class CanvasGraph(tk.Canvas):
             src_pos = (node1.position.x, node1.position.y)
             dst_pos = (node2.position.x, node2.position.y)
             edge = CanvasEdge(self, src.id, src_pos, dst_pos)
+            edge.linked_wireless = self.is_linked_wireless(src.id, dst.id)
             edge.token = token
             edge.dst = dst.id
             edge.set_link(link)
@@ -468,7 +469,8 @@ class CanvasGraph(tk.Canvas):
             return
 
         # set dst node and snap edge to center
-        edge.complete(self.selected)
+        linked_wireless = self.is_linked_wireless(src_node.id, self.selected)
+        edge.complete(self.selected, linked_wireless)
 
         self.edges[edge.token] = edge
         src_node.edges.add(edge)
@@ -909,7 +911,8 @@ class CanvasGraph(tk.Canvas):
         if token not in self.edges:
             pos = (source.core_node.position.x, source.core_node.position.y)
             edge = CanvasEdge(self, source.id, pos, pos)
-            edge.complete(dest.id)
+            linked_wireless = self.is_linked_wireless(source.id, dest.id)
+            edge.complete(dest.id, linked_wireless)
             self.edges[edge.token] = edge
             self.nodes[source.id].edges.add(edge)
             self.nodes[dest.id].edges.add(edge)
@@ -1035,10 +1038,29 @@ class CanvasGraph(tk.Canvas):
             )
         self.tag_raise(tags.NODE)
 
+    def is_linked_wireless(self, src: int, dst: int) -> bool:
+        src_node = self.nodes[src]
+        dst_node = self.nodes[dst]
+        src_node_type = src_node.core_node.type
+        dst_node_type = dst_node.core_node.type
+        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
+        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+
+        # update the wlan/EMANE network
+        wlan_network = self.wireless_network
+        if is_src_wireless and not is_dst_wireless:
+            if src not in wlan_network:
+                wlan_network[src] = set()
+            wlan_network[src].add(dst)
+        elif not is_src_wireless and is_dst_wireless:
+            if dst not in wlan_network:
+                wlan_network[dst] = set()
+            wlan_network[dst].add(src)
+        return is_src_wireless or is_dst_wireless
+
     def clear_throughputs(self) -> None:
         for edge in self.edges.values():
-            edge.clear_middle_label()
-            edge.draw_link_options()
+            edge.clear_throughput()
 
     def scale_graph(self) -> None:
         for nid, canvas_node in self.nodes.items():

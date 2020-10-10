@@ -287,6 +287,7 @@ class CanvasEdge(Edge):
         self.text_src: Optional[int] = None
         self.text_dst: Optional[int] = None
         self.link: Optional[Link] = None
+        self.linked_wireless: bool = False
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
         self.draw(src_pos, dst_pos, tk.NORMAL)
@@ -332,7 +333,8 @@ class CanvasEdge(Edge):
         src_text, dst_text = self.create_node_labels()
         self.src_label_text(src_text)
         self.dst_label_text(dst_text)
-        self.draw_link_options()
+        if not self.linked_wireless:
+            self.draw_link_options()
 
     def redraw(self) -> None:
         super().redraw()
@@ -350,36 +352,22 @@ class CanvasEdge(Edge):
             width = self.scaled_width()
         self.canvas.itemconfig(self.id, fill=color, width=width)
 
-    def complete(self, dst: int) -> None:
+    def clear_throughput(self) -> None:
+        self.clear_middle_label()
+        if not self.linked_wireless:
+            self.draw_link_options()
+
+    def complete(self, dst: int, linked_wireless: bool) -> None:
         self.dst = dst
+        self.linked_wireless = linked_wireless
         self.token = create_edge_token(self.src, self.dst)
         dst_pos = self.canvas.coords(self.dst)
         self.move_dst(dst_pos)
         self.check_wireless()
-        logging.debug("Draw wired link from node %s to node %s", self.src, dst)
-
-    def is_wireless(self) -> bool:
-        src_node = self.canvas.nodes[self.src]
-        dst_node = self.canvas.nodes[self.dst]
-        src_node_type = src_node.core_node.type
-        dst_node_type = dst_node.core_node.type
-        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
-        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
-
-        # update the wlan/EMANE network
-        wlan_network = self.canvas.wireless_network
-        if is_src_wireless and not is_dst_wireless:
-            if self.src not in wlan_network:
-                wlan_network[self.src] = set()
-            wlan_network[self.src].add(self.dst)
-        elif not is_src_wireless and is_dst_wireless:
-            if self.dst not in wlan_network:
-                wlan_network[self.dst] = set()
-            wlan_network[self.dst].add(self.src)
-        return is_src_wireless or is_dst_wireless
+        logging.debug("draw wired link from node %s to node %s", self.src, dst)
 
     def check_wireless(self) -> None:
-        if self.is_wireless():
+        if self.linked_wireless:
             self.canvas.itemconfig(self.id, state=tk.HIDDEN)
             self.canvas.dtag(self.id, tags.EDGE)
             self._check_antenna()
