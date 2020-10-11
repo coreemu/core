@@ -14,7 +14,7 @@ from core.gui.utils import bandwidth_text, delay_jitter_text
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
 
-TEXT_DISTANCE: float = 0.30
+TEXT_DISTANCE: int = 60
 EDGE_WIDTH: int = 3
 EDGE_COLOR: str = "#ff0000"
 WIRELESS_WIDTH: float = 3
@@ -156,15 +156,17 @@ class Edge:
 
     def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         src_x, src_y, _, _, dst_x, dst_y = self.canvas.coords(self.id)
-        v1 = dst_x - src_x
-        v2 = dst_y - src_y
-        ux = TEXT_DISTANCE * v1
-        uy = TEXT_DISTANCE * v2
-        src_x = src_x + ux
-        src_y = src_y + uy
-        dst_x = dst_x - ux
-        dst_y = dst_y - uy
-        return (src_x, src_y), (dst_x, dst_y)
+        v_x, v_y = dst_x - src_x, dst_y - src_y
+        v_len = math.sqrt(v_x ** 2 + v_y ** 2)
+        if v_len == 0:
+            u_x, u_y = 0.0, 0.0
+        else:
+            u_x, u_y = v_x / v_len, v_y / v_len
+        offset_x, offset_y = TEXT_DISTANCE * u_x, TEXT_DISTANCE * u_y
+        return (
+            (src_x + offset_x, src_y + offset_y),
+            (dst_x - offset_x, dst_y - offset_y),
+        )
 
     def src_label_text(self, text: str) -> None:
         if self.src_label is None:
