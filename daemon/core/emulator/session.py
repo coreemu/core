@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 import time
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 from core import constants, utils
@@ -978,15 +979,6 @@ class Session:
         corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
         xml_writer.write(xml_file_name)
 
-    @staticmethod
-    def merge_environment(f, env, title):
-        try:
-            if os.path.isfile(f):
-                utils.load_config(f, env)
-        except IOError:
-            logging.warning(f"{title} file does not exist: {f}")
-        return env
-
     def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
         Get an environment suitable for a subprocess.Popen call.
@@ -1007,16 +999,25 @@ class Session:
         if state:
             env["SESSION_STATE"] = str(self.state)
         # try reading and merging optional environments from:
-        #    /etc/core/environment
-        #    /home/user/.core/environment
-        #    /tmp/session.nnnnn/environment
-        env_file = os.path.join(constants.CORE_CONF_DIR, "environment")
-        env = self.merge_environment(env_file, env, "environment configuration")
+        # /etc/core/environment
+        # /home/user/.core/environment
+        # /tmp/pycore.<session id>/environment
+        core_env_path = Path(constants.CORE_CONF_DIR) / "environment"
+        session_env_path = Path(self.session_dir) / "environment"
         if self.user:
-            env_user_file = os.path.join("/home", self.user, ".core", "environment")
-            env = self.merge_environment(env_user_file, env, "user environemnt")
-        session_env_file = os.path.join(self.session_dir, "environment")
-        env = self.merge_environment(session_env_file, env, "session environemnt")
+            user_home_path = Path(f"~{self.user}").expanduser()
+            user_env1 = user_home_path / ".core" / "environment"
+            user_env2 = user_home_path / ".coregui" / "environment"
+            paths = [core_env_path, user_env1, user_env2, session_env_path]
+        else:
+            paths = [core_env_path, session_env_path]
+        for path in paths:
+            if path.is_file():
+                try:
+                    logging.info("loading environment config: %s", path)
+                    utils.load_config(path, env)
+                except IOError:
+                    logging.exception("error reading environment file: %s", path)
         return env
 
     def set_thumbnail(self, thumb_file: str) -> None:
