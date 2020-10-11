@@ -185,63 +185,72 @@ the **startup** commands would be supplied, which typically tends to be
 running the shell files generated.
 
 ```python
+"""
+Simple example custom service, used to drive shell commands on a node.
+"""
+from typing import Tuple
+
+from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService, ServiceMode
 
 
-class MyService(CoreService):
+class ExampleService(CoreService):
     """
-    Custom CORE Service
+    Example Custom CORE Service
 
-    :var str name: name used as a unique ID for this service and is required, no spaces
-    :var str group: allows you to group services within the GUI under a common name
-    :var tuple executables: executables this service depends on to function, if executable is
+    :cvar name: name used as a unique ID for this service and is required, no spaces
+    :cvar group: allows you to group services within the GUI under a common name
+    :cvar executables: executables this service depends on to function, if executable is
         not on the path, service will not be loaded
-    :var tuple dependencies: services that this service depends on for startup, tuple of service names
-    :var tuple dirs: directories that this service will create within a node
-    :var tuple configs: files that this service will generate, without a full path this file goes in
-        the node's directory e.g. /tmp/pycore.12345/n1.conf/myfile
-    :var tuple startup: commands used to start this service, any non-zero exit code will cause a failure
-    :var tuple validate: commands used to validate that a service was started, any non-zero exit code
-        will cause a failure
-    :var ServiceMode validation_mode: validation mode, used to determine startup success.
+    :cvar dependencies: services that this service depends on for startup, tuple of
+        service names
+    :cvar dirs: directories that this service will create within a node
+    :cvar configs: files that this service will generate, without a full path this file
+        goes in the node's directory e.g. /tmp/pycore.12345/n1.conf/myfile
+    :cvar startup: commands used to start this service, any non-zero exit code will
+        cause a failure
+    :cvar validate: commands used to validate that a service was started, any non-zero
+        exit code will cause a failure
+    :cvar validation_mode: validation mode, used to determine startup success.
         NON_BLOCKING    - runs startup commands, and validates success with validation commands
         BLOCKING        - runs startup commands, and validates success with the startup commands themselves
         TIMER           - runs startup commands, and validates success by waiting for "validation_timer" alone
-    :var int validation_timer: time in seconds for a service to wait for validation, before determining
-        success in TIMER/NON_BLOCKING modes.
-    :var float validation_validation_period: period in seconds to wait before retrying validation,
+    :cvar validation_timer: time in seconds for a service to wait for validation, before
+        determining success in TIMER/NON_BLOCKING modes.
+    :cvar validation_period: period in seconds to wait before retrying validation,
         only used in NON_BLOCKING mode
-    :var tuple shutdown: shutdown commands to stop this service
+    :cvar shutdown: shutdown commands to stop this service
     """
 
-    name = "MyService"
-    group = "Utility"
-    executables = ()
-    dependencies = ()
-    dirs = ()
-    configs = ("myservice1.sh", "myservice2.sh")
-    startup = tuple(f"sh {x}" for x in configs)
-    validate = ()
-    validation_mode = ServiceMode.NON_BLOCKING
-    validation_timer = 5
-    validation_period = 0.5
-    shutdown = ()
+    name: str = "ExampleService"
+    group: str = "Utility"
+    executables: Tuple[str, ...] = ()
+    dependencies: Tuple[str, ...] = ()
+    dirs: Tuple[str, ...] = ()
+    configs: Tuple[str, ...] = ("myservice1.sh", "myservice2.sh")
+    startup: Tuple[str, ...] = tuple(f"sh {x}" for x in configs)
+    validate: Tuple[str, ...] = ()
+    validation_mode: ServiceMode = ServiceMode.NON_BLOCKING
+    validation_timer: int = 5
+    validation_period: float = 0.5
+    shutdown: Tuple[str, ...] = ()
 
     @classmethod
-    def on_load(cls):
+    def on_load(cls) -> None:
         """
-        Provides a way to run some arbitrary logic when the service is loaded, possibly to help facilitate
-        dynamic settings for the environment.
+        Provides a way to run some arbitrary logic when the service is loaded, possibly
+        to help facilitate dynamic settings for the environment.
 
         :return: nothing
         """
         pass
 
     @classmethod
-    def get_configs(cls, node):
+    def get_configs(cls, node: CoreNode) -> Tuple[str, ...]:
         """
-        Provides a way to dynamically generate the config files from the node a service will run.
-        Defaults to the class definition and can be left out entirely if not needed.
+        Provides a way to dynamically generate the config files from the node a service
+        will run. Defaults to the class definition and can be left out entirely if not
+        needed.
 
         :param node: core node that the service is being ran on
         :return: tuple of config files to create
@@ -249,32 +258,31 @@ class MyService(CoreService):
         return cls.configs
 
     @classmethod
-    def generate_config(cls, node, filename):
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
-        Returns a string representation for a file, given the node the service is starting on the config filename
-        that this information will be used for. This must be defined, if "configs" are defined.
+        Returns a string representation for a file, given the node the service is
+        starting on the config filename that this information will be used for. This
+        must be defined, if "configs" are defined.
 
         :param node: core node that the service is being ran on
-        :param str filename: configuration file to generate
+        :param filename: configuration file to generate
         :return: configuration file content
-        :rtype: str
         """
         cfg = "#!/bin/sh\n"
-
         if filename == cls.configs[0]:
             cfg += "# auto-generated by MyService (sample.py)\n"
-            for ifc in node.get_ifaces():
-                cfg += f'echo "Node {node.name} has interface {ifc.name}"\n'
+            for iface in node.get_ifaces():
+                cfg += f'echo "Node {node.name} has interface {iface.name}"\n'
         elif filename == cls.configs[1]:
             cfg += "echo hello"
-
         return cfg
 
     @classmethod
-    def get_startup(cls, node):
+    def get_startup(cls, node: CoreNode) -> Tuple[str, ...]:
         """
-        Provides a way to dynamically generate the startup commands from the node a service will run.
-        Defaults to the class definition and can be left out entirely if not needed.
+        Provides a way to dynamically generate the startup commands from the node a
+        service will run. Defaults to the class definition and can be left out entirely
+        if not needed.
 
         :param node: core node that the service is being ran on
         :return: tuple of startup commands to run
@@ -282,10 +290,11 @@ class MyService(CoreService):
         return cls.startup
 
     @classmethod
-    def get_validate(cls, node):
+    def get_validate(cls, node: CoreNode) -> Tuple[str, ...]:
         """
-        Provides a way to dynamically generate the validate commands from the node a service will run.
-        Defaults to the class definition and can be left out entirely if not needed.
+        Provides a way to dynamically generate the validate commands from the node a
+        service will run. Defaults to the class definition and can be left out entirely
+        if not needed.
 
         :param node: core node that the service is being ran on
         :return: tuple of commands to validate service startup with
