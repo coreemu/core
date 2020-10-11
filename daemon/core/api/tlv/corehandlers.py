@@ -52,6 +52,7 @@ from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
+from core.nodes.physical import Rj45Node
 from core.services.coreservices import ServiceManager, ServiceShim
 
 
@@ -801,6 +802,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 node1_id, node2_id, iface1_data, iface2_data, options, link_type
             )
         elif message.flags & MessageFlags.DELETE.value:
+            node1 = self.session.get_node(node1_id, NodeBase)
+            node2 = self.session.get_node(node2_id, NodeBase)
+            if isinstance(node1, Rj45Node):
+                iface1_data.id = node1.iface_id
+            if isinstance(node2, Rj45Node):
+                iface2_data.id = node2.iface_id
             self.session.delete_link(
                 node1_id, node2_id, iface1_data.id, iface2_data.id, link_type
             )
