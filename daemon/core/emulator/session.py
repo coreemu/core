@@ -1014,7 +1014,6 @@ class Session:
         for path in paths:
             if path.is_file():
                 try:
-                    logging.info("loading environment config: %s", path)
                     utils.load_config(path, env)
                 except IOError:
                     logging.exception("error reading environment file: %s", path)
