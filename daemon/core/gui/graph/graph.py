@@ -437,6 +437,14 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
 
+        # only 1 link between bridge based nodes
+        is_src_bridge = NodeUtils.is_bridge_node(src_node.core_node)
+        is_dst_bridge = NodeUtils.is_bridge_node(dst_node.core_node)
+        common_links = src_node.edges & dst_node.edges
+        if all([is_src_bridge, is_dst_bridge, common_links]):
+            edge.delete()
+            return
+
         # finalize edge creation
         self.complete_edge(src_node, dst_node, edge)
 
