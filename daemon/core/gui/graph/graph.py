@@ -900,8 +900,6 @@ class CanvasGraph(tk.Canvas):
     ) -> None:
         linked_wireless = self.is_linked_wireless(src.id, dst.id)
         edge.complete(dst.id, linked_wireless)
-        src.edges.add(edge)
-        dst.edges.add(edge)
         if link is None:
             link = self.core.create_link(edge, src, dst)
         if link.iface1:
@@ -910,6 +908,8 @@ class CanvasGraph(tk.Canvas):
         if link.iface2:
             iface2 = link.iface2
             dst.ifaces[iface2.id] = iface2
+        src.edges.add(edge)
+        dst.edges.add(edge)
         edge.set_link(link)
         edge.token = create_edge_token(src.id, dst.id, edge.link)
         self.arc_common_edges(edge)
