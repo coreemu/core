@@ -339,6 +339,8 @@ class CanvasEdge(Edge):
         self.draw_labels()
 
     def check_options(self) -> None:
+        if not self.link.options:
+            return
         if self.link.options.loss == EDGE_LOSS:
             state = tk.HIDDEN
             self.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
