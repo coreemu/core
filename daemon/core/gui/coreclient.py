@@ -910,10 +910,10 @@ class CoreClient:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
         if NodeUtils.is_container_node(src_node.type):
-            src_iface_id = edge.src_iface.id
+            src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge
         if NodeUtils.is_container_node(dst_node.type):
-            dst_iface_id = edge.dst_iface.id
+            dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
     def get_wlan_configs_proto(self) -> List[wlan_pb2.WlanConfig]:

@@ -322,10 +322,10 @@ class CanvasNode:
         for edge in self.edges:
             if self.id == edge.src:
                 other_id = edge.dst
-                edge_iface_id = edge.src_iface.id
+                edge_iface_id = edge.link.iface1.id
             else:
                 other_id = edge.src
-                edge_iface_id = edge.dst_iface.id
+                edge_iface_id = edge.link.iface2.id
             if edge_iface_id != iface_id:
                 continue
             other_node = self.canvas.nodes[other_id]

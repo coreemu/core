@@ -285,8 +285,6 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_iface: Optional[Interface] = None
-        self.dst_iface: Optional[Interface] = None
         self.text_src: Optional[int] = None
         self.text_dst: Optional[int] = None
         self.link: Optional[Link] = None

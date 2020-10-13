@@ -237,7 +237,7 @@ class CanvasGraph(tk.Canvas):
             src_pos = (node1.position.x, node1.position.y)
             dst_pos = (node2.position.x, node2.position.y)
             edge = CanvasEdge(self, src.id, src_pos, dst_pos)
-            self.complete_edge(src, dst, edge)
+            self.complete_edge(src, dst, edge, link)
 
     def delete_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         token = create_edge_token(src.id, dst.id, link)
@@ -512,10 +512,10 @@ class CanvasGraph(tk.Canvas):
                     edge.delete()
                     # update node connected to edge being deleted
                     other_id = edge.src
-                    other_iface = edge.src_iface
+                    other_iface = edge.link.iface1
                     if edge.src == object_id:
                         other_id = edge.dst
-                        other_iface = edge.dst_iface
+                        other_iface = edge.link.iface2
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
                     if other_iface:
@@ -537,12 +537,12 @@ class CanvasGraph(tk.Canvas):
         del self.edges[edge.token]
         src_node = self.nodes[edge.src]
         src_node.edges.discard(edge)
-        if edge.src_iface:
-            del src_node.ifaces[edge.src_iface.id]
+        if edge.link.iface1:
+            del src_node.ifaces[edge.link.iface1.id]
         dst_node = self.nodes[edge.dst]
         dst_node.edges.discard(edge)
-        if edge.dst_iface:
-            del dst_node.ifaces[edge.dst_iface.id]
+        if edge.link.iface2:
+            del dst_node.ifaces[edge.link.iface2.id]
         src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
         if src_wireless:
             dst_node.delete_antenna()
@@ -907,11 +907,9 @@ class CanvasGraph(tk.Canvas):
         if link.iface1:
             iface1 = link.iface1
             src.ifaces[iface1.id] = iface1
-            edge.src_iface = iface1
         if link.iface2:
             iface2 = link.iface2
             dst.ifaces[iface2.id] = iface2
-            edge.dst_iface = iface2
         edge.set_link(link)
         edge.token = create_edge_token(src.id, dst.id, edge.link)
         self.arc_common_edges(edge)
