@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 TEXT_DISTANCE: int = 60
 EDGE_WIDTH: int = 3
 EDGE_COLOR: str = "#ff0000"
+EDGE_LOSS: float = 100.0
 WIRELESS_WIDTH: float = 3
 WIRELESS_COLOR: str = "#009933"
 ARC_DISTANCE: int = 50
@@ -305,10 +306,6 @@ class CanvasEdge(Edge):
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
         self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
-    def set_link(self, link: Link) -> None:
-        self.link = link
-        self.draw_labels()
-
     def iface_label(self, iface: Interface) -> str:
         label = ""
         if iface.name and self.canvas.show_iface_names.get():
@@ -340,6 +337,16 @@ class CanvasEdge(Edge):
     def redraw(self) -> None:
         super().redraw()
         self.draw_labels()
+
+    def check_options(self) -> None:
+        if self.link.options.loss == EDGE_LOSS:
+            state = tk.HIDDEN
+            self.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
+        else:
+            state = tk.NORMAL
+            self.canvas.dtag(self.id, tags.LOSS_EDGES)
+        if self.canvas.show_loss_links.state() == tk.HIDDEN:
+            self.canvas.itemconfigure(self.id, state=state)
 
     def set_throughput(self, throughput: float) -> None:
         throughput = 0.001 * throughput

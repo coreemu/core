@@ -173,6 +173,11 @@ class Menubar(tk.Menu):
             variable=self.canvas.show_links,
         )
         menu.add_checkbutton(
+            label="Loss Links",
+            command=self.canvas.show_loss_links.click_handler,
+            variable=self.canvas.show_loss_links,
+        )
+        menu.add_checkbutton(
             label="Wireless Links",
             command=self.canvas.show_wireless.click_handler,
             variable=self.canvas.show_wireless,
