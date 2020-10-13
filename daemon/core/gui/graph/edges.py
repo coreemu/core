@@ -27,10 +27,10 @@ def create_wireless_token(src: int, dst: int, network: int) -> str:
     return f"{src}-{dst}-{network}"
 
 
-def create_edge_token(src: int, dst: int, link: Link) -> str:
+def create_edge_token(link: Link) -> str:
     iface1_id = link.iface1.id if link.iface1 else None
     iface2_id = link.iface2.id if link.iface2 else None
-    return f"{src}-{iface1_id}-{dst}-{iface2_id}"
+    return f"{link.node1_id}-{iface1_id}-{link.node2_id}-{iface2_id}"
 
 
 def arc_edges(edges) -> None:

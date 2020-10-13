@@ -56,9 +56,9 @@ class LinkConfigurationDialog(Dialog):
         self.down_loss: tk.StringVar = tk.StringVar()
         self.down_duplicate: tk.StringVar = tk.StringVar()
 
-        self.color: tk.StringVar = tk.StringVar(value="#000000")
+        self.color: tk.StringVar = tk.StringVar(value=self.edge.color)
         self.color_button: Optional[tk.Button] = None
-        self.width: tk.DoubleVar = tk.DoubleVar()
+        self.width: tk.DoubleVar = tk.DoubleVar(value=self.edge.width)
 
         self.load_link_config()
         self.symmetric_frame: Optional[ttk.Frame] = None
@@ -217,8 +217,8 @@ class LinkConfigurationDialog(Dialog):
         self.color_button.config(background=color)
 
     def click_apply(self) -> None:
-        self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
-        self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
+        self.edge.width = self.width.get()
+        self.edge.color = self.color.get()
         link = self.edge.link
         bandwidth = get_int(self.bandwidth)
         jitter = get_int(self.jitter)
@@ -269,7 +269,7 @@ class LinkConfigurationDialog(Dialog):
                 self.app.core.edit_link(self.edge.asymmetric_link)
 
         # update edge label
-        self.edge.draw_link_options()
+        self.edge.redraw()
         self.edge.check_options()
         self.destroy()
 

@@ -225,13 +225,9 @@ class CoreClient:
                 self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
                 self.app.canvas.organize()
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wired_edge(
-                    canvas_node1, canvas_node2, event.link
-                )
+                self.app.canvas.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wired_edge(
-                    canvas_node1, canvas_node2, event.link
-                )
+                self.app.canvas.update_wired_edge(event.link)
             else:
                 logging.warning("unknown link event: %s", event)
 
@@ -384,6 +380,17 @@ class CoreClient:
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
+
+        # load edges config
+        edges_config = config.get("edges")
+        if edges_config:
+            edges_config = json.loads(edges_config)
+            logging.info("edges config: %s", edges_config)
+            for edge_config in edges_config:
+                edge = self.links[edge_config["token"]]
+                edge.width = edge_config["width"]
+                edge.color = edge_config["color"]
+                edge.redraw()
 
     def create_new_session(self) -> None:
         """
@@ -572,7 +579,15 @@ class CoreClient:
             shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
-        metadata = {"canvas": canvas_config, "shapes": shapes}
+        # create edges config
+        edges_config = []
+        for edge in self.links.values():
+            edge_config = dict(token=edge.token, width=edge.width, color=edge.color)
+            edges_config.append(edge_config)
+        edges_config = json.dumps(edges_config)
+
+        # save metadata
+        metadata = dict(canvas=canvas_config, shapes=shapes, edges=edges_config)
         response = self.client.set_session_metadata(self.session.id, metadata)
         logging.debug("set session metadata %s, result: %s", metadata, response)
 

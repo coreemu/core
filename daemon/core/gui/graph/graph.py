@@ -229,7 +229,7 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(self.rect)
 
     def add_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
-        token = create_edge_token(src.id, dst.id, link)
+        token = create_edge_token(link)
         if token in self.edges and link.options.unidirectional:
             edge = self.edges[token]
             edge.asymmetric_link = link
@@ -241,14 +241,14 @@ class CanvasGraph(tk.Canvas):
             edge = CanvasEdge(self, src.id, src_pos, dst_pos)
             self.complete_edge(src, dst, edge, link)
 
-    def delete_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
-        token = create_edge_token(src.id, dst.id, link)
+    def delete_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
         edge = self.edges.get(token)
         if edge:
             self.delete_edge(edge)
 
-    def update_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
-        token = create_edge_token(src.id, dst.id, link)
+    def update_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
         edge = self.edges.get(token)
         if edge:
             edge.link.options = deepcopy(link.options)
@@ -915,7 +915,7 @@ class CanvasGraph(tk.Canvas):
             dst.ifaces[iface2.id] = iface2
         src.edges.add(edge)
         dst.edges.add(edge)
-        edge.token = create_edge_token(src.id, dst.id, edge.link)
+        edge.token = create_edge_token(edge.link)
         self.arc_common_edges(edge)
         edge.draw_labels()
         edge.check_options()
