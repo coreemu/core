@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.nodes.base import CoreNetworkBase, CoreNode
 
+DEFAULT_MTU: int = 1500
+
 
 class CoreInterface:
     """
@@ -338,7 +340,7 @@ class Veth(CoreInterface):
         node: "CoreNode",
         name: str,
         localname: str,
-        mtu: int = 1500,
+        mtu: int = DEFAULT_MTU,
         server: "DistributedServer" = None,
         start: bool = True,
     ) -> None:
@@ -403,7 +405,7 @@ class TunTap(CoreInterface):
         node: "CoreNode",
         name: str,
         localname: str,
-        mtu: int = 1500,
+        mtu: int = DEFAULT_MTU,
         server: "DistributedServer" = None,
         start: bool = True,
     ) -> None:

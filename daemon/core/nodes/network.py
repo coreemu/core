@@ -3,6 +3,7 @@ Defines network nodes used within core.
 """
 
 import logging
+import math
 import threading
 import time
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
@@ -447,77 +448,59 @@ class CoreNetwork(CoreNetworkBase):
         :param iface2: interface two
         :return: nothing
         """
-        devname = iface.localname
-        tc = f"{TC} qdisc replace dev {devname}"
-        parent = "root"
-        changed = False
-        bw = options.bandwidth
-        if iface.setparam("bw", bw):
-            # from tc-tbf(8): minimum value for burst is rate / kernel_hz
-            burst = max(2 * iface.mtu, int(bw / 1000))
-            # max IP payload
-            limit = 0xFFFF
-            tbf = f"tbf rate {bw} burst {burst} limit {limit}"
-            if bw > 0:
-                if self.up:
-                    cmd = f"{tc} {parent} handle 1: {tbf}"
-                    iface.host_cmd(cmd)
-                iface.setparam("has_tbf", True)
-                changed = True
-            elif iface.getparam("has_tbf") and bw <= 0:
-                if self.up:
-                    cmd = f"{TC} qdisc delete dev {devname} {parent}"
-                    iface.host_cmd(cmd)
-                iface.setparam("has_tbf", False)
-                # removing the parent removes the child
-                iface.setparam("has_netem", False)
-                changed = True
-        if iface.getparam("has_tbf"):
-            parent = "parent 1:1"
-        netem = "netem"
-        delay = options.delay
-        changed = max(changed, iface.setparam("delay", delay))
-        loss = options.loss
-        if loss is not None:
-            loss = float(loss)
-        changed = max(changed, iface.setparam("loss", loss))
-        duplicate = options.dup
-        if duplicate is not None:
-            duplicate = int(duplicate)
-        changed = max(changed, iface.setparam("duplicate", duplicate))
-        jitter = options.jitter
-        changed = max(changed, iface.setparam("jitter", jitter))
+        # determine if any settings have changed
+        changed = any(
+            [
+                iface.setparam("bw", options.bandwidth),
+                iface.setparam("delay", options.delay),
+                iface.setparam("loss", options.loss),
+                iface.setparam("duplicate", options.dup),
+                iface.setparam("jitter", options.jitter),
+            ]
+        )
         if not changed:
             return
-        # jitter and delay use the same delay statement
-        if delay is not None:
-            netem += f" delay {delay}us"
-        if jitter is not None:
-            if delay is None:
-                netem += f" delay 0us {jitter}us 25%"
-            else:
-                netem += f" {jitter}us 25%"
 
-        if loss is not None and loss > 0:
-            netem += f" loss {min(loss, 100)}%"
-        if duplicate is not None and duplicate > 0:
-            netem += f" duplicate {min(duplicate, 100)}%"
-
-        delay_check = delay is None or delay <= 0
-        jitter_check = jitter is None or jitter <= 0
-        loss_check = loss is None or loss <= 0
-        duplicate_check = duplicate is None or duplicate <= 0
-        if all([delay_check, jitter_check, loss_check, duplicate_check]):
-            # possibly remove netem if it exists and parent queue wasn't removed
+        # delete tc configuration or create and add it
+        devname = iface.localname
+        if all(
+            [
+                options.delay is None or options.delay <= 0,
+                options.jitter is None or options.jitter <= 0,
+                options.loss is None or options.loss <= 0,
+                options.dup is None or options.dup <= 0,
+                options.bandwidth is None or options.bandwidth <= 0,
+            ]
+        ):
             if not iface.getparam("has_netem"):
                 return
             if self.up:
-                cmd = f"{TC} qdisc delete dev {devname} {parent} handle 10:"
+                cmd = f"{TC} qdisc delete dev {devname} root handle 10:"
                 iface.host_cmd(cmd)
             iface.setparam("has_netem", False)
-        elif len(netem) > 1:
+        else:
+            netem = ""
+            if options.bandwidth is not None:
+                limit = 1000
+                bw = options.bandwidth / 1000
+                if options.delay and options.bandwidth:
+                    delay = options.delay / 1000
+                    limit = max(2, math.ceil((2 * bw * delay) / (8 * iface.mtu)))
+                netem += f" rate {bw}kbit"
+                netem += f" limit {limit}"
+            if options.delay is not None:
+                netem += f" delay {options.delay}us"
+            if options.jitter is not None:
+                if options.delay is None:
+                    netem += f" delay 0us {options.jitter}us 25%"
+                else:
+                    netem += f" {options.jitter}us 25%"
+            if options.loss is not None and options.loss > 0:
+                netem += f" loss {min(options.loss, 100)}%"
+            if options.dup is not None and options.dup > 0:
+                netem += f" duplicate {min(options.dup, 100)}%"
             if self.up:
-                cmd = f"{TC} qdisc replace dev {devname} {parent} handle 10: {netem}"
+                cmd = f"{TC} qdisc replace dev {devname} root handle 10: netem {netem}"
                 iface.host_cmd(cmd)
             iface.setparam("has_netem", True)
 

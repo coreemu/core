@@ -788,14 +788,18 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options = LinkOptions()
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        options.loss = message.get_tlv(LinkTlvs.LOSS.value)
-        options.dup = message.get_tlv(LinkTlvs.DUP.value)
         options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
         options.mer = message.get_tlv(LinkTlvs.MER.value)
         options.burst = message.get_tlv(LinkTlvs.BURST.value)
         options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
         options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
         options.key = message.get_tlv(LinkTlvs.KEY.value)
+        loss = message.get_tlv(LinkTlvs.LOSS.value)
+        dup = message.get_tlv(LinkTlvs.DUP.value)
+        if loss is not None:
+            options.loss = float(loss)
+        if dup is not None:
+            options.dup = int(dup)
 
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(

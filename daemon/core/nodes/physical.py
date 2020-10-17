@@ -13,7 +13,7 @@ from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
-from core.nodes.interface import CoreInterface
+from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
 
 if TYPE_CHECKING:
@@ -252,7 +252,7 @@ class Rj45Node(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        mtu: int = 1500,
+        mtu: int = DEFAULT_MTU,
         server: DistributedServer = None,
     ) -> None:
         """
