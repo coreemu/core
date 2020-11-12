@@ -68,10 +68,14 @@ class LinkConfigurationDialog(Dialog):
 
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
-        source_name = self.app.canvas.nodes[self.edge.src].core_node.name
-        dest_name = self.app.canvas.nodes[self.edge.dst].core_node.name
+        src_label = self.app.canvas.nodes[self.edge.src].core_node.name
+        if self.edge.link.iface1:
+            src_label += f":{self.edge.link.iface1.name}"
+        dst_label = self.app.canvas.nodes[self.edge.dst].core_node.name
+        if self.edge.link.iface2:
+            dst_label += f":{self.edge.link.iface2.name}"
         label = ttk.Label(
-            self.top, text=f"Link from {source_name} to {dest_name}", anchor=tk.CENTER
+            self.top, text=f"{src_label} to {dst_label}", anchor=tk.CENTER
         )
         label.grid(row=0, column=0, sticky=tk.EW, pady=PADY)
 

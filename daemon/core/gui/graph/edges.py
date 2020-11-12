@@ -22,11 +22,14 @@ WIRELESS_COLOR: str = "#009933"
 ARC_DISTANCE: int = 50
 
 
-def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
-    values = [src, dst]
-    if network is not None:
-        values.append(network)
-    return tuple(sorted(values))
+def create_wireless_token(src: int, dst: int, network: int) -> str:
+    return f"{src}-{dst}-{network}"
+
+
+def create_edge_token(src: int, dst: int, link: Link) -> str:
+    iface1_id = link.iface1.id if link.iface1 else None
+    iface2_id = link.iface2.id if link.iface2 else None
+    return f"{src}-{iface1_id}-{dst}-{iface2_id}"
 
 
 def arc_edges(edges) -> None:
@@ -67,16 +70,12 @@ class Edge:
         self.src: int = src
         self.dst: int = dst
         self.arc: int = 0
-        self.token: Optional[Tuple[int, ...]] = None
+        self.token: Optional[str] = None
         self.src_label: Optional[int] = None
         self.middle_label: Optional[int] = None
         self.dst_label: Optional[int] = None
         self.color: str = EDGE_COLOR
         self.width: int = EDGE_WIDTH
-
-    @classmethod
-    def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
-        return tuple(sorted([src, dst]))
 
     def scaled_width(self) -> float:
         return self.width * self.canvas.app.app_scale
@@ -242,15 +241,17 @@ class CanvasWirelessEdge(Edge):
         canvas: "CanvasGraph",
         src: int,
         dst: int,
+        network_id: int,
+        token: str,
         src_pos: Tuple[float, float],
         dst_pos: Tuple[float, float],
-        token: Tuple[int, ...],
         link: Link,
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(canvas, src, dst)
+        self.network_id: int = network_id
         self.link: Link = link
-        self.token: Tuple[int, ...] = token
+        self.token: str = token
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
@@ -284,8 +285,6 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_iface: Optional[Interface] = None
-        self.dst_iface: Optional[Interface] = None
         self.text_src: Optional[int] = None
         self.text_dst: Optional[int] = None
         self.link: Optional[Link] = None
@@ -362,7 +361,6 @@ class CanvasEdge(Edge):
     def complete(self, dst: int, linked_wireless: bool) -> None:
         self.dst = dst
         self.linked_wireless = linked_wireless
-        self.token = create_edge_token(self.src, self.dst)
         dst_pos = self.canvas.coords(self.dst)
         self.move_dst(dst_pos)
         self.check_wireless()
