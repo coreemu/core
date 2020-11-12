@@ -110,6 +110,7 @@ class CanvasGraph(tk.Canvas):
         self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
         self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)
+        self.show_loss_links: ShowVar = ShowVar(self, tags.LOSS_EDGES, value=True)
         self.show_iface_names: BooleanVar = BooleanVar(value=False)
         self.show_ip4s: BooleanVar = BooleanVar(value=True)
         self.show_ip6s: BooleanVar = BooleanVar(value=True)
@@ -147,6 +148,7 @@ class CanvasGraph(tk.Canvas):
         self.show_iface_names.set(False)
         self.show_ip4s.set(True)
         self.show_ip6s.set(True)
+        self.show_loss_links.set(True)
 
         # delete any existing drawn items
         for tag in tags.RESET_TAGS:
@@ -250,6 +252,8 @@ class CanvasGraph(tk.Canvas):
         edge = self.edges.get(token)
         if edge:
             edge.link.options = deepcopy(link.options)
+            edge.draw_link_options()
+            edge.check_options()
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
@@ -902,6 +906,7 @@ class CanvasGraph(tk.Canvas):
         edge.complete(dst.id, linked_wireless)
         if link is None:
             link = self.core.create_link(edge, src, dst)
+        edge.link = link
         if link.iface1:
             iface1 = link.iface1
             src.ifaces[iface1.id] = iface1
@@ -910,9 +915,10 @@ class CanvasGraph(tk.Canvas):
             dst.ifaces[iface2.id] = iface2
         src.edges.add(edge)
         dst.edges.add(edge)
-        edge.set_link(link)
         edge.token = create_edge_token(src.id, dst.id, edge.link)
         self.arc_common_edges(edge)
+        edge.draw_labels()
+        edge.check_options()
         self.edges[edge.token] = edge
         self.core.save_edge(edge, src, dst)
 
