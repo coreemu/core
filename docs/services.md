@@ -180,7 +180,7 @@ consider contributing it to the CORE project.
 Below is the skeleton for a custom service with some documentation. Most
 people would likely only setup the required class variables **(name/group)**.
 Then define the **configs** (files they want to generate) and implement the
-**generate_confifs** function to dynamically create the files wanted. Finally
+**generate_config** function to dynamically create the files wanted. Finally
 the **startup** commands would be supplied, which typically tends to be
 running the shell files generated.
 
