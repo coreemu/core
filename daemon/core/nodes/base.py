@@ -30,8 +30,6 @@ if TYPE_CHECKING:
     CoreServices = List[Union[CoreService, Type[CoreService]]]
     ConfigServiceType = Type[ConfigService]
 
-_DEFAULT_MTU = 1500
-
 
 class NodeBase(abc.ABC):
     """

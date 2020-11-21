@@ -5,7 +5,7 @@ from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase
-from core.nodes.interface import CoreInterface
+from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import WlanNode
 
 GROUP: str = "FRR"
@@ -18,7 +18,7 @@ def has_mtu_mismatch(iface: CoreInterface) -> bool:
     mtu-ignore command. This is needed when e.g. a node is linked via a
     GreTap device.
     """
-    if iface.mtu != 1500:
+    if iface.mtu != DEFAULT_MTU:
         return True
     if not iface.net:
         return False
