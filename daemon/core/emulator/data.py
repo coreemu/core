@@ -172,6 +172,7 @@ class LinkOptions:
     mburst: int = None
     unidirectional: int = None
     key: int = None
+    buffer: int = None
 
 
 @dataclass

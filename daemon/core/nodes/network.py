@@ -456,6 +456,7 @@ class CoreNetwork(CoreNetworkBase):
                 iface.setparam("loss", options.loss),
                 iface.setparam("duplicate", options.dup),
                 iface.setparam("jitter", options.jitter),
+                iface.setparam("buffer", options.buffer),
             ]
         )
         if not changed:
@@ -470,6 +471,7 @@ class CoreNetwork(CoreNetworkBase):
                 options.loss is None or options.loss <= 0,
                 options.dup is None or options.dup <= 0,
                 options.bandwidth is None or options.bandwidth <= 0,
+                options.buffer is None or options.buffer <= 0,
             ]
         ):
             if not iface.getparam("has_netem"):
@@ -483,7 +485,9 @@ class CoreNetwork(CoreNetworkBase):
             if options.bandwidth is not None:
                 limit = 1000
                 bw = options.bandwidth / 1000
-                if options.delay and options.bandwidth:
+                if options.buffer is not None and options.buffer > 0:
+                    limit = options.buffer
+                elif options.delay and options.bandwidth:
                     delay = options.delay / 1000
                     limit = max(2, math.ceil((2 * bw * delay) / (8 * iface.mtu)))
                 netem += f" rate {bw}kbit"
