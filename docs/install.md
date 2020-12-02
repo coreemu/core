@@ -9,62 +9,13 @@ or build and install a python wheel.
 
 > **WARNING:** if Docker is installed, the default iptable rules will block CORE traffic
 
-### Tools Used
-The following tools will be leveraged during installation:
-
-|Tool|Description|
-|---|---|
-|[pip](https://pip.pypa.io/en/stable/)|used to install pipx|
-|[pipx](https://pipxproject.github.io/pipx/)|used to install standalone python tools (invoke, poetry)|
-|[invoke](http://www.pyinvoke.org/)|used to run provided tasks (install, uninstall, reinstall, etc)|
-|[poetry](https://python-poetry.org/)|used to install python virtual environment or building a python wheel|
-
-### Files
-The following is a list of files that would be installed after running the automated installation.
-
-> **NOTE:** the default install prefix is /usr/local, but can be changed as noted below
-
-* executable files
-  * <prefix>/bin/{core-daemon, core-gui, vcmd, vnoded, etc}
-* tcl/tk gui files
-  * <prefix>/lib/core
-  * <prefix>/share/core/icons
-* example imn files
-  * <prefix>/share/core/examples
-* python files
-  * poetry virtual env
-    * `cd <repo>/daemon && poetry env info`
-    * ~/.cache/pypoetry/virtualenvs/
-  * local python install
-    * default install path for python3 installation of a wheel
-    * `python3 -c "import core; print(core.__file__)"`
-* configuration files
-  * /etc/core/{core.conf, logging.conf}
-* ospf mdr repository files
-  * <repo>/../ospf-mdr
-* emane repository files
-  * <repo>/../emane
-
-### Installed Executables
-After the installation complete it will have installed the following scripts.
-
-| Name | Description |
-|---|---|
-| core-cleanup | tool to help removed lingering core created containers, bridges, directories |
-| core-cli | tool to query, open xml files, and send commands using gRPC |
-| core-daemon | runs the backed core server providing TLV and gRPC APIs |
-| core-gui | runs the legacy tcl/tk based GUI |
-| core-imn-to-xml | tool to help automate converting a .imn file to .xml format |
-| core-manage | tool to add, remove, or check for services, models, and node types |
-| core-pygui | runs the new python/tk based GUI |
-| core-python | provides a convenience for running the core python virtual environment |
-| core-route-monitor | tool to help monitor traffic across nodes and feed that to SDT |
-| core-service-update | tool to update automate modifying a legacy service to match current naming |
-| coresendmsg | tool to send TLV API commands from command line |
-
-### Required Hardware
+### Requirements
 Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
+
+* Linux Kernel v3.3+
+* iproute2 4.5+ is a requirement for bridge related commands
+* ebtables not backed by nftables
 
 ### Supported Linux Distributions
 Plan is to support recent Ubuntu and CentOS LTS releases.
@@ -89,11 +40,58 @@ sudo yum install -y kernel-modules-extra
 sudo modprobe sch_netem
 ```
 
-### Utility Requirements
-The following are known dependencies that will result in errors when not met.
+### Tools Used
+The following tools will be leveraged during installation:
 
-* iproute2 4.5+ is a requirement for bridge related commands
-* ebtables not backed by nftables
+|Tool|Description|
+|---|---|
+|[pip](https://pip.pypa.io/en/stable/)|used to install pipx|
+|[pipx](https://pipxproject.github.io/pipx/)|used to install standalone python tools (invoke, poetry)|
+|[invoke](http://www.pyinvoke.org/)|used to run provided tasks (install, uninstall, reinstall, etc)|
+|[poetry](https://python-poetry.org/)|used to install python virtual environment or building a python wheel|
+
+### Files
+The following is a list of files that would be installed after running the automated installation.
+
+> **NOTE:** the default install prefix is /usr/local, but can be changed as noted below
+
+* executable files
+  * `<prefix>/bin/{core-daemon, core-gui, vcmd, vnoded, etc}`
+* tcl/tk gui files
+  * `<prefix>/lib/core`
+  * `<prefix>/share/core/icons`
+* example imn files
+  * `<prefix>/share/core/examples`
+* python files
+  * poetry virtual env
+    * `cd <repo>/daemon && poetry env info`
+    * `~/.cache/pypoetry/virtualenvs/`
+  * local python install
+    * default install path for python3 installation of a wheel
+    * `python3 -c "import core; print(core.__file__)"`
+* configuration files
+  * `/etc/core/{core.conf, logging.conf}`
+* ospf mdr repository files
+  * `<repo>/../ospf-mdr`
+* emane repository files
+  * `<repo>/../emane`
+
+### Installed Executables
+After the installation complete it will have installed the following scripts.
+
+| Name | Description |
+|---|---|
+| core-cleanup | tool to help removed lingering core created containers, bridges, directories |
+| core-cli | tool to query, open xml files, and send commands using gRPC |
+| core-daemon | runs the backed core server providing TLV and gRPC APIs |
+| core-gui | runs the legacy tcl/tk based GUI |
+| core-imn-to-xml | tool to help automate converting a .imn file to .xml format |
+| core-manage | tool to add, remove, or check for services, models, and node types |
+| core-pygui | runs the new python/tk based GUI |
+| core-python | provides a convenience for running the core python virtual environment |
+| core-route-monitor | tool to help monitor traffic across nodes and feed that to SDT |
+| core-service-update | tool to update automate modifying a legacy service to match current naming |
+| coresendmsg | tool to send TLV API commands from command line |
 
 ## Upgrading from Older Release
 Please make sure to uninstall any previous installations of CORE cleanly
