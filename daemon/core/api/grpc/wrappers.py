@@ -457,6 +457,7 @@ class LinkOptions:
     delay: int = 0
     dup: int = 0
     unidirectional: bool = False
+    buffer: int = 0
 
     @classmethod
     def from_proto(cls, proto: core_pb2.LinkOptions) -> "LinkOptions":
@@ -471,6 +472,7 @@ class LinkOptions:
             delay=proto.delay,
             dup=proto.dup,
             unidirectional=proto.unidirectional,
+            buffer=proto.buffer,
         )
 
     def to_proto(self) -> core_pb2.LinkOptions:
@@ -485,6 +487,7 @@ class LinkOptions:
             delay=self.delay,
             dup=self.dup,
             unidirectional=self.unidirectional,
+            buffer=self.buffer,
         )
 
 

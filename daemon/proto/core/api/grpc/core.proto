@@ -777,6 +777,7 @@ message LinkOptions {
     int64 delay = 8;
     int32 dup = 9;
     bool unidirectional = 10;
+    int32 buffer = 11;
 }
 
 message Interface {

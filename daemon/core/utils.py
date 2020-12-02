@@ -15,6 +15,7 @@ import random
 import shlex
 import shutil
 import sys
+from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 from typing import (
     TYPE_CHECKING,
@@ -315,27 +316,25 @@ def sysctl_devname(devname: str) -> Optional[str]:
     return devname.replace(".", "/")
 
 
-def load_config(filename: str, d: Dict[str, str]) -> None:
+def load_config(file_path: Path, d: Dict[str, str]) -> None:
     """
     Read key=value pairs from a file, into a dict. Skip comments; strip newline
     characters and spacing.
 
-    :param filename: file to read into a dictionary
-    :param d: dictionary to read file into
+    :param file_path: file path to read data from
+    :param d: dictionary to config into
     :return: nothing
     """
-    with open(filename, "r") as f:
+    with file_path.open("r") as f:
         lines = f.readlines()
-
     for line in lines:
         if line[:1] == "#":
             continue
-
         try:
             key, value = line.split("=", 1)
             d[key] = value.strip()
         except ValueError:
-            logging.exception("error reading file to dict: %s", filename)
+            logging.exception("error reading file to dict: %s", file_path)
 
 
 def load_classes(path: str, clazz: Generic[T]) -> T:

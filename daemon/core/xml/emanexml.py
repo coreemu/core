@@ -192,12 +192,13 @@ def build_platform_xml(
             add_param(nem_element, platform_endpoint, config[platform_endpoint])
             transport_endpoint = "transportendpoint"
             add_param(nem_element, transport_endpoint, config[transport_endpoint])
-        else:
-            transport_name = transport_file_name(iface)
-            transport_element = etree.SubElement(
-                nem_element, "transport", definition=transport_name
-            )
-            add_param(transport_element, "device", iface.name)
+
+        # define transport element
+        transport_name = transport_file_name(iface)
+        transport_element = etree.SubElement(
+            nem_element, "transport", definition=transport_name
+        )
+        add_param(transport_element, "device", iface.name)
 
         # add nem element to platform element
         platform_element.append(nem_element)

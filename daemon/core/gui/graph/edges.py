@@ -14,19 +14,23 @@ from core.gui.utils import bandwidth_text, delay_jitter_text
 if TYPE_CHECKING:
     from core.gui.graph.graph import CanvasGraph
 
-TEXT_DISTANCE: float = 0.30
+TEXT_DISTANCE: int = 60
 EDGE_WIDTH: int = 3
 EDGE_COLOR: str = "#ff0000"
+EDGE_LOSS: float = 100.0
 WIRELESS_WIDTH: float = 3
 WIRELESS_COLOR: str = "#009933"
 ARC_DISTANCE: int = 50
 
 
-def create_edge_token(src: int, dst: int, network: int = None) -> Tuple[int, ...]:
-    values = [src, dst]
-    if network is not None:
-        values.append(network)
-    return tuple(sorted(values))
+def create_wireless_token(src: int, dst: int, network: int) -> str:
+    return f"{src}-{dst}-{network}"
+
+
+def create_edge_token(link: Link) -> str:
+    iface1_id = link.iface1.id if link.iface1 else None
+    iface2_id = link.iface2.id if link.iface2 else None
+    return f"{link.node1_id}-{iface1_id}-{link.node2_id}-{iface2_id}"
 
 
 def arc_edges(edges) -> None:
@@ -67,16 +71,12 @@ class Edge:
         self.src: int = src
         self.dst: int = dst
         self.arc: int = 0
-        self.token: Optional[Tuple[int, ...]] = None
+        self.token: Optional[str] = None
         self.src_label: Optional[int] = None
         self.middle_label: Optional[int] = None
         self.dst_label: Optional[int] = None
         self.color: str = EDGE_COLOR
         self.width: int = EDGE_WIDTH
-
-    @classmethod
-    def create_token(cls, src: int, dst: int) -> Tuple[int, ...]:
-        return tuple(sorted([src, dst]))
 
     def scaled_width(self) -> float:
         return self.width * self.canvas.app.app_scale
@@ -156,15 +156,17 @@ class Edge:
 
     def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
         src_x, src_y, _, _, dst_x, dst_y = self.canvas.coords(self.id)
-        v1 = dst_x - src_x
-        v2 = dst_y - src_y
-        ux = TEXT_DISTANCE * v1
-        uy = TEXT_DISTANCE * v2
-        src_x = src_x + ux
-        src_y = src_y + uy
-        dst_x = dst_x - ux
-        dst_y = dst_y - uy
-        return (src_x, src_y), (dst_x, dst_y)
+        v_x, v_y = dst_x - src_x, dst_y - src_y
+        v_len = math.sqrt(v_x ** 2 + v_y ** 2)
+        if v_len == 0:
+            u_x, u_y = 0.0, 0.0
+        else:
+            u_x, u_y = v_x / v_len, v_y / v_len
+        offset_x, offset_y = TEXT_DISTANCE * u_x, TEXT_DISTANCE * u_y
+        return (
+            (src_x + offset_x, src_y + offset_y),
+            (dst_x - offset_x, dst_y - offset_y),
+        )
 
     def src_label_text(self, text: str) -> None:
         if self.src_label is None:
@@ -240,15 +242,17 @@ class CanvasWirelessEdge(Edge):
         canvas: "CanvasGraph",
         src: int,
         dst: int,
+        network_id: int,
+        token: str,
         src_pos: Tuple[float, float],
         dst_pos: Tuple[float, float],
-        token: Tuple[int, ...],
         link: Link,
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(canvas, src, dst)
+        self.network_id: int = network_id
         self.link: Link = link
-        self.token: Tuple[int, ...] = token
+        self.token: str = token
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
@@ -282,11 +286,10 @@ class CanvasEdge(Edge):
         Create an instance of canvas edge object
         """
         super().__init__(canvas, src)
-        self.src_iface: Optional[Interface] = None
-        self.dst_iface: Optional[Interface] = None
         self.text_src: Optional[int] = None
         self.text_dst: Optional[int] = None
         self.link: Optional[Link] = None
+        self.linked_wireless: bool = False
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
         self.draw(src_pos, dst_pos, tk.NORMAL)
@@ -302,10 +305,6 @@ class CanvasEdge(Edge):
     def set_binding(self) -> None:
         self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.show_context)
         self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
-
-    def set_link(self, link: Link) -> None:
-        self.link = link
-        self.draw_labels()
 
     def iface_label(self, iface: Interface) -> str:
         label = ""
@@ -332,11 +331,24 @@ class CanvasEdge(Edge):
         src_text, dst_text = self.create_node_labels()
         self.src_label_text(src_text)
         self.dst_label_text(dst_text)
-        self.draw_link_options()
+        if not self.linked_wireless:
+            self.draw_link_options()
 
     def redraw(self) -> None:
         super().redraw()
         self.draw_labels()
+
+    def check_options(self) -> None:
+        if not self.link.options:
+            return
+        if self.link.options.loss == EDGE_LOSS:
+            state = tk.HIDDEN
+            self.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
+        else:
+            state = tk.NORMAL
+            self.canvas.dtag(self.id, tags.LOSS_EDGES)
+        if self.canvas.show_loss_links.state() == tk.HIDDEN:
+            self.canvas.itemconfigure(self.id, state=state)
 
     def set_throughput(self, throughput: float) -> None:
         throughput = 0.001 * throughput
@@ -350,36 +362,21 @@ class CanvasEdge(Edge):
             width = self.scaled_width()
         self.canvas.itemconfig(self.id, fill=color, width=width)
 
-    def complete(self, dst: int) -> None:
+    def clear_throughput(self) -> None:
+        self.clear_middle_label()
+        if not self.linked_wireless:
+            self.draw_link_options()
+
+    def complete(self, dst: int, linked_wireless: bool) -> None:
         self.dst = dst
-        self.token = create_edge_token(self.src, self.dst)
+        self.linked_wireless = linked_wireless
         dst_pos = self.canvas.coords(self.dst)
         self.move_dst(dst_pos)
         self.check_wireless()
-        logging.debug("Draw wired link from node %s to node %s", self.src, dst)
-
-    def is_wireless(self) -> bool:
-        src_node = self.canvas.nodes[self.src]
-        dst_node = self.canvas.nodes[self.dst]
-        src_node_type = src_node.core_node.type
-        dst_node_type = dst_node.core_node.type
-        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
-        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
-
-        # update the wlan/EMANE network
-        wlan_network = self.canvas.wireless_network
-        if is_src_wireless and not is_dst_wireless:
-            if self.src not in wlan_network:
-                wlan_network[self.src] = set()
-            wlan_network[self.src].add(self.dst)
-        elif not is_src_wireless and is_dst_wireless:
-            if self.dst not in wlan_network:
-                wlan_network[self.dst] = set()
-            wlan_network[self.dst].add(self.src)
-        return is_src_wireless or is_dst_wireless
+        logging.debug("draw wired link from node %s to node %s", self.src, dst)
 
     def check_wireless(self) -> None:
-        if self.is_wireless():
+        if self.linked_wireless:
             self.canvas.itemconfig(self.id, state=tk.HIDDEN)
             self.canvas.dtag(self.id, tags.EDGE)
             self._check_antenna()

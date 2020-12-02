@@ -50,6 +50,26 @@ can also subscribe to EMANE location events and move the nodes on the canvas
 as they are moved in the EMANE emulation. This would occur when an Emulation
 Script Generator, for example, is running a mobility script.
 
+## EMANE in CORE
+
+This section will cover some high level topics and examples for running and
+using EMANE in CORE.
+
+You can find more detailed tutorials and examples at the
+[EMANE Tutorial](https://github.com/adjacentlink/emane-tutorial/wiki).
+
+Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
+
+> **WARNING:** demo files will be found within the new `core-pygui`
+
+|Topic|Model|Description|
+|---|---|---|
+|[XML Files](emane/files.md)|RF Pipe|Overview of generated XML files used to drive EMANE|
+|[GPSD](emane/gpsd.md)|RF Pipe|Overview of running and integrating gpsd with EMANE|
+|[Precomputed](emane/precomputed.md)|RF Pipe|Overview of using the precomputed propagation model|
+|[EEL](emane/eel.md)|RF Pipe|Overview of using the Emulation Event Log (EEL) Generator|
+|[Antenna Profiles](emane/antenna.md)|RF Pipe|Overview of using antenna profiles in EMANE|
+
 ## EMANE Configuration
 
 The CORE configuration file **/etc/core/core.conf** has options specific to
@@ -96,7 +116,61 @@ placed within the path defined by **emane_models_dir** in the CORE
 configuration file. This path cannot end in **/emane**.
 
 Here is an example model with documentation describing functionality:
-[Example Model](../daemon/examples/myemane/examplemodel.py)
+```python
+"""
+Example custom emane model.
+"""
+from typing import Dict, List, Optional, Set
+
+from core.config import Configuration
+from core.emane import emanemanifest, emanemodel
+
+
+class ExampleModel(emanemodel.EmaneModel):
+    """
+    Custom emane model.
+
+    :cvar name: defines the emane model name that will show up in the GUI
+
+    Mac Definition:
+    :cvar mac_library: defines that mac library that the model will reference
+    :cvar mac_xml: defines the mac manifest file that will be parsed to obtain configuration options,
+        that will be displayed within the GUI
+    :cvar mac_defaults: allows you to override options that are maintained within the manifest file above
+    :cvar mac_config: parses the manifest file and converts configurations into core supported formats
+
+    Phy Definition:
+    NOTE: phy configuration will default to the universal model as seen below and the below section does not
+    have to be included
+    :cvar phy_library: defines that phy library that the model will reference, used if you need to
+        provide a custom phy
+    :cvar phy_xml: defines the phy manifest file that will be parsed to obtain configuration options,
+        that will be displayed within the GUI
+    :cvar phy_defaults: allows you to override options that are maintained within the manifest file above
+        or for the default universal model
+    :cvar phy_config: parses the manifest file and converts configurations into core supported formats
+
+    Custom Override Options:
+    NOTE: these options default to what's seen below and do not have to be included
+    :cvar config_ignore: allows you to ignore options within phy/mac, used typically if you needed to add
+        a custom option for display within the gui
+    """
+
+    name: str = "emane_example"
+    mac_library: str = "rfpipemaclayer"
+    mac_xml: str = "/usr/share/emane/manifest/rfpipemaclayer.xml"
+    mac_defaults: Dict[str, str] = {
+        "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
+    }
+    mac_config: List[Configuration] = emanemanifest.parse(mac_xml, mac_defaults)
+    phy_library: Optional[str] = None
+    phy_xml: str = "/usr/share/emane/manifest/emanephy.xml"
+    phy_defaults: Dict[str, str] = {
+        "subid": "1", "propagationmodel": "2ray", "noisemode": "none"
+    }
+    phy_config: List[Configuration] = emanemanifest.parse(phy_xml, phy_defaults)
+    config_ignore: Set[str] = set()
+```
 
 ## Single PC with EMANE
 

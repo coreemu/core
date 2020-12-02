@@ -972,6 +972,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             mburst=options_proto.mburst,
             unidirectional=options_proto.unidirectional,
             key=options_proto.key,
+            buffer=options_proto.buffer,
         )
         session.update_link(node1_id, node2_id, iface1_id, iface2_id, options)
         iface1 = InterfaceData(id=iface1_id)

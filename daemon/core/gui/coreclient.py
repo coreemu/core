@@ -87,14 +87,14 @@ class CoreClient:
         self.read_config()
 
         # helpers
-        self.iface_to_edge: Dict[Tuple[int, ...], Tuple[int, ...]] = {}
+        self.iface_to_edge: Dict[Tuple[int, ...], CanvasEdge] = {}
         self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
         self.observer: Optional[str] = None
 
         # session data
         self.mobility_players: Dict[int, MobilityPlayer] = {}
         self.canvas_nodes: Dict[int, CanvasNode] = {}
-        self.links: Dict[Tuple[int, int], CanvasEdge] = {}
+        self.links: Dict[str, CanvasEdge] = {}
         self.handling_throughputs: Optional[grpc.Future] = None
         self.handling_cpu_usage: Optional[grpc.Future] = None
         self.handling_events: Optional[grpc.Future] = None
@@ -225,11 +225,9 @@ class CoreClient:
                 self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
                 self.app.canvas.organize()
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wired_edge(canvas_node1, canvas_node2)
+                self.app.canvas.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wired_edge(
-                    canvas_node1, canvas_node2, event.link
-                )
+                self.app.canvas.update_wired_edge(event.link)
             else:
                 logging.warning("unknown link event: %s", event)
 
@@ -382,6 +380,17 @@ class CoreClient:
                     self.app.canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
+
+        # load edges config
+        edges_config = config.get("edges")
+        if edges_config:
+            edges_config = json.loads(edges_config)
+            logging.info("edges config: %s", edges_config)
+            for edge_config in edges_config:
+                edge = self.links[edge_config["token"]]
+                edge.width = edge_config["width"]
+                edge.color = edge_config["color"]
+                edge.redraw()
 
     def create_new_session(self) -> None:
         """
@@ -570,7 +579,15 @@ class CoreClient:
             shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
-        metadata = {"canvas": canvas_config, "shapes": shapes}
+        # create edges config
+        edges_config = []
+        for edge in self.links.values():
+            edge_config = dict(token=edge.token, width=edge.width, color=edge.color)
+            edges_config.append(edge_config)
+        edges_config = json.dumps(edges_config)
+
+        # save metadata
+        metadata = dict(canvas=canvas_config, shapes=shapes, edges=edges_config)
         response = self.client.set_session_metadata(self.session.id, metadata)
         logging.debug("set session metadata %s, result: %s", metadata, response)
 
@@ -877,7 +894,7 @@ class CoreClient:
 
     def create_link(
         self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ) -> None:
+    ) -> Link:
         """
         Create core link for a pair of canvas nodes, with token referencing
         the canvas edge.
@@ -888,15 +905,9 @@ class CoreClient:
         src_iface = None
         if NodeUtils.is_container_node(src_node.type):
             src_iface = self.create_iface(canvas_src_node)
-            self.iface_to_edge[(src_node.id, src_iface.id)] = edge.token
-            edge.src_iface = src_iface
-            canvas_src_node.ifaces[src_iface.id] = src_iface
         dst_iface = None
         if NodeUtils.is_container_node(dst_node.type):
             dst_iface = self.create_iface(canvas_dst_node)
-            self.iface_to_edge[(dst_node.id, dst_iface.id)] = edge.token
-            edge.dst_iface = dst_iface
-            canvas_dst_node.ifaces[dst_iface.id] = dst_iface
         link = Link(
             type=LinkType.WIRED,
             node1_id=src_node.id,
@@ -904,9 +915,21 @@ class CoreClient:
             iface1=src_iface,
             iface2=dst_iface,
         )
-        edge.set_link(link)
-        self.links[edge.token] = edge
         logging.info("added link between %s and %s", src_node.name, dst_node.name)
+        return link
+
+    def save_edge(
+        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
+    ) -> None:
+        self.links[edge.token] = edge
+        src_node = canvas_src_node.core_node
+        dst_node = canvas_dst_node.core_node
+        if NodeUtils.is_container_node(src_node.type):
+            src_iface_id = edge.link.iface1.id
+            self.iface_to_edge[(src_node.id, src_iface_id)] = edge
+        if NodeUtils.is_container_node(dst_node.type):
+            dst_iface_id = edge.link.iface2.id
+            self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
     def get_wlan_configs_proto(self) -> List[wlan_pb2.WlanConfig]:
         configs = []

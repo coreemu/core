@@ -217,7 +217,7 @@ class PcapService(ConfigService):
 class RadvdService(ConfigService):
     name: str = "radvd"
     group: str = GROUP_NAME
-    directories: List[str] = ["/etc/radvd"]
+    directories: List[str] = ["/etc/radvd", "/var/run/radvd"]
     files: List[str] = ["/etc/radvd/radvd.conf"]
     executables: List[str] = ["radvd"]
     dependencies: List[str] = []

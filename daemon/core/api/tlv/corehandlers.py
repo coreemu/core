@@ -52,6 +52,7 @@ from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
+from core.nodes.physical import Rj45Node
 from core.services.coreservices import ServiceManager, ServiceShim
 
 
@@ -787,20 +788,30 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options = LinkOptions()
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-        options.loss = message.get_tlv(LinkTlvs.LOSS.value)
-        options.dup = message.get_tlv(LinkTlvs.DUP.value)
         options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
         options.mer = message.get_tlv(LinkTlvs.MER.value)
         options.burst = message.get_tlv(LinkTlvs.BURST.value)
         options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
         options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
         options.key = message.get_tlv(LinkTlvs.KEY.value)
+        loss = message.get_tlv(LinkTlvs.LOSS.value)
+        dup = message.get_tlv(LinkTlvs.DUP.value)
+        if loss is not None:
+            options.loss = float(loss)
+        if dup is not None:
+            options.dup = int(dup)
 
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
                 node1_id, node2_id, iface1_data, iface2_data, options, link_type
             )
         elif message.flags & MessageFlags.DELETE.value:
+            node1 = self.session.get_node(node1_id, NodeBase)
+            node2 = self.session.get_node(node2_id, NodeBase)
+            if isinstance(node1, Rj45Node):
+                iface1_data.id = node1.iface_id
+            if isinstance(node2, Rj45Node):
+                iface2_data.id = node2.iface_id
             self.session.delete_link(
                 node1_id, node2_id, iface1_data.id, iface2_data.id, link_type
             )
@@ -1851,7 +1862,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 )
                 self.session.broadcast_config(config_data)
 
-        # send emane model info
+        # send global emane config
+        config = self.session.emane.get_configs()
+        logging.debug("global emane config: values(%s)", config)
+        config_data = ConfigShim.config_data(
+            0, None, ConfigFlags.UPDATE.value, self.session.emane.emane_config, config
+        )
+        self.session.broadcast_config(config_data)
+
+        # send emane model configs
         for node_id in self.session.emane.nodes():
             emane_configs = self.session.emane.get_all_configs(node_id)
             for model_name in emane_configs:

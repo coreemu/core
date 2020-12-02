@@ -1,3 +1,24 @@
+## 2020-12-02 CORE 7.3.0
+
+* core-daemon
+    * fixed issue where emane global configuration was not being sent to core-gui
+    * updated controlnet names on host to be prefixed with ctrl
+    * fixed RJ45 link shutdown from core-gui causing an error
+    * fixed emane external transport xml generation
+    * \#517 - update to account for radvd required directory
+    * \#514 - support added for session specific environment files
+    * \#529 - updated to configure netem limit based on delay or user specified, requires kernel 3.3+
+* core-pygui
+    * fixed issue drawing wlan/emane link options when it should not have
+    * edge labels are now placed a set distance from nodes like original gui
+    * link color/width are now saved to xml files
+    * added support to configure buffer size for links
+    * \#525 - added support for multiple wired links between the same nodes
+    * \#526 - added option to hide/show links with 100% loss
+* Documentation
+    * \#527 - typo in service documentation
+    * \#515 - added examples to docs for using EMANE features within a CORE context
+
 ## 2020-09-29 CORE 7.2.1
 
 * core-daemon

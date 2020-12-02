@@ -62,11 +62,16 @@ class NodeUtils:
     IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
     WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
+    BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
     IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
     MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
     ROUTER_NODES: Set[str] = {"router", "mdr"}
     ANTENNA_ICON: PhotoImage = None
+
+    @classmethod
+    def is_bridge_node(cls, node: Node) -> bool:
+        return node.type in cls.BRIDGE_NODES
 
     @classmethod
     def is_mobility(cls, node: Node) -> bool:

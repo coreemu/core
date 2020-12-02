@@ -128,6 +128,7 @@ def add_link_data(
         options.mer = options_proto.mer
         options.burst = options_proto.burst
         options.mburst = options_proto.mburst
+        options.buffer = options_proto.buffer
         options.unidirectional = options_proto.unidirectional
         options.key = options_proto.key
     return iface1_data, iface2_data, options, link_type
@@ -329,6 +330,7 @@ def convert_link_options(options_data: LinkOptions) -> core_pb2.LinkOptions:
         burst=options_data.burst,
         delay=options_data.delay,
         dup=options_data.dup,
+        buffer=options_data.buffer,
         unidirectional=options_data.unidirectional,
     )
 

@@ -49,16 +49,18 @@ class LinkConfigurationDialog(Dialog):
         self.jitter: tk.StringVar = tk.StringVar()
         self.loss: tk.StringVar = tk.StringVar()
         self.duplicate: tk.StringVar = tk.StringVar()
+        self.buffer: tk.StringVar = tk.StringVar()
 
         self.down_bandwidth: tk.StringVar = tk.StringVar()
         self.down_delay: tk.StringVar = tk.StringVar()
         self.down_jitter: tk.StringVar = tk.StringVar()
         self.down_loss: tk.StringVar = tk.StringVar()
         self.down_duplicate: tk.StringVar = tk.StringVar()
+        self.down_buffer: tk.StringVar = tk.StringVar()
 
-        self.color: tk.StringVar = tk.StringVar(value="#000000")
+        self.color: tk.StringVar = tk.StringVar(value=self.edge.color)
         self.color_button: Optional[tk.Button] = None
-        self.width: tk.DoubleVar = tk.DoubleVar()
+        self.width: tk.DoubleVar = tk.DoubleVar(value=self.edge.width)
 
         self.load_link_config()
         self.symmetric_frame: Optional[ttk.Frame] = None
@@ -68,10 +70,14 @@ class LinkConfigurationDialog(Dialog):
 
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
-        source_name = self.app.canvas.nodes[self.edge.src].core_node.name
-        dest_name = self.app.canvas.nodes[self.edge.dst].core_node.name
+        src_label = self.app.canvas.nodes[self.edge.src].core_node.name
+        if self.edge.link.iface1:
+            src_label += f":{self.edge.link.iface1.name}"
+        dst_label = self.app.canvas.nodes[self.edge.dst].core_node.name
+        if self.edge.link.iface2:
+            dst_label += f":{self.edge.link.iface2.name}"
         label = ttk.Label(
-            self.top, text=f"Link from {source_name} to {dest_name}", anchor=tk.CENTER
+            self.top, text=f"{src_label} to {dst_label}", anchor=tk.CENTER
         )
         label.grid(row=0, column=0, sticky=tk.EW, pady=PADY)
 
@@ -183,6 +189,19 @@ class LinkConfigurationDialog(Dialog):
             entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
         row = row + 1
 
+        label = ttk.Label(frame, text="Buffer (Packets)")
+        label.grid(row=row, column=0, sticky=tk.EW)
+        entry = validation.PositiveIntEntry(
+            frame, empty_enabled=False, textvariable=self.buffer
+        )
+        entry.grid(row=row, column=1, sticky=tk.EW, pady=PADY)
+        if not self.is_symmetric:
+            entry = validation.PositiveIntEntry(
+                frame, empty_enabled=False, textvariable=self.down_buffer
+            )
+            entry.grid(row=row, column=2, sticky=tk.EW, pady=PADY)
+        row = row + 1
+
         label = ttk.Label(frame, text="Color")
         label.grid(row=row, column=0, sticky=tk.EW)
         self.color_button = tk.Button(
@@ -213,16 +232,22 @@ class LinkConfigurationDialog(Dialog):
         self.color_button.config(background=color)
 
     def click_apply(self) -> None:
-        self.app.canvas.itemconfigure(self.edge.id, width=self.width.get())
-        self.app.canvas.itemconfigure(self.edge.id, fill=self.color.get())
+        self.edge.width = self.width.get()
+        self.edge.color = self.color.get()
         link = self.edge.link
         bandwidth = get_int(self.bandwidth)
         jitter = get_int(self.jitter)
         delay = get_int(self.delay)
         duplicate = get_int(self.duplicate)
+        buffer = get_int(self.buffer)
         loss = get_float(self.loss)
         options = LinkOptions(
-            bandwidth=bandwidth, jitter=jitter, delay=delay, dup=duplicate, loss=loss
+            bandwidth=bandwidth,
+            jitter=jitter,
+            delay=delay,
+            dup=duplicate,
+            loss=loss,
+            buffer=buffer,
         )
         link.options = options
         iface1_id = link.iface1.id if link.iface1 else None
@@ -239,6 +264,7 @@ class LinkConfigurationDialog(Dialog):
             down_jitter = get_int(self.down_jitter)
             down_delay = get_int(self.down_delay)
             down_duplicate = get_int(self.down_duplicate)
+            down_buffer = get_int(self.down_buffer)
             down_loss = get_float(self.down_loss)
             options = LinkOptions(
                 bandwidth=down_bandwidth,
@@ -246,6 +272,7 @@ class LinkConfigurationDialog(Dialog):
                 delay=down_delay,
                 dup=down_duplicate,
                 loss=down_loss,
+                buffer=down_buffer,
                 unidirectional=True,
             )
             self.edge.asymmetric_link = Link(
@@ -265,7 +292,8 @@ class LinkConfigurationDialog(Dialog):
                 self.app.core.edit_link(self.edge.asymmetric_link)
 
         # update edge label
-        self.edge.draw_link_options()
+        self.edge.redraw()
+        self.edge.check_options()
         self.destroy()
 
     def change_symmetry(self) -> None:
@@ -299,6 +327,7 @@ class LinkConfigurationDialog(Dialog):
             self.duplicate.set(str(link.options.dup))
             self.loss.set(str(link.options.loss))
             self.delay.set(str(link.options.delay))
+            self.buffer.set(str(link.options.buffer))
         if not self.is_symmetric:
             asym_link = self.edge.asymmetric_link
             self.down_bandwidth.set(str(asym_link.options.bandwidth))
@@ -306,3 +335,4 @@ class LinkConfigurationDialog(Dialog):
             self.down_duplicate.set(str(asym_link.options.dup))
             self.down_loss.set(str(asym_link.options.loss))
             self.down_delay.set(str(asym_link.options.delay))
+            self.down_buffer.set(str(asym_link.options.buffer))

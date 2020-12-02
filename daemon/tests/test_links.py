@@ -83,6 +83,7 @@ class TestLinks:
         loss = 25
         dup = 25
         jitter = 10
+        buffer = 100
         node1 = session.add_node(CoreNode)
         node2 = session.add_node(SwitchNode)
         iface1_data = ip_prefixes.create_iface(node1)
@@ -93,10 +94,16 @@ class TestLinks:
         assert iface1.getparam("loss") != loss
         assert iface1.getparam("duplicate") != dup
         assert iface1.getparam("jitter") != jitter
+        assert iface1.getparam("buffer") != buffer
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+            delay=delay,
+            bandwidth=bandwidth,
+            loss=loss,
+            dup=dup,
+            jitter=jitter,
+            buffer=buffer,
         )
         session.update_link(
             node1.id, node2.id, iface1_id=iface1_data.id, options=options
@@ -108,6 +115,7 @@ class TestLinks:
         assert iface1.getparam("loss") == loss
         assert iface1.getparam("duplicate") == dup
         assert iface1.getparam("jitter") == jitter
+        assert iface1.getparam("buffer") == buffer
 
     def test_update_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -116,6 +124,7 @@ class TestLinks:
         loss = 25
         dup = 25
         jitter = 10
+        buffer = 100
         node1 = session.add_node(SwitchNode)
         node2 = session.add_node(CoreNode)
         iface2_data = ip_prefixes.create_iface(node2)
@@ -126,10 +135,16 @@ class TestLinks:
         assert iface2.getparam("loss") != loss
         assert iface2.getparam("duplicate") != dup
         assert iface2.getparam("jitter") != jitter
+        assert iface2.getparam("buffer") != buffer
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+            delay=delay,
+            bandwidth=bandwidth,
+            loss=loss,
+            dup=dup,
+            jitter=jitter,
+            buffer=buffer,
         )
         session.update_link(
             node1.id, node2.id, iface2_id=iface2_data.id, options=options
@@ -141,6 +156,7 @@ class TestLinks:
         assert iface2.getparam("loss") == loss
         assert iface2.getparam("duplicate") == dup
         assert iface2.getparam("jitter") == jitter
+        assert iface2.getparam("buffer") == buffer
 
     def test_update_ptp(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -149,6 +165,7 @@ class TestLinks:
         loss = 25
         dup = 25
         jitter = 10
+        buffer = 100
         node1 = session.add_node(CoreNode)
         node2 = session.add_node(CoreNode)
         iface1_data = ip_prefixes.create_iface(node1)
@@ -161,15 +178,22 @@ class TestLinks:
         assert iface1.getparam("loss") != loss
         assert iface1.getparam("duplicate") != dup
         assert iface1.getparam("jitter") != jitter
+        assert iface1.getparam("buffer") != buffer
         assert iface2.getparam("delay") != delay
         assert iface2.getparam("bw") != bandwidth
         assert iface2.getparam("loss") != loss
         assert iface2.getparam("duplicate") != dup
         assert iface2.getparam("jitter") != jitter
+        assert iface2.getparam("buffer") != buffer
 
         # when
         options = LinkOptions(
-            delay=delay, bandwidth=bandwidth, loss=loss, dup=dup, jitter=jitter
+            delay=delay,
+            bandwidth=bandwidth,
+            loss=loss,
+            dup=dup,
+            jitter=jitter,
+            buffer=buffer,
         )
         session.update_link(node1.id, node2.id, iface1_data.id, iface2_data.id, options)
 
@@ -179,11 +203,13 @@ class TestLinks:
         assert iface1.getparam("loss") == loss
         assert iface1.getparam("duplicate") == dup
         assert iface1.getparam("jitter") == jitter
+        assert iface1.getparam("buffer") == buffer
         assert iface2.getparam("delay") == delay
         assert iface2.getparam("bw") == bandwidth
         assert iface2.getparam("loss") == loss
         assert iface2.getparam("duplicate") == dup
         assert iface2.getparam("jitter") == jitter
+        assert iface2.getparam("buffer") == buffer
 
     def test_delete_ptp(self, session: Session, ip_prefixes: IpPrefixes):
         # given

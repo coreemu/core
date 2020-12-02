@@ -12,6 +12,7 @@ import sys
 import tempfile
 import threading
 import time
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
 
 from core import constants, utils
@@ -997,28 +998,25 @@ class Session:
         env["SESSION_USER"] = str(self.user)
         if state:
             env["SESSION_STATE"] = str(self.state)
-        # attempt to read and add environment config file
-        environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
-        try:
-            if os.path.isfile(environment_config_file):
-                utils.load_config(environment_config_file, env)
-        except IOError:
-            logging.warning(
-                "environment configuration file does not exist: %s",
-                environment_config_file,
-            )
-        # attempt to read and add user environment file
+        # try reading and merging optional environments from:
+        # /etc/core/environment
+        # /home/user/.core/environment
+        # /tmp/pycore.<session id>/environment
+        core_env_path = Path(constants.CORE_CONF_DIR) / "environment"
+        session_env_path = Path(self.session_dir) / "environment"
         if self.user:
-            environment_user_file = os.path.join(
-                "/home", self.user, ".core", "environment"
-            )
-            try:
-                utils.load_config(environment_user_file, env)
-            except IOError:
-                logging.debug(
-                    "user core environment settings file not present: %s",
-                    environment_user_file,
-                )
+            user_home_path = Path(f"~{self.user}").expanduser()
+            user_env1 = user_home_path / ".core" / "environment"
+            user_env2 = user_home_path / ".coregui" / "environment"
+            paths = [core_env_path, user_env1, user_env2, session_env_path]
+        else:
+            paths = [core_env_path, session_env_path]
+        for path in paths:
+            if path.is_file():
+                try:
+                    utils.load_config(path, env)
+                except IOError:
+                    logging.exception("error reading environment file: %s", path)
         return env
 
     def set_thumbnail(self, thumb_file: str) -> None:
@@ -1447,12 +1445,14 @@ class Session:
         )
         control_net = self.create_node(
             CtrlNet,
-            True,
-            prefix,
+            start=False,
+            prefix=prefix,
             _id=_id,
             updown_script=updown_script,
             serverintf=server_iface,
         )
+        control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
+        control_net.startup()
         return control_net
 
     def add_remove_control_iface(

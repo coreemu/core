@@ -21,8 +21,10 @@ from core.gui.graph.edges import (
     EDGE_WIDTH,
     CanvasEdge,
     CanvasWirelessEdge,
+    Edge,
     arc_edges,
     create_edge_token,
+    create_wireless_token,
 )
 from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode
@@ -69,9 +71,9 @@ class CanvasGraph(tk.Canvas):
         self.selected: Optional[int] = None
         self.node_draw: Optional[NodeDraw] = None
         self.nodes: Dict[int, CanvasNode] = {}
-        self.edges: Dict[int, CanvasEdge] = {}
+        self.edges: Dict[str, CanvasEdge] = {}
         self.shapes: Dict[int, Shape] = {}
-        self.wireless_edges: Dict[Tuple[int, ...], CanvasWirelessEdge] = {}
+        self.wireless_edges: Dict[str, CanvasWirelessEdge] = {}
 
         # map wireless/EMANE node to the set of MDRs connected to that node
         self.wireless_network: Dict[int, Set[int]] = {}
@@ -108,6 +110,7 @@ class CanvasGraph(tk.Canvas):
         self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
         self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)
+        self.show_loss_links: ShowVar = ShowVar(self, tags.LOSS_EDGES, value=True)
         self.show_iface_names: BooleanVar = BooleanVar(value=False)
         self.show_ip4s: BooleanVar = BooleanVar(value=True)
         self.show_ip6s: BooleanVar = BooleanVar(value=True)
@@ -145,6 +148,7 @@ class CanvasGraph(tk.Canvas):
         self.show_iface_names.set(False)
         self.show_ip4s.set(True)
         self.show_ip6s.set(True)
+        self.show_loss_links.set(True)
 
         # delete any existing drawn items
         for tag in tags.RESET_TAGS:
@@ -206,14 +210,9 @@ class CanvasGraph(tk.Canvas):
             iface_id = iface_throughput.iface_id
             throughput = iface_throughput.throughput
             iface_to_edge_id = (node_id, iface_id)
-            token = self.core.iface_to_edge.get(iface_to_edge_id)
-            if not token:
-                continue
-            edge = self.edges.get(token)
+            edge = self.core.iface_to_edge.get(iface_to_edge_id)
             if edge:
                 edge.set_throughput(throughput)
-            else:
-                del self.core.iface_to_edge[iface_to_edge_id]
 
     def draw_grid(self) -> None:
         """
@@ -230,7 +229,7 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(self.rect)
 
     def add_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
-        token = create_edge_token(src.id, dst.id)
+        token = create_edge_token(link)
         if token in self.edges and link.options.unidirectional:
             edge = self.edges[token]
             edge.asymmetric_link = link
@@ -240,71 +239,52 @@ class CanvasGraph(tk.Canvas):
             src_pos = (node1.position.x, node1.position.y)
             dst_pos = (node2.position.x, node2.position.y)
             edge = CanvasEdge(self, src.id, src_pos, dst_pos)
-            edge.token = token
-            edge.dst = dst.id
-            edge.set_link(link)
-            edge.check_wireless()
-            src.edges.add(edge)
-            dst.edges.add(edge)
-            self.edges[edge.token] = edge
-            self.core.links[edge.token] = edge
-            if link.iface1:
-                iface1 = link.iface1
-                self.core.iface_to_edge[(node1.id, iface1.id)] = token
-                src.ifaces[iface1.id] = iface1
-                edge.src_iface = iface1
-            if link.iface2:
-                iface2 = link.iface2
-                self.core.iface_to_edge[(node2.id, iface2.id)] = edge.token
-                dst.ifaces[iface2.id] = iface2
-                edge.dst_iface = iface2
+            self.complete_edge(src, dst, edge, link)
 
-    def delete_wired_edge(self, src: CanvasNode, dst: CanvasNode) -> None:
-        token = create_edge_token(src.id, dst.id)
+    def delete_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
         edge = self.edges.get(token)
-        if not edge:
-            return
-        self.delete_edge(edge)
+        if edge:
+            self.delete_edge(edge)
 
-    def update_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
-        token = create_edge_token(src.id, dst.id)
+    def update_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
         edge = self.edges.get(token)
-        if not edge:
-            return
-        edge.link.options = deepcopy(link.options)
+        if edge:
+            edge.link.options = deepcopy(link.options)
+            edge.draw_link_options()
+            edge.check_options()
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
-        token = create_edge_token(src.id, dst.id, network_id)
+        token = create_wireless_token(src.id, dst.id, network_id)
         if token in self.wireless_edges:
             logging.warning("ignoring link that already exists: %s", link)
             return
         src_pos = self.coords(src.id)
         dst_pos = self.coords(dst.id)
-        edge = CanvasWirelessEdge(self, src.id, dst.id, src_pos, dst_pos, token, link)
+        edge = CanvasWirelessEdge(
+            self, src.id, dst.id, network_id, token, src_pos, dst_pos, link
+        )
         self.wireless_edges[token] = edge
         src.wireless_edges.add(edge)
         dst.wireless_edges.add(edge)
         self.tag_raise(src.id)
         self.tag_raise(dst.id)
-        # update arcs when there are multiple links
-        common_edges = list(src.wireless_edges & dst.wireless_edges)
-        arc_edges(common_edges)
+        self.arc_common_edges(edge)
 
     def delete_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: Link
     ) -> None:
         network_id = link.network_id if link.network_id else None
-        token = create_edge_token(src.id, dst.id, network_id)
+        token = create_wireless_token(src.id, dst.id, network_id)
         if token not in self.wireless_edges:
             return
         edge = self.wireless_edges.pop(token)
         edge.delete()
         src.wireless_edges.remove(edge)
         dst.wireless_edges.remove(edge)
-        # update arcs when there are multiple links
-        common_edges = list(src.wireless_edges & dst.wireless_edges)
-        arc_edges(common_edges)
+        self.arc_common_edges(edge)
 
     def update_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: Link
@@ -312,7 +292,7 @@ class CanvasGraph(tk.Canvas):
         if not link.label:
             return
         network_id = link.network_id if link.network_id else None
-        token = create_edge_token(src.id, dst.id, network_id)
+        token = create_wireless_token(src.id, dst.id, network_id)
         if token not in self.wireless_edges:
             self.add_wireless_edge(src, dst, link)
         else:
@@ -453,12 +433,6 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
 
-        # ignore repeated edges
-        token = create_edge_token(edge.src, self.selected)
-        if token in self.edges:
-            edge.delete()
-            return
-
         # rj45 nodes can only support one link
         if NodeUtils.is_rj45_node(src_node.core_node.type) and src_node.edges:
             edge.delete()
@@ -467,13 +441,23 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
 
-        # set dst node and snap edge to center
-        edge.complete(self.selected)
+        # only 1 link between bridge based nodes
+        is_src_bridge = NodeUtils.is_bridge_node(src_node.core_node)
+        is_dst_bridge = NodeUtils.is_bridge_node(dst_node.core_node)
+        common_links = src_node.edges & dst_node.edges
+        if all([is_src_bridge, is_dst_bridge, common_links]):
+            edge.delete()
+            return
 
-        self.edges[edge.token] = edge
-        src_node.edges.add(edge)
-        dst_node.edges.add(edge)
-        self.core.create_link(edge, src_node, dst_node)
+        # finalize edge creation
+        self.complete_edge(src_node, dst_node, edge)
+
+    def arc_common_edges(self, edge: Edge) -> None:
+        src_node = self.nodes[edge.src]
+        dst_node = self.nodes[edge.dst]
+        common_edges = list(src_node.edges & dst_node.edges)
+        common_edges += list(src_node.wireless_edges & dst_node.wireless_edges)
+        arc_edges(common_edges)
 
     def select_object(self, object_id: int, choose_multiple: bool = False) -> None:
         """
@@ -532,10 +516,10 @@ class CanvasGraph(tk.Canvas):
                     edge.delete()
                     # update node connected to edge being deleted
                     other_id = edge.src
-                    other_iface = edge.src_iface
+                    other_iface = edge.link.iface1
                     if edge.src == object_id:
                         other_id = edge.dst
-                        other_iface = edge.dst_iface
+                        other_iface = edge.link.iface2
                     other_node = self.nodes[other_id]
                     other_node.edges.remove(edge)
                     if other_iface:
@@ -557,12 +541,12 @@ class CanvasGraph(tk.Canvas):
         del self.edges[edge.token]
         src_node = self.nodes[edge.src]
         src_node.edges.discard(edge)
-        if edge.src_iface:
-            del src_node.ifaces[edge.src_iface.id]
+        if edge.link.iface1:
+            del src_node.ifaces[edge.link.iface1.id]
         dst_node = self.nodes[edge.dst]
         dst_node.edges.discard(edge)
-        if edge.dst_iface:
-            del dst_node.ifaces[edge.dst_iface.id]
+        if edge.link.iface2:
+            del dst_node.ifaces[edge.link.iface2.id]
         src_wireless = NodeUtils.is_wireless_node(src_node.core_node.type)
         if src_wireless:
             dst_node.delete_antenna()
@@ -570,6 +554,7 @@ class CanvasGraph(tk.Canvas):
         if dst_wireless:
             src_node.delete_antenna()
         self.core.deleted_canvas_edges([edge])
+        self.arc_common_edges(edge)
 
     def zoom(self, event: tk.Event, factor: float = None) -> None:
         if not factor:
@@ -901,19 +886,41 @@ class CanvasGraph(tk.Canvas):
     def is_selection_mode(self) -> bool:
         return self.mode == GraphMode.SELECT
 
-    def create_edge(self, source: CanvasNode, dest: CanvasNode) -> None:
+    def create_edge(self, src: CanvasNode, dst: CanvasNode) -> CanvasEdge:
         """
         create an edge between source node and destination node
         """
-        token = create_edge_token(source.id, dest.id)
-        if token not in self.edges:
-            pos = (source.core_node.position.x, source.core_node.position.y)
-            edge = CanvasEdge(self, source.id, pos, pos)
-            edge.complete(dest.id)
-            self.edges[edge.token] = edge
-            self.nodes[source.id].edges.add(edge)
-            self.nodes[dest.id].edges.add(edge)
-            self.core.create_link(edge, source, dest)
+        pos = (src.core_node.position.x, src.core_node.position.y)
+        edge = CanvasEdge(self, src.id, pos, pos)
+        self.complete_edge(src, dst, edge)
+        return edge
+
+    def complete_edge(
+        self,
+        src: CanvasNode,
+        dst: CanvasNode,
+        edge: CanvasEdge,
+        link: Optional[Link] = None,
+    ) -> None:
+        linked_wireless = self.is_linked_wireless(src.id, dst.id)
+        edge.complete(dst.id, linked_wireless)
+        if link is None:
+            link = self.core.create_link(edge, src, dst)
+        edge.link = link
+        if link.iface1:
+            iface1 = link.iface1
+            src.ifaces[iface1.id] = iface1
+        if link.iface2:
+            iface2 = link.iface2
+            dst.ifaces[iface2.id] = iface2
+        src.edges.add(edge)
+        dst.edges.add(edge)
+        edge.token = create_edge_token(edge.link)
+        self.arc_common_edges(edge)
+        edge.draw_labels()
+        edge.check_options()
+        self.edges[edge.token] = edge
+        self.core.save_edge(edge, src, dst)
 
     def copy(self) -> None:
         if self.core.is_runtime():
@@ -967,13 +974,12 @@ class CanvasGraph(tk.Canvas):
                 if edge.src not in to_copy_ids or edge.dst not in to_copy_ids:
                     if canvas_node.id == edge.src:
                         dst_node = self.nodes[edge.dst]
-                        self.create_edge(node, dst_node)
-                        token = create_edge_token(node.id, dst_node.id)
+                        copy_edge = self.create_edge(node, dst_node)
                     elif canvas_node.id == edge.dst:
                         src_node = self.nodes[edge.src]
-                        self.create_edge(src_node, node)
-                        token = create_edge_token(src_node.id, node.id)
-                    copy_edge = self.edges[token]
+                        copy_edge = self.create_edge(src_node, node)
+                    else:
+                        continue
                     copy_link = copy_edge.link
                     iface1_id = copy_link.iface1.id if copy_link.iface1 else None
                     iface2_id = copy_link.iface2.id if copy_link.iface2 else None
@@ -1000,13 +1006,11 @@ class CanvasGraph(tk.Canvas):
 
         # copy link and link config
         for edge in to_copy_edges:
-            src_node_id = copy_map[edge.token[0]]
-            dst_node_id = copy_map[edge.token[1]]
+            src_node_id = copy_map[edge.src]
+            dst_node_id = copy_map[edge.dst]
             src_node_copy = self.nodes[src_node_id]
             dst_node_copy = self.nodes[dst_node_id]
-            self.create_edge(src_node_copy, dst_node_copy)
-            token = create_edge_token(src_node_copy.id, dst_node_copy.id)
-            copy_edge = self.edges[token]
+            copy_edge = self.create_edge(src_node_copy, dst_node_copy)
             copy_link = copy_edge.link
             iface1_id = copy_link.iface1.id if copy_link.iface1 else None
             iface2_id = copy_link.iface2.id if copy_link.iface2 else None
@@ -1035,10 +1039,29 @@ class CanvasGraph(tk.Canvas):
             )
         self.tag_raise(tags.NODE)
 
+    def is_linked_wireless(self, src: int, dst: int) -> bool:
+        src_node = self.nodes[src]
+        dst_node = self.nodes[dst]
+        src_node_type = src_node.core_node.type
+        dst_node_type = dst_node.core_node.type
+        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
+        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+
+        # update the wlan/EMANE network
+        wlan_network = self.wireless_network
+        if is_src_wireless and not is_dst_wireless:
+            if src not in wlan_network:
+                wlan_network[src] = set()
+            wlan_network[src].add(dst)
+        elif not is_src_wireless and is_dst_wireless:
+            if dst not in wlan_network:
+                wlan_network[dst] = set()
+            wlan_network[dst].add(src)
+        return is_src_wireless or is_dst_wireless
+
     def clear_throughputs(self) -> None:
         for edge in self.edges.values():
-            edge.clear_middle_label()
-            edge.draw_link_options()
+            edge.clear_throughput()
 
     def scale_graph(self) -> None:
         for nid, canvas_node in self.nodes.items():

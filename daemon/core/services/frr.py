@@ -8,7 +8,7 @@ import netaddr
 
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNode
-from core.nodes.interface import CoreInterface
+from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
@@ -384,7 +384,7 @@ class FRROspfv2(FrrService):
         mtu-ignore command. This is needed when e.g. a node is linked via a
         GreTap device.
         """
-        if iface.mtu != 1500:
+        if iface.mtu != DEFAULT_MTU:
             # a workaround for PhysicalNode GreTap, which has no knowledge of
             # the other nodes/nets
             return "  ip ospf mtu-ignore\n"

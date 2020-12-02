@@ -196,10 +196,10 @@ class InterfaceManager:
         for edge in canvas_node.edges:
             src_node = canvas.nodes[edge.src]
             dst_node = canvas.nodes[edge.dst]
-            iface = edge.src_iface
+            iface = edge.link.iface1
             check_node = src_node
             if src_node == canvas_node:
-                iface = edge.dst_iface
+                iface = edge.link.iface2
                 check_node = dst_node
             if check_node.core_node.id in visited:
                 continue
