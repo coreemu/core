@@ -28,8 +28,8 @@ def create_wireless_token(src: int, dst: int, network: int) -> str:
 
 
 def create_edge_token(link: Link) -> str:
-    iface1_id = link.iface1.id if link.iface1 else None
-    iface2_id = link.iface2.id if link.iface2 else None
+    iface1_id = link.iface1.id if link.iface1 else 0
+    iface2_id = link.iface2.id if link.iface2 else 0
     return f"{link.node1_id}-{iface1_id}-{link.node2_id}-{iface2_id}"
 
 
