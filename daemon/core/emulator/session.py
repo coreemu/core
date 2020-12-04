@@ -369,6 +369,19 @@ class Session:
                 node1.delete_iface(iface1_id)
             elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
                 node2.delete_iface(iface2_id)
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                for iface in node1.get_ifaces(control=False):
+                    if iface.othernet == node2:
+                        node1.detach(iface)
+                        iface.shutdown()
+                        break
+                for iface in node2.get_ifaces(control=False):
+                    if iface.othernet == node1:
+                        node2.detach(iface)
+                        iface.shutdown()
+                        break
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
