@@ -582,6 +582,8 @@ class CoreClient:
         # create edges config
         edges_config = []
         for edge in self.links.values():
+            if not edge.is_customized():
+                continue
             edge_config = dict(token=edge.token, width=edge.width, color=edge.color)
             edges_config.append(edge_config)
         edges_config = json.dumps(edges_config)

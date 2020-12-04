@@ -297,6 +297,9 @@ class CanvasEdge(Edge):
         self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()
 
+    def is_customized(self) -> bool:
+        return self.width != EDGE_WIDTH or self.color != EDGE_COLOR
+
     def create_context(self) -> None:
         themes.style_menu(self.context)
         self.context.add_command(label="Configure", command=self.click_configure)
