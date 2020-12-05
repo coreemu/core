@@ -770,10 +770,11 @@ class Session:
         """
         Shutdown all session nodes and remove the session directory.
         """
+        if self.state == EventTypes.SHUTDOWN_STATE:
+            logging.info("session(%s) state(%s) already shutdown", self.id, self.state)
+            return
         logging.info("session(%s) state(%s) shutting down", self.id, self.state)
-        if self.state != EventTypes.SHUTDOWN_STATE:
-            self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
-            self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
+        self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         # clear out current core session
         self.clear()
         # shutdown sdt
@@ -1258,6 +1259,14 @@ class Session:
 
         :return: nothing
         """
+        if self.state.already_collected():
+            logging.info(
+                "session(%s) state(%s) already data collected", self.id, self.state
+            )
+            return
+        logging.info("session(%s) state(%s) data collection", self.id, self.state)
+        self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
+
         # stop event loop
         self.event_loop.stop()
 
@@ -1279,10 +1288,8 @@ class Session:
         self.update_control_iface_hosts(remove=True)
 
         # remove all four possible control networks
-        self.add_remove_control_net(0, remove=True)
-        self.add_remove_control_net(1, remove=True)
-        self.add_remove_control_net(2, remove=True)
-        self.add_remove_control_net(3, remove=True)
+        for i in range(4):
+            self.add_remove_control_net(i, remove=True)
 
     def short_session_id(self) -> str:
         """

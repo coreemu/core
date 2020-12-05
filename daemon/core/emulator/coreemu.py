@@ -144,6 +144,7 @@ class CoreEmu:
         result = False
         if session:
             logging.info("shutting session down: %s", _id)
+            session.data_collect()
             session.shutdown()
             result = True
         else:

@@ -315,6 +315,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("stop session: %s", request)
         session = self.get_session(request.session_id, context)
+        session.data_collect()
         session.shutdown()
         return core_pb2.StopSessionResponse(result=True)
 
