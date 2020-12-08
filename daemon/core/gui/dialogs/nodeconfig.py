@@ -342,7 +342,9 @@ class NodeConfigDialog(Dialog):
 
             mac = data.mac.get()
             auto_mac = data.is_auto.get()
-            if not auto_mac and not netaddr.valid_mac(mac):
+            if auto_mac:
+                iface.mac = None
+            elif not auto_mac and not netaddr.valid_mac(mac):
                 title = f"MAC Error for {iface.name}"
                 messagebox.showerror(title, "Invalid MAC Address")
                 error = True
