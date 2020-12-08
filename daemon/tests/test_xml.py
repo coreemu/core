@@ -309,6 +309,7 @@ class TestXml:
         options.jitter = 10
         options.delay = 30
         options.dup = 5
+        options.buffer = 100
         session.add_link(node1.id, switch.id, iface1_data, options=options)
 
         # instantiate session
@@ -352,6 +353,7 @@ class TestXml:
         assert options.jitter == link.options.jitter
         assert options.delay == link.options.delay
         assert options.dup == link.options.dup
+        assert options.buffer == link.options.buffer
 
     def test_link_options_ptp(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -376,6 +378,7 @@ class TestXml:
         options.jitter = 10
         options.delay = 30
         options.dup = 5
+        options.buffer = 100
         session.add_link(node1.id, node2.id, iface1_data, iface2_data, options)
 
         # instantiate session
@@ -419,6 +422,7 @@ class TestXml:
         assert options.jitter == link.options.jitter
         assert options.delay == link.options.delay
         assert options.dup == link.options.dup
+        assert options.buffer == link.options.buffer
 
     def test_link_options_bidirectional(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
@@ -444,6 +448,7 @@ class TestXml:
         options1.loss = 10.5
         options1.dup = 5
         options1.jitter = 5
+        options1.buffer = 50
         session.add_link(node1.id, node2.id, iface1_data, iface2_data, options1)
         options2 = LinkOptions()
         options2.unidirectional = 1
@@ -452,6 +457,7 @@ class TestXml:
         options2.loss = 10
         options2.dup = 10
         options2.jitter = 10
+        options2.buffer = 100
         session.update_link(
             node2.id, node1.id, iface2_data.id, iface1_data.id, options2
         )
@@ -499,8 +505,10 @@ class TestXml:
         assert options1.loss == link1.options.loss
         assert options1.dup == link1.options.dup
         assert options1.jitter == link1.options.jitter
+        assert options1.buffer == link1.options.buffer
         assert options2.bandwidth == link2.options.bandwidth
         assert options2.delay == link2.options.delay
         assert options2.loss == link2.options.loss
         assert options2.dup == link2.options.dup
         assert options2.jitter == link2.options.jitter
+        assert options2.buffer == link2.options.buffer

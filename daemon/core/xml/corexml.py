@@ -570,6 +570,7 @@ class CoreXmlWriter:
             add_attribute(options, "unidirectional", options_data.unidirectional)
             add_attribute(options, "network_id", link_data.network_id)
             add_attribute(options, "key", options_data.key)
+            add_attribute(options, "buffer", options_data.buffer)
             if options.items():
                 link_element.append(options)
 
@@ -976,6 +977,7 @@ class CoreXmlReader:
                 if options.loss is None:
                     options.loss = get_float(options_element, "per")
                 options.unidirectional = get_int(options_element, "unidirectional")
+                options.buffer = get_int(options_element, "buffer")
 
             if options.unidirectional == 1 and node_set in node_sets:
                 logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
