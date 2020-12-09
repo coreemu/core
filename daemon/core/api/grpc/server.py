@@ -221,9 +221,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
-        session.set_state(EventTypes.CONFIGURATION_STATE)
         if not os.path.exists(session.session_dir):
             os.mkdir(session.session_dir)
+        session.set_state(EventTypes.CONFIGURATION_STATE)
 
         # location
         if request.HasField("location"):
