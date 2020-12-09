@@ -173,24 +173,20 @@ class MobilityManager(ModelManager):
         self.session.broadcast_event(event_data)
 
     def update_nets(
-        self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]
+        self, net: Union[WlanNode, EmaneNet], moved_ifaces: List[CoreInterface]
     ) -> None:
         """
-        A mobility script has caused nodes in the 'moved' list to move.
-        Update every mobility network. This saves range calculations if the model
-        were to recalculate for each individual node movement.
+        A mobility script has caused a set of interfaces to move for a given
+        mobility network. Update the network of the moved interfaces.
 
-        :param moved: moved nodes
+        :param net: network interfaces were moved witin
         :param moved_ifaces: moved network interfaces
         :return: nothing
         """
-        for node_id in self.nodes():
-            try:
-                node = get_mobility_node(self.session, node_id)
-                if node.model:
-                    node.model.update(moved, moved_ifaces)
-            except CoreError:
-                logging.exception("error updating mobility node")
+        if not net.model:
+            logging.error("moved interfaces network has no model: %s", net.name)
+            return
+        net.model.update(moved_ifaces)
 
 
 class WirelessModel(ConfigurableOptions):
@@ -223,11 +219,10 @@ class WirelessModel(ConfigurableOptions):
         """
         return []
 
-    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
+    def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
         Update this wireless model.
 
-        :param moved: moved nodes
         :param moved_ifaces: moved network interfaces
         :return: nothing
         """
@@ -369,14 +364,13 @@ class BasicRangeModel(WirelessModel):
 
     position_callback = set_position
 
-    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
+    def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
         Node positions have changed without recalc. Update positions from
         node.position, then re-calculate links for those that have moved.
         Assumes bidirectional links, with one calculation per node pair, where
         one of the nodes has moved.
 
-        :param moved: moved nodes
         :param moved_ifaces: moved network interfaces
         :return: nothing
         """
@@ -420,7 +414,6 @@ class BasicRangeModel(WirelessModel):
 
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
-
             if d > self.range:
                 if linked:
                     logging.debug("was linked, unlinking")
@@ -638,17 +631,15 @@ class WayPointMobility(WirelessModel):
                     return
                 return self.run()
 
-        # only move interfaces attached to self.wlan, or all nodenum in script?
-        moved = []
+        # TODO: only move interfaces attached to self.wlan, or all nodenum in script?
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
             if self.movenode(node, dt):
-                moved.append(node)
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.session.mobility.update_nets(moved, moved_ifaces)
+        self.session.mobility.update_nets(self.net, moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -719,7 +710,7 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        moved = []
+        # TODO: only move interfaces attached to self.wlan, or all nodenum in script?
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
@@ -727,9 +718,8 @@ class WayPointMobility(WirelessModel):
                 continue
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
-            moved.append(node)
             moved_ifaces.append(iface)
-        self.session.mobility.update_nets(moved, moved_ifaces)
+        self.session.mobility.update_nets(self.net, moved_ifaces)
 
     def addwaypoint(
         self,
