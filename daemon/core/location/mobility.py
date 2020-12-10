@@ -172,22 +172,6 @@ class MobilityManager(ModelManager):
         )
         self.session.broadcast_event(event_data)
 
-    def update_nets(
-        self, net: Union[WlanNode, EmaneNet], moved_ifaces: List[CoreInterface]
-    ) -> None:
-        """
-        A mobility script has caused a set of interfaces to move for a given
-        mobility network. Update the network of the moved interfaces.
-
-        :param net: network interfaces were moved witin
-        :param moved_ifaces: moved network interfaces
-        :return: nothing
-        """
-        if not net.model:
-            logging.error("moved interfaces network has no model: %s", net.name)
-            return
-        net.model.update(moved_ifaces)
-
 
 class WirelessModel(ConfigurableOptions):
     """
@@ -631,7 +615,6 @@ class WayPointMobility(WirelessModel):
                     return
                 return self.run()
 
-        # TODO: only move interfaces attached to self.wlan, or all nodenum in script?
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
@@ -639,7 +622,7 @@ class WayPointMobility(WirelessModel):
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.session.mobility.update_nets(self.net, moved_ifaces)
+        self.net.model.update(moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -650,7 +633,6 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        logging.info("running mobility scenario")
         self.timezero = time.monotonic()
         self.lasttime = self.timezero - (0.001 * self.refresh_ms)
         self.movenodesinitial()
@@ -710,7 +692,6 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        # TODO: only move interfaces attached to self.wlan, or all nodenum in script?
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
@@ -719,7 +700,7 @@ class WayPointMobility(WirelessModel):
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
             moved_ifaces.append(iface)
-        self.session.mobility.update_nets(self.net, moved_ifaces)
+        self.net.model.update(moved_ifaces)
 
     def addwaypoint(
         self,
@@ -1104,7 +1085,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        logging.info("starting script")
+        logging.info("starting script: %s", self.file)
         laststate = self.state
         super().start()
         if laststate == self.STATE_PAUSED:
@@ -1125,6 +1106,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
+        logging.info("pausing script: %s", self.file)
         super().pause()
         self.statescript("pause")
 
@@ -1136,6 +1118,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             position
         :return: nothing
         """
+        logging.info("stopping script: %s", self.file)
         super().stop(move_initial=move_initial)
         self.statescript("stop")
 
