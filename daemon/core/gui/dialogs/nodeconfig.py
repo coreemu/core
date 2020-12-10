@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from core.gui.graph.node import CanvasNode
 
 IFACE_NAME_LEN: int = 15
+DEFAULT_SERVER: str = "localhost"
 
 
 def check_ip6(parent: tk.BaseWidget, name: str, value: str) -> bool:
@@ -183,7 +184,7 @@ class NodeConfigDialog(Dialog):
         self.name: tk.StringVar = tk.StringVar(value=self.node.name)
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
-        server = "localhost"
+        server = DEFAULT_SERVER
         if self.node.server:
             server = self.node.server
         self.server: tk.StringVar = tk.StringVar(value=server)
@@ -250,7 +251,7 @@ class NodeConfigDialog(Dialog):
             frame.columnconfigure(1, weight=1)
             label = ttk.Label(frame, text="Server")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            servers = ["localhost"]
+            servers = [DEFAULT_SERVER]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
                 frame, textvariable=self.server, values=servers, state=combo_state
@@ -382,8 +383,11 @@ class NodeConfigDialog(Dialog):
         if NodeUtils.is_image_node(self.node.type):
             self.node.image = self.container_image.get()
         server = self.server.get()
-        if NodeUtils.is_container_node(self.node.type) and server != "localhost":
-            self.node.server = server
+        if NodeUtils.is_container_node(self.node.type):
+            if server == DEFAULT_SERVER:
+                self.node.server = None
+            else:
+                self.node.server = server
 
         # set custom icon
         if self.image_file:
