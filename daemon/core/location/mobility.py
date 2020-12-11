@@ -31,6 +31,9 @@ from core.nodes.network import WlanNode
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
+LEARNING_DISABLED: int = 0
+LEARNING_ENABLED: int = 30000
+
 
 def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, EmaneNet]:
     try:
@@ -259,6 +262,12 @@ class BasicRangeModel(WirelessModel):
         Configuration(
             _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
+        Configuration(
+            _id="promiscuous",
+            _type=ConfigDataTypes.BOOL,
+            default="0",
+            label="promiscuous mode",
+        ),
     ]
 
     @classmethod
@@ -282,6 +291,7 @@ class BasicRangeModel(WirelessModel):
         self.delay: Optional[int] = None
         self.loss: Optional[float] = None
         self.jitter: Optional[int] = None
+        self.promiscuous: bool = False
 
     def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
         """
@@ -444,6 +454,12 @@ class BasicRangeModel(WirelessModel):
         self.delay = self._get_config(self.delay, config, "delay")
         self.loss = self._get_config(self.loss, config, "error")
         self.jitter = self._get_config(self.jitter, config, "jitter")
+        promiscuous = config["promiscuous"] == "1"
+        if self.promiscuous and not promiscuous:
+            self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_ENABLED)
+        elif not self.promiscuous and promiscuous:
+            self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_DISABLED)
+        self.promiscuous = promiscuous
         self.setlinkparams()
 
     def create_link_data(
