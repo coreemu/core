@@ -138,22 +138,8 @@ class Application(ttk.Frame):
         label.grid(sticky=tk.EW, pady=PADY)
 
     def draw_canvas(self) -> None:
-        canvas_frame = ttk.Frame(self.right_frame)
-        canvas_frame.rowconfigure(0, weight=1)
-        canvas_frame.columnconfigure(0, weight=1)
-        canvas_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=1)
-        self.manager = CanvasManager(canvas_frame, self, self.core)
+        self.manager = CanvasManager(self.right_frame, self, self.core)
         self.manager.notebook.grid(sticky=tk.NSEW)
-        # self.canvas = CanvasGraph(canvas_frame, self, self.core)
-        # self.canvas.grid(sticky=tk.NSEW)
-        # scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
-        # scroll_y.grid(row=0, column=1, sticky=tk.NS)
-        # scroll_x = ttk.Scrollbar(
-        #     canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview
-        # )
-        # scroll_x.grid(row=1, column=0, sticky=tk.EW)
-        # self.canvas.configure(xscrollcommand=scroll_x.set)
-        # self.canvas.configure(yscrollcommand=scroll_y.set)
 
     def draw_status(self) -> None:
         self.statusbar = StatusBar(self.right_frame, self)

@@ -128,6 +128,8 @@ class Menubar(tk.Menu):
         Create canvas menu
         """
         menu = tk.Menu(self)
+        menu.add_command(label="New", command=self.click_canvas_add)
+        menu.add_command(label="Delete", command=self.click_canvas_delete)
         menu.add_command(label="Size / Scale", command=self.click_canvas_size_and_scale)
         menu.add_command(label="Wallpaper", command=self.click_canvas_wallpaper)
         self.add_cascade(label="Canvas", menu=menu)
@@ -371,6 +373,12 @@ class Menubar(tk.Menu):
     def click_preferences(self) -> None:
         dialog = PreferencesDialog(self.app)
         dialog.show()
+
+    def click_canvas_add(self) -> None:
+        self.canvas_manager.add_canvas()
+
+    def click_canvas_delete(self) -> None:
+        self.canvas_manager.delete_canvas()
 
     def click_canvas_size_and_scale(self) -> None:
         dialog = SizeAndScaleDialog(self.app)

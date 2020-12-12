@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from tkinter import BooleanVar, ttk
+from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple
 
 from core.api.grpc.wrappers import Session
@@ -70,11 +70,55 @@ class CanvasManager:
 
         # widget
         self.notebook: Optional[ttk.Notebook] = None
+        self.unique_ids: Dict[str, int] = {}
         self.draw()
 
     def draw(self) -> None:
         self.notebook = ttk.Notebook(self.master)
-        self.notebook.grid(sticky=tk.NSEW)
+        self.notebook.grid(sticky=tk.NSEW, pady=1)
+
+    def next_id(self) -> int:
+        _id = 1
+        tab_ids = set(self.unique_ids.values())
+        while _id in tab_ids:
+            _id += 1
+        return _id
+
+    def add_canvas(self) -> CanvasGraph:
+        # create tab frame
+        tab = ttk.Frame(self.notebook, padding=0)
+        tab.grid(sticky=tk.NSEW)
+        tab.columnconfigure(0, weight=1)
+        tab.rowconfigure(0, weight=1)
+        tab_id = self.next_id()
+        self.notebook.add(tab, text=f"Canvas {tab_id}")
+        unique_id = self.notebook.tabs()[-1]
+        logging.info("tab(%s) is %s", unique_id, tab_id)
+        self.unique_ids[unique_id] = tab_id
+
+        # create canvas
+        canvas = CanvasGraph(tab, self.app, self, self.core, tab_id)
+        canvas.grid(sticky=tk.NSEW)
+        self.canvases[tab_id] = canvas
+
+        # add scrollbars
+        scroll_y = ttk.Scrollbar(tab, command=canvas.yview)
+        scroll_y.grid(row=0, column=1, sticky=tk.NS)
+        scroll_x = ttk.Scrollbar(tab, orient=tk.HORIZONTAL, command=canvas.xview)
+        scroll_x.grid(row=1, column=0, sticky=tk.EW)
+        canvas.configure(xscrollcommand=scroll_x.set)
+        canvas.configure(yscrollcommand=scroll_y.set)
+        return canvas
+
+    def delete_canvas(self) -> None:
+        if len(self.notebook.tabs()) == 1:
+            messagebox.showinfo("Canvas", "Cannot delete last canvas", parent=self.app)
+            return
+        unique_id = self.notebook.select()
+        self.notebook.forget(unique_id)
+        tab_id = self.unique_ids.pop(unique_id)
+        self.canvases.pop(tab_id)
+        # TODO: handle clearing out canvas related nodes and links
 
     def join(self, session: Session) -> None:
         # clear out all canvas
@@ -95,18 +139,11 @@ class CanvasManager:
         self.annotation_type = None
         self.node_draw = None
 
+        # TODO: create and add nodes to all associated canvases
         # draw initial tab(s) and session
-        tab = ttk.Frame(self.notebook, padding=0)
-        tab.grid(sticky=tk.NSEW)
-        tab.columnconfigure(0, weight=1)
-        tab.rowconfigure(0, weight=1)
-        tab_id = len(self.notebook.tabs())
-        self.notebook.add(tab, text=f"Canvas {tab_id}")
-        logging.info("canvas tab id: %s", tab_id)
-        canvas = CanvasGraph(tab, self.app, self, self.core, tab_id)
-        canvas.grid(sticky=tk.NSEW)
-        self.canvases[tab_id] = canvas
+        canvas = self.add_canvas()
 
+        # draw session on canvas
         canvas.reset_and_redraw(session)
         self.core.parse_metadata(canvas)
         canvas.organize()
