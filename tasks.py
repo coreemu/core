@@ -100,6 +100,7 @@ class OsInfo:
         if not os_like:
             like = " ".join(like)
             print(f"unsupported os install type({like})")
+            print("trying using the -i option to specify an install type")
             sys.exit(1)
         if version:
             try:
@@ -141,7 +142,7 @@ def get_os(install_type: Optional[str]) -> OsInfo:
                 key, value = line.split("=")
                 d[key] = value.strip("\"")
         name_value = d["ID"]
-        like_value = d["ID_LIKE"]
+        like_value = d.get("ID_LIKE", "")
         version_value = d["VERSION_ID"]
     return OsInfo.get(name_value, like_value.split(), version_value)
 
