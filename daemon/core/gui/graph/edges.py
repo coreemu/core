@@ -145,7 +145,7 @@ class Edge:
                 text=text,
                 tags=tags.LINK_LABEL,
                 justify=tk.CENTER,
-                state=self.canvas.show_link_labels.state(),
+                state=self.canvas.manager.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.middle_label, text=text)
@@ -177,7 +177,7 @@ class Edge:
                 justify=tk.CENTER,
                 font=self.canvas.app.edge_font,
                 tags=tags.LINK_LABEL,
-                state=self.canvas.show_link_labels.state(),
+                state=self.canvas.manager.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.src_label, text=text)
@@ -191,7 +191,7 @@ class Edge:
                 justify=tk.CENTER,
                 font=self.canvas.app.edge_font,
                 tags=tags.LINK_LABEL,
-                state=self.canvas.show_link_labels.state(),
+                state=self.canvas.manager.show_link_labels.state(),
             )
         else:
             self.canvas.itemconfig(self.dst_label, text=text)
@@ -256,7 +256,7 @@ class CanvasWirelessEdge(Edge):
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
-        self.draw(src_pos, dst_pos, self.canvas.show_wireless.state())
+        self.draw(src_pos, dst_pos, self.canvas.manager.show_wireless.state())
         if link.label:
             self.middle_label_text(link.label)
         self.set_binding()
@@ -311,12 +311,12 @@ class CanvasEdge(Edge):
 
     def iface_label(self, iface: Interface) -> str:
         label = ""
-        if iface.name and self.canvas.show_iface_names.get():
+        if iface.name and self.canvas.manager.show_iface_names.get():
             label = f"{iface.name}"
-        if iface.ip4 and self.canvas.show_ip4s.get():
+        if iface.ip4 and self.canvas.manager.show_ip4s.get():
             label = f"{label}\n" if label else ""
             label += f"{iface.ip4}/{iface.ip4_mask}"
-        if iface.ip6 and self.canvas.show_ip6s.get():
+        if iface.ip6 and self.canvas.manager.show_ip6s.get():
             label = f"{label}\n" if label else ""
             label += f"{iface.ip6}/{iface.ip6_mask}"
         return label
@@ -350,7 +350,7 @@ class CanvasEdge(Edge):
         else:
             state = tk.NORMAL
             self.canvas.dtag(self.id, tags.LOSS_EDGES)
-        if self.canvas.show_loss_links.state() == tk.HIDDEN:
+        if self.canvas.manager.show_loss_links.state() == tk.HIDDEN:
             self.canvas.itemconfigure(self.id, state=state)
 
     def set_throughput(self, throughput: float) -> None:

@@ -555,6 +555,8 @@ class CoreClient:
                 mobility_player.show()
 
     def set_metadata(self) -> None:
+        # TODO: handle metadata for multiple canvases
+        return
         # create canvas data
         wallpaper_path = None
         if self.app.canvas.wallpaper_file:

@@ -13,7 +13,6 @@ from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.frames.base import InfoFrameBase
 from core.gui.frames.default import DefaultInfoFrame
-from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.manager import CanvasManager
 from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
@@ -37,7 +36,6 @@ class Application(ttk.Frame):
         self.toolbar: Optional[Toolbar] = None
         self.right_frame: Optional[ttk.Frame] = None
         self.manager: Optional[CanvasManager] = None
-        self.canvas: Optional[CanvasGraph] = None
         self.statusbar: Optional[StatusBar] = None
         self.progress: Optional[Progressbar] = None
         self.infobar: Optional[ttk.Frame] = None

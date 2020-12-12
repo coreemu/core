@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple, ValuesView
 
 from core.api.grpc.wrappers import Session
 from core.gui.graph import tags
@@ -77,12 +77,20 @@ class CanvasManager:
         self.notebook = ttk.Notebook(self.master)
         self.notebook.grid(sticky=tk.NSEW, pady=1)
 
-    def next_id(self) -> int:
+    def _next_id(self) -> int:
         _id = 1
         tab_ids = set(self.unique_ids.values())
         while _id in tab_ids:
             _id += 1
         return _id
+
+    def current(self) -> CanvasGraph:
+        unique_id = self.notebook.select()
+        tab_id = self.unique_ids[unique_id]
+        return self.canvases[tab_id]
+
+    def all(self) -> ValuesView[CanvasGraph]:
+        return self.canvases.values()
 
     def add_canvas(self) -> CanvasGraph:
         # create tab frame
@@ -90,7 +98,7 @@ class CanvasManager:
         tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(0, weight=1)
-        tab_id = self.next_id()
+        tab_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {tab_id}")
         unique_id = self.notebook.tabs()[-1]
         logging.info("tab(%s) is %s", unique_id, tab_id)

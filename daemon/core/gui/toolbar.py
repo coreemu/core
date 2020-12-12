@@ -144,7 +144,8 @@ class MarkerFrame(ttk.Frame):
         Tooltip(self.color_frame, "Marker Color")
 
     def click_clear(self) -> None:
-        self.app.canvas.delete(tags.MARKER)
+        canvas = self.app.manager.current()
+        canvas.delete(tags.MARKER)
 
     def click_color(self, _event: tk.Event) -> None:
         dialog = ColorPickerDialog(self.app, self.app, self.color)
@@ -283,7 +284,7 @@ class Toolbar(ttk.Frame):
 
     def click_runtime_selection(self) -> None:
         self.runtime_frame.select_radio(self.runtime_select_button)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.manager.mode = GraphMode.SELECT
         self.hide_marker()
 
     def click_start(self) -> None:
@@ -292,7 +293,7 @@ class Toolbar(ttk.Frame):
         server.
         """
         self.app.menubar.change_menubar_item_state(is_runtime=True)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.manager.mode = GraphMode.SELECT
         enable_buttons(self.design_frame, enabled=False)
         task = ProgressTask(
             self.app, "Start", self.app.core.start_session, self.start_callback
@@ -348,8 +349,8 @@ class Toolbar(ttk.Frame):
         Draw the options for link-layer button.
         """
         self.hide_marker()
-        self.app.canvas.mode = GraphMode.NODE
-        self.app.canvas.node_draw = self.current_network
+        self.app.manager.mode = GraphMode.NODE
+        self.app.manager.node_draw = self.current_network
         self.design_frame.select_radio(self.network_button)
         self.picker = PickerFrame(self.app, self.network_button)
         for node_draw in NodeUtils.NETWORK_NODES:
@@ -364,8 +365,8 @@ class Toolbar(ttk.Frame):
         Draw the options for marker button.
         """
         self.design_frame.select_radio(self.annotation_button)
-        self.app.canvas.mode = GraphMode.ANNOTATION
-        self.app.canvas.annotation_type = self.current_annotation
+        self.app.manager.mode = GraphMode.ANNOTATION
+        self.app.manager.annotation_type = self.current_annotation
         if is_marker(self.current_annotation):
             self.show_marker()
         self.picker = PickerFrame(self.app, self.annotation_button)
@@ -406,7 +407,8 @@ class Toolbar(ttk.Frame):
 
     def stop_callback(self, result: bool) -> None:
         self.set_design()
-        self.app.canvas.stopped_session()
+        for canvas in self.app.manager.all():
+            canvas.stopped_session()
 
     def update_annotation(
         self, shape_type: ShapeType, image_enum: ImageEnum, image: PhotoImage
@@ -414,7 +416,7 @@ class Toolbar(ttk.Frame):
         logging.debug("clicked annotation")
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
-        self.app.canvas.annotation_type = shape_type
+        self.app.manager.annotation_type = shape_type
         self.current_annotation = shape_type
         self.annotation_enum = image_enum
         if is_marker(shape_type):
@@ -435,8 +437,8 @@ class Toolbar(ttk.Frame):
 
     def click_marker_button(self) -> None:
         self.runtime_frame.select_radio(self.runtime_marker_button)
-        self.app.canvas.mode = GraphMode.ANNOTATION
-        self.app.canvas.annotation_type = ShapeType.MARKER
+        self.app.manager.mode = GraphMode.ANNOTATION
+        self.app.manager.annotation_type = ShapeType.MARKER
         self.show_marker()
 
     def scale_button(
