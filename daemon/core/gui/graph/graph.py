@@ -1,7 +1,6 @@
 import logging
 import tkinter as tk
 from copy import deepcopy
-from tkinter import BooleanVar
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from PIL import Image
@@ -31,10 +30,11 @@ from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import ImageEnum, TypeToImage
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+    from core.gui.graph.manager import CanvasManager
     from core.gui.coreclient import CoreClient
 
 ZOOM_IN = 1.1
@@ -44,32 +44,23 @@ MOVE_NODE_MODES = {GraphMode.NODE, GraphMode.SELECT}
 MOVE_SHAPE_MODES = {GraphMode.ANNOTATION, GraphMode.SELECT}
 
 
-class ShowVar(BooleanVar):
-    def __init__(self, canvas: "CanvasGraph", tag: str, value: bool) -> None:
-        super().__init__(value=value)
-        self.canvas = canvas
-        self.tag = tag
-
-    def state(self) -> str:
-        return tk.NORMAL if self.get() else tk.HIDDEN
-
-    def click_handler(self) -> None:
-        self.canvas.itemconfigure(self.tag, state=self.state())
-
-
 class CanvasGraph(tk.Canvas):
     def __init__(
-        self, master: tk.BaseWidget, app: "Application", core: "CoreClient"
+        self,
+        master: tk.BaseWidget,
+        app: "Application",
+        canvas_manager: "CanvasManager",
+        core: "CoreClient",
+        _id: int,
     ) -> None:
         super().__init__(master, highlightthickness=0, background="#cccccc")
+        self.id: int = _id
         self.app: "Application" = app
+        self.manager: "CanvasManager" = canvas_manager
         self.core: "CoreClient" = core
-        self.mode: GraphMode = GraphMode.SELECT
-        self.annotation_type: Optional[ShapeType] = None
         self.selection: Dict[int, int] = {}
         self.select_box: Optional[Shape] = None
         self.selected: Optional[int] = None
-        self.node_draw: Optional[NodeDraw] = None
         self.nodes: Dict[int, CanvasNode] = {}
         self.edges: Dict[str, CanvasEdge] = {}
         self.shapes: Dict[int, Shape] = {}
@@ -103,18 +94,6 @@ class CanvasGraph(tk.Canvas):
         self.throughput_width: int = 10
         self.throughput_color: str = "#FF0000"
 
-        # drawing related
-        self.show_node_labels: ShowVar = ShowVar(self, tags.NODE_LABEL, value=True)
-        self.show_link_labels: ShowVar = ShowVar(self, tags.LINK_LABEL, value=True)
-        self.show_links: ShowVar = ShowVar(self, tags.EDGE, value=True)
-        self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
-        self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
-        self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)
-        self.show_loss_links: ShowVar = ShowVar(self, tags.LOSS_EDGES, value=True)
-        self.show_iface_names: BooleanVar = BooleanVar(value=False)
-        self.show_ip4s: BooleanVar = BooleanVar(value=True)
-        self.show_ip6s: BooleanVar = BooleanVar(value=True)
-
         # bindings
         self.setup_bindings()
 
@@ -140,24 +119,11 @@ class CanvasGraph(tk.Canvas):
         self.configure(scrollregion=self.bbox(tk.ALL))
 
     def reset_and_redraw(self, session: Session) -> None:
-        # reset view options to default state
-        self.show_node_labels.set(True)
-        self.show_link_labels.set(True)
-        self.show_grid.set(True)
-        self.show_annotations.set(True)
-        self.show_iface_names.set(False)
-        self.show_ip4s.set(True)
-        self.show_ip6s.set(True)
-        self.show_loss_links.set(True)
-
         # delete any existing drawn items
         for tag in tags.RESET_TAGS:
             self.delete(tag)
 
         # set the private variables to default value
-        self.mode = GraphMode.SELECT
-        self.annotation_type = None
-        self.node_draw = None
         self.selected = None
         self.nodes.clear()
         self.edges.clear()
@@ -307,7 +273,7 @@ class CanvasGraph(tk.Canvas):
             image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
         x = core_node.position.x
         y = core_node.position.y
-        node = CanvasNode(self.app, x, y, core_node, image)
+        node = CanvasNode(self.app, self, x, y, core_node, image)
         self.nodes[node.id] = node
         self.core.set_canvas_node(core_node, node)
 
@@ -381,13 +347,13 @@ class CanvasGraph(tk.Canvas):
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             return
-        if self.mode == GraphMode.ANNOTATION:
+        if self.manager.mode == GraphMode.ANNOTATION:
             self.focus_set()
             if self.shape_drawing:
                 shape = self.shapes[self.selected]
                 shape.shape_complete(x, y)
                 self.shape_drawing = False
-        elif self.mode == GraphMode.SELECT:
+        elif self.manager.mode == GraphMode.SELECT:
             self.focus_set()
             if self.select_box:
                 x0, y0, x1, y1 = self.coords(self.select_box.id)
@@ -403,13 +369,15 @@ class CanvasGraph(tk.Canvas):
         else:
             self.focus_set()
             self.selected = self.get_selected(event)
-            logging.debug(f"click release selected({self.selected}) mode({self.mode})")
-            if self.mode == GraphMode.EDGE:
+            logging.debug(
+                "click release selected(%s) mode(%s)", self.selected, self.manager.mode
+            )
+            if self.manager.mode == GraphMode.EDGE:
                 self.handle_edge_release(event)
-            elif self.mode == GraphMode.NODE:
+            elif self.manager.mode == GraphMode.NODE:
                 self.add_node(x, y)
-            elif self.mode == GraphMode.PICKNODE:
-                self.mode = GraphMode.NODE
+            elif self.manager.mode == GraphMode.PICKNODE:
+                self.manager.mode = GraphMode.NODE
         self.selected = None
 
     def handle_edge_release(self, _event: tk.Event) -> None:
@@ -588,13 +556,13 @@ class CanvasGraph(tk.Canvas):
         y_check = self.cursor[1] - self.offset[1]
         logging.debug("click press offset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
-        if self.mode == GraphMode.EDGE and is_node:
+        if self.manager.mode == GraphMode.EDGE and is_node:
             pos = self.coords(selected)
             self.drawing_edge = CanvasEdge(self, selected, pos, pos)
             self.organize()
 
-        if self.mode == GraphMode.ANNOTATION:
-            if is_marker(self.annotation_type):
+        if self.manager.mode == GraphMode.ANNOTATION:
+            if is_marker(self.manager.annotation_type):
                 r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
@@ -604,11 +572,11 @@ class CanvasGraph(tk.Canvas):
                     fill=self.app.toolbar.marker_frame.color,
                     outline="",
                     tags=(tags.MARKER, tags.ANNOTATION),
-                    state=self.show_annotations.state(),
+                    state=self.manager.show_annotations.state(),
                 )
                 return
             if selected is None:
-                shape = Shape(self.app, self, self.annotation_type, x, y)
+                shape = Shape(self.app, self, self.manager.annotation_type, x, y)
                 self.selected = shape.id
                 self.shape_drawing = True
                 self.shapes[shape.id] = shape
@@ -630,7 +598,7 @@ class CanvasGraph(tk.Canvas):
                         node.core_node.position.y,
                     )
         else:
-            if self.mode == GraphMode.SELECT:
+            if self.manager.mode == GraphMode.SELECT:
                 shape = Shape(self.app, self, ShapeType.RECTANGLE, x, y)
                 self.select_box = shape
             self.clear_selection()
@@ -659,7 +627,7 @@ class CanvasGraph(tk.Canvas):
             if self.select_box:
                 self.select_box.delete()
                 self.select_box = None
-            if is_draw_shape(self.annotation_type) and self.shape_drawing:
+            if is_draw_shape(self.manager.annotation_type) and self.shape_drawing:
                 shape = self.shapes.pop(self.selected)
                 shape.delete()
                 self.shape_drawing = False
@@ -669,14 +637,14 @@ class CanvasGraph(tk.Canvas):
         y_offset = y - self.cursor[1]
         self.cursor = x, y
 
-        if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
+        if self.manager.mode == GraphMode.EDGE and self.drawing_edge is not None:
             self.drawing_edge.move_dst(self.cursor)
-        if self.mode == GraphMode.ANNOTATION:
-            if is_draw_shape(self.annotation_type) and self.shape_drawing:
+        if self.manager.mode == GraphMode.ANNOTATION:
+            if is_draw_shape(self.manager.annotation_type) and self.shape_drawing:
                 shape = self.shapes[self.selected]
                 shape.shape_motion(x, y)
                 return
-            elif is_marker(self.annotation_type):
+            elif is_marker(self.manager.annotation_type):
                 r = self.app.toolbar.marker_frame.size.get()
                 self.create_oval(
                     x - r,
@@ -689,21 +657,21 @@ class CanvasGraph(tk.Canvas):
                 )
                 return
 
-        if self.mode == GraphMode.EDGE:
+        if self.manager.mode == GraphMode.EDGE:
             return
 
         # move selected objects
         if self.selection:
             for selected_id in self.selection:
-                if self.mode in MOVE_SHAPE_MODES and selected_id in self.shapes:
+                if self.manager.mode in MOVE_SHAPE_MODES and selected_id in self.shapes:
                     shape = self.shapes[selected_id]
                     shape.motion(x_offset, y_offset)
 
-                if self.mode in MOVE_NODE_MODES and selected_id in self.nodes:
+                if self.manager.mode in MOVE_NODE_MODES and selected_id in self.nodes:
                     node = self.nodes[selected_id]
                     node.motion(x_offset, y_offset, update=self.core.is_runtime())
         else:
-            if self.select_box and self.mode == GraphMode.SELECT:
+            if self.select_box and self.manager.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
 
     def press_delete(self, _event: tk.Event) -> None:
@@ -729,17 +697,22 @@ class CanvasGraph(tk.Canvas):
             return
         actual_x, actual_y = self.get_actual_coords(x, y)
         core_node = self.core.create_node(
-            actual_x, actual_y, self.node_draw.node_type, self.node_draw.model
+            actual_x,
+            actual_y,
+            self.manager.node_draw.node_type,
+            self.manager.node_draw.model,
         )
         if not core_node:
             return
         try:
-            image_enum = self.node_draw.image_enum
-            self.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)
+            image_enum = self.manager.node_draw.image_enum
+            self.manager.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)
         except AttributeError:
-            image_file = self.node_draw.image_file
-            self.node_draw.image = self.app.get_custom_icon(image_file, ICON_SIZE)
-        node = CanvasNode(self.app, x, y, core_node, self.node_draw.image)
+            image_file = self.manager.node_draw.image_file
+            self.manager.node_draw.image = self.app.get_custom_icon(
+                image_file, ICON_SIZE
+            )
+        node = CanvasNode(self.app, self, x, y, core_node, self.manager.node_draw.image)
         self.nodes[node.id] = node
         self.core.set_canvas_node(core_node, node)
 
@@ -847,7 +820,7 @@ class CanvasGraph(tk.Canvas):
         # redraw gridlines to new canvas size
         self.delete(tags.GRIDLINE)
         self.draw_grid()
-        self.app.canvas.show_grid.click_handler()
+        self.app.manager.show_grid.click_handler()
 
     def redraw_wallpaper(self) -> None:
         if self.adjust_to_dim.get():
@@ -884,7 +857,7 @@ class CanvasGraph(tk.Canvas):
             self.wallpaper_file = None
 
     def is_selection_mode(self) -> bool:
-        return self.mode == GraphMode.SELECT
+        return self.manager.mode == GraphMode.SELECT
 
     def create_edge(self, src: CanvasNode, dst: CanvasNode) -> CanvasEdge:
         """

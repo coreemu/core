@@ -22,7 +22,7 @@ from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
-from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.manager import CanvasManager
 from core.gui.nodeutils import ICON_SIZE
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
@@ -45,7 +45,7 @@ class Menubar(tk.Menu):
         super().__init__(app)
         self.app: "Application" = app
         self.core: CoreClient = app.core
-        self.canvas: CanvasGraph = app.canvas
+        self.canvas_manager: CanvasManager = app.manager
         self.recent_menu: Optional[tk.Menu] = None
         self.edit_menu: Optional[tk.Menu] = None
         self.observers_menu: Optional[ObserversMenu] = None
@@ -145,52 +145,52 @@ class Menubar(tk.Menu):
         menu.add_checkbutton(
             label="Interface Names",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_iface_names,
+            variable=self.canvas_manager.show_iface_names,
         )
         menu.add_checkbutton(
             label="IPv4 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_ip4s,
+            variable=self.canvas_manager.show_ip4s,
         )
         menu.add_checkbutton(
             label="IPv6 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_ip6s,
+            variable=self.canvas_manager.show_ip6s,
         )
         menu.add_checkbutton(
             label="Node Labels",
-            command=self.canvas.show_node_labels.click_handler,
-            variable=self.canvas.show_node_labels,
+            command=self.canvas_manager.show_node_labels.click_handler,
+            variable=self.canvas_manager.show_node_labels,
         )
         menu.add_checkbutton(
             label="Link Labels",
-            command=self.canvas.show_link_labels.click_handler,
-            variable=self.canvas.show_link_labels,
+            command=self.canvas_manager.show_link_labels.click_handler,
+            variable=self.canvas_manager.show_link_labels,
         )
         menu.add_checkbutton(
             label="Links",
-            command=self.canvas.show_links.click_handler,
-            variable=self.canvas.show_links,
+            command=self.canvas_manager.show_links.click_handler,
+            variable=self.canvas_manager.show_links,
         )
         menu.add_checkbutton(
             label="Loss Links",
-            command=self.canvas.show_loss_links.click_handler,
-            variable=self.canvas.show_loss_links,
+            command=self.canvas_manager.show_loss_links.click_handler,
+            variable=self.canvas_manager.show_loss_links,
         )
         menu.add_checkbutton(
             label="Wireless Links",
-            command=self.canvas.show_wireless.click_handler,
-            variable=self.canvas.show_wireless,
+            command=self.canvas_manager.show_wireless.click_handler,
+            variable=self.canvas_manager.show_wireless,
         )
         menu.add_checkbutton(
             label="Annotations",
-            command=self.canvas.show_annotations.click_handler,
-            variable=self.canvas.show_annotations,
+            command=self.canvas_manager.show_annotations.click_handler,
+            variable=self.canvas_manager.show_annotations,
         )
         menu.add_checkbutton(
             label="Canvas Grid",
-            command=self.canvas.show_grid.click_handler,
-            variable=self.canvas.show_grid,
+            command=self.canvas_manager.show_grid.click_handler,
+            variable=self.canvas_manager.show_grid,
         )
         self.add_cascade(label="View", menu=menu)
 

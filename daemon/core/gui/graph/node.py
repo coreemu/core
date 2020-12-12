@@ -31,10 +31,16 @@ NODE_TEXT_OFFSET: int = 5
 
 class CanvasNode:
     def __init__(
-        self, app: "Application", x: float, y: float, core_node: Node, image: PhotoImage
+        self,
+        app: "Application",
+        canvas: "CanvasGraph",
+        x: float,
+        y: float,
+        core_node: Node,
+        image: PhotoImage,
     ):
         self.app: "Application" = app
-        self.canvas: "CanvasGraph" = app.canvas
+        self.canvas: "CanvasGraph" = canvas
         self.image: PhotoImage = image
         self.core_node: Node = core_node
         self.id: int = self.canvas.create_image(
@@ -49,7 +55,7 @@ class CanvasNode:
             tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
-            state=self.canvas.show_node_labels.state(),
+            state=self.app.manager.show_node_labels.state(),
         )
         self.tooltip: CanvasTooltip = CanvasTooltip(self.canvas)
         self.edges: Set[CanvasEdge] = set()

@@ -257,8 +257,8 @@ class Toolbar(ttk.Frame):
 
     def draw_node_picker(self) -> None:
         self.hide_marker()
-        self.app.canvas.mode = GraphMode.NODE
-        self.app.canvas.node_draw = self.current_node
+        self.app.manager.mode = GraphMode.NODE
+        self.app.manager.node_draw = self.current_node
         self.design_frame.select_radio(self.node_button)
         self.picker = PickerFrame(self.app, self.node_button)
         # draw default nodes
@@ -278,7 +278,7 @@ class Toolbar(ttk.Frame):
 
     def click_selection(self) -> None:
         self.design_frame.select_radio(self.select_button)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.manager.mode = GraphMode.SELECT
         self.hide_marker()
 
     def click_runtime_selection(self) -> None:
@@ -324,7 +324,7 @@ class Toolbar(ttk.Frame):
 
     def click_link(self) -> None:
         self.design_frame.select_radio(self.link_button)
-        self.app.canvas.mode = GraphMode.EDGE
+        self.app.manager.mode = GraphMode.EDGE
         self.hide_marker()
 
     def update_button(
@@ -337,7 +337,7 @@ class Toolbar(ttk.Frame):
         logging.debug("update button(%s): %s", button, node_draw)
         button.configure(image=image)
         button.image = image
-        self.app.canvas.node_draw = node_draw
+        self.app.manager.node_draw = node_draw
         if type_enum == NodeTypeEnum.NODE:
             self.current_node = node_draw
         elif type_enum == NodeTypeEnum.NETWORK:

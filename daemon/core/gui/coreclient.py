@@ -47,6 +47,7 @@ from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
+from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import AnnotationData, Shape
 from core.gui.graph.shapeutils import ShapeType
@@ -315,9 +316,7 @@ class CoreClient:
                 self.session.id, self.handle_events
             )
             self.ifaces_manager.joined(self.session.links)
-            self.app.canvas.reset_and_redraw(self.session)
-            self.parse_metadata()
-            self.app.canvas.organize()
+            self.app.manager.join(self.session)
             if self.is_runtime():
                 self.show_mobility_players()
             self.app.after(0, self.app.joined_session_update)
@@ -327,7 +326,7 @@ class CoreClient:
     def is_runtime(self) -> bool:
         return self.session and self.session.state == SessionState.RUNTIME
 
-    def parse_metadata(self) -> None:
+    def parse_metadata(self, canvas: CanvasGraph) -> None:
         # canvas setting
         config = self.session.metadata
         canvas_config = config.get("canvas")
@@ -347,10 +346,10 @@ class CoreClient:
             wallpaper = canvas_config.get("wallpaper")
             if wallpaper:
                 wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            self.app.canvas.set_wallpaper(wallpaper)
+            canvas.set_wallpaper(wallpaper)
         else:
-            self.app.canvas.redraw_canvas()
-            self.app.canvas.set_wallpaper(None)
+            canvas.redraw_canvas()
+            canvas.set_wallpaper(None)
 
         # load saved shapes
         shapes_config = config.get("shapes")
@@ -377,7 +376,7 @@ class CoreClient:
                     shape = Shape(
                         self.app, self.app.canvas, shape_type, *coords, data=data
                     )
-                    self.app.canvas.shapes[shape.id] = shape
+                    canvas.shapes[shape.id] = shape
                 except ValueError:
                     logging.exception("unknown shape: %s", shape_type)
 
