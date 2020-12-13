@@ -704,6 +704,7 @@ class CanvasGraph(tk.Canvas):
         )
         if not core_node:
             return
+        core_node.canvas = self.id
         try:
             image_enum = self.manager.node_draw.image_enum
             self.manager.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)

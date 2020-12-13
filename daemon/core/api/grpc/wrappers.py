@@ -649,6 +649,7 @@ class Node:
     geo: Geo = None
     dir: str = None
     channel: str = None
+    canvas: int = None
 
     # configurations
     emane_model_configs: Dict[
@@ -683,6 +684,7 @@ class Node:
             geo=Geo.from_proto(proto.geo),
             dir=proto.dir,
             channel=proto.channel,
+            canvas=proto.canvas,
         )
 
     def to_proto(self) -> core_pb2.Node:
@@ -700,6 +702,7 @@ class Node:
             server=self.server,
             dir=self.dir,
             channel=self.channel,
+            canvas=self.canvas,
         )
 
 

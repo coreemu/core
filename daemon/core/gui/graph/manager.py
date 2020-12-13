@@ -3,12 +3,12 @@ import tkinter as tk
 from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple, ValuesView
 
-from core.api.grpc.wrappers import Session
+from core.api.grpc.wrappers import LinkType, Session
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.shapeutils import ShapeType
-from core.gui.nodeutils import NodeDraw
+from core.gui.nodeutils import NodeDraw, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -79,35 +79,36 @@ class CanvasManager:
 
     def _next_id(self) -> int:
         _id = 1
-        tab_ids = set(self.unique_ids.values())
-        while _id in tab_ids:
+        canvas_ids = set(self.unique_ids.values())
+        while _id in canvas_ids:
             _id += 1
         return _id
 
     def current(self) -> CanvasGraph:
         unique_id = self.notebook.select()
-        tab_id = self.unique_ids[unique_id]
-        return self.canvases[tab_id]
+        canvas_id = self.unique_ids[unique_id]
+        return self.canvases[canvas_id]
 
     def all(self) -> ValuesView[CanvasGraph]:
         return self.canvases.values()
 
-    def add_canvas(self) -> CanvasGraph:
+    def add_canvas(self, canvas_id: int = None) -> CanvasGraph:
         # create tab frame
         tab = ttk.Frame(self.notebook, padding=0)
         tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(0, weight=1)
-        tab_id = self._next_id()
-        self.notebook.add(tab, text=f"Canvas {tab_id}")
+        if canvas_id is None:
+            canvas_id = self._next_id()
+        self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
-        logging.info("tab(%s) is %s", unique_id, tab_id)
-        self.unique_ids[unique_id] = tab_id
+        logging.info("tab(%s) is %s", unique_id, canvas_id)
+        self.unique_ids[unique_id] = canvas_id
 
         # create canvas
-        canvas = CanvasGraph(tab, self.app, self, self.core, tab_id)
+        canvas = CanvasGraph(tab, self.app, self, self.core, canvas_id)
         canvas.grid(sticky=tk.NSEW)
-        self.canvases[tab_id] = canvas
+        self.canvases[canvas_id] = canvas
 
         # add scrollbars
         scroll_y = ttk.Scrollbar(tab, command=canvas.yview)
@@ -124,14 +125,14 @@ class CanvasManager:
             return
         unique_id = self.notebook.select()
         self.notebook.forget(unique_id)
-        tab_id = self.unique_ids.pop(unique_id)
-        self.canvases.pop(tab_id)
-        # TODO: handle clearing out canvas related nodes and links
+        canvas_id = self.unique_ids.pop(unique_id)
+        self.canvases.pop(canvas_id)
+        # TODO: handle clearing out canvas related nodes and links from core client
 
     def join(self, session: Session) -> None:
         # clear out all canvas
-        for tab_id in self.notebook.tabs():
-            self.notebook.forget(tab_id)
+        for canvas_id in self.notebook.tabs():
+            self.notebook.forget(canvas_id)
         self.canvases.clear()
 
         # reset settings
@@ -147,11 +148,45 @@ class CanvasManager:
         self.annotation_type = None
         self.node_draw = None
 
-        # TODO: create and add nodes to all associated canvases
-        # draw initial tab(s) and session
-        canvas = self.add_canvas()
+        if session.nodes:
+            self.draw_session(session)
+        else:
+            self.add_canvas()
 
-        # draw session on canvas
-        canvas.reset_and_redraw(session)
-        self.core.parse_metadata(canvas)
-        canvas.organize()
+    def draw_session(self, session: Session) -> None:
+        # create session nodes
+        for core_node in session.nodes.values():
+            # get tab id for node
+            canvas_id = core_node.canvas if core_node.canvas > 0 else 1
+
+            # get or create canvas
+            canvas = self.canvases.get(canvas_id)
+            if not canvas:
+                canvas = self.add_canvas(canvas_id)
+
+            # add node, avoiding ignored nodes
+            if NodeUtils.is_ignore_node(core_node.type):
+                continue
+            logging.debug("drawing node: %s", core_node)
+            canvas.add_core_node(core_node)
+
+        # draw existing links
+        for link in session.links:
+            logging.debug("drawing link: %s", link)
+            node1 = self.core.get_canvas_node(link.node1_id)
+            node2 = self.core.get_canvas_node(link.node2_id)
+            # TODO: handle edges for nodes on different canvases
+            if node1.canvas == node2.canvas:
+                canvas = node1.canvas
+                if link.type == LinkType.WIRELESS:
+                    canvas.add_wireless_edge(node1, node2, link)
+                else:
+                    canvas.add_wired_edge(node1, node2, link)
+            else:
+                logging.error("cant handle nodes linked between canvases")
+
+        # TODO: handle metadata
+        # self.core.parse_metadata(canvas)
+        # organize all canvases
+        for canvas in self.canvases.values():
+            canvas.organize()

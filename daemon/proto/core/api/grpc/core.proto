@@ -752,6 +752,7 @@ message Node {
     Geo geo = 12;
     string dir = 13;
     string channel = 14;
+    int32 canvas = 15;
 }
 
 message Link {
