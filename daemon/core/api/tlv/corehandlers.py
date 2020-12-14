@@ -2029,7 +2029,7 @@ class CoreUdpHandler(CoreHandler):
             for session_id in sessions:
                 session = self.server.mainserver.coreemu.sessions.get(session_id)
                 if session:
-                    logging.debug("session handling message: %s", session.session_id)
+                    logging.debug("session handling message: %s", session.id)
                     self.session = session
                     self.handle_message(message)
                     self.broadcast(message)
