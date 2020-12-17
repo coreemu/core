@@ -1080,10 +1080,18 @@ class CanvasGraph(tk.Canvas):
 
     def parse_metadata(self, config: Dict[str, Any]) -> None:
         fit_image = config.get("fit_image", False)
-        wallpaper_style = config.get("wallpaper-style", 1)
-        wallpaper = config.get("wallpaper")
         self.adjust_to_dim.set(fit_image)
+        wallpaper_style = config.get("wallpaper_style", 1)
         self.scale_option.set(wallpaper_style)
+        wallpaper = config.get("wallpaper")
         if wallpaper:
-            wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            self.set_wallpaper(wallpaper)
+            wallpaper = Path(wallpaper)
+            if not wallpaper.is_file():
+                wallpaper = appconfig.BACKGROUNDS_PATH.joinpath(wallpaper)
+            logging.info("canvas(%s), wallpaper: %s", self.id, wallpaper)
+            if wallpaper.is_file():
+                self.set_wallpaper(str(wallpaper))
+            else:
+                self.app.show_error(
+                    "Background Error", f"background file not found: {wallpaper}"
+                )
