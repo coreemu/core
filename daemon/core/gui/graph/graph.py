@@ -7,14 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import (
-    Interface,
-    Link,
-    LinkType,
-    Node,
-    Session,
-    ThroughputsEvent,
-)
+from core.api.grpc.wrappers import Interface, Link, LinkType, Node, Session
 from core.gui import appconfig
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
@@ -89,11 +82,6 @@ class CanvasGraph(tk.Canvas):
         self.wallpaper_file: str = ""
         self.scale_option: tk.IntVar = tk.IntVar(value=1)
         self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(value=False)
-
-        # throughput related
-        self.throughput_threshold: float = 250.0
-        self.throughput_width: int = 10
-        self.throughput_color: str = "#FF0000"
 
         # bindings
         self.setup_bindings()
@@ -170,16 +158,6 @@ class CanvasGraph(tk.Canvas):
         valid_topleft = self.inside_canvas(x1, y1)
         valid_bottomright = self.inside_canvas(x2, y2)
         return valid_topleft and valid_bottomright
-
-    def set_throughputs(self, throughputs_event: ThroughputsEvent) -> None:
-        for iface_throughput in throughputs_event.iface_throughputs:
-            node_id = iface_throughput.node_id
-            iface_id = iface_throughput.iface_id
-            throughput = iface_throughput.throughput
-            iface_to_edge_id = (node_id, iface_id)
-            edge = self.core.iface_to_edge.get(iface_to_edge_id)
-            if edge:
-                edge.set_throughput(throughput)
 
     def draw_grid(self) -> None:
         """

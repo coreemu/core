@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, ValuesView
 
-from core.api.grpc.wrappers import LinkType, Session
+from core.api.grpc.wrappers import LinkType, Session, ThroughputsEvent
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.graph import CanvasGraph
@@ -73,6 +73,9 @@ class CanvasManager:
         self.notebook: Optional[ttk.Notebook] = None
         self.unique_ids: Dict[str, int] = {}
         self.draw()
+
+        # start with a single tab by default
+        self.add_canvas()
 
     def draw(self) -> None:
         self.notebook = ttk.Notebook(self.master)
@@ -225,3 +228,18 @@ class CanvasManager:
                 continue
             canvas = self.get(canvas_id)
             canvas.parse_metadata(canvas_config)
+
+    def set_throughputs(self, throughputs_event: ThroughputsEvent):
+        for iface_throughput in throughputs_event.iface_throughputs:
+            node_id = iface_throughput.node_id
+            iface_id = iface_throughput.iface_id
+            throughput = iface_throughput.throughput
+            iface_to_edge_id = (node_id, iface_id)
+            edge = self.core.iface_to_edge.get(iface_to_edge_id)
+            if edge:
+                edge.set_throughput(throughput)
+
+    def clear_throughputs(self) -> None:
+        for canvas in self.all():
+            for edge in canvas.edges.values():
+                edge.clear_throughput()

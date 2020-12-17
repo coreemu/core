@@ -134,7 +134,8 @@ class PreferencesDialog(Dialog):
 
         # scale toolbar and canvas items
         self.app.toolbar.scale()
-        self.app.canvas.scale_graph()
+        for canvas in self.app.manager.all():
+            canvas.scale_graph()
 
     def adjust_scale(self, arg1: str, arg2: str, arg3: str) -> None:
         scale_value = self.gui_scale.get()

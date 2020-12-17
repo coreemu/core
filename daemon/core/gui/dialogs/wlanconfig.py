@@ -21,7 +21,7 @@ RANGE_WIDTH: int = 3
 class WlanConfigDialog(Dialog):
     def __init__(self, app: "Application", canvas_node: "CanvasNode") -> None:
         super().__init__(app, f"{canvas_node.core_node.name} WLAN Configuration")
-        self.canvas: "CanvasGraph" = app.canvas
+        self.canvas: "CanvasGraph" = app.manager.current()
         self.canvas_node: "CanvasNode" = canvas_node
         self.node: Node = canvas_node.core_node
         self.config_frame: Optional[ConfigFrame] = None

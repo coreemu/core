@@ -259,7 +259,7 @@ class CoreClient:
         if self.handling_throughputs:
             self.handling_throughputs.cancel()
             self.handling_throughputs = None
-            self.app.canvas.clear_throughputs()
+            self.app.manager.clear_throughputs()
 
     def cancel_events(self) -> None:
         if self.handling_events:
@@ -290,7 +290,7 @@ class CoreClient:
             )
             return
         logging.debug("handling throughputs event: %s", event)
-        self.app.after(0, self.app.canvas.set_throughputs, event)
+        self.app.after(0, self.app.manager.set_throughputs, event)
 
     def handle_cpu_event(self, event: core_pb2.CpuUsageEvent) -> None:
         self.app.after(0, self.app.statusbar.set_cpu, event.usage)

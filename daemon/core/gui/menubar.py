@@ -45,7 +45,7 @@ class Menubar(tk.Menu):
         super().__init__(app)
         self.app: "Application" = app
         self.core: CoreClient = app.core
-        self.canvas_manager: CanvasManager = app.manager
+        self.manager: CanvasManager = app.manager
         self.recent_menu: Optional[tk.Menu] = None
         self.edit_menu: Optional[tk.Menu] = None
         self.observers_menu: Optional[ObserversMenu] = None
@@ -148,52 +148,52 @@ class Menubar(tk.Menu):
         menu.add_checkbutton(
             label="Interface Names",
             command=self.click_edge_label_change,
-            variable=self.canvas_manager.show_iface_names,
+            variable=self.manager.show_iface_names,
         )
         menu.add_checkbutton(
             label="IPv4 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas_manager.show_ip4s,
+            variable=self.manager.show_ip4s,
         )
         menu.add_checkbutton(
             label="IPv6 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas_manager.show_ip6s,
+            variable=self.manager.show_ip6s,
         )
         menu.add_checkbutton(
             label="Node Labels",
-            command=self.canvas_manager.show_node_labels.click_handler,
-            variable=self.canvas_manager.show_node_labels,
+            command=self.manager.show_node_labels.click_handler,
+            variable=self.manager.show_node_labels,
         )
         menu.add_checkbutton(
             label="Link Labels",
-            command=self.canvas_manager.show_link_labels.click_handler,
-            variable=self.canvas_manager.show_link_labels,
+            command=self.manager.show_link_labels.click_handler,
+            variable=self.manager.show_link_labels,
         )
         menu.add_checkbutton(
             label="Links",
-            command=self.canvas_manager.show_links.click_handler,
-            variable=self.canvas_manager.show_links,
+            command=self.manager.show_links.click_handler,
+            variable=self.manager.show_links,
         )
         menu.add_checkbutton(
             label="Loss Links",
-            command=self.canvas_manager.show_loss_links.click_handler,
-            variable=self.canvas_manager.show_loss_links,
+            command=self.manager.show_loss_links.click_handler,
+            variable=self.manager.show_loss_links,
         )
         menu.add_checkbutton(
             label="Wireless Links",
-            command=self.canvas_manager.show_wireless.click_handler,
-            variable=self.canvas_manager.show_wireless,
+            command=self.manager.show_wireless.click_handler,
+            variable=self.manager.show_wireless,
         )
         menu.add_checkbutton(
             label="Annotations",
-            command=self.canvas_manager.show_annotations.click_handler,
-            variable=self.canvas_manager.show_annotations,
+            command=self.manager.show_annotations.click_handler,
+            variable=self.manager.show_annotations,
         )
         menu.add_checkbutton(
             label="Canvas Grid",
-            command=self.canvas_manager.show_grid.click_handler,
-            variable=self.canvas_manager.show_grid,
+            command=self.manager.show_grid.click_handler,
+            variable=self.manager.show_grid,
         )
         self.add_cascade(label="View", menu=menu)
 
@@ -376,10 +376,10 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_canvas_add(self) -> None:
-        self.canvas_manager.add_canvas()
+        self.manager.add_canvas()
 
     def click_canvas_delete(self) -> None:
-        self.canvas_manager.delete_canvas()
+        self.manager.delete_canvas()
 
     def click_canvas_size_and_scale(self) -> None:
         dialog = SizeAndScaleDialog(self.app)
@@ -448,14 +448,15 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_autogrid(self) -> None:
-        width, height = self.canvas.current_dimensions
+        width, height = self.manager.current_dimensions
         padding = (ICON_SIZE / 2) + 10
         layout_size = padding + ICON_SIZE
         col_count = width // layout_size
         logging.info(
             "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
         )
-        for i, node in enumerate(self.canvas.nodes.values()):
+        canvas = self.manager.current()
+        for i, node in enumerate(canvas.nodes.values()):
             col = i % col_count
             row = i // col_count
             x = (col * layout_size) + padding
