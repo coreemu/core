@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Dict, Optional, Set, Tuple, ValuesView
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, ValuesView
 
 from core.api.grpc.wrappers import LinkType, Session
 from core.gui.graph import tags
@@ -200,3 +200,28 @@ class CanvasManager:
             canvas.redraw_canvas(dimensions)
             if canvas.wallpaper:
                 canvas.redraw_wallpaper()
+
+    def get_metadata(self) -> Dict[str, Any]:
+        canvases = [x.get_metadata() for x in self.all()]
+        return dict(
+            gridlines=self.app.manager.show_grid.get(),
+            dimensions=self.app.manager.current_dimensions,
+            canvases=canvases,
+        )
+
+    def parse_metadata(self, config: Dict[str, Any]) -> None:
+        # get configured dimensions and gridlines option
+        dimensions = self.default_dimensions
+        dimensions = config.get("dimensions", dimensions)
+        gridlines = config.get("gridlines", True)
+        self.show_grid.set(gridlines)
+        self.redraw_canvases(dimensions)
+
+        # get background configurations
+        for canvas_config in config.get("canvases", []):
+            canvas_id = canvas_config.get("id")
+            if canvas_id is None:
+                logging.error("canvas config id not provided")
+                continue
+            canvas = self.get(canvas_id)
+            canvas.parse_metadata(canvas_config)

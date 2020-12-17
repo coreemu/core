@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -40,7 +39,7 @@ from core.api.grpc.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
-from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
+from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
@@ -330,31 +329,9 @@ class CoreClient:
         logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-            # get configured dimensions and gridlines option
-            dimensions = self.app.manager.default_dimensions
-            dimensions = canvas_config.get("dimensions", dimensions)
-            gridlines = canvas_config.get("gridlines", True)
-            self.app.manager.show_grid.set(gridlines)
-            self.app.manager.redraw_canvases(dimensions)
+            self.app.manager.parse_metadata(canvas_config)
 
-            # get background configurations
-            for background_config in canvas_config.get("canvases", []):
-                canvas_id = background_config.get("id")
-                if canvas_id is None:
-                    logging.error("canvas config id not provided")
-                    continue
-                canvas = self.app.manager.get(canvas_id)
-                fit_image = background_config.get("fit_image", False)
-                wallpaper_style = background_config.get("wallpaper-style", 1)
-                wallpaper = background_config.get("wallpaper")
-                canvas.adjust_to_dim.set(fit_image)
-                canvas.scale_option.set(wallpaper_style)
-                logging.info("canvas config: %s", background_config)
-                if wallpaper:
-                    wallpaper = str(BACKGROUNDS_PATH.joinpath(wallpaper))
-                    canvas.set_wallpaper(wallpaper)
-
-        # load saved shapes
+            # load saved shapes
         shapes_config = config.get("shapes")
         if shapes_config:
             shapes_config = json.loads(shapes_config)
@@ -362,7 +339,7 @@ class CoreClient:
                 logging.debug("loading shape: %s", shape_config)
                 Shape.from_metadata(self.app, shape_config)
 
-                # load edges config
+        # load edges config
         edges_config = config.get("edges")
         if edges_config:
             edges_config = json.loads(edges_config)
@@ -538,27 +515,7 @@ class CoreClient:
 
     def set_metadata(self) -> None:
         # create canvas data
-        canvases = []
-        for canvas in self.app.manager.all():
-            wallpaper_path = None
-            if canvas.wallpaper_file:
-                wallpaper = Path(canvas.wallpaper_file)
-                if BACKGROUNDS_PATH == wallpaper.parent:
-                    wallpaper_path = wallpaper.name
-                else:
-                    wallpaper_path = str(wallpaper)
-            config = {
-                "id": canvas.id,
-                "wallpaper": wallpaper_path,
-                "wallpaper-style": canvas.scale_option.get(),
-                "fit_image": canvas.adjust_to_dim.get(),
-            }
-            canvases.append(config)
-        canvas_config = dict(
-            gridlines=self.app.manager.show_grid.get(),
-            dimensions=self.app.manager.current_dimensions,
-            canvases=canvases,
-        )
+        canvas_config = self.app.manager.get_metadata()
         canvas_config = json.dumps(canvas_config)
 
         # create shapes data

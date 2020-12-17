@@ -1,7 +1,8 @@
 import logging
 import tkinter as tk
 from copy import deepcopy
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
@@ -14,6 +15,7 @@ from core.api.grpc.wrappers import (
     Session,
     ThroughputsEvent,
 )
+from core.gui import appconfig
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -925,7 +927,9 @@ class CanvasGraph(tk.Canvas):
             )
             if not copy:
                 continue
-            node = CanvasNode(self.app, scaled_x, scaled_y, copy, canvas_node.image)
+            node = CanvasNode(
+                self.app, self, scaled_x, scaled_y, copy, canvas_node.image
+            )
             # copy configurations and services
             node.core_node.services = core_node.services.copy()
             node.core_node.config_services = core_node.config_services.copy()
@@ -1058,3 +1062,28 @@ class CanvasGraph(tk.Canvas):
 
             for edge_id in self.find_withtag(tags.EDGE):
                 self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))
+
+    def get_metadata(self) -> Dict[str, Any]:
+        wallpaper_path = None
+        if self.wallpaper_file:
+            wallpaper = Path(self.wallpaper_file)
+            if appconfig.BACKGROUNDS_PATH == wallpaper.parent:
+                wallpaper_path = wallpaper.name
+            else:
+                wallpaper_path = str(wallpaper)
+        return dict(
+            id=self.id,
+            wallpaper=wallpaper_path,
+            wallpaper_style=self.scale_option.get(),
+            fit_image=self.adjust_to_dim.get(),
+        )
+
+    def parse_metadata(self, config: Dict[str, Any]) -> None:
+        fit_image = config.get("fit_image", False)
+        wallpaper_style = config.get("wallpaper-style", 1)
+        wallpaper = config.get("wallpaper")
+        self.adjust_to_dim.set(fit_image)
+        self.scale_option.set(wallpaper_style)
+        if wallpaper:
+            wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
+            self.set_wallpaper(wallpaper)
