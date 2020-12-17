@@ -37,11 +37,12 @@ if TYPE_CHECKING:
     from core.gui.graph.manager import CanvasManager
     from core.gui.coreclient import CoreClient
 
-ZOOM_IN = 1.1
-ZOOM_OUT = 0.9
-ICON_SIZE = 48
-MOVE_NODE_MODES = {GraphMode.NODE, GraphMode.SELECT}
-MOVE_SHAPE_MODES = {GraphMode.ANNOTATION, GraphMode.SELECT}
+ZOOM_IN: float = 1.1
+ZOOM_OUT: float = 0.9
+ICON_SIZE: int = 48
+MOVE_NODE_MODES: Set[GraphMode] = {GraphMode.NODE, GraphMode.SELECT}
+MOVE_SHAPE_MODES: Set[GraphMode] = {GraphMode.ANNOTATION, GraphMode.SELECT}
+BACKGROUND_COLOR: str = "#cccccc"
 
 
 class CanvasGraph(tk.Canvas):
@@ -49,14 +50,15 @@ class CanvasGraph(tk.Canvas):
         self,
         master: tk.BaseWidget,
         app: "Application",
-        canvas_manager: "CanvasManager",
+        manager: "CanvasManager",
         core: "CoreClient",
         _id: int,
+        dimensions: Tuple[int, int],
     ) -> None:
-        super().__init__(master, highlightthickness=0, background="#cccccc")
+        super().__init__(master, highlightthickness=0, background=BACKGROUND_COLOR)
         self.id: int = _id
         self.app: "Application" = app
-        self.manager: "CanvasManager" = canvas_manager
+        self.manager: "CanvasManager" = manager
         self.core: "CoreClient" = core
         self.selection: Dict[int, int] = {}
         self.select_box: Optional[Shape] = None
@@ -72,10 +74,7 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge: Optional[CanvasEdge] = None
         self.rect: Optional[int] = None
         self.shape_drawing: bool = False
-        width = self.app.guiconfig.preferences.width
-        height = self.app.guiconfig.preferences.height
-        self.default_dimensions: Tuple[int, int] = (width, height)
-        self.current_dimensions: Tuple[int, int] = self.default_dimensions
+        self.current_dimensions: Tuple[int, int] = dimensions
         self.ratio: float = 1.0
         self.offset: Tuple[int, int] = (0, 0)
         self.cursor: Tuple[int, int] = (0, 0)
@@ -105,7 +104,7 @@ class CanvasGraph(tk.Canvas):
         if self.rect is not None:
             self.delete(self.rect)
         if not dimensions:
-            dimensions = self.default_dimensions
+            dimensions = self.manager.default_dimensions
         self.current_dimensions = dimensions
         self.rect = self.create_rectangle(
             0,
@@ -845,7 +844,7 @@ class CanvasGraph(tk.Canvas):
             self.tag_raise(tag)
 
     def set_wallpaper(self, filename: Optional[str]) -> None:
-        logging.debug("setting wallpaper: %s", filename)
+        logging.info("setting canvas(%s) background: %s", self.id, filename)
         if filename:
             img = Image.open(filename)
             self.wallpaper = img

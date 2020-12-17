@@ -85,7 +85,7 @@ class Shape:
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.RECTANGLE:
@@ -99,7 +99,7 @@ class Shape:
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.TEXT:
@@ -111,7 +111,7 @@ class Shape:
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
         else:
             logging.error("unknown shape type: %s", self.shape_type)
@@ -139,7 +139,7 @@ class Shape:
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
 
     def shape_motion(self, x1: float, y1: float) -> None:

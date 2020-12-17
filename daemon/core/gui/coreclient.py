@@ -40,17 +40,13 @@ from core.api.grpc.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
-from core.gui import appconfig
 from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
-from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.node import CanvasNode
-from core.gui.graph.shape import AnnotationData, Shape
-from core.gui.graph.shapeutils import ShapeType
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
 
@@ -326,59 +322,65 @@ class CoreClient:
     def is_runtime(self) -> bool:
         return self.session and self.session.state == SessionState.RUNTIME
 
-    def parse_metadata(self, canvas: CanvasGraph) -> None:
+    def parse_metadata(self) -> None:
         # canvas setting
         config = self.session.metadata
         canvas_config = config.get("canvas")
         logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
+            # get configured dimensions and gridlines option
+            dimensions = self.app.manager.default_dimensions
+            dimensions = canvas_config.get("dimensions", dimensions)
             gridlines = canvas_config.get("gridlines", True)
-            self.app.canvas.show_grid.set(gridlines)
-            fit_image = canvas_config.get("fit_image", False)
-            self.app.canvas.adjust_to_dim.set(fit_image)
-            wallpaper_style = canvas_config.get("wallpaper-style", 1)
-            self.app.canvas.scale_option.set(wallpaper_style)
-            width = self.app.guiconfig.preferences.width
-            height = self.app.guiconfig.preferences.height
-            dimensions = canvas_config.get("dimensions", [width, height])
-            self.app.canvas.redraw_canvas(dimensions)
-            wallpaper = canvas_config.get("wallpaper")
-            if wallpaper:
-                wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            canvas.set_wallpaper(wallpaper)
-        else:
-            canvas.redraw_canvas()
-            canvas.set_wallpaper(None)
+            self.app.manager.show_grid.set(gridlines)
+            self.app.manager.redraw_canvases(dimensions)
+
+            # get background configurations
+            for background_config in canvas_config.get("canvases", []):
+                canvas_id = background_config.get("id")
+                if canvas_id is None:
+                    logging.error("canvas config id not provided")
+                    continue
+                canvas = self.app.manager.get(canvas_id)
+                fit_image = background_config.get("fit_image", False)
+                wallpaper_style = background_config.get("wallpaper-style", 1)
+                wallpaper = background_config.get("wallpaper")
+                canvas.adjust_to_dim.set(fit_image)
+                canvas.scale_option.set(wallpaper_style)
+                logging.info("canvas config: %s", background_config)
+                if wallpaper:
+                    wallpaper = str(BACKGROUNDS_PATH.joinpath(wallpaper))
+                    canvas.set_wallpaper(wallpaper)
 
         # load saved shapes
-        shapes_config = config.get("shapes")
-        if shapes_config:
-            shapes_config = json.loads(shapes_config)
-            for shape_config in shapes_config:
-                logging.debug("loading shape: %s", shape_config)
-                shape_type = shape_config["type"]
-                try:
-                    shape_type = ShapeType(shape_type)
-                    coords = shape_config["iconcoords"]
-                    data = AnnotationData(
-                        shape_config["label"],
-                        shape_config["fontfamily"],
-                        shape_config["fontsize"],
-                        shape_config["labelcolor"],
-                        shape_config["color"],
-                        shape_config["border"],
-                        shape_config["width"],
-                        shape_config["bold"],
-                        shape_config["italic"],
-                        shape_config["underline"],
-                    )
-                    shape = Shape(
-                        self.app, self.app.canvas, shape_type, *coords, data=data
-                    )
-                    canvas.shapes[shape.id] = shape
-                except ValueError:
-                    logging.exception("unknown shape: %s", shape_type)
+        # shapes_config = config.get("shapes")
+        # if shapes_config:
+        #     shapes_config = json.loads(shapes_config)
+        #     for shape_config in shapes_config:
+        #         logging.debug("loading shape: %s", shape_config)
+        #         shape_type = shape_config["type"]
+        #         try:
+        #             shape_type = ShapeType(shape_type)
+        #             coords = shape_config["iconcoords"]
+        #             data = AnnotationData(
+        #                 shape_config["label"],
+        #                 shape_config["fontfamily"],
+        #                 shape_config["fontsize"],
+        #                 shape_config["labelcolor"],
+        #                 shape_config["color"],
+        #                 shape_config["border"],
+        #                 shape_config["width"],
+        #                 shape_config["bold"],
+        #                 shape_config["italic"],
+        #                 shape_config["underline"],
+        #             )
+        #             shape = Shape(
+        #                 self.app, self.app.canvas, shape_type, *coords, data=data
+        #             )
+        #             canvas.shapes[shape.id] = shape
+        #         except ValueError:
+        #             logging.exception("unknown shape: %s", shape_type)
 
         # load edges config
         edges_config = config.get("edges")
@@ -555,29 +557,35 @@ class CoreClient:
                 mobility_player.show()
 
     def set_metadata(self) -> None:
-        # TODO: handle metadata for multiple canvases
-        return
         # create canvas data
-        wallpaper_path = None
-        if self.app.canvas.wallpaper_file:
-            wallpaper = Path(self.app.canvas.wallpaper_file)
-            if BACKGROUNDS_PATH == wallpaper.parent:
-                wallpaper_path = wallpaper.name
-            else:
-                wallpaper_path = str(wallpaper)
-        canvas_config = {
-            "wallpaper": wallpaper_path,
-            "wallpaper-style": self.app.canvas.scale_option.get(),
-            "gridlines": self.app.canvas.show_grid.get(),
-            "fit_image": self.app.canvas.adjust_to_dim.get(),
-            "dimensions": self.app.canvas.current_dimensions,
-        }
+        canvases = []
+        for canvas in self.app.manager.canvases.values():
+            wallpaper_path = None
+            if canvas.wallpaper_file:
+                wallpaper = Path(canvas.wallpaper_file)
+                if BACKGROUNDS_PATH == wallpaper.parent:
+                    wallpaper_path = wallpaper.name
+                else:
+                    wallpaper_path = str(wallpaper)
+            config = {
+                "id": canvas.id,
+                "wallpaper": wallpaper_path,
+                "wallpaper-style": canvas.scale_option.get(),
+                "fit_image": canvas.adjust_to_dim.get(),
+            }
+            canvases.append(config)
+        canvas_config = dict(
+            gridlines=self.app.manager.show_grid.get(),
+            dimensions=self.app.manager.current_dimensions,
+            canvases=canvases,
+        )
         canvas_config = json.dumps(canvas_config)
 
         # create shapes data
         shapes = []
-        for shape in self.app.canvas.shapes.values():
-            shapes.append(shape.metadata())
+        # TODO: handle shapes being on multiple canvases
+        # for shape in self.app.canvas.shapes.values():
+        #     shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
         # create edges config

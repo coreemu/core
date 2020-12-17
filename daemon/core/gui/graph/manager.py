@@ -52,6 +52,7 @@ class CanvasManager:
             self.app.guiconfig.preferences.width,
             self.app.guiconfig.preferences.height,
         )
+        self.current_dimensions: Tuple[int, int] = self.default_dimensions
         self.show_node_labels: ShowVar = ShowVar(self, tags.NODE_LABEL, value=True)
         self.show_link_labels: ShowVar = ShowVar(self, tags.LINK_LABEL, value=True)
         self.show_links: ShowVar = ShowVar(self, tags.EDGE, value=True)
@@ -92,6 +93,12 @@ class CanvasManager:
     def all(self) -> ValuesView[CanvasGraph]:
         return self.canvases.values()
 
+    def get(self, canvas_id: int) -> CanvasGraph:
+        canvas = self.canvases.get(canvas_id)
+        if not canvas:
+            canvas = self.add_canvas(canvas_id)
+        return canvas
+
     def add_canvas(self, canvas_id: int = None) -> CanvasGraph:
         # create tab frame
         tab = ttk.Frame(self.notebook, padding=0)
@@ -102,11 +109,12 @@ class CanvasManager:
             canvas_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
-        logging.info("tab(%s) is %s", unique_id, canvas_id)
         self.unique_ids[unique_id] = canvas_id
 
         # create canvas
-        canvas = CanvasGraph(tab, self.app, self, self.core, canvas_id)
+        canvas = CanvasGraph(
+            tab, self.app, self, self.core, canvas_id, self.default_dimensions
+        )
         canvas.grid(sticky=tk.NSEW)
         self.canvases[canvas_id] = canvas
 
@@ -148,22 +156,15 @@ class CanvasManager:
         self.annotation_type = None
         self.node_draw = None
 
-        if session.nodes:
-            self.draw_session(session)
-        else:
-            self.add_canvas()
+        # draw session
+        self.draw_session(session)
 
     def draw_session(self, session: Session) -> None:
         # create session nodes
         for core_node in session.nodes.values():
             # get tab id for node
             canvas_id = core_node.canvas if core_node.canvas > 0 else 1
-
-            # get or create canvas
-            canvas = self.canvases.get(canvas_id)
-            if not canvas:
-                canvas = self.add_canvas(canvas_id)
-
+            canvas = self.get(canvas_id)
             # add node, avoiding ignored nodes
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
@@ -185,8 +186,17 @@ class CanvasManager:
             else:
                 logging.error("cant handle nodes linked between canvases")
 
-        # TODO: handle metadata
-        # self.core.parse_metadata(canvas)
-        # organize all canvases
+        # parse metadata and organize canvases
+        self.core.parse_metadata()
         for canvas in self.canvases.values():
             canvas.organize()
+
+        # create a default canvas if none were created prior
+        if not self.canvases:
+            self.add_canvas()
+
+    def redraw_canvases(self, dimensions: Tuple[int, int]) -> None:
+        for canvas in self.canvases.values():
+            canvas.redraw_canvas(dimensions)
+            if canvas.wallpaper:
+                canvas.redraw_wallpaper()
