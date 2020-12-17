@@ -25,7 +25,7 @@ class ShowVar(BooleanVar):
         return tk.NORMAL if self.get() else tk.HIDDEN
 
     def click_handler(self) -> None:
-        for canvas in self.manager.canvases.values():
+        for canvas in self.manager.all():
             canvas.itemconfigure(self.tag, state=self.state())
 
 

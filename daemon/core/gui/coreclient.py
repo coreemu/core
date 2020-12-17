@@ -47,6 +47,7 @@ from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
+from core.gui.graph.shape import Shape
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
 
@@ -354,35 +355,14 @@ class CoreClient:
                     canvas.set_wallpaper(wallpaper)
 
         # load saved shapes
-        # shapes_config = config.get("shapes")
-        # if shapes_config:
-        #     shapes_config = json.loads(shapes_config)
-        #     for shape_config in shapes_config:
-        #         logging.debug("loading shape: %s", shape_config)
-        #         shape_type = shape_config["type"]
-        #         try:
-        #             shape_type = ShapeType(shape_type)
-        #             coords = shape_config["iconcoords"]
-        #             data = AnnotationData(
-        #                 shape_config["label"],
-        #                 shape_config["fontfamily"],
-        #                 shape_config["fontsize"],
-        #                 shape_config["labelcolor"],
-        #                 shape_config["color"],
-        #                 shape_config["border"],
-        #                 shape_config["width"],
-        #                 shape_config["bold"],
-        #                 shape_config["italic"],
-        #                 shape_config["underline"],
-        #             )
-        #             shape = Shape(
-        #                 self.app, self.app.canvas, shape_type, *coords, data=data
-        #             )
-        #             canvas.shapes[shape.id] = shape
-        #         except ValueError:
-        #             logging.exception("unknown shape: %s", shape_type)
+        shapes_config = config.get("shapes")
+        if shapes_config:
+            shapes_config = json.loads(shapes_config)
+            for shape_config in shapes_config:
+                logging.debug("loading shape: %s", shape_config)
+                Shape.from_metadata(self.app, shape_config)
 
-        # load edges config
+                # load edges config
         edges_config = config.get("edges")
         if edges_config:
             edges_config = json.loads(edges_config)
@@ -559,7 +539,7 @@ class CoreClient:
     def set_metadata(self) -> None:
         # create canvas data
         canvases = []
-        for canvas in self.app.manager.canvases.values():
+        for canvas in self.app.manager.all():
             wallpaper_path = None
             if canvas.wallpaper_file:
                 wallpaper = Path(canvas.wallpaper_file)
@@ -583,9 +563,9 @@ class CoreClient:
 
         # create shapes data
         shapes = []
-        # TODO: handle shapes being on multiple canvases
-        # for shape in self.app.canvas.shapes.values():
-        #     shapes.append(shape.metadata())
+        for canvas in self.app.manager.all():
+            for shape in canvas.shapes.values():
+                shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
         # create edges config
