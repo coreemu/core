@@ -1129,13 +1129,16 @@ class Session:
         """
         Clear the nodes dictionary, and call shutdown for each node.
         """
+        nodes_ids = []
         with self.nodes_lock:
             funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
-                self.sdt.delete_node(node.id)
+                nodes_ids.append(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
+        for node_id in nodes_ids:
+            self.sdt.delete_node(node_id)
 
     def write_nodes(self) -> None:
         """
