@@ -48,7 +48,6 @@ class StatusBar(ttk.Frame):
 
         self.zoom = ttk.Label(self, anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE)
         self.zoom.grid(row=0, column=1, sticky=tk.EW)
-        # self.set_zoom(self.app.canvas.ratio)
 
         self.cpu_label = ttk.Label(
             self, anchor=tk.CENTER, borderwidth=1, relief=tk.RIDGE

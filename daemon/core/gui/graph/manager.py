@@ -74,8 +74,16 @@ class CanvasManager:
         self.unique_ids: Dict[str, int] = {}
         self.draw()
 
+        self.setup_bindings()
         # start with a single tab by default
         self.add_canvas()
+
+    def setup_bindings(self) -> None:
+        self.notebook.bind("<<NotebookTabChanged>>", self.tab_change)
+
+    def tab_change(self, _event: tk.Event) -> None:
+        canvas = self.current()
+        self.app.statusbar.set_zoom(canvas.ratio)
 
     def draw(self) -> None:
         self.notebook = ttk.Notebook(self.master)
@@ -145,6 +153,7 @@ class CanvasManager:
         for canvas_id in self.notebook.tabs():
             self.notebook.forget(canvas_id)
         self.canvases.clear()
+        self.unique_ids.clear()
 
         # reset settings
         self.show_node_labels.set(True)
