@@ -251,6 +251,22 @@ class CanvasNode:
                 self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
+
+            link_menu = tk.Menu(self.context)
+            for canvas in self.app.manager.all():
+                canvas_menu = tk.Menu(link_menu)
+                themes.style_menu(canvas_menu)
+                for node in canvas.nodes.values():
+                    if node == self:
+                        continue
+                    func_link = functools.partial(self.click_link, node)
+                    canvas_menu.add_command(
+                        label=node.core_node.name, command=func_link
+                    )
+                link_menu.add_cascade(label=f"Canvas {canvas.id}", menu=canvas_menu)
+            themes.style_menu(link_menu)
+            self.context.add_cascade(label="Link", menu=link_menu)
+
             unlink_menu = tk.Menu(self.context)
             for edge in self.edges:
                 link = edge.link
@@ -267,6 +283,7 @@ class CanvasNode:
                 unlink_menu.add_command(label=label, command=func_unlink)
             themes.style_menu(unlink_menu)
             self.context.add_cascade(label="Unlink", menu=unlink_menu)
+
             edit_menu = tk.Menu(self.context)
             themes.style_menu(edit_menu)
             edit_menu.add_command(label="Cut", command=self.click_cut)
@@ -282,6 +299,12 @@ class CanvasNode:
     def click_unlink(self, edge: CanvasEdge) -> None:
         self.canvas.delete_edge(edge)
         self.app.default_info()
+
+    def click_link(self, node: "CanvasNode") -> None:
+        pos = self.canvas.coords(self.id)
+        edge = CanvasEdge(self.canvas, self.id, pos, pos)
+        self.canvas.complete_edge(self, node, edge)
+        self.canvas.organize()
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
