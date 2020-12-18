@@ -257,7 +257,7 @@ class CanvasNode:
                 canvas_menu = tk.Menu(link_menu)
                 themes.style_menu(canvas_menu)
                 for node in canvas.nodes.values():
-                    if node == self:
+                    if not self.is_linkable(node):
                         continue
                     func_link = functools.partial(self.click_link, node)
                     canvas_menu.add_command(
@@ -389,3 +389,21 @@ class CanvasNode:
         self.core_node.icon = icon_path
         self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
         self.canvas.itemconfig(self.id, image=self.image)
+
+    def is_linkable(self, node: "CanvasNode") -> bool:
+        # cannot link to self
+        if self == node:
+            return False
+        # rj45 nodes can only support one link
+        if NodeUtils.is_rj45_node(self.core_node.type) and self.edges:
+            return False
+        if NodeUtils.is_rj45_node(node.core_node.type) and node.edges:
+            return False
+        # only 1 link between bridge based nodes
+        is_src_bridge = NodeUtils.is_bridge_node(self.core_node)
+        is_dst_bridge = NodeUtils.is_bridge_node(node.core_node)
+        common_links = self.edges & node.edges
+        if all([is_src_bridge, is_dst_bridge, common_links]):
+            return False
+        # valid link
+        return True

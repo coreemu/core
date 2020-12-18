@@ -362,11 +362,9 @@ class CanvasGraph(tk.Canvas):
     def handle_edge_release(self, _event: tk.Event) -> None:
         edge = self.drawing_edge
         self.drawing_edge = None
-
         # not drawing edge return
         if edge is None:
             return
-
         # edge dst must be a node
         logging.debug("current selected: %s", self.selected)
         src_node = self.nodes.get(edge.src)
@@ -374,28 +372,10 @@ class CanvasGraph(tk.Canvas):
         if not dst_node or not src_node:
             edge.delete()
             return
-
-        # edge dst is same as src, delete edge
-        if edge.src == self.selected:
+        # check if node can be linked
+        if not src_node.is_linkable(dst_node):
             edge.delete()
             return
-
-        # rj45 nodes can only support one link
-        if NodeUtils.is_rj45_node(src_node.core_node.type) and src_node.edges:
-            edge.delete()
-            return
-        if NodeUtils.is_rj45_node(dst_node.core_node.type) and dst_node.edges:
-            edge.delete()
-            return
-
-        # only 1 link between bridge based nodes
-        is_src_bridge = NodeUtils.is_bridge_node(src_node.core_node)
-        is_dst_bridge = NodeUtils.is_bridge_node(dst_node.core_node)
-        common_links = src_node.edges & dst_node.edges
-        if all([is_src_bridge, is_dst_bridge, common_links]):
-            edge.delete()
-            return
-
         # finalize edge creation
         self.complete_edge(src_node, dst_node, edge)
 
