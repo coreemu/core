@@ -204,27 +204,26 @@ class CoreClient:
         canvas_node2 = self.canvas_nodes[node2_id]
         if event.link.type == LinkType.WIRELESS:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wireless_edge(
+                self.app.manager.add_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wireless_edge(
+                self.app.manager.delete_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wireless_edge(
+                self.app.manager.update_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             else:
                 logging.warning("unknown link event: %s", event)
         else:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
-                self.app.canvas.organize()
+                self.app.manager.add_wired_edge(canvas_node1, canvas_node2, event.link)
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wired_edge(event.link)
+                self.app.manager.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wired_edge(event.link)
+                self.app.manager.update_wired_edge(event.link)
             else:
                 logging.warning("unknown link event: %s", event)
 
@@ -246,7 +245,7 @@ class CoreClient:
         elif event.message_type == MessageType.ADD:
             if node.id in self.session.nodes:
                 logging.error("core node already exists: %s", node)
-            self.app.canvas.add_core_node(node)
+            self.app.manager.add_core_node(node)
         else:
             logging.warning("unknown node event: %s", event)
 

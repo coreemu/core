@@ -188,19 +188,16 @@ class InterfaceManager:
         self, canvas_node: CanvasNode, visited: Set[int] = None
     ) -> Optional[IPNetwork]:
         logging.info("finding subnet for node: %s", canvas_node.core_node.name)
-        canvas = self.app.canvas
         subnets = None
         if not visited:
             visited = set()
         visited.add(canvas_node.core_node.id)
         for edge in canvas_node.edges:
-            src_node = canvas.nodes[edge.src]
-            dst_node = canvas.nodes[edge.dst]
             iface = edge.link.iface1
-            check_node = src_node
-            if src_node == canvas_node:
+            check_node = edge.src
+            if edge.src == canvas_node:
                 iface = edge.link.iface2
-                check_node = dst_node
+                check_node = edge.dst
             if check_node.core_node.id in visited:
                 continue
             visited.add(check_node.core_node.id)

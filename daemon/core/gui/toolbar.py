@@ -407,8 +407,7 @@ class Toolbar(ttk.Frame):
 
     def stop_callback(self, result: bool) -> None:
         self.set_design()
-        for canvas in self.app.manager.all():
-            canvas.stopped_session()
+        self.app.manager.stopped_session()
 
     def update_annotation(
         self, shape_type: ShapeType, image_enum: ImageEnum, image: PhotoImage

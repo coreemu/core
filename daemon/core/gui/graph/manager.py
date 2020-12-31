@@ -1,14 +1,23 @@
 import logging
 import tkinter as tk
+from copy import deepcopy
 from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, ValuesView
 
-from core.api.grpc.wrappers import LinkType, Session, ThroughputsEvent
+from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
 from core.gui.graph import tags
+from core.gui.graph.edges import (
+    CanvasEdge,
+    CanvasWirelessEdge,
+    create_edge_token,
+    create_wireless_token,
+)
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.node import CanvasNode
 from core.gui.graph.shapeutils import ShapeType
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.images import ImageEnum
+from core.gui.nodeutils import ICON_SIZE, NodeDraw, NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -46,6 +55,8 @@ class CanvasManager:
         # canvas object storage
         # TODO: validate this
         self.wireless_network: Dict[int, Set[int]] = {}
+        self.edges: Dict[str, CanvasEdge] = {}
+        self.wireless_edges: Dict[str, CanvasWirelessEdge] = {}
 
         # global canvas settings
         self.default_dimensions: Tuple[int, int] = (
@@ -174,27 +185,21 @@ class CanvasManager:
     def draw_session(self, session: Session) -> None:
         # create session nodes
         for core_node in session.nodes.values():
-            # get tab id for node
-            canvas_id = core_node.canvas if core_node.canvas > 0 else 1
-            canvas = self.get(canvas_id)
             # add node, avoiding ignored nodes
             if NodeUtils.is_ignore_node(core_node.type):
                 continue
-            logging.debug("drawing node: %s", core_node)
-            canvas.add_core_node(core_node)
+            self.add_core_node(core_node)
 
         # draw existing links
         for link in session.links:
             logging.debug("drawing link: %s", link)
             node1 = self.core.get_canvas_node(link.node1_id)
             node2 = self.core.get_canvas_node(link.node2_id)
-            # TODO: handle edges for nodes on different canvases
             if node1.canvas == node2.canvas:
-                canvas = node1.canvas
                 if link.type == LinkType.WIRELESS:
-                    canvas.add_wireless_edge(node1, node2, link)
+                    self.add_wireless_edge(node1, node2, link)
                 else:
-                    canvas.add_wired_edge(node1, node2, link)
+                    self.add_wired_edge(node1, node2, link)
             else:
                 logging.error("cant handle nodes linked between canvases")
 
@@ -238,6 +243,21 @@ class CanvasManager:
             canvas = self.get(canvas_id)
             canvas.parse_metadata(canvas_config)
 
+    def add_core_node(self, core_node: Node) -> None:
+        logging.debug("adding node: %s", core_node)
+        # get canvas tab for node
+        canvas_id = core_node.canvas if core_node.canvas > 0 else 1
+        canvas = self.get(canvas_id)
+        # if the gui can't find node's image, default to the "edit-node" image
+        image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
+        if not image:
+            image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
+        x = core_node.position.x
+        y = core_node.position.y
+        node = CanvasNode(self.app, canvas, x, y, core_node, image)
+        canvas.nodes[node.id] = node
+        self.core.set_canvas_node(core_node, node)
+
     def set_throughputs(self, throughputs_event: ThroughputsEvent):
         for iface_throughput in throughputs_event.iface_throughputs:
             node_id = iface_throughput.node_id
@@ -249,6 +269,123 @@ class CanvasManager:
                 edge.set_throughput(throughput)
 
     def clear_throughputs(self) -> None:
-        for canvas in self.all():
-            for edge in canvas.edges.values():
-                edge.clear_throughput()
+        for edge in self.edges.values():
+            edge.clear_throughput()
+
+    def stopped_session(self) -> None:
+        # clear wireless edges
+        for edge in self.wireless_edges.values():
+            edge.delete()
+            edge.src.wireless_edges.remove(edge)
+            edge.dst.wireless_edges.remove(edge)
+        self.wireless_edges.clear()
+        self.clear_throughputs()
+
+    def update_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
+        edge = self.edges.get(token)
+        if edge:
+            edge.link.options = deepcopy(link.options)
+            edge.draw_link_options()
+            edge.check_options()
+
+    def delete_wired_edge(self, link: Link) -> None:
+        token = create_edge_token(link)
+        edge = self.edges.get(token)
+        if edge:
+            edge.delete()
+
+    def add_wired_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
+        token = create_edge_token(link)
+        if token in self.edges and link.options.unidirectional:
+            edge = self.edges[token]
+            edge.asymmetric_link = link
+        elif token not in self.edges:
+            edge = CanvasEdge(self.app, src)
+            self.complete_edge(src, dst, edge, link)
+
+    def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
+        network_id = link.network_id if link.network_id else None
+        token = create_wireless_token(src.id, dst.id, network_id)
+        if token in self.wireless_edges:
+            logging.warning("ignoring link that already exists: %s", link)
+            return
+        edge = CanvasWirelessEdge(self.app, src, dst, network_id, token, link)
+        self.wireless_edges[token] = edge
+        src.wireless_edges.add(edge)
+        dst.wireless_edges.add(edge)
+        src.canvas.tag_raise(src.id)
+        dst.canvas.tag_raise(dst.id)
+        edge.arc_common_edges()
+
+    def delete_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: Link
+    ) -> None:
+        network_id = link.network_id if link.network_id else None
+        token = create_wireless_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            return
+        edge = self.wireless_edges.pop(token)
+        edge.delete()
+        src.wireless_edges.remove(edge)
+        dst.wireless_edges.remove(edge)
+        edge.arc_common_edges()
+
+    def update_wireless_edge(
+        self, src: CanvasNode, dst: CanvasNode, link: Link
+    ) -> None:
+        if not link.label:
+            return
+        network_id = link.network_id if link.network_id else None
+        token = create_wireless_token(src.id, dst.id, network_id)
+        if token not in self.wireless_edges:
+            self.add_wireless_edge(src, dst, link)
+        else:
+            edge = self.wireless_edges[token]
+            edge.middle_label_text(link.label)
+
+    # TODO: remove src parameter as edge already has value
+    def complete_edge(
+        self,
+        src: CanvasNode,
+        dst: CanvasNode,
+        edge: CanvasEdge,
+        link: Optional[Link] = None,
+    ) -> None:
+        linked_wireless = self.is_linked_wireless(src, dst)
+        edge.complete(dst, linked_wireless)
+        if link is None:
+            link = self.core.create_link(edge, src, dst)
+        edge.link = link
+        if link.iface1:
+            iface1 = link.iface1
+            src.ifaces[iface1.id] = iface1
+        if link.iface2:
+            iface2 = link.iface2
+            dst.ifaces[iface2.id] = iface2
+        src.edges.add(edge)
+        dst.edges.add(edge)
+        edge.token = create_edge_token(edge.link)
+        edge.arc_common_edges()
+        edge.draw_labels()
+        edge.check_options()
+        self.edges[edge.token] = edge
+        self.core.save_edge(edge, src, dst)
+
+    def is_linked_wireless(self, src: CanvasNode, dst: CanvasNode) -> bool:
+        src_node_type = src.core_node.type
+        dst_node_type = dst.core_node.type
+        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
+        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+
+        # update the wlan/EMANE network
+        wlan_network = self.wireless_network
+        if is_src_wireless and not is_dst_wireless:
+            if src not in wlan_network:
+                wlan_network[src.core_node.id] = set()
+            wlan_network[src.core_node.id].add(dst.core_node.id)
+        elif not is_src_wireless and is_dst_wireless:
+            if dst not in wlan_network:
+                wlan_network[dst.core_node.id] = set()
+            wlan_network[dst.core_node.id].add(src.core_node.id)
+        return is_src_wireless or is_dst_wireless

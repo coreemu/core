@@ -2,7 +2,7 @@ import functools
 import logging
 import tkinter as tk
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Set
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -67,6 +67,9 @@ class CanvasNode:
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
 
+    def position(self) -> Tuple[int, int]:
+        return self.canvas.coords(self.id)
+
     def next_iface_id(self) -> int:
         i = 0
         while i in self.ifaces:
@@ -87,7 +90,7 @@ class CanvasNode:
         self.delete_antennas()
 
     def add_antenna(self) -> None:
-        x, y = self.canvas.coords(self.id)
+        x, y = self.position()
         offset = len(self.antennas) * 8 * self.app.app_scale
         img = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
         antenna_id = self.canvas.create_image(
@@ -145,15 +148,14 @@ class CanvasNode:
 
     def move(self, x: float, y: float) -> None:
         x, y = self.canvas.get_scaled_coords(x, y)
-        current_x, current_y = self.canvas.coords(self.id)
+        current_x, current_y = self.position()
         x_offset = x - current_x
         y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
     def motion(self, x_offset: float, y_offset: float, update: bool = True) -> None:
-        original_position = self.canvas.coords(self.id)
+        original_position = self.position()
         self.canvas.move(self.id, x_offset, y_offset)
-        pos = self.canvas.coords(self.id)
 
         # check new position
         bbox = self.canvas.bbox(self.id)
@@ -171,11 +173,12 @@ class CanvasNode:
 
         # move edges
         for edge in self.edges:
-            edge.move_node(self.id, pos)
+            edge.move_node(self)
         for edge in self.wireless_edges:
-            edge.move_node(self.id, pos)
+            edge.move_node(self)
 
         # set actual coords for node and update core is running
+        pos = self.position()
         real_x, real_y = self.canvas.get_actual_coords(*pos)
         self.core_node.position.x = real_x
         self.core_node.position.y = real_y
@@ -297,14 +300,12 @@ class CanvasNode:
         self.canvas_delete()
 
     def click_unlink(self, edge: CanvasEdge) -> None:
-        self.canvas.delete_edge(edge)
+        edge.delete()
         self.app.default_info()
 
     def click_link(self, node: "CanvasNode") -> None:
-        pos = self.canvas.coords(self.id)
-        edge = CanvasEdge(self.canvas, self.id, pos, pos)
-        self.canvas.complete_edge(self, node, edge)
-        self.canvas.organize()
+        edge = CanvasEdge(self.app, self, node)
+        self.app.manager.complete_edge(self, node, edge)
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
