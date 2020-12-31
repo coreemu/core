@@ -50,7 +50,7 @@ def node_label_positions(
     else:
         u_x, u_y = v_x / v_len, v_y / v_len
     offset_x, offset_y = TEXT_DISTANCE * u_x, TEXT_DISTANCE * u_y
-    return ((src_x + offset_x, src_y + offset_y), (dst_x - offset_x, dst_y - offset_y))
+    return (src_x + offset_x, src_y + offset_y), (dst_x - offset_x, dst_y - offset_y)
 
 
 def arc_edges(edges) -> None:
@@ -301,34 +301,6 @@ class Edge:
             self.dst.canvas.delete(self.middle_label2)
             self.middle_label2 = None
 
-    def node_label_positions(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
-        src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
-        v_x, v_y = dst_x - src_x, dst_y - src_y
-        v_len = math.sqrt(v_x ** 2 + v_y ** 2)
-        if v_len == 0:
-            u_x, u_y = 0.0, 0.0
-        else:
-            u_x, u_y = v_x / v_len, v_y / v_len
-        offset_x, offset_y = TEXT_DISTANCE * u_x, TEXT_DISTANCE * u_y
-        return (
-            (src_x + offset_x, src_y + offset_y),
-            (dst_x - offset_x, dst_y - offset_y),
-        )
-
-    def node_label_positions2(self) -> Tuple[Tuple[float, float], Tuple[float, float]]:
-        src_x, src_y, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
-        v_x, v_y = dst_x - src_x, dst_y - src_y
-        v_len = math.sqrt(v_x ** 2 + v_y ** 2)
-        if v_len == 0:
-            u_x, u_y = 0.0, 0.0
-        else:
-            u_x, u_y = v_x / v_len, v_y / v_len
-        offset_x, offset_y = TEXT_DISTANCE * u_x, TEXT_DISTANCE * u_y
-        return (
-            (src_x + offset_x, src_y + offset_y),
-            (dst_x - offset_x, dst_y - offset_y),
-        )
-
     def src_label_text(self, text: str) -> None:
         if self.src_label is None:
             src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
@@ -431,7 +403,8 @@ class Edge:
         self.src.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
         if self.middle_label:
             self.src.canvas.coords(self.middle_label, *arc_pos)
-        src_pos, dst_pos = self.node_label_positions()
+        src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
+        src_pos, dst_pos = node_label_positions(src_x, src_y, dst_x, dst_y)
         if self.src_label:
             self.src.canvas.coords(self.src_label, *src_pos)
         if self.dst_label:
@@ -444,7 +417,8 @@ class Edge:
         self.dst.canvas.coords(self.id2, *src_pos, *arc_pos, *dst_pos)
         if self.middle_label2:
             self.dst.canvas.coords(self.middle_label2, *arc_pos)
-        src_pos, dst_pos = self.node_label_positions2()
+        src_x, src_y, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
+        src_pos, dst_pos = node_label_positions(src_x, src_y, dst_x, dst_y)
         if self.src_label2:
             self.dst.canvas.coords(self.src_label2, *src_pos)
         if self.dst_label2:
