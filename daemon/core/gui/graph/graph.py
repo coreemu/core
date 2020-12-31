@@ -217,11 +217,11 @@ class CanvasGraph(tk.Canvas):
         self.selected = None
 
     def handle_edge_release(self, _event: tk.Event) -> None:
+        # not drawing edge return
+        if not self.drawing_edge:
+            return
         edge = self.drawing_edge
         self.drawing_edge = None
-        # not drawing edge return
-        if edge is None:
-            return
         # edge dst must be a node
         logging.debug("current selected: %s", self.selected)
         dst_node = self.nodes.get(self.selected)
@@ -233,7 +233,7 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
         # finalize edge creation
-        self.manager.complete_edge(edge.src, dst_node, edge)
+        self.manager.complete_edge(edge, dst_node)
 
     def select_object(self, object_id: int, choose_multiple: bool = False) -> None:
         """
@@ -666,7 +666,7 @@ class CanvasGraph(tk.Canvas):
         create an edge between source node and destination node
         """
         edge = CanvasEdge(self.app, src)
-        self.manager.complete_edge(src, dst, edge)
+        self.manager.complete_edge(edge, dst)
         return edge
 
     def copy(self) -> None:

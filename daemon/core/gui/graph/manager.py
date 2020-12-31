@@ -93,6 +93,10 @@ class CanvasManager:
         self.notebook.bind("<<NotebookTabChanged>>", self.tab_change)
 
     def tab_change(self, _event: tk.Event) -> None:
+        # ignore tab change events before tab data has been setup
+        unique_id = self.notebook.select()
+        if not unique_id or unique_id not in self.unique_ids:
+            return
         canvas = self.current()
         self.app.statusbar.set_zoom(canvas.ratio)
 
@@ -109,8 +113,9 @@ class CanvasManager:
 
     def current(self) -> CanvasGraph:
         unique_id = self.notebook.select()
+        logging.info("current selected id: %s", unique_id)
         canvas_id = self.unique_ids[unique_id]
-        return self.canvases[canvas_id]
+        return self.get(canvas_id)
 
     def all(self) -> ValuesView[CanvasGraph]:
         return self.canvases.values()
@@ -131,6 +136,7 @@ class CanvasManager:
             canvas_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
+        logging.info("creating canvas(%s) unique(%s)", canvas_id, unique_id)
         self.unique_ids[unique_id] = canvas_id
 
         # create canvas
@@ -165,6 +171,7 @@ class CanvasManager:
             self.notebook.forget(canvas_id)
         self.canvases.clear()
         self.unique_ids.clear()
+        logging.info("cleared canvases")
 
         # reset settings
         self.show_node_labels.set(True)
@@ -195,13 +202,17 @@ class CanvasManager:
             logging.debug("drawing link: %s", link)
             node1 = self.core.get_canvas_node(link.node1_id)
             node2 = self.core.get_canvas_node(link.node2_id)
-            if node1.canvas == node2.canvas:
-                if link.type == LinkType.WIRELESS:
-                    self.add_wireless_edge(node1, node2, link)
-                else:
-                    self.add_wired_edge(node1, node2, link)
+            if link.type == LinkType.WIRELESS:
+                self.add_wireless_edge(node1, node2, link)
             else:
-                logging.error("cant handle nodes linked between canvases")
+                self.add_wired_edge(node1, node2, link)
+            # if node1.canvas == node2.canvas:
+            #     if link.type == LinkType.WIRELESS:
+            #         self.add_wireless_edge(node1, node2, link)
+            #     else:
+            #         self.add_wired_edge(node1, node2, link)
+            # else:
+            #     logging.error("cant handle nodes linked between canvases")
 
         # parse metadata and organize canvases
         self.core.parse_metadata()
@@ -244,9 +255,9 @@ class CanvasManager:
             canvas.parse_metadata(canvas_config)
 
     def add_core_node(self, core_node: Node) -> None:
-        logging.debug("adding node: %s", core_node)
         # get canvas tab for node
         canvas_id = core_node.canvas if core_node.canvas > 0 else 1
+        logging.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
         canvas = self.get(canvas_id)
         # if the gui can't find node's image, default to the "edit-node" image
         image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
@@ -301,8 +312,8 @@ class CanvasManager:
             edge = self.edges[token]
             edge.asymmetric_link = link
         elif token not in self.edges:
-            edge = CanvasEdge(self.app, src)
-            self.complete_edge(src, dst, edge, link)
+            edge = CanvasEdge(self.app, src, dst)
+            self.complete_edge(edge, dst, link)
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
@@ -344,14 +355,12 @@ class CanvasManager:
             edge = self.wireless_edges[token]
             edge.middle_label_text(link.label)
 
-    # TODO: remove src parameter as edge already has value
+    # TODO: look into properly moving this into the edge itself and complete when
+    #       the destination is already provided
     def complete_edge(
-        self,
-        src: CanvasNode,
-        dst: CanvasNode,
-        edge: CanvasEdge,
-        link: Optional[Link] = None,
+        self, edge: CanvasEdge, dst: CanvasNode, link: Optional[Link] = None
     ) -> None:
+        src = edge.src
         linked_wireless = self.is_linked_wireless(src, dst)
         edge.complete(dst, linked_wireless)
         if link is None:
@@ -371,6 +380,9 @@ class CanvasManager:
         edge.check_options()
         self.edges[edge.token] = edge
         self.core.save_edge(edge, src, dst)
+        edge.src.canvas.organize()
+        if not edge.is_same_canvas():
+            edge.dst.canvas.organize()
 
     def is_linked_wireless(self, src: CanvasNode, dst: CanvasNode) -> bool:
         src_node_type = src.core_node.type

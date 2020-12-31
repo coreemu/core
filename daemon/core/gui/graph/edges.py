@@ -385,12 +385,14 @@ class Edge:
         self.moved(src_pos, self.dst_shadow.position())
 
     def move_dst(self) -> None:
-        src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id)
-        src_pos = src_x, src_y
         dst_pos = self.dst.position()
         if self.is_same_canvas():
+            src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id)
+            src_pos = src_x, src_y
             self.moved(src_pos, dst_pos)
         else:
+            src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id2)
+            src_pos = src_x, src_y
             self.moved2(src_pos, dst_pos)
 
     def move_src(self) -> None:

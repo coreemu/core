@@ -273,13 +273,12 @@ class CanvasNode:
             unlink_menu = tk.Menu(self.context)
             for edge in self.edges:
                 link = edge.link
-                if self.id == edge.src:
-                    other_id = edge.dst
+                if self.id == edge.src.id:
+                    other_node = edge.dst
                     other_iface = link.iface2.name if link.iface2 else None
                 else:
-                    other_id = edge.src
+                    other_node = edge.src
                     other_iface = link.iface1.name if link.iface1 else None
-                other_node = self.canvas.nodes[other_id]
                 other_name = other_node.core_node.name
                 label = f"{other_name}:{other_iface}" if other_iface else other_name
                 func_unlink = functools.partial(self.click_unlink, edge)
@@ -305,7 +304,7 @@ class CanvasNode:
 
     def click_link(self, node: "CanvasNode") -> None:
         edge = CanvasEdge(self.app, self, node)
-        self.app.manager.complete_edge(self, node, edge)
+        self.app.manager.complete_edge(edge, node)
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
