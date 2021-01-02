@@ -282,24 +282,13 @@ class CanvasGraph(tk.Canvas):
                 canvas_node = self.nodes.pop(object_id)
                 canvas_node.delete()
                 nodes.append(canvas_node)
-                is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
                 # delete related edges
-                for edge in canvas_node.edges:
+                while canvas_node.edges:
+                    edge = canvas_node.edges.pop()
                     if edge in edges:
                         continue
                     edges.add(edge)
                     edge.delete()
-                    # update node connected to edge being deleted
-                    other_node = edge.src
-                    other_iface = edge.link.iface1
-                    if edge.src == object_id:
-                        other_node = edge.dst
-                        other_iface = edge.link.iface2
-                    other_node.edges.remove(edge)
-                    if other_iface:
-                        del other_node.ifaces[other_iface.id]
-                    if is_wireless:
-                        other_node.delete_antenna()
 
             # delete shape
             if object_id in self.shapes:
@@ -308,7 +297,6 @@ class CanvasGraph(tk.Canvas):
 
         self.selection.clear()
         self.core.deleted_canvas_nodes(nodes)
-        self.core.deleted_canvas_edges(edges)
 
     def zoom(self, event: tk.Event, factor: float = None) -> None:
         if not factor:
