@@ -2,7 +2,7 @@ import functools
 import logging
 import math
 import tkinter as tk
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from PIL.ImageTk import PhotoImage
 
@@ -110,9 +110,19 @@ class ShadowNode:
             justify=tk.CENTER,
         )
         self.canvas.shadow_nodes[self.id] = self
+        self.canvas.shadow_core_nodes[self.node.core_node.id] = self
 
     def position(self) -> Tuple[int, int]:
         return self.canvas.coords(self.id)
+
+    def should_delete(self) -> bool:
+        for edge in self.node.edges:
+            other_node = edge.src
+            if self.node == edge.src:
+                other_node = edge.dst
+            if other_node.canvas == self.canvas:
+                return False
+        return True
 
     def motion(self, x_offset, y_offset) -> None:
         original_position = self.position()
@@ -136,6 +146,7 @@ class ShadowNode:
 
     def delete(self):
         self.canvas.shadow_nodes.pop(self.id, None)
+        self.canvas.shadow_core_nodes.pop(self.node.core_node.id, None)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 
@@ -213,10 +224,10 @@ class Edge:
             self.id = self.draw_edge(self.src.canvas, self.src, self.src, state)
         else:
             # draw shadow nodes and 2 lines
-            self.src_shadow = ShadowNode(self.app, self.dst.canvas, self.src)
-            self.dst_shadow = ShadowNode(self.app, self.src.canvas, self.dst)
-            self.id = self.draw_edge(self.src.canvas, self.src, self.dst, state)
-            self.id2 = self.draw_edge(self.dst.canvas, self.src, self.dst, state)
+            self.src_shadow = self.dst.canvas.get_shadow(self.src)
+            self.dst_shadow = self.src.canvas.get_shadow(self.dst)
+            self.id = self.draw_edge(self.src.canvas, self.src, self.dst_shadow, state)
+            self.id2 = self.draw_edge(self.dst.canvas, self.src_shadow, self.dst, state)
         logging.info(
             "drawed edge: src shadow(%s) dst shadow(%s)",
             self.src_shadow,
@@ -224,7 +235,11 @@ class Edge:
         )
 
     def draw_edge(
-        self, canvas: "CanvasGraph", src: "CanvasNode", dst: "CanvasNode", state: str
+        self,
+        canvas: "CanvasGraph",
+        src: Union["CanvasNode", "ShadowNode"],
+        dst: Union["CanvasNode", "ShadowNode"],
+        state: str,
     ) -> int:
         src_pos = src.position()
         dst_pos = dst.position()
@@ -242,16 +257,11 @@ class Edge:
 
     def redraw(self) -> None:
         self.src.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
-        # src_x, src_y, _, _, _, _ = self.src.canvas.coords(self.id)
-        # src_pos = src_x, src_y
         self.move_src()
         if not self.is_same_canvas():
             self.dst.canvas.itemconfig(
                 self.id2, width=self.scaled_width(), fill=self.color
             )
-            # src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id2)
-            # src_pos = src_x, src_y
-            # self.move_src(src_pos)
             self.move_dst()
 
     def middle_label_text(self, text: str) -> None:
@@ -423,10 +433,10 @@ class Edge:
             self.dst.canvas.delete(self.id2)
             self.dst.canvas.delete(self.src_label2)
             self.dst.canvas.delete(self.dst_label2)
-        if self.src_shadow:
+        if self.src_shadow and self.src_shadow.should_delete():
             self.src_shadow.delete()
             self.src_shadow = None
-        if self.dst_shadow:
+        if self.dst_shadow and self.dst_shadow.should_delete():
             self.dst_shadow.delete()
             self.dst_shadow = None
         self.clear_middle_label()
@@ -674,7 +684,6 @@ class CanvasEdge(Edge):
         self.middle_label_text(label)
 
     def delete(self) -> None:
-        super().delete()
         self.src.edges.discard(self)
         if self.dst:
             self.dst.edges.discard(self)
@@ -689,4 +698,5 @@ class CanvasEdge(Edge):
             if dst_wireless:
                 self.src.delete_antenna()
             self.app.core.deleted_canvas_edges([self])
+        super().delete()
         self.arc_common_edges()

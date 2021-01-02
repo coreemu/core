@@ -53,6 +53,7 @@ class CanvasGraph(tk.Canvas):
         self.nodes: Dict[int, CanvasNode] = {}
         self.shadow_nodes: Dict[int, ShadowNode] = {}
         self.shapes: Dict[int, Shape] = {}
+        self.shadow_core_nodes: Dict[int, ShadowNode] = {}
 
         # map wireless/EMANE node to the set of MDRs connected to that node
         self.wireless_network: Dict[int, Set[int]] = {}
@@ -113,6 +114,12 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
         self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
+
+    def get_shadow(self, node: CanvasNode) -> ShadowNode:
+        shadow_node = self.shadow_core_nodes.get(node.core_node.id)
+        if not shadow_node:
+            shadow_node = ShadowNode(self.app, self, node)
+        return shadow_node
 
     def get_actual_coords(self, x: float, y: float) -> Tuple[float, float]:
         actual_x = (x - self.offset[0]) / self.ratio
