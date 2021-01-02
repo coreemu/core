@@ -209,48 +209,36 @@ class Edge:
         return self.src.canvas == self.dst.canvas
 
     def draw(self, state: str) -> None:
-        src_pos = self.src.position()
         if self.is_same_canvas():
-            dst_pos = src_pos
-            if self.dst:
-                dst_pos = self.dst.position()
-            arc_pos = self._get_arcpoint(src_pos, dst_pos)
-            self.id = self.src.canvas.create_line(
-                *src_pos,
-                *arc_pos,
-                *dst_pos,
-                smooth=True,
-                tags=self.tag,
-                width=self.scaled_width(),
-                fill=self.color,
-                state=state,
-            )
+            self.id = self.draw_edge(self.src.canvas, self.src, self.src, state)
         else:
             # draw shadow nodes and 2 lines
-            dst_pos = self.dst.position()
-            arc_pos = self._get_arcpoint(src_pos, dst_pos)
             self.src_shadow = ShadowNode(self.app, self.dst.canvas, self.src)
             self.dst_shadow = ShadowNode(self.app, self.src.canvas, self.dst)
-            self.id = self.src.canvas.create_line(
-                *src_pos,
-                *arc_pos,
-                *dst_pos,
-                smooth=True,
-                tags=self.tag,
-                width=self.scaled_width(),
-                fill=self.color,
-                state=state,
-            )
-            self.id2 = self.dst.canvas.create_line(
-                *src_pos,
-                *arc_pos,
-                *dst_pos,
-                smooth=True,
-                tags=self.tag,
-                width=self.scaled_width(),
-                fill=self.color,
-                state=state,
-            )
+            self.id = self.draw_edge(self.src.canvas, self.src, self.dst, state)
+            self.id2 = self.draw_edge(self.dst.canvas, self.src, self.dst, state)
+        logging.info(
+            "drawed edge: src shadow(%s) dst shadow(%s)",
+            self.src_shadow,
+            self.dst_shadow,
+        )
+
+    def draw_edge(
+        self, canvas: "CanvasGraph", src: "CanvasNode", dst: "CanvasNode", state: str
+    ) -> int:
+        src_pos = src.position()
+        dst_pos = dst.position()
+        arc_pos = self._get_arcpoint(src_pos, dst_pos)
+        return canvas.create_line(
+            *src_pos,
+            *arc_pos,
+            *dst_pos,
+            smooth=True,
+            tags=self.tag,
+            width=self.scaled_width(),
+            fill=self.color,
+            state=state,
+        )
 
     def redraw(self) -> None:
         self.src.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
@@ -688,10 +676,10 @@ class CanvasEdge(Edge):
     def delete(self) -> None:
         super().delete()
         self.src.edges.discard(self)
-        if self.link.iface1:
-            del self.src.ifaces[self.link.iface1.id]
         if self.dst:
             self.dst.edges.discard(self)
+            if self.link.iface1:
+                del self.src.ifaces[self.link.iface1.id]
             if self.link.iface2:
                 del self.dst.ifaces[self.link.iface2.id]
             src_wireless = NodeUtils.is_wireless_node(self.src.core_node.type)

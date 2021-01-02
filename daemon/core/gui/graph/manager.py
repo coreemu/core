@@ -118,7 +118,6 @@ class CanvasManager:
 
     def current(self) -> CanvasGraph:
         unique_id = self.notebook.select()
-        logging.info("current selected id: %s", unique_id)
         canvas_id = self.canvas_ids[unique_id]
         return self.get(canvas_id)
 
@@ -178,6 +177,8 @@ class CanvasManager:
         self.canvases.clear()
         self.canvas_ids.clear()
         self.unique_ids.clear()
+        self.edges.clear()
+        self.wireless_edges.clear()
         logging.info("cleared canvases")
 
         # reset settings
@@ -206,20 +207,12 @@ class CanvasManager:
 
         # draw existing links
         for link in session.links:
-            logging.debug("drawing link: %s", link)
             node1 = self.core.get_canvas_node(link.node1_id)
             node2 = self.core.get_canvas_node(link.node2_id)
             if link.type == LinkType.WIRELESS:
                 self.add_wireless_edge(node1, node2, link)
             else:
                 self.add_wired_edge(node1, node2, link)
-            # if node1.canvas == node2.canvas:
-            #     if link.type == LinkType.WIRELESS:
-            #         self.add_wireless_edge(node1, node2, link)
-            #     else:
-            #         self.add_wired_edge(node1, node2, link)
-            # else:
-            #     logging.error("cant handle nodes linked between canvases")
 
         # parse metadata and organize canvases
         self.core.parse_metadata()
