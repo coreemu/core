@@ -349,15 +349,14 @@ class CanvasNode:
     def has_emane_link(self, iface_id: int) -> Node:
         result = None
         for edge in self.edges:
-            if self.id == edge.src:
-                other_id = edge.dst
+            if self.id == edge.src.id:
+                other_node = edge.dst
                 edge_iface_id = edge.link.iface1.id
             else:
-                other_id = edge.src
+                other_node = edge.src
                 edge_iface_id = edge.link.iface2.id
             if edge_iface_id != iface_id:
                 continue
-            other_node = self.canvas.nodes[other_id]
             if other_node.core_node.type == NodeType.EMANE:
                 result = other_node.core_node
                 break

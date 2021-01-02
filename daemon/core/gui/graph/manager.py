@@ -82,7 +82,8 @@ class CanvasManager:
 
         # widget
         self.notebook: Optional[ttk.Notebook] = None
-        self.unique_ids: Dict[str, int] = {}
+        self.canvas_ids: Dict[str, int] = {}
+        self.unique_ids: Dict[int, str] = {}
         self.draw()
 
         self.setup_bindings()
@@ -95,10 +96,14 @@ class CanvasManager:
     def tab_change(self, _event: tk.Event) -> None:
         # ignore tab change events before tab data has been setup
         unique_id = self.notebook.select()
-        if not unique_id or unique_id not in self.unique_ids:
+        if not unique_id or unique_id not in self.canvas_ids:
             return
         canvas = self.current()
         self.app.statusbar.set_zoom(canvas.ratio)
+
+    def select(self, tab_id: int):
+        unique_id = self.unique_ids.get(tab_id)
+        self.notebook.select(unique_id)
 
     def draw(self) -> None:
         self.notebook = ttk.Notebook(self.master)
@@ -106,7 +111,7 @@ class CanvasManager:
 
     def _next_id(self) -> int:
         _id = 1
-        canvas_ids = set(self.unique_ids.values())
+        canvas_ids = set(self.canvas_ids.values())
         while _id in canvas_ids:
             _id += 1
         return _id
@@ -114,7 +119,7 @@ class CanvasManager:
     def current(self) -> CanvasGraph:
         unique_id = self.notebook.select()
         logging.info("current selected id: %s", unique_id)
-        canvas_id = self.unique_ids[unique_id]
+        canvas_id = self.canvas_ids[unique_id]
         return self.get(canvas_id)
 
     def all(self) -> ValuesView[CanvasGraph]:
@@ -137,7 +142,8 @@ class CanvasManager:
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
         logging.info("creating canvas(%s) unique(%s)", canvas_id, unique_id)
-        self.unique_ids[unique_id] = canvas_id
+        self.canvas_ids[unique_id] = canvas_id
+        self.unique_ids[canvas_id] = unique_id
 
         # create canvas
         canvas = CanvasGraph(
@@ -161,7 +167,7 @@ class CanvasManager:
             return
         unique_id = self.notebook.select()
         self.notebook.forget(unique_id)
-        canvas_id = self.unique_ids.pop(unique_id)
+        canvas_id = self.canvas_ids.pop(unique_id)
         self.canvases.pop(canvas_id)
         # TODO: handle clearing out canvas related nodes and links from core client
 
@@ -170,6 +176,7 @@ class CanvasManager:
         for canvas_id in self.notebook.tabs():
             self.notebook.forget(canvas_id)
         self.canvases.clear()
+        self.canvas_ids.clear()
         self.unique_ids.clear()
         logging.info("cleared canvases")
 

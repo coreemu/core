@@ -510,11 +510,11 @@ class CanvasEdge(Edge):
         return self.width != EDGE_WIDTH or self.color != EDGE_COLOR
 
     def set_binding(self) -> None:
-        show_context = functools.partial(self.show_info, self.src.canvas)
+        show_context = functools.partial(self.show_context, self.src.canvas)
         self.src.canvas.tag_bind(self.id, "<ButtonRelease-3>", show_context)
         self.src.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
         if self.dst and not self.is_same_canvas():
-            show_context = functools.partial(self.show_info, self.dst.canvas)
+            show_context = functools.partial(self.show_context, self.dst.canvas)
             self.dst.canvas.tag_bind(self.id2, "<ButtonRelease-3>", show_context)
             self.dst.canvas.tag_bind(self.id2, "<Button-1>", self.show_info)
 
