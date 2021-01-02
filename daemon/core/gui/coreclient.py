@@ -239,9 +239,9 @@ class CoreClient:
                 canvas_node.update_icon(node.icon)
         elif event.message_type == MessageType.DELETE:
             canvas_node = self.canvas_nodes[node.id]
-            self.app.canvas.clear_selection()
-            self.app.canvas.select_object(canvas_node.id)
-            self.app.canvas.delete_selected_objects()
+            canvas_node.canvas.clear_selection()
+            canvas_node.canvas.select_object(canvas_node.id)
+            canvas_node.canvas.delete_selected_objects()
         elif event.message_type == MessageType.ADD:
             if node.id in self.session.nodes:
                 logging.error("core node already exists: %s", node)
