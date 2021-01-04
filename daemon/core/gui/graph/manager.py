@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from copy import deepcopy
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, Tuple, ValuesView
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, ValuesView
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
 from core.gui.graph import tags
@@ -52,9 +52,7 @@ class CanvasManager:
         self.node_draw: Optional[NodeDraw] = None
         self.canvases: Dict[int, CanvasGraph] = {}
 
-        # canvas object storage
-        # TODO: validate this
-        self.wireless_network: Dict[int, Set[int]] = {}
+        # global edge management
         self.edges: Dict[str, CanvasEdge] = {}
         self.wireless_edges: Dict[str, CanvasWirelessEdge] = {}
 
@@ -361,8 +359,7 @@ class CanvasManager:
         self, edge: CanvasEdge, dst: CanvasNode, link: Optional[Link] = None
     ) -> None:
         src = edge.src
-        linked_wireless = self.is_linked_wireless(src, dst)
-        edge.complete(dst, linked_wireless)
+        edge.complete(dst)
         if link is None:
             link = self.core.create_link(edge, src, dst)
         edge.link = link
@@ -381,23 +378,5 @@ class CanvasManager:
         self.edges[edge.token] = edge
         self.core.save_edge(edge, src, dst)
         edge.src.canvas.organize()
-        if not edge.is_same_canvas():
+        if edge.has_shadows():
             edge.dst.canvas.organize()
-
-    def is_linked_wireless(self, src: CanvasNode, dst: CanvasNode) -> bool:
-        src_node_type = src.core_node.type
-        dst_node_type = dst.core_node.type
-        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
-        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
-
-        # update the wlan/EMANE network
-        wlan_network = self.wireless_network
-        if is_src_wireless and not is_dst_wireless:
-            if src not in wlan_network:
-                wlan_network[src.core_node.id] = set()
-            wlan_network[src.core_node.id].add(dst.core_node.id)
-        elif not is_src_wireless and is_dst_wireless:
-            if dst not in wlan_network:
-                wlan_network[dst.core_node.id] = set()
-            wlan_network[dst.core_node.id].add(src.core_node.id)
-        return is_src_wireless or is_dst_wireless

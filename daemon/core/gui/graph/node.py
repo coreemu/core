@@ -406,3 +406,6 @@ class CanvasNode:
             return False
         # valid link
         return True
+
+    def is_wireless(self) -> bool:
+        return NodeUtils.is_wireless_node(self.core_node.type)
