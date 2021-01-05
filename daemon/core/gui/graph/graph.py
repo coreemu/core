@@ -287,8 +287,6 @@ class CanvasGraph(tk.Canvas):
             # delete node and related edges
             if object_id in self.nodes:
                 canvas_node = self.nodes.pop(object_id)
-                canvas_node.delete()
-                nodes.append(canvas_node)
                 # delete related edges
                 while canvas_node.edges:
                     edge = canvas_node.edges.pop()
@@ -296,6 +294,9 @@ class CanvasGraph(tk.Canvas):
                         continue
                     edges.add(edge)
                     edge.delete()
+                # delete node
+                canvas_node.delete()
+                nodes.append(canvas_node)
 
             # delete shape
             if object_id in self.shapes:

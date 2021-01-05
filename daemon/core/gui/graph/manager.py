@@ -325,7 +325,6 @@ class CanvasManager:
         dst.wireless_edges.add(edge)
         src.canvas.tag_raise(src.id)
         dst.canvas.tag_raise(dst.id)
-        edge.arc_common_edges()
 
     def delete_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: Link
@@ -336,9 +335,6 @@ class CanvasManager:
             return
         edge = self.wireless_edges.pop(token)
         edge.delete()
-        src.wireless_edges.remove(edge)
-        dst.wireless_edges.remove(edge)
-        edge.arc_common_edges()
 
     def update_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: Link
@@ -372,7 +368,8 @@ class CanvasManager:
         src.edges.add(edge)
         dst.edges.add(edge)
         edge.token = create_edge_token(edge.link)
-        edge.arc_common_edges()
+        if not edge.linked_wireless:
+            edge.arc_common_edges()
         edge.draw_labels()
         edge.check_options()
         self.edges[edge.token] = edge

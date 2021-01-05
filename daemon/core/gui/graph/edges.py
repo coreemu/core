@@ -120,7 +120,7 @@ class ShadowNode:
             other_node = edge.src
             if self.node == edge.src:
                 other_node = edge.dst
-            if other_node.canvas == self.canvas:
+            if not other_node.is_wireless() and other_node.canvas == self.canvas:
                 return False
         return True
 
@@ -224,13 +224,27 @@ class Edge:
 
     def draw(self, state: str) -> None:
         if not self.has_shadows():
-            self.id = self.draw_edge(self.src.canvas, self.src, self.src, state)
+            dst = self.dst if self.dst else self.src
+            self.id = self.draw_edge(self.src.canvas, self.src, dst, state)
+        elif self.linked_wireless:
+            if self.src.is_wireless():
+                self.src_shadow = self.dst.canvas.get_shadow(self.src)
+                self.id2 = self.draw_edge(
+                    self.dst.canvas, self.src_shadow, self.dst, state
+                )
+            if self.dst.is_wireless():
+                self.dst_shadow = self.src.canvas.get_shadow(self.dst)
+                self.id = self.draw_edge(
+                    self.src.canvas, self.src, self.dst_shadow, state
+                )
         else:
             # draw shadow nodes and 2 lines
             self.src_shadow = self.dst.canvas.get_shadow(self.src)
             self.dst_shadow = self.src.canvas.get_shadow(self.dst)
             self.id = self.draw_edge(self.src.canvas, self.src, self.dst_shadow, state)
             self.id2 = self.draw_edge(self.dst.canvas, self.src_shadow, self.dst, state)
+            self.src.canvas.organize()
+            self.dst.canvas.organize()
         logging.info(
             "drawed edge: src shadow(%s) dst shadow(%s)",
             self.src_shadow,
@@ -261,7 +275,7 @@ class Edge:
     def redraw(self) -> None:
         self.src.canvas.itemconfig(self.id, width=self.scaled_width(), fill=self.color)
         self.move_src()
-        if self.has_shadows():
+        if self.id2:
             self.dst.canvas.itemconfig(
                 self.id2, width=self.scaled_width(), fill=self.color
             )
@@ -279,7 +293,7 @@ class Edge:
                 justify=tk.CENTER,
                 state=self.manager.show_link_labels.state(),
             )
-            if self.has_shadows():
+            if self.id2:
                 _, _, x, y, _, _ = self.dst.canvas.coords(self.id2)
                 self.middle_label2 = self.dst.canvas.create_text(
                     x,
@@ -292,29 +306,32 @@ class Edge:
                 )
         else:
             self.src.canvas.itemconfig(self.middle_label, text=text)
-            if self.has_shadows():
+            if self.middle_label2:
                 self.dst.canvas.itemconfig(self.middle_label2, text=text)
 
     def clear_middle_label(self) -> None:
         self.src.canvas.delete(self.middle_label)
         self.middle_label = None
-        if self.has_shadows():
+        if self.middle_label2:
             self.dst.canvas.delete(self.middle_label2)
             self.middle_label2 = None
 
     def src_label_text(self, text: str) -> None:
-        if self.src_label is None:
-            src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
-            src_pos, _ = node_label_positions(src_x, src_y, dst_x, dst_y)
-            self.src_label = self.src.canvas.create_text(
-                *src_pos,
-                text=text,
-                justify=tk.CENTER,
-                font=self.app.edge_font,
-                tags=tags.LINK_LABEL,
-                state=self.manager.show_link_labels.state(),
-            )
-            if self.has_shadows():
+        if self.src_label is None and self.src_label2 is None:
+            if self.id:
+                logging.info("src label id")
+                src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
+                src_pos, _ = node_label_positions(src_x, src_y, dst_x, dst_y)
+                self.src_label = self.src.canvas.create_text(
+                    *src_pos,
+                    text=text,
+                    justify=tk.CENTER,
+                    font=self.app.edge_font,
+                    tags=tags.LINK_LABEL,
+                    state=self.manager.show_link_labels.state(),
+                )
+            if self.id2:
+                logging.info("src label id2")
                 src_x, src_y, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
                 src_pos, _ = node_label_positions(src_x, src_y, dst_x, dst_y)
                 self.src_label2 = self.dst.canvas.create_text(
@@ -326,23 +343,25 @@ class Edge:
                     state=self.manager.show_link_labels.state(),
                 )
         else:
-            self.src.canvas.itemconfig(self.src_label, text=text)
-            if self.has_shadows():
+            if self.src_label:
+                self.src.canvas.itemconfig(self.src_label, text=text)
+            if self.src_label2:
                 self.dst.canvas.itemconfig(self.src_label2, text=text)
 
     def dst_label_text(self, text: str) -> None:
-        if self.dst_label is None:
-            src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
-            _, dst_pos = node_label_positions(src_x, src_y, dst_x, dst_y)
-            self.dst_label = self.src.canvas.create_text(
-                *dst_pos,
-                text=text,
-                justify=tk.CENTER,
-                font=self.app.edge_font,
-                tags=tags.LINK_LABEL,
-                state=self.manager.show_link_labels.state(),
-            )
-            if self.has_shadows():
+        if self.dst_label is None and self.dst_label2 is None:
+            if self.id:
+                src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
+                _, dst_pos = node_label_positions(src_x, src_y, dst_x, dst_y)
+                self.dst_label = self.src.canvas.create_text(
+                    *dst_pos,
+                    text=text,
+                    justify=tk.CENTER,
+                    font=self.app.edge_font,
+                    tags=tags.LINK_LABEL,
+                    state=self.manager.show_link_labels.state(),
+                )
+            if self.id2:
                 src_x, src_y, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
                 _, dst_pos = node_label_positions(src_x, src_y, dst_x, dst_y)
                 self.dst_label2 = self.dst.canvas.create_text(
@@ -354,8 +373,9 @@ class Edge:
                     state=self.manager.show_link_labels.state(),
                 )
         else:
-            self.src.canvas.itemconfig(self.dst_label, text=text)
-            if self.has_shadows():
+            if self.dst_label:
+                self.src.canvas.itemconfig(self.dst_label, text=text)
+            if self.dst_label2:
                 self.dst.canvas.itemconfig(self.dst_label2, text=text)
 
     def drawing(self, pos: Tuple[float, float]) -> None:
@@ -372,31 +392,39 @@ class Edge:
     def move_shadow(self, node: "ShadowNode") -> None:
         if self.src_shadow == node:
             self.move_src_shadow()
-        else:
+        elif self.dst_shadow == node:
             self.move_dst_shadow()
 
     def move_src_shadow(self) -> None:
+        if not self.id2:
+            return
         _, _, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
         dst_pos = dst_x, dst_y
         self.moved2(self.src_shadow.position(), dst_pos)
 
     def move_dst_shadow(self) -> None:
+        if not self.id:
+            return
         src_x, src_y, _, _, _, _ = self.src.canvas.coords(self.id)
         src_pos = src_x, src_y
         self.moved(src_pos, self.dst_shadow.position())
 
     def move_dst(self) -> None:
+        if self.dst.is_wireless() and self.has_shadows():
+            return
         dst_pos = self.dst.position()
-        if not self.has_shadows():
-            src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id)
-            src_pos = src_x, src_y
-            self.moved(src_pos, dst_pos)
-        else:
+        if self.id2:
             src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id2)
             src_pos = src_x, src_y
             self.moved2(src_pos, dst_pos)
+        elif self.id:
+            src_x, src_y, _, _, _, _ = self.dst.canvas.coords(self.id)
+            src_pos = src_x, src_y
+            self.moved(src_pos, dst_pos)
 
     def move_src(self) -> None:
+        if not self.id:
+            return
         _, _, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
         dst_pos = dst_x, dst_y
         self.moved(self.src.position(), dst_pos)
@@ -485,6 +513,11 @@ class CanvasWirelessEdge(Edge):
     def show_info(self, _event: tk.Event) -> None:
         self.app.display_info(WirelessEdgeInfoFrame, app=self.app, edge=self)
 
+    def delete(self) -> None:
+        self.src.wireless_edges.discard(self)
+        self.dst.wireless_edges.remove(self)
+        super().delete()
+
 
 class CanvasEdge(Edge):
     """
@@ -504,16 +537,16 @@ class CanvasEdge(Edge):
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
         self.draw(tk.NORMAL)
-        self.set_binding()
 
     def is_customized(self) -> bool:
         return self.width != EDGE_WIDTH or self.color != EDGE_COLOR
 
-    def set_binding(self) -> None:
-        show_context = functools.partial(self.show_context, self.src.canvas)
-        self.src.canvas.tag_bind(self.id, "<ButtonRelease-3>", show_context)
-        self.src.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
-        if self.dst and self.has_shadows():
+    def set_bindings(self) -> None:
+        if self.id:
+            show_context = functools.partial(self.show_context, self.src.canvas)
+            self.src.canvas.tag_bind(self.id, "<ButtonRelease-3>", show_context)
+            self.src.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
+        if self.id2:
             show_context = functools.partial(self.show_context, self.dst.canvas)
             self.dst.canvas.tag_bind(self.id2, "<ButtonRelease-3>", show_context)
             self.dst.canvas.tag_bind(self.id2, "<Button-1>", self.show_info)
@@ -556,16 +589,16 @@ class CanvasEdge(Edge):
         if self.link.options.loss == EDGE_LOSS:
             state = tk.HIDDEN
             self.src.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
-            if self.has_shadows():
+            if self.id2:
                 self.dst.canvas.addtag_withtag(tags.LOSS_EDGES, self.id2)
         else:
             state = tk.NORMAL
             self.src.canvas.dtag(self.id, tags.LOSS_EDGES)
-            if self.has_shadows():
+            if self.id2:
                 self.dst.canvas.dtag(self.id2, tags.LOSS_EDGES)
         if self.manager.show_loss_links.state() == tk.HIDDEN:
             self.src.canvas.itemconfigure(self.id, state=state)
-            if self.has_shadows():
+            if self.id2:
                 self.dst.canvas.itemconfigure(self.id2, state=state)
 
     def set_throughput(self, throughput: float) -> None:
@@ -579,7 +612,7 @@ class CanvasEdge(Edge):
             color = self.color
             width = self.scaled_width()
         self.src.canvas.itemconfig(self.id, fill=color, width=width)
-        if self.has_shadows():
+        if self.id2:
             self.dst.canvas.itemconfig(self.id2, fill=color, width=width)
 
     def clear_throughput(self) -> None:
@@ -590,18 +623,20 @@ class CanvasEdge(Edge):
     def complete(self, dst: "CanvasNode") -> None:
         self.dst = dst
         self.linked_wireless = self.src.is_wireless() or self.dst.is_wireless()
-        self.move_dst()
+        self.set_bindings()
         self.check_wireless()
         logging.debug("draw wired link from node %s to node %s", self.src, dst)
 
     def check_wireless(self) -> None:
         if not self.linked_wireless:
             return
-        self.src.canvas.itemconfig(self.id, state=tk.HIDDEN)
-        self.src.canvas.dtag(self.id, tags.EDGE)
-        if self.has_shadows():
-            self.dst.canvas.itemconfig(self.id2, state=tk.HIDDEN)
+        if self.id:
+            # self.src.canvas.itemconfig(self.id, state=tk.HIDDEN)
+            self.src.canvas.dtag(self.id, tags.EDGE)
+        if self.id2:
+            # self.dst.canvas.itemconfig(self.id2, state=tk.HIDDEN)
             self.dst.canvas.dtag(self.id2, tags.EDGE)
+        # add antenna to node
         if self.src.is_wireless() and not self.dst.is_wireless():
             self.dst.add_antenna()
         elif not self.src.is_wireless() and self.dst.is_wireless():
@@ -610,12 +645,17 @@ class CanvasEdge(Edge):
             self.src.add_antenna()
 
     def reset(self) -> None:
-        self.src.canvas.delete(self.middle_label)
-        self.middle_label = None
-        self.src.canvas.itemconfig(self.id, fill=self.color, width=self.scaled_width())
-        if self.has_shadows():
+        if self.middle_label:
+            self.src.canvas.delete(self.middle_label)
+            self.middle_label = None
+        if self.middle_label2:
             self.dst.canvas.delete(self.middle_label2)
             self.middle_label2 = None
+        if self.id:
+            self.src.canvas.itemconfig(
+                self.id, fill=self.color, width=self.scaled_width()
+            )
+        if self.id2:
             self.dst.canvas.itemconfig(
                 self.id2, fill=self.color, width=self.scaled_width()
             )
@@ -690,4 +730,5 @@ class CanvasEdge(Edge):
                 self.src.delete_antenna()
             self.app.core.deleted_canvas_edges([self])
         super().delete()
-        self.arc_common_edges()
+        if self.dst:
+            self.arc_common_edges()
