@@ -285,8 +285,6 @@ class CanvasManager:
         # clear wireless edges
         for edge in self.wireless_edges.values():
             edge.delete()
-            edge.src.wireless_edges.remove(edge)
-            edge.dst.wireless_edges.remove(edge)
         self.wireless_edges.clear()
         self.clear_throughputs()
 

@@ -588,16 +588,19 @@ class CanvasEdge(Edge):
             return
         if self.link.options.loss == EDGE_LOSS:
             state = tk.HIDDEN
-            self.src.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
+            if self.id:
+                self.src.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
             if self.id2:
                 self.dst.canvas.addtag_withtag(tags.LOSS_EDGES, self.id2)
         else:
             state = tk.NORMAL
-            self.src.canvas.dtag(self.id, tags.LOSS_EDGES)
+            if self.id:
+                self.src.canvas.dtag(self.id, tags.LOSS_EDGES)
             if self.id2:
                 self.dst.canvas.dtag(self.id2, tags.LOSS_EDGES)
         if self.manager.show_loss_links.state() == tk.HIDDEN:
-            self.src.canvas.itemconfigure(self.id, state=state)
+            if self.id:
+                self.src.canvas.itemconfigure(self.id, state=state)
             if self.id2:
                 self.dst.canvas.itemconfigure(self.id2, state=state)
 
