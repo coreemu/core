@@ -90,6 +90,7 @@ class ImageEnum(Enum):
     SHUTDOWN = "shutdown"
     CANCEL = "cancel"
     ERROR = "error"
+    SHADOW = "shadow"
 
 
 class TypeToImage:

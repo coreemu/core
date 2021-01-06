@@ -91,7 +91,7 @@ class ShadowNode:
         self.node: "CanvasNode" = node
         self.id: Optional[int] = None
         self.text_id: Optional[int] = None
-        self.image: PhotoImage = self.app.get_icon(ImageEnum.ROUTER, ICON_SIZE)
+        self.image: PhotoImage = self.app.get_icon(ImageEnum.SHADOW, ICON_SIZE)
         self.draw()
 
     def draw(self) -> None:
