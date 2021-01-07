@@ -107,7 +107,7 @@ class NodeNameEntry(ValidationEntry):
         if len(s) == 0:
             return True
         for x in s:
-            if not x.isalnum() and x != "_":
+            if not x.isalnum() and x != "-":
                 return False
         return True
 
