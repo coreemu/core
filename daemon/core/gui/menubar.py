@@ -116,11 +116,13 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
+        menu.add_command(label="Hide", accelerator="Ctrl+H", command=self.click_hide)
         self.add_cascade(label="Edit", menu=menu)
         self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
         self.app.master.bind_all("<Control-d>", self.click_delete)
+        self.app.master.bind_all("<Control-h>", self.click_hide)
         self.edit_menu = menu
 
     def draw_canvas_menu(self) -> None:
@@ -412,6 +414,9 @@ class Menubar(tk.Menu):
     def click_cut(self, _event: tk.Event = None) -> None:
         self.canvas.copy()
         self.canvas.delete_selected_objects()
+
+    def click_hide(self, _event: tk.Event = None) -> None:
+        self.canvas.hide_selected_objects()
 
     def click_session_options(self) -> None:
         logging.debug("Click options")

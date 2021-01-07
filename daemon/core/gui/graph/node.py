@@ -360,3 +360,9 @@ class CanvasNode:
         self.core_node.icon = icon_path
         self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
         self.canvas.itemconfig(self.id, image=self.image)
+
+    def hide(self) -> None:
+        self.canvas.addtag_withtag(tags.HIDDEN, self.id)
+        self.canvas.addtag_withtag(tags.HIDDEN, self.text_id)
+        self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+        self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
