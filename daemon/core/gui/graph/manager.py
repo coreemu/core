@@ -211,6 +211,13 @@ class CanvasManager:
                 continue
             self.add_core_node(core_node)
 
+        # organize canvas tabs
+        canvas_ids = sorted(self.canvases)
+        for index, canvas_id in enumerate(canvas_ids):
+            canvas = self.canvases[canvas_id]
+            logging.info("sorting canvas index(%s) canvas(%s)", index, canvas_id)
+            self.notebook.insert(index, canvas.master)
+
         # draw existing links
         for link in session.links:
             node1 = self.core.get_canvas_node(link.node1_id)

@@ -591,7 +591,6 @@ class Session:
         :raises core.CoreError: when node to update does not exist
         """
         node = self.get_node(node_id, NodeBase)
-        node.canvas = options.canvas
         node.icon = options.icon
         self.set_node_position(node, options)
         self.sdt.edit_node(node, options.lon, options.lat, options.alt)
