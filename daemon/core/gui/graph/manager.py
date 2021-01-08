@@ -165,8 +165,16 @@ class CanvasManager:
         unique_id = self.notebook.select()
         self.notebook.forget(unique_id)
         canvas_id = self.canvas_ids.pop(unique_id)
-        self.canvases.pop(canvas_id)
-        # TODO: handle clearing out canvas related nodes and links from core client
+        canvas = self.canvases.pop(canvas_id)
+        edges = set()
+        for node in canvas.nodes.values():
+            node.delete()
+            while node.edges:
+                edge = node.edges.pop()
+                if edge in edges:
+                    continue
+                edges.add(edge)
+                edge.delete()
 
     def join(self, session: Session) -> None:
         # clear out all canvas

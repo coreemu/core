@@ -634,10 +634,10 @@ class CanvasEdge(Edge):
         if not self.linked_wireless:
             return
         if self.id:
-            # self.src.canvas.itemconfig(self.id, state=tk.HIDDEN)
+            self.src.canvas.itemconfig(self.id, state=tk.HIDDEN)
             self.src.canvas.dtag(self.id, tags.EDGE)
         if self.id2:
-            # self.dst.canvas.itemconfig(self.id2, state=tk.HIDDEN)
+            self.dst.canvas.itemconfig(self.id2, state=tk.HIDDEN)
             self.dst.canvas.dtag(self.id2, tags.EDGE)
         # add antenna to node
         if self.src.is_wireless() and not self.dst.is_wireless():

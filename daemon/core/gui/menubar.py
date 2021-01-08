@@ -48,6 +48,7 @@ class Menubar(tk.Menu):
         self.manager: CanvasManager = app.manager
         self.recent_menu: Optional[tk.Menu] = None
         self.edit_menu: Optional[tk.Menu] = None
+        self.canvas_menu: Optional[tk.Menu] = None
         self.observers_menu: Optional[ObserversMenu] = None
         self.draw()
 
@@ -106,6 +107,7 @@ class Menubar(tk.Menu):
         menu = tk.Menu(self)
         menu.add_command(label="Preferences", command=self.click_preferences)
         menu.add_command(label="Custom Nodes", command=self.click_custom_nodes)
+        menu.add_command(label="Show Hidden Nodes", command=self.click_show_hidden)
         menu.add_separator()
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
@@ -116,11 +118,13 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
+        menu.add_command(label="Hide", accelerator="Ctrl+H", command=self.click_hide)
         self.add_cascade(label="Edit", menu=menu)
         self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
         self.app.master.bind_all("<Control-d>", self.click_delete)
+        self.app.master.bind_all("<Control-h>", self.click_hide)
         self.edit_menu = menu
 
     def draw_canvas_menu(self) -> None:
@@ -134,6 +138,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="Delete", command=self.click_canvas_delete)
         menu.add_command(label="Wallpaper", command=self.click_canvas_wallpaper)
         self.add_cascade(label="Canvas", menu=menu)
+        self.canvas_menu = menu
 
     def draw_view_menu(self) -> None:
         """
@@ -337,17 +342,12 @@ class Menubar(tk.Menu):
         self.app.save_config()
         self.app.menubar.update_recent_files()
 
-    def change_menubar_item_state(self, is_runtime: bool) -> None:
-        labels = {"Copy", "Paste", "Delete", "Cut"}
-        for i in range(self.edit_menu.index(tk.END) + 1):
-            try:
-                label = self.edit_menu.entrycget(i, "label")
-                if label not in labels:
-                    continue
-                state = tk.DISABLED if is_runtime else tk.NORMAL
-                self.edit_menu.entryconfig(i, state=state)
-            except tk.TclError:
-                pass
+    def set_state(self, is_runtime: bool) -> None:
+        state = tk.DISABLED if is_runtime else tk.NORMAL
+        for entry in {"Copy", "Paste", "Delete", "Cut"}:
+            self.edit_menu.entryconfigure(entry, state=state)
+        for entry in {"Delete"}:
+            self.canvas_menu.entryconfigure(entry, state=state)
 
     def prompt_save_running_session(self, quit_app: bool = False) -> None:
         """
@@ -410,17 +410,29 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_copy(self, _event: tk.Event = None) -> None:
-        self.canvas.copy()
+        canvas = self.manager.current()
+        canvas.copy()
 
     def click_paste(self, _event: tk.Event = None) -> None:
-        self.canvas.paste()
+        canvas = self.manager.current()
+        canvas.paste()
 
     def click_delete(self, _event: tk.Event = None) -> None:
-        self.canvas.delete_selected_objects()
+        canvas = self.manager.current()
+        canvas.delete_selected_objects()
+
+    def click_hide(self, _event: tk.Event = None) -> None:
+        canvas = self.manager.current()
+        canvas.hide_selected_objects()
 
     def click_cut(self, _event: tk.Event = None) -> None:
-        self.canvas.copy()
-        self.canvas.delete_selected_objects()
+        canvas = self.manager.current()
+        canvas.copy()
+        canvas.delete_selected_objects()
+
+    def click_show_hidden(self, _event: tk.Event = None) -> None:
+        canvas = self.manager.current()
+        canvas.show_hidden()
 
     def click_session_options(self) -> None:
         logging.debug("Click options")
@@ -470,7 +482,7 @@ class Menubar(tk.Menu):
             self.app.hide_info()
 
     def click_edge_label_change(self) -> None:
-        for edge in self.canvas.edges.values():
+        for edge in self.manager.edges.values():
             edge.draw_labels()
 
     def click_mac_config(self) -> None:

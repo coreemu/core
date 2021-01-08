@@ -14,6 +14,7 @@ NODE: str = "node"
 WALLPAPER: str = "wallpaper"
 SELECTION: str = "selectednodes"
 MARKER: str = "marker"
+HIDDEN: str = "hidden"
 ORGANIZE_TAGS: List[str] = [
     WALLPAPER,
     GRIDLINE,

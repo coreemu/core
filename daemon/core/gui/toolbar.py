@@ -292,7 +292,7 @@ class Toolbar(ttk.Frame):
         Start session handler redraw buttons, send node and link messages to grpc
         server.
         """
-        self.app.menubar.change_menubar_item_state(is_runtime=True)
+        self.app.menubar.set_state(is_runtime=True)
         self.app.manager.mode = GraphMode.SELECT
         enable_buttons(self.design_frame, enabled=False)
         task = ProgressTask(
@@ -397,7 +397,7 @@ class Toolbar(ttk.Frame):
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
         logging.info("clicked stop button")
-        self.app.menubar.change_menubar_item_state(is_runtime=False)
+        self.app.menubar.set_state(is_runtime=False)
         self.app.core.close_mobility_players()
         enable_buttons(self.runtime_frame, enabled=False)
         task = ProgressTask(

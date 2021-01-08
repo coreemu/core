@@ -63,6 +63,7 @@ class CanvasNode:
         self.wireless_edges: Set[CanvasWirelessEdge] = set()
         self.antennas: List[int] = []
         self.antenna_images: Dict[int, PhotoImage] = {}
+        self.hidden: bool = False
         self.setup_bindings()
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
@@ -409,3 +410,13 @@ class CanvasNode:
 
     def is_wireless(self) -> bool:
         return NodeUtils.is_wireless_node(self.core_node.type)
+
+    def hide(self) -> None:
+        self.hidden = True
+        self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+        self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
+
+    def show(self) -> None:
+        self.hidden = False
+        self.canvas.itemconfig(self.id, state=tk.NORMAL)
+        self.canvas.itemconfig(self.text_id, state=tk.NORMAL)

@@ -189,8 +189,10 @@ class Application(ttk.Frame):
 
     def joined_session_update(self) -> None:
         if self.core.is_runtime():
+            self.menubar.set_state(is_runtime=True)
             self.toolbar.set_runtime()
         else:
+            self.menubar.set_state(is_runtime=False)
             self.toolbar.set_design()
 
     def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
