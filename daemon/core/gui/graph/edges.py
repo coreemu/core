@@ -150,6 +150,14 @@ class ShadowNode:
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 
+    def hide(self) -> None:
+        self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+        self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
+
+    def show(self) -> None:
+        self.canvas.itemconfig(self.id, state=tk.NORMAL)
+        self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
+
 
 class Edge:
     tag: str = tags.EDGE
@@ -176,6 +184,7 @@ class Edge:
         self.color: str = EDGE_COLOR
         self.width: int = EDGE_WIDTH
         self.linked_wireless: bool = False
+        self.hidden: bool = False
         if self.dst:
             self.linked_wireless = self.src.is_wireless() or self.dst.is_wireless()
 
@@ -478,6 +487,38 @@ class Edge:
         self.dst_label = None
         self.dst_label2 = None
         self.manager.edges.pop(self.token, None)
+
+    def hide(self) -> None:
+        self.hidden = True
+        if self.src_shadow:
+            self.src_shadow.hide()
+        if self.dst_shadow:
+            self.dst_shadow.hide()
+        self.src.canvas.itemconfigure(self.id, state=tk.HIDDEN)
+        self.src.canvas.itemconfigure(self.src_label, state=tk.HIDDEN)
+        self.src.canvas.itemconfigure(self.dst_label, state=tk.HIDDEN)
+        self.src.canvas.itemconfigure(self.middle_label, state=tk.HIDDEN)
+        if self.id2:
+            self.dst.canvas.itemconfigure(self.id2, state=tk.HIDDEN)
+            self.dst.canvas.itemconfigure(self.src_label2, state=tk.HIDDEN)
+            self.dst.canvas.itemconfigure(self.dst_label2, state=tk.HIDDEN)
+            self.dst.canvas.itemconfigure(self.middle_label2, state=tk.HIDDEN)
+
+    def show(self) -> None:
+        self.hidden = False
+        if self.src_shadow:
+            self.src_shadow.show()
+        if self.dst_shadow:
+            self.dst_shadow.show()
+        self.src.canvas.itemconfigure(self.id, state=tk.NORMAL)
+        self.src.canvas.itemconfigure(self.src_label, state=tk.NORMAL)
+        self.src.canvas.itemconfigure(self.dst_label, state=tk.NORMAL)
+        self.src.canvas.itemconfigure(self.middle_label, state=tk.NORMAL)
+        if self.id2:
+            self.dst.canvas.itemconfigure(self.id2, state=tk.NORMAL)
+            self.dst.canvas.itemconfigure(self.src_label2, state=tk.NORMAL)
+            self.dst.canvas.itemconfigure(self.dst_label2, state=tk.NORMAL)
+            self.dst.canvas.itemconfigure(self.middle_label2, state=tk.NORMAL)
 
 
 class CanvasWirelessEdge(Edge):

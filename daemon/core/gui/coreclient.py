@@ -330,7 +330,7 @@ class CoreClient:
             canvas_config = json.loads(canvas_config)
             self.app.manager.parse_metadata(canvas_config)
 
-            # load saved shapes
+        # load saved shapes
         shapes_config = config.get("shapes")
         if shapes_config:
             shapes_config = json.loads(shapes_config)
@@ -348,6 +348,17 @@ class CoreClient:
                 edge.width = edge_config["width"]
                 edge.color = edge_config["color"]
                 edge.redraw()
+
+        # read hidden nodes
+        hidden = config.get("hidden")
+        if hidden:
+            hidden = json.loads(hidden)
+            for _id in hidden:
+                canvas_node = self.canvas_nodes.get(_id)
+                if canvas_node:
+                    canvas_node.hide()
+                else:
+                    logging.warning("invalid node to hide: %s", _id)
 
     def create_new_session(self) -> None:
         """
@@ -533,8 +544,14 @@ class CoreClient:
             edges_config.append(edge_config)
         edges_config = json.dumps(edges_config)
 
+        # create hidden metadata
+        hidden = [x.core_node.id for x in self.canvas_nodes.values() if x.hidden]
+        hidden = json.dumps(hidden)
+
         # save metadata
-        metadata = dict(canvas=canvas_config, shapes=shapes, edges=edges_config)
+        metadata = dict(
+            canvas=canvas_config, shapes=shapes, edges=edges_config, hidden=hidden
+        )
         response = self.client.set_session_metadata(self.session.id, metadata)
         logging.debug("set session metadata %s, result: %s", metadata, response)
 

@@ -292,6 +292,7 @@ class CanvasNode:
             edit_menu.add_command(label="Cut", command=self.click_cut)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
+            edit_menu.add_command(label="Hide", command=self.hide)
             self.context.add_cascade(label="Edit", menu=edit_menu)
         self.context.tk_popup(event.x_root, event.y_root)
 
@@ -415,8 +416,17 @@ class CanvasNode:
         self.hidden = True
         self.canvas.itemconfig(self.id, state=tk.HIDDEN)
         self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
+        for edge in self.edges:
+            if not edge.hidden:
+                edge.hide()
 
     def show(self) -> None:
         self.hidden = False
         self.canvas.itemconfig(self.id, state=tk.NORMAL)
         self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
+        for edge in self.edges:
+            other_node = edge.src
+            if edge.src == self:
+                other_node = edge.dst
+            if edge.hidden and not other_node.hidden:
+                edge.show()

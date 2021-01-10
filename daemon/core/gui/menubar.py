@@ -431,8 +431,8 @@ class Menubar(tk.Menu):
         canvas.delete_selected_objects()
 
     def click_show_hidden(self, _event: tk.Event = None) -> None:
-        canvas = self.manager.current()
-        canvas.show_hidden()
+        for canvas in self.manager.all():
+            canvas.show_hidden()
 
     def click_session_options(self) -> None:
         logging.debug("Click options")

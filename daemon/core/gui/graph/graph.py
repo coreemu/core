@@ -307,30 +307,19 @@ class CanvasGraph(tk.Canvas):
         self.core.deleted_canvas_nodes(nodes)
 
     def hide_selected_objects(self) -> None:
-        edges = set()
         for object_id in self.selection:
             #  delete selection box
             selection_id = self.selection[object_id]
             self.delete(selection_id)
-
             # hide node and related edges
             if object_id in self.nodes:
                 canvas_node = self.nodes[object_id]
                 canvas_node.hide()
-                # hide related edges
-                for edge in canvas_node.edges:
-                    if edge in edges:
-                        continue
-                    edges.add(edge)
 
     def show_hidden(self) -> None:
-        edges = set()
         for node in self.nodes.values():
-            node.show()
-            for edge in node.edges:
-                if edge in edges:
-                    continue
-                edges.add(edge)
+            if node.hidden:
+                node.show()
 
     def zoom(self, event: tk.Event, factor: float = None) -> None:
         if not factor:
