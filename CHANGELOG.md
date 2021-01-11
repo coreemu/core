@@ -1,3 +1,26 @@
+## 2021-01-11 CORE 7.4.0
+
+* Installation
+    * fixed issue for automated install assuming ID_LIKE is always present in /etc/os-release
+* gRPC API
+    * fixed issue stopping session and not properly going to data collect state
+    * fixed issue to have start session properly create a directory before configuration state
+* core-pygui
+    * fixed issue handling deletion of wired link to a switch
+    * avoid saving edge metadata to xml when values are default
+    * fixed issue editing node mac addresses
+    * added support for configuring interface names
+    * fixed issue with potential node names to allow hyphens and remove under bars
+    * \#531 - fixed issue changing distributed nodes back to local
+* core-daemon
+    * fixed issue to properly handle deleting links from a network to network node
+    * updated xml to support writing and reading link buffer configurations
+    * reverted change and removed mac learning from wlan, due to promiscuous like behavior
+    * fixed issue creating control interfaces when starting services
+    * fixed deadlock issue when clearing a session using sdt
+    * \#116 - fixed issue for wlans handling multiple mobility scripts at once
+    * \#539 - fixed issue in udp tlv api
+
 ## 2020-12-02 CORE 7.3.0
 
 * core-daemon
