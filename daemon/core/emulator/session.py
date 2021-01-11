@@ -13,7 +13,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -369,6 +369,19 @@ class Session:
                 node1.delete_iface(iface1_id)
             elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
                 node2.delete_iface(iface2_id)
+            elif isinstance(node1, CoreNetworkBase) and isinstance(
+                node2, CoreNetworkBase
+            ):
+                for iface in node1.get_ifaces(control=False):
+                    if iface.othernet == node2:
+                        node1.detach(iface)
+                        iface.shutdown()
+                        break
+                for iface in node2.get_ifaces(control=False):
+                    if iface.othernet == node1:
+                        node2.detach(iface)
+                        iface.shutdown()
+                        break
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
@@ -558,11 +571,11 @@ class Session:
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(_id, BasicRangeModel.name)
 
-        # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
-        is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
+        # boot nodes after runtime CoreNodes and PhysicalNodes
+        is_boot_node = isinstance(node, (CoreNode, PhysicalNode))
         if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
             self.write_nodes()
-            self.add_remove_control_iface(node=node, remove=False)
+            self.add_remove_control_iface(node, remove=False)
             self.services.boot_services(node)
 
         self.sdt.add_node(node)
@@ -757,10 +770,11 @@ class Session:
         """
         Shutdown all session nodes and remove the session directory.
         """
+        if self.state == EventTypes.SHUTDOWN_STATE:
+            logging.info("session(%s) state(%s) already shutdown", self.id, self.state)
+            return
         logging.info("session(%s) state(%s) shutting down", self.id, self.state)
-        if self.state != EventTypes.SHUTDOWN_STATE:
-            self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
-            self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
+        self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         # clear out current core session
         self.clear()
         # shutdown sdt
@@ -1115,13 +1129,16 @@ class Session:
         """
         Clear the nodes dictionary, and call shutdown for each node.
         """
+        nodes_ids = []
         with self.nodes_lock:
             funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
-                self.sdt.delete_node(node.id)
+                nodes_ids.append(node.id)
                 funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
+        for node_id in nodes_ids:
+            self.sdt.delete_node(node_id)
 
     def write_nodes(self) -> None:
         """
@@ -1245,6 +1262,14 @@ class Session:
 
         :return: nothing
         """
+        if self.state.already_collected():
+            logging.info(
+                "session(%s) state(%s) already data collected", self.id, self.state
+            )
+            return
+        logging.info("session(%s) state(%s) data collection", self.id, self.state)
+        self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
+
         # stop event loop
         self.event_loop.stop()
 
@@ -1266,10 +1291,8 @@ class Session:
         self.update_control_iface_hosts(remove=True)
 
         # remove all four possible control networks
-        self.add_remove_control_net(0, remove=True)
-        self.add_remove_control_net(1, remove=True)
-        self.add_remove_control_net(2, remove=True)
-        self.add_remove_control_net(3, remove=True)
+        for i in range(4):
+            self.add_remove_control_net(i, remove=True)
 
     def short_session_id(self) -> str:
         """
@@ -1290,7 +1313,6 @@ class Session:
         :return: nothing
         """
         logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
-        self.add_remove_control_iface(node=node, remove=False)
         self.services.boot_services(node)
         node.start_config_services()
 
@@ -1305,11 +1327,10 @@ class Session:
         with self.nodes_lock:
             funcs = []
             start = time.monotonic()
-            for _id in self.nodes:
-                node = self.nodes[_id]
-                if isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node):
-                    args = (node,)
-                    funcs.append((self.boot_node, args, {}))
+            for node in self.nodes.values():
+                if isinstance(node, (CoreNode, PhysicalNode)):
+                    self.add_remove_control_iface(node, remove=False)
+                    funcs.append((self.boot_node, (node,), {}))
             results, exceptions = utils.threadpool(funcs)
             total = time.monotonic() - start
             logging.debug("boot run time: %s", total)
@@ -1457,7 +1478,7 @@ class Session:
 
     def add_remove_control_iface(
         self,
-        node: CoreNode,
+        node: Union[CoreNode, PhysicalNode],
         net_index: int = 0,
         remove: bool = False,
         conf_required: bool = True,

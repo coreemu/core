@@ -74,10 +74,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "-a",
         "--address",
+        required=True,
         help="local address that distributed servers will use for gre tunneling",
     )
     parser.add_argument(
-        "-s", "--server", help="distributed server to use for creating nodes"
+        "-s",
+        "--server",
+        required=True,
+        help="distributed server to use for creating nodes",
     )
     args = parser.parse_args()
     main(args)

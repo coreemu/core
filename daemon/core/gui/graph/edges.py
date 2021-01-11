@@ -28,8 +28,8 @@ def create_wireless_token(src: int, dst: int, network: int) -> str:
 
 
 def create_edge_token(link: Link) -> str:
-    iface1_id = link.iface1.id if link.iface1 else None
-    iface2_id = link.iface2.id if link.iface2 else None
+    iface1_id = link.iface1.id if link.iface1 else 0
+    iface2_id = link.iface2.id if link.iface2 else 0
     return f"{link.node1_id}-{iface1_id}-{link.node2_id}-{iface2_id}"
 
 
@@ -296,6 +296,9 @@ class CanvasEdge(Edge):
         self.set_binding()
         self.context: tk.Menu = tk.Menu(self.canvas)
         self.create_context()
+
+    def is_customized(self) -> bool:
+        return self.width != EDGE_WIDTH or self.color != EDGE_COLOR
 
     def create_context(self) -> None:
         themes.style_menu(self.context)

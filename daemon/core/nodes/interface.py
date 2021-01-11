@@ -241,12 +241,16 @@ class CoreInterface:
         jitter = self.getparam("jitter")
         if jitter is not None:
             jitter = int(jitter)
+        buffer = self.getparam("buffer")
+        if buffer is not None:
+            buffer = int(buffer)
         return LinkOptions(
             delay=delay,
             bandwidth=bandwidth,
             dup=dup,
             jitter=jitter,
             loss=self.getparam("loss"),
+            buffer=buffer,
             unidirectional=unidirectional,
         )
 

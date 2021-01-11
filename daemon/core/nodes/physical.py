@@ -266,7 +266,9 @@ class Rj45Node(CoreNodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server)
-        self.iface = CoreInterface(session, self, name, name, mtu, server)
+        self.iface: CoreInterface = CoreInterface(
+            session, self, name, name, mtu, server
+        )
         self.iface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
         self.iface_id: Optional[int] = None
@@ -335,11 +337,12 @@ class Rj45Node(CoreNodeBase):
             if iface_id is None:
                 iface_id = 0
             if self.iface.net is not None:
-                raise CoreError("RJ45 nodes support at most 1 network interface")
+                raise CoreError(
+                    f"RJ45({self.name}) nodes support at most 1 network interface"
+                )
             self.ifaces[iface_id] = self.iface
             self.iface_id = iface_id
-            if net is not None:
-                self.iface.attachnet(net)
+            self.iface.attachnet(net)
             for ip in iface_data.get_ips():
                 self.add_ip(ip)
             return self.iface
@@ -353,6 +356,12 @@ class Rj45Node(CoreNodeBase):
         """
         self.get_iface(iface_id)
         self.ifaces.pop(iface_id)
+        if self.iface.net is None:
+            raise CoreError(
+                f"RJ45({self.name}) is not currently connected to a network"
+            )
+        self.iface.detachnet()
+        self.iface.net = None
         self.shutdown()
 
     def get_iface(self, iface_id: int) -> CoreInterface:

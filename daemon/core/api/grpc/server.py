@@ -221,9 +221,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
-        session.set_state(EventTypes.CONFIGURATION_STATE)
         if not os.path.exists(session.session_dir):
             os.mkdir(session.session_dir)
+        session.set_state(EventTypes.CONFIGURATION_STATE)
 
         # location
         if request.HasField("location"):
@@ -315,6 +315,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("stop session: %s", request)
         session = self.get_session(request.session_id, context)
+        session.data_collect()
         session.shutdown()
         return core_pb2.StopSessionResponse(result=True)
 

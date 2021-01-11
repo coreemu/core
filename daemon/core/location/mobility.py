@@ -31,6 +31,9 @@ from core.nodes.network import WlanNode
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
+LEARNING_DISABLED: int = 0
+LEARNING_ENABLED: int = 30000
+
 
 def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, EmaneNet]:
     try:
@@ -172,26 +175,6 @@ class MobilityManager(ModelManager):
         )
         self.session.broadcast_event(event_data)
 
-    def update_nets(
-        self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]
-    ) -> None:
-        """
-        A mobility script has caused nodes in the 'moved' list to move.
-        Update every mobility network. This saves range calculations if the model
-        were to recalculate for each individual node movement.
-
-        :param moved: moved nodes
-        :param moved_ifaces: moved network interfaces
-        :return: nothing
-        """
-        for node_id in self.nodes():
-            try:
-                node = get_mobility_node(self.session, node_id)
-                if node.model:
-                    node.model.update(moved, moved_ifaces)
-            except CoreError:
-                logging.exception("error updating mobility node")
-
 
 class WirelessModel(ConfigurableOptions):
     """
@@ -223,11 +206,10 @@ class WirelessModel(ConfigurableOptions):
         """
         return []
 
-    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
+    def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
         Update this wireless model.
 
-        :param moved: moved nodes
         :param moved_ifaces: moved network interfaces
         :return: nothing
         """
@@ -280,6 +262,12 @@ class BasicRangeModel(WirelessModel):
         Configuration(
             _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
+        Configuration(
+            _id="promiscuous",
+            _type=ConfigDataTypes.BOOL,
+            default="0",
+            label="promiscuous mode",
+        ),
     ]
 
     @classmethod
@@ -303,6 +291,7 @@ class BasicRangeModel(WirelessModel):
         self.delay: Optional[int] = None
         self.loss: Optional[float] = None
         self.jitter: Optional[int] = None
+        self.promiscuous: bool = False
 
     def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
         """
@@ -369,14 +358,13 @@ class BasicRangeModel(WirelessModel):
 
     position_callback = set_position
 
-    def update(self, moved: List[CoreNode], moved_ifaces: List[CoreInterface]) -> None:
+    def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
         Node positions have changed without recalc. Update positions from
         node.position, then re-calculate links for those that have moved.
         Assumes bidirectional links, with one calculation per node pair, where
         one of the nodes has moved.
 
-        :param moved: moved nodes
         :param moved_ifaces: moved network interfaces
         :return: nothing
         """
@@ -420,7 +408,6 @@ class BasicRangeModel(WirelessModel):
 
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
-
             if d > self.range:
                 if linked:
                     logging.debug("was linked, unlinking")
@@ -467,6 +454,12 @@ class BasicRangeModel(WirelessModel):
         self.delay = self._get_config(self.delay, config, "delay")
         self.loss = self._get_config(self.loss, config, "error")
         self.jitter = self._get_config(self.jitter, config, "jitter")
+        promiscuous = config["promiscuous"] == "1"
+        if self.promiscuous and not promiscuous:
+            self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_ENABLED)
+        elif not self.promiscuous and promiscuous:
+            self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_DISABLED)
+        self.promiscuous = promiscuous
         self.setlinkparams()
 
     def create_link_data(
@@ -638,17 +631,14 @@ class WayPointMobility(WirelessModel):
                     return
                 return self.run()
 
-        # only move interfaces attached to self.wlan, or all nodenum in script?
-        moved = []
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
             if self.movenode(node, dt):
-                moved.append(node)
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.session.mobility.update_nets(moved, moved_ifaces)
+        self.net.model.update(moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -659,7 +649,6 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        logging.info("running mobility scenario")
         self.timezero = time.monotonic()
         self.lasttime = self.timezero - (0.001 * self.refresh_ms)
         self.movenodesinitial()
@@ -719,7 +708,6 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        moved = []
         moved_ifaces = []
         for iface in self.net.get_ifaces():
             node = iface.node
@@ -727,9 +715,8 @@ class WayPointMobility(WirelessModel):
                 continue
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
-            moved.append(node)
             moved_ifaces.append(iface)
-        self.session.mobility.update_nets(moved, moved_ifaces)
+        self.net.model.update(moved_ifaces)
 
     def addwaypoint(
         self,
@@ -1114,7 +1101,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        logging.info("starting script")
+        logging.info("starting script: %s", self.file)
         laststate = self.state
         super().start()
         if laststate == self.STATE_PAUSED:
@@ -1135,6 +1122,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
+        logging.info("pausing script: %s", self.file)
         super().pause()
         self.statescript("pause")
 
@@ -1146,6 +1134,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             position
         :return: nothing
         """
+        logging.info("stopping script: %s", self.file)
         super().stop(move_initial=move_initial)
         self.statescript("stop")
 

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 import netaddr
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import Node
+from core.api.grpc.wrappers import Interface, Node
 from core.gui import nodeutils, validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
@@ -21,8 +21,11 @@ if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
 
+IFACE_NAME_LEN: int = 15
+DEFAULT_SERVER: str = "localhost"
 
-def check_ip6(parent, name: str, value: str) -> bool:
+
+def check_ip6(parent: tk.BaseWidget, name: str, value: str) -> bool:
     if not value:
         return True
     title = f"IP6 Error for {name}"
@@ -47,7 +50,7 @@ def check_ip6(parent, name: str, value: str) -> bool:
     return True
 
 
-def check_ip4(parent, name: str, value: str) -> bool:
+def check_ip4(parent: tk.BaseWidget, name: str, value: str) -> bool:
     if not value:
         return True
     title = f"IP4 Error for {name}"
@@ -84,15 +87,87 @@ def mac_auto(is_auto: tk.BooleanVar, entry: ttk.Entry, mac: tk.StringVar) -> Non
 class InterfaceData:
     def __init__(
         self,
+        name: tk.StringVar,
         is_auto: tk.BooleanVar,
         mac: tk.StringVar,
         ip4: tk.StringVar,
         ip6: tk.StringVar,
     ) -> None:
+        self.name: tk.StringVar = name
         self.is_auto: tk.BooleanVar = is_auto
         self.mac: tk.StringVar = mac
         self.ip4: tk.StringVar = ip4
         self.ip6: tk.StringVar = ip6
+
+    def validate(self, parent: tk.BaseWidget, iface: Interface) -> bool:
+        valid_name = self._validate_name(parent, iface)
+        valid_ip4 = self._validate_ip4(parent, iface)
+        valid_ip6 = self._validate_ip6(parent, iface)
+        valid_mac = self._validate_mac(parent, iface)
+        return all([valid_name, valid_ip4, valid_ip6, valid_mac])
+
+    def _validate_name(self, parent: tk.BaseWidget, iface: Interface) -> bool:
+        name = self.name.get()
+        title = f"Interface Name Error for {iface.name}"
+        if not name:
+            messagebox.showerror(title, "Name cannot be empty", parent=parent)
+            return False
+        if len(name) > IFACE_NAME_LEN:
+            messagebox.showerror(
+                title,
+                f"Name cannot be greater than {IFACE_NAME_LEN} chars",
+                parent=parent,
+            )
+            return False
+        for x in name:
+            if x.isspace() or x == "/":
+                messagebox.showerror(
+                    title, "Name cannot contain space or /", parent=parent
+                )
+                return False
+        iface.name = name
+        return True
+
+    def _validate_ip4(self, parent: tk.BaseWidget, iface: Interface) -> bool:
+        ip4_net = self.ip4.get()
+        if not check_ip4(parent, iface.name, ip4_net):
+            return False
+        if ip4_net:
+            ip4, ip4_mask = ip4_net.split("/")
+            ip4_mask = int(ip4_mask)
+        else:
+            ip4, ip4_mask = "", 0
+        iface.ip4 = ip4
+        iface.ip4_mask = ip4_mask
+        return True
+
+    def _validate_ip6(self, parent: tk.BaseWidget, iface: Interface) -> bool:
+        ip6_net = self.ip6.get()
+        if not check_ip6(parent, iface.name, ip6_net):
+            return False
+        if ip6_net:
+            ip6, ip6_mask = ip6_net.split("/")
+            ip6_mask = int(ip6_mask)
+        else:
+            ip6, ip6_mask = "", 0
+        iface.ip6 = ip6
+        iface.ip6_mask = ip6_mask
+        return True
+
+    def _validate_mac(self, parent: tk.BaseWidget, iface: Interface) -> bool:
+        mac = self.mac.get()
+        auto_mac = self.is_auto.get()
+        if auto_mac:
+            iface.mac = None
+        else:
+            if not netaddr.valid_mac(mac):
+                title = f"MAC Error for {iface.name}"
+                messagebox.showerror(title, "Invalid MAC Address", parent=parent)
+                return False
+            else:
+                mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
+                iface.mac = str(mac)
+        return True
 
 
 class NodeConfigDialog(Dialog):
@@ -109,7 +184,7 @@ class NodeConfigDialog(Dialog):
         self.name: tk.StringVar = tk.StringVar(value=self.node.name)
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
-        server = "localhost"
+        server = DEFAULT_SERVER
         if self.node.server:
             server = self.node.server
         self.server: tk.StringVar = tk.StringVar(value=server)
@@ -176,7 +251,7 @@ class NodeConfigDialog(Dialog):
             frame.columnconfigure(1, weight=1)
             label = ttk.Label(frame, text="Server")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            servers = ["localhost"]
+            servers = [DEFAULT_SERVER]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
                 frame, textvariable=self.server, values=servers, state=combo_state
@@ -229,6 +304,14 @@ class NodeConfigDialog(Dialog):
                 button.grid(row=row, sticky=tk.EW, columnspan=3, pady=PADY)
                 row += 1
 
+            label = ttk.Label(tab, text="Name")
+            label.grid(row=row, column=0, padx=PADX, pady=PADY)
+            name = tk.StringVar(value=iface.name)
+            entry = ttk.Entry(tab, textvariable=name, state=state)
+            entry.var = name
+            entry.grid(row=row, column=1, columnspan=2, sticky=tk.EW)
+            row += 1
+
             label = ttk.Label(tab, text="MAC")
             label.grid(row=row, column=0, padx=PADX, pady=PADY)
             auto_set = not iface.mac
@@ -267,7 +350,7 @@ class NodeConfigDialog(Dialog):
             entry = ttk.Entry(tab, textvariable=ip6, state=state)
             entry.grid(row=row, column=1, columnspan=2, sticky=tk.EW)
 
-            self.ifaces[iface.id] = InterfaceData(is_auto, mac, ip4, ip6)
+            self.ifaces[iface.id] = InterfaceData(name, is_auto, mac, ip4, ip6)
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
@@ -300,8 +383,11 @@ class NodeConfigDialog(Dialog):
         if NodeUtils.is_image_node(self.node.type):
             self.node.image = self.container_image.get()
         server = self.server.get()
-        if NodeUtils.is_container_node(self.node.type) and server != "localhost":
-            self.node.server = server
+        if NodeUtils.is_container_node(self.node.type):
+            if server == DEFAULT_SERVER:
+                self.node.server = None
+            else:
+                self.node.server = server
 
         # set custom icon
         if self.image_file:
@@ -313,43 +399,9 @@ class NodeConfigDialog(Dialog):
         # update node interface data
         for iface in self.canvas_node.ifaces.values():
             data = self.ifaces[iface.id]
-
-            # validate ip4
-            ip4_net = data.ip4.get()
-            if not check_ip4(self, iface.name, ip4_net):
-                error = True
+            error = not data.validate(self, iface)
+            if error:
                 break
-            if ip4_net:
-                ip4, ip4_mask = ip4_net.split("/")
-                ip4_mask = int(ip4_mask)
-            else:
-                ip4, ip4_mask = "", 0
-            iface.ip4 = ip4
-            iface.ip4_mask = ip4_mask
-
-            # validate ip6
-            ip6_net = data.ip6.get()
-            if not check_ip6(self, iface.name, ip6_net):
-                error = True
-                break
-            if ip6_net:
-                ip6, ip6_mask = ip6_net.split("/")
-                ip6_mask = int(ip6_mask)
-            else:
-                ip6, ip6_mask = "", 0
-            iface.ip6 = ip6
-            iface.ip6_mask = ip6_mask
-
-            mac = data.mac.get()
-            auto_mac = data.is_auto.get()
-            if not auto_mac and not netaddr.valid_mac(mac):
-                title = f"MAC Error for {iface.name}"
-                messagebox.showerror(title, "Invalid MAC Address")
-                error = True
-                break
-            elif not auto_mac:
-                mac = netaddr.EUI(mac, dialect=netaddr.mac_unix_expanded)
-                iface.mac = str(mac)
 
         # redraw
         if not error:

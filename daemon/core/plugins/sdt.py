@@ -4,7 +4,6 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-import threading
 from typing import IO, TYPE_CHECKING, Dict, Optional, Set, Tuple
 from urllib.parse import urlparse
 
@@ -65,7 +64,6 @@ class Sdt:
         :param session: session this manager is tied to
         """
         self.session: "Session" = session
-        self.lock: threading.Lock = threading.Lock()
         self.sock: Optional[IO] = None
         self.connected: bool = False
         self.url: str = self.DEFAULT_SDT_URL

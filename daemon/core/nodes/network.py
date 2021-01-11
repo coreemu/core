@@ -32,7 +32,8 @@ if TYPE_CHECKING:
 
     WirelessModelType = Type[WirelessModel]
 
-ebtables_lock = threading.Lock()
+LEARNING_DISABLED: int = 0
+ebtables_lock: threading.Lock = threading.Lock()
 
 
 class EbtablesQueue:
@@ -946,7 +947,7 @@ class HubNode(CoreNetwork):
         :return: nothing
         """
         super().startup()
-        self.net_client.disable_mac_learning(self.brname)
+        self.net_client.set_mac_learning(self.brname, LEARNING_DISABLED)
 
 
 class WlanNode(CoreNetwork):
@@ -989,7 +990,6 @@ class WlanNode(CoreNetwork):
         :return: nothing
         """
         super().startup()
-        self.net_client.disable_mac_learning(self.brname)
         ebq.ebchange(self)
 
     def attach(self, iface: CoreInterface) -> None:

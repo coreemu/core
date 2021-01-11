@@ -106,6 +106,9 @@ class EventTypes(Enum):
     def should_start(self) -> bool:
         return self.value > self.DEFINITION_STATE.value
 
+    def already_collected(self) -> bool:
+        return self.value >= self.DATACOLLECT_STATE.value
+
 
 class ExceptionLevels(Enum):
     """

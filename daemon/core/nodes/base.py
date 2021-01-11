@@ -837,7 +837,12 @@ class CoreNode(CoreNodeBase):
             if net.has_custom_iface:
                 return net.custom_iface(self, iface_data)
             else:
-                iface_id = self.newveth(iface_data.id, iface_data.name)
+                iface_id = iface_data.id
+                if iface_id is not None and iface_id in self.ifaces:
+                    raise CoreError(
+                        f"node({self.name}) already has interface({iface_id})"
+                    )
+                iface_id = self.newveth(iface_id, iface_data.name)
                 self.attachnet(iface_id, net)
                 if iface_data.mac:
                     self.set_mac(iface_id, iface_data.mac)

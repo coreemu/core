@@ -286,14 +286,15 @@ class LinuxNetClient:
                 return True
         return False
 
-    def disable_mac_learning(self, name: str) -> None:
+    def set_mac_learning(self, name: str, value: int) -> None:
         """
-        Disable mac learning for a Linux bridge.
+        Set mac learning for a Linux bridge.
 
         :param name: bridge name
+        :param value: ageing time value
         :return: nothing
         """
-        self.run(f"{IP} link set {name} type bridge ageing_time 0")
+        self.run(f"{IP} link set {name} type bridge ageing_time {value}")
 
 
 class OvsNetClient(LinuxNetClient):
