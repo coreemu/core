@@ -451,7 +451,7 @@ class CoreClient:
             self.client.add_session_server(self.session.id, server.name, server.address)
 
     def start_session(self) -> Tuple[bool, List[str]]:
-        self.ifaces_manager.reset_mac()
+        self.ifaces_manager.set_macs([x.link for x in self.links.values()])
         nodes = [x.to_proto() for x in self.session.nodes.values()]
         links = []
         asymmetric_links = []

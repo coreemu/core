@@ -56,16 +56,17 @@ class InterfaceManager:
         self.current_mac: Optional[EUI] = None
         self.current_subnets: Optional[Subnets] = None
         self.used_subnets: Dict[Tuple[IPNetwork, IPNetwork], Subnets] = {}
+        self.used_macs: Set[str] = set()
 
     def update_ips(self, ip4: str, ip6: str) -> None:
         self.reset()
         self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
         self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
 
-    def reset_mac(self) -> None:
-        self.current_mac = self.mac
-
     def next_mac(self) -> str:
+        while str(self.current_mac) in self.used_macs:
+            value = self.current_mac.value + 1
+            self.current_mac = EUI(value, dialect=netaddr.mac_unix_expanded)
         mac = str(self.current_mac)
         value = self.current_mac.value + 1
         self.current_mac = EUI(value, dialect=netaddr.mac_unix_expanded)
@@ -113,6 +114,15 @@ class InterfaceManager:
                 if index is not None:
                     subnets.used_indexes.discard(index)
         self.current_subnets = None
+
+    def set_macs(self, links: List[Link]) -> None:
+        self.current_mac = self.mac
+        self.used_macs.clear()
+        for link in links:
+            if link.iface1:
+                self.used_macs.add(link.iface1.mac)
+            if link.iface2:
+                self.used_macs.add(link.iface2.mac)
 
     def joined(self, links: List[Link]) -> None:
         ifaces = []
