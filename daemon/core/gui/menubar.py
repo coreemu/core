@@ -22,7 +22,7 @@ from core.gui.dialogs.servers import ServersDialog
 from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
-from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.manager import CanvasManager
 from core.gui.nodeutils import ICON_SIZE
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
@@ -45,9 +45,10 @@ class Menubar(tk.Menu):
         super().__init__(app)
         self.app: "Application" = app
         self.core: CoreClient = app.core
-        self.canvas: CanvasGraph = app.canvas
+        self.manager: CanvasManager = app.manager
         self.recent_menu: Optional[tk.Menu] = None
         self.edit_menu: Optional[tk.Menu] = None
+        self.canvas_menu: Optional[tk.Menu] = None
         self.observers_menu: Optional[ObserversMenu] = None
         self.draw()
 
@@ -106,6 +107,7 @@ class Menubar(tk.Menu):
         menu = tk.Menu(self)
         menu.add_command(label="Preferences", command=self.click_preferences)
         menu.add_command(label="Custom Nodes", command=self.click_custom_nodes)
+        menu.add_command(label="Show Hidden Nodes", command=self.click_show_hidden)
         menu.add_separator()
         menu.add_command(label="Undo", accelerator="Ctrl+Z", state=tk.DISABLED)
         menu.add_command(label="Redo", accelerator="Ctrl+Y", state=tk.DISABLED)
@@ -116,11 +118,13 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Delete", accelerator="Ctrl+D", command=self.click_delete
         )
+        menu.add_command(label="Hide", accelerator="Ctrl+H", command=self.click_hide)
         self.add_cascade(label="Edit", menu=menu)
         self.app.master.bind_all("<Control-x>", self.click_cut)
         self.app.master.bind_all("<Control-c>", self.click_copy)
         self.app.master.bind_all("<Control-v>", self.click_paste)
         self.app.master.bind_all("<Control-d>", self.click_delete)
+        self.app.master.bind_all("<Control-h>", self.click_hide)
         self.edit_menu = menu
 
     def draw_canvas_menu(self) -> None:
@@ -128,9 +132,13 @@ class Menubar(tk.Menu):
         Create canvas menu
         """
         menu = tk.Menu(self)
+        menu.add_command(label="New", command=self.click_canvas_add)
         menu.add_command(label="Size / Scale", command=self.click_canvas_size_and_scale)
+        menu.add_separator()
+        menu.add_command(label="Delete", command=self.click_canvas_delete)
         menu.add_command(label="Wallpaper", command=self.click_canvas_wallpaper)
         self.add_cascade(label="Canvas", menu=menu)
+        self.canvas_menu = menu
 
     def draw_view_menu(self) -> None:
         """
@@ -145,52 +153,52 @@ class Menubar(tk.Menu):
         menu.add_checkbutton(
             label="Interface Names",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_iface_names,
+            variable=self.manager.show_iface_names,
         )
         menu.add_checkbutton(
             label="IPv4 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_ip4s,
+            variable=self.manager.show_ip4s,
         )
         menu.add_checkbutton(
             label="IPv6 Addresses",
             command=self.click_edge_label_change,
-            variable=self.canvas.show_ip6s,
+            variable=self.manager.show_ip6s,
         )
         menu.add_checkbutton(
             label="Node Labels",
-            command=self.canvas.show_node_labels.click_handler,
-            variable=self.canvas.show_node_labels,
+            command=self.manager.show_node_labels.click_handler,
+            variable=self.manager.show_node_labels,
         )
         menu.add_checkbutton(
             label="Link Labels",
-            command=self.canvas.show_link_labels.click_handler,
-            variable=self.canvas.show_link_labels,
+            command=self.manager.show_link_labels.click_handler,
+            variable=self.manager.show_link_labels,
         )
         menu.add_checkbutton(
             label="Links",
-            command=self.canvas.show_links.click_handler,
-            variable=self.canvas.show_links,
+            command=self.manager.show_links.click_handler,
+            variable=self.manager.show_links,
         )
         menu.add_checkbutton(
             label="Loss Links",
-            command=self.canvas.show_loss_links.click_handler,
-            variable=self.canvas.show_loss_links,
+            command=self.manager.show_loss_links.click_handler,
+            variable=self.manager.show_loss_links,
         )
         menu.add_checkbutton(
             label="Wireless Links",
-            command=self.canvas.show_wireless.click_handler,
-            variable=self.canvas.show_wireless,
+            command=self.manager.show_wireless.click_handler,
+            variable=self.manager.show_wireless,
         )
         menu.add_checkbutton(
             label="Annotations",
-            command=self.canvas.show_annotations.click_handler,
-            variable=self.canvas.show_annotations,
+            command=self.manager.show_annotations.click_handler,
+            variable=self.manager.show_annotations,
         )
         menu.add_checkbutton(
             label="Canvas Grid",
-            command=self.canvas.show_grid.click_handler,
-            variable=self.canvas.show_grid,
+            command=self.manager.show_grid.click_handler,
+            variable=self.manager.show_grid,
         )
         self.add_cascade(label="View", menu=menu)
 
@@ -334,17 +342,12 @@ class Menubar(tk.Menu):
         self.app.save_config()
         self.app.menubar.update_recent_files()
 
-    def change_menubar_item_state(self, is_runtime: bool) -> None:
-        labels = {"Copy", "Paste", "Delete", "Cut"}
-        for i in range(self.edit_menu.index(tk.END) + 1):
-            try:
-                label = self.edit_menu.entrycget(i, "label")
-                if label not in labels:
-                    continue
-                state = tk.DISABLED if is_runtime else tk.NORMAL
-                self.edit_menu.entryconfig(i, state=state)
-            except tk.TclError:
-                pass
+    def set_state(self, is_runtime: bool) -> None:
+        state = tk.DISABLED if is_runtime else tk.NORMAL
+        for entry in {"Copy", "Paste", "Delete", "Cut"}:
+            self.edit_menu.entryconfigure(entry, state=state)
+        for entry in {"Delete"}:
+            self.canvas_menu.entryconfigure(entry, state=state)
 
     def prompt_save_running_session(self, quit_app: bool = False) -> None:
         """
@@ -371,6 +374,12 @@ class Menubar(tk.Menu):
     def click_preferences(self) -> None:
         dialog = PreferencesDialog(self.app)
         dialog.show()
+
+    def click_canvas_add(self) -> None:
+        self.manager.add_canvas()
+
+    def click_canvas_delete(self) -> None:
+        self.manager.delete_canvas()
 
     def click_canvas_size_and_scale(self) -> None:
         dialog = SizeAndScaleDialog(self.app)
@@ -401,17 +410,29 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_copy(self, _event: tk.Event = None) -> None:
-        self.canvas.copy()
+        canvas = self.manager.current()
+        canvas.copy()
 
     def click_paste(self, _event: tk.Event = None) -> None:
-        self.canvas.paste()
+        canvas = self.manager.current()
+        canvas.paste()
 
     def click_delete(self, _event: tk.Event = None) -> None:
-        self.canvas.delete_selected_objects()
+        canvas = self.manager.current()
+        canvas.delete_selected_objects()
+
+    def click_hide(self, _event: tk.Event = None) -> None:
+        canvas = self.manager.current()
+        canvas.hide_selected_objects()
 
     def click_cut(self, _event: tk.Event = None) -> None:
-        self.canvas.copy()
-        self.canvas.delete_selected_objects()
+        canvas = self.manager.current()
+        canvas.copy()
+        canvas.delete_selected_objects()
+
+    def click_show_hidden(self, _event: tk.Event = None) -> None:
+        for canvas in self.manager.all():
+            canvas.show_hidden()
 
     def click_session_options(self) -> None:
         logging.debug("Click options")
@@ -439,14 +460,15 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_autogrid(self) -> None:
-        width, height = self.canvas.current_dimensions
+        width, height = self.manager.current_dimensions
         padding = (ICON_SIZE / 2) + 10
         layout_size = padding + ICON_SIZE
         col_count = width // layout_size
         logging.info(
             "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
         )
-        for i, node in enumerate(self.canvas.nodes.values()):
+        canvas = self.manager.current()
+        for i, node in enumerate(canvas.nodes.values()):
             col = i % col_count
             row = i // col_count
             x = (col * layout_size) + padding
@@ -460,7 +482,7 @@ class Menubar(tk.Menu):
             self.app.hide_info()
 
     def click_edge_label_change(self) -> None:
-        for edge in self.canvas.edges.values():
+        for edge in self.manager.edges.values():
             edge.draw_labels()
 
     def click_mac_config(self) -> None:

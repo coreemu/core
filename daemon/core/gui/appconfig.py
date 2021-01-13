@@ -185,7 +185,8 @@ class GuiConfig(yaml.YAMLObject):
 def copy_files(current_path: Path, new_path: Path) -> None:
     for current_file in current_path.glob("*"):
         new_file = new_path.joinpath(current_file.name)
-        shutil.copy(current_file, new_file)
+        if not new_file.exists():
+            shutil.copy(current_file, new_file)
 
 
 def find_terminal() -> Optional[str]:
@@ -197,16 +198,14 @@ def find_terminal() -> Optional[str]:
 
 
 def check_directory() -> None:
-    if HOME_PATH.exists():
-        return
-    HOME_PATH.mkdir()
-    BACKGROUNDS_PATH.mkdir()
-    CUSTOM_EMANE_PATH.mkdir()
-    CUSTOM_SERVICE_PATH.mkdir()
-    ICONS_PATH.mkdir()
-    MOBILITY_PATH.mkdir()
-    XMLS_PATH.mkdir()
-    SCRIPT_PATH.mkdir()
+    HOME_PATH.mkdir(exist_ok=True)
+    BACKGROUNDS_PATH.mkdir(exist_ok=True)
+    CUSTOM_EMANE_PATH.mkdir(exist_ok=True)
+    CUSTOM_SERVICE_PATH.mkdir(exist_ok=True)
+    ICONS_PATH.mkdir(exist_ok=True)
+    MOBILITY_PATH.mkdir(exist_ok=True)
+    XMLS_PATH.mkdir(exist_ok=True)
+    SCRIPT_PATH.mkdir(exist_ok=True)
 
     copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
     copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)

@@ -67,6 +67,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
         image=node_proto.image,
         services=node_proto.services,
         config_services=node_proto.config_services,
+        canvas=node_proto.canvas,
     )
     if node_proto.emane:
         options.emane = node_proto.emane
@@ -290,6 +291,7 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
         config_services=config_services,
         dir=node_dir,
         channel=channel,
+        canvas=node.canvas,
     )
 
 

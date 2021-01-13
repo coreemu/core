@@ -23,7 +23,7 @@ class CanvasWallpaperDialog(Dialog):
         create an instance of CanvasWallpaper object
         """
         super().__init__(app, "Canvas Background")
-        self.canvas: CanvasGraph = self.app.canvas
+        self.canvas: CanvasGraph = self.app.manager.current()
         self.scale_option: tk.IntVar = tk.IntVar(value=self.canvas.scale_option.get())
         self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(
             value=self.canvas.adjust_to_dim.get()
@@ -161,7 +161,6 @@ class CanvasWallpaperDialog(Dialog):
     def click_apply(self) -> None:
         self.canvas.scale_option.set(self.scale_option.get())
         self.canvas.adjust_to_dim.set(self.adjust_to_dim.get())
-        self.canvas.show_grid.click_handler()
         filename = self.filename.get()
         if not filename:
             filename = None

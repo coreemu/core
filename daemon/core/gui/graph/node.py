@@ -2,7 +2,7 @@ import functools
 import logging
 import tkinter as tk
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Set
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -31,10 +31,16 @@ NODE_TEXT_OFFSET: int = 5
 
 class CanvasNode:
     def __init__(
-        self, app: "Application", x: float, y: float, core_node: Node, image: PhotoImage
+        self,
+        app: "Application",
+        canvas: "CanvasGraph",
+        x: float,
+        y: float,
+        core_node: Node,
+        image: PhotoImage,
     ):
         self.app: "Application" = app
-        self.canvas: "CanvasGraph" = app.canvas
+        self.canvas: "CanvasGraph" = canvas
         self.image: PhotoImage = image
         self.core_node: Node = core_node
         self.id: int = self.canvas.create_image(
@@ -49,7 +55,7 @@ class CanvasNode:
             tags=tags.NODE_LABEL,
             font=self.app.icon_text_font,
             fill="#0000CD",
-            state=self.canvas.show_node_labels.state(),
+            state=self.app.manager.show_node_labels.state(),
         )
         self.tooltip: CanvasTooltip = CanvasTooltip(self.canvas)
         self.edges: Set[CanvasEdge] = set()
@@ -57,9 +63,13 @@ class CanvasNode:
         self.wireless_edges: Set[CanvasWirelessEdge] = set()
         self.antennas: List[int] = []
         self.antenna_images: Dict[int, PhotoImage] = {}
+        self.hidden: bool = False
         self.setup_bindings()
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
+
+    def position(self) -> Tuple[int, int]:
+        return self.canvas.coords(self.id)
 
     def next_iface_id(self) -> int:
         i = 0
@@ -81,7 +91,7 @@ class CanvasNode:
         self.delete_antennas()
 
     def add_antenna(self) -> None:
-        x, y = self.canvas.coords(self.id)
+        x, y = self.position()
         offset = len(self.antennas) * 8 * self.app.app_scale
         img = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
         antenna_id = self.canvas.create_image(
@@ -139,15 +149,14 @@ class CanvasNode:
 
     def move(self, x: float, y: float) -> None:
         x, y = self.canvas.get_scaled_coords(x, y)
-        current_x, current_y = self.canvas.coords(self.id)
+        current_x, current_y = self.position()
         x_offset = x - current_x
         y_offset = y - current_y
         self.motion(x_offset, y_offset, update=False)
 
     def motion(self, x_offset: float, y_offset: float, update: bool = True) -> None:
-        original_position = self.canvas.coords(self.id)
+        original_position = self.position()
         self.canvas.move(self.id, x_offset, y_offset)
-        pos = self.canvas.coords(self.id)
 
         # check new position
         bbox = self.canvas.bbox(self.id)
@@ -165,11 +174,12 @@ class CanvasNode:
 
         # move edges
         for edge in self.edges:
-            edge.move_node(self.id, pos)
+            edge.move_node(self)
         for edge in self.wireless_edges:
-            edge.move_node(self.id, pos)
+            edge.move_node(self)
 
         # set actual coords for node and update core is running
+        pos = self.position()
         real_x, real_y = self.canvas.get_actual_coords(*pos)
         self.core_node.position.x = real_x
         self.core_node.position.y = real_y
@@ -245,27 +255,44 @@ class CanvasNode:
                 self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
+
+            link_menu = tk.Menu(self.context)
+            for canvas in self.app.manager.all():
+                canvas_menu = tk.Menu(link_menu)
+                themes.style_menu(canvas_menu)
+                for node in canvas.nodes.values():
+                    if not self.is_linkable(node):
+                        continue
+                    func_link = functools.partial(self.click_link, node)
+                    canvas_menu.add_command(
+                        label=node.core_node.name, command=func_link
+                    )
+                link_menu.add_cascade(label=f"Canvas {canvas.id}", menu=canvas_menu)
+            themes.style_menu(link_menu)
+            self.context.add_cascade(label="Link", menu=link_menu)
+
             unlink_menu = tk.Menu(self.context)
             for edge in self.edges:
                 link = edge.link
-                if self.id == edge.src:
-                    other_id = edge.dst
+                if self.id == edge.src.id:
+                    other_node = edge.dst
                     other_iface = link.iface2.name if link.iface2 else None
                 else:
-                    other_id = edge.src
+                    other_node = edge.src
                     other_iface = link.iface1.name if link.iface1 else None
-                other_node = self.canvas.nodes[other_id]
                 other_name = other_node.core_node.name
                 label = f"{other_name}:{other_iface}" if other_iface else other_name
                 func_unlink = functools.partial(self.click_unlink, edge)
                 unlink_menu.add_command(label=label, command=func_unlink)
             themes.style_menu(unlink_menu)
             self.context.add_cascade(label="Unlink", menu=unlink_menu)
+
             edit_menu = tk.Menu(self.context)
             themes.style_menu(edit_menu)
             edit_menu.add_command(label="Cut", command=self.click_cut)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
+            edit_menu.add_command(label="Hide", command=self.hide)
             self.context.add_cascade(label="Edit", menu=edit_menu)
         self.context.tk_popup(event.x_root, event.y_root)
 
@@ -274,8 +301,12 @@ class CanvasNode:
         self.canvas_delete()
 
     def click_unlink(self, edge: CanvasEdge) -> None:
-        self.canvas.delete_edge(edge)
+        edge.delete()
         self.app.default_info()
+
+    def click_link(self, node: "CanvasNode") -> None:
+        edge = CanvasEdge(self.app, self, node)
+        self.app.manager.complete_edge(edge, node)
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
@@ -320,15 +351,14 @@ class CanvasNode:
     def has_emane_link(self, iface_id: int) -> Node:
         result = None
         for edge in self.edges:
-            if self.id == edge.src:
-                other_id = edge.dst
+            if self.id == edge.src.id:
+                other_node = edge.dst
                 edge_iface_id = edge.link.iface1.id
             else:
-                other_id = edge.src
+                other_node = edge.src
                 edge_iface_id = edge.link.iface2.id
             if edge_iface_id != iface_id:
                 continue
-            other_node = self.canvas.nodes[other_id]
             if other_node.core_node.type == NodeType.EMANE:
                 result = other_node.core_node
                 break
@@ -360,3 +390,43 @@ class CanvasNode:
         self.core_node.icon = icon_path
         self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
         self.canvas.itemconfig(self.id, image=self.image)
+
+    def is_linkable(self, node: "CanvasNode") -> bool:
+        # cannot link to self
+        if self == node:
+            return False
+        # rj45 nodes can only support one link
+        if NodeUtils.is_rj45_node(self.core_node.type) and self.edges:
+            return False
+        if NodeUtils.is_rj45_node(node.core_node.type) and node.edges:
+            return False
+        # only 1 link between bridge based nodes
+        is_src_bridge = NodeUtils.is_bridge_node(self.core_node)
+        is_dst_bridge = NodeUtils.is_bridge_node(node.core_node)
+        common_links = self.edges & node.edges
+        if all([is_src_bridge, is_dst_bridge, common_links]):
+            return False
+        # valid link
+        return True
+
+    def is_wireless(self) -> bool:
+        return NodeUtils.is_wireless_node(self.core_node.type)
+
+    def hide(self) -> None:
+        self.hidden = True
+        self.canvas.itemconfig(self.id, state=tk.HIDDEN)
+        self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
+        for edge in self.edges:
+            if not edge.hidden:
+                edge.hide()
+
+    def show(self) -> None:
+        self.hidden = False
+        self.canvas.itemconfig(self.id, state=tk.NORMAL)
+        self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
+        for edge in self.edges:
+            other_node = edge.src
+            if edge.src == self:
+                other_node = edge.dst
+            if edge.hidden and not other_node.hidden:
+                edge.show()

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
-from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.manager import CanvasManager
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
@@ -22,9 +22,9 @@ class SizeAndScaleDialog(Dialog):
         create an instance for size and scale object
         """
         super().__init__(app, "Canvas Size and Scale")
-        self.canvas: CanvasGraph = self.app.canvas
+        self.manager: CanvasManager = self.app.manager
         self.section_font: font.Font = font.Font(weight=font.BOLD)
-        width, height = self.canvas.current_dimensions
+        width, height = self.manager.current_dimensions
         self.pixel_width: tk.IntVar = tk.IntVar(value=width)
         self.pixel_height: tk.IntVar = tk.IntVar(value=height)
         location = self.app.core.session.location
@@ -189,9 +189,7 @@ class SizeAndScaleDialog(Dialog):
 
     def click_apply(self) -> None:
         width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.canvas.redraw_canvas((width, height))
-        if self.canvas.wallpaper:
-            self.canvas.redraw_wallpaper()
+        self.manager.redraw_canvases((width, height))
         location = self.app.core.session.location
         location.x = self.x.get()
         location.y = self.y.get()

@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -40,16 +39,14 @@ from core.api.grpc.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
-from core.gui import appconfig
-from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
+from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
-from core.gui.graph.shape import AnnotationData, Shape
-from core.gui.graph.shapeutils import ShapeType
+from core.gui.graph.shape import Shape
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw, NodeUtils
 
@@ -207,27 +204,26 @@ class CoreClient:
         canvas_node2 = self.canvas_nodes[node2_id]
         if event.link.type == LinkType.WIRELESS:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wireless_edge(
+                self.app.manager.add_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wireless_edge(
+                self.app.manager.delete_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wireless_edge(
+                self.app.manager.update_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             else:
                 logging.warning("unknown link event: %s", event)
         else:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
-                self.app.canvas.organize()
+                self.app.manager.add_wired_edge(canvas_node1, canvas_node2, event.link)
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wired_edge(event.link)
+                self.app.manager.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wired_edge(event.link)
+                self.app.manager.update_wired_edge(event.link)
             else:
                 logging.warning("unknown link event: %s", event)
 
@@ -243,13 +239,13 @@ class CoreClient:
                 canvas_node.update_icon(node.icon)
         elif event.message_type == MessageType.DELETE:
             canvas_node = self.canvas_nodes[node.id]
-            self.app.canvas.clear_selection()
-            self.app.canvas.select_object(canvas_node.id)
-            self.app.canvas.delete_selected_objects()
+            canvas_node.canvas.clear_selection()
+            canvas_node.canvas.select_object(canvas_node.id)
+            canvas_node.canvas.delete_selected_objects()
         elif event.message_type == MessageType.ADD:
             if node.id in self.session.nodes:
                 logging.error("core node already exists: %s", node)
-            self.app.canvas.add_core_node(node)
+            self.app.manager.add_core_node(node)
         else:
             logging.warning("unknown node event: %s", event)
 
@@ -262,7 +258,7 @@ class CoreClient:
         if self.handling_throughputs:
             self.handling_throughputs.cancel()
             self.handling_throughputs = None
-            self.app.canvas.clear_throughputs()
+            self.app.manager.clear_throughputs()
 
     def cancel_events(self) -> None:
         if self.handling_events:
@@ -293,7 +289,7 @@ class CoreClient:
             )
             return
         logging.debug("handling throughputs event: %s", event)
-        self.app.after(0, self.app.canvas.set_throughputs, event)
+        self.app.after(0, self.app.manager.set_throughputs, event)
 
     def handle_cpu_event(self, event: core_pb2.CpuUsageEvent) -> None:
         self.app.after(0, self.app.statusbar.set_cpu, event.usage)
@@ -315,9 +311,7 @@ class CoreClient:
                 self.session.id, self.handle_events
             )
             self.ifaces_manager.joined(self.session.links)
-            self.app.canvas.reset_and_redraw(self.session)
-            self.parse_metadata()
-            self.app.canvas.organize()
+            self.app.manager.join(self.session)
             if self.is_runtime():
                 self.show_mobility_players()
             self.app.after(0, self.app.joined_session_update)
@@ -334,23 +328,7 @@ class CoreClient:
         logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-            gridlines = canvas_config.get("gridlines", True)
-            self.app.canvas.show_grid.set(gridlines)
-            fit_image = canvas_config.get("fit_image", False)
-            self.app.canvas.adjust_to_dim.set(fit_image)
-            wallpaper_style = canvas_config.get("wallpaper-style", 1)
-            self.app.canvas.scale_option.set(wallpaper_style)
-            width = self.app.guiconfig.preferences.width
-            height = self.app.guiconfig.preferences.height
-            dimensions = canvas_config.get("dimensions", [width, height])
-            self.app.canvas.redraw_canvas(dimensions)
-            wallpaper = canvas_config.get("wallpaper")
-            if wallpaper:
-                wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            self.app.canvas.set_wallpaper(wallpaper)
-        else:
-            self.app.canvas.redraw_canvas()
-            self.app.canvas.set_wallpaper(None)
+            self.app.manager.parse_metadata(canvas_config)
 
         # load saved shapes
         shapes_config = config.get("shapes")
@@ -358,28 +336,7 @@ class CoreClient:
             shapes_config = json.loads(shapes_config)
             for shape_config in shapes_config:
                 logging.debug("loading shape: %s", shape_config)
-                shape_type = shape_config["type"]
-                try:
-                    shape_type = ShapeType(shape_type)
-                    coords = shape_config["iconcoords"]
-                    data = AnnotationData(
-                        shape_config["label"],
-                        shape_config["fontfamily"],
-                        shape_config["fontsize"],
-                        shape_config["labelcolor"],
-                        shape_config["color"],
-                        shape_config["border"],
-                        shape_config["width"],
-                        shape_config["bold"],
-                        shape_config["italic"],
-                        shape_config["underline"],
-                    )
-                    shape = Shape(
-                        self.app, self.app.canvas, shape_type, *coords, data=data
-                    )
-                    self.app.canvas.shapes[shape.id] = shape
-                except ValueError:
-                    logging.exception("unknown shape: %s", shape_type)
+                Shape.from_metadata(self.app, shape_config)
 
         # load edges config
         edges_config = config.get("edges")
@@ -391,6 +348,17 @@ class CoreClient:
                 edge.width = edge_config["width"]
                 edge.color = edge_config["color"]
                 edge.redraw()
+
+        # read hidden nodes
+        hidden = config.get("hidden")
+        if hidden:
+            hidden = json.loads(hidden)
+            for _id in hidden:
+                canvas_node = self.canvas_nodes.get(_id)
+                if canvas_node:
+                    canvas_node.hide()
+                else:
+                    logging.warning("invalid node to hide: %s", _id)
 
     def create_new_session(self) -> None:
         """
@@ -557,26 +525,14 @@ class CoreClient:
 
     def set_metadata(self) -> None:
         # create canvas data
-        wallpaper_path = None
-        if self.app.canvas.wallpaper_file:
-            wallpaper = Path(self.app.canvas.wallpaper_file)
-            if BACKGROUNDS_PATH == wallpaper.parent:
-                wallpaper_path = wallpaper.name
-            else:
-                wallpaper_path = str(wallpaper)
-        canvas_config = {
-            "wallpaper": wallpaper_path,
-            "wallpaper-style": self.app.canvas.scale_option.get(),
-            "gridlines": self.app.canvas.show_grid.get(),
-            "fit_image": self.app.canvas.adjust_to_dim.get(),
-            "dimensions": self.app.canvas.current_dimensions,
-        }
+        canvas_config = self.app.manager.get_metadata()
         canvas_config = json.dumps(canvas_config)
 
         # create shapes data
         shapes = []
-        for shape in self.app.canvas.shapes.values():
-            shapes.append(shape.metadata())
+        for canvas in self.app.manager.all():
+            for shape in canvas.shapes.values():
+                shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
         # create edges config
@@ -588,8 +544,14 @@ class CoreClient:
             edges_config.append(edge_config)
         edges_config = json.dumps(edges_config)
 
+        # create hidden metadata
+        hidden = [x.core_node.id for x in self.canvas_nodes.values() if x.hidden]
+        hidden = json.dumps(hidden)
+
         # save metadata
-        metadata = dict(canvas=canvas_config, shapes=shapes, edges=edges_config)
+        metadata = dict(
+            canvas=canvas_config, shapes=shapes, edges=edges_config, hidden=hidden
+        )
         response = self.client.set_session_metadata(self.session.id, metadata)
         logging.debug("set session metadata %s, result: %s", metadata, response)
 

@@ -27,7 +27,7 @@ class ShapeDialog(Dialog):
         else:
             title = "Add Text"
         super().__init__(app, title)
-        self.canvas: "CanvasGraph" = app.canvas
+        self.canvas: "CanvasGraph" = app.manager.current()
         self.fill: Optional[ttk.Label] = None
         self.border: Optional[ttk.Label] = None
         self.shape: "Shape" = shape

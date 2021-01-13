@@ -13,7 +13,7 @@ from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog
 from core.gui.frames.base import InfoFrameBase
 from core.gui.frames.default import DefaultInfoFrame
-from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.manager import CanvasManager
 from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
 from core.gui.nodeutils import NodeUtils
@@ -35,7 +35,7 @@ class Application(ttk.Frame):
         self.menubar: Optional[Menubar] = None
         self.toolbar: Optional[Toolbar] = None
         self.right_frame: Optional[ttk.Frame] = None
-        self.canvas: Optional[CanvasGraph] = None
+        self.manager: Optional[CanvasManager] = None
         self.statusbar: Optional[StatusBar] = None
         self.progress: Optional[Progressbar] = None
         self.infobar: Optional[ttk.Frame] = None
@@ -136,20 +136,8 @@ class Application(ttk.Frame):
         label.grid(sticky=tk.EW, pady=PADY)
 
     def draw_canvas(self) -> None:
-        canvas_frame = ttk.Frame(self.right_frame)
-        canvas_frame.rowconfigure(0, weight=1)
-        canvas_frame.columnconfigure(0, weight=1)
-        canvas_frame.grid(row=0, column=0, sticky=tk.NSEW, pady=1)
-        self.canvas = CanvasGraph(canvas_frame, self, self.core)
-        self.canvas.grid(sticky=tk.NSEW)
-        scroll_y = ttk.Scrollbar(canvas_frame, command=self.canvas.yview)
-        scroll_y.grid(row=0, column=1, sticky=tk.NS)
-        scroll_x = ttk.Scrollbar(
-            canvas_frame, orient=tk.HORIZONTAL, command=self.canvas.xview
-        )
-        scroll_x.grid(row=1, column=0, sticky=tk.EW)
-        self.canvas.configure(xscrollcommand=scroll_x.set)
-        self.canvas.configure(yscrollcommand=scroll_y.set)
+        self.manager = CanvasManager(self.right_frame, self, self.core)
+        self.manager.notebook.grid(sticky=tk.NSEW)
 
     def draw_status(self) -> None:
         self.statusbar = StatusBar(self.right_frame, self)
@@ -201,8 +189,10 @@ class Application(ttk.Frame):
 
     def joined_session_update(self) -> None:
         if self.core.is_runtime():
+            self.menubar.set_state(is_runtime=True)
             self.toolbar.set_runtime()
         else:
+            self.menubar.set_state(is_runtime=False)
             self.toolbar.set_design()
 
     def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
