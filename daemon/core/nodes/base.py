@@ -159,7 +159,7 @@ class NodeBase(abc.ABC):
         ifaces = []
         for iface_id in sorted(self.ifaces):
             iface = self.ifaces[iface_id]
-            if not control and getattr(iface, "control", False):
+            if not control and iface.control:
                 continue
             ifaces.append(iface)
         return ifaces

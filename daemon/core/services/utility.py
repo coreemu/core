@@ -581,7 +581,7 @@ if [ "x$1" = "xstart" ]; then
 
 """
         for iface in node.get_ifaces():
-            if hasattr(iface, "control") and iface.control is True:
+            if iface.control:
                 cfg += "# "
             redir = "< /dev/null"
             cfg += "tcpdump ${DUMPOPTS} -w %s.%s.pcap -i %s %s &\n" % (

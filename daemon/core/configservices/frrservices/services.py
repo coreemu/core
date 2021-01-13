@@ -103,8 +103,7 @@ class FRRZebra(ConfigService):
                 ip4s.append(str(ip4.ip))
             for ip6 in iface.ip6s:
                 ip6s.append(str(ip6.ip))
-            is_control = getattr(iface, "control", False)
-            ifaces.append((iface, ip4s, ip6s, is_control))
+            ifaces.append((iface, ip4s, ip6s, iface.control))
 
         return dict(
             frr_conf=frr_conf,

@@ -73,6 +73,7 @@ class CoreInterface:
         self.net_client: LinuxNetClient = get_net_client(
             self.session.use_ovs(), self.host_cmd
         )
+        self.control: bool = False
 
     def host_cmd(
         self,
