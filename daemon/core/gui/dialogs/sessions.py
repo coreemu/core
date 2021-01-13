@@ -22,7 +22,6 @@ class SessionsDialog(Dialog):
         self.selected_session: Optional[int] = None
         self.selected_id: Optional[int] = None
         self.tree: Optional[ttk.Treeview] = None
-        self.sessions: List[SessionSummary] = self.get_sessions()
         self.connect_button: Optional[ttk.Button] = None
         self.delete_button: Optional[ttk.Button] = None
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -32,7 +31,8 @@ class SessionsDialog(Dialog):
         try:
             response = self.app.core.client.get_sessions()
             logging.info("sessions: %s", response)
-            return [SessionSummary.from_proto(x) for x in response.sessions]
+            sessions = sorted(response.sessions, key=lambda x: x.id)
+            return [SessionSummary.from_proto(x) for x in sessions]
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Sessions Error", e)
             self.destroy()
@@ -79,15 +79,7 @@ class SessionsDialog(Dialog):
         self.tree.heading("state", text="State")
         self.tree.column("nodes", stretch=tk.YES, anchor="center")
         self.tree.heading("nodes", text="Node Count")
-
-        for index, session in enumerate(self.sessions):
-            state_name = SessionState(session.state).name
-            self.tree.insert(
-                "",
-                tk.END,
-                text=str(session.id),
-                values=(session.id, state_name, session.nodes),
-            )
+        self.draw_sessions()
         self.tree.bind("<Double-1>", self.double_click_join)
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
@@ -98,6 +90,17 @@ class SessionsDialog(Dialog):
         xscrollbar = ttk.Scrollbar(frame, orient="horizontal", command=self.tree.xview)
         xscrollbar.grid(row=1, sticky=tk.EW)
         self.tree.configure(xscrollcommand=xscrollbar.set)
+
+    def draw_sessions(self) -> None:
+        self.tree.delete(*self.tree.get_children())
+        for index, session in enumerate(self.get_sessions()):
+            state_name = SessionState(session.state).name
+            self.tree.insert(
+                "",
+                tk.END,
+                text=str(session.id),
+                values=(session.id, state_name, session.nodes),
+            )
 
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
@@ -196,15 +199,21 @@ class SessionsDialog(Dialog):
     def click_delete(self) -> None:
         if not self.selected_session:
             return
-        logging.debug("delete session: %s", self.selected_session)
+        logging.info("click delete session: %s", self.selected_session)
         self.tree.delete(self.selected_id)
         self.app.core.delete_session(self.selected_session)
         session_id = None
         if self.app.core.session:
             session_id = self.app.core.session.id
         if self.selected_session == session_id:
-            self.click_new()
-            self.destroy()
+            self.app.core.session = None
+            sessions = self.get_sessions()
+            if not sessions:
+                self.app.core.create_new_session()
+                self.draw_sessions()
+            else:
+                session_id = sessions[0].id
+                self.app.core.join_session(session_id)
         self.click_select()
 
     def click_exit(self) -> None:

@@ -152,7 +152,7 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event: core_pb2.Event) -> None:
-        if event.source == GUI_SOURCE:
+        if not self.session or event.source == GUI_SOURCE:
             return
         if event.session_id != self.session.id:
             logging.warning(
