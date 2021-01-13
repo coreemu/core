@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
+from core.api.grpc.services_pb2 import ServiceAction
 from core.api.grpc.wrappers import Interface, Node, NodeType
 from core.gui import nodeutils, themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
@@ -232,6 +233,22 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
+            if NodeUtils.is_container_node(self.core_node.type):
+                services_menu = tk.Menu(self.context)
+                for service in self.core_node.services:
+                    service_menu = tk.Menu(services_menu)
+                    themes.style_menu(service_menu)
+                    start_func = functools.partial(self.start_service, service)
+                    service_menu.add_command(label="Start", command=start_func)
+                    stop_func = functools.partial(self.stop_service, service)
+                    service_menu.add_command(label="Stop", command=stop_func)
+                    restart_func = functools.partial(self.restart_service, service)
+                    service_menu.add_command(label="Restart", command=restart_func)
+                    validate_func = functools.partial(self.validate_service, service)
+                    service_menu.add_command(label="Validate", command=validate_func)
+                    services_menu.add_cascade(label=service, menu=service_menu)
+                themes.style_menu(services_menu)
+                self.context.add_cascade(label="Services", menu=services_menu)
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if NodeUtils.is_container_node(self.core_node.type):
@@ -430,3 +447,26 @@ class CanvasNode:
                 other_node = edge.dst
             if edge.hidden and not other_node.hidden:
                 edge.show()
+
+    def _service_action(self, service: str, action: ServiceAction) -> None:
+        session_id = self.app.core.session.id
+        try:
+            response = self.app.core.client.service_action(
+                session_id, self.core_node.id, service, action
+            )
+            if not response.result:
+                self.app.show_error("Service Action Error", "Action Failed!")
+        except grpc.RpcError as e:
+            self.app.show_grpc_exception("Service Error", e)
+
+    def start_service(self, service: str) -> None:
+        self._service_action(service, ServiceAction.START)
+
+    def stop_service(self, service: str) -> None:
+        self._service_action(service, ServiceAction.STOP)
+
+    def restart_service(self, service: str) -> None:
+        self._service_action(service, ServiceAction.RESTART)
+
+    def validate_service(self, service: str) -> None:
+        self._service_action(service, ServiceAction.VALIDATE)
