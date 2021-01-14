@@ -262,11 +262,6 @@ class Edge:
             self.id2 = self.draw_edge(self.dst.canvas, self.src_shadow, self.dst, state)
             self.src.canvas.organize()
             self.dst.canvas.organize()
-        logging.info(
-            "drawed edge: src shadow(%s) dst shadow(%s)",
-            self.src_shadow,
-            self.dst_shadow,
-        )
 
     def draw_edge(
         self,
@@ -336,7 +331,6 @@ class Edge:
     def src_label_text(self, text: str) -> None:
         if self.src_label is None and self.src_label2 is None:
             if self.id:
-                logging.info("src label id")
                 src_x, src_y, _, _, dst_x, dst_y = self.src.canvas.coords(self.id)
                 src_pos, _ = node_label_positions(src_x, src_y, dst_x, dst_y)
                 self.src_label = self.src.canvas.create_text(
@@ -348,7 +342,6 @@ class Edge:
                     state=self.manager.show_link_labels.state(),
                 )
             if self.id2:
-                logging.info("src label id2")
                 src_x, src_y, _, _, dst_x, dst_y = self.dst.canvas.coords(self.id2)
                 src_pos, _ = node_label_positions(src_x, src_y, dst_x, dst_y)
                 self.src_label2 = self.dst.canvas.create_text(

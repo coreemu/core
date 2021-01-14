@@ -138,7 +138,7 @@ class CanvasManager:
             canvas_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
-        logging.info("creating canvas(%s) unique(%s)", canvas_id, unique_id)
+        logging.info("creating canvas(%s)", canvas_id)
         self.canvas_ids[unique_id] = canvas_id
         self.unique_ids[canvas_id] = unique_id
 
@@ -215,7 +215,6 @@ class CanvasManager:
         canvas_ids = sorted(self.canvases)
         for index, canvas_id in enumerate(canvas_ids):
             canvas = self.canvases[canvas_id]
-            logging.info("sorting canvas index(%s) canvas(%s)", index, canvas_id)
             self.notebook.insert(index, canvas.master)
 
         # draw existing links
