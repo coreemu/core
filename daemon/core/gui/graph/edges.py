@@ -93,6 +93,14 @@ class ShadowNode:
         self.text_id: Optional[int] = None
         self.image: PhotoImage = self.app.get_icon(ImageEnum.SHADOW, ICON_SIZE)
         self.draw()
+        self.setup_bindings()
+
+    def setup_bindings(self) -> None:
+        self.canvas.tag_bind(self.id, "<Double-Button-1>", self.node.double_click)
+        self.canvas.tag_bind(self.id, "<Enter>", self.node.on_enter)
+        self.canvas.tag_bind(self.id, "<Leave>", self.node.on_leave)
+        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.node.show_context)
+        self.canvas.tag_bind(self.id, "<Button-1>", self.node.show_info)
 
     def draw(self) -> None:
         x, y = self.node.position()
