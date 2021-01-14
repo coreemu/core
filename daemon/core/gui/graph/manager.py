@@ -369,7 +369,7 @@ class CanvasManager:
         src = edge.src
         edge.complete(dst)
         if link is None:
-            link = self.core.create_link(edge, src, dst)
+            link = self.core.ifaces_manager.create_link(edge)
         edge.link = link
         if link.iface1:
             iface1 = link.iface1

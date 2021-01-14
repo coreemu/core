@@ -4,12 +4,18 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 import netaddr
 from netaddr import EUI, IPNetwork
 
-from core.api.grpc.wrappers import Interface, Link, Node
+from core.api.grpc.wrappers import Interface, Link, LinkType, Node
+from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
 from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+
+IP4_MASK: int = 24
+IP6_MASK: int = 64
+WIRELESS_IP4_MASK: int = 32
+WIRELESS_IP6_MASK: int = 128
 
 
 def get_index(iface: Interface) -> Optional[int]:
@@ -47,10 +53,8 @@ class InterfaceManager:
         self.app: "Application" = app
         ip4 = self.app.guiconfig.ips.ip4
         ip6 = self.app.guiconfig.ips.ip6
-        self.ip4_mask: int = 24
-        self.ip6_mask: int = 64
-        self.ip4_subnets: IPNetwork = IPNetwork(f"{ip4}/{self.ip4_mask}")
-        self.ip6_subnets: IPNetwork = IPNetwork(f"{ip6}/{self.ip6_mask}")
+        self.ip4_subnets: IPNetwork = IPNetwork(f"{ip4}/{IP4_MASK}")
+        self.ip6_subnets: IPNetwork = IPNetwork(f"{ip6}/{IP6_MASK}")
         mac = self.app.guiconfig.mac
         self.mac: EUI = EUI(mac, dialect=netaddr.mac_unix_expanded)
         self.current_mac: Optional[EUI] = None
@@ -60,8 +64,8 @@ class InterfaceManager:
 
     def update_ips(self, ip4: str, ip6: str) -> None:
         self.reset()
-        self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
-        self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
+        self.ip4_subnets = IPNetwork(f"{ip4}/{IP4_MASK}")
+        self.ip6_subnets = IPNetwork(f"{ip6}/{IP6_MASK}")
 
     def next_mac(self) -> str:
         while str(self.current_mac) in self.used_macs:
@@ -163,10 +167,10 @@ class InterfaceManager:
     def get_subnets(self, iface: Interface) -> Subnets:
         ip4_subnet = self.ip4_subnets
         if iface.ip4:
-            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4_mask}").cidr
+            ip4_subnet = IPNetwork(f"{iface.ip4}/{IP4_MASK}").cidr
         ip6_subnet = self.ip6_subnets
         if iface.ip6:
-            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6_mask}").cidr
+            ip6_subnet = IPNetwork(f"{iface.ip6}/{IP6_MASK}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 
@@ -219,3 +223,48 @@ class InterfaceManager:
                 logging.info("found subnets: %s", subnets)
                 break
         return subnets
+
+    def create_link(self, edge: CanvasEdge) -> Link:
+        """
+        Create core link for a given edge based on src/dst nodes.
+        """
+        src_node = edge.src.core_node
+        dst_node = edge.dst.core_node
+        self.determine_subnets(edge.src, edge.dst)
+        src_iface = None
+        if NodeUtils.is_container_node(src_node.type):
+            src_iface = self.create_iface(edge.src, edge.linked_wireless)
+        dst_iface = None
+        if NodeUtils.is_container_node(dst_node.type):
+            dst_iface = self.create_iface(edge.dst, edge.linked_wireless)
+        link = Link(
+            type=LinkType.WIRED,
+            node1_id=src_node.id,
+            node2_id=dst_node.id,
+            iface1=src_iface,
+            iface2=dst_iface,
+        )
+        logging.info("added link between %s and %s", src_node.name, dst_node.name)
+        return link
+
+    def create_iface(self, canvas_node: CanvasNode, wireless_link: bool) -> Interface:
+        node = canvas_node.core_node
+        ip4, ip6 = self.get_ips(node)
+        if wireless_link:
+            ip4_mask = WIRELESS_IP4_MASK
+            ip6_mask = WIRELESS_IP6_MASK
+        else:
+            ip4_mask = IP4_MASK
+            ip6_mask = IP6_MASK
+        iface_id = canvas_node.next_iface_id()
+        name = f"eth{iface_id}"
+        iface = Interface(
+            id=iface_id,
+            name=name,
+            ip4=ip4,
+            ip4_mask=ip4_mask,
+            ip6=ip6,
+            ip6_mask=ip6_mask,
+        )
+        logging.info("create node(%s) interface(%s)", node.name, iface)
+        return iface

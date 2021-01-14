@@ -24,7 +24,6 @@ from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
     ExceptionEvent,
-    Interface,
     Link,
     LinkEvent,
     LinkType,
@@ -837,50 +836,6 @@ class CoreClient:
             del self.links[edge.token]
             links.append(edge.link)
         self.ifaces_manager.removed(links)
-
-    def create_iface(self, canvas_node: CanvasNode) -> Interface:
-        node = canvas_node.core_node
-        ip4, ip6 = self.ifaces_manager.get_ips(node)
-        ip4_mask = self.ifaces_manager.ip4_mask
-        ip6_mask = self.ifaces_manager.ip6_mask
-        iface_id = canvas_node.next_iface_id()
-        name = f"eth{iface_id}"
-        iface = Interface(
-            id=iface_id,
-            name=name,
-            ip4=ip4,
-            ip4_mask=ip4_mask,
-            ip6=ip6,
-            ip6_mask=ip6_mask,
-        )
-        logging.info("create node(%s) interface(%s)", node.name, iface)
-        return iface
-
-    def create_link(
-        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ) -> Link:
-        """
-        Create core link for a pair of canvas nodes, with token referencing
-        the canvas edge.
-        """
-        src_node = canvas_src_node.core_node
-        dst_node = canvas_dst_node.core_node
-        self.ifaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
-        src_iface = None
-        if NodeUtils.is_container_node(src_node.type):
-            src_iface = self.create_iface(canvas_src_node)
-        dst_iface = None
-        if NodeUtils.is_container_node(dst_node.type):
-            dst_iface = self.create_iface(canvas_dst_node)
-        link = Link(
-            type=LinkType.WIRED,
-            node1_id=src_node.id,
-            node2_id=dst_node.id,
-            iface1=src_iface,
-            iface2=dst_iface,
-        )
-        logging.info("added link between %s and %s", src_node.name, dst_node.name)
-        return link
 
     def save_edge(
         self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
