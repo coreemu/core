@@ -290,15 +290,11 @@ class CanvasNode:
 
             unlink_menu = tk.Menu(self.context)
             for edge in self.edges:
-                link = edge.link
-                if self.id == edge.src.id:
-                    other_node = edge.dst
-                    other_iface = link.iface2.name if link.iface2 else None
-                else:
-                    other_node = edge.src
-                    other_iface = link.iface1.name if link.iface1 else None
-                other_name = other_node.core_node.name
-                label = f"{other_name}:{other_iface}" if other_iface else other_name
+                other_node = edge.other_node(self)
+                other_iface = edge.other_iface(self)
+                label = other_node.core_node.name
+                if other_iface:
+                    label = f"{label}:{other_iface.name}"
                 func_unlink = functools.partial(self.click_unlink, edge)
                 unlink_menu.add_command(label=label, command=func_unlink)
             themes.style_menu(unlink_menu)
@@ -368,12 +364,9 @@ class CanvasNode:
     def has_emane_link(self, iface_id: int) -> Node:
         result = None
         for edge in self.edges:
-            if self.id == edge.src.id:
-                other_node = edge.dst
-                edge_iface_id = edge.link.iface1.id
-            else:
-                other_node = edge.src
-                edge_iface_id = edge.link.iface2.id
+            other_node = edge.other_node(self)
+            iface = edge.iface(self)
+            edge_iface_id = iface.id if iface else None
             if edge_iface_id != iface_id:
                 continue
             if other_node.core_node.type == NodeType.EMANE:
@@ -442,9 +435,7 @@ class CanvasNode:
         self.canvas.itemconfig(self.id, state=tk.NORMAL)
         self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
         for edge in self.edges:
-            other_node = edge.src
-            if edge.src == self:
-                other_node = edge.dst
+            other_node = edge.other_node(self)
             if edge.hidden and not other_node.hidden:
                 edge.show()
 

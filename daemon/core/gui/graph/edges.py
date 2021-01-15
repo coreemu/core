@@ -125,9 +125,7 @@ class ShadowNode:
 
     def should_delete(self) -> bool:
         for edge in self.node.edges:
-            other_node = edge.src
-            if self.node == edge.src:
-                other_node = edge.dst
+            other_node = edge.other_node(self.node)
             if not other_node.is_wireless() and other_node.canvas == self.canvas:
                 return False
         return True
@@ -181,6 +179,7 @@ class Edge:
         self.src_shadow: Optional[ShadowNode] = None
         self.dst: Optional["CanvasNode"] = dst
         self.dst_shadow: Optional[ShadowNode] = None
+        self.link: Optional[Link] = None
         self.arc: int = 0
         self.token: Optional[str] = None
         self.src_label: Optional[int] = None
@@ -521,6 +520,30 @@ class Edge:
             self.dst.canvas.itemconfigure(self.dst_label2, state=tk.NORMAL)
             self.dst.canvas.itemconfigure(self.middle_label2, state=tk.NORMAL)
 
+    def other_node(self, node: "CanvasNode") -> "CanvasNode":
+        if self.src == node:
+            return self.dst
+        elif self.dst == node:
+            return self.src
+        else:
+            raise ValueError(f"node({node.core_node.name}) does not belong to edge")
+
+    def other_iface(self, node: "CanvasNode") -> Optional[Interface]:
+        if self.src == node:
+            return self.link.iface2 if self.link else None
+        elif self.dst == node:
+            return self.link.iface1 if self.link else None
+        else:
+            raise ValueError(f"node({node.core_node.name}) does not belong to edge")
+
+    def iface(self, node: "CanvasNode") -> Optional[Interface]:
+        if self.src == node:
+            return self.link.iface1 if self.link else None
+        elif self.dst == node:
+            return self.link.iface2 if self.link else None
+        else:
+            raise ValueError(f"node({node.core_node.name}) does not belong to edge")
+
 
 class CanvasWirelessEdge(Edge):
     tag = tags.WIRELESS_EDGE
@@ -575,7 +598,6 @@ class CanvasEdge(Edge):
         super().__init__(app, src, dst)
         self.text_src: Optional[int] = None
         self.text_dst: Optional[int] = None
-        self.link: Optional[Link] = None
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
         self.draw(tk.NORMAL)
