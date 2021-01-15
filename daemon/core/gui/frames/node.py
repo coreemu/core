@@ -31,7 +31,7 @@ class NodeInfoFrame(InfoFrameBase):
                 else:
                     frame.add_detail("", service)
         if node.type == NodeType.EMANE:
-            emane = node.emane.split("_")[1:]
+            emane = "".join(node.emane.split("_")[1:])
             frame.add_detail("EMANE", emane)
         if NodeUtils.is_image_node(node.type):
             frame.add_detail("Image", node.image)
