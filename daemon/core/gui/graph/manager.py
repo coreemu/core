@@ -207,7 +207,7 @@ class CanvasManager:
         # create session nodes
         for core_node in session.nodes.values():
             # add node, avoiding ignored nodes
-            if NodeUtils.is_ignore_node(core_node.type):
+            if NodeUtils.is_ignore_node(core_node):
                 continue
             self.add_core_node(core_node)
 

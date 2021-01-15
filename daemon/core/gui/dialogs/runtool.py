@@ -26,7 +26,7 @@ class RunToolDialog(Dialog):
         store all CORE nodes (nodes that execute commands) from all existing nodes
         """
         for node in self.app.core.session.nodes.values():
-            if NodeUtils.is_container_node(node.type):
+            if NodeUtils.is_container_node(node):
                 self.executable_nodes[node.name] = node.id
 
     def draw(self) -> None:

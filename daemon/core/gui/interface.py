@@ -179,8 +179,8 @@ class InterfaceManager:
     ) -> None:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
-        is_src_container = NodeUtils.is_container_node(src_node.type)
-        is_dst_container = NodeUtils.is_container_node(dst_node.type)
+        is_src_container = NodeUtils.is_container_node(src_node)
+        is_dst_container = NodeUtils.is_container_node(dst_node)
         if is_src_container and is_dst_container:
             self.current_subnets = self.next_subnets()
         elif is_src_container and not is_dst_container:
@@ -232,10 +232,10 @@ class InterfaceManager:
         dst_node = edge.dst.core_node
         self.determine_subnets(edge.src, edge.dst)
         src_iface = None
-        if NodeUtils.is_container_node(src_node.type):
+        if NodeUtils.is_container_node(src_node):
             src_iface = self.create_iface(edge.src, edge.linked_wireless)
         dst_iface = None
-        if NodeUtils.is_container_node(dst_node.type):
+        if NodeUtils.is_container_node(dst_node):
             dst_iface = self.create_iface(edge.dst, edge.linked_wireless)
         link = Link(
             type=LinkType.WIRED,

@@ -190,7 +190,7 @@ class CanvasNode:
     def on_enter(self, event: tk.Event) -> None:
         is_runtime = self.app.core.is_runtime()
         has_observer = self.app.core.observer is not None
-        is_container = NodeUtils.is_container_node(self.core_node.type)
+        is_container = NodeUtils.is_container_node(self.core_node)
         if is_runtime and has_observer and is_container:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
@@ -205,7 +205,7 @@ class CanvasNode:
 
     def double_click(self, event: tk.Event) -> None:
         if self.app.core.is_runtime():
-            if NodeUtils.is_container_node(self.core_node.type):
+            if NodeUtils.is_container_node(self.core_node):
                 self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
@@ -233,7 +233,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
-            if NodeUtils.is_container_node(self.core_node.type):
+            if NodeUtils.is_container_node(self.core_node):
                 services_menu = tk.Menu(self.context)
                 for service in sorted(self.core_node.services):
                     service_menu = tk.Menu(services_menu)
@@ -251,7 +251,7 @@ class CanvasNode:
                 self.context.add_cascade(label="Services", menu=services_menu)
         else:
             self.context.add_command(label="Configure", command=self.show_config)
-            if NodeUtils.is_container_node(self.core_node.type):
+            if NodeUtils.is_container_node(self.core_node):
                 self.context.add_command(label="Services", command=self.show_services)
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
@@ -268,7 +268,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )
-            if NodeUtils.is_wireless_node(self.core_node.type):
+            if NodeUtils.is_wireless_node(self.core_node):
                 self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
@@ -406,9 +406,9 @@ class CanvasNode:
         if self == node:
             return False
         # rj45 nodes can only support one link
-        if NodeUtils.is_rj45_node(self.core_node.type) and self.edges:
+        if NodeUtils.is_rj45_node(self.core_node) and self.edges:
             return False
-        if NodeUtils.is_rj45_node(node.core_node.type) and node.edges:
+        if NodeUtils.is_rj45_node(node.core_node) and node.edges:
             return False
         # only 1 link between bridge based nodes
         is_src_bridge = NodeUtils.is_bridge_node(self.core_node)
@@ -420,7 +420,7 @@ class CanvasNode:
         return True
 
     def is_wireless(self) -> bool:
-        return NodeUtils.is_wireless_node(self.core_node.type)
+        return NodeUtils.is_wireless_node(self.core_node)
 
     def hide(self) -> None:
         self.hidden = True

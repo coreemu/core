@@ -843,10 +843,10 @@ class CoreClient:
         self.links[edge.token] = edge
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
-        if NodeUtils.is_container_node(src_node.type):
+        if NodeUtils.is_container_node(src_node):
             src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge
-        if NodeUtils.is_container_node(dst_node.type):
+        if NodeUtils.is_container_node(dst_node):
             dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
@@ -893,7 +893,7 @@ class CoreClient:
     def get_service_configs_proto(self) -> List[services_pb2.ServiceConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not NodeUtils.is_container_node(node):
                 continue
             if not node.service_configs:
                 continue
@@ -913,7 +913,7 @@ class CoreClient:
     def get_service_file_configs_proto(self) -> List[services_pb2.ServiceFileConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not NodeUtils.is_container_node(node):
                 continue
             if not node.service_file_configs:
                 continue
@@ -930,7 +930,7 @@ class CoreClient:
     ) -> List[configservices_pb2.ConfigServiceConfig]:
         config_service_protos = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not NodeUtils.is_container_node(node):
                 continue
             if not node.config_service_configs:
                 continue

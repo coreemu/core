@@ -225,7 +225,7 @@ class NodeConfigDialog(Dialog):
         row += 1
 
         # node type field
-        if NodeUtils.is_model_node(self.node.type):
+        if NodeUtils.is_model_node(self.node):
             label = ttk.Label(frame, text="Type")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             combobox = ttk.Combobox(
@@ -245,7 +245,7 @@ class NodeConfigDialog(Dialog):
             entry.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
-        if NodeUtils.is_container_node(self.node.type):
+        if NodeUtils.is_container_node(self.node):
             # server
             frame.grid(sticky=tk.EW)
             frame.columnconfigure(1, weight=1)
@@ -259,7 +259,7 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
-        if NodeUtils.is_rj45_node(self.node.type):
+        if NodeUtils.is_rj45_node(self.node):
             response = self.app.core.client.get_ifaces()
             logging.debug("host machine available interfaces: %s", response)
             ifaces = ListboxScroll(frame)
@@ -383,7 +383,7 @@ class NodeConfigDialog(Dialog):
         if NodeUtils.is_image_node(self.node.type):
             self.node.image = self.container_image.get()
         server = self.server.get()
-        if NodeUtils.is_container_node(self.node.type):
+        if NodeUtils.is_container_node(self.node):
             if server == DEFAULT_SERVER:
                 self.node.server = None
             else:

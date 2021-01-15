@@ -79,42 +79,42 @@ class NodeUtils:
 
     @classmethod
     def is_router_node(cls, node: Node) -> bool:
-        return cls.is_model_node(node.type) and node.model in cls.ROUTER_NODES
+        return cls.is_model_node(node) and node.model in cls.ROUTER_NODES
 
     @classmethod
-    def is_ignore_node(cls, node_type: NodeType) -> bool:
-        return node_type in cls.IGNORE_NODES
+    def is_ignore_node(cls, node: Node) -> bool:
+        return node.type in cls.IGNORE_NODES
 
     @classmethod
-    def is_container_node(cls, node_type: NodeType) -> bool:
-        return node_type in cls.CONTAINER_NODES
+    def is_container_node(cls, node: Node) -> bool:
+        return node.type in cls.CONTAINER_NODES
 
     @classmethod
-    def is_model_node(cls, node_type: NodeType) -> bool:
-        return node_type == NodeType.DEFAULT
+    def is_model_node(cls, node: Node) -> bool:
+        return node.type == NodeType.DEFAULT
 
     @classmethod
     def is_image_node(cls, node_type: NodeType) -> bool:
         return node_type in cls.IMAGE_NODES
 
     @classmethod
-    def is_wireless_node(cls, node_type: NodeType) -> bool:
-        return node_type in cls.WIRELESS_NODES
+    def is_wireless_node(cls, node: Node) -> bool:
+        return node.type in cls.WIRELESS_NODES
 
     @classmethod
-    def is_rj45_node(cls, node_type: NodeType) -> bool:
-        return node_type in cls.RJ45_NODES
+    def is_rj45_node(cls, node: Node) -> bool:
+        return node.type in cls.RJ45_NODES
 
     @classmethod
     def node_icon(
-        cls, node_type: NodeType, model: str, gui_config: GuiConfig, scale: float = 1.0
+        cls, node: Node, gui_config: GuiConfig, scale: float = 1.0
     ) -> PhotoImage:
 
-        image_enum = TypeToImage.get(node_type, model)
+        image_enum = TypeToImage.get(node.type, node.model)
         if image_enum:
             return Images.get(image_enum, int(ICON_SIZE * scale))
         else:
-            image_stem = cls.get_image_file(gui_config, model)
+            image_stem = cls.get_image_file(gui_config, node.model)
             if image_stem:
                 return Images.get_with_image_file(image_stem, int(ICON_SIZE * scale))
 
@@ -122,7 +122,7 @@ class NodeUtils:
     def node_image(
         cls, core_node: Node, gui_config: GuiConfig, scale: float = 1.0
     ) -> PhotoImage:
-        image = cls.node_icon(core_node.type, core_node.model, gui_config, scale)
+        image = cls.node_icon(core_node, gui_config, scale)
         if core_node.icon:
             try:
                 image = Images.create(core_node.icon, int(ICON_SIZE * scale))
