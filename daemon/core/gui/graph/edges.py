@@ -4,22 +4,18 @@ import math
 import tkinter as tk
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
-from PIL.ImageTk import PhotoImage
-
 from core.api.grpc.wrappers import Interface, Link
 from core.gui import themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
-from core.gui.images import ImageEnum
-from core.gui.nodeutils import ICON_SIZE
 from core.gui.utils import bandwidth_text, delay_jitter_text
 
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.graph import CanvasGraph
     from core.gui.graph.manager import CanvasManager
-    from core.gui.graph.node import CanvasNode
+    from core.gui.graph.node import CanvasNode, ShadowNode
 
 TEXT_DISTANCE: int = 60
 EDGE_WIDTH: int = 3
@@ -80,89 +76,6 @@ def arc_edges(edges) -> None:
         arc += arc_step
         edge.arc = arc
         edge.redraw()
-
-
-class ShadowNode:
-    def __init__(
-        self, app: "Application", canvas: "CanvasGraph", node: "CanvasNode"
-    ) -> None:
-        self.app: "Application" = app
-        self.canvas: "CanvasGraph" = canvas
-        self.node: "CanvasNode" = node
-        self.id: Optional[int] = None
-        self.text_id: Optional[int] = None
-        self.image: PhotoImage = self.app.get_icon(ImageEnum.SHADOW, ICON_SIZE)
-        self.draw()
-        self.setup_bindings()
-
-    def setup_bindings(self) -> None:
-        self.canvas.tag_bind(self.id, "<Double-Button-1>", self.node.double_click)
-        self.canvas.tag_bind(self.id, "<Enter>", self.node.on_enter)
-        self.canvas.tag_bind(self.id, "<Leave>", self.node.on_leave)
-        self.canvas.tag_bind(self.id, "<ButtonRelease-3>", self.node.show_context)
-        self.canvas.tag_bind(self.id, "<Button-1>", self.node.show_info)
-
-    def draw(self) -> None:
-        x, y = self.node.position()
-        self.id: int = self.canvas.create_image(
-            x, y, anchor=tk.CENTER, image=self.image, tags=tags.NODE
-        )
-        self.text_id = self.canvas.create_text(
-            x,
-            y + 20,
-            text=f"{self.node.get_label()} [{self.node.canvas.id}]",
-            tags=tags.NODE_LABEL,
-            font=self.app.icon_text_font,
-            fill="#0000CD",
-            state=self.app.manager.show_node_labels.state(),
-            justify=tk.CENTER,
-        )
-        self.canvas.shadow_nodes[self.id] = self
-        self.canvas.shadow_core_nodes[self.node.core_node.id] = self
-
-    def position(self) -> Tuple[int, int]:
-        return self.canvas.coords(self.id)
-
-    def should_delete(self) -> bool:
-        for edge in self.node.edges:
-            other_node = edge.other_node(self.node)
-            if not other_node.is_wireless() and other_node.canvas == self.canvas:
-                return False
-        return True
-
-    def motion(self, x_offset, y_offset) -> None:
-        original_position = self.position()
-        self.canvas.move(self.id, x_offset, y_offset)
-
-        # check new position
-        bbox = self.canvas.bbox(self.id)
-        if not self.canvas.valid_position(*bbox):
-            self.canvas.coords(self.id, original_position)
-            return
-
-        # move text and selection box
-        self.canvas.move(self.text_id, x_offset, y_offset)
-        self.canvas.move_selection(self.id, x_offset, y_offset)
-
-        # move edges
-        for edge in self.node.edges:
-            edge.move_shadow(self)
-        for edge in self.node.wireless_edges:
-            edge.move_shadow(self)
-
-    def delete(self):
-        self.canvas.shadow_nodes.pop(self.id, None)
-        self.canvas.shadow_core_nodes.pop(self.node.core_node.id, None)
-        self.canvas.delete(self.id)
-        self.canvas.delete(self.text_id)
-
-    def hide(self) -> None:
-        self.canvas.itemconfig(self.id, state=tk.HIDDEN)
-        self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
-
-    def show(self) -> None:
-        self.canvas.itemconfig(self.id, state=tk.NORMAL)
-        self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
 
 
 class Edge:

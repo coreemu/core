@@ -11,9 +11,9 @@ from core.api.grpc.wrappers import Interface, Link
 from core.gui import appconfig
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
-from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge, ShadowNode
+from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge
 from core.gui.graph.enums import GraphMode, ScaleOption
-from core.gui.graph.node import CanvasNode
+from core.gui.graph.node import CanvasNode, ShadowNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import TypeToImage
