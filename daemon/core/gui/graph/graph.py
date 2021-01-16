@@ -240,7 +240,7 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
         # finalize edge creation
-        self.manager.complete_edge(edge, dst_node)
+        edge.complete(dst_node)
 
     def select_object(self, object_id: int, choose_multiple: bool = False) -> None:
         """
@@ -677,7 +677,7 @@ class CanvasGraph(tk.Canvas):
         create an edge between source node and destination node
         """
         edge = CanvasEdge(self.app, src)
-        self.manager.complete_edge(edge, dst)
+        edge.complete(dst)
         return edge
 
     def copy(self) -> None:

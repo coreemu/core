@@ -400,7 +400,6 @@ class Edge:
         self.src_label2 = None
         self.dst_label = None
         self.dst_label2 = None
-        self.manager.edges.pop(self.token, None)
 
     def hide(self) -> None:
         self.hidden = True
@@ -603,12 +602,37 @@ class CanvasEdge(Edge):
         if not self.linked_wireless:
             self.draw_link_options()
 
-    def complete(self, dst: "CanvasNode") -> None:
+    def complete(self, dst: "CanvasNode", link: Link = None) -> None:
+        logging.debug(
+            "completing wired link from node(%s) to node(%s)",
+            self.src.core_node.name,
+            dst.core_node.name,
+        )
         self.dst = dst
         self.linked_wireless = self.src.is_wireless() or self.dst.is_wireless()
         self.set_bindings()
         self.check_wireless()
-        logging.debug("draw wired link from node %s to node %s", self.src, dst)
+        if link is None:
+            link = self.app.core.ifaces_manager.create_link(self)
+        if link.iface1:
+            iface1 = link.iface1
+            self.src.ifaces[iface1.id] = iface1
+        if link.iface2:
+            iface2 = link.iface2
+            self.dst.ifaces[iface2.id] = iface2
+        self.token = create_edge_token(link)
+        self.link = link
+        self.src.edges.add(self)
+        self.dst.edges.add(self)
+        if not self.linked_wireless:
+            self.arc_common_edges()
+        self.draw_labels()
+        self.check_options()
+        self.app.core.save_edge(self)
+        self.src.canvas.organize()
+        if self.has_shadows():
+            self.dst.canvas.organize()
+        self.manager.edges[self.token] = self
 
     def check_wireless(self) -> None:
         if not self.linked_wireless:
@@ -715,3 +739,4 @@ class CanvasEdge(Edge):
         super().delete()
         if self.dst:
             self.arc_common_edges()
+        self.manager.edges.pop(self.token, None)

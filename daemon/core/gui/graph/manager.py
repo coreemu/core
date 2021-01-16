@@ -323,7 +323,7 @@ class CanvasManager:
             edge.asymmetric_link = link
         elif token not in self.edges:
             edge = CanvasEdge(self.app, src, dst)
-            self.complete_edge(edge, dst, link)
+            edge.complete(dst, link)
 
     def add_wireless_edge(self, src: CanvasNode, dst: CanvasNode, link: Link) -> None:
         network_id = link.network_id if link.network_id else None
@@ -356,32 +356,3 @@ class CanvasManager:
         else:
             edge = self.wireless_edges[token]
             edge.middle_label_text(link.label)
-
-    # TODO: look into properly moving this into the edge itself and complete when
-    #       the destination is already provided
-    def complete_edge(
-        self, edge: CanvasEdge, dst: CanvasNode, link: Optional[Link] = None
-    ) -> None:
-        src = edge.src
-        edge.complete(dst)
-        if link is None:
-            link = self.core.ifaces_manager.create_link(edge)
-        edge.link = link
-        if link.iface1:
-            iface1 = link.iface1
-            src.ifaces[iface1.id] = iface1
-        if link.iface2:
-            iface2 = link.iface2
-            dst.ifaces[iface2.id] = iface2
-        src.edges.add(edge)
-        dst.edges.add(edge)
-        edge.token = create_edge_token(edge.link)
-        if not edge.linked_wireless:
-            edge.arc_common_edges()
-        edge.draw_labels()
-        edge.check_options()
-        self.edges[edge.token] = edge
-        self.core.save_edge(edge, src, dst)
-        edge.src.canvas.organize()
-        if edge.has_shadows():
-            edge.dst.canvas.organize()

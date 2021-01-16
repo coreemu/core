@@ -837,12 +837,10 @@ class CoreClient:
             links.append(edge.link)
         self.ifaces_manager.removed(links)
 
-    def save_edge(
-        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ) -> None:
+    def save_edge(self, edge: CanvasEdge) -> None:
         self.links[edge.token] = edge
-        src_node = canvas_src_node.core_node
-        dst_node = canvas_dst_node.core_node
+        src_node = edge.src.core_node
+        dst_node = edge.dst.core_node
         if NodeUtils.is_container_node(src_node):
             src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge

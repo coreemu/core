@@ -319,7 +319,7 @@ class CanvasNode:
 
     def click_link(self, node: "CanvasNode") -> None:
         edge = CanvasEdge(self.app, self, node)
-        self.app.manager.complete_edge(edge, node)
+        edge.complete(node)
 
     def canvas_delete(self) -> None:
         self.canvas.clear_selection()
