@@ -333,10 +333,6 @@ class CanvasManager:
             return
         edge = CanvasWirelessEdge(self.app, src, dst, network_id, token, link)
         self.wireless_edges[token] = edge
-        src.wireless_edges.add(edge)
-        dst.wireless_edges.add(edge)
-        src.canvas.tag_raise(src.id)
-        dst.canvas.tag_raise(dst.id)
 
     def delete_wireless_edge(
         self, src: CanvasNode, dst: CanvasNode, link: Link

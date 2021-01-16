@@ -172,7 +172,8 @@ class Edge:
             self.dst_shadow = self.src.canvas.get_shadow(self.dst)
             self.id = self.draw_edge(self.src.canvas, self.src, self.dst_shadow, state)
             self.id2 = self.draw_edge(self.dst.canvas, self.src_shadow, self.dst, state)
-            self.src.canvas.organize()
+        self.src.canvas.organize()
+        if self.has_shadows():
             self.dst.canvas.organize()
 
     def draw_edge(
@@ -472,6 +473,8 @@ class CanvasWirelessEdge(Edge):
     ) -> None:
         logging.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(app, src, dst)
+        self.src.wireless_edges.add(self)
+        self.dst.wireless_edges.add(self)
         self.network_id: int = network_id
         self.link: Link = link
         self.token: str = token
