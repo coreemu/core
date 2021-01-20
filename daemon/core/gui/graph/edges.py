@@ -27,13 +27,27 @@ ARC_DISTANCE: int = 50
 
 
 def create_wireless_token(src: int, dst: int, network: int) -> str:
-    return f"{src}-{dst}-{network}"
+    if src < dst:
+        node1, node2 = src, dst
+    else:
+        node1, node2 = dst, src
+    return f"{node1}-{node2}-{network}"
 
 
 def create_edge_token(link: Link) -> str:
     iface1_id = link.iface1.id if link.iface1 else 0
     iface2_id = link.iface2.id if link.iface2 else 0
-    return f"{link.node1_id}-{iface1_id}-{link.node2_id}-{iface2_id}"
+    if link.node1_id < link.node2_id:
+        node1 = link.node1_id
+        node1_iface = iface1_id
+        node2 = link.node2_id
+        node2_iface = iface2_id
+    else:
+        node1 = link.node2_id
+        node1_iface = iface2_id
+        node2 = link.node1_id
+        node2_iface = iface1_id
+    return f"{node1}-{node1_iface}-{node2}-{node2_iface}"
 
 
 def node_label_positions(
