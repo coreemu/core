@@ -711,9 +711,11 @@ class CoreClient:
                 self.session.id,
                 config_proto.node_id,
                 config_proto.service,
-                startup=config_proto.startup,
-                validate=config_proto.validate,
-                shutdown=config_proto.shutdown,
+                config_proto.files,
+                config_proto.directories,
+                config_proto.startup,
+                config_proto.validate,
+                config_proto.shutdown,
             )
         for config_proto in self.get_service_file_configs_proto():
             self.client.set_node_service_file(
