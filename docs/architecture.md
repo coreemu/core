@@ -11,7 +11,7 @@
   * Links are created using Linux bridges and virtual ethernet peers
   * Packets sent over links are manipulated using traffic control
   * Controlled via the CORE GUI
-  * Provides both a custo TLV API and gRPC API
+  * Provides both a custom TLV API and gRPC API
   * Python program that leverages a small C binary for node creation
 * core-gui
   * GUI and daemon communicate over the custom TLV API
