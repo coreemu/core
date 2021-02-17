@@ -38,6 +38,30 @@ class ShowVar(BooleanVar):
             canvas.itemconfigure(self.tag, state=self.state())
 
 
+class ShowNodeLabels(ShowVar):
+    def click_handler(self) -> None:
+        state = self.state()
+        for canvas in self.manager.all():
+            for node in canvas.nodes.values():
+                if not node.hidden:
+                    node.set_label(state)
+
+
+class ShowLinks(ShowVar):
+    def click_handler(self) -> None:
+        for edge in self.manager.edges.values():
+            if not edge.hidden:
+                edge.check_visibility()
+
+
+class ShowLinkLabels(ShowVar):
+    def click_handler(self) -> None:
+        state = self.state()
+        for edge in self.manager.edges.values():
+            if not edge.hidden:
+                edge.set_labels(state)
+
+
 class CanvasManager:
     def __init__(
         self, master: tk.BaseWidget, app: "Application", core: "CoreClient"
@@ -62,13 +86,17 @@ class CanvasManager:
             self.app.guiconfig.preferences.height,
         )
         self.current_dimensions: Tuple[int, int] = self.default_dimensions
-        self.show_node_labels: ShowVar = ShowVar(self, tags.NODE_LABEL, value=True)
-        self.show_link_labels: ShowVar = ShowVar(self, tags.LINK_LABEL, value=True)
-        self.show_links: ShowVar = ShowVar(self, tags.EDGE, value=True)
+        self.show_node_labels: ShowVar = ShowNodeLabels(
+            self, tags.NODE_LABEL, value=True
+        )
+        self.show_link_labels: ShowVar = ShowLinkLabels(
+            self, tags.LINK_LABEL, value=True
+        )
+        self.show_links: ShowVar = ShowLinks(self, tags.EDGE, value=True)
         self.show_wireless: ShowVar = ShowVar(self, tags.WIRELESS_EDGE, value=True)
         self.show_grid: ShowVar = ShowVar(self, tags.GRIDLINE, value=True)
         self.show_annotations: ShowVar = ShowVar(self, tags.ANNOTATION, value=True)
-        self.show_loss_links: ShowVar = ShowVar(self, tags.LOSS_EDGES, value=True)
+        self.show_loss_links: ShowVar = ShowLinks(self, tags.LOSS_EDGES, value=True)
         self.show_iface_names: BooleanVar = BooleanVar(value=False)
         self.show_ip4s: BooleanVar = BooleanVar(value=True)
         self.show_ip6s: BooleanVar = BooleanVar(value=True)
@@ -308,7 +336,7 @@ class CanvasManager:
         if edge:
             edge.link.options = deepcopy(link.options)
             edge.draw_link_options()
-            edge.check_options()
+            edge.check_visibility()
 
     def delete_wired_edge(self, link: Link) -> None:
         token = create_edge_token(link)

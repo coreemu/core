@@ -293,7 +293,7 @@ class LinkConfigurationDialog(Dialog):
 
         # update edge label
         self.edge.redraw()
-        self.edge.check_options()
+        self.edge.check_visibility()
         self.destroy()
 
     def change_symmetry(self) -> None:

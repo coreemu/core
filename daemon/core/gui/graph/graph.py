@@ -240,6 +240,7 @@ class CanvasGraph(tk.Canvas):
             edge.delete()
             return
         # finalize edge creation
+        edge.drawing(dst_node.position())
         edge.complete(dst_node)
 
     def select_object(self, object_id: int, choose_multiple: bool = False) -> None:

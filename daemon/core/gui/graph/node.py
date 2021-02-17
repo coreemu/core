@@ -305,13 +305,17 @@ class CanvasNode:
             edit_menu.add_command(label="Cut", command=self.click_cut)
             edit_menu.add_command(label="Copy", command=self.canvas_copy)
             edit_menu.add_command(label="Delete", command=self.canvas_delete)
-            edit_menu.add_command(label="Hide", command=self.hide)
+            edit_menu.add_command(label="Hide", command=self.click_hide)
             self.context.add_cascade(label="Edit", menu=edit_menu)
         self.context.tk_popup(event.x_root, event.y_root)
 
     def click_cut(self) -> None:
         self.canvas_copy()
         self.canvas_delete()
+
+    def click_hide(self) -> None:
+        self.canvas.clear_selection()
+        self.hide()
 
     def click_unlink(self, edge: CanvasEdge) -> None:
         edge.delete()
@@ -426,6 +430,8 @@ class CanvasNode:
         self.hidden = True
         self.canvas.itemconfig(self.id, state=tk.HIDDEN)
         self.canvas.itemconfig(self.text_id, state=tk.HIDDEN)
+        for antenna in self.antennas:
+            self.canvas.itemconfig(antenna, state=tk.HIDDEN)
         for edge in self.edges:
             if not edge.hidden:
                 edge.hide()
@@ -433,11 +439,17 @@ class CanvasNode:
     def show(self) -> None:
         self.hidden = False
         self.canvas.itemconfig(self.id, state=tk.NORMAL)
-        self.canvas.itemconfig(self.text_id, state=tk.NORMAL)
+        state = self.app.manager.show_node_labels.state()
+        self.set_label(state)
+        for antenna in self.antennas:
+            self.canvas.itemconfig(antenna, state=tk.NORMAL)
         for edge in self.edges:
             other_node = edge.other_node(self)
             if edge.hidden and not other_node.hidden:
                 edge.show()
+
+    def set_label(self, state: str) -> None:
+        self.canvas.itemconfig(self.text_id, state=state)
 
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id

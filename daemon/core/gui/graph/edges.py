@@ -438,14 +438,18 @@ class Edge:
         if self.dst_shadow:
             self.dst_shadow.show()
         self.src.canvas.itemconfigure(self.id, state=tk.NORMAL)
-        self.src.canvas.itemconfigure(self.src_label, state=tk.NORMAL)
-        self.src.canvas.itemconfigure(self.dst_label, state=tk.NORMAL)
-        self.src.canvas.itemconfigure(self.middle_label, state=tk.NORMAL)
+        state = self.manager.show_link_labels.state()
+        self.set_labels(state)
+
+    def set_labels(self, state: str) -> None:
+        self.src.canvas.itemconfigure(self.src_label, state=state)
+        self.src.canvas.itemconfigure(self.dst_label, state=state)
+        self.src.canvas.itemconfigure(self.middle_label, state=state)
         if self.id2:
-            self.dst.canvas.itemconfigure(self.id2, state=tk.NORMAL)
-            self.dst.canvas.itemconfigure(self.src_label2, state=tk.NORMAL)
-            self.dst.canvas.itemconfigure(self.dst_label2, state=tk.NORMAL)
-            self.dst.canvas.itemconfigure(self.middle_label2, state=tk.NORMAL)
+            self.dst.canvas.itemconfigure(self.id2, state=state)
+            self.dst.canvas.itemconfigure(self.src_label2, state=state)
+            self.dst.canvas.itemconfigure(self.dst_label2, state=state)
+            self.dst.canvas.itemconfigure(self.middle_label2, state=state)
 
     def other_node(self, node: "CanvasNode") -> "CanvasNode":
         if self.src == node:
@@ -576,26 +580,24 @@ class CanvasEdge(Edge):
         super().redraw()
         self.draw_labels()
 
-    def check_options(self) -> None:
-        if not self.link.options:
-            return
-        if self.link.options.loss == EDGE_LOSS:
+    def show(self) -> None:
+        super().show()
+        self.check_visibility()
+
+    def check_visibility(self) -> None:
+        state = tk.NORMAL
+        hide_links = self.manager.show_links.state() == tk.HIDDEN
+        if self.linked_wireless or hide_links:
             state = tk.HIDDEN
-            if self.id:
-                self.src.canvas.addtag_withtag(tags.LOSS_EDGES, self.id)
-            if self.id2:
-                self.dst.canvas.addtag_withtag(tags.LOSS_EDGES, self.id2)
-        else:
-            state = tk.NORMAL
-            if self.id:
-                self.src.canvas.dtag(self.id, tags.LOSS_EDGES)
-            if self.id2:
-                self.dst.canvas.dtag(self.id2, tags.LOSS_EDGES)
-        if self.manager.show_loss_links.state() == tk.HIDDEN:
-            if self.id:
-                self.src.canvas.itemconfigure(self.id, state=state)
-            if self.id2:
-                self.dst.canvas.itemconfigure(self.id2, state=state)
+        elif self.link.options:
+            hide_loss = self.manager.show_loss_links.state() == tk.HIDDEN
+            should_hide = self.link.options.loss >= EDGE_LOSS
+            if hide_loss and should_hide:
+                state = tk.HIDDEN
+        if self.id:
+            self.src.canvas.itemconfigure(self.id, state=state)
+        if self.id2:
+            self.dst.canvas.itemconfigure(self.id2, state=state)
 
     def set_throughput(self, throughput: float) -> None:
         throughput = 0.001 * throughput
@@ -641,7 +643,7 @@ class CanvasEdge(Edge):
         if not self.linked_wireless:
             self.arc_common_edges()
         self.draw_labels()
-        self.check_options()
+        self.check_visibility()
         self.app.core.save_edge(self)
         self.src.canvas.organize()
         if self.has_shadows():
