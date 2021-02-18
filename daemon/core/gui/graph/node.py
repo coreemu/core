@@ -435,6 +435,9 @@ class CanvasNode:
         for edge in self.edges:
             if not edge.hidden:
                 edge.hide()
+        for edge in self.wireless_edges:
+            if not edge.hidden:
+                edge.hide()
 
     def show(self) -> None:
         self.hidden = False
@@ -444,6 +447,10 @@ class CanvasNode:
         for antenna in self.antennas:
             self.canvas.itemconfig(antenna, state=tk.NORMAL)
         for edge in self.edges:
+            other_node = edge.other_node(self)
+            if edge.hidden and not other_node.hidden:
+                edge.show()
+        for edge in self.wireless_edges:
             other_node = edge.other_node(self)
             if edge.hidden and not other_node.hidden:
                 edge.show()

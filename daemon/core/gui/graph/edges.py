@@ -498,9 +498,12 @@ class CanvasWirelessEdge(Edge):
         self.width: float = WIRELESS_WIDTH
         color = link.color if link.color else WIRELESS_COLOR
         self.color: str = color
-        self.draw(self.manager.show_wireless.state())
+        state = self.manager.show_wireless.state()
+        self.draw(state)
         if link.label:
             self.middle_label_text(link.label)
+        if self.src.hidden or self.dst.hidden:
+            self.hide()
         self.set_binding()
 
     def set_binding(self) -> None:
