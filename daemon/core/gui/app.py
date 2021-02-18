@@ -7,7 +7,9 @@ from typing import Any, Dict, Optional, Type
 
 import grpc
 
-from core.gui import appconfig, themes
+from core.gui import appconfig
+from core.gui import nodeutils as nutils
+from core.gui import themes
 from core.gui.appconfig import GuiConfig
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.error import ErrorDialog
@@ -16,7 +18,6 @@ from core.gui.frames.default import DefaultInfoFrame
 from core.gui.graph.manager import CanvasManager
 from core.gui.images import ImageEnum, Images
 from core.gui.menubar import Menubar
-from core.gui.nodeutils import NodeUtils
 from core.gui.statusbar import StatusBar
 from core.gui.themes import PADY
 from core.gui.toolbar import Toolbar
@@ -29,7 +30,7 @@ class Application(ttk.Frame):
     def __init__(self, proxy: bool, session_id: int = None) -> None:
         super().__init__()
         # load node icons
-        NodeUtils.setup()
+        nutils.setup()
 
         # widgets
         self.menubar: Optional[Menubar] = None

@@ -38,6 +38,7 @@ from core.api.grpc.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
+from core.gui import nodeutils as nutils
 from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
 from core.gui.dialogs.error import ErrorDialog
@@ -47,7 +48,7 @@ from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shape import Shape
 from core.gui.interface import InterfaceManager
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.nodeutils import NodeDraw
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -515,7 +516,7 @@ class CoreClient:
 
     def show_mobility_players(self) -> None:
         for node in self.session.nodes.values():
-            if not NodeUtils.is_mobility(node):
+            if not nutils.is_mobility(node):
                 continue
             if node.mobility_config:
                 mobility_player = MobilityPlayer(self.app, node)
@@ -779,7 +780,7 @@ class CoreClient:
         node_id = self.next_node_id()
         position = Position(x=x, y=y)
         image = None
-        if NodeUtils.is_image_node(node_type):
+        if nutils.has_image(node_type):
             image = "ubuntu:latest"
         emane = None
         if node_type == NodeType.EMANE:
@@ -804,9 +805,9 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-        if NodeUtils.is_custom(node_type, model):
-            services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
-            node.services[:] = services
+        if nutils.is_custom(node):
+            services = nutils.get_custom_services(self.app.guiconfig, model)
+            node.services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
@@ -843,10 +844,10 @@ class CoreClient:
         self.links[edge.token] = edge
         src_node = edge.src.core_node
         dst_node = edge.dst.core_node
-        if NodeUtils.is_container_node(src_node):
+        if nutils.is_container(src_node):
             src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge
-        if NodeUtils.is_container_node(dst_node):
+        if nutils.is_container(dst_node):
             dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
@@ -865,7 +866,7 @@ class CoreClient:
     def get_mobility_configs_proto(self) -> List[mobility_pb2.MobilityConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_mobility(node):
+            if not nutils.is_mobility(node):
                 continue
             if not node.mobility_config:
                 continue
@@ -893,7 +894,7 @@ class CoreClient:
     def get_service_configs_proto(self) -> List[services_pb2.ServiceConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node):
+            if not nutils.is_container(node):
                 continue
             if not node.service_configs:
                 continue
@@ -913,7 +914,7 @@ class CoreClient:
     def get_service_file_configs_proto(self) -> List[services_pb2.ServiceFileConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node):
+            if not nutils.is_container(node):
                 continue
             if not node.service_file_configs:
                 continue
@@ -930,7 +931,7 @@ class CoreClient:
     ) -> List[configservices_pb2.ConfigServiceConfig]:
         config_service_protos = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node):
+            if not nutils.is_container(node):
                 continue
             if not node.config_service_configs:
                 continue

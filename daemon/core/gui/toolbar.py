@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 
 from PIL.ImageTk import PhotoImage
 
+from core.gui import nodeutils as nutils
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.nodeutils import NodeDraw
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 from core.gui.themes import Styles
@@ -190,8 +191,8 @@ class Toolbar(ttk.Frame):
 
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method
-        self.current_node: NodeDraw = NodeUtils.NODES[0]
-        self.current_network: NodeDraw = NodeUtils.NETWORK_NODES[0]
+        self.current_node: NodeDraw = nutils.NODES[0]
+        self.current_network: NodeDraw = nutils.NETWORK_NODES[0]
         self.current_annotation: ShapeType = ShapeType.MARKER
         self.annotation_enum: ImageEnum = ImageEnum.MARKER
 
@@ -263,7 +264,7 @@ class Toolbar(ttk.Frame):
         self.design_frame.select_radio(self.node_button)
         self.picker = PickerFrame(self.app, self.node_button)
         # draw default nodes
-        for node_draw in NodeUtils.NODES:
+        for node_draw in nutils.NODES:
             func = partial(
                 self.update_button, self.node_button, node_draw, NodeTypeEnum.NODE
             )
@@ -353,7 +354,7 @@ class Toolbar(ttk.Frame):
         self.app.manager.node_draw = self.current_network
         self.design_frame.select_radio(self.network_button)
         self.picker = PickerFrame(self.app, self.network_button)
-        for node_draw in NodeUtils.NETWORK_NODES:
+        for node_draw in nutils.NETWORK_NODES:
             func = partial(
                 self.update_button, self.network_button, node_draw, NodeTypeEnum.NETWORK
             )

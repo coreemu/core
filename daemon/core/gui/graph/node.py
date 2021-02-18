@@ -9,7 +9,8 @@ from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.services_pb2 import ServiceAction
 from core.api.grpc.wrappers import Interface, Node, NodeType
-from core.gui import nodeutils, themes
+from core.gui import nodeutils as nutils
+from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
@@ -21,7 +22,7 @@ from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum, Images
-from core.gui.nodeutils import ANTENNA_SIZE, ICON_SIZE, NodeUtils
+from core.gui.nodeutils import ANTENNA_SIZE, ICON_SIZE
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -190,7 +191,7 @@ class CanvasNode:
     def on_enter(self, event: tk.Event) -> None:
         is_runtime = self.app.core.is_runtime()
         has_observer = self.app.core.observer is not None
-        is_container = NodeUtils.is_container_node(self.core_node)
+        is_container = nutils.is_container(self.core_node)
         if is_runtime and has_observer and is_container:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
@@ -205,7 +206,7 @@ class CanvasNode:
 
     def double_click(self, event: tk.Event) -> None:
         if self.app.core.is_runtime():
-            if NodeUtils.is_container_node(self.core_node):
+            if nutils.is_container(self.core_node):
                 self.canvas.core.launch_terminal(self.core_node.id)
         else:
             self.show_config()
@@ -233,7 +234,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Player", command=self.show_mobility_player
                 )
-            if NodeUtils.is_container_node(self.core_node):
+            if nutils.is_container(self.core_node):
                 services_menu = tk.Menu(self.context)
                 for service in sorted(self.core_node.services):
                     service_menu = tk.Menu(services_menu)
@@ -251,7 +252,7 @@ class CanvasNode:
                 self.context.add_cascade(label="Services", menu=services_menu)
         else:
             self.context.add_command(label="Configure", command=self.show_config)
-            if NodeUtils.is_container_node(self.core_node):
+            if nutils.is_container(self.core_node):
                 self.context.add_command(label="Services", command=self.show_services)
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
@@ -268,7 +269,7 @@ class CanvasNode:
                 self.context.add_command(
                     label="Mobility Config", command=self.show_mobility_config
                 )
-            if NodeUtils.is_wireless_node(self.core_node):
+            if nutils.is_wireless(self.core_node):
                 self.context.add_command(
                     label="Link To Selected", command=self.wireless_link_selected
                 )
@@ -402,7 +403,7 @@ class CanvasNode:
             logging.error(f"node icon does not exist: {icon_path}")
             return
         self.core_node.icon = icon_path
-        self.image = Images.create(icon_path, nodeutils.ICON_SIZE)
+        self.image = Images.create(icon_path)
         self.canvas.itemconfig(self.id, image=self.image)
 
     def is_linkable(self, node: "CanvasNode") -> bool:
@@ -410,21 +411,18 @@ class CanvasNode:
         if self == node:
             return False
         # rj45 nodes can only support one link
-        if NodeUtils.is_rj45_node(self.core_node) and self.edges:
+        if nutils.is_rj45(self.core_node) and self.edges:
             return False
-        if NodeUtils.is_rj45_node(node.core_node) and node.edges:
+        if nutils.is_rj45(node.core_node) and node.edges:
             return False
         # only 1 link between bridge based nodes
-        is_src_bridge = NodeUtils.is_bridge_node(self.core_node)
-        is_dst_bridge = NodeUtils.is_bridge_node(node.core_node)
+        is_src_bridge = nutils.is_bridge(self.core_node)
+        is_dst_bridge = nutils.is_bridge(node.core_node)
         common_links = self.edges & node.edges
         if all([is_src_bridge, is_dst_bridge, common_links]):
             return False
         # valid link
         return True
-
-    def is_wireless(self) -> bool:
-        return NodeUtils.is_wireless_node(self.core_node)
 
     def hide(self) -> None:
         self.hidden = True
@@ -480,6 +478,9 @@ class CanvasNode:
 
     def validate_service(self, service: str) -> None:
         self._service_action(service, ServiceAction.VALIDATE)
+
+    def is_wireless(self) -> bool:
+        return nutils.is_wireless(self.core_node)
 
 
 class ShadowNode:

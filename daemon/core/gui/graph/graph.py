@@ -9,6 +9,7 @@ from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Link
 from core.gui import appconfig
+from core.gui import nodeutils as nutils
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.edges import EDGE_WIDTH, CanvasEdge
@@ -17,7 +18,6 @@ from core.gui.graph.node import CanvasNode, ShadowNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 from core.gui.images import TypeToImage
-from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -803,9 +803,7 @@ class CanvasGraph(tk.Canvas):
     def scale_graph(self) -> None:
         for nid, canvas_node in self.nodes.items():
             img = None
-            if NodeUtils.is_custom(
-                canvas_node.core_node.type, canvas_node.core_node.model
-            ):
+            if nutils.is_custom(canvas_node.core_node):
                 for custom_node in self.app.guiconfig.nodes:
                     if custom_node.name == canvas_node.core_node.model:
                         img = self.app.get_custom_icon(custom_node.image, ICON_SIZE)

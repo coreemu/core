@@ -5,6 +5,7 @@ from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, ValuesView
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
+from core.gui import nodeutils as nutils
 from core.gui.graph import tags
 from core.gui.graph.edges import (
     CanvasEdge,
@@ -17,7 +18,7 @@ from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.images import ImageEnum
-from core.gui.nodeutils import ICON_SIZE, NodeDraw, NodeUtils
+from core.gui.nodeutils import ICON_SIZE, NodeDraw
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -235,7 +236,7 @@ class CanvasManager:
         # create session nodes
         for core_node in session.nodes.values():
             # add node, avoiding ignored nodes
-            if NodeUtils.is_ignore_node(core_node):
+            if nutils.should_ignore(core_node):
                 continue
             self.add_core_node(core_node)
 
@@ -300,7 +301,7 @@ class CanvasManager:
         logging.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
         canvas = self.get(canvas_id)
         # if the gui can't find node's image, default to the "edit-node" image
-        image = NodeUtils.node_image(core_node, self.app.guiconfig, self.app.app_scale)
+        image = nutils.get_icon(core_node, self.app.guiconfig, self.app.app_scale)
         if not image:
             image = self.app.get_icon(ImageEnum.EDITNODE, ICON_SIZE)
         x = core_node.position.x

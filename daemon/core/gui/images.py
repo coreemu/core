@@ -8,12 +8,18 @@ from PIL.ImageTk import PhotoImage
 from core.api.grpc.wrappers import NodeType
 from core.gui.appconfig import LOCAL_ICONS_PATH
 
+ICON_SIZE: int = 48
+
 
 class Images:
     images: Dict[str, str] = {}
 
     @classmethod
-    def create(cls, file_path: str, width: int, height: int = None) -> PhotoImage:
+    def create(
+        cls, file_path: str, width: int = None, height: int = None
+    ) -> PhotoImage:
+        if width is None:
+            width = ICON_SIZE
         if height is None:
             height = width
         image = Image.open(file_path)

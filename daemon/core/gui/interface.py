@@ -5,9 +5,9 @@ import netaddr
 from netaddr import EUI, IPNetwork
 
 from core.api.grpc.wrappers import Interface, Link, LinkType, Node
+from core.gui import nodeutils as nutils
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
-from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -147,7 +147,7 @@ class InterfaceManager:
                 self.used_subnets[subnets.key()] = subnets
 
     def next_index(self, node: Node) -> int:
-        if NodeUtils.is_router_node(node):
+        if nutils.is_router(node):
             index = 1
         else:
             index = 20
@@ -179,8 +179,8 @@ class InterfaceManager:
     ) -> None:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
-        is_src_container = NodeUtils.is_container_node(src_node)
-        is_dst_container = NodeUtils.is_container_node(dst_node)
+        is_src_container = nutils.is_container(src_node)
+        is_dst_container = nutils.is_container(dst_node)
         if is_src_container and is_dst_container:
             self.current_subnets = self.next_subnets()
         elif is_src_container and not is_dst_container:
@@ -232,10 +232,10 @@ class InterfaceManager:
         dst_node = edge.dst.core_node
         self.determine_subnets(edge.src, edge.dst)
         src_iface = None
-        if NodeUtils.is_container_node(src_node):
+        if nutils.is_container(src_node):
             src_iface = self.create_iface(edge.src, edge.linked_wireless)
         dst_iface = None
-        if NodeUtils.is_container_node(dst_node):
+        if nutils.is_container(dst_node):
             dst_iface = self.create_iface(edge.dst, edge.linked_wireless)
         link = Link(
             type=LinkType.WIRED,

@@ -10,6 +10,125 @@ from core.gui.images import ImageEnum, Images, TypeToImage
 ICON_SIZE: int = 48
 ANTENNA_SIZE: int = 32
 
+NODES: List["NodeDraw"] = []
+NETWORK_NODES: List["NodeDraw"] = []
+NODE_ICONS = {}
+CONTAINER_NODES: Set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
+IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
+WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
+BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
+IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
+MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
+ROUTER_NODES: Set[str] = {"router", "mdr"}
+ANTENNA_ICON: Optional[PhotoImage] = None
+
+
+def setup() -> None:
+    global ANTENNA_ICON
+    nodes = [
+        (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
+        (ImageEnum.HOST, NodeType.DEFAULT, "Host", "host"),
+        (ImageEnum.PC, NodeType.DEFAULT, "PC", "PC"),
+        (ImageEnum.MDR, NodeType.DEFAULT, "MDR", "mdr"),
+        (ImageEnum.PROUTER, NodeType.DEFAULT, "PRouter", "prouter"),
+        (ImageEnum.DOCKER, NodeType.DOCKER, "Docker", None),
+        (ImageEnum.LXC, NodeType.LXC, "LXC", None),
+    ]
+    for image_enum, node_type, label, model in nodes:
+        node_draw = NodeDraw.from_setup(image_enum, node_type, label, model)
+        NODES.append(node_draw)
+        NODE_ICONS[(node_type, model)] = node_draw.image
+    network_nodes = [
+        (ImageEnum.HUB, NodeType.HUB, "Hub"),
+        (ImageEnum.SWITCH, NodeType.SWITCH, "Switch"),
+        (ImageEnum.WLAN, NodeType.WIRELESS_LAN, "WLAN"),
+        (ImageEnum.EMANE, NodeType.EMANE, "EMANE"),
+        (ImageEnum.RJ45, NodeType.RJ45, "RJ45"),
+        (ImageEnum.TUNNEL, NodeType.TUNNEL, "Tunnel"),
+    ]
+    for image_enum, node_type, label in network_nodes:
+        node_draw = NodeDraw.from_setup(image_enum, node_type, label)
+        NETWORK_NODES.append(node_draw)
+        NODE_ICONS[(node_type, None)] = node_draw.image
+    ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
+
+
+def is_bridge(node: Node) -> bool:
+    return node.type in BRIDGE_NODES
+
+
+def is_mobility(node: Node) -> bool:
+    return node.type in MOBILITY_NODES
+
+
+def is_router(node: Node) -> bool:
+    return is_model(node) and node.model in ROUTER_NODES
+
+
+def should_ignore(node: Node) -> bool:
+    return node.type in IGNORE_NODES
+
+
+def is_container(node: Node) -> bool:
+    return node.type in CONTAINER_NODES
+
+
+def is_model(node: Node) -> bool:
+    return node.type == NodeType.DEFAULT
+
+
+def has_image(node_type: NodeType) -> bool:
+    return node_type in IMAGE_NODES
+
+
+def is_wireless(node: Node) -> bool:
+    return node.type in WIRELESS_NODES
+
+
+def is_rj45(node: Node) -> bool:
+    return node.type in RJ45_NODES
+
+
+def is_custom(node: Node) -> bool:
+    return is_model(node) and node.model not in NODE_MODELS
+
+
+def get_custom_services(gui_config: GuiConfig, name: str) -> List[str]:
+    for custom_node in gui_config.nodes:
+        if custom_node.name == name:
+            return custom_node.services
+    return []
+
+
+def _get_image_file(config: GuiConfig, name: str) -> Optional[str]:
+    for custom_node in config.nodes:
+        if custom_node.name == name:
+            return custom_node.image
+    return None
+
+
+def get_icon(node: Node, config: GuiConfig, scale: float) -> Optional[PhotoImage]:
+    image = None
+    # node has defined a custom icon
+    if node.icon:
+        try:
+            image = Images.create(node.icon, int(ICON_SIZE * scale))
+        except OSError:
+            logging.error("invalid icon: %s", node.icon)
+    else:
+        # attempt to find default type/model image
+        image_enum = TypeToImage.get(node.type, node.model)
+        if image_enum:
+            image = Images.get(image_enum, int(ICON_SIZE * scale))
+        # attempt to find custom image file
+        else:
+            image_file = _get_image_file(config, node.model)
+            if image_file:
+                image = Images.get_with_image_file(image_file, int(ICON_SIZE * scale))
+    return image
+
 
 class NodeDraw:
     def __init__(self) -> None:
@@ -52,128 +171,3 @@ class NodeDraw:
         node_draw.model = custom_node.name
         node_draw.tooltip = custom_node.name
         return node_draw
-
-
-class NodeUtils:
-    NODES: List[NodeDraw] = []
-    NETWORK_NODES: List[NodeDraw] = []
-    NODE_ICONS = {}
-    CONTAINER_NODES: Set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
-    IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
-    WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
-    RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
-    BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
-    IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
-    MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
-    NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
-    ROUTER_NODES: Set[str] = {"router", "mdr"}
-    ANTENNA_ICON: PhotoImage = None
-
-    @classmethod
-    def is_bridge_node(cls, node: Node) -> bool:
-        return node.type in cls.BRIDGE_NODES
-
-    @classmethod
-    def is_mobility(cls, node: Node) -> bool:
-        return node.type in cls.MOBILITY_NODES
-
-    @classmethod
-    def is_router_node(cls, node: Node) -> bool:
-        return cls.is_model_node(node) and node.model in cls.ROUTER_NODES
-
-    @classmethod
-    def is_ignore_node(cls, node: Node) -> bool:
-        return node.type in cls.IGNORE_NODES
-
-    @classmethod
-    def is_container_node(cls, node: Node) -> bool:
-        return node.type in cls.CONTAINER_NODES
-
-    @classmethod
-    def is_model_node(cls, node: Node) -> bool:
-        return node.type == NodeType.DEFAULT
-
-    @classmethod
-    def is_image_node(cls, node_type: NodeType) -> bool:
-        return node_type in cls.IMAGE_NODES
-
-    @classmethod
-    def is_wireless_node(cls, node: Node) -> bool:
-        return node.type in cls.WIRELESS_NODES
-
-    @classmethod
-    def is_rj45_node(cls, node: Node) -> bool:
-        return node.type in cls.RJ45_NODES
-
-    @classmethod
-    def node_icon(
-        cls, node: Node, gui_config: GuiConfig, scale: float = 1.0
-    ) -> PhotoImage:
-
-        image_enum = TypeToImage.get(node.type, node.model)
-        if image_enum:
-            return Images.get(image_enum, int(ICON_SIZE * scale))
-        else:
-            image_stem = cls.get_image_file(gui_config, node.model)
-            if image_stem:
-                return Images.get_with_image_file(image_stem, int(ICON_SIZE * scale))
-
-    @classmethod
-    def node_image(
-        cls, core_node: Node, gui_config: GuiConfig, scale: float = 1.0
-    ) -> PhotoImage:
-        image = cls.node_icon(core_node, gui_config, scale)
-        if core_node.icon:
-            try:
-                image = Images.create(core_node.icon, int(ICON_SIZE * scale))
-            except OSError:
-                logging.error("invalid icon: %s", core_node.icon)
-        return image
-
-    @classmethod
-    def is_custom(cls, node_type: NodeType, model: str) -> bool:
-        return node_type == NodeType.DEFAULT and model not in cls.NODE_MODELS
-
-    @classmethod
-    def get_custom_node_services(cls, gui_config: GuiConfig, name: str) -> List[str]:
-        for custom_node in gui_config.nodes:
-            if custom_node.name == name:
-                return custom_node.services
-        return []
-
-    @classmethod
-    def get_image_file(cls, gui_config: GuiConfig, name: str) -> Optional[str]:
-        for custom_node in gui_config.nodes:
-            if custom_node.name == name:
-                return custom_node.image
-        return None
-
-    @classmethod
-    def setup(cls) -> None:
-        nodes = [
-            (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
-            (ImageEnum.HOST, NodeType.DEFAULT, "Host", "host"),
-            (ImageEnum.PC, NodeType.DEFAULT, "PC", "PC"),
-            (ImageEnum.MDR, NodeType.DEFAULT, "MDR", "mdr"),
-            (ImageEnum.PROUTER, NodeType.DEFAULT, "PRouter", "prouter"),
-            (ImageEnum.DOCKER, NodeType.DOCKER, "Docker", None),
-            (ImageEnum.LXC, NodeType.LXC, "LXC", None),
-        ]
-        for image_enum, node_type, label, model in nodes:
-            node_draw = NodeDraw.from_setup(image_enum, node_type, label, model)
-            cls.NODES.append(node_draw)
-            cls.NODE_ICONS[(node_type, model)] = node_draw.image
-
-        network_nodes = [
-            (ImageEnum.HUB, NodeType.HUB, "Hub"),
-            (ImageEnum.SWITCH, NodeType.SWITCH, "Switch"),
-            (ImageEnum.WLAN, NodeType.WIRELESS_LAN, "WLAN"),
-            (ImageEnum.EMANE, NodeType.EMANE, "EMANE"),
-            (ImageEnum.RJ45, NodeType.RJ45, "RJ45"),
-            (ImageEnum.TUNNEL, NodeType.TUNNEL, "Tunnel"),
-        ]
-        for image_enum, node_type, label in network_nodes:
-            node_draw = NodeDraw.from_setup(image_enum, node_type, label)
-            cls.NETWORK_NODES.append(node_draw)
-            cls.NODE_ICONS[(node_type, None)] = node_draw.image
-        cls.ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
