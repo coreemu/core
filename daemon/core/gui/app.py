@@ -196,11 +196,11 @@ class Application(ttk.Frame):
             self.menubar.set_state(is_runtime=False)
             self.toolbar.set_design()
 
-    def get_icon(self, image_enum: ImageEnum, *, width: int) -> PhotoImage:
+    def get_enum_icon(self, image_enum: ImageEnum, *, width: int) -> PhotoImage:
         return images.from_enum(image_enum, width=width, scale=self.app_scale)
 
-    def get_custom_icon(self, image_file: str, *, width: int) -> PhotoImage:
-        return images.from_name(image_file, width=width, scale=self.app_scale)
+    def get_file_icon(self, file_path: str, *, width: int) -> PhotoImage:
+        return images.from_file(file_path, width=width, scale=self.app_scale)
 
     def close(self) -> None:
         self.master.destroy()

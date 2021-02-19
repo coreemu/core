@@ -17,7 +17,11 @@ IMAGES: Dict[str, str] = {}
 
 def load_all() -> None:
     for image in LOCAL_ICONS_PATH.glob("*"):
-        IMAGES[image.stem] = str(image)
+        try:
+            ImageEnum(image.stem)
+            IMAGES[image.stem] = str(image)
+        except ValueError:
+            pass
 
 
 def from_file(
@@ -36,13 +40,6 @@ def from_enum(
     image_enum: "ImageEnum", *, width: int, height: int = None, scale: float = 1.0
 ) -> PhotoImage:
     file_path = IMAGES[image_enum.value]
-    return from_file(file_path, width=width, height=height, scale=scale)
-
-
-def from_name(
-    name: str, *, width: int, height: int = None, scale: float = 1.0
-) -> PhotoImage:
-    file_path = IMAGES[name]
     return from_file(file_path, width=width, height=height, scale=scale)
 
 

@@ -216,7 +216,7 @@ class CustomNodesDialog(Dialog):
     def click_create(self) -> None:
         name = self.name.get()
         if name not in self.app.core.custom_nodes:
-            image_file = Path(self.image_file).stem
+            image_file = str(Path(self.image_file).absolute())
             custom_node = CustomNode(name, image_file, list(self.services))
             node_draw = NodeDraw.from_custom(custom_node)
             logging.info(
@@ -236,7 +236,7 @@ class CustomNodesDialog(Dialog):
             self.selected = name
             node_draw = self.app.core.custom_nodes.pop(previous_name)
             node_draw.model = name
-            node_draw.image_file = Path(self.image_file).stem
+            node_draw.image_file = str(Path(self.image_file).absolute())
             node_draw.image = self.image
             node_draw.services = self.services
             logging.debug(

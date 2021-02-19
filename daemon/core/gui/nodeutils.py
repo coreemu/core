@@ -113,22 +113,21 @@ def _get_custom_file(config: GuiConfig, name: str) -> Optional[str]:
 def get_icon(node: Node, app: "Application") -> PhotoImage:
     scale = app.app_scale
     image = None
-    # node has defined a custom icon
+    # node icon was overriden with a specific value
     if node.icon:
         try:
             image = images.from_file(node.icon, width=images.NODE_SIZE, scale=scale)
         except OSError:
             logging.error("invalid icon: %s", node.icon)
+    # custom node
+    elif is_custom(node):
+        image_file = _get_custom_file(app.guiconfig, node.model)
+        logging.info("custom node file: %s", image_file)
+        if image_file:
+            image = images.from_file(image_file, width=images.NODE_SIZE, scale=scale)
+    # built in node
     else:
-        # attempt to find default type/model image
         image = images.from_node(node, scale=scale)
-        # attempt to find custom image file
-        if not image:
-            image_file = _get_custom_file(app.guiconfig, node.model)
-            if image_file:
-                image = images.from_name(
-                    image_file, width=images.NODE_SIZE, scale=scale
-                )
     # default image, if everything above fails
     if not image:
         image = images.from_enum(
@@ -171,7 +170,7 @@ class NodeDraw:
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = custom_node.image
-        node_draw.image = images.from_name(custom_node.image, width=images.NODE_SIZE)
+        node_draw.image = images.from_file(custom_node.image, width=images.NODE_SIZE)
         node_draw.node_type = NodeType.DEFAULT
         node_draw.services = custom_node.services
         node_draw.label = custom_node.name

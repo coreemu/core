@@ -95,7 +95,7 @@ class CanvasNode:
     def add_antenna(self) -> None:
         x, y = self.position()
         offset = len(self.antennas) * 8 * self.app.app_scale
-        img = self.app.get_icon(ImageEnum.ANTENNA, width=images.ANTENNA_SIZE)
+        img = self.app.get_enum_icon(ImageEnum.ANTENNA, width=images.ANTENNA_SIZE)
         antenna_id = self.canvas.create_image(
             x - 16 + offset,
             y - int(23 * self.app.app_scale),
@@ -389,7 +389,7 @@ class CanvasNode:
     def scale_antennas(self) -> None:
         for i in range(len(self.antennas)):
             antenna_id = self.antennas[i]
-            image = self.app.get_icon(ImageEnum.ANTENNA, width=images.ANTENNA_SIZE)
+            image = self.app.get_enum_icon(ImageEnum.ANTENNA, width=images.ANTENNA_SIZE)
             self.canvas.itemconfig(antenna_id, image=image)
             self.antenna_images[antenna_id] = image
             node_x, node_y = self.canvas.coords(self.id)
@@ -492,7 +492,7 @@ class ShadowNode:
         self.node: "CanvasNode" = node
         self.id: Optional[int] = None
         self.text_id: Optional[int] = None
-        self.image: PhotoImage = self.app.get_icon(
+        self.image: PhotoImage = self.app.get_enum_icon(
             ImageEnum.SHADOW, width=images.NODE_SIZE
         )
         self.draw()
