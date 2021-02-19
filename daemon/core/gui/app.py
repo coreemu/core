@@ -1,7 +1,7 @@
 import logging
 import math
 import tkinter as tk
-from tkinter import PhotoImage, font, ttk
+from tkinter import PhotoImage, font, messagebox, ttk
 from tkinter.ttk import Progressbar
 from typing import Any, Dict, Optional, Type
 
@@ -168,17 +168,30 @@ class Application(ttk.Frame):
     def hide_info(self) -> None:
         self.infobar.grid_forget()
 
-    def show_grpc_exception(self, title: str, e: grpc.RpcError) -> None:
+    def show_grpc_exception(
+        self, message: str, e: grpc.RpcError, blocking: bool = False
+    ) -> None:
         logging.exception("app grpc exception", exc_info=e)
-        message = e.details()
-        self.show_error(title, message)
+        dialog = ErrorDialog(self, "GRPC Exception", message, e.details())
+        if blocking:
+            dialog.show()
+        else:
+            self.after(0, lambda: dialog.show())
 
-    def show_exception(self, title: str, e: Exception) -> None:
+    def show_exception(self, message: str, e: Exception) -> None:
         logging.exception("app exception", exc_info=e)
-        self.show_error(title, str(e))
+        self.after(
+            0, lambda: ErrorDialog(self, "App Exception", message, str(e)).show()
+        )
 
-    def show_error(self, title: str, message: str) -> None:
-        self.after(0, lambda: ErrorDialog(self, title, message).show())
+    def show_exception_data(self, title: str, message: str, details: str) -> None:
+        self.after(0, lambda: ErrorDialog(self, title, message, details).show())
+
+    def show_error(self, title: str, message: str, blocking: bool = False) -> None:
+        if blocking:
+            messagebox.showerror(title, message, parent=self)
+        else:
+            self.after(0, lambda: messagebox.showerror(title, message, parent=self))
 
     def on_closing(self) -> None:
         if self.toolbar.picker:

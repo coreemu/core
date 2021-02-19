@@ -310,7 +310,9 @@ class Toolbar(ttk.Frame):
             enable_buttons(self.design_frame, enabled=True)
             if exceptions:
                 message = "\n".join(exceptions)
-                self.app.show_error("Start Session Error", message)
+                self.app.show_exception_data(
+                    "Start Exception", "Session failed to start", message
+                )
 
     def set_runtime(self) -> None:
         enable_buttons(self.runtime_frame, enabled=True)

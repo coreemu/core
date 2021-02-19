@@ -41,7 +41,6 @@ from core.api.grpc.wrappers import (
 from core.gui import nodeutils as nutils
 from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
-from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
@@ -418,10 +417,11 @@ class CoreClient:
             if session_id:
                 session_ids = set(x.id for x in sessions)
                 if session_id not in session_ids:
-                    dialog = ErrorDialog(
-                        self.app, "Join Session Error", f"{session_id} does not exist"
+                    self.app.show_error(
+                        "Join Session Error",
+                        f"{session_id} does not exist",
+                        blocking=True,
                     )
-                    dialog.show()
                     self.app.close()
                 else:
                     self.join_session(session_id)
@@ -433,8 +433,7 @@ class CoreClient:
                     dialog.show()
         except grpc.RpcError as e:
             logging.exception("core setup error")
-            dialog = ErrorDialog(self.app, "Setup Error", e.details())
-            dialog.show()
+            self.app.show_grpc_exception("Setup Error", e, blocking=True)
             self.app.close()
 
     def edit_node(self, core_node: Node) -> None:
