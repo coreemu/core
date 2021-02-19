@@ -8,12 +8,12 @@ import netaddr
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node
+from core.gui import images
 from core.gui import nodeutils as nutils
 from core.gui import validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.emaneconfig import EmaneModelDialog
-from core.gui.images import Images
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
 
@@ -371,7 +371,7 @@ class NodeConfigDialog(Dialog):
     def click_icon(self) -> None:
         file_path = image_chooser(self, ICONS_PATH)
         if file_path:
-            self.image = Images.create(file_path, nutils.ICON_SIZE)
+            self.image = images.from_file(file_path, width=images.NODE_SIZE)
             self.image_button.config(image=self.image)
             self.image_file = file_path
 

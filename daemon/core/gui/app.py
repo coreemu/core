@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional, Type
 
 import grpc
 
-from core.gui import appconfig
+from core.gui import appconfig, images
 from core.gui import nodeutils as nutils
 from core.gui import themes
 from core.gui.appconfig import GuiConfig
@@ -16,7 +16,7 @@ from core.gui.dialogs.error import ErrorDialog
 from core.gui.frames.base import InfoFrameBase
 from core.gui.frames.default import DefaultInfoFrame
 from core.gui.graph.manager import CanvasManager
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.menubar import Menubar
 from core.gui.statusbar import StatusBar
 from core.gui.themes import PADY
@@ -78,7 +78,7 @@ class Application(ttk.Frame):
         self.master.title("CORE")
         self.center()
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
-        image = Images.get(ImageEnum.CORE, 16)
+        image = images.from_enum(ImageEnum.CORE, width=images.DIALOG_SIZE)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.master.option_add("*tearOff", tk.FALSE)
         self.setup_file_dialogs()
@@ -197,10 +197,10 @@ class Application(ttk.Frame):
             self.toolbar.set_design()
 
     def get_icon(self, image_enum: ImageEnum, width: int) -> PhotoImage:
-        return Images.get(image_enum, int(width * self.app_scale))
+        return images.from_enum(image_enum, width=width, scale=self.app_scale)
 
     def get_custom_icon(self, image_file: str, width: int) -> PhotoImage:
-        return Images.get_custom(image_file, int(width * self.app_scale))
+        return images.from_name(image_file, width=width, scale=self.app_scale)
 
     def close(self) -> None:
         self.master.destroy()

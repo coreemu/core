@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, List, Optional
 import grpc
 
 from core.api.grpc.wrappers import SessionState, SessionSummary
+from core.gui import images
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
 
@@ -108,14 +109,14 @@ class SessionsDialog(Dialog):
             frame.columnconfigure(i, weight=1)
         frame.grid(sticky=tk.EW)
 
-        image = Images.get(ImageEnum.DOCUMENTNEW, 16)
+        image = images.from_enum(ImageEnum.DOCUMENTNEW, width=images.BUTTON_SIZE)
         b = ttk.Button(
             frame, image=image, text="New", compound=tk.LEFT, command=self.click_new
         )
         b.image = image
         b.grid(row=0, padx=PADX, sticky=tk.EW)
 
-        image = Images.get(ImageEnum.FILEOPEN, 16)
+        image = images.from_enum(ImageEnum.FILEOPEN, width=images.BUTTON_SIZE)
         self.connect_button = ttk.Button(
             frame,
             image=image,
@@ -127,7 +128,7 @@ class SessionsDialog(Dialog):
         self.connect_button.image = image
         self.connect_button.grid(row=0, column=1, padx=PADX, sticky=tk.EW)
 
-        image = Images.get(ImageEnum.DELETE, 16)
+        image = images.from_enum(ImageEnum.DELETE, width=images.BUTTON_SIZE)
         self.delete_button = ttk.Button(
             frame,
             image=image,
@@ -139,7 +140,7 @@ class SessionsDialog(Dialog):
         self.delete_button.image = image
         self.delete_button.grid(row=0, column=2, padx=PADX, sticky=tk.EW)
 
-        image = Images.get(ImageEnum.CANCEL, 16)
+        image = images.from_enum(ImageEnum.CANCEL, width=images.BUTTON_SIZE)
         if self.is_start_app:
             b = ttk.Button(
                 frame,

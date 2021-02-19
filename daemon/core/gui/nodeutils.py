@@ -4,11 +4,9 @@ from typing import List, Optional, Set
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Node, NodeType
+from core.gui import images
 from core.gui.appconfig import CustomNode, GuiConfig
-from core.gui.images import ImageEnum, Images, TypeToImage
-
-ICON_SIZE: int = 48
-ANTENNA_SIZE: int = 32
+from core.gui.images import ImageEnum, TypeToImage
 
 NODES: List["NodeDraw"] = []
 NETWORK_NODES: List["NodeDraw"] = []
@@ -52,7 +50,7 @@ def setup() -> None:
         node_draw = NodeDraw.from_setup(image_enum, node_type, label)
         NETWORK_NODES.append(node_draw)
         NODE_ICONS[(node_type, None)] = node_draw.image
-    ANTENNA_ICON = Images.get(ImageEnum.ANTENNA, ANTENNA_SIZE)
+    ANTENNA_ICON = images.from_enum(ImageEnum.ANTENNA, width=images.ANTENNA_SIZE)
 
 
 def is_bridge(node: Node) -> bool:
@@ -114,19 +112,21 @@ def get_icon(node: Node, config: GuiConfig, scale: float) -> Optional[PhotoImage
     # node has defined a custom icon
     if node.icon:
         try:
-            image = Images.create(node.icon, int(ICON_SIZE * scale))
+            image = images.from_file(node.icon, width=images.NODE_SIZE, scale=scale)
         except OSError:
             logging.error("invalid icon: %s", node.icon)
     else:
         # attempt to find default type/model image
         image_enum = TypeToImage.get(node.type, node.model)
         if image_enum:
-            image = Images.get(image_enum, int(ICON_SIZE * scale))
+            image = images.from_enum(image_enum, width=images.NODE_SIZE, scale=scale)
         # attempt to find custom image file
         else:
             image_file = _get_image_file(config, node.model)
             if image_file:
-                image = Images.get_with_image_file(image_file, int(ICON_SIZE * scale))
+                image = images.from_name(
+                    image_file, width=images.NODE_SIZE, scale=scale
+                )
     return image
 
 
@@ -152,7 +152,7 @@ class NodeDraw:
     ) -> "NodeDraw":
         node_draw = NodeDraw()
         node_draw.image_enum = image_enum
-        node_draw.image = Images.get(image_enum, ICON_SIZE)
+        node_draw.image = images.from_enum(image_enum, width=images.NODE_SIZE)
         node_draw.node_type = node_type
         node_draw.label = label
         node_draw.model = model
@@ -164,7 +164,7 @@ class NodeDraw:
         node_draw = NodeDraw()
         node_draw.custom = True
         node_draw.image_file = custom_node.image
-        node_draw.image = Images.get_custom(custom_node.image, ICON_SIZE)
+        node_draw.image = images.from_name(custom_node.image, width=images.NODE_SIZE)
         node_draw.node_type = NodeType.DEFAULT
         node_draw.services = custom_node.services
         node_draw.label = custom_node.name

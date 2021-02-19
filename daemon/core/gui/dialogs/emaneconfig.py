@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 import grpc
 
 from core.api.grpc.wrappers import ConfigOption, Node
+from core.gui import images
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
@@ -143,7 +144,7 @@ class EmaneConfigDialog(Dialog):
         )
         label.grid(pady=PADY)
 
-        image = Images.get(ImageEnum.EDITNODE, 16)
+        image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
         button = ttk.Button(
             self.top,
             image=image,
@@ -181,7 +182,7 @@ class EmaneConfigDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
-        image = Images.get(ImageEnum.EDITNODE, 16)
+        image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
         self.emane_model_button = ttk.Button(
             frame,
             text=f"{self.emane_model.get()} options",
@@ -192,7 +193,7 @@ class EmaneConfigDialog(Dialog):
         self.emane_model_button.image = image
         self.emane_model_button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
 
-        image = Images.get(ImageEnum.EDITNODE, 16)
+        image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
         button = ttk.Button(
             frame,
             text="EMANE options",

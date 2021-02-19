@@ -9,6 +9,7 @@ from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.services_pb2 import ServiceAction
 from core.api.grpc.wrappers import Interface, Node, NodeType
+from core.gui import images
 from core.gui import nodeutils as nutils
 from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
@@ -21,8 +22,7 @@ from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
 from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
-from core.gui.images import ImageEnum, Images
-from core.gui.nodeutils import ANTENNA_SIZE, ICON_SIZE
+from core.gui.images import ImageEnum
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -95,7 +95,7 @@ class CanvasNode:
     def add_antenna(self) -> None:
         x, y = self.position()
         offset = len(self.antennas) * 8 * self.app.app_scale
-        img = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
+        img = self.app.get_icon(ImageEnum.ANTENNA, images.ANTENNA_SIZE)
         antenna_id = self.canvas.create_image(
             x - 16 + offset,
             y - int(23 * self.app.app_scale),
@@ -389,7 +389,7 @@ class CanvasNode:
     def scale_antennas(self) -> None:
         for i in range(len(self.antennas)):
             antenna_id = self.antennas[i]
-            image = self.app.get_icon(ImageEnum.ANTENNA, ANTENNA_SIZE)
+            image = self.app.get_icon(ImageEnum.ANTENNA, images.ANTENNA_SIZE)
             self.canvas.itemconfig(antenna_id, image=image)
             self.antenna_images[antenna_id] = image
             node_x, node_y = self.canvas.coords(self.id)
@@ -403,7 +403,7 @@ class CanvasNode:
             logging.error(f"node icon does not exist: {icon_path}")
             return
         self.core_node.icon = icon_path
-        self.image = Images.create(icon_path)
+        self.image = images.from_file(icon_path, width=images.NODE_SIZE)
         self.canvas.itemconfig(self.id, image=self.image)
 
     def is_linkable(self, node: "CanvasNode") -> bool:
@@ -492,7 +492,7 @@ class ShadowNode:
         self.node: "CanvasNode" = node
         self.id: Optional[int] = None
         self.text_id: Optional[int] = None
-        self.image: PhotoImage = self.app.get_icon(ImageEnum.SHADOW, ICON_SIZE)
+        self.image: PhotoImage = self.app.get_icon(ImageEnum.SHADOW, images.NODE_SIZE)
         self.draw()
         self.setup_bindings()
 

@@ -1,5 +1,4 @@
 from enum import Enum
-from tkinter import messagebox
 from typing import Dict, Optional, Tuple
 
 from PIL import Image
@@ -8,52 +7,43 @@ from PIL.ImageTk import PhotoImage
 from core.api.grpc.wrappers import NodeType
 from core.gui.appconfig import LOCAL_ICONS_PATH
 
-ICON_SIZE: int = 48
+NODE_SIZE: int = 48
+ANTENNA_SIZE: int = 32
+BUTTON_SIZE: int = 16
+ERROR_SIZE: int = 24
+DIALOG_SIZE: int = 16
+IMAGES: Dict[str, str] = {}
 
 
-class Images:
-    images: Dict[str, str] = {}
+def load_all() -> None:
+    for image in LOCAL_ICONS_PATH.glob("*"):
+        IMAGES[image.stem] = str(image)
 
-    @classmethod
-    def create(
-        cls, file_path: str, width: int = None, height: int = None
-    ) -> PhotoImage:
-        if width is None:
-            width = ICON_SIZE
-        if height is None:
-            height = width
-        image = Image.open(file_path)
-        image = image.resize((width, height), Image.ANTIALIAS)
-        return PhotoImage(image)
 
-    @classmethod
-    def load_all(cls) -> None:
-        for image in LOCAL_ICONS_PATH.glob("*"):
-            cls.images[image.stem] = str(image)
+def from_file(
+    file_path: str, *, width: int, height: int = None, scale: float = 1.0
+) -> PhotoImage:
+    if height is None:
+        height = width
+    width = int(width * scale)
+    height = int(height * scale)
+    image = Image.open(file_path)
+    image = image.resize((width, height), Image.ANTIALIAS)
+    return PhotoImage(image)
 
-    @classmethod
-    def get(cls, image_enum: Enum, width: int, height: int = None) -> PhotoImage:
-        file_path = cls.images[image_enum.value]
-        return cls.create(file_path, width, height)
 
-    @classmethod
-    def get_with_image_file(
-        cls, stem: str, width: int, height: int = None
-    ) -> PhotoImage:
-        file_path = cls.images[stem]
-        return cls.create(file_path, width, height)
+def from_enum(
+    image_enum: "ImageEnum", *, width: int, height: int = None, scale: float = 1.0
+) -> PhotoImage:
+    file_path = IMAGES[image_enum.value]
+    return from_file(file_path, width=width, height=height, scale=scale)
 
-    @classmethod
-    def get_custom(cls, name: str, width: int, height: int = None) -> PhotoImage:
-        try:
-            file_path = cls.images[name]
-            return cls.create(file_path, width, height)
-        except KeyError:
-            messagebox.showwarning(
-                "Missing image file",
-                f"{name}.png is missing at daemon/core/gui/data/icons, drop image "
-                f"file at daemon/core/gui/data/icons and restart the gui",
-            )
+
+def from_name(
+    name: str, *, width: int, height: int = None, scale: float = 1.0
+) -> PhotoImage:
+    file_path = IMAGES[name]
+    return from_file(file_path, width=width, height=height, scale=scale)
 
 
 class ImageEnum(Enum):

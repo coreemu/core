@@ -2,8 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
+from core.gui import images
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.themes import PADY
 from core.gui.widgets import CodeText
 
@@ -22,7 +23,7 @@ class ErrorDialog(Dialog):
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(1, weight=1)
-        image = Images.get(ImageEnum.ERROR, 24)
+        image = images.from_enum(ImageEnum.ERROR, width=images.ERROR_SIZE)
         label = ttk.Label(
             self.top, text=self.title, image=image, compound=tk.LEFT, anchor=tk.CENTER
         )

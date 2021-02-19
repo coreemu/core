@@ -206,20 +206,19 @@ def check_directory() -> None:
     MOBILITY_PATH.mkdir(exist_ok=True)
     XMLS_PATH.mkdir(exist_ok=True)
     SCRIPT_PATH.mkdir(exist_ok=True)
-
     copy_files(LOCAL_ICONS_PATH, ICONS_PATH)
     copy_files(LOCAL_BACKGROUND_PATH, BACKGROUNDS_PATH)
     copy_files(LOCAL_XMLS_PATH, XMLS_PATH)
     copy_files(LOCAL_MOBILITY_PATH, MOBILITY_PATH)
-
-    terminal = find_terminal()
-    if "EDITOR" in os.environ:
-        editor = EDITORS[0]
-    else:
-        editor = EDITORS[1]
-    preferences = PreferencesConfig(editor, terminal)
-    config = GuiConfig(preferences=preferences)
-    save(config)
+    if not CONFIG_PATH.exists():
+        terminal = find_terminal()
+        if "EDITOR" in os.environ:
+            editor = EDITORS[0]
+        else:
+            editor = EDITORS[1]
+        preferences = PreferencesConfig(editor, terminal)
+        config = GuiConfig(preferences=preferences)
+        save(config)
 
 
 def read() -> GuiConfig:

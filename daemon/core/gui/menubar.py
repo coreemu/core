@@ -6,6 +6,7 @@ from functools import partial
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Optional
 
+from core.gui import images
 from core.gui.coreclient import CoreClient
 from core.gui.dialogs.about import AboutDialog
 from core.gui.dialogs.canvassizeandscale import SizeAndScaleDialog
@@ -23,7 +24,6 @@ from core.gui.dialogs.sessionoptions import SessionOptionsDialog
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.graph.manager import CanvasManager
-from core.gui.nodeutils import ICON_SIZE
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 
@@ -461,8 +461,8 @@ class Menubar(tk.Menu):
 
     def click_autogrid(self) -> None:
         width, height = self.manager.current_dimensions
-        padding = (ICON_SIZE / 2) + 10
-        layout_size = padding + ICON_SIZE
+        padding = (images.NODE_SIZE / 2) + 10
+        layout_size = padding + images.NODE_SIZE
         col_count = width // layout_size
         logging.info(
             "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count

@@ -6,10 +6,9 @@ from typing import TYPE_CHECKING, Optional, Set
 
 from PIL.ImageTk import PhotoImage
 
-from core.gui import nodeutils
+from core.gui import images
 from core.gui.appconfig import ICONS_PATH, CustomNode
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import Images
 from core.gui.nodeutils import NodeDraw
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll, image_chooser
@@ -190,7 +189,7 @@ class CustomNodesDialog(Dialog):
     def click_icon(self) -> None:
         file_path = image_chooser(self, ICONS_PATH)
         if file_path:
-            image = Images.create(file_path, nodeutils.ICON_SIZE)
+            image = images.from_file(file_path, width=images.NODE_SIZE)
             self.image = image
             self.image_file = file_path
             self.image_button.config(image=self.image)

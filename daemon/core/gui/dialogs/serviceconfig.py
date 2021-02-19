@@ -8,9 +8,10 @@ import grpc
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Node, NodeServiceData, ServiceValidationMode
+from core.gui import images
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
-from core.gui.images import ImageEnum, Images
+from core.gui.images import ImageEnum
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
@@ -179,7 +180,7 @@ class ServiceConfigDialog(Dialog):
         button.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         entry = ttk.Entry(frame, state=tk.DISABLED)
         entry.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
-        image = Images.get(ImageEnum.FILEOPEN, 16)
+        image = images.from_enum(ImageEnum.FILEOPEN, width=images.BUTTON_SIZE)
         button = ttk.Button(frame, image=image)
         button.image = image
         button.grid(row=0, column=2)
@@ -194,11 +195,11 @@ class ServiceConfigDialog(Dialog):
             value=2,
         )
         button.grid(row=0, column=0, sticky=tk.EW)
-        image = Images.get(ImageEnum.FILEOPEN, 16)
+        image = images.from_enum(ImageEnum.FILEOPEN, width=images.BUTTON_SIZE)
         button = ttk.Button(frame, image=image)
         button.image = image
         button.grid(row=0, column=1)
-        image = Images.get(ImageEnum.DOCUMENTSAVE, 16)
+        image = images.from_enum(ImageEnum.DOCUMENTSAVE, width=images.BUTTON_SIZE)
         button = ttk.Button(frame, image=image)
         button.image = image
         button.grid(row=0, column=2)
