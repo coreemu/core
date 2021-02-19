@@ -1,12 +1,15 @@
 import logging
-from typing import List, Optional, Set
+from typing import TYPE_CHECKING, List, Optional, Set
 
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Node, NodeType
 from core.gui import images
 from core.gui.appconfig import CustomNode, GuiConfig
-from core.gui.images import ImageEnum, TypeToImage
+from core.gui.images import ImageEnum
+
+if TYPE_CHECKING:
+    from core.gui.app import Application
 
 NODES: List["NodeDraw"] = []
 NETWORK_NODES: List["NodeDraw"] = []
@@ -100,14 +103,15 @@ def get_custom_services(gui_config: GuiConfig, name: str) -> List[str]:
     return []
 
 
-def _get_image_file(config: GuiConfig, name: str) -> Optional[str]:
+def _get_custom_file(config: GuiConfig, name: str) -> Optional[str]:
     for custom_node in config.nodes:
         if custom_node.name == name:
             return custom_node.image
     return None
 
 
-def get_icon(node: Node, config: GuiConfig, scale: float) -> Optional[PhotoImage]:
+def get_icon(node: Node, app: "Application") -> PhotoImage:
+    scale = app.app_scale
     image = None
     # node has defined a custom icon
     if node.icon:
@@ -117,16 +121,19 @@ def get_icon(node: Node, config: GuiConfig, scale: float) -> Optional[PhotoImage
             logging.error("invalid icon: %s", node.icon)
     else:
         # attempt to find default type/model image
-        image_enum = TypeToImage.get(node.type, node.model)
-        if image_enum:
-            image = images.from_enum(image_enum, width=images.NODE_SIZE, scale=scale)
+        image = images.from_node(node, scale=scale)
         # attempt to find custom image file
-        else:
-            image_file = _get_image_file(config, node.model)
+        if not image:
+            image_file = _get_custom_file(app.guiconfig, node.model)
             if image_file:
                 image = images.from_name(
                     image_file, width=images.NODE_SIZE, scale=scale
                 )
+    # default image, if everything above fails
+    if not image:
+        image = images.from_enum(
+            ImageEnum.EDITNODE, width=images.NODE_SIZE, scale=scale
+        )
     return image
 
 

@@ -5,7 +5,6 @@ from tkinter import BooleanVar, messagebox, ttk
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, ValuesView
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
-from core.gui import images
 from core.gui import nodeutils as nutils
 from core.gui.graph import tags
 from core.gui.graph.edges import (
@@ -18,7 +17,6 @@ from core.gui.graph.enums import GraphMode
 from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.node import CanvasNode
 from core.gui.graph.shapeutils import ShapeType
-from core.gui.images import ImageEnum
 from core.gui.nodeutils import NodeDraw
 
 if TYPE_CHECKING:
@@ -301,10 +299,7 @@ class CanvasManager:
         canvas_id = core_node.canvas if core_node.canvas > 0 else 1
         logging.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
         canvas = self.get(canvas_id)
-        # if the gui can't find node's image, default to the "edit-node" image
-        image = nutils.get_icon(core_node, self.app.guiconfig, self.app.app_scale)
-        if not image:
-            image = self.app.get_icon(ImageEnum.EDITNODE, images.NODE_SIZE)
+        image = nutils.get_icon(core_node, self.app)
         x = core_node.position.x
         y = core_node.position.y
         node = CanvasNode(self.app, canvas, x, y, core_node, image)

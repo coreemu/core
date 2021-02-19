@@ -17,7 +17,6 @@ from core.gui.graph.enums import GraphMode, ScaleOption
 from core.gui.graph.node import CanvasNode, ShadowNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
-from core.gui.images import TypeToImage
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -26,7 +25,6 @@ if TYPE_CHECKING:
 
 ZOOM_IN: float = 1.1
 ZOOM_OUT: float = 0.9
-ICON_SIZE: int = 48
 MOVE_NODE_MODES: Set[GraphMode] = {GraphMode.NODE, GraphMode.SELECT}
 MOVE_SHAPE_MODES: Set[GraphMode] = {GraphMode.ANNOTATION, GraphMode.SELECT}
 BACKGROUND_COLOR: str = "#cccccc"
@@ -518,14 +516,6 @@ class CanvasGraph(tk.Canvas):
         if not core_node:
             return
         core_node.canvas = self.id
-        try:
-            image_enum = self.manager.node_draw.image_enum
-            self.manager.node_draw.image = self.app.get_icon(image_enum, ICON_SIZE)
-        except AttributeError:
-            image_file = self.manager.node_draw.image_file
-            self.manager.node_draw.image = self.app.get_custom_icon(
-                image_file, ICON_SIZE
-            )
         node = CanvasNode(self.app, self, x, y, core_node, self.manager.node_draw.image)
         self.nodes[node.id] = node
         self.core.set_canvas_node(core_node, node)
@@ -801,25 +791,14 @@ class CanvasGraph(tk.Canvas):
         self.tag_raise(tags.NODE)
 
     def scale_graph(self) -> None:
-        for nid, canvas_node in self.nodes.items():
-            img = None
-            if nutils.is_custom(canvas_node.core_node):
-                for custom_node in self.app.guiconfig.nodes:
-                    if custom_node.name == canvas_node.core_node.model:
-                        img = self.app.get_custom_icon(custom_node.image, ICON_SIZE)
-            else:
-                image_enum = TypeToImage.get(
-                    canvas_node.core_node.type, canvas_node.core_node.model
-                )
-                img = self.app.get_icon(image_enum, ICON_SIZE)
-
-            self.itemconfig(nid, image=img)
-            canvas_node.image = img
+        for node_id, canvas_node in self.nodes.items():
+            image = nutils.get_icon(canvas_node.core_node, self.app)
+            self.itemconfig(node_id, image=image)
+            canvas_node.image = image
             canvas_node.scale_text()
             canvas_node.scale_antennas()
-
-            for edge_id in self.find_withtag(tags.EDGE):
-                self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))
+        for edge_id in self.find_withtag(tags.EDGE):
+            self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))
 
     def get_metadata(self) -> Dict[str, Any]:
         wallpaper_path = None

@@ -4,7 +4,7 @@ from typing import Dict, Optional, Tuple
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import NodeType
+from core.api.grpc.wrappers import Node, NodeType
 from core.gui.appconfig import LOCAL_ICONS_PATH
 
 NODE_SIZE: int = 48
@@ -89,23 +89,26 @@ class ImageEnum(Enum):
     SHADOW = "shadow"
 
 
-class TypeToImage:
-    type_to_image: Dict[Tuple[NodeType, str], ImageEnum] = {
-        (NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
-        (NodeType.DEFAULT, "PC"): ImageEnum.PC,
-        (NodeType.DEFAULT, "host"): ImageEnum.HOST,
-        (NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
-        (NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
-        (NodeType.HUB, ""): ImageEnum.HUB,
-        (NodeType.SWITCH, ""): ImageEnum.SWITCH,
-        (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
-        (NodeType.EMANE, ""): ImageEnum.EMANE,
-        (NodeType.RJ45, ""): ImageEnum.RJ45,
-        (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
-        (NodeType.DOCKER, ""): ImageEnum.DOCKER,
-        (NodeType.LXC, ""): ImageEnum.LXC,
-    }
+TYPE_MAP: Dict[Tuple[NodeType, str], ImageEnum] = {
+    (NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
+    (NodeType.DEFAULT, "PC"): ImageEnum.PC,
+    (NodeType.DEFAULT, "host"): ImageEnum.HOST,
+    (NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
+    (NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
+    (NodeType.HUB, ""): ImageEnum.HUB,
+    (NodeType.SWITCH, ""): ImageEnum.SWITCH,
+    (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
+    (NodeType.EMANE, ""): ImageEnum.EMANE,
+    (NodeType.RJ45, ""): ImageEnum.RJ45,
+    (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
+    (NodeType.DOCKER, ""): ImageEnum.DOCKER,
+    (NodeType.LXC, ""): ImageEnum.LXC,
+}
 
-    @classmethod
-    def get(cls, node_type, model) -> Optional[ImageEnum]:
-        return cls.type_to_image.get((node_type, model))
+
+def from_node(node: Node, *, scale: float) -> Optional[PhotoImage]:
+    image = None
+    image_enum = TYPE_MAP.get((node.type, node.model))
+    if image_enum:
+        image = from_enum(image_enum, width=NODE_SIZE, scale=scale)
+    return image

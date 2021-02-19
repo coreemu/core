@@ -58,11 +58,11 @@ class PickerFrame(ttk.Frame):
         image_file: str = None,
     ) -> None:
         if image_enum:
-            bar_image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
-            image = self.app.get_icon(image_enum, PICKER_SIZE)
+            bar_image = self.app.get_icon(image_enum, width=TOOLBAR_SIZE)
+            image = self.app.get_icon(image_enum, width=PICKER_SIZE)
         else:
-            bar_image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
-            image = self.app.get_custom_icon(image_file, PICKER_SIZE)
+            bar_image = self.app.get_custom_icon(image_file, width=TOOLBAR_SIZE)
+            image = self.app.get_custom_icon(image_file, width=PICKER_SIZE)
         button = ttk.Button(
             self, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
         )
@@ -93,7 +93,7 @@ class ButtonBar(ttk.Frame):
     def create_button(
         self, image_enum: ImageEnum, func: Callable, tooltip: str, radio: bool = False
     ) -> ttk.Button:
-        image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+        image = self.app.get_icon(image_enum, width=TOOLBAR_SIZE)
         button = ttk.Button(self, image=image, command=func)
         button.image = image
         button.grid(sticky=tk.EW)
@@ -122,7 +122,7 @@ class MarkerFrame(ttk.Frame):
     def draw(self) -> None:
         self.columnconfigure(0, weight=1)
 
-        image = self.app.get_icon(ImageEnum.DELETE, 16)
+        image = self.app.get_icon(ImageEnum.DELETE, width=16)
         button = ttk.Button(self, image=image, width=2, command=self.click_clear)
         button.image = image
         button.grid(sticky=tk.EW, pady=self.PAD)
@@ -384,7 +384,7 @@ class Toolbar(ttk.Frame):
         self.picker.show()
 
     def create_observe_button(self) -> None:
-        image = self.app.get_icon(ImageEnum.OBSERVE, TOOLBAR_SIZE)
+        image = self.app.get_icon(ImageEnum.OBSERVE, width=TOOLBAR_SIZE)
         menu_button = ttk.Menubutton(
             self.runtime_frame, image=image, direction=tk.RIGHT
         )
@@ -446,9 +446,9 @@ class Toolbar(ttk.Frame):
     ) -> None:
         image = None
         if image_enum:
-            image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+            image = self.app.get_icon(image_enum, width=TOOLBAR_SIZE)
         elif image_file:
-            image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
+            image = self.app.get_custom_icon(image_file, width=TOOLBAR_SIZE)
         if image:
             button.config(image=image)
             button.image = image

@@ -49,10 +49,10 @@ class ServiceConfigDialog(Dialog):
         self.default_directories: List[str] = []
         self.temp_directories: List[str] = []
         self.documentnew_img: PhotoImage = self.app.get_icon(
-            ImageEnum.DOCUMENTNEW, ICON_SIZE
+            ImageEnum.DOCUMENTNEW, width=ICON_SIZE
         )
         self.editdelete_img: PhotoImage = self.app.get_icon(
-            ImageEnum.EDITDELETE, ICON_SIZE
+            ImageEnum.EDITDELETE, width=ICON_SIZE
         )
         self.notebook: Optional[ttk.Notebook] = None
         self.metadata_entry: Optional[ttk.Entry] = None
