@@ -4,7 +4,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-from typing import IO, TYPE_CHECKING, Dict, Optional, Set, Tuple
+from typing import IO, TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 from core.constants import CORE_CONF_DIR, CORE_DATA_DIR
@@ -26,11 +26,12 @@ def get_link_id(node1_id: int, node2_id: int, network_id: int) -> str:
     return link_id
 
 
-CORE_LAYER = "CORE"
-NODE_LAYER = "CORE::Nodes"
-LINK_LAYER = "CORE::Links"
-CORE_LAYERS = [CORE_LAYER, LINK_LAYER, NODE_LAYER]
-DEFAULT_LINK_COLOR = "red"
+CORE_LAYER: str = "CORE"
+NODE_LAYER: str = "CORE::Nodes"
+LINK_LAYER: str = "CORE::Links"
+WIRED_LINK_LAYER: str = f"{LINK_LAYER}::wired"
+CORE_LAYERS: List[str] = [CORE_LAYER, LINK_LAYER, NODE_LAYER, WIRED_LINK_LAYER]
+DEFAULT_LINK_COLOR: str = "red"
 
 
 class Sdt:
@@ -365,13 +366,10 @@ class Sdt:
             color = self.session.get_link_color(network_id)
         line = f"{color},2"
         link_id = get_link_id(node1_id, node2_id, network_id)
-        layer = LINK_LAYER
         if network_id:
-            node = self.session.nodes.get(network_id)
-            if node:
-                network_name = node.name
-                layer = f"{layer}::{network_name}"
-                self.network_layers.add(layer)
+            layer = self.get_network_layer(network_id)
+        else:
+            layer = WIRED_LINK_LAYER
         link_label = ""
         if label:
             link_label = f'linklabel on,"{label}"'
@@ -379,6 +377,15 @@ class Sdt:
             f"link {node1_id},{node2_id},{link_id} linkLayer {layer} line {line} "
             f"{link_label}"
         )
+
+    def get_network_layer(self, network_id: int) -> str:
+        node = self.session.nodes.get(network_id)
+        if node:
+            layer = f"{LINK_LAYER}::{node.name}"
+            self.network_layers.add(layer)
+        else:
+            layer = WIRED_LINK_LAYER
+        return layer
 
     def delete_link(self, node1_id: int, node2_id: int, network_id: int = None) -> None:
         """
