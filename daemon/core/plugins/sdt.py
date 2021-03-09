@@ -324,7 +324,7 @@ class Sdt:
             if all([lat is not None, lon is not None, alt is not None]):
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
                 self.cmd(f"node {node.id} {pos}")
-            elif node_data.message_type == 0:
+            elif node_data.message_type == MessageFlags.NONE:
                 lat, lon, alt = self.session.location.getgeo(x, y, 0)
                 pos = f"pos {lon:.6f},{lat:.6f},{alt:.6f}"
                 self.cmd(f"node {node.id} {pos}")
