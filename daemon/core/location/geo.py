@@ -10,9 +10,9 @@ from pyproj import Transformer
 
 from core.emulator.enumerations import RegisterTlvs
 
-SCALE_FACTOR = 100.0
-CRS_WGS84 = 4326
-CRS_PROJ = 3857
+SCALE_FACTOR: float = 100.0
+CRS_WGS84: int = 4326
+CRS_PROJ: int = 3857
 
 
 class GeoLocation:
