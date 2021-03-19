@@ -6,6 +6,7 @@ import logging
 import os
 import threading
 from collections import OrderedDict
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Callable, Dict, Tuple
 
@@ -79,23 +80,23 @@ class DistributedServer:
             stdout, stderr = e.streams_for_display()
             raise CoreCommandError(e.result.exited, cmd, stdout, stderr)
 
-    def remote_put(self, source: str, destination: str) -> None:
+    def remote_put(self, src_path: Path, dst_path: Path) -> None:
         """
         Push file to remote server.
 
-        :param source: source file to push
-        :param destination: destination file location
+        :param src_path: source file to push
+        :param dst_path: destination file location
         :return: nothing
         """
         with self.lock:
-            self.conn.put(source, destination)
+            self.conn.put(str(src_path), str(dst_path))
 
-    def remote_put_temp(self, destination: str, data: str) -> None:
+    def remote_put_temp(self, dst_path: Path, data: str) -> None:
         """
         Remote push file contents to a remote server, using a temp file as an
         intermediate step.
 
-        :param destination: file destination for data
+        :param dst_path: file destination for data
         :param data: data to store in remote file
         :return: nothing
         """
@@ -103,7 +104,7 @@ class DistributedServer:
             temp = NamedTemporaryFile(delete=False)
             temp.write(data.encode("utf-8"))
             temp.close()
-            self.conn.put(temp.name, destination)
+            self.conn.put(temp.name, str(dst_path))
             os.unlink(temp.name)
 
 
@@ -170,13 +171,11 @@ class DistributedController:
             tunnels = self.tunnels[key]
             for tunnel in tunnels:
                 tunnel.shutdown()
-
         # remove all remote session directories
         for name in self.servers:
             server = self.servers[name]
             cmd = f"rm -rf {self.session.session_dir}"
             server.remote_cmd(cmd)
-
         # clear tunnels
         self.tunnels.clear()
 
@@ -212,14 +211,12 @@ class DistributedController:
         tunnel = self.tunnels.get(key)
         if tunnel is not None:
             return tunnel
-
         # local to server
         logging.info(
             "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
         )
         local_tap = GreTap(session=self.session, remoteip=host, key=key)
         local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
-
         # server to local
         logging.info(
             "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
@@ -228,7 +225,6 @@ class DistributedController:
             session=self.session, remoteip=self.address, key=key, server=server
         )
         remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
-
         # save tunnels for shutdown
         tunnel = (local_tap, remote_tap)
         self.tunnels[key] = tunnel

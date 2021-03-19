@@ -1,7 +1,7 @@
 """
 ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 """
-import os
+from pathlib import Path
 
 from core.emane import emanemodel
 
@@ -15,8 +15,8 @@ class EmaneIeee80211abgModel(emanemodel.EmaneModel):
     mac_xml: str = "ieee80211abgmaclayer.xml"
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        cls.mac_defaults["pcrcurveuri"] = os.path.join(
-            emane_prefix, "share/emane/xml/models/mac/ieee80211abg/ieee80211pcr.xml"
+    def load(cls, emane_prefix: Path) -> None:
+        cls.mac_defaults["pcrcurveuri"] = str(
+            emane_prefix / "share/emane/xml/models/mac/ieee80211abg/ieee80211pcr.xml"
         )
         super().load(emane_prefix)

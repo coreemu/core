@@ -1,7 +1,7 @@
 """
 Unit tests for testing CORE EMANE networks.
 """
-import os
+from pathlib import Path
 from tempfile import TemporaryFile
 from typing import Type
 from xml.etree import ElementTree
@@ -28,7 +28,8 @@ _EMANE_MODELS = [
     EmaneCommEffectModel,
     EmaneTdmaModel,
 ]
-_DIR = os.path.dirname(os.path.abspath(__file__))
+_DIR: Path = Path(__file__).resolve().parent
+_SCHEDULE: Path = _DIR / "../../examples/tdma/schedule.xml"
 
 
 def ping(
@@ -107,9 +108,7 @@ class TestEmane:
         # configure tdma
         if model == EmaneTdmaModel:
             session.emane.set_model_config(
-                emane_network.id,
-                EmaneTdmaModel.name,
-                {"schedule": os.path.join(_DIR, "../../examples/tdma/schedule.xml")},
+                emane_network.id, EmaneTdmaModel.name, {"schedule": str(_SCHEDULE)}
             )
 
         # create nodes

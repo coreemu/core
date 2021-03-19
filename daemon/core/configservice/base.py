@@ -2,8 +2,8 @@ import abc
 import enum
 import inspect
 import logging
-import pathlib
 import time
+from pathlib import Path
 from typing import Any, Dict, List
 
 from mako import exceptions
@@ -46,7 +46,7 @@ class ConfigService(abc.ABC):
         """
         self.node: CoreNode = node
         class_file = inspect.getfile(self.__class__)
-        templates_path = pathlib.Path(class_file).parent.joinpath(TEMPLATES_DIR)
+        templates_path = Path(class_file).parent.joinpath(TEMPLATES_DIR)
         self.templates: TemplateLookup = TemplateLookup(directories=templates_path)
         self.config: Dict[str, Configuration] = {}
         self.custom_templates: Dict[str, str] = {}
@@ -176,9 +176,10 @@ class ConfigService(abc.ABC):
         :raises CoreError: when there is a failure creating a directory
         """
         for directory in self.directories:
+            dir_path = Path(directory)
             try:
-                self.node.privatedir(directory)
-            except (CoreCommandError, ValueError):
+                self.node.privatedir(dir_path)
+            except (CoreCommandError, CoreError):
                 raise CoreError(
                     f"node({self.node.name}) service({self.name}) "
                     f"failure to create service directory: {directory}"
@@ -220,7 +221,7 @@ class ConfigService(abc.ABC):
         """
         templates = {}
         for name in self.files:
-            basename = pathlib.Path(name).name
+            basename = Path(name).name
             if name in self.custom_templates:
                 template = self.custom_templates[name]
                 template = self.clean_text(template)
@@ -240,12 +241,12 @@ class ConfigService(abc.ABC):
         """
         data = self.data()
         for name in self.files:
-            basename = pathlib.Path(name).name
+            file_path = Path(name)
             if name in self.custom_templates:
                 text = self.custom_templates[name]
                 rendered = self.render_text(text, data)
-            elif self.templates.has_template(basename):
-                rendered = self.render_template(basename, data)
+            elif self.templates.has_template(file_path.name):
+                rendered = self.render_template(file_path.name, data)
             else:
                 text = self.get_text_template(name)
                 rendered = self.render_text(text, data)
@@ -256,7 +257,7 @@ class ConfigService(abc.ABC):
                 name,
                 rendered,
             )
-            self.node.nodefile(name, rendered)
+            self.node.nodefile(file_path, rendered)
 
     def run_startup(self, wait: bool) -> None:
         """

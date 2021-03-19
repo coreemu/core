@@ -419,7 +419,7 @@ class BasicRangeModel(WirelessModel):
                     self.wlan.link(a, b)
                     self.sendlinkmsg(a, b)
         except KeyError:
-            logging.exception("error getting interfaces during calclinkS")
+            logging.exception("error getting interfaces during calclink")
 
     @staticmethod
     def calcdistance(
@@ -920,7 +920,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :param _id: object id
         """
         super().__init__(session, _id)
-        self.file: Optional[str] = None
+        self.file: Optional[Path] = None
         self.autostart: Optional[str] = None
         self.nodemap: Dict[int, int] = {}
         self.script_start: Optional[str] = None
@@ -928,7 +928,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         self.script_stop: Optional[str] = None
 
     def update_config(self, config: Dict[str, str]) -> None:
-        self.file = config["file"]
+        self.file = Path(config["file"])
         logging.info(
             "ns-2 scripted mobility configured for WLAN %d using file: %s",
             self.id,
@@ -953,15 +953,15 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        filename = self.findfile(self.file)
+        file_path = self.findfile(self.file)
         try:
-            f = open(filename, "r")
+            f = file_path.open("r")
         except IOError:
             logging.exception(
                 "ns-2 scripted mobility failed to load file: %s", self.file
             )
             return
-        logging.info("reading ns-2 script file: %s", filename)
+        logging.info("reading ns-2 script file: %s", file_path)
         ln = 0
         ix = iy = iz = None
         inodenum = None
@@ -977,13 +977,13 @@ class Ns2ScriptedMobility(WayPointMobility):
                     # waypoints:
                     #    $ns_ at 1.00 "$node_(6) setdest 500.0 178.0 25.0"
                     parts = line.split()
-                    time = float(parts[2])
+                    line_time = float(parts[2])
                     nodenum = parts[3][1 + parts[3].index("(") : parts[3].index(")")]
                     x = float(parts[5])
                     y = float(parts[6])
                     z = None
                     speed = float(parts[7].strip('"'))
-                    self.addwaypoint(time, self.map(nodenum), x, y, z, speed)
+                    self.addwaypoint(line_time, self.map(nodenum), x, y, z, speed)
                 elif line[:7] == "$node_(":
                     # initial position (time=0, speed=0):
                     #    $node_(6) set X_ 780.0
@@ -1011,31 +1011,31 @@ class Ns2ScriptedMobility(WayPointMobility):
         if ix is not None and iy is not None:
             self.addinitial(self.map(inodenum), ix, iy, iz)
 
-    def findfile(self, file_name: str) -> str:
+    def findfile(self, file_path: Path) -> Path:
         """
         Locate a script file. If the specified file doesn't exist, look in the
         same directory as the scenario file, or in gui directories.
 
-        :param file_name: file name to find
+        :param file_path: file name to find
         :return: absolute path to the file
         :raises CoreError: when file is not found
         """
-        file_path = Path(file_name).expanduser()
+        file_path = file_path.expanduser()
         if file_path.exists():
-            return str(file_path)
-        if self.session.file_name:
-            file_path = Path(self.session.file_name).parent / file_name
-            if file_path.exists():
-                return str(file_path)
+            return file_path
+        if self.session.file_path:
+            session_file_path = self.session.file_path.parent / file_path
+            if session_file_path.exists():
+                return session_file_path
         if self.session.user:
             user_path = Path(f"~{self.session.user}").expanduser()
-            file_path = user_path / ".core" / "configs" / file_name
-            if file_path.exists():
-                return str(file_path)
-            file_path = user_path / ".coregui" / "mobility" / file_name
-            if file_path.exists():
-                return str(file_path)
-        raise CoreError(f"invalid file: {file_name}")
+            configs_path = user_path / ".core" / "configs" / file_path
+            if configs_path.exists():
+                return configs_path
+            mobility_path = user_path / ".coregui" / "mobility" / file_path
+            if mobility_path.exists():
+                return mobility_path
+        raise CoreError(f"invalid file: {file_path}")
 
     def parsemap(self, mapstr: str) -> None:
         """
@@ -1047,7 +1047,6 @@ class Ns2ScriptedMobility(WayPointMobility):
         self.nodemap = {}
         if mapstr.strip() == "":
             return
-
         for pair in mapstr.split(","):
             parts = pair.split(":")
             try:
@@ -1152,6 +1151,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             filename = self.script_stop
         if filename is None or filename == "":
             return
+        filename = Path(filename)
         filename = self.findfile(filename)
         args = f"{BASH} {filename} {typestr}"
         utils.cmd(

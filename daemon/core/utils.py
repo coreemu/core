@@ -46,11 +46,10 @@ IFACE_CONFIG_FACTOR: int = 1000
 
 
 def execute_file(
-    path: str, exec_globals: Dict[str, str] = None, exec_locals: Dict[str, str] = None
+    path: Path, exec_globals: Dict[str, str] = None, exec_locals: Dict[str, str] = None
 ) -> None:
     """
-    Provides an alternative way to run execfile to be compatible for
-    both python2/3.
+    Provides a way to execute a file.
 
     :param path: path of file to execute
     :param exec_globals: globals values to pass to execution
@@ -59,10 +58,10 @@ def execute_file(
     """
     if exec_globals is None:
         exec_globals = {}
-    exec_globals.update({"__file__": path, "__name__": "__main__"})
-    with open(path, "rb") as f:
+    exec_globals.update({"__file__": str(path), "__name__": "__main__"})
+    with path.open("rb") as f:
         data = compile(f.read(), path, "exec")
-        exec(data, exec_globals, exec_locals)
+    exec(data, exec_globals, exec_locals)
 
 
 def hashkey(value: Union[str, int]) -> int:
@@ -92,24 +91,19 @@ def _detach_init() -> None:
     os.setsid()
 
 
-def _valid_module(path: str, file_name: str) -> bool:
+def _valid_module(path: Path) -> bool:
     """
     Check if file is a valid python module.
 
     :param path: path to file
-    :param file_name: file name to check
     :return: True if a valid python module file, False otherwise
     """
-    file_path = os.path.join(path, file_name)
-    if not os.path.isfile(file_path):
+    if not path.is_file():
         return False
-
-    if file_name.startswith("_"):
+    if path.name.startswith("_"):
         return False
-
-    if not file_name.endswith(".py"):
+    if not path.suffix == ".py":
         return False
-
     return True
 
 
@@ -124,13 +118,10 @@ def _is_class(module: Any, member: Type, clazz: Type) -> bool:
     """
     if not inspect.isclass(member):
         return False
-
     if not issubclass(member, clazz):
         return False
-
     if member.__module__ != module.__name__:
         return False
-
     return True
 
 
@@ -196,7 +187,7 @@ def mute_detach(args: str, **kwargs: Dict[str, Any]) -> int:
 def cmd(
     args: str,
     env: Dict[str, str] = None,
-    cwd: str = None,
+    cwd: Path = None,
     wait: bool = True,
     shell: bool = False,
 ) -> str:
@@ -282,7 +273,7 @@ def file_demunge(pathname: str, header: str) -> None:
 
 def expand_corepath(
     pathname: str, session: "Session" = None, node: "CoreNode" = None
-) -> str:
+) -> Path:
     """
     Expand a file path given session information.
 
@@ -294,14 +285,12 @@ def expand_corepath(
     if session is not None:
         pathname = pathname.replace("~", f"/home/{session.user}")
         pathname = pathname.replace("%SESSION%", str(session.id))
-        pathname = pathname.replace("%SESSION_DIR%", session.session_dir)
+        pathname = pathname.replace("%SESSION_DIR%", str(session.session_dir))
         pathname = pathname.replace("%SESSION_USER%", session.user)
-
     if node is not None:
         pathname = pathname.replace("%NODE%", str(node.id))
         pathname = pathname.replace("%NODENAME%", node.name)
-
-    return pathname
+    return Path(pathname)
 
 
 def sysctl_devname(devname: str) -> Optional[str]:
@@ -337,7 +326,7 @@ def load_config(file_path: Path, d: Dict[str, str]) -> None:
             logging.exception("error reading file to dict: %s", file_path)
 
 
-def load_classes(path: str, clazz: Generic[T]) -> T:
+def load_classes(path: Path, clazz: Generic[T]) -> T:
     """
     Dynamically load classes for use within CORE.
 
@@ -347,24 +336,19 @@ def load_classes(path: str, clazz: Generic[T]) -> T:
     """
     # validate path exists
     logging.debug("attempting to load modules from path: %s", path)
-    if not os.path.isdir(path):
+    if not path.is_dir():
         logging.warning("invalid custom module directory specified" ": %s", path)
     # check if path is in sys.path
-    parent_path = os.path.dirname(path)
-    if parent_path not in sys.path:
-        logging.debug("adding parent path to allow imports: %s", parent_path)
-        sys.path.append(parent_path)
-
-    # retrieve potential service modules, and filter out invalid modules
-    base_module = os.path.basename(path)
-    module_names = os.listdir(path)
-    module_names = filter(lambda x: _valid_module(path, x), module_names)
-    module_names = map(lambda x: x[:-3], module_names)
-
+    parent = str(path.parent)
+    if parent not in sys.path:
+        logging.debug("adding parent path to allow imports: %s", parent)
+        sys.path.append(parent)
     # import and add all service modules in the path
     classes = []
-    for module_name in module_names:
-        import_statement = f"{base_module}.{module_name}"
+    for p in path.iterdir():
+        if not _valid_module(p):
+            continue
+        import_statement = f"{path.name}.{p.stem}"
         logging.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
@@ -376,20 +360,19 @@ def load_classes(path: str, clazz: Generic[T]) -> T:
             logging.exception(
                 "unexpected error during import, skipping: %s", import_statement
             )
-
     return classes
 
 
-def load_logging_config(config_path: str) -> None:
+def load_logging_config(config_path: Path) -> None:
     """
     Load CORE logging configuration file.
 
     :param config_path: path to logging config file
     :return: nothing
     """
-    with open(config_path, "r") as log_config_file:
-        log_config = json.load(log_config_file)
-        logging.config.dictConfig(log_config)
+    with config_path.open("r") as f:
+        log_config = json.load(f)
+    logging.config.dictConfig(log_config)
 
 
 def threadpool(

@@ -1,6 +1,6 @@
 import logging
-import os
 import tkinter as tk
+from pathlib import Path
 from tkinter import filedialog, ttk
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
@@ -579,11 +579,12 @@ class ServiceConfigDialog(Dialog):
         self.directory_entry.insert("end", d)
 
     def add_directory(self) -> None:
-        d = self.directory_entry.get()
-        if os.path.isdir(d):
-            if d not in self.temp_directories:
-                self.dir_list.listbox.insert("end", d)
-                self.temp_directories.append(d)
+        directory = self.directory_entry.get()
+        directory = Path(directory)
+        if directory.is_dir():
+            if str(directory) not in self.temp_directories:
+                self.dir_list.listbox.insert("end", directory)
+                self.temp_directories.append(directory)
 
     def remove_directory(self) -> None:
         d = self.directory_entry.get()

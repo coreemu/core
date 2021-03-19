@@ -1,8 +1,8 @@
 """
 Tests for testing tlv message handling.
 """
-import os
 import time
+from pathlib import Path
 from typing import Optional
 
 import mock
@@ -425,7 +425,7 @@ class TestGui:
         assert file_data == service_file.data
 
     def test_file_node_file_copy(self, request, coretlv: CoreHandler):
-        file_name = "/var/log/test/node.log"
+        file_path = Path("/var/log/test/node.log")
         node = coretlv.session.add_node(CoreNode)
         node.makenodedir()
         file_data = "echo hello"
@@ -433,7 +433,7 @@ class TestGui:
             MessageFlags.ADD.value,
             [
                 (FileTlvs.NODE, node.id),
-                (FileTlvs.NAME, file_name),
+                (FileTlvs.NAME, str(file_path)),
                 (FileTlvs.DATA, file_data),
             ],
         )
@@ -441,10 +441,10 @@ class TestGui:
         coretlv.handle_message(message)
 
         if not request.config.getoption("mock"):
-            directory, basename = os.path.split(file_name)
+            directory = str(file_path.parent)
             created_directory = directory[1:].replace("/", ".")
-            create_path = os.path.join(node.nodedir, created_directory, basename)
-            assert os.path.exists(create_path)
+            create_path = node.nodedir / created_directory / file_path.name
+            assert create_path.exists()
 
     def test_exec_node_tty(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()
@@ -547,20 +547,21 @@ class TestGui:
             0,
             [(EventTlvs.TYPE, EventTypes.FILE_SAVE.value), (EventTlvs.NAME, file_path)],
         )
-
         coretlv.handle_message(message)
-
-        assert os.path.exists(file_path)
+        assert Path(file_path).exists()
 
     def test_event_open_xml(self, coretlv: CoreHandler, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         node = coretlv.session.add_node(CoreNode)
         coretlv.session.save_xml(file_path)
         coretlv.session.delete_node(node.id)
         message = coreapi.CoreEventMessage.create(
             0,
-            [(EventTlvs.TYPE, EventTypes.FILE_OPEN.value), (EventTlvs.NAME, file_path)],
+            [
+                (EventTlvs.TYPE, EventTypes.FILE_OPEN.value),
+                (EventTlvs.NAME, str(file_path)),
+            ],
         )
 
         coretlv.handle_message(message)

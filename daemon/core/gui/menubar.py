@@ -1,8 +1,8 @@
 import logging
-import os
 import tkinter as tk
 import webbrowser
 from functools import partial
+from pathlib import Path
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Optional
 
@@ -272,12 +272,12 @@ class Menubar(tk.Menu):
         menu.add_command(label="About", command=self.click_about)
         self.add_cascade(label="Help", menu=menu)
 
-    def open_recent_files(self, filename: str) -> None:
-        if os.path.isfile(filename):
-            logging.debug("Open recent file %s", filename)
-            self.open_xml_task(filename)
+    def open_recent_files(self, file_path: Path) -> None:
+        if file_path.is_file():
+            logging.debug("Open recent file %s", file_path)
+            self.open_xml_task(file_path)
         else:
-            logging.warning("File does not exist %s", filename)
+            logging.warning("File does not exist %s", file_path)
 
     def update_recent_files(self) -> None:
         self.recent_menu.delete(0, tk.END)
@@ -286,7 +286,7 @@ class Menubar(tk.Menu):
                 label=i, command=partial(self.open_recent_files, i)
             )
 
-    def click_save(self, _event=None) -> None:
+    def click_save(self, _event: tk.Event = None) -> None:
         if self.core.session.file:
             self.core.save_xml()
         else:
@@ -314,7 +314,7 @@ class Menubar(tk.Menu):
         if file_path:
             self.open_xml_task(file_path)
 
-    def open_xml_task(self, file_path: str) -> None:
+    def open_xml_task(self, file_path: Path) -> None:
         self.add_recent_file_to_gui_config(file_path)
         self.prompt_save_running_session()
         task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(file_path,))
@@ -324,21 +324,14 @@ class Menubar(tk.Menu):
         dialog = ExecutePythonDialog(self.app)
         dialog.show()
 
-    def add_recent_file_to_gui_config(self, file_path) -> None:
+    def add_recent_file_to_gui_config(self, file_path: Path) -> None:
         recent_files = self.app.guiconfig.recentfiles
-        num_files = len(recent_files)
-        if num_files == 0:
-            recent_files.insert(0, file_path)
-        elif 0 < num_files <= MAX_FILES:
-            if file_path in recent_files:
-                recent_files.remove(file_path)
-                recent_files.insert(0, file_path)
-            else:
-                if num_files == MAX_FILES:
-                    recent_files.pop()
-                recent_files.insert(0, file_path)
-        else:
-            logging.error("unexpected number of recent files")
+        file_path = str(file_path)
+        if file_path in recent_files:
+            recent_files.remove(file_path)
+        recent_files.insert(0, file_path)
+        if len(recent_files) > MAX_FILES:
+            recent_files.pop()
         self.app.save_config()
         self.app.menubar.update_recent_files()
 

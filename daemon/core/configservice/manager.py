@@ -1,5 +1,6 @@
 import logging
 import pathlib
+from pathlib import Path
 from typing import Dict, List, Type
 
 from core import utils
@@ -55,10 +56,10 @@ class ConfigServiceManager:
             except CoreError as e:
                 raise CoreError(f"config service({service.name}): {e}")
 
-            # make service available
+        # make service available
         self.services[name] = service
 
-    def load(self, path: str) -> List[str]:
+    def load(self, path: Path) -> List[str]:
         """
         Search path provided for configurable services and add them for being managed.
 
@@ -71,7 +72,7 @@ class ConfigServiceManager:
         service_errors = []
         for subdir in subdirs:
             logging.debug("loading config services from: %s", subdir)
-            services = utils.load_classes(str(subdir), ConfigService)
+            services = utils.load_classes(subdir, ConfigService)
             for service in services:
                 try:
                     self.add(service)

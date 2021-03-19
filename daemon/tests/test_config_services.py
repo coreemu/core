@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -68,7 +69,8 @@ class TestConfigServices:
         service.create_dirs()
 
         # then
-        node.privatedir.assert_called_with(MyService.directories[0])
+        directory = Path(MyService.directories[0])
+        node.privatedir.assert_called_with(directory)
 
     def test_create_files_custom(self):
         # given
@@ -81,7 +83,8 @@ class TestConfigServices:
         service.create_files()
 
         # then
-        node.nodefile.assert_called_with(MyService.files[0], text)
+        file_path = Path(MyService.files[0])
+        node.nodefile.assert_called_with(file_path, text)
 
     def test_create_files_text(self):
         # given
@@ -92,7 +95,8 @@ class TestConfigServices:
         service.create_files()
 
         # then
-        node.nodefile.assert_called_with(MyService.files[0], TEMPLATE_TEXT)
+        file_path = Path(MyService.files[0])
+        node.nodefile.assert_called_with(file_path, TEMPLATE_TEXT)
 
     def test_run_startup(self):
         # given

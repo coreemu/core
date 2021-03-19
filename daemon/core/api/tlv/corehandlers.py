@@ -3,7 +3,6 @@ socket server request handlers leveraged by core servers.
 """
 
 import logging
-import os
 import shlex
 import shutil
 import socketserver
@@ -11,6 +10,7 @@ import sys
 import threading
 import time
 from itertools import repeat
+from pathlib import Path
 from queue import Empty, Queue
 from typing import Optional
 
@@ -167,39 +167,27 @@ class CoreHandler(socketserver.BaseRequestHandler):
         date_list = []
         thumb_list = []
         num_sessions = 0
-
         with self._sessions_lock:
             for _id in self.coreemu.sessions:
                 session = self.coreemu.sessions[_id]
                 num_sessions += 1
                 id_list.append(str(_id))
-
                 name = session.name
                 if not name:
                     name = ""
                 name_list.append(name)
-
-                file_name = session.file_name
-                if not file_name:
-                    file_name = ""
-                file_list.append(file_name)
-
+                file_name = str(session.file_path) if session.file_path else ""
+                file_list.append(str(file_name))
                 node_count_list.append(str(session.get_node_count()))
-
                 date_list.append(time.ctime(session.state_time))
-
-                thumb = session.thumbnail
-                if not thumb:
-                    thumb = ""
+                thumb = str(session.thumbnail) if session.thumbnail else ""
                 thumb_list.append(thumb)
-
         session_ids = "|".join(id_list)
         names = "|".join(name_list)
         files = "|".join(file_list)
         node_counts = "|".join(node_count_list)
         dates = "|".join(date_list)
         thumbs = "|".join(thumb_list)
-
         if num_sessions > 0:
             tlv_data = b""
             if len(session_ids) > 0:
@@ -221,7 +209,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             message = coreapi.CoreSessionMessage.pack(flags, tlv_data)
         else:
             message = None
-
         return message
 
     def handle_broadcast_event(self, event_data):
@@ -931,22 +918,18 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if message.flags & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
-                file_name = sys.argv[0]
-
-                if os.path.splitext(file_name)[1].lower() == ".xml":
+                file_path = Path(sys.argv[0])
+                if file_path.suffix == ".xml":
                     session = self.coreemu.create_session()
                     try:
-                        session.open_xml(file_name)
+                        session.open_xml(file_path)
                     except Exception:
                         self.coreemu.delete_session(session.id)
                         raise
                 else:
                     thread = threading.Thread(
                         target=utils.execute_file,
-                        args=(
-                            file_name,
-                            {"__file__": file_name, "coreemu": self.coreemu},
-                        ),
+                        args=(file_path, {"coreemu": self.coreemu}),
                         daemon=True,
                     )
                     thread.start()
@@ -1465,10 +1448,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
-            node_num = message.get_tlv(FileTlvs.NODE.value)
+            node_id = message.get_tlv(FileTlvs.NODE.value)
             file_name = message.get_tlv(FileTlvs.NAME.value)
             file_type = message.get_tlv(FileTlvs.TYPE.value)
-            source_name = message.get_tlv(FileTlvs.SOURCE_NAME.value)
+            src_path = message.get_tlv(FileTlvs.SOURCE_NAME.value)
+            if src_path:
+                src_path = Path(src_path)
             data = message.get_tlv(FileTlvs.DATA.value)
             compressed_data = message.get_tlv(FileTlvs.COMPRESSED_DATA.value)
 
@@ -1478,7 +1463,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 )
                 return ()
 
-            if source_name and data:
+            if src_path and data:
                 logging.warning(
                     "ignoring invalid File message: source and data TLVs are both present"
                 )
@@ -1490,7 +1475,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(":")[:2]
                     self.session.services.set_service_file(
-                        node_num, service_name, file_name, data
+                        node_id, service_name, file_name, data
                     )
                     return ()
                 elif file_type.startswith("hook:"):
@@ -1500,19 +1485,20 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         return ()
                     state = int(state)
                     state = EventTypes(state)
-                    self.session.add_hook(state, file_name, data, source_name)
+                    self.session.add_hook(state, file_name, data, src_path)
                     return ()
 
             # writing a file to the host
-            if node_num is None:
-                if source_name is not None:
-                    shutil.copy2(source_name, file_name)
+            if node_id is None:
+                if src_path is not None:
+                    shutil.copy2(src_path, file_name)
                 else:
-                    with open(file_name, "w") as open_file:
-                        open_file.write(data)
+                    with file_name.open("w") as f:
+                        f.write(data)
                 return ()
 
-            self.session.add_node_file(node_num, source_name, file_name, data)
+            file_path = Path(file_name)
+            self.session.add_node_file(node_id, src_path, file_path, data)
         else:
             raise NotImplementedError
 
@@ -1567,26 +1553,32 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     "dropping unhandled event message for node: %s", node.name
                 )
                 return ()
-            self.session.set_state(event_type)
 
         if event_type == EventTypes.DEFINITION_STATE:
+            self.session.set_state(event_type)
             # clear all session objects in order to receive new definitions
             self.session.clear()
+        elif event_type == EventTypes.CONFIGURATION_STATE:
+            self.session.set_state(event_type)
         elif event_type == EventTypes.INSTANTIATION_STATE:
+            self.session.set_state(event_type)
             if len(self.handler_threads) > 1:
                 # TODO: sync handler threads here before continuing
                 time.sleep(2.0)  # XXX
             # done receiving node/link configuration, ready to instantiate
             self.session.instantiate()
 
-            # after booting nodes attempt to send emulation id for nodes waiting on status
+            # after booting nodes attempt to send emulation id for nodes
+            # waiting on status
             for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
+            self.session.set_state(event_type)
             logging.warning("Unexpected event message: RUNTIME state received")
         elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
         elif event_type == EventTypes.SHUTDOWN_STATE:
+            self.session.set_state(event_type)
             logging.warning("Unexpected event message: SHUTDOWN state received")
         elif event_type in {
             EventTypes.START,
@@ -1613,13 +1605,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     name,
                 )
         elif event_type == EventTypes.FILE_OPEN:
-            filename = event_data.name
-            self.session.open_xml(filename, start=False)
+            file_path = Path(event_data.name)
+            self.session.open_xml(file_path, start=False)
             self.send_objects()
             return ()
         elif event_type == EventTypes.FILE_SAVE:
-            filename = event_data.name
-            self.session.save_xml(filename)
+            file_path = Path(event_data.name)
+            self.session.save_xml(file_path)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node_id = event_data.node
@@ -1733,20 +1725,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     session = self.session
                 else:
                     session = self.coreemu.sessions.get(session_id)
-
                 if session is None:
                     logging.warning("session %s not found", session_id)
                     continue
-
                 if names is not None:
                     session.name = names[index]
-
                 if files is not None:
-                    session.file_name = files[index]
-
+                    session.file_path = Path(files[index])
                 if thumb:
+                    thumb = Path(thumb)
                     session.set_thumbnail(thumb)
-
                 if user:
                     session.set_user(user)
         elif (

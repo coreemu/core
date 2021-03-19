@@ -3,6 +3,7 @@ import logging
 import os
 import signal
 import sys
+from pathlib import Path
 from typing import Dict, List, Type
 
 import core.services
@@ -60,10 +61,11 @@ class CoreEmu:
 
         # config services
         self.service_manager: ConfigServiceManager = ConfigServiceManager()
-        config_services_path = os.path.abspath(os.path.dirname(configservices.__file__))
+        config_services_path = Path(configservices.__file__).resolve().parent
         self.service_manager.load(config_services_path)
         custom_dir = self.config.get("custom_config_services_dir")
-        if custom_dir:
+        if custom_dir is not None:
+            custom_dir = Path(custom_dir)
             self.service_manager.load(custom_dir)
 
         # check executables exist on path
@@ -91,13 +93,12 @@ class CoreEmu:
         """
         # load default services
         self.service_errors = core.services.load()
-
         # load custom services
         service_paths = self.config.get("custom_services_dir")
         logging.debug("custom service paths: %s", service_paths)
-        if service_paths:
+        if service_paths is not None:
             for service_path in service_paths.split(","):
-                service_path = service_path.strip()
+                service_path = Path(service_path.strip())
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
 

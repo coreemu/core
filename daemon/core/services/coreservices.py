@@ -10,6 +10,7 @@ services.
 import enum
 import logging
 import time
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Dict,
@@ -264,7 +265,7 @@ class ServiceManager:
         return service
 
     @classmethod
-    def add_services(cls, path: str) -> List[str]:
+    def add_services(cls, path: Path) -> List[str]:
         """
         Method for retrieving all CoreServices from a given path.
 
@@ -276,7 +277,6 @@ class ServiceManager:
         for service in services:
             if not service.name:
                 continue
-
             try:
                 cls.add(service)
             except (CoreError, ValueError) as e:
@@ -488,9 +488,10 @@ class CoreServices:
 
         # create service directories
         for directory in service.dirs:
+            dir_path = Path(directory)
             try:
-                node.privatedir(directory)
-            except (CoreCommandError, ValueError) as e:
+                node.privatedir(dir_path)
+            except (CoreCommandError, CoreError) as e:
                 logging.warning(
                     "error mounting private dir '%s' for service '%s': %s",
                     directory,
@@ -534,14 +535,14 @@ class CoreServices:
                     "node(%s) service(%s) failed validation" % (node.name, service.name)
                 )
 
-    def copy_service_file(self, node: CoreNode, filename: str, cfg: str) -> bool:
+    def copy_service_file(self, node: CoreNode, file_path: Path, cfg: str) -> bool:
         """
         Given a configured service filename and config, determine if the
         config references an existing file that should be copied.
         Returns True for local files, False for generated.
 
         :param node: node to copy service for
-        :param filename: file name for a configured service
+        :param file_path: file name for a configured service
         :param cfg: configuration string
         :return: True if successful, False otherwise
         """
@@ -550,7 +551,7 @@ class CoreServices:
             src = src.split("\n")[0]
             src = utils.expand_corepath(src, node.session, node)
             # TODO: glob here
-            node.nodefilecopy(filename, src, mode=0o644)
+            node.nodefilecopy(file_path, src, mode=0o644)
             return True
         return False
 
@@ -729,8 +730,8 @@ class CoreServices:
         config_files = service.configs
         if not service.custom:
             config_files = service.get_configs(node)
-
         for file_name in config_files:
+            file_path = Path(file_name)
             logging.debug(
                 "generating service config custom(%s): %s", service.custom, file_name
             )
@@ -738,18 +739,16 @@ class CoreServices:
                 cfg = service.config_data.get(file_name)
                 if cfg is None:
                     cfg = service.generate_config(node, file_name)
-
                 # cfg may have a file:/// url for copying from a file
                 try:
-                    if self.copy_service_file(node, file_name, cfg):
+                    if self.copy_service_file(node, file_path, cfg):
                         continue
                 except IOError:
                     logging.exception("error copying service file: %s", file_name)
                     continue
             else:
                 cfg = service.generate_config(node, file_name)
-
-            node.nodefile(file_name, cfg)
+            node.nodefile(file_path, cfg)
 
     def service_reconfigure(self, node: CoreNode, service: "CoreService") -> None:
         """
@@ -762,17 +761,15 @@ class CoreServices:
         config_files = service.configs
         if not service.custom:
             config_files = service.get_configs(node)
-
         for file_name in config_files:
+            file_path = Path(file_name)
             if file_name[:7] == "file:///":
                 # TODO: implement this
                 raise NotImplementedError
-
             cfg = service.config_data.get(file_name)
             if cfg is None:
                 cfg = service.generate_config(node, file_name)
-
-            node.nodefile(file_name, cfg)
+            node.nodefile(file_path, cfg)
 
 
 class CoreService:

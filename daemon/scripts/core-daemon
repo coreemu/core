@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 from configparser import ConfigParser
+from pathlib import Path
 
 from core import constants
 from core.api.grpc.server import CoreGrpcServer
@@ -148,7 +149,8 @@ def main():
     :return: nothing
     """
     cfg = get_merged_config(f"{CORE_CONF_DIR}/core.conf")
-    load_logging_config(cfg["logfile"])
+    log_config_path = Path(cfg["logfile"])
+    load_logging_config(log_config_path)
     banner()
     try:
         cored(cfg)

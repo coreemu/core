@@ -271,11 +271,11 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
     node_dir = None
     config_services = []
     if isinstance(node, CoreNodeBase):
-        node_dir = node.nodedir
+        node_dir = str(node.nodedir)
         config_services = [x for x in node.config_services]
     channel = None
     if isinstance(node, CoreNode):
-        channel = node.ctrlchnlname
+        channel = str(node.ctrlchnlname)
     emane_model = None
     if isinstance(node, EmaneNet):
         emane_model = node.model.name

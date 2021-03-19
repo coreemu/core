@@ -3,7 +3,7 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 import logging
-import os
+from pathlib import Path
 from typing import Dict, List
 
 from lxml import etree
@@ -48,8 +48,8 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     external_config: List[Configuration] = []
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        shim_xml_path = os.path.join(emane_prefix, "share/emane/manifest", cls.shim_xml)
+    def load(cls, emane_prefix: Path) -> None:
+        shim_xml_path = emane_prefix / "share/emane/manifest" / cls.shim_xml
         cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod

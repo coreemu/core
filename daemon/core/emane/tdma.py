@@ -3,7 +3,7 @@ tdma.py: EMANE TDMA model bindings for CORE
 """
 
 import logging
-import os
+from pathlib import Path
 from typing import Set
 
 from core import constants, utils
@@ -22,27 +22,25 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name: str = "schedule"
-    default_schedule: str = os.path.join(
-        constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml"
+    default_schedule: Path = (
+        constants.CORE_DATA_DIR / "examples" / "tdma" / "schedule.xml"
     )
     config_ignore: Set[str] = {schedule_name}
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        cls.mac_defaults["pcrcurveuri"] = os.path.join(
-            emane_prefix,
-            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
+    def load(cls, emane_prefix: Path) -> None:
+        cls.mac_defaults["pcrcurveuri"] = str(
+            emane_prefix
+            / "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml"
         )
         super().load(emane_prefix)
-        cls.mac_config.insert(
-            0,
-            Configuration(
-                _id=cls.schedule_name,
-                _type=ConfigDataTypes.STRING,
-                default=cls.default_schedule,
-                label="TDMA schedule file (core)",
-            ),
+        config_item = Configuration(
+            _id=cls.schedule_name,
+            _type=ConfigDataTypes.STRING,
+            default=str(cls.default_schedule),
+            label="TDMA schedule file (core)",
         )
+        cls.mac_config.insert(0, config_item)
 
     def post_startup(self) -> None:
         """

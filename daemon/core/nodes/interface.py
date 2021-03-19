@@ -4,6 +4,7 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 import netaddr
@@ -79,7 +80,7 @@ class CoreInterface:
         self,
         args: str,
         env: Dict[str, str] = None,
-        cwd: str = None,
+        cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:

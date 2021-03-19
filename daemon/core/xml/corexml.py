@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from lxml import etree
@@ -25,7 +26,7 @@ T = TypeVar("T")
 
 
 def write_xml_file(
-    xml_element: etree.Element, file_path: str, doctype: str = None
+    xml_element: etree.Element, file_path: Path, doctype: str = None
 ) -> None:
     xml_data = etree.tostring(
         xml_element,
@@ -34,8 +35,8 @@ def write_xml_file(
         encoding="UTF-8",
         doctype=doctype,
     )
-    with open(file_path, "wb") as xml_file:
-        xml_file.write(xml_data)
+    with file_path.open("wb") as f:
+        f.write(xml_data)
 
 
 def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T]:
@@ -293,13 +294,12 @@ class CoreXmlWriter:
         self.write_session_metadata()
         self.write_default_services()
 
-    def write(self, file_name: str) -> None:
-        self.scenario.set("name", file_name)
-
+    def write(self, path: Path) -> None:
+        self.scenario.set("name", str(path))
         # write out generated xml
         xml_tree = etree.ElementTree(self.scenario)
         xml_tree.write(
-            file_name, xml_declaration=True, pretty_print=True, encoding="UTF-8"
+            str(path), xml_declaration=True, pretty_print=True, encoding="UTF-8"
         )
 
     def write_session_origin(self) -> None:
@@ -580,8 +580,8 @@ class CoreXmlReader:
         self.session: "Session" = session
         self.scenario: Optional[etree.ElementTree] = None
 
-    def read(self, file_name: str) -> None:
-        xml_tree = etree.parse(file_name)
+    def read(self, file_path: Path) -> None:
+        xml_tree = etree.parse(str(file_path))
         self.scenario = xml_tree.getroot()
 
         # read xml session content

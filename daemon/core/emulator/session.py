@@ -103,13 +103,13 @@ class Session:
         self.id: int = _id
 
         # define and create session directory when desired
-        self.session_dir: str = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
+        self.session_dir: Path = Path(tempfile.gettempdir()) / f"pycore.{self.id}"
         if mkdir:
-            os.mkdir(self.session_dir)
+            self.session_dir.mkdir()
 
         self.name: Optional[str] = None
-        self.file_name: Optional[str] = None
-        self.thumbnail: Optional[str] = None
+        self.file_path: Optional[Path] = None
+        self.thumbnail: Optional[Path] = None
         self.user: Optional[str] = None
         self.event_loop: EventLoop = EventLoop()
         self.link_colors: Dict[int, str] = {}
@@ -641,42 +641,39 @@ class Session:
         logging.info("session(%s) checking if active: %s", self.id, result)
         return result
 
-    def open_xml(self, file_name: str, start: bool = False) -> None:
+    def open_xml(self, file_path: Path, start: bool = False) -> None:
         """
         Import a session from the EmulationScript XML format.
 
-        :param file_name: xml file to load session from
+        :param file_path: xml file to load session from
         :param start: instantiate session if true, false otherwise
         :return: nothing
         """
-        logging.info("opening xml: %s", file_name)
-
+        logging.info("opening xml: %s", file_path)
         # clear out existing session
         self.clear()
-
         # set state and read xml
         state = EventTypes.CONFIGURATION_STATE if start else EventTypes.DEFINITION_STATE
         self.set_state(state)
-        self.name = os.path.basename(file_name)
-        self.file_name = file_name
-        CoreXmlReader(self).read(file_name)
-
+        self.name = file_path.name
+        self.file_path = file_path
+        CoreXmlReader(self).read(file_path)
         # start session if needed
         if start:
             self.set_state(EventTypes.INSTANTIATION_STATE)
             self.instantiate()
 
-    def save_xml(self, file_name: str) -> None:
+    def save_xml(self, file_path: Path) -> None:
         """
         Export a session to the EmulationScript XML format.
 
-        :param file_name: file name to write session xml to
+        :param file_path: file name to write session xml to
         :return: nothing
         """
-        CoreXmlWriter(self).write(file_name)
+        CoreXmlWriter(self).write(file_path)
 
     def add_hook(
-        self, state: EventTypes, file_name: str, data: str, source_name: str = None
+        self, state: EventTypes, file_name: str, data: str, src_name: str = None
     ) -> None:
         """
         Store a hook from a received file message.
@@ -684,11 +681,11 @@ class Session:
         :param state: when to run hook
         :param file_name: file name for hook
         :param data: hook data
-        :param source_name: source name
+        :param src_name: source name
         :return: nothing
         """
         logging.info(
-            "setting state hook: %s - %s source(%s)", state, file_name, source_name
+            "setting state hook: %s - %s source(%s)", state, file_name, src_name
         )
         hook = file_name, data
         state_hooks = self.hooks.setdefault(state, [])
@@ -700,22 +697,22 @@ class Session:
             self.run_hook(hook)
 
     def add_node_file(
-        self, node_id: int, source_name: str, file_name: str, data: str
+        self, node_id: int, src_path: Path, file_path: Path, data: str
     ) -> None:
         """
         Add a file to a node.
 
         :param node_id: node to add file to
-        :param source_name: source file name
-        :param file_name: file name to add
+        :param src_path: source file path
+        :param file_path: file path to add
         :param data: file data
         :return: nothing
         """
         node = self.get_node(node_id, CoreNodeBase)
-        if source_name is not None:
-            node.addfile(source_name, file_name)
+        if src_path is not None:
+            node.addfile(src_path, file_path)
         elif data is not None:
-            node.nodefile(file_name, data)
+            node.nodefile(file_path, data)
 
     def clear(self) -> None:
         """
@@ -879,9 +876,9 @@ class Session:
         :param state: state to write to file
         :return: nothing
         """
-        state_file = os.path.join(self.session_dir, "state")
+        state_file = self.session_dir / "state"
         try:
-            with open(state_file, "w") as f:
+            with state_file.open("w") as f:
                 f.write(f"{state.value} {state.name}\n")
         except IOError:
             logging.exception("error writing state file: %s", state.name)
@@ -907,12 +904,12 @@ class Session:
         """
         file_name, data = hook
         logging.info("running hook %s", file_name)
-        file_path = os.path.join(self.session_dir, file_name)
-        log_path = os.path.join(self.session_dir, f"{file_name}.log")
+        file_path = self.session_dir / file_name
+        log_path = self.session_dir / f"{file_name}.log"
         try:
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 f.write(data)
-            with open(log_path, "w") as f:
+            with log_path.open("w") as f:
                 args = ["/bin/sh", file_name]
                 subprocess.check_call(
                     args,
@@ -983,10 +980,10 @@ class Session:
         """
         self.emane.poststartup()
         # create session deployed xml
-        xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
         xml_writer = corexml.CoreXmlWriter(self)
         corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-        xml_writer.write(xml_file_name)
+        xml_file_path = self.session_dir / "session-deployed.xml"
+        xml_writer.write(xml_file_path)
 
     def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
@@ -1001,9 +998,9 @@ class Session:
         env["CORE_PYTHON"] = sys.executable
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
-        env["SESSION_DIR"] = self.session_dir
+        env["SESSION_DIR"] = str(self.session_dir)
         env["SESSION_NAME"] = str(self.name)
-        env["SESSION_FILENAME"] = str(self.file_name)
+        env["SESSION_FILENAME"] = str(self.file_path)
         env["SESSION_USER"] = str(self.user)
         if state:
             env["SESSION_STATE"] = str(self.state)
@@ -1011,8 +1008,8 @@ class Session:
         # /etc/core/environment
         # /home/user/.core/environment
         # /tmp/pycore.<session id>/environment
-        core_env_path = Path(constants.CORE_CONF_DIR) / "environment"
-        session_env_path = Path(self.session_dir) / "environment"
+        core_env_path = constants.CORE_CONF_DIR / "environment"
+        session_env_path = self.session_dir / "environment"
         if self.user:
             user_home_path = Path(f"~{self.user}").expanduser()
             user_env1 = user_home_path / ".core" / "environment"
@@ -1028,20 +1025,20 @@ class Session:
                     logging.exception("error reading environment file: %s", path)
         return env
 
-    def set_thumbnail(self, thumb_file: str) -> None:
+    def set_thumbnail(self, thumb_file: Path) -> None:
         """
         Set the thumbnail filename. Move files from /tmp to session dir.
 
         :param thumb_file: tumbnail file to set for session
         :return: nothing
         """
-        if not os.path.exists(thumb_file):
+        if not thumb_file.is_file():
             logging.error("thumbnail file to set does not exist: %s", thumb_file)
             self.thumbnail = None
             return
-        destination_file = os.path.join(self.session_dir, os.path.basename(thumb_file))
-        shutil.copy(thumb_file, destination_file)
-        self.thumbnail = destination_file
+        dst_path = self.session_dir / thumb_file.name
+        shutil.copy(thumb_file, dst_path)
+        self.thumbnail = dst_path
 
     def set_user(self, user: str) -> None:
         """
@@ -1054,7 +1051,7 @@ class Session:
         if user:
             try:
                 uid = pwd.getpwnam(user).pw_uid
-                gid = os.stat(self.session_dir).st_gid
+                gid = self.session_dir.stat().st_gid
                 os.chown(self.session_dir, uid, gid)
             except IOError:
                 logging.exception("failed to set permission on %s", self.session_dir)
@@ -1140,10 +1137,10 @@ class Session:
         Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
         """
-        file_path = os.path.join(self.session_dir, "nodes")
+        file_path = self.session_dir / "nodes"
         try:
             with self.nodes_lock:
-                with open(file_path, "w") as f:
+                with file_path.open("w") as f:
                     for _id, node in self.nodes.items():
                         f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
         except IOError:
@@ -1268,15 +1265,13 @@ class Session:
         # stop event loop
         self.event_loop.stop()
 
-        # stop node services
+        # stop mobility and node services
         with self.nodes_lock:
             funcs = []
-            for node_id in self.nodes:
-                node = self.nodes[node_id]
-                if not isinstance(node, CoreNodeBase) or not node.up:
-                    continue
-                args = (node,)
-                funcs.append((self.services.stop_services, args, {}))
+            for node in self.nodes.values():
+                if isinstance(node, CoreNodeBase) and node.up:
+                    args = (node,)
+                    funcs.append((self.services.stop_services, args, {}))
             utils.threadpool(funcs)
 
         # shutdown emane

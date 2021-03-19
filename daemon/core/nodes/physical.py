@@ -3,9 +3,9 @@ PhysicalNode class for including real systems in the emulated network.
 """
 
 import logging
-import os
 import threading
-from typing import IO, TYPE_CHECKING, List, Optional, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -26,15 +26,15 @@ class PhysicalNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: str = None,
+        nodedir: Path = None,
         server: DistributedServer = None,
     ) -> None:
         super().__init__(session, _id, name, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
-        self.nodedir: Optional[str] = nodedir
+        self.nodedir: Optional[Path] = nodedir
         self.lock: threading.RLock = threading.RLock()
-        self._mounts: List[Tuple[str, str]] = []
+        self._mounts: List[Tuple[Path, Path]] = []
 
     def startup(self) -> None:
         with self.lock:
@@ -44,15 +44,12 @@ class PhysicalNode(CoreNodeBase):
     def shutdown(self) -> None:
         if not self.up:
             return
-
         with self.lock:
             while self._mounts:
-                _source, target = self._mounts.pop(-1)
-                self.umount(target)
-
+                _, target_path = self._mounts.pop(-1)
+                self.umount(target_path)
             for iface in self.get_ifaces():
                 iface.shutdown()
-
             self.rmnodedir()
 
     def path_exists(self, path: str) -> bool:
@@ -186,55 +183,40 @@ class PhysicalNode(CoreNodeBase):
             self.adopt_iface(iface, iface_id, iface_data.mac, ips)
             return iface
 
-    def privatedir(self, path: str) -> None:
-        if path[0] != "/":
-            raise ValueError(f"path not fully qualified: {path}")
-        hostpath = os.path.join(
-            self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
-        )
-        os.mkdir(hostpath)
-        self.mount(hostpath, path)
+    def privatedir(self, dir_path: Path) -> None:
+        if not str(dir_path).startswith("/"):
+            raise CoreError(f"private directory path not fully qualified: {dir_path}")
+        host_path = self.host_path(dir_path, is_dir=True)
+        self.host_cmd(f"mkdir -p {host_path}")
+        self.mount(host_path, dir_path)
 
-    def mount(self, source: str, target: str) -> None:
-        source = os.path.abspath(source)
-        logging.info("mounting %s at %s", source, target)
-        os.makedirs(target)
-        self.host_cmd(f"{MOUNT} --bind {source} {target}", cwd=self.nodedir)
-        self._mounts.append((source, target))
+    def mount(self, src_path: Path, target_path: Path) -> None:
+        logging.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
+        self.cmd(f"mkdir -p {target_path}")
+        self.host_cmd(f"{MOUNT} --bind {src_path} {target_path}", cwd=self.nodedir)
+        self._mounts.append((src_path, target_path))
 
-    def umount(self, target: str) -> None:
-        logging.info("unmounting '%s'", target)
+    def umount(self, target_path: Path) -> None:
+        logging.info("unmounting '%s'", target_path)
         try:
-            self.host_cmd(f"{UMOUNT} -l {target}", cwd=self.nodedir)
+            self.host_cmd(f"{UMOUNT} -l {target_path}", cwd=self.nodedir)
         except CoreCommandError:
-            logging.exception("unmounting failed for %s", target)
+            logging.exception("unmounting failed for %s", target_path)
 
-    def opennodefile(self, filename: str, mode: str = "w") -> IO:
-        dirname, basename = os.path.split(filename)
-        if not basename:
-            raise ValueError("no basename for filename: " + filename)
-
-        if dirname and dirname[0] == "/":
-            dirname = dirname[1:]
-
-        dirname = dirname.replace("/", ".")
-        dirname = os.path.join(self.nodedir, dirname)
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0o755)
-
-        hostfilename = os.path.join(dirname, basename)
-        return open(hostfilename, mode)
-
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
-        with self.opennodefile(filename, "w") as f:
+    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        host_path = self.host_path(file_path)
+        directory = host_path.parent
+        if not directory.is_dir():
+            directory.mkdir(parents=True, mode=0o755)
+        with host_path.open("w") as f:
             f.write(contents)
-            os.chmod(f.name, mode)
-            logging.info("created nodefile: '%s'; mode: 0%o", f.name, mode)
+        host_path.chmod(mode)
+        logging.info("created nodefile: '%s'; mode: 0%o", host_path, mode)
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         return self.host_cmd(args, wait=wait)
 
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: str, file_path: str) -> None:
         raise CoreError("physical node does not support addfile")
 
 
@@ -464,10 +446,10 @@ class Rj45Node(CoreNodeBase):
     def termcmdstring(self, sh: str) -> str:
         raise CoreError("rj45 does not support terminal commands")
 
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: str, file_path: str) -> None:
         raise CoreError("rj45 does not support addfile")
 
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+    def nodefile(self, file_path: str, contents: str, mode: int = 0o644) -> None:
         raise CoreError("rj45 does not support nodefile")
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:

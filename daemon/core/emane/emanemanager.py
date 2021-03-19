@@ -8,6 +8,7 @@ import threading
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 from core import utils
@@ -175,17 +176,15 @@ class EmaneManager(ModelManager):
         if not path:
             logging.info("emane is not installed")
             return
-
         # get version
         emane_version = utils.cmd("emane --version")
         logging.info("using emane: %s", emane_version)
-
         # load default emane models
         self.load_models(EMANE_MODELS)
-
         # load custom models
         custom_models_path = self.session.options.get_config("emane_models_dir")
-        if custom_models_path:
+        if custom_models_path is not None:
+            custom_models_path = Path(custom_models_path)
             emane_models = utils.load_classes(custom_models_path, EmaneModel)
             self.load_models(emane_models)
 
@@ -246,6 +245,7 @@ class EmaneManager(ModelManager):
             emane_prefix = self.session.options.get_config(
                 "emane_prefix", default=DEFAULT_EMANE_PREFIX
             )
+            emane_prefix = Path(emane_prefix)
             emane_model.load(emane_prefix)
             self.models[emane_model.name] = emane_model
 
@@ -398,9 +398,9 @@ class EmaneManager(ModelManager):
         return self.ifaces_to_nems.get(iface)
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
-        path = os.path.join(self.session.session_dir, "emane_nems")
+        path = self.session.session_dir / "emane_nems"
         try:
-            with open(path, "a") as f:
+            with path.open("a") as f:
                 f.write(f"{iface.node.name} {iface.name} {nem_id}\n")
         except IOError:
             logging.exception("error writing to emane nem file")
@@ -590,18 +590,17 @@ class EmaneManager(ModelManager):
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 node.node_net_client.create_route(eventgroup, eventdev)
             # start emane
-            log_file = os.path.join(node.nodedir, f"{node.name}-emane.log")
-            platform_xml = os.path.join(node.nodedir, f"{node.name}-platform.xml")
+            log_file = node.nodedir / f"{node.name}-emane.log"
+            platform_xml = node.nodedir / f"{node.name}-platform.xml"
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
         else:
-            path = self.session.session_dir
-            log_file = os.path.join(path, f"{node.name}-emane.log")
-            platform_xml = os.path.join(path, f"{node.name}-platform.xml")
-            emanecmd += f" -f {log_file} {platform_xml}"
-            node.host_cmd(emanecmd, cwd=path)
-            logging.info("node(%s) host emane daemon running: %s", node.name, emanecmd)
+            log_file = self.session.session_dir / f"{node.name}-emane.log"
+            platform_xml = self.session.session_dir / f"{node.name}-platform.xml"
+            args = f"{emanecmd} -f {log_file} {platform_xml}"
+            node.host_cmd(args, cwd=self.session.session_dir)
+            logging.info("node(%s) host emane daemon running: %s", node.name, args)
 
     def install_iface(self, iface: CoreInterface) -> None:
         emane_net = iface.net
@@ -869,7 +868,8 @@ class EmaneGlobalModel:
         emane_prefix = self.session.options.get_config(
             "emane_prefix", default=DEFAULT_EMANE_PREFIX
         )
-        emulator_xml = os.path.join(emane_prefix, "share/emane/manifest/nemmanager.xml")
+        emane_prefix = Path(emane_prefix)
+        emulator_xml = emane_prefix / "share/emane/manifest/nemmanager.xml"
         emulator_defaults = {
             "eventservicedevice": DEFAULT_DEV,
             "eventservicegroup": "224.1.2.8:45703",

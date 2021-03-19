@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Dict, List
 
 from core.config import Configuration
@@ -71,9 +72,10 @@ def _get_default(config_type_name: str, config_value: List[str]) -> str:
     return config_default
 
 
-def parse(manifest_path: str, defaults: Dict[str, str]) -> List[Configuration]:
+def parse(manifest_path: Path, defaults: Dict[str, str]) -> List[Configuration]:
     """
-    Parses a valid emane manifest file and converts the provided configuration values into ones used by core.
+    Parses a valid emane manifest file and converts the provided configuration values
+    into ones used by core.
 
     :param manifest_path: absolute manifest file path
     :param defaults: used to override default values for configurations
@@ -85,7 +87,7 @@ def parse(manifest_path: str, defaults: Dict[str, str]) -> List[Configuration]:
         return []
 
     # load configuration file
-    manifest_file = manifest.Manifest(manifest_path)
+    manifest_file = manifest.Manifest(str(manifest_path))
     manifest_configurations = manifest_file.getAllConfiguration()
 
     configurations = []

@@ -6,6 +6,7 @@ import tempfile
 import threading
 import time
 from concurrent import futures
+from pathlib import Path
 from typing import Iterable, Optional, Pattern, Type
 
 import grpc
@@ -221,8 +222,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
-        if not os.path.exists(session.session_dir):
-            os.mkdir(session.session_dir)
+        session.session_dir.mkdir(exist_ok=True)
         session.set_state(EventTypes.CONFIGURATION_STATE)
 
         # location
@@ -366,12 +366,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         sessions = []
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
+            session_file = str(session.file_path) if session.file_path else None
             session_summary = core_pb2.SessionSummary(
                 id=session_id,
                 state=session.state.value,
                 nodes=session.get_node_count(),
-                file=session.file_name,
-                dir=session.session_dir,
+                file=session_file,
+                dir=str(session.session_dir),
             )
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
@@ -423,14 +424,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set session state: %s", request)
         session = self.get_session(request.session_id, context)
-
         try:
             state = EventTypes(request.state)
             session.set_state(state)
-
             if state == EventTypes.INSTANTIATION_STATE:
-                if not os.path.exists(session.session_dir):
-                    os.mkdir(session.session_dir)
+                session.session_dir.mkdir(exist_ok=True)
                 session.instantiate()
             elif state == EventTypes.SHUTDOWN_STATE:
                 session.shutdown()
@@ -438,11 +436,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 session.data_collect()
             elif state == EventTypes.DEFINITION_STATE:
                 session.clear()
-
             result = True
         except KeyError:
             result = False
-
         return core_pb2.SetSessionStateResponse(result=result)
 
     def SetSessionUser(
@@ -573,12 +569,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         mobility_configs = grpcutils.get_mobility_configs(session)
         service_configs = grpcutils.get_node_service_configs(session)
         config_service_configs = grpcutils.get_node_config_service_configs(session)
+        session_file = str(session.file_path) if session.file_path else None
         session_proto = core_pb2.Session(
             id=session.id,
             state=session.state.value,
             nodes=nodes,
             links=links,
-            dir=session.session_dir,
+            dir=str(session.session_dir),
             user=session.user,
             default_services=default_services,
             location=location,
@@ -591,7 +588,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             config_service_configs=config_service_configs,
             mobility_configs=mobility_configs,
             metadata=session.metadata,
-            file=session.file_name,
+            file=session_file,
         )
         return core_pb2.GetSessionResponse(session=session_proto)
 
@@ -1508,15 +1505,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("open xml: %s", request)
         session = self.coreemu.create_session()
-
         temp = tempfile.NamedTemporaryFile(delete=False)
         temp.write(request.data.encode("utf-8"))
         temp.close()
-
+        temp_path = Path(temp.name)
+        file_path = Path(request.file)
         try:
-            session.open_xml(temp.name, request.start)
-            session.name = os.path.basename(request.file)
-            session.file_name = request.file
+            session.open_xml(temp_path, request.start)
+            session.name = file_path.name
+            session.file_path = file_path
             return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
         except IOError:
             logging.exception("error opening session file")
@@ -1733,12 +1730,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def ExecuteScript(self, request, context):
         existing_sessions = set(self.coreemu.sessions.keys())
+        file_path = Path(request.script)
         thread = threading.Thread(
             target=utils.execute_file,
-            args=(
-                request.script,
-                {"__file__": request.script, "coreemu": self.coreemu},
-            ),
+            args=(file_path, {"coreemu": self.coreemu}),
             daemon=True,
         )
         thread.start()

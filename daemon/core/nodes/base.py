@@ -3,9 +3,9 @@ Defines the base logic for nodes used within core.
 """
 import abc
 import logging
-import os
 import shutil
 import threading
+from pathlib import Path
 from threading import RLock
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
 
@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 
     CoreServices = List[Union[CoreService, Type[CoreService]]]
     ConfigServiceType = Type[ConfigService]
+
+PRIVATE_DIRS: List[Path] = [Path("/var/run"), Path("/var/log")]
 
 
 class NodeBase(abc.ABC):
@@ -97,7 +99,7 @@ class NodeBase(abc.ABC):
         self,
         args: str,
         env: Dict[str, str] = None,
-        cwd: str = None,
+        cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -221,7 +223,7 @@ class CoreNodeBase(NodeBase):
         """
         super().__init__(session, _id, name, server)
         self.config_services: Dict[str, "ConfigService"] = {}
-        self.nodedir: Optional[str] = None
+        self.nodedir: Optional[Path] = None
         self.tmpnodedir: bool = False
 
     @abc.abstractmethod
@@ -233,11 +235,11 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         """
         Create a node file with a given mode.
 
-        :param filename: name of file to create
+        :param file_path: name of file to create
         :param contents: contents of file
         :param mode: mode for file
         :return: nothing
@@ -245,12 +247,12 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: Path, file_path: Path) -> None:
         """
         Add a file.
 
-        :param srcname: source file name
-        :param filename: file name to add
+        :param src_path: source file path
+        :param file_path: file name to add
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -302,6 +304,21 @@ class CoreNodeBase(NodeBase):
         """
         raise NotImplementedError
 
+    def host_path(self, path: Path, is_dir: bool = False) -> Path:
+        """
+        Return the name of a node"s file on the host filesystem.
+
+        :param path: path to translate to host path
+        :param is_dir: True if path is a directory path, False otherwise
+        :return: path to file
+        """
+        if is_dir:
+            directory = str(path).strip("/").replace("/", ".")
+            return self.nodedir / directory
+        else:
+            directory = str(path.parent).strip("/").replace("/", ".")
+            return self.nodedir / directory / path.name
+
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
         Adds a configuration service to the node.
@@ -346,7 +363,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if self.nodedir is None:
-            self.nodedir = os.path.join(self.session.session_dir, self.name + ".conf")
+            self.nodedir = self.session.session_dir / f"{self.name}.conf"
             self.host_cmd(f"mkdir -p {self.nodedir}")
             self.tmpnodedir = True
         else:
@@ -458,7 +475,7 @@ class CoreNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: str = None,
+        nodedir: Path = None,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -472,14 +489,12 @@ class CoreNode(CoreNodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server)
-        self.nodedir: Optional[str] = nodedir
-        self.ctrlchnlname: str = os.path.abspath(
-            os.path.join(self.session.session_dir, self.name)
-        )
+        self.nodedir: Optional[Path] = nodedir
+        self.ctrlchnlname: Path = self.session.session_dir / self.name
         self.client: Optional[VnodeClient] = None
         self.pid: Optional[int] = None
         self.lock: RLock = RLock()
-        self._mounts: List[Tuple[str, str]] = []
+        self._mounts: List[Tuple[Path, Path]] = []
         self.node_net_client: LinuxNetClient = self.create_node_net_client(
             self.session.use_ovs()
         )
@@ -549,8 +564,8 @@ class CoreNode(CoreNodeBase):
             self.up = True
 
             # create private directories
-            self.privatedir("/var/run")
-            self.privatedir("/var/log")
+            for dir_path in PRIVATE_DIRS:
+                self.privatedir(dir_path)
 
     def shutdown(self) -> None:
         """
@@ -561,29 +576,24 @@ class CoreNode(CoreNodeBase):
         # nothing to do if node is not up
         if not self.up:
             return
-
         with self.lock:
             try:
                 # unmount all targets (NOTE: non-persistent mount namespaces are
                 # removed by the kernel when last referencing process is killed)
                 self._mounts = []
-
                 # shutdown all interfaces
                 for iface in self.get_ifaces():
                     iface.shutdown()
-
                 # kill node process if present
                 try:
                     self.host_cmd(f"kill -9 {self.pid}")
                 except CoreCommandError:
                     logging.exception("error killing process")
-
                 # remove node directory if present
                 try:
                     self.host_cmd(f"rm -rf {self.ctrlchnlname}")
                 except CoreCommandError:
                     logging.exception("error removing node directory")
-
                 # clear interface data, close client, and mark self and not up
                 self.ifaces.clear()
                 self.client.close()
@@ -636,35 +646,32 @@ class CoreNode(CoreNodeBase):
         else:
             return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
-    def privatedir(self, path: str) -> None:
+    def privatedir(self, dir_path: Path) -> None:
         """
         Create a private directory.
 
-        :param path: path to create
+        :param dir_path: path to create
         :return: nothing
         """
-        if path[0] != "/":
-            raise ValueError(f"path not fully qualified: {path}")
-        hostpath = os.path.join(
-            self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
-        )
-        self.host_cmd(f"mkdir -p {hostpath}")
-        self.mount(hostpath, path)
+        if not str(dir_path).startswith("/"):
+            raise CoreError(f"private directory path not fully qualified: {dir_path}")
+        host_path = self.host_path(dir_path, is_dir=True)
+        self.host_cmd(f"mkdir -p {host_path}")
+        self.mount(host_path, dir_path)
 
-    def mount(self, source: str, target: str) -> None:
+    def mount(self, src_path: Path, target_path: Path) -> None:
         """
         Create and mount a directory.
 
-        :param source: source directory to mount
-        :param target: target directory to create
+        :param src_path: source directory to mount
+        :param target_path: target directory to create
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        source = os.path.abspath(source)
-        logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        self.cmd(f"mkdir -p {target}")
-        self.cmd(f"{MOUNT} -n --bind {source} {target}")
-        self._mounts.append((source, target))
+        logging.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
+        self.cmd(f"mkdir -p {target_path}")
+        self.cmd(f"{MOUNT} -n --bind {src_path} {target_path}")
+        self._mounts.append((src_path, target_path))
 
     def next_iface_id(self) -> int:
         """
@@ -851,86 +858,66 @@ class CoreNode(CoreNodeBase):
                 self.ifup(iface_id)
                 return self.get_iface(iface_id)
 
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: Path, file_path: Path) -> None:
         """
         Add a file.
 
-        :param srcname: source file name
-        :param filename: file name to add
+        :param src_path: source file path
+        :param file_path: file name to add
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("adding file from %s to %s", srcname, filename)
-        directory = os.path.dirname(filename)
+        logging.info("adding file from %s to %s", src_path, file_path)
+        directory = file_path.parent
         if self.server is None:
             self.client.check_cmd(f"mkdir -p {directory}")
-            self.client.check_cmd(f"mv {srcname} {filename}")
+            self.client.check_cmd(f"mv {src_path} {file_path}")
             self.client.check_cmd("sync")
         else:
             self.host_cmd(f"mkdir -p {directory}")
-            self.server.remote_put(srcname, filename)
+            self.server.remote_put(src_path, file_path)
 
-    def hostfilename(self, filename: str) -> str:
-        """
-        Return the name of a node"s file on the host filesystem.
-
-        :param filename: host file name
-        :return: path to file
-        """
-        dirname, basename = os.path.split(filename)
-        if not basename:
-            raise ValueError(f"no basename for filename: {filename}")
-        if dirname and dirname[0] == "/":
-            dirname = dirname[1:]
-        dirname = dirname.replace("/", ".")
-        dirname = os.path.join(self.nodedir, dirname)
-        return os.path.join(dirname, basename)
-
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         """
         Create a node file with a given mode.
 
-        :param filename: name of file to create
+        :param file_path: name of file to create
         :param contents: contents of file
         :param mode: mode for file
         :return: nothing
         """
-        hostfilename = self.hostfilename(filename)
-        dirname, _basename = os.path.split(hostfilename)
+        host_path = self.host_path(file_path)
+        directory = host_path.parent
         if self.server is None:
-            if not os.path.isdir(dirname):
-                os.makedirs(dirname, mode=0o755)
-            with open(hostfilename, "w") as open_file:
-                open_file.write(contents)
-                os.chmod(open_file.name, mode)
+            if not directory.exists():
+                directory.mkdir(parents=True, mode=0o755)
+            with host_path.open("w") as f:
+                f.write(contents)
+            host_path.chmod(mode)
         else:
-            self.host_cmd(f"mkdir -m {0o755:o} -p {dirname}")
-            self.server.remote_put_temp(hostfilename, contents)
-            self.host_cmd(f"chmod {mode:o} {hostfilename}")
-        logging.debug(
-            "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
-        )
+            self.host_cmd(f"mkdir -m {0o755:o} -p {directory}")
+            self.server.remote_put_temp(host_path, contents)
+            self.host_cmd(f"chmod {mode:o} {host_path}")
+        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, host_path, mode)
 
-    def nodefilecopy(self, filename: str, srcfilename: str, mode: int = None) -> None:
+    def nodefilecopy(self, file_path: Path, src_path: Path, mode: int = None) -> None:
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
 
-        :param filename: file name to copy file to
-        :param srcfilename: file to copy
+        :param file_path: file name to copy file to
+        :param src_path: file to copy
         :param mode: mode to copy to
         :return: nothing
         """
-        hostfilename = self.hostfilename(filename)
+        host_path = self.host_path(file_path)
         if self.server is None:
-            shutil.copy2(srcfilename, hostfilename)
+            shutil.copy2(src_path, host_path)
         else:
-            self.server.remote_put(srcfilename, hostfilename)
+            self.server.remote_put(src_path, host_path)
         if mode is not None:
-            self.host_cmd(f"chmod {mode:o} {hostfilename}")
-        logging.info(
-            "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
-        )
+            self.host_cmd(f"chmod {mode:o} {host_path}")
+        logging.info("node(%s) copied file: %s; mode: %s", self.name, host_path, mode)
 
 
 class CoreNetworkBase(NodeBase):

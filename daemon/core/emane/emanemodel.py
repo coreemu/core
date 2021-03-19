@@ -2,7 +2,7 @@
 Defines Emane Models used within CORE.
 """
 import logging
-import os
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from core.config import ConfigGroup, Configuration
@@ -53,7 +53,7 @@ class EmaneModel(WirelessModel):
     config_ignore: Set[str] = set()
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
+    def load(cls, emane_prefix: Path) -> None:
         """
         Called after being loaded within the EmaneManager. Provides configured emane_prefix for
         parsing xml files.
@@ -63,11 +63,10 @@ class EmaneModel(WirelessModel):
         """
         manifest_path = "share/emane/manifest"
         # load mac configuration
-        mac_xml_path = os.path.join(emane_prefix, manifest_path, cls.mac_xml)
+        mac_xml_path = emane_prefix / manifest_path / cls.mac_xml
         cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
-
         # load phy configuration
-        phy_xml_path = os.path.join(emane_prefix, manifest_path, cls.phy_xml)
+        phy_xml_path = emane_prefix / manifest_path / cls.phy_xml
         cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
 
     @classmethod

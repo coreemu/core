@@ -1,5 +1,5 @@
 import logging
-import os
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
@@ -54,7 +54,7 @@ def _value_to_params(value: str) -> Optional[Tuple[str]]:
 def create_file(
     xml_element: etree.Element,
     doc_name: str,
-    file_path: str,
+    file_path: Path,
     server: DistributedServer = None,
 ) -> None:
     """
@@ -71,10 +71,11 @@ def create_file(
     )
     if server:
         temp = NamedTemporaryFile(delete=False)
-        corexml.write_xml_file(xml_element, temp.name, doctype=doctype)
+        temp_path = Path(temp.name)
+        corexml.write_xml_file(xml_element, temp_path, doctype=doctype)
         temp.close()
-        server.remote_put(temp.name, file_path)
-        os.unlink(temp.name)
+        server.remote_put(temp_path, file_path)
+        temp_path.unlink()
     else:
         corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
@@ -92,9 +93,9 @@ def create_node_file(
     :return:
     """
     if isinstance(node, CoreNode):
-        file_path = os.path.join(node.nodedir, file_name)
+        file_path = node.nodedir / file_name
     else:
-        file_path = os.path.join(node.session.session_dir, file_name)
+        file_path = node.session.session_dir / file_name
     create_file(xml_element, doc_name, file_path, node.server)
 
 
@@ -316,7 +317,7 @@ def create_event_service_xml(
     group: str,
     port: str,
     device: str,
-    file_directory: str,
+    file_directory: Path,
     server: DistributedServer = None,
 ) -> None:
     """
@@ -340,8 +341,7 @@ def create_event_service_xml(
     ):
         sub_element = etree.SubElement(event_element, name)
         sub_element.text = value
-    file_name = "libemaneeventservice.xml"
-    file_path = os.path.join(file_directory, file_name)
+    file_path = file_directory / "libemaneeventservice.xml"
     create_file(event_element, "emaneeventmsgsvc", file_path, server)
 
 

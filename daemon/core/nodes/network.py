@@ -6,6 +6,7 @@ import logging
 import math
 import threading
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 import netaddr
@@ -292,7 +293,7 @@ class CoreNetwork(CoreNetworkBase):
         self,
         args: str,
         env: Dict[str, str] = None,
-        cwd: str = None,
+        cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -333,9 +334,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if not self.up:
             return
-
         ebq.stopupdateloop(self)
-
         try:
             self.net_client.delete_bridge(self.brname)
             if self.has_ebtables_chain:
@@ -346,11 +345,9 @@ class CoreNetwork(CoreNetworkBase):
                 ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
-
         # removes veth pairs used for bridge-to-bridge connections
         for iface in self.get_ifaces():
             iface.shutdown()
-
         self.ifaces.clear()
         self._linked.clear()
         del self.session
@@ -389,10 +386,8 @@ class CoreNetwork(CoreNetworkBase):
         # check if the network interfaces are attached to this network
         if self.ifaces[iface1.net_id] != iface1:
             raise ValueError(f"inconsistency for interface {iface1.name}")
-
         if self.ifaces[iface2.net_id] != iface2:
             raise ValueError(f"inconsistency for interface {iface2.name}")
-
         try:
             linked = self._linked[iface1][iface2]
         except KeyError:
@@ -403,7 +398,6 @@ class CoreNetwork(CoreNetworkBase):
             else:
                 raise Exception(f"unknown policy: {self.policy.value}")
             self._linked[iface1][iface2] = linked
-
         return linked
 
     def unlink(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
