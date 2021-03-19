@@ -25,7 +25,9 @@ from core.emulator.session import Session
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
+from core.nodes.docker import DockerNode
 from core.nodes.interface import CoreInterface
+from core.nodes.lxd import LxcNode
 from core.nodes.network import WlanNode
 from core.services.coreservices import CoreService
 
@@ -67,6 +69,7 @@ def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOption
         image=node_proto.image,
         services=node_proto.services,
         config_services=node_proto.config_services,
+        canvas=node_proto.canvas,
     )
     if node_proto.emane:
         options.emane = node_proto.emane
@@ -263,19 +266,22 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
     geo = core_pb2.Geo(
         lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
     )
-    services = getattr(node, "services", [])
-    if services is None:
-        services = []
-    services = [x.name for x in services]
-    config_services = getattr(node, "config_services", {})
-    config_services = [x for x in config_services]
+    services = [x.name for x in node.services]
+    model = node.type
+    node_dir = None
+    config_services = []
+    if isinstance(node, CoreNodeBase):
+        node_dir = node.nodedir
+        config_services = [x for x in node.config_services]
+    channel = None
+    if isinstance(node, CoreNode):
+        channel = node.ctrlchnlname
     emane_model = None
     if isinstance(node, EmaneNet):
         emane_model = node.model.name
-    model = getattr(node, "type", None)
-    node_dir = getattr(node, "nodedir", None)
-    channel = getattr(node, "ctrlchnlname", None)
-    image = getattr(node, "image", None)
+    image = None
+    if isinstance(node, (DockerNode, LxcNode)):
+        image = node.image
     return core_pb2.Node(
         id=node.id,
         name=node.name,
@@ -290,6 +296,7 @@ def get_node_proto(session: Session, node: NodeBase) -> core_pb2.Node:
         config_services=config_services,
         dir=node_dir,
         channel=channel,
+        canvas=node.canvas,
     )
 
 

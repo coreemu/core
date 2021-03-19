@@ -13,7 +13,7 @@ from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.lxd import LxcNode
-from core.nodes.network import CtrlNet, WlanNode
+from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
 from core.services.coreservices import CoreService
 
 if TYPE_CHECKING:
@@ -253,15 +253,13 @@ class DeviceElement(NodeElement):
 class NetworkElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "network")
-        model = getattr(self.node, "model", None)
-        if model:
-            add_attribute(self.element, "model", model.name)
-        mobility = getattr(self.node, "mobility", None)
-        if mobility:
-            add_attribute(self.element, "mobility", mobility.name)
-        grekey = getattr(self.node, "grekey", None)
-        if grekey and grekey is not None:
-            add_attribute(self.element, "grekey", grekey)
+        if isinstance(self.node, (WlanNode, EmaneNet)):
+            if self.node.model:
+                add_attribute(self.element, "model", self.node.model.name)
+            if self.node.mobility:
+                add_attribute(self.element, "mobility", self.node.mobility.name)
+        if isinstance(self.node, GreTapBridge):
+            add_attribute(self.element, "grekey", self.node.grekey)
         self.add_type()
 
     def add_type(self) -> None:

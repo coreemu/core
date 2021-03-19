@@ -1,53 +1,46 @@
 from enum import Enum
-from tkinter import messagebox
 from typing import Dict, Optional, Tuple
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import NodeType
+from core.api.grpc.wrappers import Node, NodeType
 from core.gui.appconfig import LOCAL_ICONS_PATH
 
+NODE_SIZE: int = 48
+ANTENNA_SIZE: int = 32
+BUTTON_SIZE: int = 16
+ERROR_SIZE: int = 24
+DIALOG_SIZE: int = 16
+IMAGES: Dict[str, str] = {}
 
-class Images:
-    images: Dict[str, str] = {}
 
-    @classmethod
-    def create(cls, file_path: str, width: int, height: int = None) -> PhotoImage:
-        if height is None:
-            height = width
-        image = Image.open(file_path)
-        image = image.resize((width, height), Image.ANTIALIAS)
-        return PhotoImage(image)
-
-    @classmethod
-    def load_all(cls) -> None:
-        for image in LOCAL_ICONS_PATH.glob("*"):
-            cls.images[image.stem] = str(image)
-
-    @classmethod
-    def get(cls, image_enum: Enum, width: int, height: int = None) -> PhotoImage:
-        file_path = cls.images[image_enum.value]
-        return cls.create(file_path, width, height)
-
-    @classmethod
-    def get_with_image_file(
-        cls, stem: str, width: int, height: int = None
-    ) -> PhotoImage:
-        file_path = cls.images[stem]
-        return cls.create(file_path, width, height)
-
-    @classmethod
-    def get_custom(cls, name: str, width: int, height: int = None) -> PhotoImage:
+def load_all() -> None:
+    for image in LOCAL_ICONS_PATH.glob("*"):
         try:
-            file_path = cls.images[name]
-            return cls.create(file_path, width, height)
-        except KeyError:
-            messagebox.showwarning(
-                "Missing image file",
-                f"{name}.png is missing at daemon/core/gui/data/icons, drop image "
-                f"file at daemon/core/gui/data/icons and restart the gui",
-            )
+            ImageEnum(image.stem)
+            IMAGES[image.stem] = str(image)
+        except ValueError:
+            pass
+
+
+def from_file(
+    file_path: str, *, width: int, height: int = None, scale: float = 1.0
+) -> PhotoImage:
+    if height is None:
+        height = width
+    width = int(width * scale)
+    height = int(height * scale)
+    image = Image.open(file_path)
+    image = image.resize((width, height), Image.ANTIALIAS)
+    return PhotoImage(image)
+
+
+def from_enum(
+    image_enum: "ImageEnum", *, width: int, height: int = None, scale: float = 1.0
+) -> PhotoImage:
+    file_path = IMAGES[image_enum.value]
+    return from_file(file_path, width=width, height=height, scale=scale)
 
 
 class ImageEnum(Enum):
@@ -90,25 +83,29 @@ class ImageEnum(Enum):
     SHUTDOWN = "shutdown"
     CANCEL = "cancel"
     ERROR = "error"
+    SHADOW = "shadow"
 
 
-class TypeToImage:
-    type_to_image: Dict[Tuple[NodeType, str], ImageEnum] = {
-        (NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
-        (NodeType.DEFAULT, "PC"): ImageEnum.PC,
-        (NodeType.DEFAULT, "host"): ImageEnum.HOST,
-        (NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
-        (NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
-        (NodeType.HUB, ""): ImageEnum.HUB,
-        (NodeType.SWITCH, ""): ImageEnum.SWITCH,
-        (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
-        (NodeType.EMANE, ""): ImageEnum.EMANE,
-        (NodeType.RJ45, ""): ImageEnum.RJ45,
-        (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
-        (NodeType.DOCKER, ""): ImageEnum.DOCKER,
-        (NodeType.LXC, ""): ImageEnum.LXC,
-    }
+TYPE_MAP: Dict[Tuple[NodeType, str], ImageEnum] = {
+    (NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
+    (NodeType.DEFAULT, "PC"): ImageEnum.PC,
+    (NodeType.DEFAULT, "host"): ImageEnum.HOST,
+    (NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
+    (NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
+    (NodeType.HUB, ""): ImageEnum.HUB,
+    (NodeType.SWITCH, ""): ImageEnum.SWITCH,
+    (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
+    (NodeType.EMANE, ""): ImageEnum.EMANE,
+    (NodeType.RJ45, ""): ImageEnum.RJ45,
+    (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
+    (NodeType.DOCKER, ""): ImageEnum.DOCKER,
+    (NodeType.LXC, ""): ImageEnum.LXC,
+}
 
-    @classmethod
-    def get(cls, node_type, model) -> Optional[ImageEnum]:
-        return cls.type_to_image.get((node_type, model))
+
+def from_node(node: Node, *, scale: float) -> Optional[PhotoImage]:
+    image = None
+    image_enum = TYPE_MAP.get((node.type, node.model))
+    if image_enum:
+        image = from_enum(image_enum, width=NODE_SIZE, scale=scale)
+    return image

@@ -2,8 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Dict, Optional
 
+from core.gui import nodeutils as nutils
 from core.gui.dialogs.dialog import Dialog
-from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
@@ -26,7 +26,7 @@ class RunToolDialog(Dialog):
         store all CORE nodes (nodes that execute commands) from all existing nodes
         """
         for node in self.app.core.session.nodes.values():
-            if NodeUtils.is_container_node(node.type):
+            if nutils.is_container(node):
                 self.executable_nodes[node.name] = node.id
 
     def draw(self) -> None:

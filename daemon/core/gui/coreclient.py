@@ -6,7 +6,6 @@ import json
 import logging
 import os
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -25,7 +24,6 @@ from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
     ExceptionEvent,
-    Interface,
     Link,
     LinkEvent,
     LinkType,
@@ -40,18 +38,16 @@ from core.api.grpc.wrappers import (
     SessionState,
     ThroughputsEvent,
 )
-from core.gui import appconfig
-from core.gui.appconfig import BACKGROUNDS_PATH, XMLS_PATH, CoreServer, Observer
+from core.gui import nodeutils as nutils
+from core.gui.appconfig import XMLS_PATH, CoreServer, Observer
 from core.gui.dialogs.emaneinstall import EmaneInstallDialog
-from core.gui.dialogs.error import ErrorDialog
 from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
-from core.gui.graph.shape import AnnotationData, Shape
-from core.gui.graph.shapeutils import ShapeType
+from core.gui.graph.shape import Shape
 from core.gui.interface import InterfaceManager
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.nodeutils import NodeDraw
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -155,7 +151,7 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event: core_pb2.Event) -> None:
-        if event.source == GUI_SOURCE:
+        if not self.session or event.source == GUI_SOURCE:
             return
         if event.session_id != self.session.id:
             logging.warning(
@@ -207,27 +203,26 @@ class CoreClient:
         canvas_node2 = self.canvas_nodes[node2_id]
         if event.link.type == LinkType.WIRELESS:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wireless_edge(
+                self.app.manager.add_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wireless_edge(
+                self.app.manager.delete_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wireless_edge(
+                self.app.manager.update_wireless_edge(
                     canvas_node1, canvas_node2, event.link
                 )
             else:
                 logging.warning("unknown link event: %s", event)
         else:
             if event.message_type == MessageType.ADD:
-                self.app.canvas.add_wired_edge(canvas_node1, canvas_node2, event.link)
-                self.app.canvas.organize()
+                self.app.manager.add_wired_edge(canvas_node1, canvas_node2, event.link)
             elif event.message_type == MessageType.DELETE:
-                self.app.canvas.delete_wired_edge(event.link)
+                self.app.manager.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:
-                self.app.canvas.update_wired_edge(event.link)
+                self.app.manager.update_wired_edge(event.link)
             else:
                 logging.warning("unknown link event: %s", event)
 
@@ -243,13 +238,13 @@ class CoreClient:
                 canvas_node.update_icon(node.icon)
         elif event.message_type == MessageType.DELETE:
             canvas_node = self.canvas_nodes[node.id]
-            self.app.canvas.clear_selection()
-            self.app.canvas.select_object(canvas_node.id)
-            self.app.canvas.delete_selected_objects()
+            canvas_node.canvas.clear_selection()
+            canvas_node.canvas.select_object(canvas_node.id)
+            canvas_node.canvas.delete_selected_objects()
         elif event.message_type == MessageType.ADD:
             if node.id in self.session.nodes:
                 logging.error("core node already exists: %s", node)
-            self.app.canvas.add_core_node(node)
+            self.app.manager.add_core_node(node)
         else:
             logging.warning("unknown node event: %s", event)
 
@@ -262,7 +257,7 @@ class CoreClient:
         if self.handling_throughputs:
             self.handling_throughputs.cancel()
             self.handling_throughputs = None
-            self.app.canvas.clear_throughputs()
+            self.app.manager.clear_throughputs()
 
     def cancel_events(self) -> None:
         if self.handling_events:
@@ -293,7 +288,7 @@ class CoreClient:
             )
             return
         logging.debug("handling throughputs event: %s", event)
-        self.app.after(0, self.app.canvas.set_throughputs, event)
+        self.app.after(0, self.app.manager.set_throughputs, event)
 
     def handle_cpu_event(self, event: core_pb2.CpuUsageEvent) -> None:
         self.app.after(0, self.app.statusbar.set_cpu, event.usage)
@@ -315,9 +310,7 @@ class CoreClient:
                 self.session.id, self.handle_events
             )
             self.ifaces_manager.joined(self.session.links)
-            self.app.canvas.reset_and_redraw(self.session)
-            self.parse_metadata()
-            self.app.canvas.organize()
+            self.app.manager.join(self.session)
             if self.is_runtime():
                 self.show_mobility_players()
             self.app.after(0, self.app.joined_session_update)
@@ -334,23 +327,7 @@ class CoreClient:
         logging.debug("canvas metadata: %s", canvas_config)
         if canvas_config:
             canvas_config = json.loads(canvas_config)
-            gridlines = canvas_config.get("gridlines", True)
-            self.app.canvas.show_grid.set(gridlines)
-            fit_image = canvas_config.get("fit_image", False)
-            self.app.canvas.adjust_to_dim.set(fit_image)
-            wallpaper_style = canvas_config.get("wallpaper-style", 1)
-            self.app.canvas.scale_option.set(wallpaper_style)
-            width = self.app.guiconfig.preferences.width
-            height = self.app.guiconfig.preferences.height
-            dimensions = canvas_config.get("dimensions", [width, height])
-            self.app.canvas.redraw_canvas(dimensions)
-            wallpaper = canvas_config.get("wallpaper")
-            if wallpaper:
-                wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
-            self.app.canvas.set_wallpaper(wallpaper)
-        else:
-            self.app.canvas.redraw_canvas()
-            self.app.canvas.set_wallpaper(None)
+            self.app.manager.parse_metadata(canvas_config)
 
         # load saved shapes
         shapes_config = config.get("shapes")
@@ -358,28 +335,7 @@ class CoreClient:
             shapes_config = json.loads(shapes_config)
             for shape_config in shapes_config:
                 logging.debug("loading shape: %s", shape_config)
-                shape_type = shape_config["type"]
-                try:
-                    shape_type = ShapeType(shape_type)
-                    coords = shape_config["iconcoords"]
-                    data = AnnotationData(
-                        shape_config["label"],
-                        shape_config["fontfamily"],
-                        shape_config["fontsize"],
-                        shape_config["labelcolor"],
-                        shape_config["color"],
-                        shape_config["border"],
-                        shape_config["width"],
-                        shape_config["bold"],
-                        shape_config["italic"],
-                        shape_config["underline"],
-                    )
-                    shape = Shape(
-                        self.app, self.app.canvas, shape_type, *coords, data=data
-                    )
-                    self.app.canvas.shapes[shape.id] = shape
-                except ValueError:
-                    logging.exception("unknown shape: %s", shape_type)
+                Shape.from_metadata(self.app, shape_config)
 
         # load edges config
         edges_config = config.get("edges")
@@ -391,6 +347,17 @@ class CoreClient:
                 edge.width = edge_config["width"]
                 edge.color = edge_config["color"]
                 edge.redraw()
+
+        # read hidden nodes
+        hidden = config.get("hidden")
+        if hidden:
+            hidden = json.loads(hidden)
+            for _id in hidden:
+                canvas_node = self.canvas_nodes.get(_id)
+                if canvas_node:
+                    canvas_node.hide()
+                else:
+                    logging.warning("invalid node to hide: %s", _id)
 
     def create_new_session(self) -> None:
         """
@@ -450,10 +417,11 @@ class CoreClient:
             if session_id:
                 session_ids = set(x.id for x in sessions)
                 if session_id not in session_ids:
-                    dialog = ErrorDialog(
-                        self.app, "Join Session Error", f"{session_id} does not exist"
+                    self.app.show_error(
+                        "Join Session Error",
+                        f"{session_id} does not exist",
+                        blocking=True,
                     )
-                    dialog.show()
                     self.app.close()
                 else:
                     self.join_session(session_id)
@@ -465,8 +433,7 @@ class CoreClient:
                     dialog.show()
         except grpc.RpcError as e:
             logging.exception("core setup error")
-            dialog = ErrorDialog(self.app, "Setup Error", e.details())
-            dialog.show()
+            self.app.show_grpc_exception("Setup Error", e, blocking=True)
             self.app.close()
 
     def edit_node(self, core_node: Node) -> None:
@@ -483,7 +450,7 @@ class CoreClient:
             self.client.add_session_server(self.session.id, server.name, server.address)
 
     def start_session(self) -> Tuple[bool, List[str]]:
-        self.ifaces_manager.reset_mac()
+        self.ifaces_manager.set_macs([x.link for x in self.links.values()])
         nodes = [x.to_proto() for x in self.session.nodes.values()]
         links = []
         asymmetric_links = []
@@ -548,7 +515,7 @@ class CoreClient:
 
     def show_mobility_players(self) -> None:
         for node in self.session.nodes.values():
-            if not NodeUtils.is_mobility(node):
+            if not nutils.is_mobility(node):
                 continue
             if node.mobility_config:
                 mobility_player = MobilityPlayer(self.app, node)
@@ -557,26 +524,14 @@ class CoreClient:
 
     def set_metadata(self) -> None:
         # create canvas data
-        wallpaper_path = None
-        if self.app.canvas.wallpaper_file:
-            wallpaper = Path(self.app.canvas.wallpaper_file)
-            if BACKGROUNDS_PATH == wallpaper.parent:
-                wallpaper_path = wallpaper.name
-            else:
-                wallpaper_path = str(wallpaper)
-        canvas_config = {
-            "wallpaper": wallpaper_path,
-            "wallpaper-style": self.app.canvas.scale_option.get(),
-            "gridlines": self.app.canvas.show_grid.get(),
-            "fit_image": self.app.canvas.adjust_to_dim.get(),
-            "dimensions": self.app.canvas.current_dimensions,
-        }
+        canvas_config = self.app.manager.get_metadata()
         canvas_config = json.dumps(canvas_config)
 
         # create shapes data
         shapes = []
-        for shape in self.app.canvas.shapes.values():
-            shapes.append(shape.metadata())
+        for canvas in self.app.manager.all():
+            for shape in canvas.shapes.values():
+                shapes.append(shape.metadata())
         shapes = json.dumps(shapes)
 
         # create edges config
@@ -588,8 +543,14 @@ class CoreClient:
             edges_config.append(edge_config)
         edges_config = json.dumps(edges_config)
 
+        # create hidden metadata
+        hidden = [x.core_node.id for x in self.canvas_nodes.values() if x.hidden]
+        hidden = json.dumps(hidden)
+
         # save metadata
-        metadata = dict(canvas=canvas_config, shapes=shapes, edges=edges_config)
+        metadata = dict(
+            canvas=canvas_config, shapes=shapes, edges=edges_config, hidden=hidden
+        )
         response = self.client.set_session_metadata(self.session.id, metadata)
         logging.debug("set session metadata %s, result: %s", metadata, response)
 
@@ -750,9 +711,11 @@ class CoreClient:
                 self.session.id,
                 config_proto.node_id,
                 config_proto.service,
-                startup=config_proto.startup,
-                validate=config_proto.validate,
-                shutdown=config_proto.shutdown,
+                config_proto.files,
+                config_proto.directories,
+                config_proto.startup,
+                config_proto.validate,
+                config_proto.shutdown,
             )
         for config_proto in self.get_service_file_configs_proto():
             self.client.set_node_service_file(
@@ -816,7 +779,7 @@ class CoreClient:
         node_id = self.next_node_id()
         position = Position(x=x, y=y)
         image = None
-        if NodeUtils.is_image_node(node_type):
+        if nutils.has_image(node_type):
             image = "ubuntu:latest"
         emane = None
         if node_type == NodeType.EMANE:
@@ -841,9 +804,9 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-        if NodeUtils.is_custom(node_type, model):
-            services = NodeUtils.get_custom_node_services(self.app.guiconfig, model)
-            node.services[:] = services
+        if nutils.is_custom(node):
+            services = nutils.get_custom_services(self.app.guiconfig, model)
+            node.services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
@@ -876,60 +839,14 @@ class CoreClient:
             links.append(edge.link)
         self.ifaces_manager.removed(links)
 
-    def create_iface(self, canvas_node: CanvasNode) -> Interface:
-        node = canvas_node.core_node
-        ip4, ip6 = self.ifaces_manager.get_ips(node)
-        ip4_mask = self.ifaces_manager.ip4_mask
-        ip6_mask = self.ifaces_manager.ip6_mask
-        iface_id = canvas_node.next_iface_id()
-        name = f"eth{iface_id}"
-        iface = Interface(
-            id=iface_id,
-            name=name,
-            ip4=ip4,
-            ip4_mask=ip4_mask,
-            ip6=ip6,
-            ip6_mask=ip6_mask,
-        )
-        logging.info("create node(%s) interface(%s)", node.name, iface)
-        return iface
-
-    def create_link(
-        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ) -> Link:
-        """
-        Create core link for a pair of canvas nodes, with token referencing
-        the canvas edge.
-        """
-        src_node = canvas_src_node.core_node
-        dst_node = canvas_dst_node.core_node
-        self.ifaces_manager.determine_subnets(canvas_src_node, canvas_dst_node)
-        src_iface = None
-        if NodeUtils.is_container_node(src_node.type):
-            src_iface = self.create_iface(canvas_src_node)
-        dst_iface = None
-        if NodeUtils.is_container_node(dst_node.type):
-            dst_iface = self.create_iface(canvas_dst_node)
-        link = Link(
-            type=LinkType.WIRED,
-            node1_id=src_node.id,
-            node2_id=dst_node.id,
-            iface1=src_iface,
-            iface2=dst_iface,
-        )
-        logging.info("added link between %s and %s", src_node.name, dst_node.name)
-        return link
-
-    def save_edge(
-        self, edge: CanvasEdge, canvas_src_node: CanvasNode, canvas_dst_node: CanvasNode
-    ) -> None:
+    def save_edge(self, edge: CanvasEdge) -> None:
         self.links[edge.token] = edge
-        src_node = canvas_src_node.core_node
-        dst_node = canvas_dst_node.core_node
-        if NodeUtils.is_container_node(src_node.type):
+        src_node = edge.src.core_node
+        dst_node = edge.dst.core_node
+        if nutils.is_container(src_node):
             src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge
-        if NodeUtils.is_container_node(dst_node.type):
+        if nutils.is_container(dst_node):
             dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
@@ -948,7 +865,7 @@ class CoreClient:
     def get_mobility_configs_proto(self) -> List[mobility_pb2.MobilityConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_mobility(node):
+            if not nutils.is_mobility(node):
                 continue
             if not node.mobility_config:
                 continue
@@ -976,7 +893,7 @@ class CoreClient:
     def get_service_configs_proto(self) -> List[services_pb2.ServiceConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not nutils.is_container(node):
                 continue
             if not node.service_configs:
                 continue
@@ -996,7 +913,7 @@ class CoreClient:
     def get_service_file_configs_proto(self) -> List[services_pb2.ServiceFileConfig]:
         configs = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not nutils.is_container(node):
                 continue
             if not node.service_file_configs:
                 continue
@@ -1013,7 +930,7 @@ class CoreClient:
     ) -> List[configservices_pb2.ConfigServiceConfig]:
         config_service_protos = []
         for node in self.session.nodes.values():
-            if not NodeUtils.is_container_node(node.type):
+            if not nutils.is_container(node):
                 continue
             if not node.config_service_configs:
                 continue

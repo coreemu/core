@@ -2,7 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING
 
-from core.gui.images import ImageEnum, Images
+from core.gui import images
+from core.gui.images import ImageEnum
 from core.gui.themes import DIALOG_PAD
 
 if TYPE_CHECKING:
@@ -25,7 +26,7 @@ class Dialog(tk.Toplevel):
         self.modal: bool = modal
         self.title(title)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-        image = Images.get(ImageEnum.CORE, 16)
+        image = images.from_enum(ImageEnum.CORE, width=images.DIALOG_SIZE)
         self.tk.call("wm", "iconphoto", self._w, image)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)

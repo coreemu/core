@@ -79,15 +79,13 @@ class WirelessEdgeInfoFrame(InfoFrameBase):
 
     def draw(self) -> None:
         link = self.edge.link
-        src_canvas_node = self.app.canvas.nodes[self.edge.src]
-        src_node = src_canvas_node.core_node
-        dst_canvas_node = self.app.canvas.nodes[self.edge.dst]
-        dst_node = dst_canvas_node.core_node
+        src_node = self.edge.src.core_node
+        dst_node = self.edge.dst.core_node
 
         # find interface for each node connected to network
         net_id = link.network_id
-        iface1 = get_iface(src_canvas_node, net_id)
-        iface2 = get_iface(dst_canvas_node, net_id)
+        iface1 = get_iface(self.edge.src, net_id)
+        iface2 = get_iface(self.edge.dst, net_id)
 
         frame = DetailsFrame(self)
         frame.grid(sticky=tk.EW)

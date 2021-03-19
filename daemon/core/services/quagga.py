@@ -63,7 +63,7 @@ class Zebra(CoreService):
         for iface in node.get_ifaces():
             cfg += "interface %s\n" % iface.name
             # include control interfaces in addressing but not routing daemons
-            if getattr(iface, "control", False):
+            if iface.control:
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, iface.ips()))
                 cfg += "\n"

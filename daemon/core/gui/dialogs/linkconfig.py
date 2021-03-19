@@ -70,10 +70,10 @@ class LinkConfigurationDialog(Dialog):
 
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
-        src_label = self.app.canvas.nodes[self.edge.src].core_node.name
+        src_label = self.edge.src.core_node.name
         if self.edge.link.iface1:
             src_label += f":{self.edge.link.iface1.name}"
-        dst_label = self.app.canvas.nodes[self.edge.dst].core_node.name
+        dst_label = self.edge.dst.core_node.name
         if self.edge.link.iface2:
             dst_label += f":{self.edge.link.iface2.name}"
         label = ttk.Label(
@@ -293,7 +293,7 @@ class LinkConfigurationDialog(Dialog):
 
         # update edge label
         self.edge.redraw()
-        self.edge.check_options()
+        self.edge.check_visibility()
         self.destroy()
 
     def change_symmetry(self) -> None:
@@ -316,10 +316,8 @@ class LinkConfigurationDialog(Dialog):
         """
         populate link config to the table
         """
-        width = self.app.canvas.itemcget(self.edge.id, "width")
-        self.width.set(width)
-        color = self.app.canvas.itemcget(self.edge.id, "fill")
-        self.color.set(color)
+        self.width.set(self.edge.width)
+        self.color.set(self.edge.color)
         link = self.edge.link
         if link.options:
             self.bandwidth.set(str(link.options.bandwidth))

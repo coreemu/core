@@ -921,8 +921,6 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         super().__init__(session, _id)
         self.file: Optional[str] = None
-        self.refresh_ms: Optional[int] = None
-        self.loop: Optional[bool] = None
         self.autostart: Optional[str] = None
         self.nodemap: Dict[int, int] = {}
         self.script_start: Optional[str] = None
@@ -937,7 +935,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             self.file,
         )
         self.refresh_ms = int(config["refresh_ms"])
-        self.loop = config["loop"].lower() == "on"
+        self.loop = config["loop"] == "1"
         self.autostart = config["autostart"]
         self.parsemap(config["map"])
         self.script_start = config["script_start"]

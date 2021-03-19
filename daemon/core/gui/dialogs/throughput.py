@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.dialog import Dialog
-from core.gui.graph.graph import CanvasGraph
+from core.gui.graph.manager import CanvasManager
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
 if TYPE_CHECKING:
@@ -17,16 +17,16 @@ if TYPE_CHECKING:
 class ThroughputDialog(Dialog):
     def __init__(self, app: "Application") -> None:
         super().__init__(app, "Throughput Config")
-        self.canvas: CanvasGraph = app.canvas
+        self.manager: CanvasManager = app.manager
         self.show_throughput: tk.IntVar = tk.IntVar(value=1)
         self.exponential_weight: tk.IntVar = tk.IntVar(value=1)
         self.transmission: tk.IntVar = tk.IntVar(value=1)
         self.reception: tk.IntVar = tk.IntVar(value=1)
         self.threshold: tk.DoubleVar = tk.DoubleVar(
-            value=self.canvas.throughput_threshold
+            value=self.manager.throughput_threshold
         )
-        self.width: tk.IntVar = tk.IntVar(value=self.canvas.throughput_width)
-        self.color: str = self.canvas.throughput_color
+        self.width: tk.IntVar = tk.IntVar(value=self.manager.throughput_width)
+        self.color: str = self.manager.throughput_color
         self.color_button: Optional[tk.Button] = None
         self.top.columnconfigure(0, weight=1)
         self.draw()
@@ -106,7 +106,7 @@ class ThroughputDialog(Dialog):
         self.color_button.config(bg=self.color, text=self.color, bd=0)
 
     def click_save(self) -> None:
-        self.canvas.throughput_threshold = self.threshold.get()
-        self.canvas.throughput_width = self.width.get()
-        self.canvas.throughput_color = self.color
+        self.manager.throughput_threshold = self.threshold.get()
+        self.manager.throughput_width = self.width.get()
+        self.manager.throughput_color = self.color
         self.destroy()

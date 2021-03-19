@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
@@ -69,6 +69,31 @@ class Shape:
             self.shape_data = data
         self.draw()
 
+    @classmethod
+    def from_metadata(cls, app: "Application", config: Dict[str, Any]) -> None:
+        shape_type = config["type"]
+        try:
+            shape_type = ShapeType(shape_type)
+            coords = config["iconcoords"]
+            data = AnnotationData(
+                config["label"],
+                config["fontfamily"],
+                config["fontsize"],
+                config["labelcolor"],
+                config["color"],
+                config["border"],
+                config["width"],
+                config["bold"],
+                config["italic"],
+                config["underline"],
+            )
+            canvas_id = config.get("canvas", 1)
+            canvas = app.manager.get(canvas_id)
+            shape = Shape(app, canvas, shape_type, *coords, data=data)
+            canvas.shapes[shape.id] = shape
+        except ValueError:
+            logging.exception("unknown shape: %s", shape_type)
+
     def draw(self) -> None:
         if self.created:
             dash = None
@@ -85,7 +110,7 @@ class Shape:
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.RECTANGLE:
@@ -99,7 +124,7 @@ class Shape:
                 fill=self.shape_data.fill_color,
                 outline=self.shape_data.border_color,
                 width=self.shape_data.border_width,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
             self.draw_shape_text()
         elif self.shape_type == ShapeType.TEXT:
@@ -111,7 +136,7 @@ class Shape:
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
         else:
             logging.error("unknown shape type: %s", self.shape_type)
@@ -139,7 +164,7 @@ class Shape:
                 text=self.shape_data.text,
                 fill=self.shape_data.text_color,
                 font=font,
-                state=self.canvas.show_annotations.state(),
+                state=self.app.manager.show_annotations.state(),
             )
 
     def shape_motion(self, x1: float, y1: float) -> None:
@@ -184,6 +209,7 @@ class Shape:
             x1, y1 = self.canvas.get_actual_coords(x1, y1)
             coords = (x1, y1)
         return {
+            "canvas": self.canvas.id,
             "type": self.shape_type.value,
             "iconcoords": coords,
             "label": self.shape_data.text,

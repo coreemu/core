@@ -3,9 +3,8 @@ import argparse
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from core.gui import appconfig
+from core.gui import appconfig, images
 from core.gui.app import Application
-from core.gui.images import Images
 
 if __name__ == "__main__":
     # parse flags
@@ -28,6 +27,6 @@ if __name__ == "__main__":
     logging.getLogger("PIL").setLevel(logging.ERROR)
 
     # start app
-    Images.load_all()
+    images.load_all()
     app = Application(args.proxy, args.session)
     app.mainloop()

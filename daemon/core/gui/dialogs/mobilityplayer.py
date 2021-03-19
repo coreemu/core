@@ -84,17 +84,17 @@ class MobilityPlayerDialog(Dialog):
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
-        image = self.app.get_icon(ImageEnum.START, ICON_SIZE)
+        image = self.app.get_enum_icon(ImageEnum.START, width=ICON_SIZE)
         self.play_button = ttk.Button(frame, image=image, command=self.click_play)
         self.play_button.image = image
         self.play_button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
 
-        image = self.app.get_icon(ImageEnum.PAUSE, ICON_SIZE)
+        image = self.app.get_enum_icon(ImageEnum.PAUSE, width=ICON_SIZE)
         self.pause_button = ttk.Button(frame, image=image, command=self.click_pause)
         self.pause_button.image = image
         self.pause_button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
 
-        image = self.app.get_icon(ImageEnum.STOP, ICON_SIZE)
+        image = self.app.get_enum_icon(ImageEnum.STOP, width=ICON_SIZE)
         self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
         self.stop_button.image = image
         self.stop_button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)

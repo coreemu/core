@@ -263,6 +263,15 @@ def query_node(core: CoreGrpcClient, args: Namespace) -> None:
 
 
 @coreclient
+def delete_session(core: CoreGrpcClient, args: Namespace) -> None:
+    response = core.delete_session(args.id)
+    if args.json:
+        print_json(response)
+    else:
+        print(f"delete session({args.id}): {response.result}")
+
+
+@coreclient
 def add_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     node_type = NodeType.Enum.Value(args.type)
@@ -372,6 +381,19 @@ def delete_link(core: CoreGrpcClient, args: Namespace) -> None:
         print_json(response)
     else:
         print(f"delete link: {response.result}")
+
+
+def setup_sessions_parser(parent: _SubParsersAction) -> None:
+    parser = parent.add_parser("session", help="session interactions")
+    parser.formatter_class = ArgumentDefaultsHelpFormatter
+    parser.add_argument("-i", "--id", type=int, help="session id to use", required=True)
+    subparsers = parser.add_subparsers(help="session commands")
+    subparsers.required = True
+    subparsers.dest = "command"
+
+    delete_parser = subparsers.add_parser("delete", help="delete a session")
+    delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    delete_parser.set_defaults(func=delete_session)
 
 
 def setup_node_parser(parent: _SubParsersAction) -> None:
@@ -528,6 +550,7 @@ def main() -> None:
     subparsers = parser.add_subparsers(help="supported commands")
     subparsers.required = True
     subparsers.dest = "command"
+    setup_sessions_parser(subparsers)
     setup_node_parser(subparsers)
     setup_link_parser(subparsers)
     setup_query_parser(subparsers)

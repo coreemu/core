@@ -134,7 +134,6 @@ class Session:
         self.link_handlers: List[Callable[[LinkData], None]] = []
         self.file_handlers: List[Callable[[FileData], None]] = []
         self.config_handlers: List[Callable[[ConfigData], None]] = []
-        self.shutdown_handlers: List[Callable[[Session], None]] = []
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig()
@@ -591,7 +590,6 @@ class Session:
         :raises core.CoreError: when node to update does not exist
         """
         node = self.get_node(node_id, NodeBase)
-        node.canvas = options.canvas
         node.icon = options.icon
         self.set_node_position(node, options)
         self.sdt.edit_node(node, options.lon, options.lat, options.alt)
@@ -772,20 +770,17 @@ class Session:
         """
         if self.state == EventTypes.SHUTDOWN_STATE:
             logging.info("session(%s) state(%s) already shutdown", self.id, self.state)
-            return
-        logging.info("session(%s) state(%s) shutting down", self.id, self.state)
-        self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
-        # clear out current core session
-        self.clear()
-        # shutdown sdt
-        self.sdt.shutdown()
+        else:
+            logging.info("session(%s) state(%s) shutting down", self.id, self.state)
+            self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
+            # clear out current core session
+            self.clear()
+            # shutdown sdt
+            self.sdt.shutdown()
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
-        # call session shutdown handlers
-        for handler in self.shutdown_handlers:
-            handler(self)
 
     def broadcast_event(self, event_data: EventData) -> None:
         """

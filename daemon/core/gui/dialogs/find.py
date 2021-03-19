@@ -105,8 +105,12 @@ class FindDialog(Dialog):
             self.tree.selection_set(results[0])
 
     def close_dialog(self) -> None:
-        self.app.canvas.delete("find")
+        self.clear_find()
         self.destroy()
+
+    def clear_find(self):
+        for canvas in self.app.manager.all():
+            canvas.delete("find")
 
     def click_select(self, _event: tk.Event = None) -> None:
         """
@@ -116,13 +120,13 @@ class FindDialog(Dialog):
         """
         item = self.tree.selection()
         if item:
-            self.app.canvas.delete("find")
+            self.clear_find()
             node_id = int(self.tree.item(item, "text"))
             canvas_node = self.app.core.get_canvas_node(node_id)
-
-            x0, y0, x1, y1 = self.app.canvas.bbox(canvas_node.id)
+            self.app.manager.select(canvas_node.canvas.id)
+            x0, y0, x1, y1 = canvas_node.canvas.bbox(canvas_node.id)
             dist = 5 * self.app.guiconfig.scale
-            self.app.canvas.create_oval(
+            canvas_node.canvas.create_oval(
                 x0 - dist,
                 y0 - dist,
                 x1 + dist,
@@ -132,9 +136,9 @@ class FindDialog(Dialog):
                 width=3.0 * self.app.guiconfig.scale,
             )
 
-            _x, _y, _, _ = self.app.canvas.bbox(canvas_node.id)
-            oid = self.app.canvas.find_withtag("rectangle")
-            x0, y0, x1, y1 = self.app.canvas.bbox(oid[0])
+            _x, _y, _, _ = canvas_node.canvas.bbox(canvas_node.id)
+            oid = canvas_node.canvas.find_withtag("rectangle")
+            x0, y0, x1, y1 = canvas_node.canvas.bbox(oid[0])
             logging.debug("Dist to most left: %s", abs(x0 - _x))
             logging.debug("White canvas width: %s", abs(x0 - x1))
 
@@ -150,5 +154,5 @@ class FindDialog(Dialog):
                     xscroll_fraction = xscroll_fraction - 0.05
                 if yscroll_fraction > 0.05:
                     yscroll_fraction = yscroll_fraction - 0.05
-            self.app.canvas.xview_moveto(xscroll_fraction)
-            self.app.canvas.yview_moveto(yscroll_fraction)
+            canvas_node.canvas.xview_moveto(xscroll_fraction)
+            canvas_node.canvas.yview_moveto(yscroll_fraction)

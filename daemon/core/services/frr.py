@@ -66,7 +66,7 @@ class FRRZebra(CoreService):
         for iface in node.get_ifaces():
             cfg += "interface %s\n" % iface.name
             # include control interfaces in addressing but not routing daemons
-            if hasattr(iface, "control") and iface.control is True:
+            if iface.control:
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, iface.ips()))
                 cfg += "\n"

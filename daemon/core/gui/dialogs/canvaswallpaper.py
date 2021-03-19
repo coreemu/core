@@ -6,10 +6,10 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, List, Optional
 
+from core.gui import images
 from core.gui.appconfig import BACKGROUNDS_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.graph.graph import CanvasGraph
-from core.gui.images import Images
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import image_chooser
 
@@ -23,7 +23,7 @@ class CanvasWallpaperDialog(Dialog):
         create an instance of CanvasWallpaper object
         """
         super().__init__(app, "Canvas Background")
-        self.canvas: CanvasGraph = self.app.canvas
+        self.canvas: CanvasGraph = self.app.manager.current()
         self.scale_option: tk.IntVar = tk.IntVar(value=self.canvas.scale_option.get())
         self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(
             value=self.canvas.adjust_to_dim.get()
@@ -132,7 +132,7 @@ class CanvasWallpaperDialog(Dialog):
             self.draw_preview()
 
     def draw_preview(self) -> None:
-        image = Images.create(self.filename.get(), 250, 135)
+        image = images.from_file(self.filename.get(), width=250, height=135)
         self.image_label.config(image=image)
         self.image_label.image = image
 
@@ -161,7 +161,6 @@ class CanvasWallpaperDialog(Dialog):
     def click_apply(self) -> None:
         self.canvas.scale_option.set(self.scale_option.get())
         self.canvas.adjust_to_dim.set(self.adjust_to_dim.get())
-        self.canvas.show_grid.click_handler()
         filename = self.filename.get()
         if not filename:
             filename = None

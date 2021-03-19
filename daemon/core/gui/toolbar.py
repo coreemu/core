@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 
 from PIL.ImageTk import PhotoImage
 
+from core.gui import nodeutils as nutils
 from core.gui.dialogs.colorpicker import ColorPickerDialog
 from core.gui.dialogs.runtool import RunToolDialog
 from core.gui.graph import tags
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.shapeutils import ShapeType, is_marker
 from core.gui.images import ImageEnum
-from core.gui.nodeutils import NodeDraw, NodeUtils
+from core.gui.nodeutils import NodeDraw
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 from core.gui.themes import Styles
@@ -57,11 +58,11 @@ class PickerFrame(ttk.Frame):
         image_file: str = None,
     ) -> None:
         if image_enum:
-            bar_image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
-            image = self.app.get_icon(image_enum, PICKER_SIZE)
+            bar_image = self.app.get_enum_icon(image_enum, width=TOOLBAR_SIZE)
+            image = self.app.get_enum_icon(image_enum, width=PICKER_SIZE)
         else:
-            bar_image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
-            image = self.app.get_custom_icon(image_file, PICKER_SIZE)
+            bar_image = self.app.get_file_icon(image_file, width=TOOLBAR_SIZE)
+            image = self.app.get_file_icon(image_file, width=PICKER_SIZE)
         button = ttk.Button(
             self, image=image, text=label, compound=tk.TOP, style=Styles.picker_button
         )
@@ -92,7 +93,7 @@ class ButtonBar(ttk.Frame):
     def create_button(
         self, image_enum: ImageEnum, func: Callable, tooltip: str, radio: bool = False
     ) -> ttk.Button:
-        image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+        image = self.app.get_enum_icon(image_enum, width=TOOLBAR_SIZE)
         button = ttk.Button(self, image=image, command=func)
         button.image = image
         button.grid(sticky=tk.EW)
@@ -121,7 +122,7 @@ class MarkerFrame(ttk.Frame):
     def draw(self) -> None:
         self.columnconfigure(0, weight=1)
 
-        image = self.app.get_icon(ImageEnum.DELETE, 16)
+        image = self.app.get_enum_icon(ImageEnum.DELETE, width=16)
         button = ttk.Button(self, image=image, width=2, command=self.click_clear)
         button.image = image
         button.grid(sticky=tk.EW, pady=self.PAD)
@@ -144,7 +145,8 @@ class MarkerFrame(ttk.Frame):
         Tooltip(self.color_frame, "Marker Color")
 
     def click_clear(self) -> None:
-        self.app.canvas.delete(tags.MARKER)
+        canvas = self.app.manager.current()
+        canvas.delete(tags.MARKER)
 
     def click_color(self, _event: tk.Event) -> None:
         dialog = ColorPickerDialog(self.app, self.app, self.color)
@@ -189,8 +191,8 @@ class Toolbar(ttk.Frame):
 
         # these variables help keep track of what images being drawn so that scaling
         # is possible since PhotoImage does not have resize method
-        self.current_node: NodeDraw = NodeUtils.NODES[0]
-        self.current_network: NodeDraw = NodeUtils.NETWORK_NODES[0]
+        self.current_node: NodeDraw = nutils.NODES[0]
+        self.current_network: NodeDraw = nutils.NETWORK_NODES[0]
         self.current_annotation: ShapeType = ShapeType.MARKER
         self.annotation_enum: ImageEnum = ImageEnum.MARKER
 
@@ -257,12 +259,12 @@ class Toolbar(ttk.Frame):
 
     def draw_node_picker(self) -> None:
         self.hide_marker()
-        self.app.canvas.mode = GraphMode.NODE
-        self.app.canvas.node_draw = self.current_node
+        self.app.manager.mode = GraphMode.NODE
+        self.app.manager.node_draw = self.current_node
         self.design_frame.select_radio(self.node_button)
         self.picker = PickerFrame(self.app, self.node_button)
         # draw default nodes
-        for node_draw in NodeUtils.NODES:
+        for node_draw in nutils.NODES:
             func = partial(
                 self.update_button, self.node_button, node_draw, NodeTypeEnum.NODE
             )
@@ -278,12 +280,12 @@ class Toolbar(ttk.Frame):
 
     def click_selection(self) -> None:
         self.design_frame.select_radio(self.select_button)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.manager.mode = GraphMode.SELECT
         self.hide_marker()
 
     def click_runtime_selection(self) -> None:
         self.runtime_frame.select_radio(self.runtime_select_button)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.manager.mode = GraphMode.SELECT
         self.hide_marker()
 
     def click_start(self) -> None:
@@ -291,8 +293,8 @@ class Toolbar(ttk.Frame):
         Start session handler redraw buttons, send node and link messages to grpc
         server.
         """
-        self.app.menubar.change_menubar_item_state(is_runtime=True)
-        self.app.canvas.mode = GraphMode.SELECT
+        self.app.menubar.set_state(is_runtime=True)
+        self.app.manager.mode = GraphMode.SELECT
         enable_buttons(self.design_frame, enabled=False)
         task = ProgressTask(
             self.app, "Start", self.app.core.start_session, self.start_callback
@@ -308,7 +310,9 @@ class Toolbar(ttk.Frame):
             enable_buttons(self.design_frame, enabled=True)
             if exceptions:
                 message = "\n".join(exceptions)
-                self.app.show_error("Start Session Error", message)
+                self.app.show_exception_data(
+                    "Start Exception", "Session failed to start", message
+                )
 
     def set_runtime(self) -> None:
         enable_buttons(self.runtime_frame, enabled=True)
@@ -324,7 +328,7 @@ class Toolbar(ttk.Frame):
 
     def click_link(self) -> None:
         self.design_frame.select_radio(self.link_button)
-        self.app.canvas.mode = GraphMode.EDGE
+        self.app.manager.mode = GraphMode.EDGE
         self.hide_marker()
 
     def update_button(
@@ -337,7 +341,7 @@ class Toolbar(ttk.Frame):
         logging.debug("update button(%s): %s", button, node_draw)
         button.configure(image=image)
         button.image = image
-        self.app.canvas.node_draw = node_draw
+        self.app.manager.node_draw = node_draw
         if type_enum == NodeTypeEnum.NODE:
             self.current_node = node_draw
         elif type_enum == NodeTypeEnum.NETWORK:
@@ -348,11 +352,11 @@ class Toolbar(ttk.Frame):
         Draw the options for link-layer button.
         """
         self.hide_marker()
-        self.app.canvas.mode = GraphMode.NODE
-        self.app.canvas.node_draw = self.current_network
+        self.app.manager.mode = GraphMode.NODE
+        self.app.manager.node_draw = self.current_network
         self.design_frame.select_radio(self.network_button)
         self.picker = PickerFrame(self.app, self.network_button)
-        for node_draw in NodeUtils.NETWORK_NODES:
+        for node_draw in nutils.NETWORK_NODES:
             func = partial(
                 self.update_button, self.network_button, node_draw, NodeTypeEnum.NETWORK
             )
@@ -364,8 +368,8 @@ class Toolbar(ttk.Frame):
         Draw the options for marker button.
         """
         self.design_frame.select_radio(self.annotation_button)
-        self.app.canvas.mode = GraphMode.ANNOTATION
-        self.app.canvas.annotation_type = self.current_annotation
+        self.app.manager.mode = GraphMode.ANNOTATION
+        self.app.manager.annotation_type = self.current_annotation
         if is_marker(self.current_annotation):
             self.show_marker()
         self.picker = PickerFrame(self.app, self.annotation_button)
@@ -382,7 +386,7 @@ class Toolbar(ttk.Frame):
         self.picker.show()
 
     def create_observe_button(self) -> None:
-        image = self.app.get_icon(ImageEnum.OBSERVE, TOOLBAR_SIZE)
+        image = self.app.get_enum_icon(ImageEnum.OBSERVE, width=TOOLBAR_SIZE)
         menu_button = ttk.Menubutton(
             self.runtime_frame, image=image, direction=tk.RIGHT
         )
@@ -396,7 +400,7 @@ class Toolbar(ttk.Frame):
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
         logging.info("clicked stop button")
-        self.app.menubar.change_menubar_item_state(is_runtime=False)
+        self.app.menubar.set_state(is_runtime=False)
         self.app.core.close_mobility_players()
         enable_buttons(self.runtime_frame, enabled=False)
         task = ProgressTask(
@@ -406,7 +410,7 @@ class Toolbar(ttk.Frame):
 
     def stop_callback(self, result: bool) -> None:
         self.set_design()
-        self.app.canvas.stopped_session()
+        self.app.manager.stopped_session()
 
     def update_annotation(
         self, shape_type: ShapeType, image_enum: ImageEnum, image: PhotoImage
@@ -414,7 +418,7 @@ class Toolbar(ttk.Frame):
         logging.debug("clicked annotation")
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
-        self.app.canvas.annotation_type = shape_type
+        self.app.manager.annotation_type = shape_type
         self.current_annotation = shape_type
         self.annotation_enum = image_enum
         if is_marker(shape_type):
@@ -435,8 +439,8 @@ class Toolbar(ttk.Frame):
 
     def click_marker_button(self) -> None:
         self.runtime_frame.select_radio(self.runtime_marker_button)
-        self.app.canvas.mode = GraphMode.ANNOTATION
-        self.app.canvas.annotation_type = ShapeType.MARKER
+        self.app.manager.mode = GraphMode.ANNOTATION
+        self.app.manager.annotation_type = ShapeType.MARKER
         self.show_marker()
 
     def scale_button(
@@ -444,9 +448,9 @@ class Toolbar(ttk.Frame):
     ) -> None:
         image = None
         if image_enum:
-            image = self.app.get_icon(image_enum, TOOLBAR_SIZE)
+            image = self.app.get_enum_icon(image_enum, width=TOOLBAR_SIZE)
         elif image_file:
-            image = self.app.get_custom_icon(image_file, TOOLBAR_SIZE)
+            image = self.app.get_file_icon(image_file, width=TOOLBAR_SIZE)
         if image:
             button.config(image=image)
             button.image = image

@@ -1,3 +1,22 @@
+## 2021-03-11 CORE 7.5.0
+
+* core-daemon
+    * fixed issue setting mobility loop value properly
+    * fixed issue that some states would not properly remove session directories
+    * \#560 - fixed issues with sdt integration for mobility movement and layer creation
+* core-pygui
+    * added multiple canvas support
+    * added support to hide nodes and restore them visually
+    * update to assign full netmasks to wireless connected nodes by default
+    * update to display services and action controls for nodes during runtime
+    * fixed issues with custom nodes
+    * fixed issue auto assigning macs, avoiding duplication
+    * fixed issue joining session with different netmasks
+    * fixed issues when deleting a session from the sessions dialog
+    * \#550 - fixed issue not sending all service customization data
+* core-cli
+    * added delete session command
+
 ## 2021-01-11 CORE 7.4.0
 
 * Installation

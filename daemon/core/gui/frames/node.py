@@ -2,8 +2,8 @@ import tkinter as tk
 from typing import TYPE_CHECKING
 
 from core.api.grpc.wrappers import NodeType
+from core.gui import nodeutils as nutils
 from core.gui.frames.base import DetailsFrame, InfoFrameBase
-from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -20,21 +20,21 @@ class NodeInfoFrame(InfoFrameBase):
         node = self.canvas_node.core_node
         frame = DetailsFrame(self)
         frame.grid(sticky=tk.EW)
-        frame.add_detail("ID", node.id)
+        frame.add_detail("ID", str(node.id))
         frame.add_detail("Name", node.name)
-        if NodeUtils.is_model_node(node.type):
+        if nutils.is_model(node):
             frame.add_detail("Type", node.model)
-        if NodeUtils.is_container_node(node.type):
+        if nutils.is_container(node):
             for index, service in enumerate(sorted(node.services)):
                 if index == 0:
                     frame.add_detail("Services", service)
                 else:
                     frame.add_detail("", service)
         if node.type == NodeType.EMANE:
-            emane = node.emane.split("_")[1:]
+            emane = "".join(node.emane.split("_")[1:])
             frame.add_detail("EMANE", emane)
-        if NodeUtils.is_image_node(node.type):
+        if nutils.has_image(node.type):
             frame.add_detail("Image", node.image)
-        if NodeUtils.is_container_node(node.type):
+        if nutils.is_container(node):
             server = node.server if node.server else "localhost"
             frame.add_detail("Server", server)

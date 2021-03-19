@@ -49,3 +49,6 @@ iface1 = iface_helper.create_iface(n1_id, 0)
 core.add_link(session_id, n1_id, emane_id, iface1)
 iface1 = iface_helper.create_iface(n2_id, 0)
 core.add_link(session_id, n2_id, emane_id, iface1)
+
+# change session state
+core.set_session_state(session_id, SessionState.INSTANTIATION)

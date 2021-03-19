@@ -8,12 +8,12 @@ import netaddr
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node
-from core.gui import nodeutils, validation
+from core.gui import images
+from core.gui import nodeutils as nutils
+from core.gui import validation
 from core.gui.appconfig import ICONS_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.dialogs.emaneconfig import EmaneModelDialog
-from core.gui.images import Images
-from core.gui.nodeutils import NodeUtils
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
 
@@ -225,27 +225,27 @@ class NodeConfigDialog(Dialog):
         row += 1
 
         # node type field
-        if NodeUtils.is_model_node(self.node.type):
+        if nutils.is_model(self.node):
             label = ttk.Label(frame, text="Type")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             combobox = ttk.Combobox(
                 frame,
                 textvariable=self.type,
-                values=list(NodeUtils.NODE_MODELS),
+                values=list(nutils.NODE_MODELS),
                 state=combo_state,
             )
             combobox.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
         # container image field
-        if NodeUtils.is_image_node(self.node.type):
+        if nutils.has_image(self.node.type):
             label = ttk.Label(frame, text="Image")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             entry = ttk.Entry(frame, textvariable=self.container_image, state=state)
             entry.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
-        if NodeUtils.is_container_node(self.node.type):
+        if nutils.is_container(self.node):
             # server
             frame.grid(sticky=tk.EW)
             frame.columnconfigure(1, weight=1)
@@ -259,7 +259,7 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
-        if NodeUtils.is_rj45_node(self.node.type):
+        if nutils.is_rj45(self.node):
             response = self.app.core.client.get_ifaces()
             logging.debug("host machine available interfaces: %s", response)
             ifaces = ListboxScroll(frame)
@@ -371,7 +371,7 @@ class NodeConfigDialog(Dialog):
     def click_icon(self) -> None:
         file_path = image_chooser(self, ICONS_PATH)
         if file_path:
-            self.image = Images.create(file_path, nodeutils.ICON_SIZE)
+            self.image = images.from_file(file_path, width=images.NODE_SIZE)
             self.image_button.config(image=self.image)
             self.image_file = file_path
 
@@ -380,10 +380,10 @@ class NodeConfigDialog(Dialog):
 
         # update core node
         self.node.name = self.name.get()
-        if NodeUtils.is_image_node(self.node.type):
+        if nutils.has_image(self.node.type):
             self.node.image = self.container_image.get()
         server = self.server.get()
-        if NodeUtils.is_container_node(self.node.type):
+        if nutils.is_container(self.node):
             if server == DEFAULT_SERVER:
                 self.node.server = None
             else:

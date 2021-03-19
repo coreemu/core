@@ -4,12 +4,18 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 import netaddr
 from netaddr import EUI, IPNetwork
 
-from core.api.grpc.wrappers import Interface, Link, Node
+from core.api.grpc.wrappers import Interface, Link, LinkType, Node
+from core.gui import nodeutils as nutils
+from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
-from core.gui.nodeutils import NodeUtils
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+
+IP4_MASK: int = 24
+IP6_MASK: int = 64
+WIRELESS_IP4_MASK: int = 32
+WIRELESS_IP6_MASK: int = 128
 
 
 def get_index(iface: Interface) -> Optional[int]:
@@ -47,25 +53,24 @@ class InterfaceManager:
         self.app: "Application" = app
         ip4 = self.app.guiconfig.ips.ip4
         ip6 = self.app.guiconfig.ips.ip6
-        self.ip4_mask: int = 24
-        self.ip6_mask: int = 64
-        self.ip4_subnets: IPNetwork = IPNetwork(f"{ip4}/{self.ip4_mask}")
-        self.ip6_subnets: IPNetwork = IPNetwork(f"{ip6}/{self.ip6_mask}")
+        self.ip4_subnets: IPNetwork = IPNetwork(f"{ip4}/{IP4_MASK}")
+        self.ip6_subnets: IPNetwork = IPNetwork(f"{ip6}/{IP6_MASK}")
         mac = self.app.guiconfig.mac
         self.mac: EUI = EUI(mac, dialect=netaddr.mac_unix_expanded)
         self.current_mac: Optional[EUI] = None
         self.current_subnets: Optional[Subnets] = None
         self.used_subnets: Dict[Tuple[IPNetwork, IPNetwork], Subnets] = {}
+        self.used_macs: Set[str] = set()
 
     def update_ips(self, ip4: str, ip6: str) -> None:
         self.reset()
-        self.ip4_subnets = IPNetwork(f"{ip4}/{self.ip4_mask}")
-        self.ip6_subnets = IPNetwork(f"{ip6}/{self.ip6_mask}")
-
-    def reset_mac(self) -> None:
-        self.current_mac = self.mac
+        self.ip4_subnets = IPNetwork(f"{ip4}/{IP4_MASK}")
+        self.ip6_subnets = IPNetwork(f"{ip6}/{IP6_MASK}")
 
     def next_mac(self) -> str:
+        while str(self.current_mac) in self.used_macs:
+            value = self.current_mac.value + 1
+            self.current_mac = EUI(value, dialect=netaddr.mac_unix_expanded)
         mac = str(self.current_mac)
         value = self.current_mac.value + 1
         self.current_mac = EUI(value, dialect=netaddr.mac_unix_expanded)
@@ -114,6 +119,15 @@ class InterfaceManager:
                     subnets.used_indexes.discard(index)
         self.current_subnets = None
 
+    def set_macs(self, links: List[Link]) -> None:
+        self.current_mac = self.mac
+        self.used_macs.clear()
+        for link in links:
+            if link.iface1:
+                self.used_macs.add(link.iface1.mac)
+            if link.iface2:
+                self.used_macs.add(link.iface2.mac)
+
     def joined(self, links: List[Link]) -> None:
         ifaces = []
         for link in links:
@@ -133,7 +147,7 @@ class InterfaceManager:
                 self.used_subnets[subnets.key()] = subnets
 
     def next_index(self, node: Node) -> int:
-        if NodeUtils.is_router_node(node):
+        if nutils.is_router(node):
             index = 1
         else:
             index = 20
@@ -153,10 +167,10 @@ class InterfaceManager:
     def get_subnets(self, iface: Interface) -> Subnets:
         ip4_subnet = self.ip4_subnets
         if iface.ip4:
-            ip4_subnet = IPNetwork(f"{iface.ip4}/{iface.ip4_mask}").cidr
+            ip4_subnet = IPNetwork(f"{iface.ip4}/{IP4_MASK}").cidr
         ip6_subnet = self.ip6_subnets
         if iface.ip6:
-            ip6_subnet = IPNetwork(f"{iface.ip6}/{iface.ip6_mask}").cidr
+            ip6_subnet = IPNetwork(f"{iface.ip6}/{IP6_MASK}").cidr
         subnets = Subnets(ip4_subnet, ip6_subnet)
         return self.used_subnets.get(subnets.key(), subnets)
 
@@ -165,8 +179,8 @@ class InterfaceManager:
     ) -> None:
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node
-        is_src_container = NodeUtils.is_container_node(src_node.type)
-        is_dst_container = NodeUtils.is_container_node(dst_node.type)
+        is_src_container = nutils.is_container(src_node)
+        is_dst_container = nutils.is_container(dst_node)
         if is_src_container and is_dst_container:
             self.current_subnets = self.next_subnets()
         elif is_src_container and not is_dst_container:
@@ -188,19 +202,16 @@ class InterfaceManager:
         self, canvas_node: CanvasNode, visited: Set[int] = None
     ) -> Optional[IPNetwork]:
         logging.info("finding subnet for node: %s", canvas_node.core_node.name)
-        canvas = self.app.canvas
         subnets = None
         if not visited:
             visited = set()
         visited.add(canvas_node.core_node.id)
         for edge in canvas_node.edges:
-            src_node = canvas.nodes[edge.src]
-            dst_node = canvas.nodes[edge.dst]
             iface = edge.link.iface1
-            check_node = src_node
-            if src_node == canvas_node:
+            check_node = edge.src
+            if edge.src == canvas_node:
                 iface = edge.link.iface2
-                check_node = dst_node
+                check_node = edge.dst
             if check_node.core_node.id in visited:
                 continue
             visited.add(check_node.core_node.id)
@@ -212,3 +223,48 @@ class InterfaceManager:
                 logging.info("found subnets: %s", subnets)
                 break
         return subnets
+
+    def create_link(self, edge: CanvasEdge) -> Link:
+        """
+        Create core link for a given edge based on src/dst nodes.
+        """
+        src_node = edge.src.core_node
+        dst_node = edge.dst.core_node
+        self.determine_subnets(edge.src, edge.dst)
+        src_iface = None
+        if nutils.is_container(src_node):
+            src_iface = self.create_iface(edge.src, edge.linked_wireless)
+        dst_iface = None
+        if nutils.is_container(dst_node):
+            dst_iface = self.create_iface(edge.dst, edge.linked_wireless)
+        link = Link(
+            type=LinkType.WIRED,
+            node1_id=src_node.id,
+            node2_id=dst_node.id,
+            iface1=src_iface,
+            iface2=dst_iface,
+        )
+        logging.info("added link between %s and %s", src_node.name, dst_node.name)
+        return link
+
+    def create_iface(self, canvas_node: CanvasNode, wireless_link: bool) -> Interface:
+        node = canvas_node.core_node
+        ip4, ip6 = self.get_ips(node)
+        if wireless_link:
+            ip4_mask = WIRELESS_IP4_MASK
+            ip6_mask = WIRELESS_IP6_MASK
+        else:
+            ip4_mask = IP4_MASK
+            ip6_mask = IP6_MASK
+        iface_id = canvas_node.next_iface_id()
+        name = f"eth{iface_id}"
+        iface = Interface(
+            id=iface_id,
+            name=name,
+            ip4=ip4,
+            ip4_mask=ip4_mask,
+            ip6=ip6,
+            ip6_mask=ip6_mask,
+        )
+        logging.info("create node(%s) interface(%s)", node.name, iface)
+        return iface
