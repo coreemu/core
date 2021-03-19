@@ -222,7 +222,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
-        session.session_dir.mkdir(exist_ok=True)
+        session.directory.mkdir(exist_ok=True)
         session.set_state(EventTypes.CONFIGURATION_STATE)
 
         # location
@@ -372,7 +372,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 state=session.state.value,
                 nodes=session.get_node_count(),
                 file=session_file,
-                dir=str(session.session_dir),
+                dir=str(session.directory),
             )
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
@@ -428,7 +428,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             state = EventTypes(request.state)
             session.set_state(state)
             if state == EventTypes.INSTANTIATION_STATE:
-                session.session_dir.mkdir(exist_ok=True)
+                session.directory.mkdir(exist_ok=True)
                 session.instantiate()
             elif state == EventTypes.SHUTDOWN_STATE:
                 session.shutdown()
@@ -575,7 +575,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             state=session.state.value,
             nodes=nodes,
             links=links,
-            dir=str(session.session_dir),
+            dir=str(session.directory),
             user=session.user,
             default_services=default_services,
             location=location,

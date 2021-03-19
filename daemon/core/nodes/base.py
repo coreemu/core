@@ -363,7 +363,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if self.nodedir is None:
-            self.nodedir = self.session.session_dir / f"{self.name}.conf"
+            self.nodedir = self.session.directory / f"{self.name}.conf"
             self.host_cmd(f"mkdir -p {self.nodedir}")
             self.tmpnodedir = True
         else:
@@ -490,7 +490,7 @@ class CoreNode(CoreNodeBase):
         """
         super().__init__(session, _id, name, server)
         self.nodedir: Optional[Path] = nodedir
-        self.ctrlchnlname: Path = self.session.session_dir / self.name
+        self.ctrlchnlname: Path = self.session.directory / self.name
         self.client: Optional[VnodeClient] = None
         self.pid: Optional[int] = None
         self.lock: RLock = RLock()

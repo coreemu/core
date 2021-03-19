@@ -398,7 +398,7 @@ class EmaneManager(ModelManager):
         return self.ifaces_to_nems.get(iface)
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
-        path = self.session.session_dir / "emane_nems"
+        path = self.session.directory / "emane_nems"
         try:
             with path.open("a") as f:
                 f.write(f"{iface.node.name} {iface.name} {nem_id}\n")
@@ -539,10 +539,10 @@ class EmaneManager(ModelManager):
             return
 
         dev = self.get_config("eventservicedevice")
-        emanexml.create_event_service_xml(group, port, dev, self.session.session_dir)
+        emanexml.create_event_service_xml(group, port, dev, self.session.directory)
         self.session.distributed.execute(
             lambda x: emanexml.create_event_service_xml(
-                group, port, dev, self.session.session_dir, x
+                group, port, dev, self.session.directory, x
             )
         )
 
@@ -596,10 +596,10 @@ class EmaneManager(ModelManager):
             node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
         else:
-            log_file = self.session.session_dir / f"{node.name}-emane.log"
-            platform_xml = self.session.session_dir / f"{node.name}-platform.xml"
+            log_file = self.session.directory / f"{node.name}-emane.log"
+            platform_xml = self.session.directory / f"{node.name}-platform.xml"
             args = f"{emanecmd} -f {log_file} {platform_xml}"
-            node.host_cmd(args, cwd=self.session.session_dir)
+            node.host_cmd(args, cwd=self.session.directory)
             logging.info("node(%s) host emane daemon running: %s", node.name, args)
 
     def install_iface(self, iface: CoreInterface) -> None:

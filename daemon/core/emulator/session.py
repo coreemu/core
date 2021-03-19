@@ -103,9 +103,9 @@ class Session:
         self.id: int = _id
 
         # define and create session directory when desired
-        self.session_dir: Path = Path(tempfile.gettempdir()) / f"pycore.{self.id}"
+        self.directory: Path = Path(tempfile.gettempdir()) / f"pycore.{self.id}"
         if mkdir:
-            self.session_dir.mkdir()
+            self.directory.mkdir()
 
         self.name: Optional[str] = None
         self.file_path: Optional[Path] = None
@@ -777,7 +777,7 @@ class Session:
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
-            shutil.rmtree(self.session_dir, ignore_errors=True)
+            shutil.rmtree(self.directory, ignore_errors=True)
 
     def broadcast_event(self, event_data: EventData) -> None:
         """
@@ -876,7 +876,7 @@ class Session:
         :param state: state to write to file
         :return: nothing
         """
-        state_file = self.session_dir / "state"
+        state_file = self.directory / "state"
         try:
             with state_file.open("w") as f:
                 f.write(f"{state.value} {state.name}\n")
@@ -904,8 +904,8 @@ class Session:
         """
         file_name, data = hook
         logging.info("running hook %s", file_name)
-        file_path = self.session_dir / file_name
-        log_path = self.session_dir / f"{file_name}.log"
+        file_path = self.directory / file_name
+        log_path = self.directory / f"{file_name}.log"
         try:
             with file_path.open("w") as f:
                 f.write(data)
@@ -916,7 +916,7 @@ class Session:
                     stdout=f,
                     stderr=subprocess.STDOUT,
                     close_fds=True,
-                    cwd=self.session_dir,
+                    cwd=self.directory,
                     env=self.get_environment(),
                 )
         except (IOError, subprocess.CalledProcessError):
@@ -982,7 +982,7 @@ class Session:
         # create session deployed xml
         xml_writer = corexml.CoreXmlWriter(self)
         corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-        xml_file_path = self.session_dir / "session-deployed.xml"
+        xml_file_path = self.directory / "session-deployed.xml"
         xml_writer.write(xml_file_path)
 
     def get_environment(self, state: bool = True) -> Dict[str, str]:
@@ -998,7 +998,7 @@ class Session:
         env["CORE_PYTHON"] = sys.executable
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
-        env["SESSION_DIR"] = str(self.session_dir)
+        env["SESSION_DIR"] = str(self.directory)
         env["SESSION_NAME"] = str(self.name)
         env["SESSION_FILENAME"] = str(self.file_path)
         env["SESSION_USER"] = str(self.user)
@@ -1009,7 +1009,7 @@ class Session:
         # /home/user/.core/environment
         # /tmp/pycore.<session id>/environment
         core_env_path = constants.CORE_CONF_DIR / "environment"
-        session_env_path = self.session_dir / "environment"
+        session_env_path = self.directory / "environment"
         if self.user:
             user_home_path = Path(f"~{self.user}").expanduser()
             user_env1 = user_home_path / ".core" / "environment"
@@ -1036,7 +1036,7 @@ class Session:
             logging.error("thumbnail file to set does not exist: %s", thumb_file)
             self.thumbnail = None
             return
-        dst_path = self.session_dir / thumb_file.name
+        dst_path = self.directory / thumb_file.name
         shutil.copy(thumb_file, dst_path)
         self.thumbnail = dst_path
 
@@ -1051,10 +1051,10 @@ class Session:
         if user:
             try:
                 uid = pwd.getpwnam(user).pw_uid
-                gid = self.session_dir.stat().st_gid
-                os.chown(self.session_dir, uid, gid)
+                gid = self.directory.stat().st_gid
+                os.chown(self.directory, uid, gid)
             except IOError:
-                logging.exception("failed to set permission on %s", self.session_dir)
+                logging.exception("failed to set permission on %s", self.directory)
         self.user = user
 
     def create_node(
@@ -1137,7 +1137,7 @@ class Session:
         Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
         """
-        file_path = self.session_dir / "nodes"
+        file_path = self.directory / "nodes"
         try:
             with self.nodes_lock:
                 with file_path.open("w") as f:

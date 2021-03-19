@@ -285,7 +285,7 @@ def expand_corepath(
     if session is not None:
         pathname = pathname.replace("~", f"/home/{session.user}")
         pathname = pathname.replace("%SESSION%", str(session.id))
-        pathname = pathname.replace("%SESSION_DIR%", str(session.session_dir))
+        pathname = pathname.replace("%SESSION_DIR%", str(session.directory))
         pathname = pathname.replace("%SESSION_USER%", session.user)
     if node is not None:
         pathname = pathname.replace("%NODE%", str(node.id))

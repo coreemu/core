@@ -95,7 +95,7 @@ def create_node_file(
     if isinstance(node, CoreNode):
         file_path = node.nodedir / file_name
     else:
-        file_path = node.session.session_dir / file_name
+        file_path = node.session.directory / file_name
     create_file(xml_element, doc_name, file_path, node.server)
 
 

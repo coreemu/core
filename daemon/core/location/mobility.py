@@ -1154,6 +1154,4 @@ class Ns2ScriptedMobility(WayPointMobility):
         filename = Path(filename)
         filename = self.findfile(filename)
         args = f"{BASH} {filename} {typestr}"
-        utils.cmd(
-            args, cwd=self.session.session_dir, env=self.session.get_environment()
-        )
+        utils.cmd(args, cwd=self.session.directory, env=self.session.get_environment())
