@@ -76,7 +76,7 @@ class DockerNode(CoreNode):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: str = None,
+        directory: str = None,
         server: DistributedServer = None,
         image: str = None,
     ) -> None:
@@ -86,7 +86,7 @@ class DockerNode(CoreNode):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param nodedir: node directory
+        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
@@ -94,7 +94,7 @@ class DockerNode(CoreNode):
         if image is None:
             image = "ubuntu"
         self.image: str = image
-        super().__init__(session, _id, name, nodedir, server)
+        super().__init__(session, _id, name, directory, server)
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """

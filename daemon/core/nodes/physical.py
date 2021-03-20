@@ -26,13 +26,13 @@ class PhysicalNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: Path = None,
+        directory: Path = None,
         server: DistributedServer = None,
     ) -> None:
         super().__init__(session, _id, name, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
-        self.nodedir: Optional[Path] = nodedir
+        self.directory: Optional[Path] = directory
         self.lock: threading.RLock = threading.RLock()
         self._mounts: List[Tuple[Path, Path]] = []
 
@@ -193,13 +193,13 @@ class PhysicalNode(CoreNodeBase):
     def mount(self, src_path: Path, target_path: Path) -> None:
         logging.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
         self.cmd(f"mkdir -p {target_path}")
-        self.host_cmd(f"{MOUNT} --bind {src_path} {target_path}", cwd=self.nodedir)
+        self.host_cmd(f"{MOUNT} --bind {src_path} {target_path}", cwd=self.directory)
         self._mounts.append((src_path, target_path))
 
     def umount(self, target_path: Path) -> None:
         logging.info("unmounting '%s'", target_path)
         try:
-            self.host_cmd(f"{UMOUNT} -l {target_path}", cwd=self.nodedir)
+            self.host_cmd(f"{UMOUNT} -l {target_path}", cwd=self.directory)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target_path)
 

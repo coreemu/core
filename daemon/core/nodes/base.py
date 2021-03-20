@@ -223,7 +223,7 @@ class CoreNodeBase(NodeBase):
         """
         super().__init__(session, _id, name, server)
         self.config_services: Dict[str, "ConfigService"] = {}
-        self.nodedir: Optional[Path] = None
+        self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 
     @abc.abstractmethod
@@ -314,10 +314,10 @@ class CoreNodeBase(NodeBase):
         """
         if is_dir:
             directory = str(path).strip("/").replace("/", ".")
-            return self.nodedir / directory
+            return self.directory / directory
         else:
             directory = str(path.parent).strip("/").replace("/", ".")
-            return self.nodedir / directory / path.name
+            return self.directory / directory / path.name
 
     def add_config_service(self, service_class: "ConfigServiceType") -> None:
         """
@@ -362,9 +362,9 @@ class CoreNodeBase(NodeBase):
 
         :return: nothing
         """
-        if self.nodedir is None:
-            self.nodedir = self.session.directory / f"{self.name}.conf"
-            self.host_cmd(f"mkdir -p {self.nodedir}")
+        if self.directory is None:
+            self.directory = self.session.directory / f"{self.name}.conf"
+            self.host_cmd(f"mkdir -p {self.directory}")
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
@@ -379,7 +379,7 @@ class CoreNodeBase(NodeBase):
         if preserve:
             return
         if self.tmpnodedir:
-            self.host_cmd(f"rm -rf {self.nodedir}")
+            self.host_cmd(f"rm -rf {self.directory}")
 
     def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
         """
@@ -475,7 +475,7 @@ class CoreNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: Path = None,
+        directory: Path = None,
         server: "DistributedServer" = None,
     ) -> None:
         """
@@ -484,12 +484,12 @@ class CoreNode(CoreNodeBase):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param nodedir: node directory
+        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server)
-        self.nodedir: Optional[Path] = nodedir
+        self.directory: Optional[Path] = directory
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.client: Optional[VnodeClient] = None
         self.pid: Optional[int] = None
@@ -539,8 +539,8 @@ class CoreNode(CoreNodeBase):
                 f"{VNODED} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log "
                 f"-p {self.ctrlchnlname}.pid"
             )
-            if self.nodedir:
-                vnoded += f" -C {self.nodedir}"
+            if self.directory:
+                vnoded += f" -C {self.directory}"
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)

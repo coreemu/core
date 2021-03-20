@@ -443,7 +443,7 @@ class TestGui:
         if not request.config.getoption("mock"):
             directory = str(file_path.parent)
             created_directory = directory[1:].replace("/", ".")
-            create_path = node.nodedir / created_directory / file_path.name
+            create_path = node.directory / created_directory / file_path.name
             assert create_path.exists()
 
     def test_exec_node_tty(self, coretlv: CoreHandler):

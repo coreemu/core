@@ -590,8 +590,8 @@ class EmaneManager(ModelManager):
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 node.node_net_client.create_route(eventgroup, eventdev)
             # start emane
-            log_file = node.nodedir / f"{node.name}-emane.log"
-            platform_xml = node.nodedir / f"{node.name}-platform.xml"
+            log_file = node.directory / f"{node.name}-emane.log"
+            platform_xml = node.directory / f"{node.name}-platform.xml"
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
