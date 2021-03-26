@@ -459,10 +459,10 @@ class CanvasNode:
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id
         try:
-            response = self.app.core.client.service_action(
+            result = self.app.core.client.service_action(
                 session_id, self.core_node.id, service, action
             )
-            if not response.result:
+            if not result:
                 self.app.show_error("Service Action Error", "Action Failed!")
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Service Error", e)

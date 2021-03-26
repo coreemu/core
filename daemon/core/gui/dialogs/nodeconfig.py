@@ -260,17 +260,17 @@ class NodeConfigDialog(Dialog):
             row += 1
 
         if nutils.is_rj45(self.node):
-            response = self.app.core.client.get_ifaces()
-            logging.debug("host machine available interfaces: %s", response)
-            ifaces = ListboxScroll(frame)
-            ifaces.listbox.config(state=state)
-            ifaces.grid(
+            ifaces = self.app.core.client.get_ifaces()
+            logging.debug("host machine available interfaces: %s", ifaces)
+            ifaces_scroll = ListboxScroll(frame)
+            ifaces_scroll.listbox.config(state=state)
+            ifaces_scroll.grid(
                 row=row, column=0, columnspan=2, sticky=tk.EW, padx=PADX, pady=PADY
             )
-            for inf in sorted(response.ifaces[:]):
-                ifaces.listbox.insert(tk.END, inf)
+            for inf in sorted(ifaces):
+                ifaces_scroll.listbox.insert(tk.END, inf)
             row += 1
-            ifaces.listbox.bind("<<ListboxSelect>>", self.iface_select)
+            ifaces_scroll.listbox.bind("<<ListboxSelect>>", self.iface_select)
 
         # interfaces
         if self.canvas_node.ifaces:

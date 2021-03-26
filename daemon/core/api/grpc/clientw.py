@@ -66,6 +66,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanConfig,
     WlanLinkRequest,
 )
+from core.api.grpc.wrappers import Hook
 from core.emulator.data import IpPrefixes
 
 
@@ -859,25 +860,16 @@ class CoreGrpcClient:
             hooks.append(hook)
         return hooks
 
-    def add_hook(
-        self,
-        session_id: int,
-        state: wrappers.SessionState,
-        file_name: str,
-        file_data: str,
-    ) -> bool:
+    def add_hook(self, session_id: int, hook: Hook) -> bool:
         """
         Add hook scripts.
 
         :param session_id: session id
-        :param state: state to trigger hook
-        :param file_name: name of file for hook script
-        :param file_data: hook script contents
+        :param hook: hook to add
         :return: True for success, False otherwise
         :raises grpc.RpcError: when session doesn't exist
         """
-        hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
-        request = core_pb2.AddHookRequest(session_id=session_id, hook=hook)
+        request = core_pb2.AddHookRequest(session_id=session_id, hook=hook.to_proto())
         response = self.stub.AddHook(request)
         return response.result
 
@@ -1277,7 +1269,7 @@ class CoreGrpcClient:
 
         :param file_path: path of scenario XML file
         :param start: tuple of result and session id when successful
-        :return: response with opened session id
+        :return: tuple of result and session id
         """
         with open(file_path, "r") as xml_file:
             data = xml_file.read()

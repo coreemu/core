@@ -7,7 +7,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import Node, NodeServiceData, ServiceValidationMode
+from core.api.grpc.wrappers import (
+    Node,
+    NodeServiceData,
+    ServiceConfig,
+    ServiceValidationMode,
+)
 from core.gui import images
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
@@ -455,16 +460,17 @@ class ServiceConfigDialog(Dialog):
                 or self.is_custom_directory()
             ):
                 startup, validate, shutdown = self.get_commands()
-                config = self.core.set_node_service(
-                    self.node.id,
-                    self.service_name,
-                    dirs=self.temp_directories,
+                config = ServiceConfig(
+                    node_id=self.node.id,
+                    service=self.service_name,
                     files=list(self.filename_combobox["values"]),
-                    startups=startup,
-                    validations=validate,
-                    shutdowns=shutdown,
+                    directories=self.temp_directories,
+                    startup=startup,
+                    validate=validate,
+                    shutdown=shutdown,
                 )
-                self.node.service_configs[self.service_name] = config
+                service_data = self.core.set_node_service(self.node.id, config)
+                self.node.service_configs[self.service_name] = service_data
             for file in self.modified_files:
                 file_configs = self.node.service_file_configs.setdefault(
                     self.service_name, {}

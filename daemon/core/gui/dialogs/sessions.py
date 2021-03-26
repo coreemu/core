@@ -30,10 +30,9 @@ class SessionsDialog(Dialog):
 
     def get_sessions(self) -> List[SessionSummary]:
         try:
-            response = self.app.core.client.get_sessions()
-            logging.info("sessions: %s", response)
-            sessions = sorted(response.sessions, key=lambda x: x.id)
-            return [SessionSummary.from_proto(x) for x in sessions]
+            sessions = self.app.core.client.get_sessions()
+            logging.info("sessions: %s", sessions)
+            return sorted(sessions, key=lambda x: x.id)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Sessions Error", e)
             self.destroy()

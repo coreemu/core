@@ -11,18 +11,12 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import grpc
 
-from core.api.grpc import (
-    client,
-    configservices_pb2,
-    core_pb2,
-    emane_pb2,
-    mobility_pb2,
-    services_pb2,
-    wlan_pb2,
-)
+from core.api.grpc import clientw, configservices_pb2, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
+    EmaneModelConfig,
+    Event,
     ExceptionEvent,
     Link,
     LinkEvent,
@@ -33,6 +27,7 @@ from core.api.grpc.wrappers import (
     NodeServiceData,
     NodeType,
     Position,
+    ServiceConfig,
     Session,
     SessionLocation,
     SessionState,
@@ -67,7 +62,7 @@ class CoreClient:
         """
         self.app: "Application" = app
         self.master: tk.Tk = app.master
-        self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy)
+        self._client: clientw.CoreGrpcClient = clientw.CoreGrpcClient(proxy=proxy)
         self.session: Optional[Session] = None
         self.user = getpass.getuser()
 
@@ -96,10 +91,9 @@ class CoreClient:
         self.handling_events: Optional[grpc.Future] = None
 
     @property
-    def client(self) -> client.CoreGrpcClient:
+    def client(self) -> clientw.CoreGrpcClient:
         if self.session:
-            response = self._client.check_session(self.session.id)
-            if not response.result:
+            if not self._client.check_session(self.session.id):
                 throughputs_enabled = self.handling_throughputs is not None
                 self.cancel_throughputs()
                 self.cancel_events()
@@ -150,7 +144,7 @@ class CoreClient:
         for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
 
-    def handle_events(self, event: core_pb2.Event) -> None:
+    def handle_events(self, event: Event) -> None:
         if not self.session or event.source == GUI_SOURCE:
             return
         if event.session_id != self.session.id:
@@ -160,11 +154,9 @@ class CoreClient:
                 self.session.id,
             )
             return
-
-        if event.HasField("link_event"):
-            link_event = LinkEvent.from_proto(event.link_event)
-            self.app.after(0, self.handle_link_event, link_event)
-        elif event.HasField("session_event"):
+        if event.link_event:
+            self.app.after(0, self.handle_link_event, event.link_event)
+        elif event.session_event:
             logging.info("session event: %s", event)
             session_event = event.session_event
             if session_event.event <= SessionState.SHUTDOWN.value:
@@ -181,14 +173,12 @@ class CoreClient:
                         dialog.set_pause()
             else:
                 logging.warning("unknown session event: %s", session_event)
-        elif event.HasField("node_event"):
-            node_event = NodeEvent.from_proto(event.node_event)
-            self.app.after(0, self.handle_node_event, node_event)
-        elif event.HasField("config_event"):
+        elif event.node_event:
+            self.app.after(0, self.handle_node_event, event.node_event)
+        elif event.config_event:
             logging.info("config event: %s", event)
-        elif event.HasField("exception_event"):
-            event = ExceptionEvent.from_proto(event.session_id, event.exception_event)
-            self.handle_exception_event(event)
+        elif event.exception_event:
+            self.handle_exception_event(event.exception_event)
         else:
             logging.info("unhandled event: %s", event)
 
@@ -278,8 +268,7 @@ class CoreClient:
             CPU_USAGE_DELAY, self.handle_cpu_event
         )
 
-    def handle_throughputs(self, event: core_pb2.ThroughputsEvent) -> None:
-        event = ThroughputsEvent.from_proto(event)
+    def handle_throughputs(self, event: ThroughputsEvent) -> None:
         if event.session_id != self.session.id:
             logging.warning(
                 "ignoring throughput event session(%s) current(%s)",
@@ -301,8 +290,7 @@ class CoreClient:
         logging.info("joining session(%s)", session_id)
         self.reset()
         try:
-            response = self.client.get_session(session_id)
-            self.session = Session.from_proto(response.session)
+            self.session = self.client.get_session(session_id)
             self.client.set_session_user(self.session.id, self.user)
             title_file = self.session.file.name if self.session.file else ""
             self.master.title(f"CORE Session({self.session.id}) {title_file}")
@@ -364,9 +352,9 @@ class CoreClient:
         Create a new session
         """
         try:
-            response = self.client.create_session()
-            logging.info("created session: %s", response)
-            self.join_session(response.session_id)
+            session_id = self.client.create_session()
+            logging.info("created session: %s", session_id)
+            self.join_session(session_id)
             location_config = self.app.guiconfig.location
             self.session.location = SessionLocation(
                 x=location_config.x,
@@ -398,22 +386,19 @@ class CoreClient:
         try:
             self.client.connect()
             # get all available services
-            response = self.client.get_services()
-            for service in response.services:
+            for service in self.client.get_services():
                 group_services = self.services.setdefault(service.group, set())
                 group_services.add(service.name)
             # get config service informations
-            response = self.client.get_config_services()
-            for service in response.services:
-                self.config_services[service.name] = ConfigService.from_proto(service)
+            for service in self.client.get_config_services():
+                self.config_services[service.name] = service
                 group_services = self.config_services_groups.setdefault(
                     service.group, set()
                 )
                 group_services.add(service.name)
             # join provided session, create new session, or show dialog to select an
             # existing session
-            response = self.client.get_sessions()
-            sessions = response.sessions
+            sessions = self.client.get_sessions()
             if session_id:
                 session_ids = set(x.id for x in sessions)
                 if session_id not in session_ids:
@@ -438,9 +423,8 @@ class CoreClient:
 
     def edit_node(self, core_node: Node) -> None:
         try:
-            position = core_node.position.to_proto()
             self.client.edit_node(
-                self.session.id, core_node.id, position, source=GUI_SOURCE
+                self.session.id, core_node.id, core_node.position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
@@ -451,7 +435,6 @@ class CoreClient:
 
     def start_session(self) -> Tuple[bool, List[str]]:
         self.ifaces_manager.set_macs([x.link for x in self.links.values()])
-        nodes = [x.to_proto() for x in self.session.nodes.values()]
         links = []
         asymmetric_links = []
         for edge in self.links.values():
@@ -460,43 +443,20 @@ class CoreClient:
                 link.iface1.mac = self.ifaces_manager.next_mac()
             if link.iface2 and not link.iface2.mac:
                 link.iface2.mac = self.ifaces_manager.next_mac()
-            links.append(link.to_proto())
+            links.append(link)
             if edge.asymmetric_link:
-                asymmetric_links.append(edge.asymmetric_link.to_proto())
-        wlan_configs = self.get_wlan_configs_proto()
-        mobility_configs = self.get_mobility_configs_proto()
-        emane_model_configs = self.get_emane_model_configs_proto()
-        hooks = [x.to_proto() for x in self.session.hooks.values()]
-        service_configs = self.get_service_configs_proto()
-        file_configs = self.get_service_file_configs_proto()
-        config_service_configs = self.get_config_service_configs_proto()
-        emane_config = to_dict(self.session.emane_config)
+                asymmetric_links.append(edge.asymmetric_link)
+        self.session.links = links
         result = False
         exceptions = []
         try:
             self.send_servers()
-            response = self.client.start_session(
-                self.session.id,
-                nodes,
-                links,
-                self.session.location.to_proto(),
-                hooks,
-                emane_config,
-                emane_model_configs,
-                wlan_configs,
-                mobility_configs,
-                service_configs,
-                file_configs,
-                asymmetric_links,
-                config_service_configs,
+            result, exceptions = self.client.start_session(
+                self.session, asymmetric_links
             )
-            logging.info(
-                "start session(%s), result: %s", self.session.id, response.result
-            )
-            if response.result:
+            logging.info("start session(%s), result: %s", self.session.id, result)
+            if result:
                 self.set_metadata()
-            result = response.result
-            exceptions = response.exceptions
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Start Session Error", e)
         return result, exceptions
@@ -506,9 +466,8 @@ class CoreClient:
             session_id = self.session.id
         result = False
         try:
-            response = self.client.stop_session(session_id)
-            logging.info("stopped session(%s), result: %s", session_id, response)
-            result = response.result
+            result = self.client.stop_session(session_id)
+            logging.info("stopped session(%s), result: %s", session_id, result)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Stop Session Error", e)
         return result
@@ -564,8 +523,8 @@ class CoreClient:
                     parent=self.app,
                 )
                 return
-            response = self.client.get_node_terminal(self.session.id, node_id)
-            cmd = f"{terminal} {response.terminal} &"
+            node_term = self.client.get_node_terminal(self.session.id, node_id)
+            cmd = f"{terminal} {node_term} &"
             logging.info("launching terminal %s", cmd)
             os.system(cmd)
         except grpc.RpcError as e:
@@ -587,8 +546,8 @@ class CoreClient:
             if not self.is_runtime():
                 logging.debug("Send session data to the daemon")
                 self.send_data()
-            response = self.client.save_xml(self.session.id, file_path)
-            logging.info("saved xml file %s, result: %s", file_path, response)
+            self.client.save_xml(self.session.id, file_path)
+            logging.info("saved xml file %s", file_path)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Save XML Error", e)
 
@@ -597,72 +556,50 @@ class CoreClient:
         Open core xml
         """
         try:
-            response = self._client.open_xml(file_path)
-            logging.info("open xml file %s, response: %s", file_path, response)
-            self.join_session(response.session_id)
+            result, session_id = self._client.open_xml(file_path)
+            logging.info(
+                "open xml file %s, result(%s) session(%s)",
+                file_path,
+                result,
+                session_id,
+            )
+            self.join_session(session_id)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Open XML Error", e)
 
     def get_node_service(self, node_id: int, service_name: str) -> NodeServiceData:
-        response = self.client.get_node_service(self.session.id, node_id, service_name)
+        node_service = self.client.get_node_service(
+            self.session.id, node_id, service_name
+        )
         logging.debug(
-            "get node(%s) %s service, response: %s", node_id, service_name, response
+            "get node(%s) service(%s): %s", node_id, service_name, node_service
         )
-        return NodeServiceData.from_proto(response.service)
+        return node_service
 
-    def set_node_service(
-        self,
-        node_id: int,
-        service_name: str,
-        dirs: List[str],
-        files: List[str],
-        startups: List[str],
-        validations: List[str],
-        shutdowns: List[str],
-    ) -> NodeServiceData:
-        response = self.client.set_node_service(
-            self.session.id,
-            node_id,
-            service_name,
-            directories=dirs,
-            files=files,
-            startup=startups,
-            validate=validations,
-            shutdown=shutdowns,
-        )
-        logging.info(
-            "Set %s service for node(%s), files: %s, Startup: %s, "
-            "Validation: %s, Shutdown: %s, Result: %s",
-            service_name,
-            node_id,
-            files,
-            startups,
-            validations,
-            shutdowns,
-            response,
-        )
-        response = self.client.get_node_service(self.session.id, node_id, service_name)
-        return NodeServiceData.from_proto(response.service)
+    def set_node_service(self, node_id: int, config: ServiceConfig) -> NodeServiceData:
+        result = self.client.set_node_service(self.session.id, config)
+        logging.info("set node service result(%s): %s", result, config)
+        return self.client.get_node_service(self.session.id, node_id, config.service)
 
     def get_node_service_file(
         self, node_id: int, service_name: str, file_name: str
     ) -> str:
-        response = self.client.get_node_service_file(
+        data = self.client.get_node_service_file(
             self.session.id, node_id, service_name, file_name
         )
         logging.debug(
-            "get service file for node(%s), service: %s, file: %s, result: %s",
+            "get service file for node(%s), service: %s, file: %s, data: %s",
             node_id,
             service_name,
             file_name,
-            response,
+            data,
         )
-        return response.data
+        return data
 
     def set_node_service_file(
         self, node_id: int, service_name: str, file_name: str, data: str
     ) -> None:
-        response = self.client.set_node_service_file(
+        result = self.client.set_node_service_file(
             self.session.id, node_id, service_name, file_name, data
         )
         logging.info(
@@ -671,19 +608,17 @@ class CoreClient:
             service_name,
             file_name,
             data,
-            response,
+            result,
         )
 
     def create_nodes_and_links(self) -> None:
         """
         create nodes and links that have not been created yet
         """
-        self.client.set_session_state(self.session.id, SessionState.DEFINITION.value)
+        self.client.set_session_state(self.session.id, SessionState.DEFINITION)
         for node in self.session.nodes.values():
-            response = self.client.add_node(
-                self.session.id, node.to_proto(), source=GUI_SOURCE
-            )
-            logging.debug("created node: %s", response)
+            node_id = self.client.add_node(self.session.id, node, source=GUI_SOURCE)
+            logging.debug("created node: %s", node_id)
         asymmetric_links = []
         for edge in self.links.values():
             self.add_link(edge.link)
@@ -698,58 +633,23 @@ class CoreClient:
         """
         self.send_servers()
         self.create_nodes_and_links()
-        for config_proto in self.get_wlan_configs_proto():
-            self.client.set_wlan_config(
-                self.session.id, config_proto.node_id, config_proto.config
-            )
-        for config_proto in self.get_mobility_configs_proto():
-            self.client.set_mobility_config(
-                self.session.id, config_proto.node_id, config_proto.config
-            )
-        for config_proto in self.get_service_configs_proto():
-            self.client.set_node_service(
-                self.session.id,
-                config_proto.node_id,
-                config_proto.service,
-                config_proto.files,
-                config_proto.directories,
-                config_proto.startup,
-                config_proto.validate,
-                config_proto.shutdown,
-            )
-        for config_proto in self.get_service_file_configs_proto():
+        for node_id, config in self.get_wlan_configs():
+            self.client.set_wlan_config(self.session.id, node_id, config)
+        for node_id, config in self.get_mobility_configs():
+            self.client.set_mobility_config(self.session.id, node_id, config)
+        for config in self.get_service_configs():
+            self.client.set_node_service(self.session.id, config)
+        for node_id, service, file, data in self.get_service_file_configs():
             self.client.set_node_service_file(
-                self.session.id,
-                config_proto.node_id,
-                config_proto.service,
-                config_proto.file,
-                config_proto.data,
+                self.session.id, node_id, service, file, data
             )
         for hook in self.session.hooks.values():
-            self.client.add_hook(
-                self.session.id, hook.state.value, hook.file, hook.data
-            )
-        for config_proto in self.get_emane_model_configs_proto():
-            self.client.set_emane_model_config(
-                self.session.id,
-                config_proto.node_id,
-                config_proto.model,
-                config_proto.config,
-                config_proto.iface_id,
-            )
+            self.client.add_hook(self.session.id, hook)
+        for config in self.get_emane_model_configs():
+            self.client.set_emane_model_config(self.session.id, config)
         config = to_dict(self.session.emane_config)
         self.client.set_emane_config(self.session.id, config)
-        location = self.session.location
-        self.client.set_session_location(
-            self.session.id,
-            location.x,
-            location.y,
-            location.z,
-            location.lat,
-            location.lon,
-            location.alt,
-            location.scale,
-        )
+        self.client.set_session_location(self.session.id, self.session.location)
         self.set_metadata()
 
     def close(self) -> None:
@@ -850,7 +750,7 @@ class CoreClient:
             dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
-    def get_wlan_configs_proto(self) -> List[wlan_pb2.WlanConfig]:
+    def get_wlan_configs(self) -> List[Tuple[int, Dict[str, str]]]:
         configs = []
         for node in self.session.nodes.values():
             if node.type != NodeType.WIRELESS_LAN:
@@ -858,11 +758,10 @@ class CoreClient:
             if not node.wlan_config:
                 continue
             config = ConfigOption.to_dict(node.wlan_config)
-            wlan_config = wlan_pb2.WlanConfig(node_id=node.id, config=config)
-            configs.append(wlan_config)
+            configs.append((node.id, config))
         return configs
 
-    def get_mobility_configs_proto(self) -> List[mobility_pb2.MobilityConfig]:
+    def get_mobility_configs(self) -> List[Tuple[int, Dict[str, str]]]:
         configs = []
         for node in self.session.nodes.values():
             if not nutils.is_mobility(node):
@@ -870,27 +769,24 @@ class CoreClient:
             if not node.mobility_config:
                 continue
             config = ConfigOption.to_dict(node.mobility_config)
-            mobility_config = mobility_pb2.MobilityConfig(
-                node_id=node.id, config=config
-            )
-            configs.append(mobility_config)
+            configs.append((node.id, config))
         return configs
 
-    def get_emane_model_configs_proto(self) -> List[emane_pb2.EmaneModelConfig]:
+    def get_emane_model_configs(self) -> List[EmaneModelConfig]:
         configs = []
         for node in self.session.nodes.values():
             for key, config in node.emane_model_configs.items():
                 model, iface_id = key
-                config = ConfigOption.to_dict(config)
+                # config = ConfigOption.to_dict(config)
                 if iface_id is None:
                     iface_id = -1
-                config_proto = emane_pb2.EmaneModelConfig(
-                    node_id=node.id, iface_id=iface_id, model=model, config=config
+                config = EmaneModelConfig(
+                    node_id=node.id, model=model, iface_id=iface_id, config=config
                 )
-                configs.append(config_proto)
+                configs.append(config)
         return configs
 
-    def get_service_configs_proto(self) -> List[services_pb2.ServiceConfig]:
+    def get_service_configs(self) -> List[ServiceConfig]:
         configs = []
         for node in self.session.nodes.values():
             if not nutils.is_container(node):
@@ -898,19 +794,19 @@ class CoreClient:
             if not node.service_configs:
                 continue
             for name, config in node.service_configs.items():
-                config_proto = services_pb2.ServiceConfig(
+                config = ServiceConfig(
                     node_id=node.id,
                     service=name,
-                    directories=config.dirs,
                     files=config.configs,
+                    directories=config.dirs,
                     startup=config.startup,
                     validate=config.validate,
                     shutdown=config.shutdown,
                 )
-                configs.append(config_proto)
+                configs.append(config)
         return configs
 
-    def get_service_file_configs_proto(self) -> List[services_pb2.ServiceFileConfig]:
+    def get_service_file_configs(self) -> List[Tuple[int, str, str, str]]:
         configs = []
         for node in self.session.nodes.values():
             if not nutils.is_container(node):
@@ -919,10 +815,7 @@ class CoreClient:
                 continue
             for service, file_configs in node.service_file_configs.items():
                 for file, data in file_configs.items():
-                    config_proto = services_pb2.ServiceFileConfig(
-                        node_id=node.id, service=service, file=file, data=data
-                    )
-                    configs.append(config_proto)
+                    configs.append((node.id, service, file, data))
         return configs
 
     def get_config_service_configs_proto(
@@ -946,37 +839,35 @@ class CoreClient:
 
     def run(self, node_id: int) -> str:
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
-        return self.client.node_command(self.session.id, node_id, self.observer).output
+        _, output = self.client.node_command(self.session.id, node_id, self.observer)
+        return output
 
     def get_wlan_config(self, node_id: int) -> Dict[str, ConfigOption]:
-        response = self.client.get_wlan_config(self.session.id, node_id)
-        config = response.config
+        config = self.client.get_wlan_config(self.session.id, node_id)
         logging.debug(
             "get wlan configuration from node %s, result configuration: %s",
             node_id,
             config,
         )
-        return ConfigOption.from_dict(config)
+        return config
 
     def get_mobility_config(self, node_id: int) -> Dict[str, ConfigOption]:
-        response = self.client.get_mobility_config(self.session.id, node_id)
-        config = response.config
+        config = self.client.get_mobility_config(self.session.id, node_id)
         logging.debug(
             "get mobility config from node %s, result configuration: %s",
             node_id,
             config,
         )
-        return ConfigOption.from_dict(config)
+        return config
 
     def get_emane_model_config(
         self, node_id: int, model: str, iface_id: int = None
     ) -> Dict[str, ConfigOption]:
         if iface_id is None:
             iface_id = -1
-        response = self.client.get_emane_model_config(
+        config = self.client.get_emane_model_config(
             self.session.id, node_id, model, iface_id
         )
-        config = response.config
         logging.debug(
             "get emane model config: node id: %s, EMANE model: %s, "
             "interface: %s, config: %s",
@@ -985,42 +876,21 @@ class CoreClient:
             iface_id,
             config,
         )
-        return ConfigOption.from_dict(config)
+        return config
 
     def execute_script(self, script) -> None:
-        response = self.client.execute_script(script)
-        logging.info("execute python script %s", response)
-        if response.session_id != -1:
-            self.join_session(response.session_id)
+        session_id = self.client.execute_script(script)
+        logging.info("execute python script %s", session_id)
+        if session_id != -1:
+            self.join_session(session_id)
 
     def add_link(self, link: Link) -> None:
-        iface1 = link.iface1.to_proto() if link.iface1 else None
-        iface2 = link.iface2.to_proto() if link.iface2 else None
-        options = link.options.to_proto() if link.options else None
-        response = self.client.add_link(
-            self.session.id,
-            link.node1_id,
-            link.node2_id,
-            iface1,
-            iface2,
-            options,
-            source=GUI_SOURCE,
-        )
-        logging.debug("added link: %s", response)
-        if not response.result:
+        result, _, _ = self.client.add_link(self.session.id, link, source=GUI_SOURCE)
+        logging.debug("added link: %s", result)
+        if not result:
             logging.error("error adding link: %s", link)
 
     def edit_link(self, link: Link) -> None:
-        iface1_id = link.iface1.id if link.iface1 else None
-        iface2_id = link.iface2.id if link.iface2 else None
-        response = self.client.edit_link(
-            self.session.id,
-            link.node1_id,
-            link.node2_id,
-            link.options.to_proto(),
-            iface1_id,
-            iface2_id,
-            source=GUI_SOURCE,
-        )
-        if not response.result:
+        result = self.client.edit_link(self.session.id, link, source=GUI_SOURCE)
+        if not result:
             logging.error("error editing link: %s", link)

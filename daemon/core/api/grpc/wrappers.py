@@ -171,15 +171,16 @@ class ConfigServiceData:
 class ConfigServiceDefaults:
     templates: Dict[str, str]
     config: Dict[str, "ConfigOption"]
-    modes: List[str]
+    modes: Dict[str, Dict[str, str]]
 
     @classmethod
     def from_proto(
         cls, proto: configservices_pb2.GetConfigServicesResponse
     ) -> "ConfigServiceDefaults":
         config = ConfigOption.from_dict(proto.config)
+        modes = {x.name: dict(x.config) for x in proto.modes}
         return ConfigServiceDefaults(
-            templates=dict(proto.templates), config=config, modes=list(proto.modes)
+            templates=dict(proto.templates), config=config, modes=modes
         )
 
 
@@ -598,11 +599,12 @@ class EmaneModelConfig:
         )
 
     def to_proto(self) -> emane_pb2.EmaneModelConfig:
+        config = ConfigOption.to_dict(self.config)
         return emane_pb2.EmaneModelConfig(
             node_id=self.node_id,
             model=self.model,
             iface_id=self.iface_id,
-            config=self.config,
+            config=config,
         )
 
 
