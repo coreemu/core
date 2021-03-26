@@ -788,13 +788,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if dup is not None:
             options.dup = int(dup)
 
+        # fix for rj45 nodes missing iface id
+        node1 = self.session.get_node(node1_id, NodeBase)
+        node2 = self.session.get_node(node2_id, NodeBase)
+        if isinstance(node1, Rj45Node) and iface1_data.id is None:
+            iface1_data.id = 0
+        if isinstance(node2, Rj45Node) and iface2_data.id is None:
+            iface2_data.id = 0
+
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
                 node1_id, node2_id, iface1_data, iface2_data, options, link_type
             )
         elif message.flags & MessageFlags.DELETE.value:
-            node1 = self.session.get_node(node1_id, NodeBase)
-            node2 = self.session.get_node(node2_id, NodeBase)
             if isinstance(node1, Rj45Node):
                 iface1_data.id = node1.iface_id
             if isinstance(node2, Rj45Node):
