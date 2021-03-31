@@ -20,20 +20,20 @@ class VpnClient(ConfigService):
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = [
         Configuration(
-            _id="keydir",
-            _type=ConfigDataTypes.STRING,
+            id="keydir",
+            type=ConfigDataTypes.STRING,
             label="Key Dir",
             default="/etc/core/keys",
         ),
         Configuration(
-            _id="keyname",
-            _type=ConfigDataTypes.STRING,
+            id="keyname",
+            type=ConfigDataTypes.STRING,
             label="Key Name",
             default="client1",
         ),
         Configuration(
-            _id="server",
-            _type=ConfigDataTypes.STRING,
+            id="server",
+            type=ConfigDataTypes.STRING,
             label="Server",
             default="10.0.2.10",
         ),
@@ -54,20 +54,20 @@ class VpnServer(ConfigService):
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = [
         Configuration(
-            _id="keydir",
-            _type=ConfigDataTypes.STRING,
+            id="keydir",
+            type=ConfigDataTypes.STRING,
             label="Key Dir",
             default="/etc/core/keys",
         ),
         Configuration(
-            _id="keyname",
-            _type=ConfigDataTypes.STRING,
+            id="keyname",
+            type=ConfigDataTypes.STRING,
             label="Key Name",
             default="server",
         ),
         Configuration(
-            _id="subnet",
-            _type=ConfigDataTypes.STRING,
+            id="subnet",
+            type=ConfigDataTypes.STRING,
             label="Subnet",
             default="10.0.200.0",
         ),

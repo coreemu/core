@@ -27,11 +27,11 @@ class MyService(ConfigService):
     shutdown = [f"pkill {files[0]}"]
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = [
-        Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Text"),
-        Configuration(_id="value2", _type=ConfigDataTypes.BOOL, label="Boolean"),
+        Configuration(id="value1", type=ConfigDataTypes.STRING, label="Text"),
+        Configuration(id="value2", type=ConfigDataTypes.BOOL, label="Boolean"),
         Configuration(
-            _id="value3",
-            _type=ConfigDataTypes.STRING,
+            id="value3",
+            type=ConfigDataTypes.STRING,
             label="Multiple Choice",
             options=["value1", "value2", "value3"],
         ),

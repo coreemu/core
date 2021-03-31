@@ -18,8 +18,8 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     mac_library: str = "bypassmaclayer"
     mac_config: List[Configuration] = [
         Configuration(
-            _id="none",
-            _type=ConfigDataTypes.BOOL,
+            id="none",
+            type=ConfigDataTypes.BOOL,
             default="0",
             label="There are no parameters for the bypass model.",
         )

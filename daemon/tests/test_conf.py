@@ -17,8 +17,8 @@ class TestConfigurableOptions(ConfigurableOptions):
     name1 = "value1"
     name2 = "value2"
     options = [
-        Configuration(_id=name1, _type=ConfigDataTypes.STRING, label=name1),
-        Configuration(_id=name2, _type=ConfigDataTypes.STRING, label=name2),
+        Configuration(id=name1, type=ConfigDataTypes.STRING, label=name1),
+        Configuration(id=name2, type=ConfigDataTypes.STRING, label=name2),
     ]
 
 

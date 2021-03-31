@@ -13,51 +13,51 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     name: str = "session"
     options: List[Configuration] = [
         Configuration(
-            _id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"
+            id="controlnet", type=ConfigDataTypes.STRING, label="Control Network"
         ),
         Configuration(
-            _id="controlnet0", _type=ConfigDataTypes.STRING, label="Control Network 0"
+            id="controlnet0", type=ConfigDataTypes.STRING, label="Control Network 0"
         ),
         Configuration(
-            _id="controlnet1", _type=ConfigDataTypes.STRING, label="Control Network 1"
+            id="controlnet1", type=ConfigDataTypes.STRING, label="Control Network 1"
         ),
         Configuration(
-            _id="controlnet2", _type=ConfigDataTypes.STRING, label="Control Network 2"
+            id="controlnet2", type=ConfigDataTypes.STRING, label="Control Network 2"
         ),
         Configuration(
-            _id="controlnet3", _type=ConfigDataTypes.STRING, label="Control Network 3"
+            id="controlnet3", type=ConfigDataTypes.STRING, label="Control Network 3"
         ),
         Configuration(
-            _id="controlnet_updown_script",
-            _type=ConfigDataTypes.STRING,
+            id="controlnet_updown_script",
+            type=ConfigDataTypes.STRING,
             label="Control Network Script",
         ),
         Configuration(
-            _id="enablerj45",
-            _type=ConfigDataTypes.BOOL,
+            id="enablerj45",
+            type=ConfigDataTypes.BOOL,
             default="1",
             label="Enable RJ45s",
         ),
         Configuration(
-            _id="preservedir",
-            _type=ConfigDataTypes.BOOL,
+            id="preservedir",
+            type=ConfigDataTypes.BOOL,
             default="0",
             label="Preserve session dir",
         ),
         Configuration(
-            _id="enablesdt",
-            _type=ConfigDataTypes.BOOL,
+            id="enablesdt",
+            type=ConfigDataTypes.BOOL,
             default="0",
             label="Enable SDT3D output",
         ),
         Configuration(
-            _id="sdturl",
-            _type=ConfigDataTypes.STRING,
+            id="sdturl",
+            type=ConfigDataTypes.STRING,
             default=Sdt.DEFAULT_SDT_URL,
             label="SDT3D URL",
         ),
         Configuration(
-            _id="ovs", _type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
+            id="ovs", type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
         ),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY

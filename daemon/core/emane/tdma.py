@@ -35,8 +35,8 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         )
         super().load(emane_prefix)
         config_item = Configuration(
-            _id=cls.schedule_name,
-            _type=ConfigDataTypes.STRING,
+            id=cls.schedule_name,
+            type=ConfigDataTypes.STRING,
             default=str(cls.default_schedule),
             label="TDMA schedule file (core)",
         )

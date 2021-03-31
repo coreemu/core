@@ -236,35 +236,35 @@ class BasicRangeModel(WirelessModel):
     name: str = "basic_range"
     options: List[Configuration] = [
         Configuration(
-            _id="range",
-            _type=ConfigDataTypes.UINT32,
+            id="range",
+            type=ConfigDataTypes.UINT32,
             default="275",
             label="wireless range (pixels)",
         ),
         Configuration(
-            _id="bandwidth",
-            _type=ConfigDataTypes.UINT64,
+            id="bandwidth",
+            type=ConfigDataTypes.UINT64,
             default="54000000",
             label="bandwidth (bps)",
         ),
         Configuration(
-            _id="jitter",
-            _type=ConfigDataTypes.UINT64,
+            id="jitter",
+            type=ConfigDataTypes.UINT64,
             default="0",
             label="transmission jitter (usec)",
         ),
         Configuration(
-            _id="delay",
-            _type=ConfigDataTypes.UINT64,
+            id="delay",
+            type=ConfigDataTypes.UINT64,
             default="5000",
             label="transmission delay (usec)",
         ),
         Configuration(
-            _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
+            id="error", type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
         Configuration(
-            _id="promiscuous",
-            _type=ConfigDataTypes.BOOL,
+            id="promiscuous",
+            type=ConfigDataTypes.BOOL,
             default="0",
             label="promiscuous mode",
         ),
@@ -868,40 +868,38 @@ class Ns2ScriptedMobility(WayPointMobility):
     name: str = "ns2script"
     options: List[Configuration] = [
         Configuration(
-            _id="file", _type=ConfigDataTypes.STRING, label="mobility script file"
+            id="file", type=ConfigDataTypes.STRING, label="mobility script file"
         ),
         Configuration(
-            _id="refresh_ms",
-            _type=ConfigDataTypes.UINT32,
+            id="refresh_ms",
+            type=ConfigDataTypes.UINT32,
             default="50",
             label="refresh time (ms)",
         ),
+        Configuration(id="loop", type=ConfigDataTypes.BOOL, default="1", label="loop"),
         Configuration(
-            _id="loop", _type=ConfigDataTypes.BOOL, default="1", label="loop"
-        ),
-        Configuration(
-            _id="autostart",
-            _type=ConfigDataTypes.STRING,
+            id="autostart",
+            type=ConfigDataTypes.STRING,
             label="auto-start seconds (0.0 for runtime)",
         ),
         Configuration(
-            _id="map",
-            _type=ConfigDataTypes.STRING,
+            id="map",
+            type=ConfigDataTypes.STRING,
             label="node mapping (optional, e.g. 0:1,1:2,2:3)",
         ),
         Configuration(
-            _id="script_start",
-            _type=ConfigDataTypes.STRING,
+            id="script_start",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon start",
         ),
         Configuration(
-            _id="script_pause",
-            _type=ConfigDataTypes.STRING,
+            id="script_pause",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon pause",
         ),
         Configuration(
-            _id="script_stop",
-            _type=ConfigDataTypes.STRING,
+            id="script_stop",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon stop",
         ),
     ]

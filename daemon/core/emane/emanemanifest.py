@@ -118,8 +118,8 @@ def parse(manifest_path: Path, defaults: Dict[str, str]) -> List[Configuration]:
             config_descriptions = f"{config_descriptions} file"
 
         configuration = Configuration(
-            _id=config_name,
-            _type=config_type_value,
+            id=config_name,
+            type=config_type_value,
             default=config_default,
             options=possible,
             label=config_descriptions,
