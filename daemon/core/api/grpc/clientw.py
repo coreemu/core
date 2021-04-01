@@ -5,6 +5,7 @@ gRpc client for interfacing with CORE.
 import logging
 import threading
 from contextlib import contextmanager
+from pathlib import Path
 from queue import Queue
 from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
 
@@ -54,7 +55,6 @@ from core.api.grpc.services_pb2 import (
     GetServicesRequest,
     ServiceActionRequest,
     ServiceDefaults,
-    ServiceFileConfig,
     SetNodeServiceFileRequest,
     SetNodeServiceRequest,
     SetServiceDefaultsRequest,
@@ -68,6 +68,7 @@ from core.api.grpc.wlan_pb2 import (
 )
 from core.api.grpc.wrappers import Hook
 from core.emulator.data import IpPrefixes
+from core.errors import CoreError
 
 
 class MoveNodesStreamer:
@@ -675,13 +676,17 @@ class CoreGrpcClient:
         :return: True for success, False otherwise
         :raises grpc.RpcError: when session or node doesn't exist
         """
+        if position and geo:
+            raise CoreError("cannot edit position and geo at same time")
+        position_proto = position.to_proto() if position else None
+        geo_proto = geo.to_proto() if geo else None
         request = core_pb2.EditNodeRequest(
             session_id=session_id,
             node_id=node_id,
-            position=position.to_proto(),
+            position=position_proto,
             icon=icon,
             source=source,
-            geo=geo.to_proto(),
+            geo=geo_proto,
         )
         response = self.stub.EditNode(request)
         return response.result
@@ -994,7 +999,7 @@ class CoreGrpcClient:
 
     def get_node_service_configs(
         self, session_id: int
-    ) -> List[wrappers.NodeServiceData]:
+    ) -> List[wrappers.NodeServiceConfig]:
         """
         Get service data for a node.
 
@@ -1005,8 +1010,8 @@ class CoreGrpcClient:
         request = GetNodeServiceConfigsRequest(session_id=session_id)
         response = self.stub.GetNodeServiceConfigs(request)
         node_services = []
-        for service_proto in response.configs:
-            node_service = wrappers.NodeServiceData.from_proto(service_proto)
+        for config in response.configs:
+            node_service = wrappers.NodeServiceConfig.from_proto(config)
             node_services.append(node_service)
         return node_services
 
@@ -1065,22 +1070,17 @@ class CoreGrpcClient:
         return response.result
 
     def set_node_service_file(
-        self, session_id: int, node_id: int, service: str, file_name: str, data: str
+        self, session_id: int, service_file_config: wrappers.ServiceFileConfig
     ) -> bool:
         """
         Set a service file for a node.
 
         :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :param file_name: file name to save
-        :param data: data to save for file
+        :param service_file_config: configuration to set
         :return: True for success, False otherwise
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        config = ServiceFileConfig(
-            node_id=node_id, service=service, file=file_name, data=data
-        )
+        config = service_file_config.to_proto()
         request = SetNodeServiceFileRequest(session_id=session_id, config=config)
         response = self.stub.SetNodeServiceFile(request)
         return response.result
@@ -1263,7 +1263,7 @@ class CoreGrpcClient:
         with open(file_path, "w") as xml_file:
             xml_file.write(response.data)
 
-    def open_xml(self, file_path: str, start: bool = False) -> Tuple[bool, int]:
+    def open_xml(self, file_path: Path, start: bool = False) -> Tuple[bool, int]:
         """
         Load a local scenario XML file to open as a new session.
 
@@ -1271,9 +1271,9 @@ class CoreGrpcClient:
         :param start: tuple of result and session id when successful
         :return: tuple of result and session id
         """
-        with open(file_path, "r") as xml_file:
-            data = xml_file.read()
-        request = core_pb2.OpenXmlRequest(data=data, start=start, file=file_path)
+        with file_path.open("r") as f:
+            data = f.read()
+        request = core_pb2.OpenXmlRequest(data=data, start=start, file=str(file_path))
         response = self.stub.OpenXml(request)
         return response.result, response.session_id
 

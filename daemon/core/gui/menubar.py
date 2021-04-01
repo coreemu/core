@@ -312,6 +312,7 @@ class Menubar(tk.Menu):
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
         if file_path:
+            file_path = Path(file_path)
             self.open_xml_task(file_path)
 
     def open_xml_task(self, file_path: Path) -> None:

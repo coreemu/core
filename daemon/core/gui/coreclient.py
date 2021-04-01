@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox
 from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
@@ -28,6 +29,7 @@ from core.api.grpc.wrappers import (
     NodeType,
     Position,
     ServiceConfig,
+    ServiceFileConfig,
     Session,
     SessionLocation,
     SessionState,
@@ -551,7 +553,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Save XML Error", e)
 
-    def open_xml(self, file_path: str) -> None:
+    def open_xml(self, file_path: Path) -> None:
         """
         Open core xml
         """
@@ -599,17 +601,9 @@ class CoreClient:
     def set_node_service_file(
         self, node_id: int, service_name: str, file_name: str, data: str
     ) -> None:
-        result = self.client.set_node_service_file(
-            self.session.id, node_id, service_name, file_name, data
-        )
-        logging.info(
-            "set node(%s) service file, service: %s, file: %s, data: %s, result: %s",
-            node_id,
-            service_name,
-            file_name,
-            data,
-            result,
-        )
+        config = ServiceFileConfig(node_id, service_name, file_name, data)
+        result = self.client.set_node_service_file(self.session.id, config)
+        logging.info("set service file config %s: %s", config, result)
 
     def create_nodes_and_links(self) -> None:
         """
@@ -639,10 +633,8 @@ class CoreClient:
             self.client.set_mobility_config(self.session.id, node_id, config)
         for config in self.get_service_configs():
             self.client.set_node_service(self.session.id, config)
-        for node_id, service, file, data in self.get_service_file_configs():
-            self.client.set_node_service_file(
-                self.session.id, node_id, service, file, data
-            )
+        for config in self.get_service_file_configs():
+            self.client.set_node_service_file(self.session.id, config)
         for hook in self.session.hooks.values():
             self.client.add_hook(self.session.id, hook)
         for config in self.get_emane_model_configs():
@@ -806,7 +798,7 @@ class CoreClient:
                 configs.append(config)
         return configs
 
-    def get_service_file_configs(self) -> List[Tuple[int, str, str, str]]:
+    def get_service_file_configs(self) -> List[ServiceFileConfig]:
         configs = []
         for node in self.session.nodes.values():
             if not nutils.is_container(node):
@@ -815,7 +807,8 @@ class CoreClient:
                 continue
             for service, file_configs in node.service_file_configs.items():
                 for file, data in file_configs.items():
-                    configs.append((node.id, service, file, data))
+                    config = ServiceFileConfig(node.id, service, file, data)
+                    configs.append(config)
         return configs
 
     def get_config_service_configs_proto(

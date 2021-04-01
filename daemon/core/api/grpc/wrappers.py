@@ -234,6 +234,23 @@ class NodeServiceData:
 
 
 @dataclass
+class NodeServiceConfig:
+    node_id: int
+    service: str
+    data: NodeServiceData
+    files: Dict[str, str] = field(default_factory=dict)
+
+    @classmethod
+    def from_proto(cls, proto: services_pb2.NodeServiceConfig) -> "NodeServiceConfig":
+        return NodeServiceConfig(
+            node_id=proto.node_id,
+            service=proto.service,
+            data=NodeServiceData.from_proto(proto.data),
+            files=dict(proto.files),
+        )
+
+
+@dataclass
 class ServiceConfig:
     node_id: int
     service: str
@@ -252,6 +269,19 @@ class ServiceConfig:
             startup=self.startup,
             validate=self.validate,
             shutdown=self.shutdown,
+        )
+
+
+@dataclass
+class ServiceFileConfig:
+    node_id: int
+    service: str
+    file: str
+    data: str = field(repr=False)
+
+    def to_proto(self) -> services_pb2.ServiceFileConfig:
+        return services_pb2.ServiceFileConfig(
+            node_id=self.node_id, service=self.service, file=self.file, data=self.data
         )
 
 
@@ -723,6 +753,9 @@ class Session:
     emane_config: Dict[str, ConfigOption]
     metadata: Dict[str, str]
     file: Path
+
+    def set_node(self, node: Node) -> None:
+        self.nodes[node.id] = node
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
