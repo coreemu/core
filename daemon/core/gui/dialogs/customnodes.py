@@ -76,9 +76,9 @@ class ServicesSelectDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
         # trigger group change
-        self.groups.listbox.event_generate("<<ListboxSelect>>")
+        self.handle_group_change()
 
-    def handle_group_change(self, event: tk.Event) -> None:
+    def handle_group_change(self, event: tk.Event = None) -> None:
         selection = self.groups.listbox.curselection()
         if selection:
             index = selection[0]
@@ -195,7 +195,7 @@ class CustomNodesDialog(Dialog):
             self.image_button.config(image=self.image)
 
     def click_services(self) -> None:
-        dialog = ServicesSelectDialog(self, self.app, self.services)
+        dialog = ServicesSelectDialog(self, self.app, set(self.services))
         dialog.show()
         if dialog.current_services is not None:
             self.services.clear()
@@ -238,12 +238,12 @@ class CustomNodesDialog(Dialog):
             node_draw.model = name
             node_draw.image_file = str(Path(self.image_file).absolute())
             node_draw.image = self.image
-            node_draw.services = self.services
+            node_draw.services = set(self.services)
             logging.debug(
                 "edit custom node (%s), image: (%s), services (%s)",
-                name,
-                self.image_file,
-                self.services,
+                node_draw.model,
+                node_draw.image_file,
+                node_draw.services,
             )
             self.app.core.custom_nodes[name] = node_draw
             self.nodes_list.listbox.delete(self.selected_index)
