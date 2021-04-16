@@ -172,7 +172,7 @@ class NodeDraw:
         node_draw.image_file = custom_node.image
         node_draw.image = images.from_file(custom_node.image, width=images.NODE_SIZE)
         node_draw.node_type = NodeType.DEFAULT
-        node_draw.services = custom_node.services
+        node_draw.services = set(custom_node.services)
         node_draw.label = custom_node.name
         node_draw.model = custom_node.name
         node_draw.tooltip = custom_node.name
