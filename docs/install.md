@@ -134,6 +134,9 @@ After installation has completed you should be able to run `core-daemon` and `co
 `install.sh` will attempt to determine your OS by way of `/etc/os-release`, currently it supports
 attempts to install OSs that are debian/redhat like (yum/apt).
 ```shell
+# make sure pip is the latest version before moving forward
+python3 -m pip install -U pip
+
 # clone CORE repo
 git clone https://github.com/coreemu/core.git
 cd core

@@ -1,3 +1,8 @@
+## 2021-04-15 CORE 7.5.1
+
+* core-pygui
+    * fixed issues creating and drawing custom nodes
+
 ## 2021-03-11 CORE 7.5.0
 
 * core-daemon
