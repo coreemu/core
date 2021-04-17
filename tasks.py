@@ -247,12 +247,6 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-@task(
-    help={
-        "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
-    },
-)
 def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install systemd core service
@@ -283,13 +277,6 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
         print(f"ERROR: systemd service path not found: {systemd_dir}")
 
 
-@task(
-    help={
-        "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
-        "local": "determines if core will install to local system, default is False",
-    },
-)
 def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install core script files, modified to leverage virtual environment
@@ -344,10 +331,17 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
+        "ospf": "disable ospf installation",
     },
 )
 def install(
-    c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX, install_type=None
+    c,
+    dev=False,
+    verbose=False,
+    local=False,
+    prefix=DEFAULT_PREFIX,
+    install_type=None,
+    ospf=True,
 ):
     """
     install core, poetry, scripts, service, and ospf mdr
@@ -376,8 +370,9 @@ def install(
         install_scripts(c, local, hide, prefix)
     with p.start("installing systemd service"):
         install_service(c, hide, prefix)
-    with p.start("installing ospf mdr"):
-        install_ospf_mdr(c, os_info, hide)
+    if ospf:
+        with p.start("installing ospf mdr"):
+            install_ospf_mdr(c, os_info, hide)
     print("\ninstall complete!")
 
 
@@ -444,10 +439,16 @@ def install_emane(c, verbose=False, local=False, install_type=None):
         "dev": "uninstall development mode",
         "verbose": "enable verbose",
         "local": "determines if core was installed local to system, default is False",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
     },
 )
-def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
+def uninstall(
+    c,
+    dev=False,
+    verbose=False,
+    local=False,
+    prefix=DEFAULT_PREFIX,
+):
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
@@ -533,20 +534,6 @@ def reinstall(
         if not Path("tasks.py").exists():
             raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
     install(c, dev, verbose, local, prefix, install_type)
-
-
-@task
-def daemon(c):
-    """
-    start core-daemon
-    """
-    python = get_python(c)
-    with c.cd(DAEMON_DIR):
-        c.run(
-            f"sudo {python} scripts/core-daemon "
-            "-f data/core.conf -l data/logging.conf",
-            pty=True
-        )
 
 
 @task
