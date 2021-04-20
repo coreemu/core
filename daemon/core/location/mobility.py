@@ -454,7 +454,7 @@ class BasicRangeModel(WirelessModel):
         self.delay = self._get_config(self.delay, config, "delay")
         self.loss = self._get_config(self.loss, config, "error")
         self.jitter = self._get_config(self.jitter, config, "jitter")
-        promiscuous = config["promiscuous"] == "1"
+        promiscuous = config.get("promiscuous", "0") == "1"
         if self.promiscuous and not promiscuous:
             self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_ENABLED)
         elif not self.promiscuous and promiscuous:
