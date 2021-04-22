@@ -314,6 +314,7 @@ class CoreGrpcClient:
                     config=service_config.config,
                 )
                 config_service_configs.append(config_service_config)
+        options = {k: v.value for k, v in session.options.items()}
         request = core_pb2.StartSessionRequest(
             session_id=session.id,
             nodes=nodes,
@@ -328,6 +329,7 @@ class CoreGrpcClient:
             service_file_configs=service_file_configs,
             asymmetric_links=asymmetric_links,
             config_service_configs=config_service_configs,
+            options=options,
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)

@@ -226,6 +226,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.directory.mkdir(exist_ok=True)
         session.set_state(EventTypes.CONFIGURATION_STATE)
 
+        # session options
+        session.options.config_reset()
+        for key, value in request.options.items():
+            session.options.set_config(key, value)
+
         # location
         if request.HasField("location"):
             grpcutils.session_location(session, request.location)
@@ -571,6 +576,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         service_configs = grpcutils.get_node_service_configs(session)
         config_service_configs = grpcutils.get_node_config_service_configs(session)
         session_file = str(session.file_path) if session.file_path else None
+        options = get_config_options(session.options.get_configs(), session.options)
         session_proto = core_pb2.Session(
             id=session.id,
             state=session.state.value,
@@ -590,6 +596,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             mobility_configs=mobility_configs,
             metadata=session.metadata,
             file=session_file,
+            options=options,
         )
         return core_pb2.GetSessionResponse(session=session_proto)
 

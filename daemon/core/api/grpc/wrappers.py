@@ -753,6 +753,7 @@ class Session:
     emane_config: Dict[str, ConfigOption]
     metadata: Dict[str, str]
     file: Path
+    options: Dict[str, ConfigOption]
 
     def set_node(self, node: Node) -> None:
         self.nodes[node.id] = node
@@ -792,6 +793,7 @@ class Session:
             node = nodes[node_id]
             node.mobility_config = ConfigOption.from_dict(mapped_config.config)
         file_path = Path(proto.file) if proto.file else None
+        options = ConfigOption.from_dict(proto.options)
         return Session(
             id=proto.id,
             state=SessionState(proto.state),
@@ -806,6 +808,7 @@ class Session:
             emane_config=ConfigOption.from_dict(proto.emane_config),
             metadata=dict(proto.metadata),
             file=file_path,
+            options=options,
         )
 
 

@@ -112,3 +112,13 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         if value is not None:
             value = int(value)
         return value
+
+    def config_reset(self, node_id: int = None) -> None:
+        """
+        Clear prior configuration files and reset to default values.
+
+        :param node_id: node id to store configuration for
+        :return: nothing
+        """
+        super().config_reset(node_id)
+        self.set_configs(self.default_values())

@@ -149,6 +149,18 @@ class TestGrpcw:
         service_file_data = "echo hello"
         node1.service_file_configs[service_name] = {service_file: service_file_data}
 
+        # setup session option
+        option_key = "controlnet"
+        option_value = "172.16.0.0/24"
+        option = ConfigOption(
+            label=option_key,
+            name=option_key,
+            value=option_value,
+            type=ConfigOptionType.STRING,
+            group="Default",
+        )
+        session.options[option_key] = option
+
         # when
         with patch.object(CoreXmlWriter, "write"):
             with client.context_connect():
@@ -189,6 +201,7 @@ class TestGrpcw:
             real_node1, service_name, service_file
         )
         assert service_file.data == service_file_data
+        assert option_value == real_session.options.get_config(option_key)
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(
