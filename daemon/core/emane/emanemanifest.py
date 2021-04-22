@@ -5,6 +5,8 @@ from typing import Dict, List
 from core.config import Configuration
 from core.emulator.enumerations import ConfigDataTypes
 
+logger = logging.getLogger(__name__)
+
 manifest = None
 try:
     from emane.shell import manifest
@@ -13,7 +15,7 @@ except ImportError:
         from emanesh import manifest
     except ImportError:
         manifest = None
-        logging.debug("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 def _type_value(config_type: str) -> ConfigDataTypes:

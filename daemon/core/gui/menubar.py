@@ -27,6 +27,8 @@ from core.gui.graph.manager import CanvasManager
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -274,10 +276,10 @@ class Menubar(tk.Menu):
 
     def open_recent_files(self, file_path: Path) -> None:
         if file_path.is_file():
-            logging.debug("Open recent file %s", file_path)
+            logger.debug("Open recent file %s", file_path)
             self.open_xml_task(file_path)
         else:
-            logging.warning("File does not exist %s", file_path)
+            logger.warning("File does not exist %s", file_path)
 
     def update_recent_files(self) -> None:
         self.recent_menu.delete(0, tk.END)
@@ -429,23 +431,23 @@ class Menubar(tk.Menu):
             canvas.show_hidden()
 
     def click_session_options(self) -> None:
-        logging.debug("Click options")
+        logger.debug("Click options")
         dialog = SessionOptionsDialog(self.app)
         if not dialog.has_error:
             dialog.show()
 
     def click_sessions(self) -> None:
-        logging.debug("Click change sessions")
+        logger.debug("Click change sessions")
         dialog = SessionsDialog(self.app)
         dialog.show()
 
     def click_hooks(self) -> None:
-        logging.debug("Click hooks")
+        logger.debug("Click hooks")
         dialog = HooksDialog(self.app)
         dialog.show()
 
     def click_servers(self) -> None:
-        logging.debug("Click emulation servers")
+        logger.debug("Click emulation servers")
         dialog = ServersDialog(self.app)
         dialog.show()
 
@@ -458,7 +460,7 @@ class Menubar(tk.Menu):
         padding = (images.NODE_SIZE / 2) + 10
         layout_size = padding + images.NODE_SIZE
         col_count = width // layout_size
-        logging.info(
+        logger.info(
             "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
         )
         canvas = self.manager.current()

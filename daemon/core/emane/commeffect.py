@@ -14,6 +14,8 @@ from core.emulator.data import LinkOptions
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
+logger = logging.getLogger(__name__)
+
 try:
     from emane.events.commeffectevent import CommEffectEvent
 except ImportError:
@@ -21,7 +23,7 @@ except ImportError:
         from emanesh.events.commeffectevent import CommEffectEvent
     except ImportError:
         CommEffectEvent = None
-        logging.debug("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 def convert_none(x: float) -> int:
@@ -113,11 +115,11 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         """
         service = self.session.emane.service
         if service is None:
-            logging.warning("%s: EMANE event service unavailable", self.name)
+            logger.warning("%s: EMANE event service unavailable", self.name)
             return
 
         if iface is None or iface2 is None:
-            logging.warning("%s: missing NEM information", self.name)
+            logger.warning("%s: missing NEM information", self.name)
             return
 
         # TODO: batch these into multiple events per transmission
@@ -125,7 +127,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         event = CommEffectEvent()
         nem1 = self.session.emane.get_nem_id(iface)
         nem2 = self.session.emane.get_nem_id(iface2)
-        logging.info("sending comm effect event")
+        logger.info("sending comm effect event")
         event.append(
             nem1,
             latency=convert_none(options.delay),

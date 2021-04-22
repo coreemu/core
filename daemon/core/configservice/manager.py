@@ -7,6 +7,8 @@ from core import utils
 from core.configservice.base import ConfigService
 from core.errors import CoreError
 
+logger = logging.getLogger(__name__)
+
 
 class ConfigServiceManager:
     """
@@ -41,7 +43,7 @@ class ConfigServiceManager:
         :raises CoreError: when service is a duplicate or has unmet executables
         """
         name = service.name
-        logging.debug(
+        logger.debug(
             "loading service: class(%s) name(%s)", service.__class__.__name__, name
         )
 
@@ -71,12 +73,12 @@ class ConfigServiceManager:
         subdirs.append(path)
         service_errors = []
         for subdir in subdirs:
-            logging.debug("loading config services from: %s", subdir)
+            logger.debug("loading config services from: %s", subdir)
             services = utils.load_classes(subdir, ConfigService)
             for service in services:
                 try:
                     self.add(service)
                 except CoreError as e:
                     service_errors.append(service.name)
-                    logging.debug("not loading service(%s): %s", service.name, e)
+                    logger.debug("not loading service(%s): %s", service.name, e)
         return service_errors

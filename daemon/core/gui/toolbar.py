@@ -20,6 +20,8 @@ from core.gui.task import ProgressTask
 from core.gui.themes import Styles
 from core.gui.tooltip import Tooltip
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -338,7 +340,7 @@ class Toolbar(ttk.Frame):
         type_enum: NodeTypeEnum,
         image: PhotoImage,
     ) -> None:
-        logging.debug("update button(%s): %s", button, node_draw)
+        logger.debug("update button(%s): %s", button, node_draw)
         button.configure(image=image)
         button.image = image
         self.app.manager.node_draw = node_draw
@@ -399,7 +401,7 @@ class Toolbar(ttk.Frame):
         """
         redraw buttons on the toolbar, send node and link messages to grpc server
         """
-        logging.info("clicked stop button")
+        logger.info("clicked stop button")
         self.app.menubar.set_state(is_runtime=False)
         self.app.core.close_mobility_players()
         enable_buttons(self.runtime_frame, enabled=False)
@@ -415,7 +417,7 @@ class Toolbar(ttk.Frame):
     def update_annotation(
         self, shape_type: ShapeType, image_enum: ImageEnum, image: PhotoImage
     ) -> None:
-        logging.debug("clicked annotation")
+        logger.debug("clicked annotation")
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
         self.app.manager.annotation_type = shape_type
@@ -433,7 +435,7 @@ class Toolbar(ttk.Frame):
         self.marker_frame.grid()
 
     def click_run_button(self) -> None:
-        logging.debug("Click on RUN button")
+        logger.debug("Click on RUN button")
         dialog = RunToolDialog(self.app)
         dialog.show()
 

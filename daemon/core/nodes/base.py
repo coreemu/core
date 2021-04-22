@@ -21,6 +21,8 @@ from core.nodes.client import VnodeClient
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
@@ -404,7 +406,7 @@ class CoreNodeBase(NodeBase):
         if iface_id not in self.ifaces:
             raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
         iface = self.ifaces.pop(iface_id)
-        logging.info("node(%s) removing interface(%s)", self.name, iface.name)
+        logger.info("node(%s) removing interface(%s)", self.name, iface.name)
         iface.detachnet()
         iface.shutdown()
 
@@ -547,17 +549,17 @@ class CoreNode(CoreNodeBase):
 
             output = self.host_cmd(vnoded, env=env)
             self.pid = int(output)
-            logging.debug("node(%s) pid: %s", self.name, self.pid)
+            logger.debug("node(%s) pid: %s", self.name, self.pid)
 
             # create vnode client
             self.client = VnodeClient(self.name, self.ctrlchnlname)
 
             # bring up the loopback interface
-            logging.debug("bringing up loopback interface")
+            logger.debug("bringing up loopback interface")
             self.node_net_client.device_up("lo")
 
             # set hostname for node
-            logging.debug("setting hostname: %s", self.name)
+            logger.debug("setting hostname: %s", self.name)
             self.node_net_client.set_hostname(self.name)
 
             # mark node as up
@@ -588,18 +590,18 @@ class CoreNode(CoreNodeBase):
                 try:
                     self.host_cmd(f"kill -9 {self.pid}")
                 except CoreCommandError:
-                    logging.exception("error killing process")
+                    logger.exception("error killing process")
                 # remove node directory if present
                 try:
                     self.host_cmd(f"rm -rf {self.ctrlchnlname}")
                 except CoreCommandError:
-                    logging.exception("error removing node directory")
+                    logger.exception("error removing node directory")
                 # clear interface data, close client, and mark self and not up
                 self.ifaces.clear()
                 self.client.close()
                 self.up = False
             except OSError:
-                logging.exception("error during shutdown")
+                logger.exception("error during shutdown")
             finally:
                 self.rmnodedir()
 
@@ -668,7 +670,7 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
+        logger.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
         self.cmd(f"mkdir -p {target_path}")
         self.cmd(f"{MOUNT} -n --bind {src_path} {target_path}")
         self._mounts.append((src_path, target_path))
@@ -726,9 +728,9 @@ class CoreNode(CoreNodeBase):
             if self.up:
                 flow_id = self.node_net_client.get_ifindex(veth.name)
                 veth.flow_id = int(flow_id)
-                logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
+                logger.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
                 mac = self.node_net_client.get_mac(veth.name)
-                logging.debug("interface mac: %s - %s", veth.name, mac)
+                logger.debug("interface mac: %s - %s", veth.name, mac)
                 veth.set_mac(mac)
 
             try:
@@ -867,7 +869,7 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("adding file from %s to %s", src_path, file_path)
+        logger.info("adding file from %s to %s", src_path, file_path)
         directory = file_path.parent
         if self.server is None:
             self.client.check_cmd(f"mkdir -p {directory}")
@@ -898,7 +900,7 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"mkdir -m {0o755:o} -p {directory}")
             self.server.remote_put_temp(host_path, contents)
             self.host_cmd(f"chmod {mode:o} {host_path}")
-        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, host_path, mode)
+        logger.debug("node(%s) added file: %s; mode: 0%o", self.name, host_path, mode)
 
     def nodefilecopy(self, file_path: Path, src_path: Path, mode: int = None) -> None:
         """
@@ -917,7 +919,7 @@ class CoreNode(CoreNodeBase):
             self.server.remote_put(src_path, host_path)
         if mode is not None:
             self.host_cmd(f"chmod {mode:o} {host_path}")
-        logging.info("node(%s) copied file: %s; mode: %s", self.name, host_path, mode)
+        logger.info("node(%s) copied file: %s; mode: %s", self.name, host_path, mode)
 
 
 class CoreNetworkBase(NodeBase):

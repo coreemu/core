@@ -15,6 +15,8 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import CtrlNet
 from core.xml import corexml
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager, StartData
     from core.emane.emanemodel import EmaneModel
@@ -47,7 +49,7 @@ def _value_to_params(value: str) -> Optional[Tuple[str]]:
             return None
         return values
     except SyntaxError:
-        logging.exception("error in value string to param list")
+        logger.exception("error in value string to param list")
     return None
 
 

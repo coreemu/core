@@ -11,6 +11,8 @@ from core.config import Configuration
 from core.emane import emanemodel
 from core.emulator.enumerations import ConfigDataTypes
 
+logger = logging.getLogger(__name__)
+
 
 class EmaneTdmaModel(emanemodel.EmaneModel):
     # model name
@@ -58,7 +60,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         event_device = self.session.emane.event_device
 
         # initiate tdma schedule
-        logging.info(
+        logger.info(
             "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
         )
         args = f"emaneevent-tdmaschedule -i {event_device} {schedule}"

@@ -36,6 +36,8 @@ import netaddr
 
 from core.errors import CoreCommandError, CoreError
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.nodes.base import CoreNode
@@ -204,7 +206,7 @@ def cmd(
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    logging.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    logger.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
     if shell is False:
         args = shlex.split(args)
     try:
@@ -221,7 +223,7 @@ def cmd(
         else:
             return ""
     except OSError as e:
-        logging.error("cmd error: %s", e.strerror)
+        logger.error("cmd error: %s", e.strerror)
         raise CoreCommandError(1, args, "", e.strerror)
 
 
@@ -323,7 +325,7 @@ def load_config(file_path: Path, d: Dict[str, str]) -> None:
             key, value = line.split("=", 1)
             d[key] = value.strip()
         except ValueError:
-            logging.exception("error reading file to dict: %s", file_path)
+            logger.exception("error reading file to dict: %s", file_path)
 
 
 def load_classes(path: Path, clazz: Generic[T]) -> T:
@@ -335,13 +337,13 @@ def load_classes(path: Path, clazz: Generic[T]) -> T:
     :return: list of classes loaded
     """
     # validate path exists
-    logging.debug("attempting to load modules from path: %s", path)
+    logger.debug("attempting to load modules from path: %s", path)
     if not path.is_dir():
-        logging.warning("invalid custom module directory specified" ": %s", path)
+        logger.warning("invalid custom module directory specified" ": %s", path)
     # check if path is in sys.path
     parent = str(path.parent)
     if parent not in sys.path:
-        logging.debug("adding parent path to allow imports: %s", parent)
+        logger.debug("adding parent path to allow imports: %s", parent)
         sys.path.append(parent)
     # import and add all service modules in the path
     classes = []
@@ -349,7 +351,7 @@ def load_classes(path: Path, clazz: Generic[T]) -> T:
         if not _valid_module(p):
             continue
         import_statement = f"{path.name}.{p.stem}"
-        logging.debug("importing custom module: %s", import_statement)
+        logger.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))
@@ -357,7 +359,7 @@ def load_classes(path: Path, clazz: Generic[T]) -> T:
                 valid_class = member[1]
                 classes.append(valid_class)
         except Exception:
-            logging.exception(
+            logger.exception(
                 "unexpected error during import, skipping: %s", import_statement
             )
     return classes
@@ -398,7 +400,7 @@ def threadpool(
                 result = future.result()
                 results.append(result)
             except Exception as e:
-                logging.exception("thread pool exception")
+                logger.exception("thread pool exception")
                 exceptions.append(e)
     return results, exceptions
 

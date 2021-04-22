@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Set
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.configservice.base import ConfigService
 
@@ -41,7 +43,7 @@ class ConfigServiceDependencies:
         for name in self.node_services:
             service = self.node_services[name]
             if service.name in self.started:
-                logging.debug(
+                logger.debug(
                     "skipping service that will already be started: %s", service.name
                 )
                 continue
@@ -75,7 +77,7 @@ class ConfigServiceDependencies:
         :param service: service to check dependencies for
         :return: list of config services to start in order
         """
-        logging.debug("starting service dependency check: %s", service.name)
+        logger.debug("starting service dependency check: %s", service.name)
         self._reset()
         return self._visit(service)
 
@@ -86,7 +88,7 @@ class ConfigServiceDependencies:
         :param current_service: service being visited
         :return: list of dependent services for a visited service
         """
-        logging.debug("visiting service(%s): %s", current_service.name, self.path)
+        logger.debug("visiting service(%s): %s", current_service.name, self.path)
         self.visited.add(current_service.name)
         self.visiting.add(current_service.name)
 
@@ -109,7 +111,7 @@ class ConfigServiceDependencies:
                 self._visit(service)
 
         # add service when bottom is found
-        logging.debug("adding service to startup path: %s", current_service.name)
+        logger.debug("adding service to startup path: %s", current_service.name)
         self.started.add(current_service.name)
         self.path.append(current_service)
         self.visiting.remove(current_service.name)

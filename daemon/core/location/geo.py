@@ -10,6 +10,7 @@ from pyproj import Transformer
 
 from core.emulator.enumerations import RegisterTlvs
 
+logger = logging.getLogger(__name__)
 SCALE_FACTOR: float = 100.0
 CRS_WGS84: int = 4326
 CRS_PROJ: int = 3857
@@ -92,7 +93,7 @@ class GeoLocation:
         :param alt: altitude value
         :return: x,y,z representation of provided values
         """
-        logging.debug("input lon,lat,alt(%s, %s, %s)", lon, lat, alt)
+        logger.debug("input lon,lat,alt(%s, %s, %s)", lon, lat, alt)
         px, py = self.to_pixels.transform(lon, lat)
         px -= self.refproj[0]
         py -= self.refproj[1]
@@ -100,7 +101,7 @@ class GeoLocation:
         x = self.meters2pixels(px) + self.refxyz[0]
         y = -(self.meters2pixels(py) + self.refxyz[1])
         z = self.meters2pixels(pz) + self.refxyz[2]
-        logging.debug("result x,y,z(%s, %s, %s)", x, y, z)
+        logger.debug("result x,y,z(%s, %s, %s)", x, y, z)
         return x, y, z
 
     def getgeo(self, x: float, y: float, z: float) -> Tuple[float, float, float]:
@@ -112,7 +113,7 @@ class GeoLocation:
         :param z: z value
         :return: lat,lon,alt representation of provided values
         """
-        logging.debug("input x,y(%s, %s)", x, y)
+        logger.debug("input x,y(%s, %s)", x, y)
         x -= self.refxyz[0]
         y = -(y - self.refxyz[1])
         if z is None:
@@ -123,5 +124,5 @@ class GeoLocation:
         py = self.refproj[1] + self.pixels2meters(y)
         lon, lat = self.to_geo.transform(px, py)
         alt = self.refgeo[2] + self.pixels2meters(z)
-        logging.debug("result lon,lat,alt(%s, %s, %s)", lon, lat, alt)
+        logger.debug("result lon,lat,alt(%s, %s, %s)", lon, lat, alt)
         return lat, lon, alt

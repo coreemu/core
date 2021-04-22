@@ -9,6 +9,8 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY, scale_fonts
 from core.gui.validation import LARGEST_SCALE, SMALLEST_SCALE
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -102,7 +104,7 @@ class PreferencesDialog(Dialog):
 
     def theme_change(self, event: tk.Event) -> None:
         theme = self.theme.get()
-        logging.info("changing theme: %s", theme)
+        logger.info("changing theme: %s", theme)
         self.app.style.theme_use(theme)
 
     def click_save(self) -> None:

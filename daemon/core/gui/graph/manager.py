@@ -19,6 +19,8 @@ from core.gui.graph.node import CanvasNode
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.nodeutils import NodeDraw
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.coreclient import CoreClient
@@ -166,7 +168,7 @@ class CanvasManager:
             canvas_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
-        logging.info("creating canvas(%s)", canvas_id)
+        logger.info("creating canvas(%s)", canvas_id)
         self.canvas_ids[unique_id] = canvas_id
         self.unique_ids[canvas_id] = unique_id
 
@@ -213,7 +215,7 @@ class CanvasManager:
         self.unique_ids.clear()
         self.edges.clear()
         self.wireless_edges.clear()
-        logging.info("cleared canvases")
+        logger.info("cleared canvases")
 
         # reset settings
         self.show_node_labels.set(True)
@@ -289,7 +291,7 @@ class CanvasManager:
         for canvas_config in config.get("canvases", []):
             canvas_id = canvas_config.get("id")
             if canvas_id is None:
-                logging.error("canvas config id not provided")
+                logger.error("canvas config id not provided")
                 continue
             canvas = self.get(canvas_id)
             canvas.parse_metadata(canvas_config)
@@ -297,7 +299,7 @@ class CanvasManager:
     def add_core_node(self, core_node: Node) -> None:
         # get canvas tab for node
         canvas_id = core_node.canvas if core_node.canvas > 0 else 1
-        logging.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
+        logger.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
         canvas = self.get(canvas_id)
         image = nutils.get_icon(core_node, self.app)
         x = core_node.position.x
@@ -354,7 +356,7 @@ class CanvasManager:
         network_id = link.network_id if link.network_id else None
         token = create_wireless_token(src.id, dst.id, network_id)
         if token in self.wireless_edges:
-            logging.warning("ignoring link that already exists: %s", link)
+            logger.warning("ignoring link that already exists: %s", link)
             return
         edge = CanvasWirelessEdge(self.app, src, dst, network_id, token, link)
         self.wireless_edges[token] = edge

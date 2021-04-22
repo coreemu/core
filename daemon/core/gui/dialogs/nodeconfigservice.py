@@ -12,6 +12,8 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -131,7 +133,7 @@ class NodeConfigServiceDialog(Dialog):
 
     def click_save(self) -> None:
         self.node.config_services = self.current_services.copy()
-        logging.info("saved node config services: %s", self.node.config_services)
+        logger.info("saved node config services: %s", self.node.config_services)
         self.destroy()
 
     def click_cancel(self) -> None:

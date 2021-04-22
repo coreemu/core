@@ -94,6 +94,8 @@ from core.api.grpc.wlan_pb2 import (
 )
 from core.emulator.data import IpPrefixes
 
+logger = logging.getLogger(__name__)
+
 
 class InterfaceHelper:
     """
@@ -147,9 +149,9 @@ def stream_listener(stream: Any, handler: Callable[[core_pb2.Event], None]) -> N
             handler(event)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.CANCELLED:
-            logging.debug("stream closed")
+            logger.debug("stream closed")
         else:
-            logging.exception("stream error")
+            logger.exception("stream error")
 
 
 def start_streamer(stream: Any, handler: Callable[[core_pb2.Event], None]) -> None:

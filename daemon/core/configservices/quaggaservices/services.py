@@ -9,6 +9,7 @@ from core.nodes.base import CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import WlanNode
 
+logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
 QUAGGA_STATE_DIR: str = "/var/run/quagga"
 
@@ -229,7 +230,7 @@ class Ospfv3mdr(Ospfv3):
     def data(self) -> Dict[str, Any]:
         for iface in self.node.get_ifaces():
             is_wireless = isinstance(iface.net, (WlanNode, EmaneNet))
-            logging.info("MDR wireless: %s", is_wireless)
+            logger.info("MDR wireless: %s", is_wireless)
         return dict()
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:

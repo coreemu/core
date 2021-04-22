@@ -31,6 +31,7 @@ from core.nodes.lxd import LxcNode
 from core.nodes.network import WlanNode
 from core.services.coreservices import CoreService
 
+logger = logging.getLogger(__name__)
 WORKERS = 10
 
 
@@ -156,7 +157,7 @@ def create_nodes(
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
-    logging.debug("grpc created nodes time: %s", total)
+    logger.debug("grpc created nodes time: %s", total)
     return results, exceptions
 
 
@@ -180,7 +181,7 @@ def create_links(
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
-    logging.debug("grpc created links time: %s", total)
+    logger.debug("grpc created links time: %s", total)
     return results, exceptions
 
 
@@ -204,7 +205,7 @@ def edit_links(
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
-    logging.debug("grpc edit links time: %s", total)
+    logger.debug("grpc edit links time: %s", total)
     return results, exceptions
 
 

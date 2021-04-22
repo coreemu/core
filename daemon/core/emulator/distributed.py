@@ -20,6 +20,8 @@ from core.executables import get_requirements
 from core.nodes.interface import GreTap
 from core.nodes.network import CoreNetwork, CtrlNet
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -62,7 +64,7 @@ class DistributedServer:
         replace_env = env is not None
         if not wait:
             cmd += " &"
-        logging.debug(
+        logger.debug(
             "remote cmd server(%s) cwd(%s) wait(%s): %s", self.host, cwd, wait, cmd
         )
         try:
@@ -212,13 +214,11 @@ class DistributedController:
         if tunnel is not None:
             return tunnel
         # local to server
-        logging.info(
-            "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
-        )
+        logger.info("local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key)
         local_tap = GreTap(session=self.session, remoteip=host, key=key)
         local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
         # server to local
-        logging.info(
+        logger.info(
             "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
         )
         remote_tap = GreTap(
@@ -240,7 +240,7 @@ class DistributedController:
         :param node2_id: node two id
         :return: tunnel key for the node pair
         """
-        logging.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
+        logger.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
         key = (
             (self.session.id << 16)
             ^ utils.hashkey(node1_id)

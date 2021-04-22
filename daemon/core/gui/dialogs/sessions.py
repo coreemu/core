@@ -12,6 +12,8 @@ from core.gui.images import ImageEnum
 from core.gui.task import ProgressTask
 from core.gui.themes import PADX, PADY
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -31,7 +33,7 @@ class SessionsDialog(Dialog):
     def get_sessions(self) -> List[SessionSummary]:
         try:
             sessions = self.app.core.client.get_sessions()
-            logging.info("sessions: %s", sessions)
+            logger.info("sessions: %s", sessions)
             return sorted(sessions, key=lambda x: x.id)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Sessions Error", e)
@@ -175,7 +177,7 @@ class SessionsDialog(Dialog):
             self.selected_id = None
             self.delete_button.config(state=tk.DISABLED)
             self.connect_button.config(state=tk.DISABLED)
-        logging.debug("selected session: %s", self.selected_session)
+        logger.debug("selected session: %s", self.selected_session)
 
     def click_connect(self) -> None:
         if not self.selected_session:
@@ -199,7 +201,7 @@ class SessionsDialog(Dialog):
     def click_delete(self) -> None:
         if not self.selected_session:
             return
-        logging.info("click delete session: %s", self.selected_session)
+        logger.info("click delete session: %s", self.selected_session)
         self.tree.delete(self.selected_id)
         self.app.core.delete_session(self.selected_session)
         session_id = None

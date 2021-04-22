@@ -34,6 +34,8 @@ from core.errors import (
 )
 from core.nodes.base import CoreNode
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -161,7 +163,7 @@ class ServiceShim:
                 cls.setvalue(service, key, values[cls.keys.index(key)])
             except IndexError:
                 # old config does not need to have new keys
-                logging.exception("error indexing into key")
+                logger.exception("error indexing into key")
 
     @classmethod
     def setvalue(cls, service: "CoreService", key: str, value: str) -> None:
@@ -228,7 +230,7 @@ class ServiceManager:
         :raises ValueError: when service cannot be loaded
         """
         name = service.name
-        logging.debug("loading service: class(%s) name(%s)", service.__name__, name)
+        logger.debug("loading service: class(%s) name(%s)", service.__name__, name)
 
         # avoid duplicate services
         if name in cls.services:
@@ -245,7 +247,7 @@ class ServiceManager:
         try:
             service.on_load()
         except Exception as e:
-            logging.exception("error during service(%s) on load", service.name)
+            logger.exception("error during service(%s) on load", service.name)
             raise ValueError(e)
 
         # make service available
@@ -281,7 +283,7 @@ class ServiceManager:
                 cls.add(service)
             except (CoreError, ValueError) as e:
                 service_errors.append(service.name)
-                logging.debug("not loading service(%s): %s", service.name, e)
+                logger.debug("not loading service(%s): %s", service.name, e)
         return service_errors
 
 
@@ -329,14 +331,14 @@ class CoreServices:
         :param node_type: node type to get default services for
         :return: default services
         """
-        logging.debug("getting default services for type: %s", node_type)
+        logger.debug("getting default services for type: %s", node_type)
         results = []
         defaults = self.default_services.get(node_type, [])
         for name in defaults:
-            logging.debug("checking for service with service manager: %s", name)
+            logger.debug("checking for service with service manager: %s", name)
             service = ServiceManager.get(name)
             if not service:
-                logging.warning("default service %s is unknown", name)
+                logger.warning("default service %s is unknown", name)
             else:
                 results.append(service)
         return results
@@ -369,7 +371,7 @@ class CoreServices:
         :param service_name: name of service to set
         :return: nothing
         """
-        logging.debug("setting custom service(%s) for node: %s", service_name, node_id)
+        logger.debug("setting custom service(%s) for node: %s", service_name, node_id)
         service = self.get_service(node_id, service_name)
         if not service:
             service_class = ServiceManager.get(service_name)
@@ -391,15 +393,15 @@ class CoreServices:
         :return: nothing
         """
         if not services:
-            logging.info(
+            logger.info(
                 "using default services for node(%s) type(%s)", node.name, node_type
             )
             services = self.default_services.get(node_type, [])
-        logging.info("setting services for node(%s): %s", node.name, services)
+        logger.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)
             if not service:
-                logging.warning(
+                logger.warning(
                     "unknown service(%s) for node(%s)", service_name, node.name
                 )
                 continue
@@ -457,7 +459,7 @@ class CoreServices:
             raise CoreServiceBootError(*exceptions)
 
     def _boot_service_path(self, node: CoreNode, boot_path: List["CoreServiceType"]):
-        logging.info(
+        logger.info(
             "booting node(%s) services: %s",
             node.name,
             " -> ".join([x.name for x in boot_path]),
@@ -467,7 +469,7 @@ class CoreServices:
             try:
                 self.boot_service(node, service)
             except Exception as e:
-                logging.exception("exception booting service: %s", service.name)
+                logger.exception("exception booting service: %s", service.name)
                 raise CoreServiceBootError(e)
 
     def boot_service(self, node: CoreNode, service: "CoreServiceType") -> None:
@@ -479,7 +481,7 @@ class CoreServices:
         :param service: service to start
         :return: nothing
         """
-        logging.info(
+        logger.info(
             "starting node(%s) service(%s) validation(%s)",
             node.name,
             service.name,
@@ -492,7 +494,7 @@ class CoreServices:
             try:
                 node.privatedir(dir_path)
             except (CoreCommandError, CoreError) as e:
-                logging.warning(
+                logger.warning(
                     "error mounting private dir '%s' for service '%s': %s",
                     directory,
                     service.name,
@@ -563,21 +565,21 @@ class CoreServices:
         :param service: service to validate
         :return: service validation status
         """
-        logging.debug("validating node(%s) service(%s)", node.name, service.name)
+        logger.debug("validating node(%s) service(%s)", node.name, service.name)
         cmds = service.validate
         if not service.custom:
             cmds = service.get_validate(node)
 
         status = 0
         for cmd in cmds:
-            logging.debug("validating service(%s) using: %s", service.name, cmd)
+            logger.debug("validating service(%s) using: %s", service.name, cmd)
             try:
                 node.cmd(cmd)
             except CoreCommandError as e:
-                logging.debug(
+                logger.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
                 )
-                logging.debug("cmd(%s): %s", e.cmd, e.output)
+                logger.debug("cmd(%s): %s", e.cmd, e.output)
                 status = -1
                 break
 
@@ -612,7 +614,7 @@ class CoreServices:
                     f"error stopping service {service.name}: {e.stderr}",
                     node.id,
                 )
-                logging.exception("error running stop command %s", args)
+                logger.exception("error running stop command %s", args)
                 status = -1
         return status
 
@@ -680,13 +682,13 @@ class CoreServices:
         # retrieve custom service
         service = self.get_service(node_id, service_name)
         if service is None:
-            logging.warning("received file name for unknown service: %s", service_name)
+            logger.warning("received file name for unknown service: %s", service_name)
             return
 
         # validate file being set is valid
         config_files = service.configs
         if file_name not in config_files:
-            logging.warning(
+            logger.warning(
                 "received unknown file(%s) for service(%s)", file_name, service_name
             )
             return
@@ -714,7 +716,7 @@ class CoreServices:
             try:
                 node.cmd(cmd, wait)
             except CoreCommandError:
-                logging.exception("error starting command")
+                logger.exception("error starting command")
                 status = -1
         return status
 
@@ -732,7 +734,7 @@ class CoreServices:
             config_files = service.get_configs(node)
         for file_name in config_files:
             file_path = Path(file_name)
-            logging.debug(
+            logger.debug(
                 "generating service config custom(%s): %s", service.custom, file_name
             )
             if service.custom:
@@ -744,7 +746,7 @@ class CoreServices:
                     if self.copy_service_file(node, file_path, cfg):
                         continue
                 except IOError:
-                    logging.exception("error copying service file: %s", file_name)
+                    logger.exception("error copying service file: %s", file_name)
                     continue
             else:
                 cfg = service.generate_config(node, file_name)

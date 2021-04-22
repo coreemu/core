@@ -19,6 +19,8 @@ from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
@@ -34,7 +36,7 @@ except ImportError:
         from emanesh.events import LocationEvent
     except ImportError:
         LocationEvent = None
-        logging.debug("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 class EmaneNet(CoreNetworkBase):
@@ -92,9 +94,7 @@ class EmaneNet(CoreNetworkBase):
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
             raise CoreError(f"no model set to update for node({self.name})")
-        logging.info(
-            "node(%s) updating model(%s): %s", self.id, self.model.name, config
-        )
+        logger.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
         self.model.update_config(config)
 
     def setmodel(self, model: "WirelessModelType", config: Dict[str, str]) -> None:
@@ -122,7 +122,7 @@ class EmaneNet(CoreNetworkBase):
         nem_id = self.session.emane.get_nem_id(iface)
         ifname = iface.localname
         if nem_id is None:
-            logging.info("nemid for %s is unknown", ifname)
+            logger.info("nemid for %s is unknown", ifname)
             return
         node = iface.node
         x, y, z = node.getposition()
@@ -141,7 +141,7 @@ class EmaneNet(CoreNetworkBase):
         :param iface: interface to set nem position for
         """
         if self.session.emane.service is None:
-            logging.info("position service not available")
+            logger.info("position service not available")
             return
         position = self._nem_position(iface)
         if position:
@@ -160,7 +160,7 @@ class EmaneNet(CoreNetworkBase):
             return
 
         if self.session.emane.service is None:
-            logging.info("position service not available")
+            logger.info("position service not available")
             return
 
         event = LocationEvent()

@@ -14,6 +14,7 @@ from core.config import Configuration
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode
 
+logger = logging.getLogger(__name__)
 TEMPLATES_DIR: str = "templates"
 
 
@@ -133,7 +134,7 @@ class ConfigService(abc.ABC):
         :return: nothing
         :raises ConfigServiceBootError: when there is an error starting service
         """
-        logging.info("node(%s) service(%s) starting...", self.node.name, self.name)
+        logger.info("node(%s) service(%s) starting...", self.node.name, self.name)
         self.create_dirs()
         self.create_files()
         wait = self.validation_mode == ConfigServiceMode.BLOCKING
@@ -154,7 +155,7 @@ class ConfigService(abc.ABC):
             try:
                 self.node.cmd(cmd)
             except CoreCommandError:
-                logging.exception(
+                logger.exception(
                     f"node({self.node.name}) service({self.name}) "
                     f"failed shutdown: {cmd}"
                 )
@@ -250,7 +251,7 @@ class ConfigService(abc.ABC):
             else:
                 text = self.get_text_template(name)
                 rendered = self.render_text(text, data)
-            logging.debug(
+            logger.debug(
                 "node(%s) service(%s) template(%s): \n%s",
                 self.node.name,
                 self.name,
@@ -301,7 +302,7 @@ class ConfigService(abc.ABC):
                 del cmds[index]
                 index += 1
             except CoreCommandError:
-                logging.debug(
+                logger.debug(
                     f"node({self.node.name}) service({self.name}) "
                     f"validate command failed: {cmd}"
                 )

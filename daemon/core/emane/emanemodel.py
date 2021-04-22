@@ -15,6 +15,8 @@ from core.location.mobility import WirelessModel
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
+logger = logging.getLogger(__name__)
+
 
 class EmaneModel(WirelessModel):
     """
@@ -115,7 +117,7 @@ class EmaneModel(WirelessModel):
 
         :return: nothing
         """
-        logging.debug("emane model(%s) has no post setup tasks", self.name)
+        logger.debug("emane model(%s) has no post setup tasks", self.name)
 
     def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
@@ -130,7 +132,7 @@ class EmaneModel(WirelessModel):
             emane_net = self.session.get_node(self.id, EmaneNet)
             emane_net.setnempositions(moved_ifaces)
         except CoreError:
-            logging.exception("error during update")
+            logger.exception("error during update")
 
     def linkconfig(
         self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
@@ -143,4 +145,4 @@ class EmaneModel(WirelessModel):
         :param iface2: interface two
         :return: nothing
         """
-        logging.warning("emane model(%s) does not support link config", self.name)
+        logger.warning("emane model(%s) does not support link config", self.name)

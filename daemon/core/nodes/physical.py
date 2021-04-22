@@ -16,6 +16,8 @@ from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -163,7 +165,7 @@ class PhysicalNode(CoreNodeBase):
     def new_iface(
         self, net: CoreNetworkBase, iface_data: InterfaceData
     ) -> CoreInterface:
-        logging.info("creating interface")
+        logger.info("creating interface")
         ips = iface_data.get_ips()
         iface_id = iface_data.id
         if iface_id is None:
@@ -191,17 +193,17 @@ class PhysicalNode(CoreNodeBase):
         self.mount(host_path, dir_path)
 
     def mount(self, src_path: Path, target_path: Path) -> None:
-        logging.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
+        logger.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
         self.cmd(f"mkdir -p {target_path}")
         self.host_cmd(f"{MOUNT} --bind {src_path} {target_path}", cwd=self.directory)
         self._mounts.append((src_path, target_path))
 
     def umount(self, target_path: Path) -> None:
-        logging.info("unmounting '%s'", target_path)
+        logger.info("unmounting '%s'", target_path)
         try:
             self.host_cmd(f"{UMOUNT} -l {target_path}", cwd=self.directory)
         except CoreCommandError:
-            logging.exception("unmounting failed for %s", target_path)
+            logger.exception("unmounting failed for %s", target_path)
 
     def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         host_path = self.host_path(file_path)
@@ -211,7 +213,7 @@ class PhysicalNode(CoreNodeBase):
         with host_path.open("w") as f:
             f.write(contents)
         host_path.chmod(mode)
-        logging.info("created nodefile: '%s'; mode: 0%o", host_path, mode)
+        logger.info("created nodefile: '%s'; mode: 0%o", host_path, mode)
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         return self.host_cmd(args, wait=wait)
@@ -415,7 +417,7 @@ class Rj45Node(CoreNodeBase):
                 if items[1][:4] == "fe80":
                     continue
                 self.old_addrs.append((items[1], None))
-        logging.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
+        logger.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
 
     def restorestate(self) -> None:
         """
@@ -425,7 +427,7 @@ class Rj45Node(CoreNodeBase):
         :raises CoreCommandError: when there is a command exception
         """
         localname = self.iface.localname
-        logging.info("restoring rj45 state: %s", localname)
+        logger.info("restoring rj45 state: %s", localname)
         for addr in self.old_addrs:
             self.net_client.create_address(localname, addr[0], addr[1])
         if self.old_up:

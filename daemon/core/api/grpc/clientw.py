@@ -70,6 +70,8 @@ from core.api.grpc.wrappers import Hook
 from core.emulator.data import IpPrefixes
 from core.errors import CoreError
 
+logger = logging.getLogger(__name__)
+
 
 class MoveNodesStreamer:
     def __init__(self, session_id: int = None, source: str = None) -> None:
@@ -184,9 +186,9 @@ def throughput_listener(
             handler(event)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.CANCELLED:
-            logging.debug("throughput stream closed")
+            logger.debug("throughput stream closed")
         else:
-            logging.exception("throughput stream error")
+            logger.exception("throughput stream error")
 
 
 def cpu_listener(
@@ -205,9 +207,9 @@ def cpu_listener(
             handler(event)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.CANCELLED:
-            logging.debug("cpu stream closed")
+            logger.debug("cpu stream closed")
         else:
-            logging.exception("cpu stream error")
+            logger.exception("cpu stream error")
 
 
 def event_listener(stream: Any, handler: Callable[[wrappers.Event], None]) -> None:
@@ -224,9 +226,9 @@ def event_listener(stream: Any, handler: Callable[[wrappers.Event], None]) -> No
             handler(event)
     except grpc.RpcError as e:
         if e.code() == grpc.StatusCode.CANCELLED:
-            logging.debug("session stream closed")
+            logger.debug("session stream closed")
         else:
-            logging.exception("session stream error")
+            logger.exception("session stream error")
 
 
 class CoreGrpcClient:

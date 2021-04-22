@@ -17,6 +17,8 @@ from core.gui.dialogs.emaneconfig import EmaneModelDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ListboxScroll, image_chooser
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.node import CanvasNode
@@ -261,7 +263,7 @@ class NodeConfigDialog(Dialog):
 
         if nutils.is_rj45(self.node):
             ifaces = self.app.core.client.get_ifaces()
-            logging.debug("host machine available interfaces: %s", ifaces)
+            logger.debug("host machine available interfaces: %s", ifaces)
             ifaces_scroll = ListboxScroll(frame)
             ifaces_scroll.listbox.config(state=state)
             ifaces_scroll.grid(

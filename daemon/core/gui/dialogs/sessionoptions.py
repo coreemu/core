@@ -10,6 +10,8 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -55,7 +57,7 @@ class SessionOptionsDialog(Dialog):
         try:
             session_id = self.app.core.session.id
             result = self.app.core.client.set_session_options(session_id, config)
-            logging.info("saved session config: %s", result)
+            logger.info("saved session config: %s", result)
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Set Session Options Error", e)
         self.destroy()

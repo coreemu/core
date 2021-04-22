@@ -13,6 +13,8 @@ from core.emulator.session import Session
 from core.executables import get_requirements
 from core.services.coreservices import ServiceManager
 
+logger = logging.getLogger(__name__)
+
 
 def signal_handler(signal_number: int, _) -> None:
     """
@@ -22,7 +24,7 @@ def signal_handler(signal_number: int, _) -> None:
     :param _: ignored
     :return: nothing
     """
-    logging.info("caught signal: %s", signal_number)
+    logger.info("caught signal: %s", signal_number)
     sys.exit(signal_number)
 
 
@@ -95,7 +97,7 @@ class CoreEmu:
         self.service_errors = core.services.load()
         # load custom services
         service_paths = self.config.get("custom_services_dir")
-        logging.debug("custom service paths: %s", service_paths)
+        logger.debug("custom service paths: %s", service_paths)
         if service_paths is not None:
             for service_path in service_paths.split(","):
                 service_path = Path(service_path.strip())
@@ -108,7 +110,7 @@ class CoreEmu:
 
         :return: nothing
         """
-        logging.info("shutting down all sessions")
+        logger.info("shutting down all sessions")
         sessions = self.sessions.copy()
         self.sessions.clear()
         for _id in sessions:
@@ -129,7 +131,7 @@ class CoreEmu:
                 _id += 1
         session = _cls(_id, config=self.config)
         session.service_manager = self.service_manager
-        logging.info("created session: %s", _id)
+        logger.info("created session: %s", _id)
         self.sessions[_id] = session
         return session
 
@@ -140,14 +142,14 @@ class CoreEmu:
         :param _id: session id to delete
         :return: True if deleted, False otherwise
         """
-        logging.info("deleting session: %s", _id)
+        logger.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)
         result = False
         if session:
-            logging.info("shutting session down: %s", _id)
+            logger.info("shutting session down: %s", _id)
             session.data_collect()
             session.shutdown()
             result = True
         else:
-            logging.error("session to delete did not exist: %s", _id)
+            logger.error("session to delete did not exist: %s", _id)
         return result

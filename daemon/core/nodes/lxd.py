@@ -12,6 +12,8 @@ from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -145,7 +147,7 @@ class LxcNode(CoreNode):
         :param dir_path: path to create
         :return: nothing
         """
-        logging.info("creating node dir: %s", dir_path)
+        logger.info("creating node dir: %s", dir_path)
         args = f"mkdir -p {dir_path}"
         self.cmd(args)
 
@@ -158,7 +160,7 @@ class LxcNode(CoreNode):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.debug("mounting source(%s) target(%s)", src_path, target_path)
+        logger.debug("mounting source(%s) target(%s)", src_path, target_path)
         raise Exception("not supported")
 
     def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
@@ -170,7 +172,7 @@ class LxcNode(CoreNode):
         :param mode: mode for file
         :return: nothing
         """
-        logging.debug("nodefile filename(%s) mode(%s)", file_path, mode)
+        logger.debug("nodefile filename(%s) mode(%s)", file_path, mode)
         temp = NamedTemporaryFile(delete=False)
         temp.write(contents.encode("utf-8"))
         temp.close()
@@ -185,7 +187,7 @@ class LxcNode(CoreNode):
         if self.server is not None:
             self.host_cmd(f"rm -f {temp_path}")
         temp_path.unlink()
-        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, file_path, mode)
+        logger.debug("node(%s) added file: %s; mode: 0%o", self.name, file_path, mode)
 
     def nodefilecopy(self, file_path: Path, src_path: Path, mode: int = None) -> None:
         """
@@ -197,7 +199,7 @@ class LxcNode(CoreNode):
         :param mode: mode to copy to
         :return: nothing
         """
-        logging.info(
+        logger.info(
             "node file copy file(%s) source(%s) mode(%s)", file_path, src_path, mode
         )
         self.cmd(f"mkdir -p {file_path.parent}")

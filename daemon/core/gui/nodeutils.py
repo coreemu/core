@@ -8,6 +8,8 @@ from core.gui import images
 from core.gui.appconfig import CustomNode, GuiConfig
 from core.gui.images import ImageEnum
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -118,11 +120,11 @@ def get_icon(node: Node, app: "Application") -> PhotoImage:
         try:
             image = images.from_file(node.icon, width=images.NODE_SIZE, scale=scale)
         except OSError:
-            logging.error("invalid icon: %s", node.icon)
+            logger.error("invalid icon: %s", node.icon)
     # custom node
     elif is_custom(node):
         image_file = _get_custom_file(app.guiconfig, node.model)
-        logging.info("custom node file: %s", image_file)
+        logger.info("custom node file: %s", image_file)
         if image_file:
             image = images.from_file(image_file, width=images.NODE_SIZE, scale=scale)
     # built in node

@@ -12,6 +12,8 @@ from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreConfigError
 from core.nodes.network import WlanNode
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.location.mobility import WirelessModel
 
@@ -178,7 +180,7 @@ class ConfigurableManager:
         :param config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "setting config for node(%s) type(%s): %s", node_id, config_type, config
         )
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
@@ -310,7 +312,7 @@ class ModelManager(ConfigurableManager):
         :param config: model configuration, None for default configuration
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "setting model(%s) for node(%s): %s", model_class.name, node.id, config
         )
         self.set_model_config(node.id, model_class.name, config)
@@ -339,5 +341,5 @@ class ModelManager(ConfigurableManager):
             model_class = self.models[model_name]
             models.append((model_class, config))
 
-        logging.debug("models for node(%s): %s", node.id, models)
+        logger.debug("models for node(%s): %s", node.id, models)
         return models

@@ -20,6 +20,8 @@ from core.gui.images import ImageEnum
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.coreclient import CoreClient
@@ -393,7 +395,7 @@ class ServiceConfigDialog(Dialog):
                 1.0, "end"
             )
         else:
-            logging.debug("file already existed")
+            logger.debug("file already existed")
 
     def delete_filename(self) -> None:
         cbb = self.filename_combobox
@@ -601,7 +603,7 @@ class ServiceConfigDialog(Dialog):
                 i = dirs.index(d)
                 self.dir_list.listbox.delete(i)
             except ValueError:
-                logging.debug("directory is not in the list")
+                logger.debug("directory is not in the list")
         self.directory_entry.delete(0, "end")
 
     def directory_select(self, event) -> None:

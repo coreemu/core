@@ -13,6 +13,8 @@ from core.gui.graph.graph import CanvasGraph
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import image_chooser
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -167,5 +169,5 @@ class CanvasWallpaperDialog(Dialog):
         try:
             self.canvas.set_wallpaper(filename)
         except FileNotFoundError:
-            logging.error("invalid background: %s", filename)
+            logger.error("invalid background: %s", filename)
         self.destroy()

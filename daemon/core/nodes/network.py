@@ -26,6 +26,8 @@ from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
@@ -90,7 +92,7 @@ class EbtablesQueue:
             try:
                 del self.last_update_time[wlan]
             except KeyError:
-                logging.exception(
+                logger.exception(
                     "error deleting last update time for wlan, ignored before: %s", wlan
                 )
         if len(self.last_update_time) > 0:
@@ -186,7 +188,7 @@ class EbtablesQueue:
         try:
             wlan.host_cmd(f"rm -f {self.atomic_file}")
         except CoreCommandError:
-            logging.exception("error removing atomic file: %s", self.atomic_file)
+            logger.exception("error removing atomic file: %s", self.atomic_file)
 
     def ebchange(self, wlan: "CoreNetwork") -> None:
         """
@@ -309,7 +311,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: combined stdout and stderr
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.debug("network node(%s) cmd", self.name)
+        logger.debug("network node(%s) cmd", self.name)
         output = utils.cmd(args, env, cwd, wait, shell)
         self.session.distributed.execute(lambda x: x.remote_cmd(args, env, cwd, wait))
         return output
@@ -344,7 +346,7 @@ class CoreNetwork(CoreNetworkBase):
                 ]
                 ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
-            logging.exception("error during shutdown")
+            logger.exception("error during shutdown")
         # removes veth pairs used for bridge-to-bridge connections
         for iface in self.get_ifaces():
             iface.shutdown()
@@ -763,7 +765,7 @@ class CtrlNet(CoreNetwork):
             raise CoreError(f"old bridges exist for node: {self.id}")
 
         super().startup()
-        logging.info("added control network bridge: %s %s", self.brname, self.prefix)
+        logger.info("added control network bridge: %s %s", self.brname, self.prefix)
 
         if self.hostid and self.assign_address:
             self.add_addresses(self.hostid)
@@ -771,7 +773,7 @@ class CtrlNet(CoreNetwork):
             self.add_addresses(-2)
 
         if self.updown_script:
-            logging.info(
+            logger.info(
                 "interface %s updown script (%s startup) called",
                 self.brname,
                 self.updown_script,
@@ -791,7 +793,7 @@ class CtrlNet(CoreNetwork):
             try:
                 self.net_client.delete_iface(self.brname, self.serverintf)
             except CoreCommandError:
-                logging.exception(
+                logger.exception(
                     "error deleting server interface %s from bridge %s",
                     self.serverintf,
                     self.brname,
@@ -799,14 +801,14 @@ class CtrlNet(CoreNetwork):
 
         if self.updown_script is not None:
             try:
-                logging.info(
+                logger.info(
                     "interface %s updown script (%s shutdown) called",
                     self.brname,
                     self.updown_script,
                 )
                 self.host_cmd(f"{self.updown_script} {self.brname} shutdown")
             except CoreCommandError:
-                logging.exception("error issuing shutdown script shutdown")
+                logger.exception("error issuing shutdown script shutdown")
 
         super().shutdown()
 
@@ -1006,7 +1008,7 @@ class WlanNode(CoreNetwork):
         :param config: configuration for model being set
         :return: nothing
         """
-        logging.debug("node(%s) setting model: %s", self.name, model.name)
+        logger.debug("node(%s) setting model: %s", self.name, model.name)
         if model.config_type == RegisterTlvs.WIRELESS:
             self.model = model(session=self.session, _id=self.id)
             for iface in self.get_ifaces():
@@ -1025,7 +1027,7 @@ class WlanNode(CoreNetwork):
     def updatemodel(self, config: Dict[str, str]) -> None:
         if not self.model:
             raise CoreError(f"no model set to update for node({self.name})")
-        logging.debug(
+        logger.debug(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
         self.model.update_config(config)
