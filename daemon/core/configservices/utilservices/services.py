@@ -149,6 +149,8 @@ class DhcpService(ConfigService):
         subnets = []
         for iface in self.node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
+                if ip4.size == 1:
+                    continue
                 # divide the address space in half
                 index = (ip4.size - 2) / 2
                 rangelow = ip4[index]

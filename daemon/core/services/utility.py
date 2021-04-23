@@ -236,7 +236,7 @@ max-lease-time 7200;
 ddns-update-style none;
 """
         for iface in node.get_ifaces(control=False):
-            cfg += "\n".join(map(cls.subnetentry, iface.ips()))
+            cfg += "\n".join(map(cls.subnetentry, iface.ip4s))
             cfg += "\n"
         return cfg
 
@@ -246,6 +246,8 @@ ddns-update-style none;
         Generate a subnet declaration block given an IPv4 prefix string
         for inclusion in the dhcpd3 config file.
         """
+        if ip.size == 1:
+            return ""
         address = str(ip.ip)
         if netaddr.valid_ipv6(address):
             return ""
