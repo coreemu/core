@@ -248,15 +248,11 @@ ddns-update-style none;
         """
         if ip.size == 1:
             return ""
-        address = str(ip.ip)
-        if netaddr.valid_ipv6(address):
-            return ""
-        else:
-            # divide the address space in half
-            index = (ip.size - 2) / 2
-            rangelow = ip[index]
-            rangehigh = ip[-2]
-            return """
+        # divide the address space in half
+        index = (ip.size - 2) / 2
+        rangelow = ip[index]
+        rangehigh = ip[-2]
+        return """
 subnet %s netmask %s {
   pool {
     range %s %s;
@@ -265,12 +261,12 @@ subnet %s netmask %s {
   }
 }
 """ % (
-                ip.ip,
-                ip.netmask,
-                rangelow,
-                rangehigh,
-                address,
-            )
+            ip.cidr.ip,
+            ip.netmask,
+            rangelow,
+            rangehigh,
+            ip.ip,
+        )
 
 
 class DhcpClientService(UtilService):

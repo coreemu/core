@@ -155,7 +155,7 @@ class DhcpService(ConfigService):
                 index = (ip4.size - 2) / 2
                 rangelow = ip4[index]
                 rangehigh = ip4[-2]
-                subnets.append((ip4.ip, ip4.netmask, rangelow, rangehigh, str(ip4.ip)))
+                subnets.append((ip4.cidr.ip, ip4.netmask, rangelow, rangehigh, ip4.ip))
         return dict(subnets=subnets)
 
 
