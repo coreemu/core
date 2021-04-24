@@ -206,16 +206,16 @@ class ServiceDefault:
 
 @dataclass
 class NodeServiceData:
-    executables: List[str]
-    dependencies: List[str]
-    dirs: List[str]
-    configs: List[str]
-    startup: List[str]
-    validate: List[str]
-    validation_mode: ServiceValidationMode
-    validation_timer: int
-    shutdown: List[str]
-    meta: str
+    executables: List[str] = field(default_factory=list)
+    dependencies: List[str] = field(default_factory=list)
+    dirs: List[str] = field(default_factory=list)
+    configs: List[str] = field(default_factory=list)
+    startup: List[str] = field(default_factory=list)
+    validate: List[str] = field(default_factory=list)
+    validation_mode: ServiceValidationMode = ServiceValidationMode.NON_BLOCKING
+    validation_timer: int = 5
+    shutdown: List[str] = field(default_factory=list)
+    meta: str = None
 
     @classmethod
     def from_proto(cls, proto: services_pb2.NodeServiceData) -> "NodeServiceData":

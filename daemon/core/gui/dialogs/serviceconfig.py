@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.wrappers import (
-    Node,
-    NodeServiceData,
-    ServiceConfig,
-    ServiceValidationMode,
-)
+from core.api.grpc.wrappers import Node, NodeServiceData, ServiceValidationMode
 from core.gui import images
 from core.gui.dialogs.copyserviceconfig import CopyServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
@@ -454,37 +449,31 @@ class ServiceConfigDialog(Dialog):
             self.current_service_color("")
             self.destroy()
             return
-
-        try:
-            if (
-                self.is_custom_command()
-                or self.has_new_files()
-                or self.is_custom_directory()
-            ):
-                startup, validate, shutdown = self.get_commands()
-                config = ServiceConfig(
-                    node_id=self.node.id,
-                    service=self.service_name,
-                    files=list(self.filename_combobox["values"]),
-                    directories=self.temp_directories,
-                    startup=startup,
-                    validate=validate,
-                    shutdown=shutdown,
-                )
-                service_data = self.core.set_node_service(self.node.id, config)
-                self.node.service_configs[self.service_name] = service_data
-            for file in self.modified_files:
-                file_configs = self.node.service_file_configs.setdefault(
-                    self.service_name, {}
-                )
-                file_configs[file] = self.temp_service_files[file]
-                # TODO: check if this is really needed
-                self.app.core.set_node_service_file(
-                    self.node.id, self.service_name, file, self.temp_service_files[file]
-                )
-            self.current_service_color("green")
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Save Service Config Error", e)
+        files = set(self.filenames)
+        if (
+            self.is_custom_command()
+            or self.has_new_files()
+            or self.is_custom_directory()
+        ):
+            startup, validate, shutdown = self.get_commands()
+            files = set(self.filename_combobox["values"])
+            service_data = NodeServiceData(
+                configs=list(files),
+                dirs=self.temp_directories,
+                startup=startup,
+                validate=validate,
+                shutdown=shutdown,
+            )
+            logger.info("setting service data: %s", service_data)
+            self.node.service_configs[self.service_name] = service_data
+        for file in self.modified_files:
+            if file not in files:
+                continue
+            file_configs = self.node.service_file_configs.setdefault(
+                self.service_name, {}
+            )
+            file_configs[file] = self.temp_service_files[file]
+        self.current_service_color("green")
         self.destroy()
 
     def display_service_file_data(self, event: tk.Event) -> None:
@@ -592,7 +581,7 @@ class ServiceConfigDialog(Dialog):
         if directory.is_dir():
             if str(directory) not in self.temp_directories:
                 self.dir_list.listbox.insert("end", directory)
-                self.temp_directories.append(directory)
+                self.temp_directories.append(str(directory))
 
     def remove_directory(self) -> None:
         d = self.directory_entry.get()

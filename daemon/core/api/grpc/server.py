@@ -269,6 +269,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for config in request.service_configs:
             grpcutils.service_configuration(session, config)
 
+        # service file configs
+        for config in request.service_file_configs:
+            session.services.set_service_file(
+                config.node_id, config.service, config.file, config.data
+            )
+
         # config service configs
         for config in request.config_service_configs:
             node = self.get_node(session, config.node_id, context, CoreNode)
@@ -277,12 +283,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 service.set_config(config.config)
             for name, template in config.templates.items():
                 service.set_template(name, template)
-
-        # service file configs
-        for config in request.service_file_configs:
-            session.services.set_service_file(
-                config.node_id, config.service, config.file, config.data
-            )
 
         # create links
         _, exceptions = grpcutils.create_links(session, request.links)

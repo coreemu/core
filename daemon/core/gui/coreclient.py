@@ -580,11 +580,6 @@ class CoreClient:
         )
         return node_service
 
-    def set_node_service(self, node_id: int, config: ServiceConfig) -> NodeServiceData:
-        result = self.client.set_node_service(self.session.id, config)
-        logger.info("set node service result(%s): %s", result, config)
-        return self.client.get_node_service(self.session.id, node_id, config.service)
-
     def get_node_service_file(
         self, node_id: int, service_name: str, file_name: str
     ) -> str:
@@ -599,13 +594,6 @@ class CoreClient:
             data,
         )
         return data
-
-    def set_node_service_file(
-        self, node_id: int, service_name: str, file_name: str, data: str
-    ) -> None:
-        config = ServiceFileConfig(node_id, service_name, file_name, data)
-        result = self.client.set_node_service_file(self.session.id, config)
-        logger.info("set service file config %s: %s", config, result)
 
     def create_nodes_and_links(self) -> None:
         """
