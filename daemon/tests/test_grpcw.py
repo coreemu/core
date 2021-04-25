@@ -274,18 +274,6 @@ class TestGrpcw:
         assert len(sessions) == 1
         assert found_session is not None
 
-    def test_get_session_options(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            config = client.get_session_options(session.id)
-
-        # then
-        assert len(config) > 0
-
     def test_get_session_location(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
@@ -330,23 +318,6 @@ class TestGrpcw:
         assert session.location.refxyz == xyz
         assert session.location.refscale == scale
         assert session.location.refgeo == lat_lon_alt
-
-    def test_set_session_options(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        option = "enablerj45"
-        value = "1"
-        with client.context_connect():
-            result = client.set_session_options(session.id, {option: value})
-
-        # then
-        assert result is True
-        assert session.options.get_config(option) == value
-        config = session.options.get_configs()
-        assert len(config) > 0
 
     def test_set_session_metadata(self, grpc_server: CoreGrpcServer):
         # given

@@ -667,11 +667,11 @@ class Geo:
 
 @dataclass
 class Node:
-    id: int
-    name: str
-    type: NodeType
+    id: int = None
+    name: str = None
+    type: NodeType = NodeType.DEFAULT
     model: str = None
-    position: Position = None
+    position: Position = Position(x=0, y=0)
     services: Set[str] = field(default_factory=set)
     config_services: Set[str] = field(default_factory=set)
     emane: str = None

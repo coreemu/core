@@ -407,33 +407,6 @@ class CoreGrpcClient:
         response = self.stub.GetSession(request)
         return wrappers.Session.from_proto(response.session)
 
-    def get_session_options(self, session_id: int) -> Dict[str, wrappers.ConfigOption]:
-        """
-        Retrieve session options as a dict with id mapping.
-
-        :param session_id: id of session
-        :return: session configuration options
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
-        response = self.stub.GetSessionOptions(request)
-        return wrappers.ConfigOption.from_dict(response.config)
-
-    def set_session_options(self, session_id: int, config: Dict[str, str]) -> bool:
-        """
-        Set options for a session.
-
-        :param session_id: id of session
-        :param config: configuration values to set
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionOptionsRequest(
-            session_id=session_id, config=config
-        )
-        response = self.stub.SetSessionOptions(request)
-        return response.result
-
     def get_session_metadata(self, session_id: int) -> Dict[str, str]:
         """
         Retrieve session metadata as a dict with id mapping.
