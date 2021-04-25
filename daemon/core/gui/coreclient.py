@@ -295,7 +295,7 @@ class CoreClient:
         self.reset()
         try:
             self.session = self.client.get_session(session_id)
-            self.client.set_session_user(self.session.id, self.user)
+            self.session.user = self.user
             title_file = self.session.file.name if self.session.file else ""
             self.master.title(f"CORE Session({self.session.id}) {title_file}")
             self.handling_events = self.client.events(

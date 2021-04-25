@@ -225,6 +225,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.clear()
         session.directory.mkdir(exist_ok=True)
         session.set_state(EventTypes.CONFIGURATION_STATE)
+        session.user = request.user
 
         # session options
         session.options.config_reset()
@@ -426,21 +427,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         except KeyError:
             result = False
         return core_pb2.SetSessionStateResponse(result=result)
-
-    def SetSessionUser(
-        self, request: core_pb2.SetSessionUserRequest, context: ServicerContext
-    ) -> core_pb2.SetSessionUserResponse:
-        """
-        Sets the user for a session.
-
-        :param request: set session user request
-        :param context: context object
-        :return: set session user response
-        """
-        logger.debug("set session user: %s", request)
-        session = self.get_session(request.session_id, context)
-        session.user = request.user
-        return core_pb2.SetSessionUserResponse(result=True)
 
     def SetSessionMetadata(
         self, request: core_pb2.SetSessionMetadataRequest, context: ServicerContext

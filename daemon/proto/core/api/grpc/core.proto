@@ -31,8 +31,6 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
-    rpc SetSessionUser (SetSessionUserRequest) returns (SetSessionUserResponse) {
-    }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
     }
     rpc SessionAlert (SessionAlertRequest) returns (SessionAlertResponse) {
@@ -181,6 +179,7 @@ message StartSessionRequest {
     repeated Link asymmetric_links = 12;
     repeated configservices.ConfigServiceConfig config_service_configs = 13;
     map<string, string> options = 14;
+    string user = 15;
 }
 
 message StartSessionResponse {
@@ -260,15 +259,6 @@ message SetSessionStateRequest {
 }
 
 message SetSessionStateResponse {
-    bool result = 1;
-}
-
-message SetSessionUserRequest {
-    int32 session_id = 1;
-    string user = 2;
-}
-
-message SetSessionUserResponse {
     bool result = 1;
 }
 

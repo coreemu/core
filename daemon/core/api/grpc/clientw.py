@@ -330,6 +330,7 @@ class CoreGrpcClient:
             asymmetric_links=asymmetric_links,
             config_service_configs=config_service_configs,
             options=options,
+            user=session.user,
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)
@@ -452,19 +453,6 @@ class CoreGrpcClient:
             session_id=session_id, state=state.value
         )
         response = self.stub.SetSessionState(request)
-        return response.result
-
-    def set_session_user(self, session_id: int, user: str) -> bool:
-        """
-        Set session user, used for helping to find files without full paths.
-
-        :param session_id: id of session
-        :param user: user to set for session
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionUserRequest(session_id=session_id, user=user)
-        response = self.stub.SetSessionUser(request)
         return response.result
 
     def add_session_server(self, session_id: int, name: str, host: str) -> bool:
