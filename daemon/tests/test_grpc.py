@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 from queue import Queue
 from tempfile import TemporaryFile
 from typing import Optional
@@ -235,36 +236,6 @@ class TestGrpc:
         assert len(response.sessions) == 1
         assert found_session is not None
 
-    def test_get_session_options(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            response = client.get_session_options(session.id)
-
-        # then
-        assert len(response.config) > 0
-
-    def test_get_session_location(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            response = client.get_session_location(session.id)
-
-        # then
-        assert response.location.scale == 1.0
-        assert response.location.x == 0
-        assert response.location.y == 0
-        assert response.location.z == 0
-        assert response.location.lat == 0
-        assert response.location.lon == 0
-        assert response.location.alt == 0
-
     def test_set_session_location(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
@@ -292,23 +263,6 @@ class TestGrpc:
         assert session.location.refscale == scale
         assert session.location.refgeo == lat_lon_alt
 
-    def test_set_session_options(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        option = "enablerj45"
-        value = "1"
-        with client.context_connect():
-            response = client.set_session_options(session.id, {option: value})
-
-        # then
-        assert response.result is True
-        assert session.options.get_config(option) == value
-        config = session.options.get_configs()
-        assert len(config) > 0
-
     def test_set_session_metadata(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
@@ -323,21 +277,6 @@ class TestGrpc:
         # then
         assert response.result is True
         assert session.metadata[key] == value
-
-    def test_get_session_metadata(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        key = "meta1"
-        value = "value1"
-        session.metadata[key] = value
-
-        # then
-        with client.context_connect():
-            response = client.get_session_metadata(session.id)
-
-        # then
-        assert response.config[key] == value
 
     def test_set_session_state(self, grpc_server: CoreGrpcServer):
         # given
@@ -507,7 +446,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         tmp = tmpdir.join("text.xml")
-        session.save_xml(str(tmp))
+        session.save_xml(Path(str(tmp)))
 
         # then
         with client.context_connect():

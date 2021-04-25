@@ -383,26 +383,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
 
-    def GetSessionLocation(
-        self, request: core_pb2.GetSessionLocationRequest, context: ServicerContext
-    ) -> core_pb2.GetSessionLocationResponse:
-        """
-        Retrieve a requested session location
-
-        :param request: get-session-location request
-        :param context: context object
-        :return: a get-session-location response
-        """
-        logger.debug("get session location: %s", request)
-        session = self.get_session(request.session_id, context)
-        x, y, z = session.location.refxyz
-        lat, lon, alt = session.location.refgeo
-        scale = session.location.refscale
-        location = core_pb2.SessionLocation(
-            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=scale
-        )
-        return core_pb2.GetSessionLocationResponse(location=location)
-
     def SetSessionLocation(
         self, request: core_pb2.SetSessionLocationRequest, context: ServicerContext
     ) -> core_pb2.SetSessionLocationResponse:
@@ -461,56 +441,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         session.user = request.user
         return core_pb2.SetSessionUserResponse(result=True)
-
-    def GetSessionOptions(
-        self, request: core_pb2.GetSessionOptionsRequest, context: ServicerContext
-    ) -> core_pb2.GetSessionOptionsResponse:
-        """
-        Retrieve session options.
-
-        :param request:
-            get-session-options request
-        :param context: context object
-        :return: get-session-options response about all session's options
-        """
-        logger.debug("get session options: %s", request)
-        session = self.get_session(request.session_id, context)
-        current_config = session.options.get_configs()
-        default_config = session.options.default_values()
-        default_config.update(current_config)
-        config = get_config_options(default_config, session.options)
-        return core_pb2.GetSessionOptionsResponse(config=config)
-
-    def SetSessionOptions(
-        self, request: core_pb2.SetSessionOptionsRequest, context: ServicerContext
-    ) -> core_pb2.SetSessionOptionsResponse:
-        """
-        Update a session's configuration
-
-        :param request: set-session-options request
-        :param context: context object
-        :return: set-session-options response
-        """
-        logger.debug("set session options: %s", request)
-        session = self.get_session(request.session_id, context)
-        config = session.options.get_configs()
-        config.update(request.config)
-        return core_pb2.SetSessionOptionsResponse(result=True)
-
-    def GetSessionMetadata(
-        self, request: core_pb2.GetSessionMetadataRequest, context: ServicerContext
-    ) -> core_pb2.GetSessionMetadataResponse:
-        """
-        Retrieve session metadata.
-
-        :param request: get session metadata
-            request
-        :param context: context object
-        :return: get session metadata response
-        """
-        logger.debug("get session metadata: %s", request)
-        session = self.get_session(request.session_id, context)
-        return core_pb2.GetSessionMetadataResponse(config=session.metadata)
 
     def SetSessionMetadata(
         self, request: core_pb2.SetSessionMetadataRequest, context: ServicerContext

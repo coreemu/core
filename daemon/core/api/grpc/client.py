@@ -298,48 +298,6 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionRequest(session_id=session_id)
         return self.stub.GetSession(request)
 
-    def get_session_options(
-        self, session_id: int
-    ) -> core_pb2.GetSessionOptionsResponse:
-        """
-        Retrieve session options as a dict with id mapping.
-
-        :param session_id: id of session
-        :return: response with a list of configuration groups
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
-        return self.stub.GetSessionOptions(request)
-
-    def set_session_options(
-        self, session_id: int, config: Dict[str, str]
-    ) -> core_pb2.SetSessionOptionsResponse:
-        """
-        Set options for a session.
-
-        :param session_id: id of session
-        :param config: configuration values to set
-        :return: response with result of success or failure
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionOptionsRequest(
-            session_id=session_id, config=config
-        )
-        return self.stub.SetSessionOptions(request)
-
-    def get_session_metadata(
-        self, session_id: int
-    ) -> core_pb2.GetSessionMetadataResponse:
-        """
-        Retrieve session metadata as a dict with id mapping.
-
-        :param session_id: id of session
-        :return: response with metadata dict
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionMetadataRequest(session_id=session_id)
-        return self.stub.GetSessionMetadata(request)
-
     def set_session_metadata(
         self, session_id: int, config: Dict[str, str]
     ) -> core_pb2.SetSessionMetadataResponse:
@@ -355,19 +313,6 @@ class CoreGrpcClient:
             session_id=session_id, config=config
         )
         return self.stub.SetSessionMetadata(request)
-
-    def get_session_location(
-        self, session_id: int
-    ) -> core_pb2.GetSessionLocationResponse:
-        """
-        Get session location.
-
-        :param session_id: id of session
-        :return: response with session position reference and scale
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionLocationRequest(session_id=session_id)
-        return self.stub.GetSessionLocation(request)
 
     def set_session_location(
         self,

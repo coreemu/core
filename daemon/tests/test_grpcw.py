@@ -274,24 +274,6 @@ class TestGrpcw:
         assert len(sessions) == 1
         assert found_session is not None
 
-    def test_get_session_location(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            location = client.get_session_location(session.id)
-
-        # then
-        assert location.scale == 1.0
-        assert location.x == 0
-        assert location.y == 0
-        assert location.z == 0
-        assert location.lat == 0
-        assert location.lon == 0
-        assert location.alt == 0
-
     def test_set_session_location(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
@@ -333,21 +315,6 @@ class TestGrpcw:
         # then
         assert result is True
         assert session.metadata[key] == value
-
-    def test_get_session_metadata(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        key = "meta1"
-        value = "value1"
-        session.metadata[key] = value
-
-        # then
-        with client.context_connect():
-            config = client.get_session_metadata(session.id)
-
-        # then
-        assert config[key] == value
 
     def test_set_session_state(self, grpc_server: CoreGrpcServer):
         # given
