@@ -314,39 +314,6 @@ class CoreGrpcClient:
         )
         return self.stub.SetSessionMetadata(request)
 
-    def set_session_location(
-        self,
-        session_id: int,
-        x: float = None,
-        y: float = None,
-        z: float = None,
-        lat: float = None,
-        lon: float = None,
-        alt: float = None,
-        scale: float = None,
-    ) -> core_pb2.SetSessionLocationResponse:
-        """
-        Set session location.
-
-        :param session_id: id of session
-        :param x: x position
-        :param y: y position
-        :param z: z position
-        :param lat: latitude position
-        :param lon: longitude  position
-        :param alt: altitude position
-        :param scale: geo scale
-        :return: response with result of success or failure
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        location = core_pb2.SessionLocation(
-            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=scale
-        )
-        request = core_pb2.SetSessionLocationRequest(
-            session_id=session_id, location=location
-        )
-        return self.stub.SetSessionLocation(request)
-
     def set_session_state(
         self, session_id: int, state: core_pb2.SessionState
     ) -> core_pb2.SetSessionStateResponse:

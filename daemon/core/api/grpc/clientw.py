@@ -427,23 +427,6 @@ class CoreGrpcClient:
         response = self.stub.SetSessionMetadata(request)
         return response.result
 
-    def set_session_location(
-        self, session_id: int, location: wrappers.SessionLocation
-    ) -> bool:
-        """
-        Set session location.
-
-        :param session_id: id of session
-        :param location: session location
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionLocationRequest(
-            session_id=session_id, location=location.to_proto()
-        )
-        response = self.stub.SetSessionLocation(request)
-        return response.result
-
     def set_session_state(self, session_id: int, state: wrappers.SessionState) -> bool:
         """
         Set session state.

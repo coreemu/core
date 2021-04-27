@@ -390,21 +390,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
 
-    def SetSessionLocation(
-        self, request: core_pb2.SetSessionLocationRequest, context: ServicerContext
-    ) -> core_pb2.SetSessionLocationResponse:
-        """
-        Set session location
-
-        :param request: set-session-location request
-        :param context: context object
-        :return: a set-session-location-response
-        """
-        logger.debug("set session location: %s", request)
-        session = self.get_session(request.session_id, context)
-        grpcutils.session_location(session, request.location)
-        return core_pb2.SetSessionLocationResponse(result=True)
-
     def SetSessionState(
         self, request: core_pb2.SetSessionStateRequest, context: ServicerContext
     ) -> core_pb2.SetSessionStateResponse:

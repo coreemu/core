@@ -27,8 +27,6 @@ service CoreApi {
     }
     rpc SetSessionMetadata (SetSessionMetadataRequest) returns (SetSessionMetadataResponse) {
     }
-    rpc SetSessionLocation (SetSessionLocationRequest) returns (SetSessionLocationResponse) {
-    }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
@@ -242,15 +240,6 @@ message SetSessionMetadataRequest {
 }
 
 message SetSessionMetadataResponse {
-    bool result = 1;
-}
-
-message SetSessionLocationRequest {
-    int32 session_id = 1;
-    SessionLocation location = 2;
-}
-
-message SetSessionLocationResponse {
     bool result = 1;
 }
 
