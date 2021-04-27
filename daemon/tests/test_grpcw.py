@@ -47,7 +47,8 @@ from core.xml.corexml import CoreXmlWriter
 
 
 class TestGrpcw:
-    def test_start_session(self, grpc_server: CoreGrpcServer):
+    @pytest.mark.parametrize("definition", [False, True])
+    def test_start_session(self, grpc_server: CoreGrpcServer, definition):
         # given
         client = CoreGrpcClient()
         with client.context_connect():
@@ -164,10 +165,15 @@ class TestGrpcw:
         # when
         with patch.object(CoreXmlWriter, "write"):
             with client.context_connect():
-                client.start_session(session)
+                client.start_session(session, definition=definition)
 
         # then
         real_session = grpc_server.coreemu.sessions[session.id]
+        if definition:
+            state = EventTypes.DEFINITION_STATE
+        else:
+            state = EventTypes.RUNTIME_STATE
+        assert real_session.state == state
         assert node1.id in real_session.nodes
         assert node2.id in real_session.nodes
         assert wlan_node.id in real_session.nodes

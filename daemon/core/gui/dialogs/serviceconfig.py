@@ -78,7 +78,7 @@ class ServiceConfigDialog(Dialog):
 
     def load(self) -> None:
         try:
-            self.app.core.create_nodes_and_links()
+            self.core.start_session(definition=True)
             default_config = self.app.core.get_node_service(
                 self.node.id, self.service_name
             )

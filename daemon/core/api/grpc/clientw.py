@@ -248,7 +248,10 @@ class CoreGrpcClient:
         self.proxy: bool = proxy
 
     def start_session(
-        self, session: wrappers.Session, asymmetric_links: List[wrappers.Link] = None
+        self,
+        session: wrappers.Session,
+        asymmetric_links: List[wrappers.Link] = None,
+        definition: bool = False,
     ) -> Tuple[bool, List[str]]:
         """
         Start a session.
@@ -331,6 +334,7 @@ class CoreGrpcClient:
             config_service_configs=config_service_configs,
             options=options,
             user=session.user,
+            definition=definition,
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)

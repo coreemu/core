@@ -223,8 +223,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
-        session.directory.mkdir(exist_ok=True)
-        session.set_state(EventTypes.CONFIGURATION_STATE)
+        if request.definition:
+            state = EventTypes.DEFINITION_STATE
+        else:
+            state = EventTypes.CONFIGURATION_STATE
+            session.directory.mkdir(exist_ok=True)
+        session.set_state(state)
         session.user = request.user
 
         # session options
@@ -298,16 +302,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # set to instantiation and start
-        session.set_state(EventTypes.INSTANTIATION_STATE)
-
-        # boot services
-        boot_exceptions = session.instantiate()
-        if boot_exceptions:
-            exceptions = []
-            for boot_exception in boot_exceptions:
-                for service_exception in boot_exception.args:
-                    exceptions.append(str(service_exception))
-            return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
+        if not request.definition:
+            session.set_state(EventTypes.INSTANTIATION_STATE)
+            # boot services
+            boot_exceptions = session.instantiate()
+            if boot_exceptions:
+                exceptions = []
+                for boot_exception in boot_exceptions:
+                    for service_exception in boot_exception.args:
+                        exceptions.append(str(service_exception))
+                return core_pb2.StartSessionResponse(
+                    result=False, exceptions=exceptions
+                )
         return core_pb2.StartSessionResponse(result=True)
 
     def StopSession(

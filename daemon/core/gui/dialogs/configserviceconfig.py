@@ -75,7 +75,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def load(self) -> None:
         try:
-            self.core.create_nodes_and_links()
+            self.core.start_session(definition=True)
             service = self.core.config_services[self.service_name]
             self.dependencies = service.dependencies[:]
             self.executables = service.executables[:]

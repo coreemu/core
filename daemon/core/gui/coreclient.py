@@ -437,28 +437,38 @@ class CoreClient:
         for server in self.servers.values():
             self.client.add_session_server(self.session.id, server.name, server.address)
 
-    def start_session(self) -> Tuple[bool, List[str]]:
-        self.ifaces_manager.set_macs([x.link for x in self.links.values()])
-        links = []
-        asymmetric_links = []
+    def get_links(self, definition: bool = False) -> Tuple[List[Link], List[Link]]:
+        if not definition:
+            self.ifaces_manager.set_macs([x.link for x in self.links.values()])
+        links, asym_links = [], []
         for edge in self.links.values():
             link = edge.link
-            if link.iface1 and not link.iface1.mac:
-                link.iface1.mac = self.ifaces_manager.next_mac()
-            if link.iface2 and not link.iface2.mac:
-                link.iface2.mac = self.ifaces_manager.next_mac()
+            if not definition:
+                if link.iface1 and not link.iface1.mac:
+                    link.iface1.mac = self.ifaces_manager.next_mac()
+                if link.iface2 and not link.iface2.mac:
+                    link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
             if edge.asymmetric_link:
-                asymmetric_links.append(edge.asymmetric_link)
+                asym_links.append(edge.asymmetric_link)
+        return links, asym_links
+
+    def start_session(self, definition: bool = False) -> Tuple[bool, List[str]]:
+        links, asym_links = self.get_links(definition)
         self.session.links = links
         result = False
         exceptions = []
         try:
             self.send_servers()
             result, exceptions = self.client.start_session(
-                self.session, asymmetric_links
+                self.session, asym_links, definition
             )
-            logger.info("start session(%s), result: %s", self.session.id, result)
+            logger.info(
+                "start session(%s) definition(%s), result: %s",
+                self.session.id,
+                definition,
+                result,
+            )
             if result:
                 self.set_metadata()
         except grpc.RpcError as e:
@@ -548,8 +558,15 @@ class CoreClient:
             file_path = str(self.session.file)
         try:
             if not self.is_runtime():
-                logger.debug("Send session data to the daemon")
-                self.send_data()
+                logger.debug("sending session data to the daemon")
+                result, exceptions = self.start_session(definition=True)
+                if not result:
+                    message = "\n".join(exceptions)
+                    self.app.show_exception_data(
+                        "Session Definition Exception",
+                        "Failed to define session",
+                        message,
+                    )
             self.client.save_xml(self.session.id, file_path)
             logger.info("saved xml file %s", file_path)
         except grpc.RpcError as e:
@@ -594,45 +611,6 @@ class CoreClient:
             data,
         )
         return data
-
-    def create_nodes_and_links(self) -> None:
-        """
-        create nodes and links that have not been created yet
-        """
-        self.client.set_session_state(self.session.id, SessionState.DEFINITION)
-        for node in self.session.nodes.values():
-            node_id = self.client.add_node(self.session.id, node, source=GUI_SOURCE)
-            logger.debug("created node: %s", node_id)
-        asymmetric_links = []
-        for edge in self.links.values():
-            self.add_link(edge.link)
-            if edge.asymmetric_link:
-                asymmetric_links.append(edge.asymmetric_link)
-        for link in asymmetric_links:
-            self.add_link(link)
-
-    def send_data(self) -> None:
-        """
-        Send to daemon all session info, but don't start the session
-        """
-        self.send_servers()
-        self.create_nodes_and_links()
-        for node_id, config in self.get_wlan_configs():
-            self.client.set_wlan_config(self.session.id, node_id, config)
-        for node_id, config in self.get_mobility_configs():
-            self.client.set_mobility_config(self.session.id, node_id, config)
-        for config in self.get_service_configs():
-            self.client.set_node_service(self.session.id, config)
-        for config in self.get_service_file_configs():
-            self.client.set_node_service_file(self.session.id, config)
-        for hook in self.session.hooks.values():
-            self.client.add_hook(self.session.id, hook)
-        for config in self.get_emane_model_configs():
-            self.client.set_emane_model_config(self.session.id, config)
-        config = to_dict(self.session.emane_config)
-        self.client.set_emane_config(self.session.id, config)
-        self.client.set_session_location(self.session.id, self.session.location)
-        self.set_metadata()
 
     def close(self) -> None:
         """
