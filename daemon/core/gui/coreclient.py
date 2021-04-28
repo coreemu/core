@@ -456,6 +456,7 @@ class CoreClient:
     def start_session(self, definition: bool = False) -> Tuple[bool, List[str]]:
         links, asym_links = self.get_links(definition)
         self.session.links = links
+        self.session.metadata = self.get_metadata()
         result = False
         exceptions = []
         try:
@@ -469,8 +470,6 @@ class CoreClient:
                 definition,
                 result,
             )
-            if result:
-                self.set_metadata()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Start Session Error", e)
         return result, exceptions
@@ -495,7 +494,7 @@ class CoreClient:
                 self.mobility_players[node.id] = mobility_player
                 mobility_player.show()
 
-    def set_metadata(self) -> None:
+    def get_metadata(self) -> Dict[str, str]:
         # create canvas data
         canvas_config = self.app.manager.get_metadata()
         canvas_config = json.dumps(canvas_config)
@@ -521,11 +520,9 @@ class CoreClient:
         hidden = json.dumps(hidden)
 
         # save metadata
-        metadata = dict(
+        return dict(
             canvas=canvas_config, shapes=shapes, edges=edges_config, hidden=hidden
         )
-        response = self.client.set_session_metadata(self.session.id, metadata)
-        logger.debug("set session metadata %s, result: %s", metadata, response)
 
     def launch_terminal(self, node_id: int) -> None:
         try:

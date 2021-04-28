@@ -298,22 +298,6 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionRequest(session_id=session_id)
         return self.stub.GetSession(request)
 
-    def set_session_metadata(
-        self, session_id: int, config: Dict[str, str]
-    ) -> core_pb2.SetSessionMetadataResponse:
-        """
-        Set metadata for a session.
-
-        :param session_id: id of session
-        :param config: configuration values to set
-        :return: response with result of success or failure
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionMetadataRequest(
-            session_id=session_id, config=config
-        )
-        return self.stub.SetSessionMetadata(request)
-
     def set_session_state(
         self, session_id: int, state: core_pb2.SessionState
     ) -> core_pb2.SetSessionStateResponse:

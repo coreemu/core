@@ -258,6 +258,7 @@ class CoreGrpcClient:
 
         :param session: session to start
         :param asymmetric_links: link configuration for asymmetric links
+        :param definition: True to only define session data, False to start session
         :return: tuple of result and exception strings
         """
         nodes = [x.to_proto() for x in session.nodes.values()]
@@ -335,6 +336,7 @@ class CoreGrpcClient:
             options=options,
             user=session.user,
             definition=definition,
+            metadata=session.metadata,
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)
@@ -411,21 +413,6 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionRequest(session_id=session_id)
         response = self.stub.GetSession(request)
         return wrappers.Session.from_proto(response.session)
-
-    def set_session_metadata(self, session_id: int, config: Dict[str, str]) -> bool:
-        """
-        Set metadata for a session.
-
-        :param session_id: id of session
-        :param config: configuration values to set
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionMetadataRequest(
-            session_id=session_id, config=config
-        )
-        response = self.stub.SetSessionMetadata(request)
-        return response.result
 
     def set_session_state(self, session_id: int, state: wrappers.SessionState) -> bool:
         """

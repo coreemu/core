@@ -25,8 +25,6 @@ service CoreApi {
     }
     rpc CheckSession (CheckSessionRequest) returns (CheckSessionResponse) {
     }
-    rpc SetSessionMetadata (SetSessionMetadataRequest) returns (SetSessionMetadataResponse) {
-    }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
     rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
@@ -179,6 +177,7 @@ message StartSessionRequest {
     map<string, string> options = 14;
     string user = 15;
     bool definition = 16;
+    map<string, string> metadata = 17;
 }
 
 message StartSessionResponse {
@@ -232,15 +231,6 @@ message GetSessionRequest {
 
 message GetSessionResponse {
     Session session = 1;
-}
-
-message SetSessionMetadataRequest {
-    int32 session_id = 1;
-    map<string, string> config = 2;
-}
-
-message SetSessionMetadataResponse {
-    bool result = 1;
 }
 
 message SetSessionStateRequest {

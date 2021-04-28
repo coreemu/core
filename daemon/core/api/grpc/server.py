@@ -235,6 +235,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.options.config_reset()
         for key, value in request.options.items():
             session.options.set_config(key, value)
+        session.metadata = dict(request.metadata)
 
         # location
         if request.HasField("location"):
@@ -418,21 +419,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         except KeyError:
             result = False
         return core_pb2.SetSessionStateResponse(result=result)
-
-    def SetSessionMetadata(
-        self, request: core_pb2.SetSessionMetadataRequest, context: ServicerContext
-    ) -> core_pb2.SetSessionMetadataResponse:
-        """
-        Update a session's metadata.
-
-        :param request: set metadata request
-        :param context: context object
-        :return: set metadata response
-        """
-        logger.debug("set session metadata: %s", request)
-        session = self.get_session(request.session_id, context)
-        session.metadata = dict(request.config)
-        return core_pb2.SetSessionMetadataResponse(result=True)
 
     def CheckSession(
         self, request: core_pb2.GetSessionRequest, context: ServicerContext

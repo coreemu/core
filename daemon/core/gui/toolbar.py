@@ -306,7 +306,6 @@ class Toolbar(ttk.Frame):
     def start_callback(self, result: bool, exceptions: List[str]) -> None:
         if result:
             self.set_runtime()
-            self.app.core.set_metadata()
             self.app.core.show_mobility_players()
         else:
             enable_buttons(self.design_frame, enabled=True)

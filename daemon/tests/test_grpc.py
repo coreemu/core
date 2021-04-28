@@ -236,21 +236,6 @@ class TestGrpc:
         assert len(response.sessions) == 1
         assert found_session is not None
 
-    def test_set_session_metadata(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        key = "meta1"
-        value = "value1"
-        with client.context_connect():
-            response = client.set_session_metadata(session.id, {key: value})
-
-        # then
-        assert response.result is True
-        assert session.metadata[key] == value
-
     def test_set_session_state(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
