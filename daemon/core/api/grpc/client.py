@@ -646,38 +646,6 @@ class CoreGrpcClient:
         )
         return self.stub.DeleteLink(request)
 
-    def get_hooks(self, session_id: int) -> core_pb2.GetHooksResponse:
-        """
-        Get all hook scripts.
-
-        :param session_id: session id
-        :return: response with a list of hooks
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetHooksRequest(session_id=session_id)
-        return self.stub.GetHooks(request)
-
-    def add_hook(
-        self,
-        session_id: int,
-        state: core_pb2.SessionState,
-        file_name: str,
-        file_data: str,
-    ) -> core_pb2.AddHookResponse:
-        """
-        Add hook scripts.
-
-        :param session_id: session id
-        :param state: state to trigger hook
-        :param file_name: name of file for hook script
-        :param file_data: hook script contents
-        :return: response with result of success or failure
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
-        request = core_pb2.AddHookRequest(session_id=session_id, hook=hook)
-        return self.stub.AddHook(request)
-
     def get_mobility_configs(self, session_id: int) -> GetMobilityConfigsResponse:
         """
         Get all mobility configurations.

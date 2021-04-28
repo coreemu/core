@@ -920,38 +920,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.broadcast_link(link_data)
         return core_pb2.DeleteLinkResponse(result=True)
 
-    def GetHooks(
-        self, request: core_pb2.GetHooksRequest, context: ServicerContext
-    ) -> core_pb2.GetHooksResponse:
-        """
-        Retrieve all hooks from a session
-
-        :param request: get-hook request
-        :param context: context object
-        :return: get-hooks response about all the hooks in all session states
-        """
-        logger.debug("get hooks: %s", request)
-        session = self.get_session(request.session_id, context)
-        hooks = grpcutils.get_hooks(session)
-        return core_pb2.GetHooksResponse(hooks=hooks)
-
-    def AddHook(
-        self, request: core_pb2.AddHookRequest, context: ServicerContext
-    ) -> core_pb2.AddHookResponse:
-        """
-        Add hook to a session
-
-        :param request: add-hook request
-        :param context: context object
-        :return: add-hook response
-        """
-        logger.debug("add hook: %s", request)
-        session = self.get_session(request.session_id, context)
-        hook = request.hook
-        state = EventTypes(hook.state)
-        session.add_hook(state, hook.file, hook.data)
-        return core_pb2.AddHookResponse(result=True)
-
     def GetMobilityConfigs(
         self, request: GetMobilityConfigsRequest, context: ServicerContext
     ) -> GetMobilityConfigsResponse:

@@ -66,12 +66,6 @@ service CoreApi {
     rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
     }
 
-    // hook rpc
-    rpc GetHooks (GetHooksRequest) returns (GetHooksResponse) {
-    }
-    rpc AddHook (AddHookRequest) returns (AddHookResponse) {
-    }
-
     // mobility rpc
     rpc GetMobilityConfigs (mobility.GetMobilityConfigsRequest) returns (mobility.GetMobilityConfigsResponse) {
     }
@@ -489,23 +483,6 @@ message DeleteLinkRequest {
 }
 
 message DeleteLinkResponse {
-    bool result = 1;
-}
-
-message GetHooksRequest {
-    int32 session_id = 1;
-}
-
-message GetHooksResponse {
-    repeated Hook hooks = 1;
-}
-
-message AddHookRequest {
-    int32 session_id = 1;
-    Hook hook = 2;
-}
-
-message AddHookResponse {
     bool result = 1;
 }
 

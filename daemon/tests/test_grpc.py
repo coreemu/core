@@ -351,41 +351,6 @@ class TestGrpc:
         # then
         assert response.terminal is not None
 
-    def test_get_hooks(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        file_name = "test"
-        file_data = "echo hello"
-        session.add_hook(EventTypes.RUNTIME_STATE, file_name, file_data)
-
-        # then
-        with client.context_connect():
-            response = client.get_hooks(session.id)
-
-        # then
-        assert len(response.hooks) == 1
-        hook = response.hooks[0]
-        assert hook.state == core_pb2.SessionState.RUNTIME
-        assert hook.file == file_name
-        assert hook.data == file_data
-
-    def test_add_hook(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        file_name = "test"
-        file_data = "echo hello"
-        with client.context_connect():
-            response = client.add_hook(
-                session.id, core_pb2.SessionState.RUNTIME, file_name, file_data
-            )
-
-        # then
-        assert response.result is True
-
     def test_save_xml(self, grpc_server: CoreGrpcServer, tmpdir: TemporaryFile):
         # given
         client = CoreGrpcClient()

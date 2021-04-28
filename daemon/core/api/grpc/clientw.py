@@ -66,7 +66,6 @@ from core.api.grpc.wlan_pb2 import (
     WlanConfig,
     WlanLinkRequest,
 )
-from core.api.grpc.wrappers import Hook
 from core.emulator.data import IpPrefixes
 from core.errors import CoreError
 
@@ -762,35 +761,6 @@ class CoreGrpcClient:
             source=source,
         )
         response = self.stub.DeleteLink(request)
-        return response.result
-
-    def get_hooks(self, session_id: int) -> List[wrappers.Hook]:
-        """
-        Get all hook scripts.
-
-        :param session_id: session id
-        :return: list of hooks
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetHooksRequest(session_id=session_id)
-        response = self.stub.GetHooks(request)
-        hooks = []
-        for hook_proto in response.hooks:
-            hook = wrappers.Hook.from_proto(hook_proto)
-            hooks.append(hook)
-        return hooks
-
-    def add_hook(self, session_id: int, hook: Hook) -> bool:
-        """
-        Add hook scripts.
-
-        :param session_id: session id
-        :param hook: hook to add
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.AddHookRequest(session_id=session_id, hook=hook.to_proto())
-        response = self.stub.AddHook(request)
         return response.result
 
     def get_mobility_configs(
