@@ -647,7 +647,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             iface_proto = grpcutils.iface_to_proto(request.node_id, iface)
             ifaces.append(iface_proto)
         node_proto = grpcutils.get_node_proto(session, node)
-        return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces)
+        links = get_links(node)
+        return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces, links=links)
 
     def MoveNodes(
         self,
@@ -777,22 +778,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = self.get_node(session, request.node_id, context, CoreNode)
         terminal = node.termcmdstring("/bin/bash")
         return core_pb2.GetNodeTerminalResponse(terminal=terminal)
-
-    def GetNodeLinks(
-        self, request: core_pb2.GetNodeLinksRequest, context: ServicerContext
-    ) -> core_pb2.GetNodeLinksResponse:
-        """
-        Retrieve all links form a requested node
-
-        :param request: get-node-links request
-        :param context: context object
-        :return: get-node-links response
-        """
-        logger.debug("get node links: %s", request)
-        session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, NodeBase)
-        links = get_links(node)
-        return core_pb2.GetNodeLinksResponse(links=links)
 
     def AddLink(
         self, request: core_pb2.AddLinkRequest, context: ServicerContext

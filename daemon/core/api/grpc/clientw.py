@@ -550,7 +550,7 @@ class CoreGrpcClient:
 
     def get_node(
         self, session_id: int, node_id: int
-    ) -> Tuple[wrappers.Node, List[wrappers.Interface]]:
+    ) -> Tuple[wrappers.Node, List[wrappers.Interface], List[wrappers.Link]]:
         """
         Get node details.
 
@@ -566,7 +566,11 @@ class CoreGrpcClient:
         for iface_proto in response.ifaces:
             iface = wrappers.Interface.from_proto(iface_proto)
             ifaces.append(iface)
-        return node, ifaces
+        links = []
+        for link_proto in response.links:
+            link = wrappers.Link.from_proto(link_proto)
+            links.append(link)
+        return node, ifaces, links
 
     def edit_node(
         self,

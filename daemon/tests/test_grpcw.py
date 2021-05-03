@@ -316,10 +316,12 @@ class TestGrpcw:
 
         # then
         with client.context_connect():
-            get_node, ifaces = client.get_node(session.id, node.id)
+            get_node, ifaces, links = client.get_node(session.id, node.id)
 
         # then
         assert node.id == get_node.id
+        assert len(ifaces) == 0
+        assert len(links) == 0
 
     def test_edit_node(self, grpc_server: CoreGrpcServer):
         # given
@@ -435,38 +437,6 @@ class TestGrpcw:
         # then
         assert result is True
         assert session_id is not None
-
-    def test_get_node_links(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        switch = session.add_node(SwitchNode)
-        node = session.add_node(CoreNode)
-        iface_data = ip_prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface_data)
-
-        # then
-        with client.context_connect():
-            links = client.get_node_links(session.id, switch.id)
-
-        # then
-        assert len(links) == 1
-
-    def test_get_node_links_exception(
-        self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes
-    ):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        switch = session.add_node(SwitchNode)
-        node = session.add_node(CoreNode)
-        iface_data = ip_prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface_data)
-
-        # then
-        with pytest.raises(grpc.RpcError):
-            with client.context_connect():
-                client.get_node_links(session.id, 3)
 
     def test_add_link(self, grpc_server: CoreGrpcServer):
         # given

@@ -57,8 +57,6 @@ service CoreApi {
     }
 
     // link rpc
-    rpc GetNodeLinks (GetNodeLinksRequest) returns (GetNodeLinksResponse) {
-    }
     rpc AddLink (AddLinkRequest) returns (AddLinkResponse) {
     }
     rpc EditLink (EditLinkRequest) returns (EditLinkResponse) {
@@ -378,6 +376,7 @@ message GetNodeRequest {
 message GetNodeResponse {
     Node node = 1;
     repeated Interface ifaces = 2;
+    repeated Link links = 3;
 }
 
 message EditNodeRequest {
@@ -436,15 +435,6 @@ message NodeCommandRequest {
 message NodeCommandResponse {
     string output = 1;
     int32 return_code = 2;
-}
-
-message GetNodeLinksRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-}
-
-message GetNodeLinksResponse {
-    repeated Link links = 1;
 }
 
 message AddLinkRequest {

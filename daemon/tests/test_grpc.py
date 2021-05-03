@@ -265,19 +265,6 @@ class TestGrpc:
         assert response.node_id is not None
         assert session.get_node(response.node_id, CoreNode) is not None
 
-    def test_get_node(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        with client.context_connect():
-            response = client.get_node(session.id, node.id)
-
-        # then
-        assert response.node.id == node.id
-
     def test_edit_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
@@ -378,38 +365,6 @@ class TestGrpc:
         # then
         assert response.result is True
         assert response.session_id is not None
-
-    def test_get_node_links(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        switch = session.add_node(SwitchNode)
-        node = session.add_node(CoreNode)
-        iface_data = ip_prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface_data)
-
-        # then
-        with client.context_connect():
-            response = client.get_node_links(session.id, switch.id)
-
-        # then
-        assert len(response.links) == 1
-
-    def test_get_node_links_exception(
-        self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes
-    ):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        switch = session.add_node(SwitchNode)
-        node = session.add_node(CoreNode)
-        iface_data = ip_prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface_data)
-
-        # then
-        with pytest.raises(grpc.RpcError):
-            with client.context_connect():
-                client.get_node_links(session.id, 3)
 
     def test_add_link(self, grpc_server: CoreGrpcServer, iface_helper: InterfaceHelper):
         # given

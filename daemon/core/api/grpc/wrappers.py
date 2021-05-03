@@ -740,20 +740,22 @@ class Node:
 
 @dataclass
 class Session:
-    id: int
-    state: SessionState
-    nodes: Dict[int, Node]
-    links: List[Link]
-    dir: str
-    user: str
-    default_services: Dict[str, Set[str]]
-    location: SessionLocation
-    hooks: Dict[str, Hook]
-    emane_models: List[str]
-    emane_config: Dict[str, ConfigOption]
-    metadata: Dict[str, str]
-    file: Path
-    options: Dict[str, ConfigOption]
+    id: int = None
+    state: SessionState = SessionState.DEFINITION
+    nodes: Dict[int, Node] = field(default_factory=dict)
+    links: List[Link] = field(default_factory=list)
+    dir: str = None
+    user: str = None
+    default_services: Dict[str, Set[str]] = field(default_factory=dict)
+    location: SessionLocation = SessionLocation(
+        x=0.0, y=0.0, z=0.0, lat=47.57917, lon=-122.13232, alt=2.0, scale=150.0
+    )
+    hooks: Dict[str, Hook] = field(default_factory=dict)
+    emane_models: List[str] = field(default_factory=list)
+    emane_config: Dict[str, ConfigOption] = field(default_factory=dict)
+    metadata: Dict[str, str] = field(default_factory=dict)
+    file: Path = None
+    options: Dict[str, ConfigOption] = field(default_factory=dict)
 
     def set_node(self, node: Node) -> None:
         self.nodes[node.id] = node
