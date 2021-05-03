@@ -55,18 +55,11 @@ class TestGrpcw:
             session_id = client.create_session()
             session = client.get_session(session_id)
         position = Position(x=50, y=100)
-        node1 = Node(
-            id=1, name="n1", position=position, type=NodeType.DEFAULT, model="PC"
-        )
+        node1 = session.add_node(1, position=position)
         position = Position(x=100, y=100)
-        node2 = Node(
-            id=2, name="n2", position=position, type=NodeType.DEFAULT, model="PC"
-        )
+        node2 = session.add_node(2, position=position)
         position = Position(x=200, y=200)
-        wlan_node = Node(id=3, name="n3", type=NodeType.WIRELESS_LAN, position=position)
-        session.set_node(node1)
-        session.set_node(node2)
-        session.set_node(wlan_node)
+        wlan_node = session.add_node(3, _type=NodeType.WIRELESS_LAN, position=position)
         iface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
         iface1_id = 0
         iface1 = iface_helper.create_iface(node1.id, iface1_id)
@@ -96,38 +89,17 @@ class TestGrpcw:
         # setup global emane config
         emane_config_key = "platform_id_start"
         emane_config_value = "2"
-        option = ConfigOption(
-            label=emane_config_key,
-            name=emane_config_key,
-            value=emane_config_value,
-            type=ConfigOptionType.INT64,
-            group="Default",
-        )
-        session.emane_config[emane_config_key] = option
+        session.set_emane({emane_config_key: emane_config_value})
 
         # setup wlan config
         wlan_config_key = "range"
         wlan_config_value = "333"
-        option = ConfigOption(
-            label=wlan_config_key,
-            name=wlan_config_key,
-            value=wlan_config_value,
-            type=ConfigOptionType.INT64,
-            group="Default",
-        )
-        wlan_node.wlan_config[wlan_config_key] = option
+        wlan_node.set_wlan({wlan_config_key: wlan_config_value})
 
         # setup mobility config
         mobility_config_key = "refresh_ms"
         mobility_config_value = "60"
-        option = ConfigOption(
-            label=mobility_config_key,
-            name=mobility_config_key,
-            value=mobility_config_value,
-            type=ConfigOptionType.INT64,
-            group="Default",
-        )
-        wlan_node.mobility_config[mobility_config_key] = option
+        wlan_node.set_mobility({mobility_config_key: mobility_config_value})
 
         # setup service config
         service_name = "DefaultRoute"
@@ -153,14 +125,7 @@ class TestGrpcw:
         # setup session option
         option_key = "controlnet"
         option_value = "172.16.0.0/24"
-        option = ConfigOption(
-            label=option_key,
-            name=option_key,
-            value=option_value,
-            type=ConfigOptionType.STRING,
-            group="Default",
-        )
-        session.options[option_key] = option
+        session.set_options({option_key: option_value})
 
         # when
         with patch.object(CoreXmlWriter, "write"):

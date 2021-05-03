@@ -395,11 +395,11 @@ class ExceptionEvent:
 
 @dataclass
 class ConfigOption:
-    label: str
     name: str
     value: str
-    type: ConfigOptionType
-    group: str
+    label: str = None
+    type: ConfigOptionType = None
+    group: str = None
     select: List[str] = None
 
     @classmethod
@@ -737,6 +737,25 @@ class Node:
             canvas=self.canvas,
         )
 
+    def set_wlan(self, config: Dict[str, str]) -> None:
+        for key, value in config.items():
+            option = ConfigOption(name=key, value=value)
+            self.wlan_config[key] = option
+
+    def set_mobility(self, config: Dict[str, str]) -> None:
+        for key, value in config.items():
+            option = ConfigOption(name=key, value=value)
+            self.mobility_config[key] = option
+
+    def set_emane_model(
+        self, model: str, config: Dict[str, str], iface_id: int = None
+    ) -> None:
+        key = (model, iface_id)
+        config_options = self.emane_model_configs.setdefault(key, {})
+        for key, value in config.items():
+            option = ConfigOption(name=key, value=value)
+            config_options[key] = option
+
 
 @dataclass
 class Session:
@@ -756,9 +775,6 @@ class Session:
     metadata: Dict[str, str] = field(default_factory=dict)
     file: Path = None
     options: Dict[str, ConfigOption] = field(default_factory=dict)
-
-    def set_node(self, node: Node) -> None:
-        self.nodes[node.id] = node
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
@@ -812,6 +828,62 @@ class Session:
             file=file_path,
             options=options,
         )
+
+    def add_node(
+        self,
+        _id: int,
+        *,
+        name: str = None,
+        _type: NodeType = NodeType.DEFAULT,
+        model: str = "PC",
+        position: Position = None,
+        geo: Geo = None,
+        emane: str = None,
+        image: str = None,
+        server: str = None,
+    ) -> Node:
+        node = Node(
+            id=_id,
+            name=name,
+            type=_type,
+            model=model,
+            position=position,
+            geo=geo,
+            emane=emane,
+            image=image,
+            server=server,
+        )
+        self.nodes[node.id] = node
+        return node
+
+    def add_link(
+        self,
+        *,
+        node1: Node,
+        node2: Node,
+        iface1: Interface = None,
+        iface2: Interface = None,
+        options: LinkOptions = None,
+    ) -> Link:
+        link = Link(
+            node1_id=node1.id,
+            node2_id=node2.id,
+            iface1=iface1,
+            iface2=iface2,
+            options=options,
+        )
+        self.links.append(link)
+        return link
+
+    def set_emane(self, config: Dict[str, str]) -> None:
+        for key, value in config.items():
+            option = ConfigOption(name=key, value=value)
+            self.emane_config[key] = option
+
+    def set_options(self, config: Dict[str, str]) -> None:
+        for key, value in config.items():
+            option = ConfigOption(name=key, value=value)
+            self.options[key] = option
 
 
 @dataclass

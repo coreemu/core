@@ -1,8 +1,8 @@
 import argparse
 import logging
 
-from core.api.grpc import client
-from core.api.grpc.core_pb2 import Node, NodeType, Position, SessionState
+from core.api.grpc import clientw
+from core.api.grpc.wrappers import NodeType, Position
 
 
 def log_event(event):
@@ -10,62 +10,41 @@ def log_event(event):
 
 
 def main(args):
-    core = client.CoreGrpcClient()
+    # helper to create interfaces
+    interface_helper = clientw.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
-    with core.context_connect():
-        # create session
-        response = core.create_session()
-        session_id = response.session_id
-        logging.info("created session: %s", response)
+    # create grpc client and connect
+    core = clientw.CoreGrpcClient()
+    core.connect()
 
-        # add distributed server
-        server_name = "core2"
-        response = core.add_session_server(session_id, server_name, args.server)
-        logging.info("added session server: %s", response)
+    # create session
+    session = core.add_session()
+    logging.info("created session: %s", session.id)
 
-        # handle events session may broadcast
-        core.events(session_id, log_event)
+    # add distributed server
+    server_name = "core2"
+    result = core.add_session_server(session.id, server_name, args.server)
+    logging.info("added session server: %s", result)
 
-        # change session state
-        response = core.set_session_state(session_id, SessionState.CONFIGURATION)
-        logging.info("set session state: %s", response)
+    # handle events session may broadcast
+    core.events(session.id, log_event)
 
-        # create switch node
-        switch = Node(type=NodeType.SWITCH)
-        response = core.add_node(session_id, switch)
-        logging.info("created switch: %s", response)
-        switch_id = response.node_id
+    # create switch node
+    position = Position(x=150, y=100)
+    switch = session.add_node(1, _type=NodeType.SWITCH, position=position)
+    position = Position(x=100, y=50)
+    node1 = session.add_node(2, position=position)
+    position = Position(x=200, y=50)
+    node2 = session.add_node(3, position=position, server=server_name)
 
-        # helper to create interfaces
-        interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
+    # create links
+    iface1 = interface_helper.create_iface(node1.id, 0)
+    session.add_link(node1=node1, node2=switch, iface1=iface1)
+    iface1 = interface_helper.create_iface(node2.id, 0)
+    session.add_link(node1=node2, node2=switch, iface1=iface1)
 
-        # create node one
-        position = Position(x=100, y=50)
-        node = Node(position=position)
-        response = core.add_node(session_id, node)
-        logging.info("created node one: %s", response)
-        node1_id = response.node_id
-
-        # create link
-        interface1 = interface_helper.create_iface(node1_id, 0)
-        response = core.add_link(session_id, node1_id, switch_id, interface1)
-        logging.info("created link from node one to switch: %s", response)
-
-        # create node two
-        position = Position(x=200, y=50)
-        node = Node(position=position, server=server_name)
-        response = core.add_node(session_id, node)
-        logging.info("created node two: %s", response)
-        node2_id = response.node_id
-
-        # create link
-        interface1 = interface_helper.create_iface(node2_id, 0)
-        response = core.add_link(session_id, node2_id, switch_id, interface1)
-        logging.info("created link from node two to switch: %s", response)
-
-        # change session state
-        response = core.set_session_state(session_id, SessionState.INSTANTIATION)
-        logging.info("set session state: %s", response)
+    # start session
+    core.start_session(session)
 
 
 if __name__ == "__main__":

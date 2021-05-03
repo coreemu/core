@@ -352,6 +352,10 @@ class CoreGrpcClient:
         response = self.stub.StopSession(request)
         return response.result
 
+    def add_session(self, session_id: int = None) -> wrappers.Session:
+        session_id = self.create_session(session_id)
+        return self.get_session(session_id)
+
     def create_session(self, session_id: int = None) -> int:
         """
         Create a session.
