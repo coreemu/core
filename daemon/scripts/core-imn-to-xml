@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from core import utils
-from core.api.grpc.client import CoreGrpcClient
+from core.api.grpc.clientw import CoreGrpcClient
 from core.errors import CoreCommandError
 
 if __name__ == "__main__":
@@ -61,7 +61,7 @@ if __name__ == "__main__":
         client = CoreGrpcClient()
         with client.context_connect():
             print(f"saving xml {xml_file.resolve()}")
-            client.save_xml(session_id, xml_file)
+            client.save_xml(session_id, str(xml_file))
 
             print(f"deleting session {session_id}")
             client.delete_session(session_id)
