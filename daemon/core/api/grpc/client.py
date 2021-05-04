@@ -24,7 +24,6 @@ from core.api.grpc import (
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetConfigServicesRequest,
-    GetNodeConfigServiceConfigsRequest,
     GetNodeConfigServiceRequest,
     GetNodeConfigServicesRequest,
     SetNodeConfigServiceRequest,
@@ -52,7 +51,6 @@ from core.api.grpc.services_pb2 import (
     GetServicesRequest,
     ServiceActionRequest,
     ServiceDefaults,
-    SetNodeServiceFileRequest,
     SetServiceDefaultsRequest,
 )
 from core.api.grpc.wlan_pb2 import (
@@ -905,22 +903,6 @@ class CoreGrpcClient:
         response = self.stub.GetNodeServiceFile(request)
         return response.data
 
-    def set_node_service_file(
-        self, session_id: int, service_file_config: wrappers.ServiceFileConfig
-    ) -> bool:
-        """
-        Set a service file for a node.
-
-        :param session_id: session id
-        :param service_file_config: configuration to set
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        config = service_file_config.to_proto()
-        request = SetNodeServiceFileRequest(session_id=session_id, config=config)
-        response = self.stub.SetNodeServiceFile(request)
-        return response.result
-
     def service_action(
         self,
         session_id: int,
@@ -1130,24 +1112,6 @@ class CoreGrpcClient:
         request = GetConfigServiceDefaultsRequest(name=name)
         response = self.stub.GetConfigServiceDefaults(request)
         return wrappers.ConfigServiceDefaults.from_proto(response)
-
-    def get_node_config_service_configs(
-        self, session_id: int
-    ) -> List[wrappers.ConfigServiceConfig]:
-        """
-        Retrieves all node config service configurations for a session.
-
-        :param session_id: session to get config service configurations for
-        :return: list of node config service configs
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetNodeConfigServiceConfigsRequest(session_id=session_id)
-        response = self.stub.GetNodeConfigServiceConfigs(request)
-        configs = []
-        for config_proto in response.configs:
-            config = wrappers.ConfigServiceConfig.from_proto(config_proto)
-            configs.append(config)
-        return configs
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str

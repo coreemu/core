@@ -79,13 +79,11 @@ service CoreApi {
     }
     rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
     }
-    rpc SetNodeServiceFile (services.SetNodeServiceFileRequest) returns (services.SetNodeServiceFileResponse) {
-    }
     rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
 
     // config services
-    rpc GetNodeConfigServiceConfigs (configservices.GetNodeConfigServiceConfigsRequest) returns (configservices.GetNodeConfigServiceConfigsResponse) {
+    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
     }
     rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
     }
@@ -134,8 +132,6 @@ service CoreApi {
     rpc GetEmaneModels (emane.GetEmaneModelsRequest) returns (emane.GetEmaneModelsResponse) {
     }
     rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
-    }
-    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
     }
     rpc GetServices (services.GetServicesRequest) returns (services.GetServicesResponse) {
     }

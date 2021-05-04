@@ -26,8 +26,6 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsResponse,
     GetConfigServicesRequest,
     GetConfigServicesResponse,
-    GetNodeConfigServiceConfigsRequest,
-    GetNodeConfigServiceConfigsResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
     GetNodeConfigServicesRequest,
@@ -78,8 +76,6 @@ from core.api.grpc.services_pb2 import (
     ServiceAction,
     ServiceActionRequest,
     ServiceActionResponse,
-    SetNodeServiceFileRequest,
-    SetNodeServiceFileResponse,
     SetServiceDefaultsRequest,
     SetServiceDefaultsResponse,
 )
@@ -1052,25 +1048,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return GetNodeServiceFileResponse(data=file_data.data)
 
-    def SetNodeServiceFile(
-        self, request: SetNodeServiceFileRequest, context: ServicerContext
-    ) -> SetNodeServiceFileResponse:
-        """
-        Store the customized service file in the service config
-
-        :param request:
-            set-node-service-file request
-        :param context: context object
-        :return: set-node-service-file response
-        """
-        logger.debug("set node service file: %s", request)
-        session = self.get_session(request.session_id, context)
-        config = request.config
-        session.services.set_service_file(
-            config.node_id, config.service, config.file, config.data
-        )
-        return SetNodeServiceFileResponse(result=True)
-
     def ServiceAction(
         self, request: ServiceActionRequest, context: ServicerContext
     ) -> ServiceActionResponse:
@@ -1426,21 +1403,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return GetConfigServiceDefaultsResponse(
             templates=templates, config=config, modes=modes
         )
-
-    def GetNodeConfigServiceConfigs(
-        self, request: GetNodeConfigServiceConfigsRequest, context: ServicerContext
-    ) -> GetNodeConfigServiceConfigsResponse:
-        """
-        Get current custom templates and config for configuration services for a given
-        node.
-
-        :param request: get node config service configs request
-        :param context: grpc context
-        :return: get node config service configs response
-        """
-        session = self.get_session(request.session_id, context)
-        configs = grpcutils.get_node_config_service_configs(session)
-        return GetNodeConfigServiceConfigsResponse(configs=configs)
 
     def GetNodeConfigServices(
         self, request: GetNodeConfigServicesRequest, context: ServicerContext
