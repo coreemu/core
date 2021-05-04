@@ -47,8 +47,6 @@ from core.api.grpc.emane_pb2 import (
     GetEmaneEventChannelResponse,
     GetEmaneModelConfigRequest,
     GetEmaneModelConfigResponse,
-    GetEmaneModelConfigsRequest,
-    GetEmaneModelConfigsResponse,
     GetEmaneModelsRequest,
     GetEmaneModelsResponse,
     SetEmaneConfigRequest,
@@ -1291,23 +1289,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         _id = utils.iface_config_id(model_config.node_id, model_config.iface_id)
         session.emane.set_model_config(_id, model_config.model, model_config.config)
         return SetEmaneModelConfigResponse(result=True)
-
-    def GetEmaneModelConfigs(
-        self, request: GetEmaneModelConfigsRequest, context: ServicerContext
-    ) -> GetEmaneModelConfigsResponse:
-        """
-        Retrieve all EMANE model configurations of a session
-
-        :param request:
-            get-EMANE-model-configurations request
-        :param context: context object
-        :return: get-EMANE-model-configurations response that has all the EMANE
-            configurations
-        """
-        logger.debug("get emane model configs: %s", request)
-        session = self.get_session(request.session_id, context)
-        configs = grpcutils.get_emane_model_configs(session)
-        return GetEmaneModelConfigsResponse(configs=configs)
 
     def SaveXml(
         self, request: core_pb2.SaveXmlRequest, context: ServicerContext

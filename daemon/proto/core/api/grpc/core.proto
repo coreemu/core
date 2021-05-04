@@ -127,8 +127,6 @@ service CoreApi {
     }
     rpc SetEmaneModelConfig (emane.SetEmaneModelConfigRequest) returns (emane.SetEmaneModelConfigResponse) {
     }
-    rpc GetEmaneModelConfigs (emane.GetEmaneModelConfigsRequest) returns (emane.GetEmaneModelConfigsResponse) {
-    }
     rpc GetEmaneEventChannel (emane.GetEmaneEventChannelRequest) returns (emane.GetEmaneEventChannelResponse) {
     }
     rpc EmanePathlosses (stream emane.EmanePathlossesRequest) returns (emane.EmanePathlossesResponse) {

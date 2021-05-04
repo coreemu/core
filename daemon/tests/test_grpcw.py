@@ -562,32 +562,6 @@ class TestGrpcw:
         assert len(config) > 1
         assert config[config_key] == config_value
 
-    def test_get_emane_model_configs(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
-        emane_network = session.add_node(EmaneNet, options=options)
-        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
-        config_key = "platform_id_start"
-        config_value = "2"
-        session.emane.set_model_config(
-            emane_network.id, EmaneIeee80211abgModel.name, {config_key: config_value}
-        )
-
-        # then
-        with client.context_connect():
-            configs = client.get_emane_model_configs(session.id)
-
-        # then
-        assert len(configs) == 1
-        model_config = configs[0]
-        assert emane_network.id == model_config.node_id
-        assert model_config.model == EmaneIeee80211abgModel.name
-        assert len(model_config.config) > 0
-        assert model_config.iface_id is None
-
     def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()

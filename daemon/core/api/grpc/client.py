@@ -35,7 +35,6 @@ from core.api.grpc.emane_pb2 import (
     GetEmaneConfigRequest,
     GetEmaneEventChannelRequest,
     GetEmaneModelConfigRequest,
-    GetEmaneModelConfigsRequest,
     GetEmaneModelsRequest,
     SetEmaneConfigRequest,
     SetEmaneModelConfigRequest,
@@ -1105,24 +1104,6 @@ class CoreGrpcClient:
         )
         response = self.stub.SetEmaneModelConfig(request)
         return response.result
-
-    def get_emane_model_configs(
-        self, session_id: int
-    ) -> List[wrappers.EmaneModelConfig]:
-        """
-        Get all EMANE model configurations for a session.
-
-        :param session_id: session to get emane model configs
-        :return: list of emane model configs
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetEmaneModelConfigsRequest(session_id=session_id)
-        response = self.stub.GetEmaneModelConfigs(request)
-        configs = []
-        for config_proto in response.configs:
-            config = wrappers.EmaneModelConfig.from_proto(config_proto)
-            configs.append(config)
-        return configs
 
     def save_xml(self, session_id: int, file_path: str) -> None:
         """
