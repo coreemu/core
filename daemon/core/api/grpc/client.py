@@ -53,7 +53,6 @@ from core.api.grpc.services_pb2 import (
     ServiceActionRequest,
     ServiceDefaults,
     SetNodeServiceFileRequest,
-    SetNodeServiceRequest,
     SetServiceDefaultsRequest,
 )
 from core.api.grpc.wlan_pb2 import (
@@ -905,23 +904,6 @@ class CoreGrpcClient:
         )
         response = self.stub.GetNodeServiceFile(request)
         return response.data
-
-    def set_node_service(
-        self, session_id: int, service_config: wrappers.ServiceConfig
-    ) -> bool:
-        """
-        Set service data for a node.
-
-        :param session_id: session id
-        :param service_config: service configuration for a node
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = SetNodeServiceRequest(
-            session_id=session_id, config=service_config.to_proto()
-        )
-        response = self.stub.SetNodeService(request)
-        return response.result
 
     def set_node_service_file(
         self, session_id: int, service_file_config: wrappers.ServiceFileConfig

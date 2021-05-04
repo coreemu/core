@@ -79,8 +79,6 @@ service CoreApi {
     }
     rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
     }
-    rpc SetNodeService (services.SetNodeServiceRequest) returns (services.SetNodeServiceResponse) {
-    }
     rpc SetNodeServiceFile (services.SetNodeServiceFileRequest) returns (services.SetNodeServiceFileResponse) {
     }
     rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {

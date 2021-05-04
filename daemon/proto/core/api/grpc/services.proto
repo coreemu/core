@@ -112,15 +112,6 @@ message GetNodeServiceFileResponse {
     string data = 1;
 }
 
-message SetNodeServiceRequest {
-    int32 session_id = 1;
-    ServiceConfig config = 2;
-}
-
-message SetNodeServiceResponse {
-    bool result = 1;
-}
-
 message SetNodeServiceFileRequest {
     int32 session_id = 1;
     ServiceFileConfig config = 2;

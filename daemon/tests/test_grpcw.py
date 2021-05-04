@@ -27,7 +27,6 @@ from core.api.grpc.wrappers import (
     NodeType,
     Position,
     ServiceAction,
-    ServiceConfig,
     ServiceFileConfig,
     ServiceValidationMode,
     SessionLocation,
@@ -737,24 +736,6 @@ class TestGrpcw:
 
         # then
         assert data is not None
-
-    def test_set_node_service(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-        config = ServiceConfig(node.id, "DefaultRoute", validate=["echo hello"])
-
-        # then
-        with client.context_connect():
-            result = client.set_node_service(session.id, config)
-
-        # then
-        assert result is True
-        service = session.services.get_service(
-            node.id, config.service, default_service=True
-        )
-        assert service.validate == tuple(config.validate)
 
     def test_set_node_service_file(self, grpc_server: CoreGrpcServer):
         # given

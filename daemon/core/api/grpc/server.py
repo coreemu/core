@@ -80,8 +80,6 @@ from core.api.grpc.services_pb2 import (
     ServiceActionResponse,
     SetNodeServiceFileRequest,
     SetNodeServiceFileResponse,
-    SetNodeServiceRequest,
-    SetNodeServiceResponse,
     SetServiceDefaultsRequest,
     SetServiceDefaultsResponse,
 )
@@ -1053,23 +1051,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node, request.service, request.file
         )
         return GetNodeServiceFileResponse(data=file_data.data)
-
-    def SetNodeService(
-        self, request: SetNodeServiceRequest, context: ServicerContext
-    ) -> SetNodeServiceResponse:
-        """
-        Set a node service for a node
-
-        :param request: set-node-service
-            request that has info to set a node service
-        :param context: context object
-        :return: set-node-service response
-        """
-        logger.debug("set node service: %s", request)
-        session = self.get_session(request.session_id, context)
-        config = request.config
-        grpcutils.service_configuration(session, config)
-        return SetNodeServiceResponse(result=True)
 
     def SetNodeServiceFile(
         self, request: SetNodeServiceFileRequest, context: ServicerContext
