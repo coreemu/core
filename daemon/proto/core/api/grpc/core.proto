@@ -87,8 +87,6 @@ service CoreApi {
     }
     rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
     }
-    rpc GetNodeConfigServices (configservices.GetNodeConfigServicesRequest) returns (configservices.GetNodeConfigServicesResponse) {
-    }
     rpc SetNodeConfigService (configservices.SetNodeConfigServiceRequest) returns (configservices.SetNodeConfigServiceResponse) {
     }
 

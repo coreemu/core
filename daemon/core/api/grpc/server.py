@@ -28,8 +28,6 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServicesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
-    GetNodeConfigServicesRequest,
-    GetNodeConfigServicesResponse,
     SetNodeConfigServiceRequest,
     SetNodeConfigServiceResponse,
 )
@@ -1403,21 +1401,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return GetConfigServiceDefaultsResponse(
             templates=templates, config=config, modes=modes
         )
-
-    def GetNodeConfigServices(
-        self, request: GetNodeConfigServicesRequest, context: ServicerContext
-    ) -> GetNodeConfigServicesResponse:
-        """
-        Get configuration services for a given node.
-
-        :param request: get node config services request
-        :param context: grpc context
-        :return: get node config services response
-        """
-        session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, CoreNode)
-        services = node.config_services.keys()
-        return GetNodeConfigServicesResponse(services=services)
 
     def SetNodeConfigService(
         self, request: SetNodeConfigServiceRequest, context: ServicerContext

@@ -25,7 +25,6 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetConfigServicesRequest,
     GetNodeConfigServiceRequest,
-    GetNodeConfigServicesRequest,
     SetNodeConfigServiceRequest,
 )
 from core.api.grpc.core_pb2 import ExecuteScriptRequest
@@ -1130,19 +1129,6 @@ class CoreGrpcClient:
         )
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
-
-    def get_node_config_services(self, session_id: int, node_id: int) -> List[str]:
-        """
-        Retrieves the config services currently assigned to a node.
-
-        :param session_id: session node belongs to
-        :param node_id: id of node to get config services for
-        :return: list of config services
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = GetNodeConfigServicesRequest(session_id=session_id, node_id=node_id)
-        response = self.stub.GetNodeConfigServices(request)
-        return list(response.services)
 
     def set_node_config_service(
         self, session_id: int, node_id: int, name: str, config: Dict[str, str]

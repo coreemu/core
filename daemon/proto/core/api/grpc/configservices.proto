@@ -67,15 +67,6 @@ message GetNodeConfigServiceResponse {
     map<string, string> config = 1;
 }
 
-message GetNodeConfigServicesRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-}
-
-message GetNodeConfigServicesResponse {
-    repeated string services = 1;
-}
-
 message SetNodeConfigServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
