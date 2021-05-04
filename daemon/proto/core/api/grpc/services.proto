@@ -91,14 +91,6 @@ message SetServiceDefaultsResponse {
     bool result = 1;
 }
 
-message GetNodeServiceConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetNodeServiceConfigsResponse {
-    repeated NodeServiceConfig configs = 1;
-}
-
 message GetNodeServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;

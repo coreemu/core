@@ -46,7 +46,6 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigRequest,
 )
 from core.api.grpc.services_pb2 import (
-    GetNodeServiceConfigsRequest,
     GetNodeServiceFileRequest,
     GetNodeServiceRequest,
     GetServiceDefaultsRequest,
@@ -869,24 +868,6 @@ class CoreGrpcClient:
         request = SetServiceDefaultsRequest(session_id=session_id, defaults=defaults)
         response = self.stub.SetServiceDefaults(request)
         return response.result
-
-    def get_node_service_configs(
-        self, session_id: int
-    ) -> List[wrappers.NodeServiceConfig]:
-        """
-        Get service data for a node.
-
-        :param session_id: session id
-        :return: list of node service data
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetNodeServiceConfigsRequest(session_id=session_id)
-        response = self.stub.GetNodeServiceConfigs(request)
-        node_services = []
-        for config in response.configs:
-            node_service = wrappers.NodeServiceConfig.from_proto(config)
-            node_services.append(node_service)
-        return node_services
 
     def get_node_service(
         self, session_id: int, node_id: int, service: str

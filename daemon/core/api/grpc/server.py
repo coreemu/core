@@ -66,8 +66,6 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigResponse,
 )
 from core.api.grpc.services_pb2 import (
-    GetNodeServiceConfigsRequest,
-    GetNodeServiceConfigsResponse,
     GetNodeServiceFileRequest,
     GetNodeServiceFileResponse,
     GetNodeServiceRequest,
@@ -1017,22 +1015,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 service_defaults.node_type
             ] = service_defaults.services
         return SetServiceDefaultsResponse(result=True)
-
-    def GetNodeServiceConfigs(
-        self, request: GetNodeServiceConfigsRequest, context: ServicerContext
-    ) -> GetNodeServiceConfigsResponse:
-        """
-        Retrieve all node service configurations.
-
-        :param request:
-            get-node-service request
-        :param context: context object
-        :return: all node service configs response
-        """
-        logger.debug("get node service configs: %s", request)
-        session = self.get_session(request.session_id, context)
-        configs = grpcutils.get_node_service_configs(session)
-        return GetNodeServiceConfigsResponse(configs=configs)
 
     def GetNodeService(
         self, request: GetNodeServiceRequest, context: ServicerContext

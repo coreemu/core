@@ -75,8 +75,6 @@ service CoreApi {
     // service rpc
     rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
     }
-    rpc GetNodeServiceConfigs (services.GetNodeServiceConfigsRequest) returns (services.GetNodeServiceConfigsResponse) {
-    }
     rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
     }
     rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
