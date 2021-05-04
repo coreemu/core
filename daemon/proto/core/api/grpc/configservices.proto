@@ -39,14 +39,6 @@ message ConfigMode {
     map<string, string> config = 2;
 }
 
-message GetConfigServicesRequest {
-    int32 session_id = 1;
-}
-
-message GetConfigServicesResponse {
-    repeated ConfigService services = 1;
-}
-
 message GetConfigServiceDefaultsRequest {
     string name = 1;
 }

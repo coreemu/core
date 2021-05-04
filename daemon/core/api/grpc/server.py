@@ -24,8 +24,6 @@ from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServiceDefaultsRequest,
     GetConfigServiceDefaultsResponse,
-    GetConfigServicesRequest,
-    GetConfigServicesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
 )
@@ -66,8 +64,6 @@ from core.api.grpc.services_pb2 import (
     GetNodeServiceResponse,
     GetServiceDefaultsRequest,
     GetServiceDefaultsResponse,
-    GetServicesRequest,
-    GetServicesResponse,
     Service,
     ServiceAction,
     ServiceActionRequest,
@@ -189,6 +185,35 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if not service:
             context.abort(grpc.StatusCode.NOT_FOUND, f"unknown service {name}")
         return service
+
+    def GetConfig(
+        self, request: core_pb2.GetConfigRequest, context: ServicerContext
+    ) -> core_pb2.GetConfigResponse:
+        services = []
+        for name in ServiceManager.services:
+            service = ServiceManager.services[name]
+            service_proto = Service(group=service.group, name=service.name)
+            services.append(service_proto)
+        config_services = []
+        for service in self.coreemu.service_manager.services.values():
+            service_proto = ConfigService(
+                name=service.name,
+                group=service.group,
+                executables=service.executables,
+                dependencies=service.dependencies,
+                directories=service.directories,
+                files=service.files,
+                startup=service.startup,
+                validate=service.validate,
+                shutdown=service.shutdown,
+                validation_mode=service.validation_mode.value,
+                validation_timer=service.validation_timer,
+                validation_period=service.validation_period,
+            )
+            config_services.append(service_proto)
+        return core_pb2.GetConfigResponse(
+            services=services, config_services=config_services
+        )
 
     def StartSession(
         self, request: core_pb2.StartSessionRequest, context: ServicerContext
@@ -954,24 +979,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = False
         return MobilityActionResponse(result=result)
 
-    def GetServices(
-        self, request: GetServicesRequest, context: ServicerContext
-    ) -> GetServicesResponse:
-        """
-        Retrieve all the services that are running
-
-        :param request: get-service request
-        :param context: context object
-        :return: get-services response
-        """
-        logger.debug("get services: %s", request)
-        services = []
-        for name in ServiceManager.services:
-            service = ServiceManager.services[name]
-            service_proto = Service(group=service.group, name=service.name)
-            services.append(service_proto)
-        return GetServicesResponse(services=services)
-
     def GetServiceDefaults(
         self, request: GetServiceDefaultsRequest, context: ServicerContext
     ) -> GetServiceDefaultsResponse:
@@ -1317,35 +1324,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return EmaneLinkResponse(result=True)
         else:
             return EmaneLinkResponse(result=False)
-
-    def GetConfigServices(
-        self, request: GetConfigServicesRequest, context: ServicerContext
-    ) -> GetConfigServicesResponse:
-        """
-        Gets all currently known configuration services.
-
-        :param request: get config services request
-        :param context: grpc context
-        :return: get config services response
-        """
-        services = []
-        for service in self.coreemu.service_manager.services.values():
-            service_proto = ConfigService(
-                name=service.name,
-                group=service.group,
-                executables=service.executables,
-                dependencies=service.dependencies,
-                directories=service.directories,
-                files=service.files,
-                startup=service.startup,
-                validate=service.validate,
-                shutdown=service.shutdown,
-                validation_mode=service.validation_mode.value,
-                validation_timer=service.validation_timer,
-                validation_period=service.validation_period,
-            )
-            services.append(service_proto)
-        return GetConfigServicesResponse(services=services)
 
     def GetNodeConfigService(
         self, request: GetNodeConfigServiceRequest, context: ServicerContext

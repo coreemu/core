@@ -23,10 +23,9 @@ from core.api.grpc import (
 )
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
-    GetConfigServicesRequest,
     GetNodeConfigServiceRequest,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptRequest
+from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     GetEmaneConfigRequest,
@@ -46,7 +45,6 @@ from core.api.grpc.services_pb2 import (
     GetNodeServiceFileRequest,
     GetNodeServiceRequest,
     GetServiceDefaultsRequest,
-    GetServicesRequest,
     ServiceActionRequest,
     ServiceDefaults,
     SetServiceDefaultsRequest,
@@ -814,19 +812,15 @@ class CoreGrpcClient:
         response = self.stub.MobilityAction(request)
         return response.result
 
-    def get_services(self) -> List[wrappers.Service]:
+    def get_config(self) -> wrappers.CoreConfig:
         """
-        Get all currently loaded services.
+        Retrieve the current core configuration values.
 
-        :return: list of services, name and groups only
+        :return: core configuration
         """
-        request = GetServicesRequest()
-        response = self.stub.GetServices(request)
-        services = []
-        for service_proto in response.services:
-            service = wrappers.Service.from_proto(service_proto)
-            services.append(service)
-        return services
+        request = GetConfigRequest()
+        response = self.stub.GetConfig(request)
+        return wrappers.CoreConfig.from_proto(response)
 
     def get_service_defaults(self, session_id: int) -> List[wrappers.ServiceDefault]:
         """
@@ -1085,20 +1079,6 @@ class CoreGrpcClient:
         request = core_pb2.GetInterfacesRequest()
         response = self.stub.GetInterfaces(request)
         return list(response.ifaces)
-
-    def get_config_services(self) -> List[wrappers.ConfigService]:
-        """
-        Retrieve all known config services.
-
-        :return: list of config services
-        """
-        request = GetConfigServicesRequest()
-        response = self.stub.GetConfigServices(request)
-        services = []
-        for service_proto in response.services:
-            service = wrappers.ConfigService.from_proto(service_proto)
-            services.append(service)
-        return services
 
     def get_config_service_defaults(self, name: str) -> wrappers.ConfigServiceDefaults:
         """

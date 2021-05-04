@@ -73,6 +73,8 @@ service CoreApi {
     }
 
     // service rpc
+    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
+    }
     rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
     }
     rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
@@ -127,15 +129,21 @@ service CoreApi {
     // globals
     rpc GetEmaneModels (emane.GetEmaneModelsRequest) returns (emane.GetEmaneModelsResponse) {
     }
-    rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
-    }
-    rpc GetServices (services.GetServicesRequest) returns (services.GetServicesResponse) {
-    }
-    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
+    rpc GetConfig (GetConfigRequest) returns (GetConfigResponse) {
     }
 }
 
 // rpc request/response messages
+message GetConfigRequest {
+}
+
+message GetConfigResponse {
+    repeated services.Service services = 1;
+    repeated configservices.ConfigService config_services = 2;
+    repeated string emane_models = 3;
+}
+
+
 message StartSessionRequest {
     int32 session_id = 1;
     repeated Node nodes = 2;

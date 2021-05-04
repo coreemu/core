@@ -670,17 +670,6 @@ class TestGrpcw:
         # then
         assert result is True
 
-    def test_get_services(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-
-        # then
-        with client.context_connect():
-            services = client.get_services()
-
-        # then
-        assert len(services) > 0
-
     def test_get_service_defaults(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()

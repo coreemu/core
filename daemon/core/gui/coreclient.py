@@ -389,12 +389,12 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            # get all available services
-            for service in self.client.get_services():
+            # get current core configurations services/config services
+            core_config = self.client.get_config()
+            for service in core_config.services:
                 group_services = self.services.setdefault(service.group, set())
                 group_services.add(service.name)
-            # get config service informations
-            for service in self.client.get_config_services():
+            for service in core_config.config_services:
                 self.config_services[service.name] = service
                 group_services = self.config_services_groups.setdefault(
                     service.group, set()

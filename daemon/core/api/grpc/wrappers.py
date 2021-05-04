@@ -175,7 +175,7 @@ class ConfigServiceDefaults:
 
     @classmethod
     def from_proto(
-        cls, proto: configservices_pb2.GetConfigServicesResponse
+        cls, proto: configservices_pb2.GetConfigServiceDefaultsResponse
     ) -> "ConfigServiceDefaults":
         config = ConfigOption.from_dict(proto.config)
         modes = {x.name: dict(x.config) for x in proto.modes}
@@ -884,6 +884,18 @@ class Session:
         for key, value in config.items():
             option = ConfigOption(name=key, value=value)
             self.options[key] = option
+
+
+@dataclass
+class CoreConfig:
+    services: List[Service] = field(default_factory=list)
+    config_services: List[ConfigService] = field(default_factory=list)
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.GetConfigResponse) -> "CoreConfig":
+        services = [Service.from_proto(x) for x in proto.services]
+        config_services = [ConfigService.from_proto(x) for x in proto.config_services]
+        return CoreConfig(services=services, config_services=config_services)
 
 
 @dataclass

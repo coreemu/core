@@ -66,14 +66,6 @@ message NodeServiceConfig {
     map<string, string> files = 4;
 }
 
-message GetServicesRequest {
-
-}
-
-message GetServicesResponse {
-    repeated Service services = 1;
-}
-
 message GetServiceDefaultsRequest {
     int32 session_id = 1;
 }
