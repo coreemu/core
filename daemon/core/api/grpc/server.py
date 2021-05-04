@@ -28,8 +28,6 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServicesResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
-    SetNodeConfigServiceRequest,
-    SetNodeConfigServiceResponse,
 )
 from core.api.grpc.core_pb2 import ExecuteScriptResponse
 from core.api.grpc.emane_pb2 import (
@@ -1401,29 +1399,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return GetConfigServiceDefaultsResponse(
             templates=templates, config=config, modes=modes
         )
-
-    def SetNodeConfigService(
-        self, request: SetNodeConfigServiceRequest, context: ServicerContext
-    ) -> SetNodeConfigServiceResponse:
-        """
-        Set custom config, for a given configuration service, for a given node.
-
-        :param request: set node config service request
-        :param context: grpc context
-        :return: set node config service response
-        """
-        session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, CoreNode)
-        self.validate_service(request.name, context)
-        service = node.config_services.get(request.name)
-        if service:
-            service.set_config(request.config)
-            return SetNodeConfigServiceResponse(result=True)
-        else:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND,
-                f"node {node.name} missing service {request.name}",
-            )
 
     def GetEmaneEventChannel(
         self, request: GetEmaneEventChannelRequest, context: ServicerContext

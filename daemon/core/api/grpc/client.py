@@ -25,7 +25,6 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetConfigServicesRequest,
     GetNodeConfigServiceRequest,
-    SetNodeConfigServiceRequest,
 )
 from core.api.grpc.core_pb2 import ExecuteScriptRequest
 from core.api.grpc.emane_pb2 import (
@@ -1129,25 +1128,6 @@ class CoreGrpcClient:
         )
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
-
-    def set_node_config_service(
-        self, session_id: int, node_id: int, name: str, config: Dict[str, str]
-    ) -> bool:
-        """
-        Assigns a config service to a node with the provided configuration.
-
-        :param session_id: session node belongs to
-        :param node_id: id of node to assign config service to
-        :param name: name of service
-        :param config: service configuration
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = SetNodeConfigServiceRequest(
-            session_id=session_id, node_id=node_id, name=name, config=config
-        )
-        response = self.stub.SetNodeConfigService(request)
-        return response.result
 
     def get_emane_event_channel(self, session_id: int) -> wrappers.EmaneEventChannel:
         """

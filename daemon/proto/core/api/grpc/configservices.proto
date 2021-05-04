@@ -66,14 +66,3 @@ message GetNodeConfigServiceRequest {
 message GetNodeConfigServiceResponse {
     map<string, string> config = 1;
 }
-
-message SetNodeConfigServiceRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string name = 3;
-    map<string, string> config = 4;
-}
-
-message SetNodeConfigServiceResponse {
-    bool result = 1;
-}
