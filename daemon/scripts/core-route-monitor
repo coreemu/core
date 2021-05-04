@@ -15,7 +15,7 @@ from typing import Dict, Tuple
 import grpc
 
 from core import utils
-from core.api.grpc.clientw import CoreGrpcClient
+from core.api.grpc.client import CoreGrpcClient
 from core.api.grpc.wrappers import NodeType
 
 SDT_HOST = "127.0.0.1"

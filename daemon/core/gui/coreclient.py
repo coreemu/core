@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List, Optional, Set, Tuple
 
 import grpc
 
-from core.api.grpc import clientw, configservices_pb2, core_pb2
+from core.api.grpc import client, configservices_pb2, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
@@ -66,7 +66,7 @@ class CoreClient:
         """
         self.app: "Application" = app
         self.master: tk.Tk = app.master
-        self._client: clientw.CoreGrpcClient = clientw.CoreGrpcClient(proxy=proxy)
+        self._client: client.CoreGrpcClient = client.CoreGrpcClient(proxy=proxy)
         self.session: Optional[Session] = None
         self.user = getpass.getuser()
 
@@ -95,7 +95,7 @@ class CoreClient:
         self.handling_events: Optional[grpc.Future] = None
 
     @property
-    def client(self) -> clientw.CoreGrpcClient:
+    def client(self) -> client.CoreGrpcClient:
         if self.session:
             if not self._client.check_session(self.session.id):
                 throughputs_enabled = self.handling_throughputs is not None

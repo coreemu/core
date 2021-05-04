@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from core.api.grpc import clientw
+from core.api.grpc import client
 from core.api.grpc.wrappers import NodeType, Position
 
 
@@ -11,10 +11,10 @@ def log_event(event):
 
 def main(args):
     # helper to create interfaces
-    interface_helper = clientw.InterfaceHelper(ip4_prefix="10.83.0.0/16")
+    interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
     # create grpc client and connect
-    core = clientw.CoreGrpcClient()
+    core = client.CoreGrpcClient()
     core.connect()
 
     # create session

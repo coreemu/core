@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from core import utils
-from core.api.grpc.clientw import CoreGrpcClient
+from core.api.grpc.client import CoreGrpcClient
 from core.errors import CoreCommandError
 
 if __name__ == "__main__":

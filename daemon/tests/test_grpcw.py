@@ -9,7 +9,7 @@ import pytest
 from mock import patch
 
 from core.api.grpc import core_pb2
-from core.api.grpc.clientw import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer
+from core.api.grpc.client import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer
 from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
     ConfigOption,

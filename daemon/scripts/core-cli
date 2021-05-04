@@ -15,7 +15,7 @@ import grpc
 import netaddr
 from netaddr import EUI, AddrFormatError, IPNetwork
 
-from core.api.grpc.clientw import CoreGrpcClient
+from core.api.grpc.client import CoreGrpcClient
 from core.api.grpc.wrappers import (
     Geo,
     Interface,
