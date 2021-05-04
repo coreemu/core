@@ -41,7 +41,6 @@ from core.api.grpc.emane_pb2 import (
 )
 from core.api.grpc.mobility_pb2 import (
     GetMobilityConfigRequest,
-    GetMobilityConfigsRequest,
     MobilityActionRequest,
     MobilityConfig,
     SetMobilityConfigRequest,
@@ -768,23 +767,6 @@ class CoreGrpcClient:
         )
         response = self.stub.DeleteLink(request)
         return response.result
-
-    def get_mobility_configs(
-        self, session_id: int
-    ) -> Dict[int, Dict[str, wrappers.ConfigOption]]:
-        """
-        Get all mobility configurations.
-
-        :param session_id: session id
-        :return: dict of node id to mobility configuration dict
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetMobilityConfigsRequest(session_id=session_id)
-        response = self.stub.GetMobilityConfigs(request)
-        configs = {}
-        for node_id, mapped_config in response.configs.items():
-            configs[node_id] = wrappers.ConfigOption.from_dict(mapped_config.config)
-        return configs
 
     def get_mobility_config(
         self, session_id: int, node_id: int

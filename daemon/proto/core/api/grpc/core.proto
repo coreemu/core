@@ -65,8 +65,6 @@ service CoreApi {
     }
 
     // mobility rpc
-    rpc GetMobilityConfigs (mobility.GetMobilityConfigsRequest) returns (mobility.GetMobilityConfigsResponse) {
-    }
     rpc GetMobilityConfig (mobility.GetMobilityConfigRequest) returns (mobility.GetMobilityConfigResponse) {
     }
     rpc SetMobilityConfig (mobility.SetMobilityConfigRequest) returns (mobility.SetMobilityConfigResponse) {
@@ -75,10 +73,6 @@ service CoreApi {
     }
 
     // service rpc
-    rpc GetServices (services.GetServicesRequest) returns (services.GetServicesResponse) {
-    }
-    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
-    }
     rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
     }
     rpc GetNodeServiceConfigs (services.GetNodeServiceConfigsRequest) returns (services.GetNodeServiceConfigsResponse) {
@@ -95,10 +89,6 @@ service CoreApi {
     }
 
     // config services
-    rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
-    }
-    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
-    }
     rpc GetNodeConfigServiceConfigs (configservices.GetNodeConfigServiceConfigsRequest) returns (configservices.GetNodeConfigServiceConfigsResponse) {
     }
     rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
@@ -121,8 +111,6 @@ service CoreApi {
     }
     rpc SetEmaneConfig (emane.SetEmaneConfigRequest) returns (emane.SetEmaneConfigResponse) {
     }
-    rpc GetEmaneModels (emane.GetEmaneModelsRequest) returns (emane.GetEmaneModelsResponse) {
-    }
     rpc GetEmaneModelConfig (emane.GetEmaneModelConfigRequest) returns (emane.GetEmaneModelConfigResponse) {
     }
     rpc SetEmaneModelConfig (emane.SetEmaneModelConfigRequest) returns (emane.SetEmaneModelConfigResponse) {
@@ -130,6 +118,8 @@ service CoreApi {
     rpc GetEmaneEventChannel (emane.GetEmaneEventChannelRequest) returns (emane.GetEmaneEventChannelResponse) {
     }
     rpc EmanePathlosses (stream emane.EmanePathlossesRequest) returns (emane.EmanePathlossesResponse) {
+    }
+    rpc EmaneLink (emane.EmaneLinkRequest) returns (emane.EmaneLinkResponse) {
     }
 
     // xml rpc
@@ -141,9 +131,19 @@ service CoreApi {
     // utilities
     rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesResponse) {
     }
-    rpc EmaneLink (emane.EmaneLinkRequest) returns (emane.EmaneLinkResponse) {
-    }
     rpc ExecuteScript (ExecuteScriptRequest) returns (ExecuteScriptResponse) {
+    }
+
+    // globals
+    rpc GetEmaneModels (emane.GetEmaneModelsRequest) returns (emane.GetEmaneModelsResponse) {
+    }
+    rpc GetConfigServices (configservices.GetConfigServicesRequest) returns (configservices.GetConfigServicesResponse) {
+    }
+    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
+    }
+    rpc GetServices (services.GetServicesRequest) returns (services.GetServicesResponse) {
+    }
+    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
     }
 }
 

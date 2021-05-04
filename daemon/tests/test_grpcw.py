@@ -624,23 +624,6 @@ class TestGrpcw:
         # then
         assert len(models) > 0
 
-    def test_get_mobility_configs(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        wlan = session.add_node(WlanNode)
-        session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
-
-        # then
-        with client.context_connect():
-            configs = client.get_mobility_configs(session.id)
-
-        # then
-        assert len(configs) > 0
-        assert wlan.id in configs
-        config = configs[wlan.id]
-        assert len(config) > 0
-
     def test_get_mobility_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()

@@ -59,8 +59,6 @@ from core.api.grpc.grpcutils import get_config_options, get_links, get_net_stats
 from core.api.grpc.mobility_pb2 import (
     GetMobilityConfigRequest,
     GetMobilityConfigResponse,
-    GetMobilityConfigsRequest,
-    GetMobilityConfigsResponse,
     MobilityAction,
     MobilityActionRequest,
     MobilityActionResponse,
@@ -900,22 +898,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         session.broadcast_link(link_data)
         return core_pb2.DeleteLinkResponse(result=True)
-
-    def GetMobilityConfigs(
-        self, request: GetMobilityConfigsRequest, context: ServicerContext
-    ) -> GetMobilityConfigsResponse:
-        """
-        Retrieve all mobility configurations from a session
-
-        :param request:
-            get-mobility-configurations request
-        :param context: context object
-        :return: get-mobility-configurations response that has a list of configurations
-        """
-        logger.debug("get mobility configs: %s", request)
-        session = self.get_session(request.session_id, context)
-        configs = grpcutils.get_mobility_configs(session)
-        return GetMobilityConfigsResponse(configs=configs)
 
     def GetMobilityConfig(
         self, request: GetMobilityConfigRequest, context: ServicerContext
