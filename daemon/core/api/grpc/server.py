@@ -94,8 +94,6 @@ from core.api.grpc.services_pb2 import (
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
     GetWlanConfigResponse,
-    GetWlanConfigsRequest,
-    GetWlanConfigsResponse,
     SetWlanConfigRequest,
     SetWlanConfigResponse,
     WlanLinkRequest,
@@ -1170,21 +1168,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = True
 
         return ServiceActionResponse(result=result)
-
-    def GetWlanConfigs(
-        self, request: GetWlanConfigsRequest, context: ServicerContext
-    ) -> GetWlanConfigsResponse:
-        """
-        Retrieve all wireless-lan configurations.
-
-        :param request: request
-        :param context: core.api.grpc.core_pb2.GetWlanConfigResponse
-        :return: all wlan configurations
-        """
-        logger.debug("get wlan configs: %s", request)
-        session = self.get_session(request.session_id, context)
-        configs = grpcutils.get_wlan_configs(session)
-        return GetWlanConfigsResponse(configs=configs)
 
     def GetWlanConfig(
         self, request: GetWlanConfigRequest, context: ServicerContext

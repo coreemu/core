@@ -109,8 +109,6 @@ service CoreApi {
     }
 
     // wlan rpc
-    rpc GetWlanConfigs (wlan.GetWlanConfigsRequest) returns (wlan.GetWlanConfigsResponse) {
-    }
     rpc GetWlanConfig (wlan.GetWlanConfigRequest) returns (wlan.GetWlanConfigResponse) {
     }
     rpc SetWlanConfig (wlan.SetWlanConfigRequest) returns (wlan.SetWlanConfigResponse) {

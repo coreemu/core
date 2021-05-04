@@ -9,14 +9,6 @@ message WlanConfig {
     map<string, string> config = 2;
 }
 
-message GetWlanConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetWlanConfigsResponse {
-    map<int32, common.MappedConfig> configs = 1;
-}
-
 message GetWlanConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;

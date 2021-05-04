@@ -61,7 +61,6 @@ from core.api.grpc.services_pb2 import (
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
-    GetWlanConfigsRequest,
     SetWlanConfigRequest,
     WlanConfig,
     WlanLinkRequest,
@@ -1001,23 +1000,6 @@ class CoreGrpcClient:
         )
         response = self.stub.ServiceAction(request)
         return response.result
-
-    def get_wlan_configs(
-        self, session_id: int
-    ) -> Dict[int, Dict[str, wrappers.ConfigOption]]:
-        """
-        Get all wlan configurations.
-
-        :param session_id: session id
-        :return: dict of node ids to dict of names to options
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetWlanConfigsRequest(session_id=session_id)
-        response = self.stub.GetWlanConfigs(request)
-        configs = {}
-        for node_id, mapped_config in response.configs.items():
-            configs[node_id] = wrappers.ConfigOption.from_dict(mapped_config.config)
-        return configs
 
     def get_wlan_config(
         self, session_id: int, node_id: int
