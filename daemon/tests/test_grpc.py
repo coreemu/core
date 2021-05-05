@@ -44,7 +44,7 @@ from core.nodes.network import SwitchNode, WlanNode
 from core.xml.corexml import CoreXmlWriter
 
 
-class TestGrpcw:
+class TestGrpc:
     @pytest.mark.parametrize("definition", [False, True])
     def test_start_session(self, grpc_server: CoreGrpcServer, definition):
         # given
