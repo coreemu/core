@@ -91,7 +91,7 @@ from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import CtrlNet, PtpNet, WlanNode
+from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
@@ -359,9 +359,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.set_state(EventTypes.DEFINITION_STATE)
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150.0
-        return core_pb2.CreateSessionResponse(
-            session_id=session.id, state=session.state.value
-        )
+        session_proto = grpcutils.convert_session(session)
+        return core_pb2.CreateSessionResponse(session=session_proto)
 
     def DeleteSession(
         self, request: core_pb2.DeleteSessionRequest, context: ServicerContext
@@ -427,57 +426,58 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("get session: %s", request)
         session = self.get_session(request.session_id, context)
-        links = []
-        nodes = []
-        for _id in session.nodes:
-            node = session.nodes[_id]
-            if not isinstance(node, (PtpNet, CtrlNet)):
-                node_proto = grpcutils.get_node_proto(session, node)
-                nodes.append(node_proto)
-            node_links = get_links(node)
-            links.extend(node_links)
-        default_services = grpcutils.get_default_services(session)
-        x, y, z = session.location.refxyz
-        lat, lon, alt = session.location.refgeo
-        location = core_pb2.SessionLocation(
-            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
-        )
-        hooks = grpcutils.get_hooks(session)
-        emane_models = grpcutils.get_emane_models(session)
-        emane_config = grpcutils.get_emane_config(session)
-        emane_model_configs = grpcutils.get_emane_model_configs(session)
-        wlan_configs = grpcutils.get_wlan_configs(session)
-        mobility_configs = grpcutils.get_mobility_configs(session)
-        service_configs = grpcutils.get_node_service_configs(session)
-        config_service_configs = grpcutils.get_node_config_service_configs(session)
-        session_file = str(session.file_path) if session.file_path else None
-        options = get_config_options(session.options.get_configs(), session.options)
-        servers = [
-            core_pb2.Server(name=x.name, host=x.host)
-            for x in session.distributed.servers.values()
-        ]
-        session_proto = core_pb2.Session(
-            id=session.id,
-            state=session.state.value,
-            nodes=nodes,
-            links=links,
-            dir=str(session.directory),
-            user=session.user,
-            default_services=default_services,
-            location=location,
-            hooks=hooks,
-            emane_models=emane_models,
-            emane_config=emane_config,
-            emane_model_configs=emane_model_configs,
-            wlan_configs=wlan_configs,
-            service_configs=service_configs,
-            config_service_configs=config_service_configs,
-            mobility_configs=mobility_configs,
-            metadata=session.metadata,
-            file=session_file,
-            options=options,
-            servers=servers,
-        )
+        # links = []
+        # nodes = []
+        # for _id in session.nodes:
+        #     node = session.nodes[_id]
+        #     if not isinstance(node, (PtpNet, CtrlNet)):
+        #         node_proto = grpcutils.get_node_proto(session, node)
+        #         nodes.append(node_proto)
+        #     node_links = get_links(node)
+        #     links.extend(node_links)
+        # default_services = grpcutils.get_default_services(session)
+        # x, y, z = session.location.refxyz
+        # lat, lon, alt = session.location.refgeo
+        # location = core_pb2.SessionLocation(
+        #     x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
+        # )
+        # hooks = grpcutils.get_hooks(session)
+        # emane_models = grpcutils.get_emane_models(session)
+        # emane_config = grpcutils.get_emane_config(session)
+        # emane_model_configs = grpcutils.get_emane_model_configs(session)
+        # wlan_configs = grpcutils.get_wlan_configs(session)
+        # mobility_configs = grpcutils.get_mobility_configs(session)
+        # service_configs = grpcutils.get_node_service_configs(session)
+        # config_service_configs = grpcutils.get_node_config_service_configs(session)
+        # session_file = str(session.file_path) if session.file_path else None
+        # options = get_config_options(session.options.get_configs(), session.options)
+        # servers = [
+        #     core_pb2.Server(name=x.name, host=x.host)
+        #     for x in session.distributed.servers.values()
+        # ]
+        # session_proto = core_pb2.Session(
+        #     id=session.id,
+        #     state=session.state.value,
+        #     nodes=nodes,
+        #     links=links,
+        #     dir=str(session.directory),
+        #     user=session.user,
+        #     default_services=default_services,
+        #     location=location,
+        #     hooks=hooks,
+        #     emane_models=emane_models,
+        #     emane_config=emane_config,
+        #     emane_model_configs=emane_model_configs,
+        #     wlan_configs=wlan_configs,
+        #     service_configs=service_configs,
+        #     config_service_configs=config_service_configs,
+        #     mobility_configs=mobility_configs,
+        #     metadata=session.metadata,
+        #     file=session_file,
+        #     options=options,
+        #     servers=servers,
+        # )
+        session_proto = grpcutils.convert_session(session)
         return core_pb2.GetSessionResponse(session=session_proto)
 
     def SessionAlert(

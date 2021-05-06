@@ -9,7 +9,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=200, y=200)

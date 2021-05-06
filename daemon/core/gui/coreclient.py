@@ -357,9 +357,9 @@ class CoreClient:
         Create a new session
         """
         try:
-            session_id = self.client.create_session()
-            logger.info("created session: %s", session_id)
-            self.join_session(session_id)
+            session = self.client.create_session()
+            logger.info("created session: %s", session.id)
+            self.join_session(session.id)
             location_config = self.app.guiconfig.location
             self.session.location = SessionLocation(
                 x=location_config.x,

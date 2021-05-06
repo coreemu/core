@@ -109,7 +109,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # provide no events to listen to all events
 core.events(session.id, event_listener)
@@ -141,7 +141,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=100, y=100)
@@ -180,7 +180,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=100, y=100)
@@ -211,7 +211,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=200, y=200)
@@ -245,7 +245,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=200, y=200)
@@ -310,7 +310,7 @@ core = client.CoreGrpcClient()
 core.connect()
 
 # add session
-session = core.add_session()
+session = core.create_session()
 
 # create nodes
 position = Position(x=200, y=200)

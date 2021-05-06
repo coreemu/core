@@ -179,8 +179,7 @@ message CreateSessionRequest {
 }
 
 message CreateSessionResponse {
-    int32 session_id = 1;
-    SessionState.Enum state = 2;
+    Session session = 1;
 }
 
 message DeleteSessionRequest {

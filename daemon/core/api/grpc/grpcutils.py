@@ -7,7 +7,7 @@ import grpc
 from grpc import ServicerContext
 
 from core import utils
-from core.api.grpc import common_pb2, core_pb2
+from core.api.grpc import common_pb2, core_pb2, wrappers
 from core.api.grpc.common_pb2 import MappedConfig
 from core.api.grpc.configservices_pb2 import ConfigServiceConfig
 from core.api.grpc.emane_pb2 import GetEmaneModelConfig
@@ -28,7 +28,7 @@ from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
-from core.nodes.network import WlanNode
+from core.nodes.network import CtrlNet, PtpNet, WlanNode
 from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
@@ -657,3 +657,57 @@ def get_mobility_node(
             return session.get_node(node_id, EmaneNet)
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, "node id is not for wlan or emane")
+
+
+def convert_session(session: Session) -> wrappers.Session:
+    links = []
+    nodes = []
+    for _id in session.nodes:
+        node = session.nodes[_id]
+        if not isinstance(node, (PtpNet, CtrlNet)):
+            node_proto = get_node_proto(session, node)
+            nodes.append(node_proto)
+        node_links = get_links(node)
+        links.extend(node_links)
+    default_services = get_default_services(session)
+    x, y, z = session.location.refxyz
+    lat, lon, alt = session.location.refgeo
+    location = core_pb2.SessionLocation(
+        x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
+    )
+    hooks = get_hooks(session)
+    emane_models = get_emane_models(session)
+    emane_config = get_emane_config(session)
+    emane_model_configs = get_emane_model_configs(session)
+    wlan_configs = get_wlan_configs(session)
+    mobility_configs = get_mobility_configs(session)
+    service_configs = get_node_service_configs(session)
+    config_service_configs = get_node_config_service_configs(session)
+    session_file = str(session.file_path) if session.file_path else None
+    options = get_config_options(session.options.get_configs(), session.options)
+    servers = [
+        core_pb2.Server(name=x.name, host=x.host)
+        for x in session.distributed.servers.values()
+    ]
+    return core_pb2.Session(
+        id=session.id,
+        state=session.state.value,
+        nodes=nodes,
+        links=links,
+        dir=str(session.directory),
+        user=session.user,
+        default_services=default_services,
+        location=location,
+        hooks=hooks,
+        emane_models=emane_models,
+        emane_config=emane_config,
+        emane_model_configs=emane_model_configs,
+        wlan_configs=wlan_configs,
+        service_configs=service_configs,
+        config_service_configs=config_service_configs,
+        mobility_configs=mobility_configs,
+        metadata=session.metadata,
+        file=session_file,
+        options=options,
+        servers=servers,
+    )

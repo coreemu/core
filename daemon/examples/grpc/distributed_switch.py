@@ -18,7 +18,7 @@ def main(args):
     core.connect()
 
     # create session
-    session = core.add_session()
+    session = core.create_session()
 
     # add distributed server
     server = Server(name="core2", host=args.server)

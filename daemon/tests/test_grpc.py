@@ -8,7 +8,7 @@ import grpc
 import pytest
 from mock import patch
 
-from core.api.grpc import core_pb2
+from core.api.grpc import core_pb2, wrappers
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer
 from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
@@ -50,8 +50,7 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         with client.context_connect():
-            session_id = client.create_session()
-            session = client.get_session(session_id)
+            session = client.create_session()
         position = Position(x=50, y=100)
         node1 = session.add_node(1, position=position)
         position = Position(x=100, y=100)
@@ -181,14 +180,14 @@ class TestGrpc:
 
         # when
         with client.context_connect():
-            created_session_id = client.create_session(session_id)
+            created_session = client.create_session(session_id)
 
         # then
-        assert isinstance(created_session_id, int)
-        session = grpc_server.coreemu.sessions.get(created_session_id)
+        assert isinstance(created_session, wrappers.Session)
+        session = grpc_server.coreemu.sessions.get(created_session.id)
         assert session is not None
         if session_id is not None:
-            assert created_session_id == session_id
+            assert created_session.id == session_id
             assert session.id == session_id
 
     @pytest.mark.parametrize("session_id, expected", [(None, True), (6013, False)])
@@ -335,6 +334,7 @@ class TestGrpc:
         node = session.add_node(CoreNode, options=options)
         session.instantiate()
         expected_output = "hello world"
+        expected_status = 0
 
         # then
         command = f"echo {expected_output}"
@@ -342,7 +342,7 @@ class TestGrpc:
             output = client.node_command(session.id, node.id, command)
 
         # then
-        assert expected_output == output
+        assert (expected_status, expected_output) == output
 
     def test_get_node_terminal(self, grpc_server: CoreGrpcServer):
         # given

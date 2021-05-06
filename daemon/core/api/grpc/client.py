@@ -343,11 +343,7 @@ class CoreGrpcClient:
         response = self.stub.StopSession(request)
         return response.result
 
-    def add_session(self, session_id: int = None) -> wrappers.Session:
-        session_id = self.create_session(session_id)
-        return self.get_session(session_id)
-
-    def create_session(self, session_id: int = None) -> int:
+    def create_session(self, session_id: int = None) -> wrappers.Session:
         """
         Create a session.
 
@@ -357,7 +353,7 @@ class CoreGrpcClient:
         """
         request = core_pb2.CreateSessionRequest(session_id=session_id)
         response = self.stub.CreateSession(request)
-        return response.session_id
+        return wrappers.Session.from_proto(response.session)
 
     def delete_session(self, session_id: int) -> bool:
         """
