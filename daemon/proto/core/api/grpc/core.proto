@@ -27,8 +27,6 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
-    rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
-    }
     rpc SessionAlert (SessionAlertRequest) returns (SessionAlertResponse) {
     }
 
@@ -162,6 +160,7 @@ message StartSessionRequest {
     string user = 15;
     bool definition = 16;
     map<string, string> metadata = 17;
+    repeated Server servers = 18;
 }
 
 message StartSessionResponse {
@@ -223,16 +222,6 @@ message SetSessionStateRequest {
 }
 
 message SetSessionStateResponse {
-    bool result = 1;
-}
-
-message AddSessionServerRequest {
-    int32 session_id = 1;
-    string name = 2;
-    string host = 3;
-}
-
-message AddSessionServerResponse {
     bool result = 1;
 }
 
@@ -617,6 +606,7 @@ message Session {
     map<string, string> metadata = 17;
     string file = 18;
     map<string, common.ConfigOption> options = 19;
+    repeated Server servers = 20;
 }
 
 message SessionSummary {
@@ -706,4 +696,9 @@ message Geo {
     float lat = 1;
     float lon = 2;
     float alt = 3;
+}
+
+message Server {
+    string name = 1;
+    string host = 2;
 }

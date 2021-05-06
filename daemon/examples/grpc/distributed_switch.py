@@ -2,7 +2,7 @@ import argparse
 import logging
 
 from core.api.grpc import client
-from core.api.grpc.wrappers import NodeType, Position
+from core.api.grpc.wrappers import NodeType, Position, Server
 
 
 def log_event(event):
@@ -19,12 +19,10 @@ def main(args):
 
     # create session
     session = core.add_session()
-    logging.info("created session: %s", session.id)
 
     # add distributed server
-    server_name = "core2"
-    result = core.add_session_server(session.id, server_name, args.server)
-    logging.info("added session server: %s", result)
+    server = Server(name="core2", host=args.server)
+    session.servers.append(server)
 
     # handle events session may broadcast
     core.events(session.id, log_event)
@@ -35,7 +33,7 @@ def main(args):
     position = Position(x=100, y=50)
     node1 = session.add_node(2, position=position)
     position = Position(x=200, y=50)
-    node2 = session.add_node(3, position=position, server=server_name)
+    node2 = session.add_node(3, position=position, server=server.name)
 
     # create links
     iface1 = interface_helper.create_iface(node1.id, 0)

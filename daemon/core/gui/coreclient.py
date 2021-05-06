@@ -28,6 +28,7 @@ from core.api.grpc.wrappers import (
     NodeServiceData,
     NodeType,
     Position,
+    Server,
     ServiceConfig,
     ServiceFileConfig,
     Session,
@@ -433,10 +434,6 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
 
-    def send_servers(self) -> None:
-        for server in self.servers.values():
-            self.client.add_session_server(self.session.id, server.name, server.address)
-
     def get_links(self, definition: bool = False) -> Tuple[List[Link], List[Link]]:
         if not definition:
             self.ifaces_manager.set_macs([x.link for x in self.links.values()])
@@ -457,10 +454,12 @@ class CoreClient:
         links, asym_links = self.get_links(definition)
         self.session.links = links
         self.session.metadata = self.get_metadata()
+        self.session.servers.clear()
+        for server in self.servers.values():
+            self.session.servers.append(Server(name=server.name, host=server.address))
         result = False
         exceptions = []
         try:
-            self.send_servers()
             result, exceptions = self.client.start_session(
                 self.session, asym_links, definition
             )

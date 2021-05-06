@@ -244,6 +244,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session.options.set_config(key, value)
         session.metadata = dict(request.metadata)
 
+        # add servers
+        for server in request.servers:
+            session.distributed.add_server(server.name, server.host)
+
         # location
         if request.HasField("location"):
             grpcutils.session_location(session, request.location)
@@ -477,6 +481,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config_service_configs = grpcutils.get_node_config_service_configs(session)
         session_file = str(session.file_path) if session.file_path else None
         options = get_config_options(session.options.get_configs(), session.options)
+        servers = [
+            core_pb2.Server(name=x.name, host=x.host)
+            for x in session.distributed.servers.values()
+        ]
         session_proto = core_pb2.Session(
             id=session.id,
             state=session.state.value,
@@ -497,23 +505,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             metadata=session.metadata,
             file=session_file,
             options=options,
+            servers=servers,
         )
         return core_pb2.GetSessionResponse(session=session_proto)
-
-    def AddSessionServer(
-        self, request: core_pb2.AddSessionServerRequest, context: ServicerContext
-    ) -> core_pb2.AddSessionServerResponse:
-        """
-        Add distributed server to a session.
-
-        :param request: get-session
-            request
-        :param context: context object
-        :return: add session server response
-        """
-        session = self.get_session(request.session_id, context)
-        session.distributed.add_server(request.name, request.host)
-        return core_pb2.AddSessionServerResponse(result=True)
 
     def SessionAlert(
         self, request: core_pb2.SessionAlertRequest, context: ServicerContext

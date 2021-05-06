@@ -185,6 +185,19 @@ class ConfigServiceDefaults:
 
 
 @dataclass
+class Server:
+    name: str
+    host: str
+
+    @classmethod
+    def from_proto(cls, proto: core_pb2.Server) -> "Server":
+        return Server(name=proto.name, host=proto.host)
+
+    def to_proto(self) -> core_pb2.Server:
+        return core_pb2.Server(name=self.name, host=self.host)
+
+
+@dataclass
 class Service:
     group: str
     name: str
@@ -775,6 +788,7 @@ class Session:
     metadata: Dict[str, str] = field(default_factory=dict)
     file: Path = None
     options: Dict[str, ConfigOption] = field(default_factory=dict)
+    servers: List[Server] = field(default_factory=list)
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
@@ -812,6 +826,7 @@ class Session:
             node.mobility_config = ConfigOption.from_dict(mapped_config.config)
         file_path = Path(proto.file) if proto.file else None
         options = ConfigOption.from_dict(proto.options)
+        servers = [Server.from_proto(x) for x in proto.servers]
         return Session(
             id=proto.id,
             state=SessionState(proto.state),
@@ -827,6 +842,7 @@ class Session:
             metadata=dict(proto.metadata),
             file=file_path,
             options=options,
+            servers=servers,
         )
 
     def add_node(

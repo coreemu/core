@@ -307,6 +307,7 @@ class CoreGrpcClient:
                 )
                 config_service_configs.append(config_service_config)
         options = {k: v.value for k, v in session.options.items()}
+        servers = [x.to_proto() for x in session.servers]
         request = core_pb2.StartSessionRequest(
             session_id=session.id,
             nodes=nodes,
@@ -325,6 +326,7 @@ class CoreGrpcClient:
             user=session.user,
             definition=definition,
             metadata=session.metadata,
+            servers=servers,
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)
@@ -419,22 +421,6 @@ class CoreGrpcClient:
             session_id=session_id, state=state.value
         )
         response = self.stub.SetSessionState(request)
-        return response.result
-
-    def add_session_server(self, session_id: int, name: str, host: str) -> bool:
-        """
-        Add distributed session server.
-
-        :param session_id: id of session
-        :param name: name of server to add
-        :param host: host address to connect to
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.AddSessionServerRequest(
-            session_id=session_id, name=name, host=host
-        )
-        response = self.stub.AddSessionServer(request)
         return response.result
 
     def alert(
