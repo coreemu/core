@@ -50,8 +50,7 @@ class CoreEmu:
         os.umask(0)
 
         # configuration
-        if config is None:
-            config = {}
+        config = config if config else {}
         self.config: Dict[str, str] = config
 
         # session management
@@ -59,16 +58,8 @@ class CoreEmu:
 
         # load services
         self.service_errors: List[str] = []
-        self.load_services()
-
-        # config services
         self.service_manager: ConfigServiceManager = ConfigServiceManager()
-        config_services_path = Path(configservices.__file__).resolve().parent
-        self.service_manager.load(config_services_path)
-        custom_dir = self.config.get("custom_config_services_dir")
-        if custom_dir is not None:
-            custom_dir = Path(custom_dir)
-            self.service_manager.load(custom_dir)
+        self._load_services()
 
         # check executables exist on path
         self._validate_env()
@@ -87,7 +78,7 @@ class CoreEmu:
         for requirement in get_requirements(use_ovs):
             utils.which(requirement, required=True)
 
-    def load_services(self) -> None:
+    def _load_services(self) -> None:
         """
         Loads default and custom services for use within CORE.
 
@@ -103,6 +94,14 @@ class CoreEmu:
                 service_path = Path(service_path.strip())
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
+        # load default config services
+        config_services_path = Path(configservices.__file__).resolve().parent
+        self.service_manager.load(config_services_path)
+        # load custom config services
+        custom_dir = self.config.get("custom_config_services_dir")
+        if custom_dir is not None:
+            custom_dir = Path(custom_dir)
+            self.service_manager.load(custom_dir)
 
     def shutdown(self) -> None:
         """
