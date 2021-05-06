@@ -402,35 +402,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
 
-    def SetSessionState(
-        self, request: core_pb2.SetSessionStateRequest, context: ServicerContext
-    ) -> core_pb2.SetSessionStateResponse:
-        """
-        Set session state
-
-        :param request: set-session-state request
-        :param context:context object
-        :return: set-session-state response
-        """
-        logger.debug("set session state: %s", request)
-        session = self.get_session(request.session_id, context)
-        try:
-            state = EventTypes(request.state)
-            session.set_state(state)
-            if state == EventTypes.INSTANTIATION_STATE:
-                session.directory.mkdir(exist_ok=True)
-                session.instantiate()
-            elif state == EventTypes.SHUTDOWN_STATE:
-                session.shutdown()
-            elif state == EventTypes.DATACOLLECT_STATE:
-                session.data_collect()
-            elif state == EventTypes.DEFINITION_STATE:
-                session.clear()
-            result = True
-        except KeyError:
-            result = False
-        return core_pb2.SetSessionStateResponse(result=result)
-
     def CheckSession(
         self, request: core_pb2.GetSessionRequest, context: ServicerContext
     ) -> core_pb2.CheckSessionResponse:

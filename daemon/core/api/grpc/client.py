@@ -408,21 +408,6 @@ class CoreGrpcClient:
         response = self.stub.GetSession(request)
         return wrappers.Session.from_proto(response.session)
 
-    def set_session_state(self, session_id: int, state: wrappers.SessionState) -> bool:
-        """
-        Set session state.
-
-        :param session_id: id of session
-        :param state: session state to transition to
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.SetSessionStateRequest(
-            session_id=session_id, state=state.value
-        )
-        response = self.stub.SetSessionState(request)
-        return response.result
-
     def alert(
         self,
         session_id: int,

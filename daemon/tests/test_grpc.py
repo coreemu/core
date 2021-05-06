@@ -243,19 +243,6 @@ class TestGrpc:
         assert len(sessions) == 1
         assert found_session is not None
 
-    def test_set_session_state(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            result = client.set_session_state(session.id, SessionState.DEFINITION)
-
-        # then
-        assert result is True
-        assert session.state == EventTypes.DEFINITION_STATE
-
     def test_add_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()

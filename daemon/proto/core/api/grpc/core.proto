@@ -25,8 +25,6 @@ service CoreApi {
     }
     rpc CheckSession (CheckSessionRequest) returns (CheckSessionResponse) {
     }
-    rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
-    }
     rpc SessionAlert (SessionAlertRequest) returns (SessionAlertResponse) {
     }
 
@@ -214,15 +212,6 @@ message GetSessionRequest {
 
 message GetSessionResponse {
     Session session = 1;
-}
-
-message SetSessionStateRequest {
-    int32 session_id = 1;
-    SessionState.Enum state = 2;
-}
-
-message SetSessionStateResponse {
-    bool result = 1;
 }
 
 message SessionAlertRequest {
