@@ -688,8 +688,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options = NodeOptions(
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value),
+            legacy=True,
         )
-
         options.set_position(
             x=message.get_tlv(NodeTlvs.X_POSITION.value),
             y=message.get_tlv(NodeTlvs.Y_POSITION.value),

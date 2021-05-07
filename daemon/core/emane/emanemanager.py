@@ -208,7 +208,7 @@ class EmaneManager:
             self.node_models.clear()
         else:
             self.node_configs.get(node_id, {}).clear()
-            del self.node_models[node_id]
+            self.node_models.pop(node_id, None)
 
     def deleteeventservice(self) -> None:
         if self.service:

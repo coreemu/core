@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 class NodeServiceDialog(Dialog):
     def __init__(self, app: "Application", node: Node) -> None:
-        title = f"{node.name} Services"
+        title = f"{node.name} Services (Deprecated)"
         super().__init__(app, title)
         self.node: Node = node
         self.groups: Optional[ListboxScroll] = None

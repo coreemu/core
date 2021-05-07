@@ -28,7 +28,7 @@ class ServiceConfigDialog(Dialog):
     def __init__(
         self, master: tk.BaseWidget, app: "Application", service_name: str, node: Node
     ) -> None:
-        title = f"{service_name} Service"
+        title = f"{service_name} Service (Deprecated)"
         super().__init__(app, title, master=master)
         self.core: "CoreClient" = app.core
         self.node: Node = node

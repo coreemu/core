@@ -91,6 +91,7 @@ class NodeOptions:
     server: str = None
     image: str = None
     emane: str = None
+    legacy: bool = False
 
     def set_position(self, x: float, y: float) -> None:
         """

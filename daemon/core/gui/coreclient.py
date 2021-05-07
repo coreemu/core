@@ -393,7 +393,7 @@ class CoreClient:
             self.client.connect()
             # get current core configurations services/config services
             core_config = self.client.get_config()
-            self.emane_models = core_config.emane_models
+            self.emane_models = sorted(core_config.emane_models)
             for service in core_config.services:
                 group_services = self.services.setdefault(service.group, set())
                 group_services.add(service.name)
@@ -664,12 +664,12 @@ class CoreClient:
         )
         if nutils.is_custom(node):
             services = nutils.get_custom_services(self.app.guiconfig, model)
-            node.services = set(services)
+            node.config_services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
             if services:
-                node.services = services.copy()
+                node.config_services = services.copy()
         logger.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,

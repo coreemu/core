@@ -255,9 +255,11 @@ class CanvasNode:
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if nutils.is_container(self.core_node):
-                self.context.add_command(label="Services", command=self.show_services)
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
+                )
+                self.context.add_command(
+                    label="Services (Deprecated)", command=self.show_services
                 )
             if is_emane:
                 self.context.add_command(

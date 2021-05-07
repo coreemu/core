@@ -702,7 +702,8 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
+        options = NodeOptions(legacy=True)
+        node = session.add_node(CoreNode, options=options)
         service_name = "DefaultRoute"
 
         # then
