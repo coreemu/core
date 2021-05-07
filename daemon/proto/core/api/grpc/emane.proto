@@ -21,14 +21,6 @@ message SetEmaneConfigResponse {
     bool result = 1;
 }
 
-message GetEmaneModelsRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneModelsResponse {
-    repeated string models = 1;
-}
-
 message GetEmaneModelConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;

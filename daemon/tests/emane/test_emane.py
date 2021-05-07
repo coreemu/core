@@ -9,13 +9,13 @@ from xml.etree import ElementTree
 import pytest
 
 from core import utils
-from core.emane.bypass import EmaneBypassModel
-from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.bypass import EmaneBypassModel
+from core.emane.models.commeffect import EmaneCommEffectModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.rfpipe import EmaneRfPipeModel
+from core.emane.models.tdma import EmaneTdmaModel
 from core.emane.nodes import EmaneNet
-from core.emane.rfpipe import EmaneRfPipeModel
-from core.emane.tdma import EmaneTdmaModel
 from core.emulator.data import IpPrefixes, NodeOptions
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
@@ -100,14 +100,13 @@ class TestEmane:
 
         # create emane node for networking the core nodes
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
+        options = NodeOptions(emane=model.name)
         options.set_position(80, 50)
         emane_network = session.add_node(EmaneNet, options=options)
-        session.emane.set_model(emane_network, model)
 
         # configure tdma
         if model == EmaneTdmaModel:
-            session.emane.set_model_config(
+            session.emane.set_config(
                 emane_network.id, EmaneTdmaModel.name, {"schedule": str(_SCHEDULE)}
             )
 
@@ -142,13 +141,13 @@ class TestEmane:
         """
         # create emane node for networking the core nodes
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
+        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
         options.set_position(80, 50)
         emane_network = session.add_node(EmaneNet, options=options)
         config_key = "txpower"
         config_value = "10"
-        session.emane.set_model(
-            emane_network, EmaneIeee80211abgModel, {config_key: config_value}
+        session.emane.set_config(
+            emane_network.id, EmaneIeee80211abgModel.name, {config_key: config_value}
         )
 
         # create nodes
@@ -174,7 +173,7 @@ class TestEmane:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path)
+        session.save_xml(Path(file_path))
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -190,12 +189,11 @@ class TestEmane:
             assert not session.get_node(node2_id, CoreNode)
 
         # load saved xml
-        session.open_xml(file_path, start=True)
+        session.open_xml(Path(file_path), start=True)
 
         # retrieve configuration we set originally
-        value = str(
-            session.emane.get_config(config_key, emane_id, EmaneIeee80211abgModel.name)
-        )
+        config = session.emane.get_config(emane_id, EmaneIeee80211abgModel.name)
+        value = config[config_key]
 
         # verify nodes and configuration were restored
         assert session.get_node(node1_id, CoreNode)
@@ -221,9 +219,9 @@ class TestEmane:
         session.add_link(node1.id, emane_node.id, iface1_data)
         session.add_link(node2.id, emane_node.id, iface2_data)
 
-        # set node specific conifg
+        # set node specific config
         datarate = "101"
-        session.emane.set_model_config(
+        session.emane.set_config(
             node1.id, EmaneRfPipeModel.name, {"datarate": datarate}
         )
 
@@ -233,7 +231,7 @@ class TestEmane:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path)
+        session.save_xml(Path(file_path))
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -251,7 +249,7 @@ class TestEmane:
             assert not session.get_node(emane_node.id, EmaneNet)
 
         # load saved xml
-        session.open_xml(file_path, start=True)
+        session.open_xml(Path(file_path), start=True)
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
@@ -262,7 +260,7 @@ class TestEmane:
             node = session.nodes[node_id]
             links += node.links()
         assert len(links) == 2
-        config = session.emane.get_model_config(node1.id, EmaneRfPipeModel.name)
+        config = session.emane.get_config(node1.id, EmaneRfPipeModel.name)
         assert config["datarate"] == datarate
 
     def test_xml_emane_interface_config(
@@ -286,7 +284,7 @@ class TestEmane:
         # set node specific conifg
         datarate = "101"
         config_id = utils.iface_config_id(node1.id, iface1_data.id)
-        session.emane.set_model_config(
+        session.emane.set_config(
             config_id, EmaneRfPipeModel.name, {"datarate": datarate}
         )
 
@@ -296,7 +294,7 @@ class TestEmane:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path)
+        session.save_xml(Path(file_path))
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -314,7 +312,7 @@ class TestEmane:
             assert not session.get_node(emane_node.id, EmaneNet)
 
         # load saved xml
-        session.open_xml(file_path, start=True)
+        session.open_xml(Path(file_path), start=True)
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
@@ -325,5 +323,5 @@ class TestEmane:
             node = session.nodes[node_id]
             links += node.links()
         assert len(links) == 2
-        config = session.emane.get_model_config(config_id, EmaneRfPipeModel.name)
+        config = session.emane.get_config(config_id, EmaneRfPipeModel.name)
         assert config["datarate"] == datarate

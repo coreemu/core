@@ -300,7 +300,7 @@ will use the defaults. When no configuration is used, the defaults are used.
 # required imports
 from core.api.grpc import client
 from core.api.grpc.core_pb2 import NodeType, Position
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 
 # interface helper
 iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
@@ -315,7 +315,7 @@ session = core.create_session()
 # create nodes
 position = Position(x=200, y=200)
 emane = session.add_node(
-    1, _type=NodeType.EMANE, position=position, emane=EmaneIeee80211abgModel.name
+  1, _type=NodeType.EMANE, position=position, emane=EmaneIeee80211abgModel.name
 )
 position = Position(x=100, y=100)
 node1 = session.add_node(2, model="mdr", position=position)

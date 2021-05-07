@@ -1,7 +1,7 @@
 # required imports
 from core.api.grpc import client
 from core.api.grpc.wrappers import NodeType, Position
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 
 # interface helper
 iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")

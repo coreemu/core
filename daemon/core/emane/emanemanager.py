@@ -12,16 +12,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 
 from core import utils
-from core.config import ConfigGroup, Configuration, ModelManager
+from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
-from core.emane.bypass import EmaneBypassModel
-from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.linkmonitor import EmaneLinkMonitor
+from core.emane.modelmanager import EmaneModelManager
 from core.emane.nodes import EmaneNet
-from core.emane.rfpipe import EmaneRfPipeModel
-from core.emane.tdma import EmaneTdmaModel
 from core.emulator.data import LinkData
 from core.emulator.enumerations import (
     ConfigDataTypes,
@@ -55,15 +51,9 @@ except ImportError:
         EventServiceException = None
         logger.debug("compatible emane python bindings not installed")
 
-EMANE_MODELS = [
-    EmaneRfPipeModel,
-    EmaneIeee80211abgModel,
-    EmaneCommEffectModel,
-    EmaneBypassModel,
-    EmaneTdmaModel,
-]
 DEFAULT_EMANE_PREFIX = "/usr"
 DEFAULT_DEV = "ctrl0"
+DEFAULT_LOG_LEVEL: int = 3
 
 
 class EmaneState(Enum):
@@ -78,7 +68,7 @@ class StartData:
     ifaces: List[CoreInterface] = field(default_factory=list)
 
 
-class EmaneManager(ModelManager):
+class EmaneManager:
     """
     EMANE controller object. Lives in a Session instance and is used for
     building EMANE config files for all EMANE networks in this emulation, and for
@@ -87,9 +77,6 @@ class EmaneManager(ModelManager):
 
     name: str = "emane"
     config_type: RegisterTlvs = RegisterTlvs.EMULATION_SERVER
-    NOT_READY: int = 2
-    EVENTCFGVAR: str = "LIBEMANEEVENTSERVICECONFIG"
-    DEFAULT_LOG_LEVEL: int = 3
 
     def __init__(self, session: "Session") -> None:
         """
@@ -116,7 +103,9 @@ class EmaneManager(ModelManager):
 
         # model for global EMANE configuration options
         self.emane_config: EmaneGlobalModel = EmaneGlobalModel(session)
-        self.set_configs(self.emane_config.default_values())
+        self.config: Dict[str, str] = self.emane_config.default_values()
+        self.node_configs: Dict[int, Dict[str, Dict[str, str]]] = {}
+        self.node_models: Dict[int, str] = {}
 
         # link  monitor
         self.link_monitor: EmaneLinkMonitor = EmaneLinkMonitor(self)
@@ -124,13 +113,62 @@ class EmaneManager(ModelManager):
         self.service: Optional[EventService] = None
         self.eventchannel: Optional[Tuple[str, int, str]] = None
         self.event_device: Optional[str] = None
-        self.emane_check()
 
     def next_nem_id(self) -> int:
-        nem_id = int(self.get_config("nem_id_start"))
+        nem_id = int(self.config["nem_id_start"])
         while nem_id in self.nems_to_ifaces:
             nem_id += 1
         return nem_id
+
+    def get_config(
+        self, key: int, model: str, default: bool = True
+    ) -> Optional[Dict[str, str]]:
+        """
+        Get the current or default configuration for an emane model.
+
+        :param key: key to get configuration for
+        :param model: emane model to get configuration for
+        :param default: True to return default configuration when none exists, False
+            otherwise
+        :return: emane model configuration
+        :raises CoreError: when model does not exist
+        """
+        model_class = self.get_model(model)
+        model_configs = self.node_configs.get(key)
+        config = None
+        if model_configs:
+            config = model_configs.get(model)
+        if config is None and default:
+            config = model_class.default_values()
+        return config
+
+    def set_config(self, key: int, model: str, config: Dict[str, str] = None) -> None:
+        """
+        Sets and update the provided configuration against the default model
+        or currently set emane model configuration.
+
+        :param key: configuration key to set
+        :param model: model to set configuration for
+        :param config: configuration to update current configuration with
+        :return: nothing
+        :raises CoreError: when model does not exist
+        """
+        self.get_model(model)
+        model_config = self.get_config(key, model)
+        config = config if config else {}
+        model_config.update(config)
+        model_configs = self.node_configs.setdefault(key, {})
+        model_configs[model] = model_config
+
+    def get_model(self, model_name: str) -> Type[EmaneModel]:
+        """
+        Convenience method for getting globally loaded emane models.
+
+        :param model_name: name of model to retrieve
+        :return: emane model class
+        :raises CoreError: when model does not exist
+        """
+        return EmaneModelManager.get(model_name)
 
     def get_iface_config(
         self, emane_net: EmaneNet, iface: CoreInterface
@@ -149,46 +187,28 @@ class EmaneManager(ModelManager):
         # try to retrieve interface specific configuration
         if iface.node_id is not None:
             key = utils.iface_config_id(iface.node.id, iface.node_id)
-            config = self.get_configs(node_id=key, config_type=model_name)
+            config = self.get_config(key, model_name, default=False)
         # attempt to retrieve node specific config, when iface config is not present
         if not config:
-            config = self.get_configs(node_id=iface.node.id, config_type=model_name)
+            config = self.get_config(iface.node.id, model_name, default=False)
         # attempt to get emane net specific config, when node config is not present
         if not config:
             # with EMANE 0.9.2+, we need an extra NEM XML from
             # model.buildnemxmlfiles(), so defaults are returned here
-            config = self.get_configs(node_id=emane_net.id, config_type=model_name)
+            config = self.get_config(emane_net.id, model_name, default=False)
         # return default config values, when a config is not present
         if not config:
             config = emane_net.model.default_values()
         return config
 
     def config_reset(self, node_id: int = None) -> None:
-        super().config_reset(node_id)
-        self.set_configs(self.emane_config.default_values())
-
-    def emane_check(self) -> None:
-        """
-        Check if emane is installed and load models.
-
-        :return: nothing
-        """
-        # check for emane
-        path = utils.which("emane", required=False)
-        if not path:
-            logger.info("emane is not installed")
-            return
-        # get version
-        emane_version = utils.cmd("emane --version")
-        logger.info("using emane: %s", emane_version)
-        # load default emane models
-        self.load_models(EMANE_MODELS)
-        # load custom models
-        custom_models_path = self.session.options.get_config("emane_models_dir")
-        if custom_models_path is not None:
-            custom_models_path = Path(custom_models_path)
-            emane_models = utils.load_classes(custom_models_path, EmaneModel)
-            self.load_models(emane_models)
+        if node_id is None:
+            self.config = self.emane_config.default_values()
+            self.node_configs.clear()
+            self.node_models.clear()
+        else:
+            self.node_configs.get(node_id, {}).clear()
+            del self.node_models[node_id]
 
     def deleteeventservice(self) -> None:
         if self.service:
@@ -207,13 +227,12 @@ class EmaneManager(ModelManager):
         The multicast group and/or port may be configured.
         """
         self.deleteeventservice()
-
         if shutdown:
             return
 
         # Get the control network to be used for events
-        group, port = self.get_config("eventservicegroup").split(":")
-        self.event_device = self.get_config("eventservicedevice")
+        group, port = self.config["eventservicegroup"].split(":")
+        self.event_device = self.config["eventservicedevice"]
         eventnetidx = self.session.get_control_net_index(self.event_device)
         if eventnetidx < 0:
             logger.error(
@@ -237,19 +256,6 @@ class EmaneManager(ModelManager):
             self.service = EventService(eventchannel=self.eventchannel, otachannel=None)
         except EventServiceException:
             logger.exception("error instantiating emane EventService")
-
-    def load_models(self, emane_models: List[Type[EmaneModel]]) -> None:
-        """
-        Load EMANE models and make them available.
-        """
-        for emane_model in emane_models:
-            logger.debug("loading emane model: %s", emane_model.__name__)
-            emane_prefix = self.session.options.get_config(
-                "emane_prefix", default=DEFAULT_EMANE_PREFIX
-            )
-            emane_prefix = Path(emane_prefix)
-            emane_model.load(emane_prefix)
-            self.models[emane_model.name] = emane_model
 
     def add_node(self, emane_net: EmaneNet) -> None:
         """
@@ -302,7 +308,7 @@ class EmaneManager(ModelManager):
 
         # control network bridge required for EMANE 0.9.2
         # - needs to exist when eventservice binds to it (initeventservice)
-        otadev = self.get_config("otamanagerdevice")
+        otadev = self.config["otamanagerdevice"]
         netidx = self.session.get_control_net_index(otadev)
         logger.debug("emane ota manager device: index(%s) otadev(%s)", netidx, otadev)
         if netidx < 0:
@@ -315,7 +321,7 @@ class EmaneManager(ModelManager):
         self.session.add_remove_control_net(
             net_index=netidx, remove=False, conf_required=False
         )
-        eventdev = self.get_config("eventservicedevice")
+        eventdev = self.config["eventservicedevice"]
         logger.debug("emane event service device: eventdev(%s)", eventdev)
         if eventdev != otadev:
             netidx = self.session.get_control_net_index(eventdev)
@@ -408,7 +414,7 @@ class EmaneManager(ModelManager):
             logger.exception("error writing to emane nem file")
 
     def links_enabled(self) -> bool:
-        return self.get_config("link_enabled") == "1"
+        return self.config["link_enabled"] == "1"
 
     def poststartup(self) -> None:
         """
@@ -470,14 +476,12 @@ class EmaneManager(ModelManager):
         for node_id in self._emane_nets:
             emane_net = self._emane_nets[node_id]
             logger.debug("checking emane model for node: %s", node_id)
-
             # skip nodes that already have a model set
             if emane_net.model:
                 logger.debug(
                     "node(%s) already has model(%s)", emane_net.id, emane_net.model.name
                 )
                 continue
-
             # set model configured for node, due to legacy messaging configuration
             # before nodes exist
             model_name = self.node_models.get(node_id)
@@ -485,9 +489,9 @@ class EmaneManager(ModelManager):
                 logger.error("emane node(%s) has no node model", node_id)
                 raise ValueError("emane node has no model set")
 
-            config = self.get_model_config(node_id=node_id, model_name=model_name)
+            config = self.get_config(node_id, model_name)
             logger.debug("setting emane model(%s) config(%s)", model_name, config)
-            model_class = self.models[model_name]
+            model_class = self.get_model(model_name)
             emane_net.setmodel(model_class, config)
 
     def get_nem_link(
@@ -525,22 +529,19 @@ class EmaneManager(ModelManager):
         default_values = self.emane_config.default_values()
         for name in ["eventservicegroup", "eventservicedevice"]:
             a = default_values[name]
-            b = self.get_config(name)
+            b = self.config[name]
             if a != b:
                 need_xml = True
-
         if not need_xml:
             # reset to using default config
             self.initeventservice()
             return
-
         try:
-            group, port = self.get_config("eventservicegroup").split(":")
+            group, port = self.config["eventservicegroup"].split(":")
         except ValueError:
             logger.exception("invalid eventservicegroup in EMANE config")
             return
-
-        dev = self.get_config("eventservicedevice")
+        dev = self.config["eventservicedevice"]
         emanexml.create_event_service_xml(group, port, dev, self.session.directory)
         self.session.distributed.execute(
             lambda x: emanexml.create_event_service_xml(
@@ -554,7 +555,7 @@ class EmaneManager(ModelManager):
         Add a control network even if the user has not configured one.
         """
         logger.info("starting emane daemons...")
-        loglevel = str(EmaneManager.DEFAULT_LOG_LEVEL)
+        loglevel = str(DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.options.get_config_int("emane_log_level")
         realtime = self.session.options.get_config_bool("emane_realtime", default=True)
         if cfgloglevel:
@@ -564,11 +565,11 @@ class EmaneManager(ModelManager):
         if realtime:
             emanecmd += " -r"
         if isinstance(node, CoreNode):
-            otagroup, _otaport = self.get_config("otamanagergroup").split(":")
-            otadev = self.get_config("otamanagerdevice")
+            otagroup, _otaport = self.config["otamanagergroup"].split(":")
+            otadev = self.config["otamanagerdevice"]
             otanetidx = self.session.get_control_net_index(otadev)
-            eventgroup, _eventport = self.get_config("eventservicegroup").split(":")
-            eventdev = self.get_config("eventservicedevice")
+            eventgroup, _eventport = self.config["eventservicegroup"].split(":")
+            eventdev = self.config["eventservicedevice"]
             eventservicenetidx = self.session.get_control_net_index(eventdev)
 
             # control network not yet started here

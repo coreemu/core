@@ -783,7 +783,6 @@ class Session:
         x=0.0, y=0.0, z=0.0, lat=47.57917, lon=-122.13232, alt=2.0, scale=150.0
     )
     hooks: Dict[str, Hook] = field(default_factory=dict)
-    emane_models: List[str] = field(default_factory=list)
     emane_config: Dict[str, ConfigOption] = field(default_factory=dict)
     metadata: Dict[str, str] = field(default_factory=dict)
     file: Path = None
@@ -837,7 +836,6 @@ class Session:
             default_services=default_services,
             location=SessionLocation.from_proto(proto.location),
             hooks=hooks,
-            emane_models=list(proto.emane_models),
             emane_config=ConfigOption.from_dict(proto.emane_config),
             metadata=dict(proto.metadata),
             file=file_path,
@@ -906,12 +904,17 @@ class Session:
 class CoreConfig:
     services: List[Service] = field(default_factory=list)
     config_services: List[ConfigService] = field(default_factory=list)
+    emane_models: List[str] = field(default_factory=list)
 
     @classmethod
     def from_proto(cls, proto: core_pb2.GetConfigResponse) -> "CoreConfig":
         services = [Service.from_proto(x) for x in proto.services]
         config_services = [ConfigService.from_proto(x) for x in proto.config_services]
-        return CoreConfig(services=services, config_services=config_services)
+        return CoreConfig(
+            services=services,
+            config_services=config_services,
+            emane_models=list(proto.emane_models),
+        )
 
 
 @dataclass

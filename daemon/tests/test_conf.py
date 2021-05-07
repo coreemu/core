@@ -6,7 +6,7 @@ from core.config import (
     Configuration,
     ModelManager,
 )
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import ConfigDataTypes
 from core.emulator.session import Session
 from core.location.mobility import BasicRangeModel

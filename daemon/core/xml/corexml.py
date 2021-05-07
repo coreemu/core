@@ -82,7 +82,7 @@ def create_iface_data(iface_element: etree.Element) -> InterfaceData:
 
 def create_emane_config(session: "Session") -> etree.Element:
     emane_configuration = etree.Element("emane_global_configuration")
-    config = session.emane.get_configs()
+    config = session.emane.config
     emulator_element = etree.SubElement(emane_configuration, "emulator")
     for emulator_config in session.emane.emane_config.emulator_config:
         value = config[emulator_config.id]
@@ -379,19 +379,15 @@ class CoreXmlWriter:
         emane_global_configuration = create_emane_config(self.session)
         self.scenario.append(emane_global_configuration)
         emane_configurations = etree.Element("emane_configurations")
-        for node_id in self.session.emane.nodes():
-            all_configs = self.session.emane.get_all_configs(node_id)
-            if not all_configs:
-                continue
+        for node_id, model_configs in self.session.emane.node_configs.items():
             node_id, iface_id = utils.parse_iface_config_id(node_id)
-            for model_name in all_configs:
-                config = all_configs[model_name]
+            for model_name, config in model_configs.items():
                 logger.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
-                model = self.session.emane.models[model_name]
+                model_class = self.session.emane.get_model(model_name)
                 emane_configuration = create_emane_model_config(
-                    node_id, model, config, iface_id
+                    node_id, model_class, config, iface_id
                 )
                 emane_configurations.append(emane_configuration)
         if emane_configurations.getchildren():
@@ -748,7 +744,7 @@ class CoreXmlReader:
             name = config.get("name")
             value = config.get("value")
             configs[name] = value
-        self.session.emane.set_configs(config=configs)
+        self.session.emane.config = configs
 
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")
@@ -765,9 +761,7 @@ class CoreXmlReader:
             node = self.session.nodes.get(node_id)
             if not node:
                 raise CoreXmlError(f"node for emane config doesn't exist: {node_id}")
-            model = self.session.emane.models.get(model_name)
-            if not model:
-                raise CoreXmlError(f"invalid emane model: {model_name}")
+            self.session.emane.get_model(model_name)
             if iface_id is not None and iface_id not in node.ifaces:
                 raise CoreXmlError(
                     f"invalid interface id({iface_id}) for node({node.name})"
@@ -796,7 +790,7 @@ class CoreXmlReader:
                 "reading emane configuration node(%s) model(%s)", node_id, model_name
             )
             node_id = utils.iface_config_id(node_id, iface_id)
-            self.session.emane.set_model_config(node_id, model_name, configs)
+            self.session.emane.set_config(node_id, model_name, configs)
 
     def read_mobility_configs(self) -> None:
         mobility_configurations = self.scenario.find("mobility_configurations")

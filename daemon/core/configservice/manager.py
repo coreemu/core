@@ -31,7 +31,7 @@ class ConfigServiceManager:
         """
         service_class = self.services.get(name)
         if service_class is None:
-            raise CoreError(f"service does not exit {name}")
+            raise CoreError(f"service does not exist {name}")
         return service_class
 
     def add(self, service: Type[ConfigService]) -> None:

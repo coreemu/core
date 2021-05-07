@@ -77,6 +77,7 @@ class CoreClient:
         self.config_services: Dict[str, ConfigService] = {}
 
         # loaded configuration data
+        self.emane_models: List[str] = []
         self.servers: Dict[str, CoreServer] = {}
         self.custom_nodes: Dict[str, NodeDraw] = {}
         self.custom_observers: Dict[str, Observer] = {}
@@ -392,6 +393,7 @@ class CoreClient:
             self.client.connect()
             # get current core configurations services/config services
             core_config = self.client.get_config()
+            self.emane_models = core_config.emane_models
             for service in core_config.services:
                 group_services = self.services.setdefault(service.group, set())
                 group_services.add(service.name)
@@ -639,11 +641,11 @@ class CoreClient:
             image = "ubuntu:latest"
         emane = None
         if node_type == NodeType.EMANE:
-            if not self.session.emane_models:
+            if not self.emane_models:
                 dialog = EmaneInstallDialog(self.app)
                 dialog.show()
                 return
-            emane = self.session.emane_models[0]
+            emane = self.emane_models[0]
             name = f"emane{node_id}"
         elif node_type == NodeType.WIRELESS_LAN:
             name = f"wlan{node_id}"

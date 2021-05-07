@@ -9,11 +9,15 @@ from typing import Dict, List, Type
 import core.services
 from core import configservices, utils
 from core.configservice.manager import ConfigServiceManager
+from core.emane import models
+from core.emane.modelmanager import EmaneModelManager
 from core.emulator.session import Session
 from core.executables import get_requirements
 from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_EMANE_PREFIX: str = "/usr"
 
 
 def signal_handler(signal_number: int, _) -> None:
@@ -61,6 +65,10 @@ class CoreEmu:
         self.service_manager: ConfigServiceManager = ConfigServiceManager()
         self._load_services()
 
+        # check and load emane
+        self.has_emane: bool = False
+        self._load_emane()
+
         # check executables exist on path
         self._validate_env()
 
@@ -102,6 +110,32 @@ class CoreEmu:
         if custom_dir is not None:
             custom_dir = Path(custom_dir)
             self.service_manager.load(custom_dir)
+
+    def _load_emane(self) -> None:
+        """
+        Check if emane is installed and load models.
+
+        :return: nothing
+        """
+        # check for emane
+        path = utils.which("emane", required=False)
+        self.has_emane = path is not None
+        if not self.has_emane:
+            logger.info("emane is not installed, emane functionality disabled")
+            return
+        # get version
+        emane_version = utils.cmd("emane --version")
+        logger.info("using emane: %s", emane_version)
+        prefix = self.config.get("emane_prefix", DEFAULT_EMANE_PREFIX)
+        prefix = Path(prefix)
+        default_path = Path(models.__file__).resolve().parent
+        EmaneModelManager.load(default_path, prefix)
+        # load custom models
+        custom_path = self.config.get("emane_models_dir")
+        if custom_path is not None:
+            logger.info("loading custom emane models: %s", custom_path)
+            custom_path = Path(custom_path)
+            EmaneModelManager.load(custom_path, prefix)
 
     def shutdown(self) -> None:
         """

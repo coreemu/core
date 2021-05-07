@@ -115,7 +115,7 @@ class EmaneConfigDialog(Dialog):
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(1)
         self.emane_models: List[str] = [
-            x.split("_")[1] for x in self.app.core.session.emane_models
+            x.split("_")[1] for x in self.app.core.emane_models
         ]
         model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)

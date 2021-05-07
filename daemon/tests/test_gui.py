@@ -22,7 +22,7 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
@@ -939,9 +939,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        config = coretlv.session.emane.get_model_config(
-            wlan.id, EmaneIeee80211abgModel.name
-        )
+        config = coretlv.session.emane.get_config(wlan.id, EmaneIeee80211abgModel.name)
         assert config[config_key] == config_value
 
     def test_config_emane_request(self, coretlv: CoreHandler):
@@ -973,5 +971,5 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        config = coretlv.session.emane.get_configs()
+        config = coretlv.session.emane.config
         assert config[config_key] == config_value

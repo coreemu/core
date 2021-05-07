@@ -560,12 +560,8 @@ class Session:
 
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
-            model = self.emane.models.get(options.emane)
-            if not model:
-                raise CoreError(
-                    f"node({node.name}) emane model({options.emane}) does not exist"
-                )
-            node.model = model(self, node.id)
+            model_class = self.emane.get_model(options.emane)
+            node.model = model_class(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
         # set default wlan config if needed

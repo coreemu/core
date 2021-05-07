@@ -31,7 +31,6 @@ from core.api.grpc.emane_pb2 import (
     GetEmaneConfigRequest,
     GetEmaneEventChannelRequest,
     GetEmaneModelConfigRequest,
-    GetEmaneModelsRequest,
     SetEmaneConfigRequest,
     SetEmaneModelConfigRequest,
 )
@@ -942,18 +941,6 @@ class CoreGrpcClient:
         request = SetEmaneConfigRequest(session_id=session_id, config=config)
         response = self.stub.SetEmaneConfig(request)
         return response.result
-
-    def get_emane_models(self, session_id: int) -> List[str]:
-        """
-        Get session emane models.
-
-        :param session_id: session id
-        :return: list of emane models
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetEmaneModelsRequest(session_id=session_id)
-        response = self.stub.GetEmaneModels(request)
-        return list(response.models)
 
     def get_emane_model_config(
         self, session_id: int, node_id: int, model: str, iface_id: int = -1

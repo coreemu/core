@@ -51,17 +51,16 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        config = self.session.emane.get_configs(node_id=self.id, config_type=self.name)
+        config = self.session.emane.get_config(self.id, self.name)
         if not config:
             return
-        schedule = config[self.schedule_name]
-
-        # get the set event device
-        event_device = self.session.emane.event_device
-
+        schedule = Path(config[self.schedule_name])
+        if not schedule.is_file():
+            logger.warning("ignoring invalid tdma schedule: %s", schedule)
+            return
         # initiate tdma schedule
+        event_device = self.session.emane.event_device
         logger.info(
             "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
         )
-        args = f"emaneevent-tdmaschedule -i {event_device} {schedule}"
-        utils.cmd(args)
+        utils.cmd(f"emaneevent-tdmaschedule -i {event_device} {schedule}")

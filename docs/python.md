@@ -278,7 +278,7 @@ will use the defaults. When no configuration is used, the defaults are used.
 
 ```python
 # required imports
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import IpPrefixes, NodeOptions
@@ -312,13 +312,13 @@ n2 = session.add_node(CoreNode, options=options)
 # configure general emane settings
 config = session.emane.get_configs()
 config.update({
-    "eventservicettl": "2"
+  "eventservicettl": "2"
 })
 
 # configure emane model settings
 # using a dict mapping currently support values as strings
 session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
-    "unicastrate": "3",
+  "unicastrate": "3",
 })
 
 # link nodes to emane

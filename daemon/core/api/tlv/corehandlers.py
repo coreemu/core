@@ -29,6 +29,7 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
+from core.emane.modelmanager import EmaneModelManager
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -419,8 +420,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.emane.config_type.value, self.session.emane.name
         )
-        for model_name in self.session.emane.models:
-            model_class = self.session.emane.models[model_name]
+        for model_name, model_class in EmaneModelManager.models.items():
             tlv_data += coreapi.CoreRegisterTlv.pack(
                 model_class.config_type.value, model_class.name
             )
@@ -1048,7 +1048,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             replies = self.handle_config_mobility_models(message_type, config_data)
         elif config_data.object == self.session.emane.name:
             replies = self.handle_config_emane(message_type, config_data)
-        elif config_data.object in self.session.emane.models:
+        elif config_data.object in EmaneModelManager.models:
             replies = self.handle_config_emane_models(message_type, config_data)
         else:
             raise Exception("no handler for configuration: %s", config_data.object)
@@ -1393,7 +1393,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             logger.info("replying to configure request for %s model", object_name)
             typeflags = ConfigFlags.NONE.value
-            config = self.session.emane.get_configs()
+            config = self.session.emane.config
             config_response = ConfigShim.config_data(
                 0, node_id, typeflags, self.session.emane.emane_config, config
             )
@@ -1405,7 +1405,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             if values_str:
                 config = ConfigShim.str_to_dict(values_str)
-                self.session.emane.set_configs(config)
+                self.session.emane.config = config
 
         return replies
 
@@ -1424,12 +1424,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logger.info("replying to configure request for model: %s", object_name)
             typeflags = ConfigFlags.NONE.value
 
-            model_class = self.session.emane.models.get(object_name)
+            model_class = self.session.emane.get_model(object_name)
             if not model_class:
                 logger.warning("model class does not exist: %s", object_name)
                 return []
 
-            config = self.session.emane.get_model_config(node_id, object_name)
+            config = self.session.emane.get_config(node_id, object_name)
             config_response = ConfigShim.config_data(
                 0, node_id, typeflags, model_class, config
             )
@@ -1439,12 +1439,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             if not object_name:
                 logger.warning("no configuration object for node: %s", node_id)
                 return []
-
             parsed_config = {}
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-
-            self.session.emane.set_model_config(node_id, object_name, parsed_config)
+            self.session.emane.node_models[node_id] = object_name
+            self.session.emane.set_config(node_id, object_name, parsed_config)
 
         return replies
 
@@ -1853,7 +1852,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 self.session.broadcast_config(config_data)
 
         # send global emane config
-        config = self.session.emane.get_configs()
+        config = self.session.emane.config
         logger.debug("global emane config: values(%s)", config)
         config_data = ConfigShim.config_data(
             0, None, ConfigFlags.UPDATE.value, self.session.emane.emane_config, config
@@ -1861,11 +1860,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.session.broadcast_config(config_data)
 
         # send emane model configs
-        for node_id in self.session.emane.nodes():
-            emane_configs = self.session.emane.get_all_configs(node_id)
-            for model_name in emane_configs:
-                config = emane_configs[model_name]
-                model_class = self.session.emane.models[model_name]
+        for node_id, model_configs in self.session.emane.node_configs.items():
+            for model_name, config in model_configs.items():
+                model_class = self.session.emane.get_model(model_name)
                 logger.debug(
                     "emane config: node(%s) class(%s) values(%s)",
                     node_id,

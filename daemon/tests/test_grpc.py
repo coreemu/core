@@ -33,7 +33,7 @@ from core.api.grpc.wrappers import (
 )
 from core.api.tlv.dataconversion import ConfigShim
 from core.api.tlv.enumerations import ConfigFlags
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, IpPrefixes, NodeData, NodeOptions
 from core.emulator.enumerations import EventTypes, ExceptionLevels
@@ -151,7 +151,7 @@ class TestGrpc:
             location_alt,
         )
         assert real_session.location.refscale == location_scale
-        assert real_session.emane.get_config(emane_config_key) == emane_config_value
+        assert real_session.emane.config[emane_config_key] == emane_config_value
         set_wlan_config = real_session.mobility.get_model_config(
             wlan_node.id, BasicRangeModel.name
         )
@@ -543,7 +543,7 @@ class TestGrpc:
 
         # then
         assert result is True
-        config = session.emane.get_configs()
+        config = session.emane.config
         assert len(config) > 1
         assert config[config_key] == config_value
 
@@ -554,7 +554,7 @@ class TestGrpc:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions(emane=EmaneIeee80211abgModel.name)
         emane_network = session.add_node(EmaneNet, options=options)
-        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
+        session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
         config_key = "bandwidth"
         config_value = "900000"
         option = ConfigOption(
@@ -574,9 +574,7 @@ class TestGrpc:
 
         # then
         assert result is True
-        config = session.emane.get_model_config(
-            emane_network.id, EmaneIeee80211abgModel.name
-        )
+        config = session.emane.get_config(emane_network.id, EmaneIeee80211abgModel.name)
         assert config[config_key] == config_value
 
     def test_get_emane_model_config(self, grpc_server: CoreGrpcServer):
@@ -586,7 +584,7 @@ class TestGrpc:
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
         options = NodeOptions(emane=EmaneIeee80211abgModel.name)
         emane_network = session.add_node(EmaneNet, options=options)
-        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
+        session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
 
         # then
         with client.context_connect():
@@ -596,18 +594,6 @@ class TestGrpc:
 
         # then
         assert len(config) > 0
-
-    def test_get_emane_models(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            models = client.get_emane_models(session.id)
-
-        # then
-        assert len(models) > 0
 
     def test_get_mobility_config(self, grpc_server: CoreGrpcServer):
         # given

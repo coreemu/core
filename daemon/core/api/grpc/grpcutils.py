@@ -532,14 +532,11 @@ def get_nem_id(
 
 def get_emane_model_configs(session: Session) -> List[GetEmaneModelConfig]:
     configs = []
-    for _id in session.emane.node_configurations:
-        if _id == -1:
-            continue
-        model_configs = session.emane.node_configurations[_id]
+    for _id, model_configs in session.emane.node_configs.items():
         for model_name in model_configs:
-            model = session.emane.models[model_name]
-            current_config = session.emane.get_model_config(_id, model_name)
-            config = get_config_options(current_config, model)
+            model_class = session.emane.get_model(model_name)
+            current_config = session.emane.get_config(_id, model_name)
+            config = get_config_options(current_config, model_class)
             node_id, iface_id = utils.parse_iface_config_id(_id)
             iface_id = iface_id if iface_id is not None else -1
             model_config = GetEmaneModelConfig(
@@ -591,15 +588,6 @@ def get_hooks(session: Session) -> List[core_pb2.Hook]:
     return hooks
 
 
-def get_emane_models(session: Session) -> List[str]:
-    emane_models = []
-    for model in session.emane.models.keys():
-        if len(model.split("_")) != 2:
-            continue
-        emane_models.append(model)
-    return emane_models
-
-
 def get_default_services(session: Session) -> List[ServiceDefaults]:
     default_services = []
     for name, services in session.services.default_services.items():
@@ -643,8 +631,7 @@ def get_node_config_service_configs(session: Session) -> List[ConfigServiceConfi
 
 
 def get_emane_config(session: Session) -> Dict[str, common_pb2.ConfigOption]:
-    current_config = session.emane.get_configs()
-    return get_config_options(current_config, session.emane.emane_config)
+    return get_config_options(session.emane.config, session.emane.emane_config)
 
 
 def get_mobility_node(
@@ -676,7 +663,6 @@ def convert_session(session: Session) -> wrappers.Session:
         x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
     )
     hooks = get_hooks(session)
-    emane_models = get_emane_models(session)
     emane_config = get_emane_config(session)
     emane_model_configs = get_emane_model_configs(session)
     wlan_configs = get_wlan_configs(session)
@@ -699,7 +685,6 @@ def convert_session(session: Session) -> wrappers.Session:
         default_services=default_services,
         location=location,
         hooks=hooks,
-        emane_models=emane_models,
         emane_config=emane_config,
         emane_model_configs=emane_model_configs,
         wlan_configs=wlan_configs,

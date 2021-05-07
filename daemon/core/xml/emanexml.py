@@ -166,7 +166,7 @@ def build_platform_xml(
         if not isinstance(data.node, CoreNode) and name in transport_configs:
             value = control_net.brname
         else:
-            value = emane_manager.get_config(name)
+            value = emane_manager.config[name]
         add_param(platform_element, name, value)
 
     # create nem xml entries for all interfaces

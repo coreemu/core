@@ -39,8 +39,6 @@ from core.api.grpc.emane_pb2 import (
     GetEmaneEventChannelResponse,
     GetEmaneModelConfigRequest,
     GetEmaneModelConfigResponse,
-    GetEmaneModelsRequest,
-    GetEmaneModelsResponse,
     SetEmaneConfigRequest,
     SetEmaneConfigResponse,
     SetEmaneModelConfigRequest,
@@ -79,6 +77,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
+from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import (
@@ -211,8 +210,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 validation_period=service.validation_period,
             )
             config_services.append(service_proto)
+        emane_models = [x.name for x in EmaneModelManager.models.values()]
         return core_pb2.GetConfigResponse(
-            services=services, config_services=config_services
+            services=services,
+            config_services=config_services,
+            emane_models=emane_models,
         )
 
     def StartSession(
@@ -264,11 +266,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # emane configs
-        config = session.emane.get_configs()
-        config.update(request.emane_config)
+        session.emane.config.update(request.emane_config)
         for config in request.emane_model_configs:
             _id = utils.iface_config_id(config.node_id, config.iface_id)
-            session.emane.set_model_config(_id, config.model, config.config)
+            session.emane.set_config(_id, config.model, config.config)
 
         # wlan configs
         for config in request.wlan_configs:
@@ -426,57 +427,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("get session: %s", request)
         session = self.get_session(request.session_id, context)
-        # links = []
-        # nodes = []
-        # for _id in session.nodes:
-        #     node = session.nodes[_id]
-        #     if not isinstance(node, (PtpNet, CtrlNet)):
-        #         node_proto = grpcutils.get_node_proto(session, node)
-        #         nodes.append(node_proto)
-        #     node_links = get_links(node)
-        #     links.extend(node_links)
-        # default_services = grpcutils.get_default_services(session)
-        # x, y, z = session.location.refxyz
-        # lat, lon, alt = session.location.refgeo
-        # location = core_pb2.SessionLocation(
-        #     x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
-        # )
-        # hooks = grpcutils.get_hooks(session)
-        # emane_models = grpcutils.get_emane_models(session)
-        # emane_config = grpcutils.get_emane_config(session)
-        # emane_model_configs = grpcutils.get_emane_model_configs(session)
-        # wlan_configs = grpcutils.get_wlan_configs(session)
-        # mobility_configs = grpcutils.get_mobility_configs(session)
-        # service_configs = grpcutils.get_node_service_configs(session)
-        # config_service_configs = grpcutils.get_node_config_service_configs(session)
-        # session_file = str(session.file_path) if session.file_path else None
-        # options = get_config_options(session.options.get_configs(), session.options)
-        # servers = [
-        #     core_pb2.Server(name=x.name, host=x.host)
-        #     for x in session.distributed.servers.values()
-        # ]
-        # session_proto = core_pb2.Session(
-        #     id=session.id,
-        #     state=session.state.value,
-        #     nodes=nodes,
-        #     links=links,
-        #     dir=str(session.directory),
-        #     user=session.user,
-        #     default_services=default_services,
-        #     location=location,
-        #     hooks=hooks,
-        #     emane_models=emane_models,
-        #     emane_config=emane_config,
-        #     emane_model_configs=emane_model_configs,
-        #     wlan_configs=wlan_configs,
-        #     service_configs=service_configs,
-        #     config_service_configs=config_service_configs,
-        #     mobility_configs=mobility_configs,
-        #     metadata=session.metadata,
-        #     file=session_file,
-        #     options=options,
-        #     servers=servers,
-        # )
         session_proto = grpcutils.convert_session(session)
         return core_pb2.GetSessionResponse(session=session_proto)
 
@@ -1122,24 +1072,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("set emane config: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.emane.get_configs()
-        config.update(request.config)
+        session.emane.config.update(request.config)
         return SetEmaneConfigResponse(result=True)
-
-    def GetEmaneModels(
-        self, request: GetEmaneModelsRequest, context: ServicerContext
-    ) -> GetEmaneModelsResponse:
-        """
-        Retrieve all the EMANE models in the session
-
-        :param request: get-emane-model request
-        :param context: context object
-        :return: get-EMANE-models response that has all the models
-        """
-        logger.debug("get emane models: %s", request)
-        session = self.get_session(request.session_id, context)
-        models = grpcutils.get_emane_models(session)
-        return GetEmaneModelsResponse(models=models)
 
     def GetEmaneModelConfig(
         self, request: GetEmaneModelConfigRequest, context: ServicerContext
@@ -1154,11 +1088,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("get emane model config: %s", request)
         session = self.get_session(request.session_id, context)
-        model = session.emane.models.get(request.model)
-        if not model:
-            raise CoreError(f"invalid emane model: {request.model}")
+        model = session.emane.get_model(request.model)
         _id = utils.iface_config_id(request.node_id, request.iface_id)
-        current_config = session.emane.get_model_config(_id, request.model)
+        current_config = session.emane.get_config(_id, request.model)
         config = get_config_options(current_config, model)
         return GetEmaneModelConfigResponse(config=config)
 
@@ -1177,7 +1109,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         model_config = request.emane_model_config
         _id = utils.iface_config_id(model_config.node_id, model_config.iface_id)
-        session.emane.set_model_config(_id, model_config.model, model_config.config)
+        session.emane.set_config(_id, model_config.model, model_config.config)
         return SetEmaneModelConfigResponse(result=True)
 
     def SaveXml(
@@ -1192,13 +1124,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("save xml: %s", request)
         session = self.get_session(request.session_id, context)
-
         _, temp_path = tempfile.mkstemp()
         session.save_xml(temp_path)
-
         with open(temp_path, "r") as xml_file:
             data = xml_file.read()
-
         return core_pb2.SaveXmlResponse(data=data)
 
     def OpenXml(

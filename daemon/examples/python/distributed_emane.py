@@ -6,7 +6,7 @@ with the GUI.
 import argparse
 import logging
 
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import IpPrefixes, NodeOptions
