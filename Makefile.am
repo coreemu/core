@@ -123,7 +123,7 @@ all: change-files
 
 .PHONY: change-files
 change-files:
-	$(call change-files,gui/core-gui)
+	$(call change-files,gui/core-gui-legacy)
 	$(call change-files,daemon/core/constants.py)
 	$(call change-files,netns/setup.py)
 

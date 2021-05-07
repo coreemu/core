@@ -14,8 +14,8 @@ TCL_FILES := $(wildcard *.tcl)
 ADDONS_FILES := $(wildcard addons/*)
 CONFIG_FILES := $(wildcard configs/*)
 
-# CORE GUI script (/usr/local/bin/core-gui)
-dist_bin_SCRIPTS = core-gui
+# CORE GUI script (/usr/local/bin/core-gui-legacy)
+dist_bin_SCRIPTS = core-gui-legacy
 
 # Tcl/Tk scripts (/usr/local/lib/core)
 coredir	= $(CORE_LIB_DIR)
@@ -38,4 +38,4 @@ dist-hook:
 DISTCLEANFILES = Makefile.in
 
 # files to include in source tarball not included elsewhere
-EXTRA_DIST = core-gui.in
+EXTRA_DIST = core-gui-legacy.in
