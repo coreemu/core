@@ -1,8 +1,10 @@
 import logging
+import pkgutil
 from pathlib import Path
 from typing import Dict, List, Type
 
 from core import utils
+from core.emane import models as emane_models
 from core.emane.emanemodel import EmaneModel
 from core.errors import CoreError
 
@@ -13,9 +15,36 @@ class EmaneModelManager:
     models: Dict[str, Type[EmaneModel]] = {}
 
     @classmethod
-    def load(cls, path: Path, prefix: Path) -> List[str]:
+    def load_locals(cls, emane_prefix: Path) -> List[str]:
         """
-        Load EMANE models and make them available.
+        Load local core emane models and make them available.
+
+        :param emane_prefix: installed emane prefix
+        :return: list of errors encountered loading emane models
+        """
+        errors = []
+        for module_info in pkgutil.walk_packages(
+            emane_models.__path__, f"{emane_models.__name__}."
+        ):
+            models = utils.load_module(module_info.name, EmaneModel)
+            for model in models:
+                logger.debug("loading emane model: %s", model.name)
+                try:
+                    model.load(emane_prefix)
+                    cls.models[model.name] = model
+                except CoreError as e:
+                    errors.append(model.name)
+                    logger.debug("not loading emane model(%s): %s", model.name, e)
+        return errors
+
+    @classmethod
+    def load(cls, path: Path, emane_prefix: Path) -> List[str]:
+        """
+        Search and load custom emane models and make them available.
+
+        :param path: path to search for custom emane models
+        :param emane_prefix: installed emane prefix
+        :return: list of errors encountered loading emane models
         """
         subdirs = [x for x in path.iterdir() if x.is_dir()]
         subdirs.append(path)
@@ -26,11 +55,11 @@ class EmaneModelManager:
             for model in models:
                 logger.debug("loading emane model: %s", model.name)
                 try:
-                    model.load(prefix)
+                    model.load(emane_prefix)
                     cls.models[model.name] = model
                 except CoreError as e:
                     errors.append(model.name)
-                    logger.debug("not loading service(%s): %s", model.name, e)
+                    logger.debug("not loading emane model(%s): %s", model.name, e)
         return errors
 
     @classmethod

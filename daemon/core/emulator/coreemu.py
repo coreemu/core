@@ -7,9 +7,8 @@ from pathlib import Path
 from typing import Dict, List, Type
 
 import core.services
-from core import configservices, utils
+from core import utils
 from core.configservice.manager import ConfigServiceManager
-from core.emane import models
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.session import Session
 from core.executables import get_requirements
@@ -103,8 +102,7 @@ class CoreEmu:
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
         # load default config services
-        config_services_path = Path(configservices.__file__).resolve().parent
-        self.service_manager.load(config_services_path)
+        self.service_manager.load_locals()
         # load custom config services
         custom_dir = self.config.get("custom_config_services_dir")
         if custom_dir is not None:
@@ -126,16 +124,15 @@ class CoreEmu:
         # get version
         emane_version = utils.cmd("emane --version")
         logger.info("using emane: %s", emane_version)
-        prefix = self.config.get("emane_prefix", DEFAULT_EMANE_PREFIX)
-        prefix = Path(prefix)
-        default_path = Path(models.__file__).resolve().parent
-        EmaneModelManager.load(default_path, prefix)
+        emane_prefix = self.config.get("emane_prefix", DEFAULT_EMANE_PREFIX)
+        emane_prefix = Path(emane_prefix)
+        EmaneModelManager.load_locals(emane_prefix)
         # load custom models
         custom_path = self.config.get("emane_models_dir")
         if custom_path is not None:
             logger.info("loading custom emane models: %s", custom_path)
             custom_path = Path(custom_path)
-            EmaneModelManager.load(custom_path, prefix)
+            EmaneModelManager.load(custom_path, emane_prefix)
 
     def shutdown(self) -> None:
         """

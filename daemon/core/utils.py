@@ -328,7 +328,22 @@ def load_config(file_path: Path, d: Dict[str, str]) -> None:
             logger.exception("error reading file to dict: %s", file_path)
 
 
-def load_classes(path: Path, clazz: Generic[T]) -> T:
+def load_module(import_statement: str, clazz: Generic[T]) -> List[T]:
+    classes = []
+    try:
+        module = importlib.import_module(import_statement)
+        members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))
+        for member in members:
+            valid_class = member[1]
+            classes.append(valid_class)
+    except Exception:
+        logger.exception(
+            "unexpected error during import, skipping: %s", import_statement
+        )
+    return classes
+
+
+def load_classes(path: Path, clazz: Generic[T]) -> List[T]:
     """
     Dynamically load classes for use within CORE.
 
@@ -352,16 +367,8 @@ def load_classes(path: Path, clazz: Generic[T]) -> T:
             continue
         import_statement = f"{path.name}.{p.stem}"
         logger.debug("importing custom module: %s", import_statement)
-        try:
-            module = importlib.import_module(import_statement)
-            members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))
-            for member in members:
-                valid_class = member[1]
-                classes.append(valid_class)
-        except Exception:
-            logger.exception(
-                "unexpected error during import, skipping: %s", import_statement
-            )
+        loaded = load_module(import_statement, clazz)
+        classes.extend(loaded)
     return classes
 
 

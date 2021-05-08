@@ -1,9 +1,10 @@
 import logging
 import pathlib
+import pkgutil
 from pathlib import Path
 from typing import Dict, List, Type
 
-from core import utils
+from core import configservices, utils
 from core.configservice.base import ConfigService
 from core.errors import CoreError
 
@@ -61,12 +62,31 @@ class ConfigServiceManager:
         # make service available
         self.services[name] = service
 
+    def load_locals(self) -> List[str]:
+        """
+        Search and add config service from local core module.
+
+        :return: list of errors when loading services
+        """
+        errors = []
+        for module_info in pkgutil.walk_packages(
+            configservices.__path__, f"{configservices.__name__}."
+        ):
+            services = utils.load_module(module_info.name, ConfigService)
+            for service in services:
+                try:
+                    self.add(service)
+                except CoreError as e:
+                    errors.append(service.name)
+                    logger.debug("not loading config service(%s): %s", service.name, e)
+        return errors
+
     def load(self, path: Path) -> List[str]:
         """
-        Search path provided for configurable services and add them for being managed.
+        Search path provided for config services and add them for being managed.
 
         :param path: path to search configurable services
-        :return: list errors when loading and adding services
+        :return: list errors when loading services
         """
         path = pathlib.Path(path)
         subdirs = [x for x in path.iterdir() if x.is_dir()]
