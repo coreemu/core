@@ -173,7 +173,7 @@ class NftablesQueue:
         :param net: network to build commands for
         :return: nothing
         """
-        with net._linked_lock:
+        with net.linked_lock:
             if net.has_nftables_chain:
                 self.cmds.append(f"flush table bridge {net.brname}")
             else:
@@ -190,7 +190,7 @@ class NftablesQueue:
                 f"ibriport != {net.brname} accept"
             )
             # rebuild the chain
-            for iface1, v in net._linked.items():
+            for iface1, v in net.linked.items():
                 for iface2, linked in v.items():
                     policy = None
                     if net.policy == NetworkPolicy.DROP and linked:
@@ -320,7 +320,7 @@ class CoreNetwork(CoreNetworkBase):
         for iface in self.get_ifaces():
             iface.shutdown()
         self.ifaces.clear()
-        self._linked.clear()
+        self.linked.clear()
         self.up = False
 
     def attach(self, iface: CoreInterface) -> None:
@@ -345,7 +345,7 @@ class CoreNetwork(CoreNetworkBase):
             iface.net_client.delete_iface(self.brname, iface.localname)
         super().detach(iface)
 
-    def linked(self, iface1: CoreInterface, iface2: CoreInterface) -> bool:
+    def is_linked(self, iface1: CoreInterface, iface2: CoreInterface) -> bool:
         """
         Determine if the provided network interfaces are linked.
 
@@ -359,7 +359,7 @@ class CoreNetwork(CoreNetworkBase):
         if self.ifaces[iface2.net_id] != iface2:
             raise ValueError(f"inconsistency for interface {iface2.name}")
         try:
-            linked = self._linked[iface1][iface2]
+            linked = self.linked[iface1][iface2]
         except KeyError:
             if self.policy == NetworkPolicy.ACCEPT:
                 linked = True
@@ -367,7 +367,7 @@ class CoreNetwork(CoreNetworkBase):
                 linked = False
             else:
                 raise Exception(f"unknown policy: {self.policy.value}")
-            self._linked[iface1][iface2] = linked
+            self.linked[iface1][iface2] = linked
         return linked
 
     def unlink(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
@@ -378,10 +378,10 @@ class CoreNetwork(CoreNetworkBase):
         :param iface2: interface two
         :return: nothing
         """
-        with self._linked_lock:
-            if not self.linked(iface1, iface2):
+        with self.linked_lock:
+            if not self.is_linked(iface1, iface2):
                 return
-            self._linked[iface1][iface2] = False
+            self.linked[iface1][iface2] = False
         nft_queue.update(self)
 
     def link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
@@ -393,10 +393,10 @@ class CoreNetwork(CoreNetworkBase):
         :param iface2: interface two
         :return: nothing
         """
-        with self._linked_lock:
-            if self.linked(iface1, iface2):
+        with self.linked_lock:
+            if self.is_linked(iface1, iface2):
                 return
-            self._linked[iface1][iface2] = True
+            self.linked[iface1][iface2] = True
         nft_queue.update(self)
 
     def linkconfig(
@@ -503,8 +503,8 @@ class CoreNetwork(CoreNetworkBase):
             iface.net_client.set_iface_master(net.brname, iface.name)
         i = net.next_iface_id()
         net.ifaces[i] = iface
-        with net._linked_lock:
-            net._linked[iface] = {}
+        with net.linked_lock:
+            net.linked[iface] = {}
         iface.net = self
         iface.othernet = net
         return iface

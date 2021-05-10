@@ -408,8 +408,8 @@ class BasicRangeModel(WirelessModel):
             a = min(iface, iface2)
             b = max(iface, iface2)
 
-            with self.wlan._linked_lock:
-                linked = self.wlan.linked(a, b)
+            with self.wlan.linked_lock:
+                linked = self.wlan.is_linked(a, b)
             if d > self.range:
                 if linked:
                     logger.debug("was linked, unlinking")
@@ -508,10 +508,10 @@ class BasicRangeModel(WirelessModel):
         :return: all link data
         """
         all_links = []
-        with self.wlan._linked_lock:
-            for a in self.wlan._linked:
-                for b in self.wlan._linked[a]:
-                    if self.wlan._linked[a][b]:
+        with self.wlan.linked_lock:
+            for a in self.wlan.linked:
+                for b in self.wlan.linked[a]:
+                    if self.wlan.linked[a][b]:
                         all_links.append(self.create_link_data(a, b, flags))
         return all_links
 

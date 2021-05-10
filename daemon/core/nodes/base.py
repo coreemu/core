@@ -948,8 +948,8 @@ class CoreNetworkBase(NodeBase):
         """
         super().__init__(session, _id, name, server)
         self.brname: Optional[str] = None
-        self._linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
-        self._linked_lock: threading.Lock = threading.Lock()
+        self.linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
+        self.linked_lock: threading.Lock = threading.Lock()
 
     @abc.abstractmethod
     def startup(self) -> None:
@@ -1018,8 +1018,8 @@ class CoreNetworkBase(NodeBase):
         i = self.next_iface_id()
         self.ifaces[i] = iface
         iface.net_id = i
-        with self._linked_lock:
-            self._linked[iface] = {}
+        with self.linked_lock:
+            self.linked[iface] = {}
 
     def detach(self, iface: CoreInterface) -> None:
         """
@@ -1030,8 +1030,8 @@ class CoreNetworkBase(NodeBase):
         """
         del self.ifaces[iface.net_id]
         iface.net_id = None
-        with self._linked_lock:
-            del self._linked[iface]
+        with self.linked_lock:
+            del self.linked[iface]
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
