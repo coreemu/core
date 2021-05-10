@@ -86,7 +86,7 @@ class Menubar(tk.Menu):
         self.recent_menu = tk.Menu(menu)
         for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
-                label=i, command=partial(self.open_recent_files, i)
+                label=i, command=partial(self.open_recent_files, Path(i))
             )
         menu.add_cascade(label="Recent Files", menu=self.recent_menu)
         menu.add_separator()
@@ -285,7 +285,7 @@ class Menubar(tk.Menu):
         self.recent_menu.delete(0, tk.END)
         for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
-                label=i, command=partial(self.open_recent_files, i)
+                label=i, command=partial(self.open_recent_files, Path(i))
             )
 
     def click_save(self, _event: tk.Event = None) -> None:
