@@ -159,14 +159,14 @@ def check_existing_core(c: Context, hide: bool) -> None:
 def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     if os_info.like == OsLike.DEBIAN:
         c.run(
-            "sudo apt install -y automake pkg-config gcc libev-dev ebtables "
+            "sudo apt install -y automake pkg-config gcc libev-dev nftables "
             "iproute2 ethtool tk python3-tk bash",
             hide=hide
         )
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
-            "libev-devel iptables-ebtables iproute python3-devel python3-tkinter "
+            "libev-devel nftables iproute python3-devel python3-tkinter "
             "tk ethtool make bash",
             hide=hide
         )
@@ -178,18 +178,6 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
                 print("run the following, restart, and try again")
                 print("sudo yum update")
                 sys.exit(1)
-
-    # attempt to setup legacy ebtables when an nftables based version is found
-    r = c.run("ebtables -V", hide=hide)
-    if "nf_tables" in r.stdout:
-        if not c.run(
-            "sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy",
-            warn=True,
-            hide=hide
-        ):
-            print(
-                "\nWARNING: unable to setup ebtables-legacy, WLAN will not work"
-            )
 
 
 def install_grpcio(c: Context, hide: bool) -> None:

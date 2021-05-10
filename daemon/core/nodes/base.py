@@ -947,9 +947,9 @@ class CoreNetworkBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server)
-        self.brname = None
-        self._linked = {}
-        self._linked_lock = threading.Lock()
+        self.brname: Optional[str] = None
+        self._linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
+        self._linked_lock: threading.Lock = threading.Lock()
 
     @abc.abstractmethod
     def startup(self) -> None:

@@ -63,8 +63,8 @@ eval "$ifcommand" | awk '
     /b\./ {print "removing bridge " $1; system("ip link set " $1 " down; ip link del " $1);}
 '
 
-ebtables -L FORWARD | awk '
-    /^-.*b\./ {print "removing ebtables " $0; system("ebtables -D FORWARD " $0); print "removing ebtables chain " $4; system("ebtables -X " $4);}
+nft list ruleset | awk '
+    $3 ~ /^b\./ {print "removing nftables " $3; system("nft delete table bridge " $3);}
 '
 
 rm -rf /tmp/pycore*

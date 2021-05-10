@@ -57,7 +57,7 @@ fpm -s dir -t deb -n core-distributed \
 	-d "procps" \
 	-d "libc6 >= 2.14" \
 	-d "bash >= 3.0" \
-	-d "ebtables" \
+	-d "nftables" \
 	-d "iproute2" \
 	-d "libev4" \
 	-d "openssh-server" \
@@ -77,7 +77,7 @@ fpm -s dir -t rpm -n core-distributed \
 	-d "ethtool" \
 	-d "procps-ng" \
 	-d "bash >= 3.0" \
-	-d "ebtables" \
+	-d "nftables" \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \

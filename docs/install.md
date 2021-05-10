@@ -15,20 +15,14 @@ containers, as a general rule you should select a machine having as much RAM and
 
 * Linux Kernel v3.3+
 * iproute2 4.5+ is a requirement for bridge related commands
-* ebtables not backed by nftables
+* nftables compatible kernel and nft command line tool
 
 ### Supported Linux Distributions
 Plan is to support recent Ubuntu and CentOS LTS releases.
 
 Verified:
 * Ubuntu - 18.04, 20.04
-* CentOS - 7.8, 8.0*
-
-> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN
-> functionality
-
-> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not
-> function properly
+* CentOS - 7.8, 8.0
 
 > **NOTE:** CentOS 8 does not have the netem kernel mod available by default
 

@@ -669,7 +669,7 @@ class CoreClient:
         else:
             services = self.session.default_services.get(model)
             if services:
-                node.config_services = services.copy()
+                node.config_services = set(services)
         logger.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
