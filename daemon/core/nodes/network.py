@@ -7,7 +7,7 @@ import math
 import threading
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Type
 
 import netaddr
 
@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     WirelessModelType = Type[WirelessModel]
 
 LEARNING_DISABLED: int = 0
-NFTABLES_LOCK: threading.Lock = threading.Lock()
 
 
 class NftablesQueue:
@@ -63,7 +62,7 @@ class NftablesQueue:
         # list of pending nftables commands
         self.cmds: List[str] = []
         # list of WLANs requiring update
-        self.updates: List["CoreNetwork"] = []
+        self.updates: Set["CoreNetwork"] = set()
         # timestamps of last WLAN update; this keeps track of WLANs that are
         # using this queue
         self.last_update_time: Dict["CoreNetwork", float] = {}
@@ -101,24 +100,11 @@ class NftablesQueue:
         """
         Return the time elapsed since this network was last updated.
         :param net: network node
-        :return: elpased time
+        :return: elapsed time
         """
-        if net in self.last_update_time:
-            elapsed = time.monotonic() - self.last_update_time[net]
-        else:
-            self.last_update_time[net] = time.monotonic()
-            elapsed = 0.0
-        return elapsed
-
-    def updated(self, net: "CoreNetwork") -> None:
-        """
-        Keep track of when this network was last updated.
-
-        :param net: network node
-        :return: nothing
-        """
-        self.last_update_time[net] = time.monotonic()
-        self.updates.remove(net)
+        now = time.monotonic()
+        last_update = self.last_update_time.setdefault(net, now)
+        return now - last_update
 
     def run(self) -> None:
         """
@@ -130,14 +116,18 @@ class NftablesQueue:
         """
         while self.running:
             with self.lock:
+                discard = set()
                 for net in self.updates:
                     if not net.up:
-                        self.updated(net)
+                        self.last_update_time[net] = time.monotonic()
+                        discard.add(net)
                         continue
                     if self.last_update(net) > self.rate:
                         self.build_cmds(net)
                         self.commit(net)
-                        self.updated(net)
+                        self.last_update_time[net] = time.monotonic()
+                        discard.add(net)
+                self.updates -= discard
             time.sleep(self.rate)
 
     def commit(self, net: "CoreNetwork") -> None:
@@ -164,8 +154,18 @@ class NftablesQueue:
         :return: nothing
         """
         with self.lock:
-            if net not in self.updates:
-                self.updates.append(net)
+            self.updates.add(net)
+
+    def delete_table(self, net: "CoreNetwork") -> None:
+        """
+        Delete nftable bridge rule table.
+
+        :param net: network to delete table for
+        :param name: name of bridge table to delete
+        :return: nothing
+        """
+        with self.lock:
+            net.host_cmd(f"{NFTABLES} delete table bridge {net.brname}")
 
     def build_cmds(self, net: "CoreNetwork") -> None:
         """
@@ -213,19 +213,6 @@ class NftablesQueue:
 # a global object because all networks share the same queue
 # cannot have multiple threads invoking the nftables commnd
 nft_queue: NftablesQueue = NftablesQueue()
-
-
-def nftables_cmds(call: Callable[..., str], cmds: List[str]) -> None:
-    """
-    Run nftable commands.
-
-    :param call: function to call commands
-    :param cmds: commands to call
-    :return: nothing
-    """
-    with NFTABLES_LOCK:
-        for cmd in cmds:
-            call(cmd)
 
 
 class CoreNetwork(CoreNetworkBase):
@@ -312,8 +299,7 @@ class CoreNetwork(CoreNetworkBase):
         try:
             self.net_client.delete_bridge(self.brname)
             if self.has_nftables_chain:
-                cmds = [f"{NFTABLES} delete table bridge {self.brname}"]
-                nftables_cmds(self.host_cmd, cmds)
+                nft_queue.delete_table(self)
         except CoreCommandError:
             logging.exception("error during shutdown")
         # removes veth pairs used for bridge-to-bridge connections
