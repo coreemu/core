@@ -149,6 +149,15 @@ cd core
 ./install.sh -p <prefix> -l
 ```
 
+### Enabling Service
+After installation, the core service is not enabled by default. If you desire to use the
+service, run the following commands.
+
+```shell
+sudo systemctl enable core-daemon
+sudo systemctl start core-daemon
+```
+
 ### Unsupported Linux Distribution
 For unsupported OSs you could attempt to do the following to translate
 an installation to your use case.
