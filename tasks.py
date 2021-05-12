@@ -265,13 +265,14 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
         print(f"ERROR: systemd service path not found: {systemd_dir}")
 
 
-def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
+def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
-    install core script files, modified to leverage virtual environment
+    install core files (scripts, examples, and configuration)
     """
     hide = not verbose
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
+    # install scripts
     for script in Path("daemon/scripts").iterdir():
         dest = bin_dir.joinpath(script.name)
         with open(script, "r") as f:
@@ -290,7 +291,6 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         # copy normal links
         else:
             c.run(f"sudo cp {script} {dest}", hide=hide)
-
     # setup core python helper
     if not local:
         core_python = bin_dir.joinpath("core-python")
@@ -303,12 +303,15 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
         os.unlink(temp.name)
-
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
+    # install examples
+    examples_dir = f"{prefix}/share/core"
+    c.run(f"sudo mkdir -p {examples_dir}", hide=hide)
+    c.run(f"sudo cp -r daemon/examples {examples_dir}", hide=hide)
 
 
 @task(
@@ -354,8 +357,8 @@ def install(
     install_type = "core" if local else "core virtual environment"
     with p.start(f"installing {install_type}"):
         install_poetry(c, dev, local, hide)
-    with p.start("installing scripts and /etc/core"):
-        install_scripts(c, local, hide, prefix)
+    with p.start("installing scripts, examples, and configuration"):
+        install_core_files(c, local, hide, prefix)
     with p.start("installing systemd service"):
         install_service(c, hide, prefix)
     if ospf:
@@ -470,6 +473,9 @@ def uninstall(
         for script in Path("daemon/scripts").iterdir():
             dest = bin_dir.joinpath(script.name)
             c.run(f"sudo rm -f {dest}", hide=hide)
+    with p.start("uninstalling examples"):
+        examples_dir = Path(prefix).joinpath("share/core")
+        c.run(f"sudo rm -rf {examples_dir}")
 
     # remove core-python symlink
     if not local:
