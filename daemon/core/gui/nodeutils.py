@@ -31,10 +31,9 @@ ANTENNA_ICON: Optional[PhotoImage] = None
 def setup() -> None:
     global ANTENNA_ICON
     nodes = [
-        (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
-        (ImageEnum.HOST, NodeType.DEFAULT, "Host", "host"),
         (ImageEnum.PC, NodeType.DEFAULT, "PC", "PC"),
         (ImageEnum.MDR, NodeType.DEFAULT, "MDR", "mdr"),
+        (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
         (ImageEnum.PROUTER, NodeType.DEFAULT, "PRouter", "prouter"),
         (ImageEnum.DOCKER, NodeType.DOCKER, "Docker", None),
         (ImageEnum.LXC, NodeType.LXC, "LXC", None),
