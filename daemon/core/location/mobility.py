@@ -44,6 +44,43 @@ def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, Emane
         return session.get_node(node_id, EmaneNet)
 
 
+def get_config_int(current: int, config: Dict[str, str], name: str) -> Optional[int]:
+    """
+    Convenience function to get config values as int.
+
+    :param current: current config value to use when one is not provided
+    :param config: config to get values from
+    :param name: name of config value to get
+    :return: current config value when not provided, new value otherwise
+    """
+    value = get_config_float(current, config, name)
+    if value is not None:
+        value = int(value)
+    return value
+
+
+def get_config_float(
+    current: Union[int, float], config: Dict[str, str], name: str
+) -> Optional[float]:
+    """
+    Convenience function to get config values as float.
+
+    :param current: current config value to use when one is not provided
+    :param config: config to get values from
+    :param name: name of config value to get
+    :return: current config value when not provided, new value otherwise
+    """
+    value = config.get(name)
+    if value is not None:
+        if value == "":
+            value = None
+        else:
+            value = float(value)
+    else:
+        value = current
+    return value
+
+
 class MobilityManager(ModelManager):
     """
     Member of session class for handling configuration data for mobility and
@@ -295,25 +332,6 @@ class BasicRangeModel(WirelessModel):
         self.jitter: Optional[int] = None
         self.promiscuous: bool = False
 
-    def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
-        """
-        Convenience for updating value to use from a provided configuration.
-
-        :param current_value: current config value to use when one is not provided
-        :param config: config to get values from
-        :param name: name of config value to get
-        :return: current config value when not provided, new value otherwise
-        """
-        value = config.get(name)
-        if value is not None:
-            if value == "":
-                value = None
-            else:
-                value = int(float(value))
-        else:
-            value = current_value
-        return value
-
     def setlinkparams(self) -> None:
         """
         Apply link parameters to all interfaces. This is invoked from
@@ -448,14 +466,14 @@ class BasicRangeModel(WirelessModel):
         :param config: values to update configuration
         :return: nothing
         """
-        self.range = self._get_config(self.range, config, "range")
+        self.range = get_config_int(self.range, config, "range")
         if self.range is None:
             self.range = 0
         logger.debug("wlan %s set range to %s", self.wlan.name, self.range)
-        self.bw = self._get_config(self.bw, config, "bandwidth")
-        self.delay = self._get_config(self.delay, config, "delay")
-        self.loss = self._get_config(self.loss, config, "error")
-        self.jitter = self._get_config(self.jitter, config, "jitter")
+        self.bw = get_config_int(self.bw, config, "bandwidth")
+        self.delay = get_config_int(self.delay, config, "delay")
+        self.loss = get_config_float(self.loss, config, "error")
+        self.jitter = get_config_int(self.jitter, config, "jitter")
         promiscuous = config.get("promiscuous", "0") == "1"
         if self.promiscuous and not promiscuous:
             self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_ENABLED)
