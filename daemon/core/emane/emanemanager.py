@@ -114,10 +114,13 @@ class EmaneManager:
         self.eventchannel: Optional[Tuple[str, int, str]] = None
         self.event_device: Optional[str] = None
 
-    def next_nem_id(self) -> int:
+    def next_nem_id(self, iface: CoreInterface) -> int:
         nem_id = int(self.config["nem_id_start"])
         while nem_id in self.nems_to_ifaces:
             nem_id += 1
+        self.nems_to_ifaces[nem_id] = iface
+        self.ifaces_to_nems[iface] = nem_id
+        self.write_nem(iface, nem_id)
         return nem_id
 
     def get_config(
@@ -385,25 +388,53 @@ class EmaneManager:
         return start_nodes
 
     def start_node(self, data: StartData) -> None:
+        node = data.node
         control_net = self.session.add_remove_control_net(
             0, remove=False, conf_required=False
         )
-        emanexml.build_platform_xml(self, control_net, data)
-        self.start_daemon(data.node)
+        if isinstance(node, CoreNode):
+            # setup ota device
+            otagroup, _otaport = self.config["otamanagergroup"].split(":")
+            otadev = self.config["otamanagerdevice"]
+            otanetidx = self.session.get_control_net_index(otadev)
+            eventgroup, _eventport = self.config["eventservicegroup"].split(":")
+            eventdev = self.config["eventservicedevice"]
+            eventservicenetidx = self.session.get_control_net_index(eventdev)
+            # control network not yet started here
+            self.session.add_remove_control_iface(
+                node, 0, remove=False, conf_required=False
+            )
+            if otanetidx > 0:
+                logger.info("adding ota device ctrl%d", otanetidx)
+                self.session.add_remove_control_iface(
+                    node, otanetidx, remove=False, conf_required=False
+                )
+            if eventservicenetidx >= 0:
+                logger.info("adding event service device ctrl%d", eventservicenetidx)
+                self.session.add_remove_control_iface(
+                    node, eventservicenetidx, remove=False, conf_required=False
+                )
+            # multicast route is needed for OTA data
+            logger.info("OTA GROUP(%s) OTA DEV(%s)", otagroup, otadev)
+            node.node_net_client.create_route(otagroup, otadev)
+            # multicast route is also needed for event data if on control network
+            if eventservicenetidx >= 0 and eventgroup != otagroup:
+                node.node_net_client.create_route(eventgroup, eventdev)
+        # builds xmls and start emane daemons
         for iface in data.ifaces:
+            emanexml.build_platform_xml(self, control_net, node, iface)
+            self.start_daemon(node, iface)
             self.install_iface(iface)
-
-    def set_nem(self, nem_id: int, iface: CoreInterface) -> None:
-        if nem_id in self.nems_to_ifaces:
-            raise CoreError(f"adding duplicate nem: {nem_id}")
-        self.nems_to_ifaces[nem_id] = iface
-        self.ifaces_to_nems[iface] = nem_id
 
     def get_iface(self, nem_id: int) -> Optional[CoreInterface]:
         return self.nems_to_ifaces.get(nem_id)
 
     def get_nem_id(self, iface: CoreInterface) -> Optional[int]:
         return self.ifaces_to_nems.get(iface)
+
+    def get_nem_port(self, iface: CoreInterface) -> int:
+        nem_id = self.get_nem_id(iface)
+        return int(f"47{nem_id:03}")
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
         path = self.session.directory / "emane_nems"
@@ -549,7 +580,7 @@ class EmaneManager:
             )
         )
 
-    def start_daemon(self, node: CoreNodeBase) -> None:
+    def start_daemon(self, node: CoreNodeBase, iface: CoreInterface) -> None:
         """
         Start one EMANE daemon per node having a radio.
         Add a control network even if the user has not configured one.
@@ -565,42 +596,15 @@ class EmaneManager:
         if realtime:
             emanecmd += " -r"
         if isinstance(node, CoreNode):
-            otagroup, _otaport = self.config["otamanagergroup"].split(":")
-            otadev = self.config["otamanagerdevice"]
-            otanetidx = self.session.get_control_net_index(otadev)
-            eventgroup, _eventport = self.config["eventservicegroup"].split(":")
-            eventdev = self.config["eventservicedevice"]
-            eventservicenetidx = self.session.get_control_net_index(eventdev)
-
-            # control network not yet started here
-            self.session.add_remove_control_iface(
-                node, 0, remove=False, conf_required=False
-            )
-            if otanetidx > 0:
-                logger.info("adding ota device ctrl%d", otanetidx)
-                self.session.add_remove_control_iface(
-                    node, otanetidx, remove=False, conf_required=False
-                )
-            if eventservicenetidx >= 0:
-                logger.info("adding event service device ctrl%d", eventservicenetidx)
-                self.session.add_remove_control_iface(
-                    node, eventservicenetidx, remove=False, conf_required=False
-                )
-            # multicast route is needed for OTA data
-            logger.info("OTA GROUP(%s) OTA DEV(%s)", otagroup, otadev)
-            node.node_net_client.create_route(otagroup, otadev)
-            # multicast route is also needed for event data if on control network
-            if eventservicenetidx >= 0 and eventgroup != otagroup:
-                node.node_net_client.create_route(eventgroup, eventdev)
             # start emane
-            log_file = node.directory / f"{node.name}-emane.log"
-            platform_xml = node.directory / f"{node.name}-platform.xml"
+            log_file = node.directory / f"{iface.name}-emane.log"
+            platform_xml = node.directory / emanexml.platform_file_name(iface)
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.cmd(args)
             logger.info("node(%s) emane daemon running: %s", node.name, args)
         else:
-            log_file = self.session.directory / f"{node.name}-emane.log"
-            platform_xml = self.session.directory / f"{node.name}-platform.xml"
+            log_file = self.session.directory / f"{iface.name}-emane.log"
+            platform_xml = self.session.directory / emanexml.platform_file_name(iface)
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.host_cmd(args, cwd=self.session.directory)
             logger.info("node(%s) host emane daemon running: %s", node.name, args)

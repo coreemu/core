@@ -227,12 +227,6 @@ class Ospfv3mdr(Ospfv3):
 
     name: str = "OSPFv3MDR"
 
-    def data(self) -> Dict[str, Any]:
-        for iface in self.node.get_ifaces():
-            is_wireless = isinstance(iface.net, (WlanNode, EmaneNet))
-            logger.info("MDR wireless: %s", is_wireless)
-        return dict()
-
     def quagga_iface_config(self, iface: CoreInterface) -> str:
         config = super().quagga_iface_config(iface)
         if isinstance(iface.net, (WlanNode, EmaneNet)):
