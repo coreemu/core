@@ -1,6 +1,7 @@
 """
 EMANE Bypass model for CORE
 """
+from pathlib import Path
 from typing import List, Set
 
 from core.config import Configuration
@@ -30,6 +31,5 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     phy_config: List[Configuration] = []
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        # ignore default logic
-        pass
+    def load(cls, emane_prefix: Path) -> None:
+        cls._load_platform_config(emane_prefix)

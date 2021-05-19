@@ -16,6 +16,8 @@ from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
 logger = logging.getLogger(__name__)
+DEFAULT_DEV: str = "ctrl0"
+MANIFEST_PATH: str = "share/emane/manifest"
 
 
 class EmaneModel(WirelessModel):
@@ -24,6 +26,16 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+
+    # default platform configuration settings
+    platform_xml: str = "nemmanager.xml"
+    platform_defaults: Dict[str, str] = {
+        "eventservicedevice": DEFAULT_DEV,
+        "eventservicegroup": "224.1.2.8:45703",
+        "otamanagerdevice": DEFAULT_DEV,
+        "otamanagergroup": "224.1.2.8:45702",
+    }
+    platform_config: List[Configuration] = []
 
     # default mac configuration settings
     mac_library: Optional[str] = None
@@ -57,19 +69,26 @@ class EmaneModel(WirelessModel):
     @classmethod
     def load(cls, emane_prefix: Path) -> None:
         """
-        Called after being loaded within the EmaneManager. Provides configured emane_prefix for
-        parsing xml files.
+        Called after being loaded within the EmaneManager. Provides configured
+        emane_prefix for parsing xml files.
 
         :param emane_prefix: configured emane prefix path
         :return: nothing
         """
-        manifest_path = "share/emane/manifest"
+        cls._load_platform_config(emane_prefix)
         # load mac configuration
-        mac_xml_path = emane_prefix / manifest_path / cls.mac_xml
+        mac_xml_path = emane_prefix / MANIFEST_PATH / cls.mac_xml
         cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
         # load phy configuration
-        phy_xml_path = emane_prefix / manifest_path / cls.phy_xml
+        phy_xml_path = emane_prefix / MANIFEST_PATH / cls.phy_xml
         cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
+    @classmethod
+    def _load_platform_config(cls, emane_prefix: Path) -> None:
+        platform_xml_path = emane_prefix / MANIFEST_PATH / cls.platform_xml
+        cls.platform_config = emanemanifest.parse(
+            platform_xml_path, cls.platform_defaults
+        )
 
     @classmethod
     def configurations(cls) -> List[Configuration]:
@@ -78,7 +97,9 @@ class EmaneModel(WirelessModel):
 
         :return: all configurations
         """
-        return cls.mac_config + cls.phy_config + cls.external_config
+        return (
+            cls.platform_config + cls.mac_config + cls.phy_config + cls.external_config
+        )
 
     @classmethod
     def config_groups(cls) -> List[ConfigGroup]:
@@ -87,11 +108,13 @@ class EmaneModel(WirelessModel):
 
         :return: list of configuration groups.
         """
-        mac_len = len(cls.mac_config)
+        platform_len = len(cls.platform_config)
+        mac_len = len(cls.mac_config) + platform_len
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
         return [
-            ConfigGroup("MAC Parameters", 1, mac_len),
+            ConfigGroup("Platform Parameters", 1, platform_len),
+            ConfigGroup("MAC Parameters", platform_len + 1, mac_len),
             ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]

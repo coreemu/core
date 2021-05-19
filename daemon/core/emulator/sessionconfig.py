@@ -59,6 +59,42 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         Configuration(
             id="ovs", type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
         ),
+        Configuration(
+            id="platform_id_start",
+            type=ConfigDataTypes.INT32,
+            default="1",
+            label="EMANE Platform ID Start",
+        ),
+        Configuration(
+            id="nem_id_start",
+            type=ConfigDataTypes.INT32,
+            default="1",
+            label="EMANE NEM ID Start",
+        ),
+        Configuration(
+            id="link_enabled",
+            type=ConfigDataTypes.BOOL,
+            default="1",
+            label="EMANE Links?",
+        ),
+        Configuration(
+            id="loss_threshold",
+            type=ConfigDataTypes.INT32,
+            default="30",
+            label="EMANE Link Loss Threshold (%)",
+        ),
+        Configuration(
+            id="link_interval",
+            type=ConfigDataTypes.INT32,
+            default="1",
+            label="EMANE Link Check Interval (sec)",
+        ),
+        Configuration(
+            id="link_timeout",
+            type=ConfigDataTypes.INT32,
+            default="4",
+            label="EMANE Link Timeout (sec)",
+        ),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
