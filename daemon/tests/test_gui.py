@@ -941,35 +941,3 @@ class TestGui:
 
         config = coretlv.session.emane.get_config(wlan.id, EmaneIeee80211abgModel.name)
         assert config[config_key] == config_value
-
-    def test_config_emane_request(self, coretlv: CoreHandler):
-        message = coreapi.CoreConfMessage.create(
-            0,
-            [
-                (ConfigTlvs.OBJECT, "emane"),
-                (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
-            ],
-        )
-        coretlv.handle_broadcast_config = mock.MagicMock()
-
-        coretlv.handle_message(message)
-
-        coretlv.handle_broadcast_config.assert_called_once()
-
-    def test_config_emane_update(self, coretlv: CoreHandler):
-        config_key = "eventservicedevice"
-        config_value = "eth4"
-        values = {config_key: config_value}
-        message = coreapi.CoreConfMessage.create(
-            0,
-            [
-                (ConfigTlvs.OBJECT, "emane"),
-                (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
-                (ConfigTlvs.VALUES, dict_to_str(values)),
-            ],
-        )
-
-        coretlv.handle_message(message)
-
-        config = coretlv.session.emane.config
-        assert config[config_key] == config_value

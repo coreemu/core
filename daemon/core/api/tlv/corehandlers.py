@@ -1046,8 +1046,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.handle_config_mobility(message_type, config_data)
         elif config_data.object in self.session.mobility.models:
             replies = self.handle_config_mobility_models(message_type, config_data)
-        elif config_data.object == self.session.emane.name:
-            replies = self.handle_config_emane(message_type, config_data)
         elif config_data.object in EmaneModelManager.models:
             replies = self.handle_config_emane_models(message_type, config_data)
         else:
@@ -1376,36 +1374,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logger.error(
                         "skipping mobility configuration for unknown node: %s", node_id
                     )
-
-        return replies
-
-    def handle_config_emane(self, message_type, config_data):
-        replies = []
-        node_id = config_data.node
-        object_name = config_data.object
-        iface_id = config_data.iface_id
-        values_str = config_data.data_values
-
-        node_id = utils.iface_config_id(node_id, iface_id)
-        logger.debug(
-            "received configure message for %s nodenum: %s", object_name, node_id
-        )
-        if message_type == ConfigFlags.REQUEST:
-            logger.info("replying to configure request for %s model", object_name)
-            typeflags = ConfigFlags.NONE.value
-            config = self.session.emane.config
-            config_response = ConfigShim.config_data(
-                0, node_id, typeflags, self.session.emane.emane_config, config
-            )
-            replies.append(config_response)
-        elif message_type != ConfigFlags.RESET:
-            if not object_name:
-                logger.info("no configuration object for node %s", node_id)
-                return []
-
-            if values_str:
-                config = ConfigShim.str_to_dict(values_str)
-                self.session.emane.config = config
 
         return replies
 
@@ -1850,14 +1818,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     0, node_id, ConfigFlags.UPDATE.value, model_class, config
                 )
                 self.session.broadcast_config(config_data)
-
-        # send global emane config
-        config = self.session.emane.config
-        logger.debug("global emane config: values(%s)", config)
-        config_data = ConfigShim.config_data(
-            0, None, ConfigFlags.UPDATE.value, self.session.emane.emane_config, config
-        )
-        self.session.broadcast_config(config_data)
 
         # send emane model configs
         for node_id, model_configs in self.session.emane.node_configs.items():

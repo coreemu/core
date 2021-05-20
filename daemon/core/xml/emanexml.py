@@ -162,7 +162,7 @@ def build_platform_xml(
     :param iface: node interface to create platform xml for
     :return: the next nem id that can be used for creating platform xml files
     """
-    # create nem xml entries for all interfaces
+    # create model based xml files
     emane_net = iface.net
     if not isinstance(emane_net, EmaneNet):
         raise CoreError(f"emane interface not connected to emane net: {emane_net.name}")
@@ -173,12 +173,12 @@ def build_platform_xml(
     # create top level platform element
     transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
-    for configuration in emane_manager.emane_config.emulator_config:
+    for configuration in emane_net.model.platform_config:
         name = configuration.id
         if not isinstance(node, CoreNode) and name in transport_configs:
             value = control_net.brname
         else:
-            value = emane_manager.config[name]
+            value = config[configuration.id]
         if name == "controlportendpoint":
             port = emane_manager.get_nem_port(iface)
             value = f"0.0.0.0:{port}"

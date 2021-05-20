@@ -783,7 +783,6 @@ class Session:
         x=0.0, y=0.0, z=0.0, lat=47.57917, lon=-122.13232, alt=2.0, scale=150.0
     )
     hooks: Dict[str, Hook] = field(default_factory=dict)
-    emane_config: Dict[str, ConfigOption] = field(default_factory=dict)
     metadata: Dict[str, str] = field(default_factory=dict)
     file: Path = None
     options: Dict[str, ConfigOption] = field(default_factory=dict)
@@ -836,7 +835,6 @@ class Session:
             default_services=default_services,
             location=SessionLocation.from_proto(proto.location),
             hooks=hooks,
-            emane_config=ConfigOption.from_dict(proto.emane_config),
             metadata=dict(proto.metadata),
             file=file_path,
             options=options,
@@ -888,11 +886,6 @@ class Session:
         )
         self.links.append(link)
         return link
-
-    def set_emane(self, config: Dict[str, str]) -> None:
-        for key, value in config.items():
-            option = ConfigOption(name=key, value=value)
-            self.emane_config[key] = option
 
     def set_options(self, config: Dict[str, str]) -> None:
         for key, value in config.items():

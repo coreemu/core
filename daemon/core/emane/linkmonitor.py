@@ -189,9 +189,10 @@ class EmaneLinkMonitor:
         self.running: bool = False
 
     def start(self) -> None:
-        self.loss_threshold = int(self.emane_manager.config["loss_threshold"])
-        self.link_interval = int(self.emane_manager.config["link_interval"])
-        self.link_timeout = int(self.emane_manager.config["link_timeout"])
+        options = self.emane_manager.session.options
+        self.loss_threshold = options.get_config_int("loss_threshold")
+        self.link_interval = options.get_config_int("link_interval")
+        self.link_timeout = options.get_config_int("link_timeout")
         self.initialize()
         if not self.clients:
             logger.info("no valid emane models to monitor links")

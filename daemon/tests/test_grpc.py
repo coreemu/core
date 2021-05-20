@@ -83,11 +83,6 @@ class TestGrpc:
             scale=location_scale,
         )
 
-        # setup global emane config
-        emane_config_key = "platform_id_start"
-        emane_config_value = "2"
-        session.set_emane({emane_config_key: emane_config_value})
-
         # setup wlan config
         wlan_config_key = "range"
         wlan_config_value = "333"
@@ -151,7 +146,6 @@ class TestGrpc:
             location_alt,
         )
         assert real_session.location.refscale == location_scale
-        assert real_session.emane.config[emane_config_key] == emane_config_value
         set_wlan_config = real_session.mobility.get_model_config(
             wlan_node.id, BasicRangeModel.name
         )
@@ -517,35 +511,6 @@ class TestGrpc:
         config = session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[range_key] == range_value
         assert wlan.model.range == int(range_value)
-
-    def test_get_emane_config(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            config = client.get_emane_config(session.id)
-
-        # then
-        assert len(config) > 0
-
-    def test_set_emane_config(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        config_key = "platform_id_start"
-        config_value = "2"
-
-        # then
-        with client.context_connect():
-            result = client.set_emane_config(session.id, {config_key: config_value})
-
-        # then
-        assert result is True
-        config = session.emane.config
-        assert len(config) > 1
-        assert config[config_key] == config_value
 
     def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given

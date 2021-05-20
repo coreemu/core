@@ -33,14 +33,10 @@ from core.api.grpc.emane_pb2 import (
     EmaneLinkResponse,
     EmanePathlossesRequest,
     EmanePathlossesResponse,
-    GetEmaneConfigRequest,
-    GetEmaneConfigResponse,
     GetEmaneEventChannelRequest,
     GetEmaneEventChannelResponse,
     GetEmaneModelConfigRequest,
     GetEmaneModelConfigResponse,
-    SetEmaneConfigRequest,
-    SetEmaneConfigResponse,
     SetEmaneModelConfigRequest,
     SetEmaneModelConfigResponse,
 )
@@ -266,7 +262,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
         # emane configs
-        session.emane.config.update(request.emane_config)
         for config in request.emane_model_configs:
             _id = utils.iface_config_id(config.node_id, config.iface_id)
             session.emane.set_config(_id, config.model, config.config)
@@ -1044,36 +1039,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node = self.get_node(session, node_id, context, WlanNode)
             node.updatemodel(config)
         return SetWlanConfigResponse(result=True)
-
-    def GetEmaneConfig(
-        self, request: GetEmaneConfigRequest, context: ServicerContext
-    ) -> GetEmaneConfigResponse:
-        """
-        Retrieve EMANE configuration of a session
-
-        :param request: get-EMANE-configuration request
-        :param context: context object
-        :return: get-EMANE-configuration response
-        """
-        logger.debug("get emane config: %s", request)
-        session = self.get_session(request.session_id, context)
-        config = grpcutils.get_emane_config(session)
-        return GetEmaneConfigResponse(config=config)
-
-    def SetEmaneConfig(
-        self, request: SetEmaneConfigRequest, context: ServicerContext
-    ) -> SetEmaneConfigResponse:
-        """
-        Set EMANE configuration of a session
-
-        :param request: set-EMANE-configuration request
-        :param context: context object
-        :return: set-EMANE-configuration response
-        """
-        logger.debug("set emane config: %s", request)
-        session = self.get_session(request.session_id, context)
-        session.emane.config.update(request.config)
-        return SetEmaneConfigResponse(result=True)
 
     def GetEmaneModelConfig(
         self, request: GetEmaneModelConfigRequest, context: ServicerContext
