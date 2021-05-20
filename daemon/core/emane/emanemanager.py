@@ -613,11 +613,11 @@ class EmaneManager:
         self.doeventloop = False
         if self.service is not None:
             self.service.breakloop()
+            if self.eventmonthread is not None:
+                self.eventmonthread.join()
+                self.eventmonthread = None
             # reset the service, otherwise nextEvent won"t work
             self.deleteeventservice()
-        if self.eventmonthread is not None:
-            self.eventmonthread.join()
-            self.eventmonthread = None
 
     def eventmonitorloop(self) -> None:
         """
