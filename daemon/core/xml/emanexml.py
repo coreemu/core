@@ -12,7 +12,6 @@ from core.emulator.distributed import DistributedServer
 from core.errors import CoreError
 from core.nodes.base import CoreNode, CoreNodeBase
 from core.nodes.interface import CoreInterface
-from core.nodes.network import CtrlNet
 from core.xml import corexml
 
 logger = logging.getLogger(__name__)
@@ -146,18 +145,13 @@ def add_configurations(
 
 
 def build_platform_xml(
-    emane_manager: "EmaneManager",
-    control_net: CtrlNet,
-    node: CoreNodeBase,
-    iface: CoreInterface,
+    emane_manager: "EmaneManager", node: CoreNodeBase, iface: CoreInterface
 ) -> None:
     """
     Create platform xml for a specific node.
 
     :param emane_manager: emane manager with emane
         configurations
-    :param control_net: control net node for this emane
-        network
     :param node: node to create a platform xml for
     :param iface: node interface to create platform xml for
     :return: the next nem id that can be used for creating platform xml files
@@ -171,14 +165,10 @@ def build_platform_xml(
     emane_net.model.build_xml_files(config, iface)
 
     # create top level platform element
-    transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
     for configuration in emane_net.model.platform_config:
         name = configuration.id
-        if not isinstance(node, CoreNode) and name in transport_configs:
-            value = control_net.brname
-        else:
-            value = config[configuration.id]
+        value = config[configuration.id]
         if name == "controlportendpoint":
             port = emane_manager.get_nem_port(iface)
             value = f"0.0.0.0:{port}"

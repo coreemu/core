@@ -274,6 +274,9 @@ class EmaneManager:
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
         """
+        # check if bindings were installed
+        if EventService is None:
+            raise CoreError("EMANE python bindings are not installed")
         logger.debug("emane setup")
         with self.session.nodes_lock:
             for node_id in self.session.nodes:
@@ -286,24 +289,6 @@ class EmaneManager:
             if not self._emane_nets:
                 logger.debug("no emane nodes in session")
                 return EmaneState.NOT_NEEDED
-
-        # check if bindings were installed
-        if EventService is None:
-            raise CoreError("EMANE python bindings are not installed")
-
-        # control network bridge required for emane
-        otadev = DEFAULT_DEV
-        netidx = self.session.get_control_net_index(otadev)
-        logger.debug("emane ota manager device: index(%s) otadev(%s)", netidx, otadev)
-        if netidx < 0:
-            logger.error(
-                "EMANE cannot start, check core config. invalid OTA device provided: %s",
-                otadev,
-            )
-            return EmaneState.NOT_READY
-        self.session.add_remove_control_net(
-            net_index=netidx, remove=False, conf_required=False
-        )
         self.check_node_models()
         return EmaneState.SUCCESS
 
@@ -322,14 +307,23 @@ class EmaneManager:
         self.initeventservice()
         if self.service and self.doeventmonitor():
             self.starteventmonitor()
+        self.startup_nodes()
+        if self.links_enabled():
+            self.link_monitor.start()
+        return EmaneState.SUCCESS
+
+    def startup_nodes(self) -> None:
         with self._emane_node_lock:
             logger.info("emane building xmls...")
             start_data = self.get_start_data()
             for data in start_data:
-                self.start_node(data)
-        if self.links_enabled():
-            self.link_monitor.start()
-        return EmaneState.SUCCESS
+                node = data.node
+                for iface in data.ifaces:
+                    if isinstance(node, CoreNode):
+                        self.setup_ota(node, iface)
+                    emanexml.build_platform_xml(self, node, iface)
+                    self.start_daemon(node, iface)
+                    self.install_iface(iface)
 
     def get_start_data(self) -> List[StartData]:
         node_map = {}
@@ -353,19 +347,6 @@ class EmaneManager:
             start_node.ifaces = sorted(start_node.ifaces, key=lambda x: x.node_id)
         return start_nodes
 
-    def start_node(self, data: StartData) -> None:
-        node = data.node
-        control_net = self.session.add_remove_control_net(
-            0, remove=False, conf_required=False
-        )
-        # builds xmls and start emane daemons
-        for iface in data.ifaces:
-            if isinstance(node, CoreNode):
-                self.setup_ota(node, iface)
-            emanexml.build_platform_xml(self, control_net, node, iface)
-            self.start_daemon(node, iface)
-            self.install_iface(iface)
-
     def setup_ota(self, node: CoreNode, iface: CoreInterface) -> None:
         if not isinstance(iface.net, EmaneNet):
             raise CoreError(
@@ -375,35 +356,27 @@ class EmaneManager:
         # setup ota device
         otagroup, _otaport = config["otamanagergroup"].split(":")
         otadev = config["otamanagerdevice"]
-        otanetidx = self.session.get_control_net_index(otadev)
+        ota_index = self.session.get_control_net_index(otadev)
+        self.session.add_remove_control_net(ota_index, conf_required=False)
+        self.session.add_remove_control_iface(node, ota_index, conf_required=False)
+        # setup event device
         eventgroup, _eventport = config["eventservicegroup"].split(":")
         eventdev = config["eventservicedevice"]
-        eventservicenetidx = self.session.get_control_net_index(eventdev)
-        # control network not yet started here
-        self.session.add_remove_control_iface(
-            node, 0, remove=False, conf_required=False
-        )
-        if otanetidx > 0:
-            logger.info("adding ota device ctrl%d", otanetidx)
-            self.session.add_remove_control_iface(
-                node, otanetidx, remove=False, conf_required=False
-            )
-        if eventservicenetidx >= 0:
-            logger.info("adding event service device ctrl%d", eventservicenetidx)
-            self.session.add_remove_control_iface(
-                node, eventservicenetidx, remove=False, conf_required=False
-            )
-        # multicast route is needed for OTA data
+        event_index = self.session.get_control_net_index(eventdev)
+        self.session.add_remove_control_net(event_index, conf_required=False)
+        self.session.add_remove_control_iface(node, event_index, conf_required=False)
+        # setup multicast routes as needed
         logger.info(
-            "node(%s) interface(%s) ota group(%s) dev(%s)",
+            "node(%s) interface(%s) ota(%s:%s) event(%s:%s)",
             node.name,
             iface.name,
             otagroup,
             otadev,
+            eventgroup,
+            eventdev,
         )
         node.node_net_client.create_route(otagroup, otadev)
-        # multicast route is also needed for event data if on control network
-        if eventservicenetidx >= 0 and eventgroup != otagroup:
+        if eventgroup != otagroup:
             node.node_net_client.create_route(eventgroup, eventdev)
 
     def get_iface(self, nem_id: int) -> Optional[CoreInterface]:
@@ -536,7 +509,13 @@ class EmaneManager:
         Start one EMANE daemon per node having a radio.
         Add a control network even if the user has not configured one.
         """
-        logger.info("starting emane daemons...")
+        nem = self.get_nem_id(iface)
+        logger.info(
+            "starting emane daemon node(%s) iface(%s) nem(%s)",
+            node.name,
+            iface.name,
+            nem,
+        )
         loglevel = str(DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.options.get_config_int("emane_log_level")
         realtime = self.session.options.get_config_bool("emane_realtime", default=True)
@@ -552,13 +531,11 @@ class EmaneManager:
             platform_xml = node.directory / emanexml.platform_file_name(iface)
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.cmd(args)
-            logger.info("node(%s) emane daemon running: %s", node.name, args)
         else:
             log_file = self.session.directory / f"{iface.name}-emane.log"
             platform_xml = self.session.directory / emanexml.platform_file_name(iface)
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.host_cmd(args, cwd=self.session.directory)
-            logger.info("node(%s) host emane daemon running: %s", node.name, args)
 
     def install_iface(self, iface: CoreInterface) -> None:
         emane_net = iface.net
