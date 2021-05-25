@@ -122,15 +122,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         Generate CommEffect events when a Link Message is received having
         link parameters.
         """
-        service = self.session.emane.service
-        if service is None:
-            logger.warning("%s: EMANE event service unavailable", self.name)
-            return
-
         if iface is None or iface2 is None:
             logger.warning("%s: missing NEM information", self.name)
             return
-
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
@@ -146,4 +140,4 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
         )
-        service.publish(nem2, event)
+        self.session.emane.publish_event(nem2, event)

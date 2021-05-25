@@ -145,13 +145,14 @@ def add_configurations(
 
 
 def build_platform_xml(
-    emane_manager: "EmaneManager", node: CoreNodeBase, iface: CoreInterface
+    emane_manager: "EmaneManager", nem_id: int, node: CoreNodeBase, iface: CoreInterface
 ) -> None:
     """
     Create platform xml for a specific node.
 
     :param emane_manager: emane manager with emane
         configurations
+    :param nem_id: nem id for current node/interface
     :param node: node to create a platform xml for
     :param iface: node interface to create platform xml for
     :return: the next nem id that can be used for creating platform xml files
@@ -160,7 +161,6 @@ def build_platform_xml(
     emane_net = iface.net
     if not isinstance(emane_net, EmaneNet):
         raise CoreError(f"emane interface not connected to emane net: {emane_net.name}")
-    nem_id = emane_manager.next_nem_id(iface)
     config = emane_manager.get_iface_config(emane_net, iface)
     emane_net.model.build_xml_files(config, iface)
 

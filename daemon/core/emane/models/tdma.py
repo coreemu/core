@@ -59,8 +59,9 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             logger.warning("ignoring invalid tdma schedule: %s", schedule)
             return
         # initiate tdma schedule
-        event_device = self.session.emane.event_device
-        logger.info(
-            "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
-        )
-        utils.cmd(f"emaneevent-tdmaschedule -i {event_device} {schedule}")
+        for service in self.session.emane.services.values():
+            device = service.device
+            logger.info(
+                "setting up tdma schedule: schedule(%s) device(%s)", schedule, device
+            )
+            utils.cmd(f"emaneevent-tdmaschedule -i {device} {schedule}")

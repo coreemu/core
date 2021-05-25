@@ -140,15 +140,12 @@ class EmaneNet(CoreNetworkBase):
 
         :param iface: interface to set nem position for
         """
-        if self.session.emane.service is None:
-            logger.info("position service not available")
-            return
         position = self._nem_position(iface)
         if position:
             nemid, lon, lat, alt = position
             event = LocationEvent()
             event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
-            self.session.emane.service.publish(0, event)
+            self.session.emane.publish_event(nemid, event, send_all=True)
 
     def setnempositions(self, moved_ifaces: List[CoreInterface]) -> None:
         """
@@ -156,20 +153,21 @@ class EmaneNet(CoreNetworkBase):
         calculation. Generate an EMANE Location Event having several
         entries for each interface that has moved.
         """
-        if len(moved_ifaces) == 0:
+        if not moved_ifaces:
             return
-
-        if self.session.emane.service is None:
-            logger.info("position service not available")
-            return
-
-        event = LocationEvent()
+        services = {}
         for iface in moved_ifaces:
             position = self._nem_position(iface)
-            if position:
-                nemid, lon, lat, alt = position
-                event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
-        self.session.emane.service.publish(0, event)
+            if not position:
+                continue
+            nem_id, lon, lat, alt = position
+            service = self.session.emane.nem_service.get(nem_id)
+            if not service:
+                continue
+            event = services.setdefault(service, LocationEvent())
+            event.append(nem_id, latitude=lat, longitude=lon, altitude=alt)
+        for service, event in services.items():
+            service.events.publish(0, event)
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         links = super().links(flags)
