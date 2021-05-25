@@ -33,6 +33,7 @@ message GetEmaneModelConfig {
 
 message GetEmaneEventChannelRequest {
     int32 session_id = 1;
+    int32 nem_id = 2;
 }
 
 message GetEmaneEventChannelResponse {

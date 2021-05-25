@@ -7,7 +7,7 @@ import os
 import threading
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Type, Union
 
 from core import utils
 from core.emane.emanemodel import EmaneModel
@@ -158,7 +158,6 @@ class EmaneManager:
         # emane event monitoring
         self.services: Dict[str, EmaneEventService] = {}
         self.nem_service: Dict[int, EmaneEventService] = {}
-        self.eventchannel: Optional[Tuple[str, int, str]] = None
 
     def next_nem_id(self, iface: CoreInterface) -> int:
         nem_id = self.session.options.get_config_int("nem_id_start")

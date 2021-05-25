@@ -1241,12 +1241,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: GetEmaneEventChannelRequest, context: ServicerContext
     ) -> GetEmaneEventChannelResponse:
         session = self.get_session(request.session_id, context)
-        group = None
-        port = None
-        device = None
-        if session.emane.eventchannel:
-            group, port, device = session.emane.eventchannel
-        return GetEmaneEventChannelResponse(group=group, port=port, device=device)
+        service = session.emane.nem_service.get(request.nem_id)
+        if not service:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"unknown nem id {request.nem_id}")
+        return GetEmaneEventChannelResponse(
+            group=service.group, port=service.port, device=service.device
+        )
 
     def ExecuteScript(self, request, context):
         existing_sessions = set(self.coreemu.sessions.keys())

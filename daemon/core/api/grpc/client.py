@@ -1034,15 +1034,18 @@ class CoreGrpcClient:
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
 
-    def get_emane_event_channel(self, session_id: int) -> wrappers.EmaneEventChannel:
+    def get_emane_event_channel(
+        self, session_id: int, nem_id: int
+    ) -> wrappers.EmaneEventChannel:
         """
         Retrieves the current emane event channel being used for a session.
 
         :param session_id: session to get emane event channel for
+        :param nem_id: nem id for the desired event channel
         :return: emane event channel
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = GetEmaneEventChannelRequest(session_id=session_id)
+        request = GetEmaneEventChannelRequest(session_id=session_id, nem_id=nem_id)
         response = self.stub.GetEmaneEventChannel(request)
         return wrappers.EmaneEventChannel.from_proto(response)
 
