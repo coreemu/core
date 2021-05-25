@@ -134,10 +134,11 @@ class EmaneModel(WirelessModel):
         emanexml.create_phy_xml(self, iface, config)
         emanexml.create_transport_xml(iface, config)
 
-    def post_startup(self) -> None:
+    def post_startup(self, iface: CoreInterface) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 
+        :param iface: interface for post startup
         :return: nothing
         """
         logger.debug("emane model(%s) has no post setup tasks", self.name)

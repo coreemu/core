@@ -446,17 +446,17 @@ class EmaneManager:
         """
         Retransmit location events now that all NEMs are active.
         """
-        if not self.genlocationevents():
-            return
+        events_enabled = self.genlocationevents()
         with self._emane_node_lock:
             for node_id in sorted(self._emane_nets):
                 emane_net = self._emane_nets[node_id]
                 logger.debug(
                     "post startup for emane node: %s - %s", emane_net.id, emane_net.name
                 )
-                emane_net.model.post_startup()
                 for iface in emane_net.get_ifaces():
-                    iface.setposition()
+                    emane_net.model.post_startup(iface)
+                    if events_enabled:
+                        iface.setposition()
 
     def reset(self) -> None:
         """

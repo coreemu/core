@@ -9,7 +9,9 @@ from typing import Set
 from core import constants, utils
 from core.config import Configuration
 from core.emane import emanemodel
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
+from core.nodes.interface import CoreInterface
 
 logger = logging.getLogger(__name__)
 
@@ -44,22 +46,21 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         )
         cls.mac_config.insert(0, config_item)
 
-    def post_startup(self) -> None:
-        """
-        Logic to execute after the emane manager is finished with startup.
-
-        :return: nothing
-        """
+    def post_startup(self, iface: CoreInterface) -> None:
         # get configured schedule
-        config = self.session.emane.get_config(self.id, self.name)
-        if not config:
-            return
+        emane_net = self.session.get_node(self.id, EmaneNet)
+        config = self.session.emane.get_iface_config(emane_net, iface)
         schedule = Path(config[self.schedule_name])
         if not schedule.is_file():
-            logger.warning("ignoring invalid tdma schedule: %s", schedule)
+            logger.error("ignoring invalid tdma schedule: %s", schedule)
             return
         # initiate tdma schedule
-        for service in self.session.emane.services.values():
+        nem_id = self.session.emane.get_nem_id(iface)
+        if not nem_id:
+            logger.error("could not find nem for interface")
+            return
+        service = self.session.emane.nem_service.get(nem_id)
+        if service:
             device = service.device
             logger.info(
                 "setting up tdma schedule: schedule(%s) device(%s)", schedule, device
