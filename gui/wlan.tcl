@@ -541,13 +541,7 @@ proc wlanConfigDialogHelper { wi target apply } {
     ttk::button $opts.model -text "model options" \
 	-image $plugin_img_edit -compound right -command "" -state disabled \
 	-command "configCap $target \[set g_selected_model\]"
-    # global EMANE model uses no node in config request message, although any
-    # config will be stored with the EMANE node having the lowest ID
-    ttk::button $opts.gen -text "EMANE options" \
-	-image $plugin_img_edit -compound right \
-	-command "configCap -1 emane"
-	#-command "popupPluginsCapConfigHelper $wi config $target"
-    pack $opts.model $opts.gen -side left -padx 4 -pady 4
+    pack $opts.model -side left -padx 4 -pady 4
     pack $opts -side top -anchor c -padx 4 -pady 4
 
     # show correct tab basic/emane based on selection

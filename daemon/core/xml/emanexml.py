@@ -12,13 +12,11 @@ from core.emulator.distributed import DistributedServer
 from core.errors import CoreError
 from core.nodes.base import CoreNode, CoreNodeBase
 from core.nodes.interface import CoreInterface
-from core.nodes.network import CtrlNet
 from core.xml import corexml
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from core.emane.emanemanager import EmaneManager, StartData
     from core.emane.emanemodel import EmaneModel
 
 _MAC_PREFIX = "02:02"
@@ -146,74 +144,67 @@ def add_configurations(
 
 
 def build_platform_xml(
-    emane_manager: "EmaneManager", control_net: CtrlNet, data: "StartData"
+    nem_id: int,
+    nem_port: int,
+    emane_net: EmaneNet,
+    iface: CoreInterface,
+    config: Dict[str, str],
 ) -> None:
     """
-    Create platform xml for a specific node.
+    Create platform xml for a nem/interface.
 
-    :param emane_manager: emane manager with emane
-        configurations
-    :param control_net: control net node for this emane
-        network
-    :param data: start data for a node connected to emane and associated interfaces
-    :return: the next nem id that can be used for creating platform xml files
+    :param nem_id: nem id for current node/interface
+    :param nem_port: control port to configure for emane
+    :param emane_net: emane network associate with node and interface
+    :param iface: node interface to create platform xml for
+    :param config: emane configuration for interface
+    :return: nothing
     """
     # create top level platform element
-    transport_configs = {"otamanagerdevice", "eventservicedevice"}
     platform_element = etree.Element("platform")
-    for configuration in emane_manager.emane_config.emulator_config:
+    for configuration in emane_net.model.platform_config:
         name = configuration.id
-        if not isinstance(data.node, CoreNode) and name in transport_configs:
-            value = control_net.brname
-        else:
-            value = emane_manager.config[name]
+        value = config[configuration.id]
         add_param(platform_element, name, value)
+    add_param(
+        platform_element, emane_net.model.platform_controlport, f"0.0.0.0:{nem_port}"
+    )
 
-    # create nem xml entries for all interfaces
-    for iface in data.ifaces:
-        emane_net = iface.net
-        if not isinstance(emane_net, EmaneNet):
-            raise CoreError(
-                f"emane interface not connected to emane net: {emane_net.name}"
-            )
-        nem_id = emane_manager.next_nem_id()
-        emane_manager.set_nem(nem_id, iface)
-        emane_manager.write_nem(iface, nem_id)
-        config = emane_manager.get_iface_config(emane_net, iface)
-        emane_net.model.build_xml_files(config, iface)
+    # build nem xml
+    nem_definition = nem_file_name(iface)
+    nem_element = etree.Element(
+        "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
+    )
 
-        # build nem xml
-        nem_definition = nem_file_name(iface)
-        nem_element = etree.Element(
-            "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
-        )
+    # create model based xml files
+    emane_net.model.build_xml_files(config, iface)
 
-        # check if this is an external transport
-        if is_external(config):
-            nem_element.set("transport", "external")
-            platform_endpoint = "platformendpoint"
-            add_param(nem_element, platform_endpoint, config[platform_endpoint])
-            transport_endpoint = "transportendpoint"
-            add_param(nem_element, transport_endpoint, config[transport_endpoint])
+    # check if this is an external transport
+    if is_external(config):
+        nem_element.set("transport", "external")
+        platform_endpoint = "platformendpoint"
+        add_param(nem_element, platform_endpoint, config[platform_endpoint])
+        transport_endpoint = "transportendpoint"
+        add_param(nem_element, transport_endpoint, config[transport_endpoint])
 
-        # define transport element
-        transport_name = transport_file_name(iface)
-        transport_element = etree.SubElement(
-            nem_element, "transport", definition=transport_name
-        )
-        add_param(transport_element, "device", iface.name)
+    # define transport element
+    transport_name = transport_file_name(iface)
+    transport_element = etree.SubElement(
+        nem_element, "transport", definition=transport_name
+    )
+    add_param(transport_element, "device", iface.name)
 
-        # add nem element to platform element
-        platform_element.append(nem_element)
+    # add nem element to platform element
+    platform_element.append(nem_element)
 
-        # generate and assign interface mac address based on nem id
-        mac = _MAC_PREFIX + ":00:00:"
-        mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
-        iface.set_mac(mac)
+    # generate and assign interface mac address based on nem id
+    mac = _MAC_PREFIX + ":00:00:"
+    mac += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
+    iface.set_mac(mac)
 
     doc_name = "platform"
-    file_name = f"{data.node.name}-platform.xml"
-    create_node_file(data.node, platform_element, doc_name, file_name)
+    file_name = platform_file_name(iface)
+    create_node_file(iface.node, platform_element, doc_name, file_name)
 
 
 def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
@@ -396,3 +387,7 @@ def phy_file_name(iface: CoreInterface) -> str:
     :return: phy xml file name
     """
     return f"{iface.name}-phy.xml"
+
+
+def platform_file_name(iface: CoreInterface) -> str:
+    return f"{iface.name}-platform.xml"

@@ -630,10 +630,6 @@ def get_node_config_service_configs(session: Session) -> List[ConfigServiceConfi
     return configs
 
 
-def get_emane_config(session: Session) -> Dict[str, common_pb2.ConfigOption]:
-    return get_config_options(session.emane.config, session.emane.emane_config)
-
-
 def get_mobility_node(
     session: Session, node_id: int, context: ServicerContext
 ) -> Union[WlanNode, EmaneNet]:
@@ -663,7 +659,6 @@ def convert_session(session: Session) -> wrappers.Session:
         x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=session.location.refscale
     )
     hooks = get_hooks(session)
-    emane_config = get_emane_config(session)
     emane_model_configs = get_emane_model_configs(session)
     wlan_configs = get_wlan_configs(session)
     mobility_configs = get_mobility_configs(session)
@@ -685,7 +680,6 @@ def convert_session(session: Session) -> wrappers.Session:
         default_services=default_services,
         location=location,
         hooks=hooks,
-        emane_config=emane_config,
         emane_model_configs=emane_model_configs,
         wlan_configs=wlan_configs,
         service_configs=service_configs,

@@ -95,10 +95,6 @@ service CoreApi {
     }
 
     // emane rpc
-    rpc GetEmaneConfig (emane.GetEmaneConfigRequest) returns (emane.GetEmaneConfigResponse) {
-    }
-    rpc SetEmaneConfig (emane.SetEmaneConfigRequest) returns (emane.SetEmaneConfigResponse) {
-    }
     rpc GetEmaneModelConfig (emane.GetEmaneModelConfigRequest) returns (emane.GetEmaneModelConfigResponse) {
     }
     rpc SetEmaneModelConfig (emane.SetEmaneModelConfigRequest) returns (emane.SetEmaneModelConfigResponse) {
@@ -144,19 +140,18 @@ message StartSessionRequest {
     repeated Link links = 3;
     repeated Hook hooks = 4;
     SessionLocation location = 5;
-    map<string, string> emane_config = 6;
-    repeated wlan.WlanConfig wlan_configs = 7;
-    repeated emane.EmaneModelConfig emane_model_configs = 8;
-    repeated mobility.MobilityConfig mobility_configs = 9;
-    repeated services.ServiceConfig service_configs = 10;
-    repeated services.ServiceFileConfig service_file_configs = 11;
-    repeated Link asymmetric_links = 12;
-    repeated configservices.ConfigServiceConfig config_service_configs = 13;
-    map<string, string> options = 14;
-    string user = 15;
-    bool definition = 16;
-    map<string, string> metadata = 17;
-    repeated Server servers = 18;
+    repeated wlan.WlanConfig wlan_configs = 6;
+    repeated emane.EmaneModelConfig emane_model_configs = 7;
+    repeated mobility.MobilityConfig mobility_configs = 8;
+    repeated services.ServiceConfig service_configs = 9;
+    repeated services.ServiceFileConfig service_file_configs = 10;
+    repeated Link asymmetric_links = 11;
+    repeated configservices.ConfigServiceConfig config_service_configs = 12;
+    map<string, string> options = 13;
+    string user = 14;
+    bool definition = 15;
+    map<string, string> metadata = 16;
+    repeated Server servers = 17;
 }
 
 message StartSessionResponse {

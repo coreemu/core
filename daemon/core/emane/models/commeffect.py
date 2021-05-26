@@ -51,16 +51,25 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
     @classmethod
     def load(cls, emane_prefix: Path) -> None:
+        cls._load_platform_config(emane_prefix)
         shim_xml_path = emane_prefix / "share/emane/manifest" / cls.shim_xml
         cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod
     def configurations(cls) -> List[Configuration]:
-        return cls.config_shim
+        return cls.platform_config + cls.config_shim
 
     @classmethod
     def config_groups(cls) -> List[ConfigGroup]:
-        return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
+        platform_len = len(cls.platform_config)
+        return [
+            ConfigGroup("Platform Parameters", 1, platform_len),
+            ConfigGroup(
+                "CommEffect SHIM Parameters",
+                platform_len + 1,
+                len(cls.configurations()),
+            ),
+        ]
 
     def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
@@ -113,15 +122,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         Generate CommEffect events when a Link Message is received having
         link parameters.
         """
-        service = self.session.emane.service
-        if service is None:
-            logger.warning("%s: EMANE event service unavailable", self.name)
-            return
-
         if iface is None or iface2 is None:
             logger.warning("%s: missing NEM information", self.name)
             return
-
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
@@ -137,4 +140,4 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
         )
-        service.publish(nem2, event)
+        self.session.emane.publish_event(nem2, event)

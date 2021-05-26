@@ -30,8 +30,9 @@ iface1 = iface_helper.create_iface(node2.id, 0)
 session.add_link(node1=node2, node2=emane, iface1=iface1)
 
 # setup emane configurations using a dict mapping currently support values as strings
-session.set_emane({"eventservicettl": "2"})
-emane.set_emane_model(EmaneIeee80211abgModel.name, {"unicastrate": "3"})
+emane.set_emane_model(
+    EmaneIeee80211abgModel.name, {"eventservicettl": "2", "unicastrate": "3"}
+)
 
 # start session
 core.start_session(session)

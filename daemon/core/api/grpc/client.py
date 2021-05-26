@@ -28,10 +28,8 @@ from core.api.grpc.configservices_pb2 import (
 from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
-    GetEmaneConfigRequest,
     GetEmaneEventChannelRequest,
     GetEmaneModelConfigRequest,
-    SetEmaneConfigRequest,
     SetEmaneModelConfigRequest,
 )
 from core.api.grpc.mobility_pb2 import (
@@ -253,7 +251,6 @@ class CoreGrpcClient:
         if asymmetric_links:
             asymmetric_links = [x.to_proto() for x in asymmetric_links]
         hooks = [x.to_proto() for x in session.hooks.values()]
-        emane_config = {k: v.value for k, v in session.emane_config.items()}
         emane_model_configs = []
         mobility_configs = []
         wlan_configs = []
@@ -313,7 +310,6 @@ class CoreGrpcClient:
             links=links,
             location=session.location.to_proto(),
             hooks=hooks,
-            emane_config=emane_config,
             emane_model_configs=emane_model_configs,
             wlan_configs=wlan_configs,
             mobility_configs=mobility_configs,
@@ -917,31 +913,6 @@ class CoreGrpcClient:
         response = self.stub.SetWlanConfig(request)
         return response.result
 
-    def get_emane_config(self, session_id: int) -> Dict[str, wrappers.ConfigOption]:
-        """
-        Get session emane configuration.
-
-        :param session_id: session id
-        :return: response with a list of configuration groups
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetEmaneConfigRequest(session_id=session_id)
-        response = self.stub.GetEmaneConfig(request)
-        return wrappers.ConfigOption.from_dict(response.config)
-
-    def set_emane_config(self, session_id: int, config: Dict[str, str]) -> bool:
-        """
-        Set session emane configuration.
-
-        :param session_id: session id
-        :param config: emane configuration
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = SetEmaneConfigRequest(session_id=session_id, config=config)
-        response = self.stub.SetEmaneConfig(request)
-        return response.result
-
     def get_emane_model_config(
         self, session_id: int, node_id: int, model: str, iface_id: int = -1
     ) -> Dict[str, wrappers.ConfigOption]:
@@ -1063,15 +1034,18 @@ class CoreGrpcClient:
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
 
-    def get_emane_event_channel(self, session_id: int) -> wrappers.EmaneEventChannel:
+    def get_emane_event_channel(
+        self, session_id: int, nem_id: int
+    ) -> wrappers.EmaneEventChannel:
         """
         Retrieves the current emane event channel being used for a session.
 
         :param session_id: session to get emane event channel for
+        :param nem_id: nem id for the desired event channel
         :return: emane event channel
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = GetEmaneEventChannelRequest(session_id=session_id)
+        request = GetEmaneEventChannelRequest(session_id=session_id, nem_id=nem_id)
         response = self.stub.GetEmaneEventChannel(request)
         return wrappers.EmaneEventChannel.from_proto(response)
 

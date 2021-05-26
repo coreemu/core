@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from lxml import etree
 
+from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.nodes.network import CtrlNet
@@ -24,7 +25,6 @@ except ImportError:
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
 
-DEFAULT_PORT: int = 47_000
 MAC_COMPONENT_INDEX: int = 1
 EMANE_RFPIPE: str = "rfpipemaclayer"
 EMANE_80211: str = "ieee80211abgmaclayer"
@@ -79,10 +79,10 @@ class EmaneLink:
 
 
 class EmaneClient:
-    def __init__(self, address: str) -> None:
+    def __init__(self, address: str, port: int) -> None:
         self.address: str = address
         self.client: shell.ControlPortClient = shell.ControlPortClient(
-            self.address, DEFAULT_PORT
+            self.address, port
         )
         self.nems: Dict[int, LossTable] = {}
         self.setup()
@@ -189,9 +189,10 @@ class EmaneLinkMonitor:
         self.running: bool = False
 
     def start(self) -> None:
-        self.loss_threshold = int(self.emane_manager.config["loss_threshold"])
-        self.link_interval = int(self.emane_manager.config["link_interval"])
-        self.link_timeout = int(self.emane_manager.config["link_timeout"])
+        options = self.emane_manager.session.options
+        self.loss_threshold = options.get_config_int("loss_threshold")
+        self.link_interval = options.get_config_int("link_interval")
+        self.link_timeout = options.get_config_int("link_timeout")
         self.initialize()
         if not self.clients:
             logger.info("no valid emane models to monitor links")
@@ -204,22 +205,28 @@ class EmaneLinkMonitor:
 
     def initialize(self) -> None:
         addresses = self.get_addresses()
-        for address in addresses:
-            client = EmaneClient(address)
+        for address, port in addresses:
+            client = EmaneClient(address, port)
             if client.nems:
                 self.clients.append(client)
 
-    def get_addresses(self) -> List[str]:
+    def get_addresses(self) -> List[Tuple[str, int]]:
         addresses = []
         nodes = self.emane_manager.getnodes()
         for node in nodes:
+            control = None
+            ports = []
             for iface in node.get_ifaces():
                 if isinstance(iface.net, CtrlNet):
                     ip4 = iface.get_ip4()
                     if ip4:
-                        address = str(ip4.ip)
-                        addresses.append(address)
-                    break
+                        control = str(ip4.ip)
+                if isinstance(iface.net, EmaneNet):
+                    port = self.emane_manager.get_nem_port(iface)
+                    ports.append(port)
+            if control:
+                for port in ports:
+                    addresses.append((control, port))
         return addresses
 
     def check_links(self) -> None:

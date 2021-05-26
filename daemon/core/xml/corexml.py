@@ -80,20 +80,6 @@ def create_iface_data(iface_element: etree.Element) -> InterfaceData:
     )
 
 
-def create_emane_config(session: "Session") -> etree.Element:
-    emane_configuration = etree.Element("emane_global_configuration")
-    config = session.emane.config
-    emulator_element = etree.SubElement(emane_configuration, "emulator")
-    for emulator_config in session.emane.emane_config.emulator_config:
-        value = config[emulator_config.id]
-        add_configuration(emulator_element, emulator_config.id, value)
-    core_element = etree.SubElement(emane_configuration, "core")
-    for core_config in session.emane.emane_config.core_config:
-        value = config[core_config.id]
-        add_configuration(core_element, core_config.id, value)
-    return emane_configuration
-
-
 def create_emane_model_config(
     node_id: int,
     model: "EmaneModelType",
@@ -104,22 +90,22 @@ def create_emane_model_config(
     add_attribute(emane_element, "node", node_id)
     add_attribute(emane_element, "iface", iface_id)
     add_attribute(emane_element, "model", model.name)
-
+    platform_element = etree.SubElement(emane_element, "platform")
+    for platform_config in model.platform_config:
+        value = config[platform_config.id]
+        add_configuration(platform_element, platform_config.id, value)
     mac_element = etree.SubElement(emane_element, "mac")
     for mac_config in model.mac_config:
         value = config[mac_config.id]
         add_configuration(mac_element, mac_config.id, value)
-
     phy_element = etree.SubElement(emane_element, "phy")
     for phy_config in model.phy_config:
         value = config[phy_config.id]
         add_configuration(phy_element, phy_config.id, value)
-
     external_element = etree.SubElement(emane_element, "external")
     for external_config in model.external_config:
         value = config[external_config.id]
         add_configuration(external_element, external_config.id, value)
-
     return emane_element
 
 
@@ -376,8 +362,6 @@ class CoreXmlWriter:
             self.scenario.append(metadata_elements)
 
     def write_emane_configs(self) -> None:
-        emane_global_configuration = create_emane_config(self.session)
-        self.scenario.append(emane_global_configuration)
         emane_configurations = etree.Element("emane_configurations")
         for node_id, model_configs in self.session.emane.node_configs.items():
             node_id, iface_id = utils.parse_iface_config_id(node_id)
@@ -591,7 +575,6 @@ class CoreXmlReader:
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
-        self.read_emane_global_config()
         self.read_nodes()
         self.read_links()
         self.read_emane_configs()
@@ -729,28 +712,10 @@ class CoreXmlReader:
                     files.add(name)
                 service.configs = tuple(files)
 
-    def read_emane_global_config(self) -> None:
-        emane_global_configuration = self.scenario.find("emane_global_configuration")
-        if emane_global_configuration is None:
-            return
-        emulator_configuration = emane_global_configuration.find("emulator")
-        configs = {}
-        for config in emulator_configuration.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        core_configuration = emane_global_configuration.find("core")
-        for config in core_configuration.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        self.session.emane.config = configs
-
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")
         if emane_configurations is None:
             return
-
         for emane_configuration in emane_configurations.iterchildren():
             node_id = get_int(emane_configuration, "node")
             iface_id = get_int(emane_configuration, "iface")
@@ -768,18 +733,21 @@ class CoreXmlReader:
                 )
 
             # read and set emane model configuration
+            platform_configuration = emane_configuration.find("platform")
+            for config in platform_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
             mac_configuration = emane_configuration.find("mac")
             for config in mac_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value
-
             phy_configuration = emane_configuration.find("phy")
             for config in phy_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value
-
             external_configuration = emane_configuration.find("external")
             for config in external_configuration.iterchildren():
                 name = config.get("name")

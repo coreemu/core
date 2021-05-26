@@ -38,7 +38,7 @@ class LinuxNetClient:
         :param device: device to add route to
         :return: nothing
         """
-        self.run(f"{IP} route add {route} dev {device}")
+        self.run(f"{IP} route replace {route} dev {device}")
 
     def device_up(self, device: str) -> None:
         """
