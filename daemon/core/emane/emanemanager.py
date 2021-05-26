@@ -321,19 +321,22 @@ class EmaneManager:
         with self._emane_node_lock:
             logger.info("emane building xmls...")
             for emane_net, iface in self.get_ifaces():
-                nem_id = self.next_nem_id(iface)
-                nem_port = self.get_nem_port(iface)
-                logger.info(
-                    "starting emane for node(%s) iface(%s) nem(%s)",
-                    iface.node.name,
-                    iface.name,
-                    nem_id,
-                )
-                config = self.get_iface_config(emane_net, iface)
-                self.setup_control_channels(nem_id, iface, config)
-                emanexml.build_platform_xml(nem_id, nem_port, emane_net, iface, config)
-                self.start_daemon(iface)
-                self.install_iface(emane_net, iface, config)
+                self.start_iface(emane_net, iface)
+
+    def start_iface(self, emane_net: EmaneNet, iface: CoreInterface) -> None:
+        nem_id = self.next_nem_id(iface)
+        nem_port = self.get_nem_port(iface)
+        logger.info(
+            "starting emane for node(%s) iface(%s) nem(%s)",
+            iface.node.name,
+            iface.name,
+            nem_id,
+        )
+        config = self.get_iface_config(emane_net, iface)
+        self.setup_control_channels(nem_id, iface, config)
+        emanexml.build_platform_xml(nem_id, nem_port, emane_net, iface, config)
+        self.start_daemon(iface)
+        self.install_iface(iface, config)
 
     def get_ifaces(self) -> List[Tuple[EmaneNet, CoreInterface]]:
         ifaces = []
@@ -413,6 +416,64 @@ class EmaneManager:
     def get_nem_port(self, iface: CoreInterface) -> int:
         nem_id = self.get_nem_id(iface)
         return int(f"47{nem_id:03}")
+
+    def get_nem_position(
+        self, iface: CoreInterface
+    ) -> Optional[Tuple[int, float, float, int]]:
+        """
+        Retrieves nem position for a given interface.
+
+        :param iface: interface to get nem emane position for
+        :return: nem position tuple, None otherwise
+        """
+        nem_id = self.get_nem_id(iface)
+        if nem_id is None:
+            logger.info("nem for %s is unknown", iface.localname)
+            return
+        node = iface.node
+        x, y, z = node.getposition()
+        lat, lon, alt = self.session.location.getgeo(x, y, z)
+        if node.position.alt is not None:
+            alt = node.position.alt
+        node.position.set_geo(lon, lat, alt)
+        # altitude must be an integer or warning is printed
+        alt = int(round(alt))
+        return nem_id, lon, lat, alt
+
+    def set_nem_position(self, iface: CoreInterface) -> None:
+        """
+        Publish a NEM location change event using the EMANE event service.
+
+        :param iface: interface to set nem position for
+        """
+        position = self.get_nem_position(iface)
+        if position:
+            nemid, lon, lat, alt = position
+            event = LocationEvent()
+            event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
+            self.publish_event(nemid, event, send_all=True)
+
+    def set_nem_positions(self, moved_ifaces: List[CoreInterface]) -> None:
+        """
+        Several NEMs have moved, from e.g. a WaypointMobilityModel
+        calculation. Generate an EMANE Location Event having several
+        entries for each interface that has moved.
+        """
+        if not moved_ifaces:
+            return
+        services = {}
+        for iface in moved_ifaces:
+            position = self.get_nem_position(iface)
+            if not position:
+                continue
+            nem_id, lon, lat, alt = position
+            service = self.nem_service.get(nem_id)
+            if not service:
+                continue
+            event = services.setdefault(service, LocationEvent())
+            event.append(nem_id, latitude=lat, longitude=lon, altitude=alt)
+        for service, event in services.items():
+            service.events.publish(0, event)
 
     def write_nem(self, iface: CoreInterface, nem_id: int) -> None:
         path = self.session.directory / "emane_nems"
@@ -566,16 +627,14 @@ class EmaneManager:
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.host_cmd(args, cwd=self.session.directory)
 
-    def install_iface(
-        self, emane_net: EmaneNet, iface: CoreInterface, config: Dict[str, str]
-    ) -> None:
+    def install_iface(self, iface: CoreInterface, config: Dict[str, str]) -> None:
         external = config.get("external", "0")
         if isinstance(iface, TunTap) and external == "0":
             iface.set_ips()
         # at this point we register location handlers for generating
         # EMANE location events
         if self.genlocationevents():
-            iface.poshook = emane_net.setnemposition
+            iface.poshook = self.set_nem_position
             iface.setposition()
 
     def doeventmonitor(self) -> bool:

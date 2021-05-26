@@ -4,7 +4,7 @@ share the same MAC+PHY model.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -109,65 +109,6 @@ class EmaneNet(CoreNetworkBase):
         elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
-
-    def _nem_position(
-        self, iface: CoreInterface
-    ) -> Optional[Tuple[int, float, float, float]]:
-        """
-        Creates nem position for emane event for a given interface.
-
-        :param iface: interface to get nem emane position for
-        :return: nem position tuple, None otherwise
-        """
-        nem_id = self.session.emane.get_nem_id(iface)
-        ifname = iface.localname
-        if nem_id is None:
-            logger.info("nemid for %s is unknown", ifname)
-            return
-        node = iface.node
-        x, y, z = node.getposition()
-        lat, lon, alt = self.session.location.getgeo(x, y, z)
-        if node.position.alt is not None:
-            alt = node.position.alt
-        node.position.set_geo(lon, lat, alt)
-        # altitude must be an integer or warning is printed
-        alt = int(round(alt))
-        return nem_id, lon, lat, alt
-
-    def setnemposition(self, iface: CoreInterface) -> None:
-        """
-        Publish a NEM location change event using the EMANE event service.
-
-        :param iface: interface to set nem position for
-        """
-        position = self._nem_position(iface)
-        if position:
-            nemid, lon, lat, alt = position
-            event = LocationEvent()
-            event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
-            self.session.emane.publish_event(nemid, event, send_all=True)
-
-    def setnempositions(self, moved_ifaces: List[CoreInterface]) -> None:
-        """
-        Several NEMs have moved, from e.g. a WaypointMobilityModel
-        calculation. Generate an EMANE Location Event having several
-        entries for each interface that has moved.
-        """
-        if not moved_ifaces:
-            return
-        services = {}
-        for iface in moved_ifaces:
-            position = self._nem_position(iface)
-            if not position:
-                continue
-            nem_id, lon, lat, alt = position
-            service = self.session.emane.nem_service.get(nem_id)
-            if not service:
-                continue
-            event = services.setdefault(service, LocationEvent())
-            event.append(nem_id, latitude=lat, longitude=lon, altitude=alt)
-        for service, event in services.items():
-            service.events.publish(0, event)
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         links = super().links(flags)

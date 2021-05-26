@@ -7,7 +7,6 @@ from typing import Dict, List, Optional, Set
 
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
-from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkOptions
 from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
@@ -153,8 +152,7 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         try:
-            emane_net = self.session.get_node(self.id, EmaneNet)
-            emane_net.setnempositions(moved_ifaces)
+            self.session.emane.set_nem_positions(moved_ifaces)
         except CoreError:
             logger.exception("error during update")
 
