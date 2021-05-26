@@ -525,22 +525,17 @@ class EmaneManager:
             if self.links_enabled():
                 self.link_monitor.stop()
             # shutdown interfaces
-            nodes = set()
             for _, iface in self.get_ifaces():
                 node = iface.node
                 if not node.up:
                     continue
-                nodes.add(node)
+                kill_cmd = f'pkill -f "emane.+{iface.name}"'
                 if isinstance(node, CoreNode):
                     iface.shutdown()
-                iface.poshook = None
-            kill_emaned = "killall -q emane"
-            # stop all emane daemons on associated nodes
-            for node in nodes:
-                if isinstance(node, CoreNode):
-                    node.cmd(kill_emaned, wait=False)
+                    node.cmd(kill_cmd, wait=False)
                 else:
-                    node.host_cmd(kill_emaned, wait=False)
+                    node.host_cmd(kill_cmd, wait=False)
+                iface.poshook = None
             # stop emane event services
             while self.services:
                 _, service = self.services.popitem()
