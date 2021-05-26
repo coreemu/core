@@ -27,6 +27,7 @@ class EmaneModel(WirelessModel):
     """
 
     # default platform configuration settings
+    platform_controlport: str = "controlportendpoint"
     platform_xml: str = "nemmanager.xml"
     platform_defaults: Dict[str, str] = {
         "eventservicedevice": DEFAULT_DEV,
@@ -88,6 +89,14 @@ class EmaneModel(WirelessModel):
         cls.platform_config = emanemanifest.parse(
             platform_xml_path, cls.platform_defaults
         )
+        # remove controlport configuration, since core will set this directly
+        controlport_index = None
+        for index, configuration in enumerate(cls.platform_config):
+            if configuration.id == cls.platform_controlport:
+                controlport_index = index
+                break
+        if controlport_index is not None:
+            cls.platform_config.pop(controlport_index)
 
     @classmethod
     def configurations(cls) -> List[Configuration]:

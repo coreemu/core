@@ -165,9 +165,10 @@ def build_platform_xml(
     for configuration in emane_net.model.platform_config:
         name = configuration.id
         value = config[configuration.id]
-        if name == "controlportendpoint":
-            value = f"0.0.0.0:{nem_port}"
         add_param(platform_element, name, value)
+    add_param(
+        platform_element, emane_net.model.platform_controlport, f"0.0.0.0:{nem_port}"
+    )
 
     # build nem xml
     nem_definition = nem_file_name(iface)
