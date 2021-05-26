@@ -282,9 +282,6 @@ class EmaneManager:
         :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
             instantiation
         """
-        # check if bindings were installed
-        if EventService is None:
-            raise CoreError("EMANE python bindings are not installed")
         logger.debug("emane setup")
         with self.session.nodes_lock:
             for node_id in self.session.nodes:
@@ -297,6 +294,9 @@ class EmaneManager:
             if not self._emane_nets:
                 logger.debug("no emane nodes in session")
                 return EmaneState.NOT_NEEDED
+        # check if bindings were installed
+        if EventService is None:
+            raise CoreError("EMANE python bindings are not installed")
         self.check_node_models()
         return EmaneState.SUCCESS
 
