@@ -17,7 +17,6 @@ from core.xml import corexml
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from core.emane.emanemanager import EmaneManager
     from core.emane.emanemodel import EmaneModel
 
 _MAC_PREFIX = "02:02"
@@ -145,33 +144,29 @@ def add_configurations(
 
 
 def build_platform_xml(
-    emane_manager: "EmaneManager", nem_id: int, node: CoreNodeBase, iface: CoreInterface
+    nem_id: int,
+    nem_port: int,
+    emane_net: EmaneNet,
+    iface: CoreInterface,
+    config: Dict[str, str],
 ) -> None:
     """
-    Create platform xml for a specific node.
+    Create platform xml for a nem/interface.
 
-    :param emane_manager: emane manager with emane
-        configurations
     :param nem_id: nem id for current node/interface
-    :param node: node to create a platform xml for
+    :param nem_port: control port to configure for emane
+    :param emane_net: emane network associate with node and interface
     :param iface: node interface to create platform xml for
-    :return: the next nem id that can be used for creating platform xml files
+    :param config: emane configuration for interface
+    :return: nothing
     """
-    # create model based xml files
-    emane_net = iface.net
-    if not isinstance(emane_net, EmaneNet):
-        raise CoreError(f"emane interface not connected to emane net: {emane_net.name}")
-    config = emane_manager.get_iface_config(emane_net, iface)
-    emane_net.model.build_xml_files(config, iface)
-
     # create top level platform element
     platform_element = etree.Element("platform")
     for configuration in emane_net.model.platform_config:
         name = configuration.id
         value = config[configuration.id]
         if name == "controlportendpoint":
-            port = emane_manager.get_nem_port(iface)
-            value = f"0.0.0.0:{port}"
+            value = f"0.0.0.0:{nem_port}"
         add_param(platform_element, name, value)
 
     # build nem xml
@@ -179,6 +174,9 @@ def build_platform_xml(
     nem_element = etree.Element(
         "nem", id=str(nem_id), name=iface.localname, definition=nem_definition
     )
+
+    # create model based xml files
+    emane_net.model.build_xml_files(config, iface)
 
     # check if this is an external transport
     if is_external(config):
@@ -205,7 +203,7 @@ def build_platform_xml(
 
     doc_name = "platform"
     file_name = platform_file_name(iface)
-    create_node_file(node, platform_element, doc_name, file_name)
+    create_node_file(iface.node, platform_element, doc_name, file_name)
 
 
 def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
