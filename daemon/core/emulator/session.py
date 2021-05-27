@@ -577,7 +577,7 @@ class Session:
         if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
             self.write_nodes()
             self.add_remove_control_iface(node, remove=False)
-            self.services.boot_services(node)
+            self.boot_node(node)
 
         self.sdt.add_node(node)
         return node
