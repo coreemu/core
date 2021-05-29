@@ -80,11 +80,10 @@ class EmaneConfigDialog(Dialog):
         self.node: Node = node
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(1)
-
         self.emane_models: List[str] = [
             x.split("_")[1] for x in self.app.core.emane_models
         ]
-        model = self.emane_models[0]
+        model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)
         self.emane_model_button: Optional[ttk.Button] = None
         self.enabled: bool = not self.app.core.is_runtime()
@@ -147,7 +146,6 @@ class EmaneConfigDialog(Dialog):
         frame = ttk.Frame(self.top)
         frame.grid(sticky=tk.EW, pady=PADY)
         frame.columnconfigure(0, weight=1)
-
         image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
         self.emane_model_button = ttk.Button(
             frame,
