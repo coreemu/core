@@ -298,10 +298,9 @@ class NodeConfigDialog(Dialog):
             emane_node = self.canvas_node.has_emane_link(iface.id)
             if emane_node:
                 emane_model = emane_node.emane.split("_")[1]
+                command = partial(self.click_emane_config, emane_model, iface.id)
                 button = ttk.Button(
-                    tab,
-                    text=f"Configure EMANE {emane_model}",
-                    command=lambda: self.click_emane_config(emane_model, iface.id),
+                    tab, text=f"Configure EMANE {emane_model}", command=command
                 )
                 button.grid(row=row, sticky=tk.EW, columnspan=3, pady=PADY)
                 row += 1
@@ -367,6 +366,7 @@ class NodeConfigDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_emane_config(self, emane_model: str, iface_id: int) -> None:
+        logger.info("configuring emane: %s - %s", emane_model, iface_id)
         dialog = EmaneModelDialog(self, self.app, self.node, emane_model, iface_id)
         dialog.show()
 
