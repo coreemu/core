@@ -4,6 +4,7 @@ that manages a CORE session.
 """
 
 import logging
+import math
 import os
 import pwd
 import shutil
@@ -610,13 +611,16 @@ class Session:
         lat = options.lat
         lon = options.lon
         alt = options.alt
-
         # check if we need to generate position from lat/lon/alt
         has_empty_position = all(i is None for i in [x, y])
         has_lat_lon_alt = all(i is not None for i in [lat, lon, alt])
         using_lat_lon_alt = has_empty_position and has_lat_lon_alt
         if using_lat_lon_alt:
             x, y, _ = self.location.getxyz(lat, lon, alt)
+            if math.isinf(x) or math.isinf(y):
+                raise CoreError(
+                    f"invalid geo for current reference/scale: {lon},{lat},{alt}"
+                )
             node.setposition(x, y, None)
             node.position.set_geo(lon, lat, alt)
             self.broadcast_node(node)
