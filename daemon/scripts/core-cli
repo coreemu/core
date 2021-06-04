@@ -210,22 +210,27 @@ def query_session(core: CoreGrpcClient, args: Namespace) -> None:
 def query_node(core: CoreGrpcClient, args: Namespace) -> None:
     session = core.get_session(args.id)
     node, ifaces, _ = core.get_node(args.id, args.node)
-    print("ID   | Name    | Type")
-    print(f"{node.id:<4} | {node.name:<7} | {node.type.name}")
-    print("Interfaces")
-    print("Connected To | ", end="")
-    print_iface_header()
-    for iface in ifaces:
-        if iface.net_id == node.id:
-            if iface.node_id:
-                name = session.nodes[iface.node_id].name
+    print("ID   | Name    | Type    | XY")
+    xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
+    print(f"{node.id:<4} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos}")
+    if node.geo:
+        print("Geo")
+        print(f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}")
+    if ifaces:
+        print("Interfaces")
+        print("Connected To | ", end="")
+        print_iface_header()
+        for iface in ifaces:
+            if iface.net_id == node.id:
+                if iface.node_id:
+                    name = session.nodes[iface.node_id].name
+                else:
+                    name = session.nodes[iface.net2_id].name
             else:
-                name = session.nodes[iface.net2_id].name
-        else:
-            net_node = session.nodes.get(iface.net_id)
-            name = net_node.name if net_node else ""
-        print(f"{name:<12} | ", end="")
-        print_iface(iface)
+                net_node = session.nodes.get(iface.net_id)
+                name = net_node.name if net_node else ""
+            print(f"{name:<12} | ", end="")
+            print_iface(iface)
 
 
 @coreclient
