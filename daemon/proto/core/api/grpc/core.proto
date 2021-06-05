@@ -577,16 +577,15 @@ message Session {
     repeated services.ServiceDefaults default_services = 7;
     SessionLocation location = 8;
     repeated Hook hooks = 9;
-    map<string, common.ConfigOption> emane_config = 10;
-    repeated emane.GetEmaneModelConfig emane_model_configs = 11;
-    map<int32, common.MappedConfig> wlan_configs = 12;
-    repeated services.NodeServiceConfig service_configs = 13;
-    repeated configservices.ConfigServiceConfig config_service_configs = 14;
-    map<int32, common.MappedConfig> mobility_configs = 15;
-    map<string, string> metadata = 16;
-    string file = 17;
-    map<string, common.ConfigOption> options = 18;
-    repeated Server servers = 19;
+    repeated emane.GetEmaneModelConfig emane_model_configs = 10;
+    map<int32, common.MappedConfig> wlan_configs = 11;
+    repeated services.NodeServiceConfig service_configs = 12;
+    repeated configservices.ConfigServiceConfig config_service_configs = 13;
+    map<int32, common.MappedConfig> mobility_configs = 14;
+    map<string, string> metadata = 15;
+    string file = 16;
+    map<string, common.ConfigOption> options = 17;
+    repeated Server servers = 18;
 }
 
 message SessionSummary {
