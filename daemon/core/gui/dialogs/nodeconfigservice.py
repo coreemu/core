@@ -103,6 +103,7 @@ class NodeConfigServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
+            self.node.config_service_configs.pop(name, None)
         self.draw_current_services()
         self.node.config_services = self.current_services.copy()
 
@@ -132,20 +133,13 @@ class NodeConfigServiceDialog(Dialog):
             if self.is_custom_service(name):
                 self.current.listbox.itemconfig(tk.END, bg="green")
 
-    def cleanup_custom_services(self) -> None:
-        for service in list(self.node.config_service_configs):
-            if service not in self.node.config_services:
-                self.node.config_service_configs.pop(service)
-
     def click_save(self) -> None:
         self.node.config_services = self.current_services.copy()
-        self.cleanup_custom_services()
         logger.info("saved node config services: %s", self.node.config_services)
         self.destroy()
 
     def click_cancel(self) -> None:
         self.current_services = None
-        self.cleanup_custom_services()
         self.destroy()
 
     def click_remove(self) -> None:
@@ -154,6 +148,7 @@ class NodeConfigServiceDialog(Dialog):
             service = self.current.listbox.get(cur[0])
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
+            self.node.config_service_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()

@@ -99,6 +99,8 @@ class NodeServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
+            self.node.service_configs.pop(name, None)
+            self.node.service_file_configs.pop(name, None)
         self.current.listbox.delete(0, tk.END)
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
@@ -126,21 +128,11 @@ class NodeServiceDialog(Dialog):
                 "Service Configuration", "Select a service to configure", parent=self
             )
 
-    def cleanup_custom_services(self) -> None:
-        for service in list(self.node.service_configs):
-            if service not in self.node.services:
-                self.node.service_configs.pop(service)
-        for service in list(self.node.service_file_configs):
-            if service not in self.node.services:
-                self.node.service_file_configs.pop(service)
-
     def click_cancel(self) -> None:
-        self.cleanup_custom_services()
         self.destroy()
 
     def click_save(self) -> None:
         self.node.services = self.current_services.copy()
-        self.cleanup_custom_services()
         self.destroy()
 
     def click_remove(self) -> None:
@@ -149,6 +141,8 @@ class NodeServiceDialog(Dialog):
             service = self.current.listbox.get(cur[0])
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
+            self.node.service_configs.pop(service, None)
+            self.node.service_file_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()
