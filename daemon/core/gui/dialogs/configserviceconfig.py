@@ -310,9 +310,9 @@ class ConfigServiceConfigDialog(Dialog):
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-        service_config = self.node.config_service_configs.get(self.service_name)
-        if not service_config:
-            service_config = ConfigServiceData()
+        service_config = self.node.config_service_configs.setdefault(
+            self.service_name, ConfigServiceData()
+        )
         if self.config_frame:
             self.config_frame.parse_config()
             service_config.config = {x.name: x.value for x in self.config.values()}

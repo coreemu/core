@@ -224,7 +224,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: start session response
         """
         logger.debug("start session: %s", request)
-        session = self.get_session(request.session_id, context)
+        session = self.get_session(request.session.id, context)
 
         # clear previous state and setup for creation
         session.clear()
@@ -234,77 +234,51 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             state = EventTypes.CONFIGURATION_STATE
             session.directory.mkdir(exist_ok=True)
         session.set_state(state)
-        session.user = request.user
+        session.user = request.session.user
 
         # session options
         session.options.config_reset()
-        for key, value in request.options.items():
-            session.options.set_config(key, value)
-        session.metadata = dict(request.metadata)
+        for option in request.session.options.values():
+            session.options.set_config(option.name, option.value)
+        session.metadata = dict(request.session.metadata)
 
         # add servers
-        for server in request.servers:
+        for server in request.session.servers:
             session.distributed.add_server(server.name, server.host)
 
         # location
-        if request.HasField("location"):
-            grpcutils.session_location(session, request.location)
+        if request.session.HasField("location"):
+            grpcutils.session_location(session, request.session.location)
 
         # add all hooks
-        for hook in request.hooks:
+        for hook in request.session.hooks:
             state = EventTypes(hook.state)
             session.add_hook(state, hook.file, hook.data)
 
         # create nodes
-        _, exceptions = grpcutils.create_nodes(session, request.nodes)
+        _, exceptions = grpcutils.create_nodes(session, request.session.nodes)
         if exceptions:
             exceptions = [str(x) for x in exceptions]
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
 
-        # emane configs
-        for config in request.emane_model_configs:
-            _id = utils.iface_config_id(config.node_id, config.iface_id)
-            session.emane.set_config(_id, config.model, config.config)
-
-        # wlan configs
-        for config in request.wlan_configs:
-            session.mobility.set_model_config(
-                config.node_id, BasicRangeModel.name, config.config
-            )
-
-        # mobility configs
-        for config in request.mobility_configs:
-            session.mobility.set_model_config(
-                config.node_id, Ns2ScriptedMobility.name, config.config
-            )
-
-        # service configs
-        for config in request.service_configs:
-            grpcutils.service_configuration(session, config)
-
-        # service file configs
-        for config in request.service_file_configs:
-            session.services.set_service_file(
-                config.node_id, config.service, config.file, config.data
-            )
-
-        # config service configs
-        for config in request.config_service_configs:
-            node = self.get_node(session, config.node_id, context, CoreNode)
-            service = node.config_services[config.name]
-            if config.config:
-                service.set_config(config.config)
-            for name, template in config.templates.items():
-                service.set_template(name, template)
+        # check for configurations
+        for node in request.session.nodes:
+            core_node = self.get_node(session, node.id, context, NodeBase)
+            grpcutils.configure_node(session, node, core_node, context)
 
         # create links
-        _, exceptions = grpcutils.create_links(session, request.links)
+        links = []
+        asym_links = []
+        for link in request.session.links:
+            if link.options.unidirectional:
+                asym_links.append(link)
+            else:
+                links.append(link)
+        _, exceptions = grpcutils.create_links(session, links)
         if exceptions:
             exceptions = [str(x) for x in exceptions]
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
-
-        # asymmetric links
-        _, exceptions = grpcutils.edit_links(session, request.asymmetric_links)
+        _, exceptions = grpcutils.edit_links(session, asym_links)
         if exceptions:
             exceptions = [str(x) for x in exceptions]
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
@@ -541,6 +515,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         _type, _id, options = grpcutils.add_node_data(request.node)
         _class = session.get_node_class(_type)
         node = session.add_node(_class, _id, options)
+        grpcutils.configure_node(session, request.node, node, context)
         source = request.source if request.source else None
         session.broadcast_node(node, MessageFlags.ADD, source)
         return core_pb2.AddNodeResponse(node_id=node.id)
@@ -563,7 +538,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             iface = node.ifaces[iface_id]
             iface_proto = grpcutils.iface_to_proto(request.node_id, iface)
             ifaces.append(iface_proto)
-        node_proto = grpcutils.get_node_proto(session, node)
+        emane_configs = grpcutils.get_emane_model_configs_dict(session)
+        node_emane_configs = emane_configs.get(node.id, [])
+        node_proto = grpcutils.get_node_proto(session, node, node_emane_configs)
         links = get_links(node)
         return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces, links=links)
 

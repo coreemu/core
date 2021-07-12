@@ -25,6 +25,7 @@ class NodeServiceDialog(Dialog):
         self.current: Optional[ListboxScroll] = None
         services = set(node.services)
         self.current_services: Set[str] = services
+        self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 
     def draw(self) -> None:
@@ -77,7 +78,7 @@ class NodeServiceDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.click_remove)
         button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
-        button = ttk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=3, sticky=tk.EW)
 
         # trigger group change
@@ -125,8 +126,21 @@ class NodeServiceDialog(Dialog):
                 "Service Configuration", "Select a service to configure", parent=self
             )
 
+    def cleanup_custom_services(self) -> None:
+        for service in list(self.node.service_configs):
+            if service not in self.node.services:
+                self.node.service_configs.pop(service)
+        for service in list(self.node.service_file_configs):
+            if service not in self.node.services:
+                self.node.service_file_configs.pop(service)
+
+    def click_cancel(self) -> None:
+        self.cleanup_custom_services()
+        self.destroy()
+
     def click_save(self) -> None:
         self.node.services = self.current_services.copy()
+        self.cleanup_custom_services()
         self.destroy()
 
     def click_remove(self) -> None:

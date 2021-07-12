@@ -239,10 +239,24 @@ class NodeServiceData:
             configs=proto.configs,
             startup=proto.startup,
             validate=proto.validate,
-            validation_mode=proto.validation_mode,
+            validation_mode=ServiceValidationMode(proto.validation_mode),
             validation_timer=proto.validation_timer,
             shutdown=proto.shutdown,
             meta=proto.meta,
+        )
+
+    def to_proto(self) -> services_pb2.NodeServiceData:
+        return services_pb2.NodeServiceData(
+            executables=self.executables,
+            dependencies=self.dependencies,
+            dirs=self.dirs,
+            configs=self.configs,
+            startup=self.startup,
+            validate=self.validate,
+            validation_mode=self.validation_mode.value,
+            validation_timer=self.validation_timer,
+            shutdown=self.shutdown,
+            meta=self.meta,
         )
 
 
@@ -430,13 +444,25 @@ class ConfigOption:
 
     @classmethod
     def from_proto(cls, proto: common_pb2.ConfigOption) -> "ConfigOption":
+        config_type = ConfigOptionType(proto.type) if proto.type is not None else None
         return ConfigOption(
             label=proto.label,
             name=proto.name,
             value=proto.value,
-            type=ConfigOptionType(proto.type),
+            type=config_type,
             group=proto.group,
             select=proto.select,
+        )
+
+    def to_proto(self) -> common_pb2.ConfigOption:
+        config_type = self.type.value if self.type is not None else None
+        return common_pb2.ConfigOption(
+            label=self.label,
+            name=self.name,
+            value=self.value,
+            type=config_type,
+            select=self.select,
+            group=self.group,
         )
 
 
@@ -714,6 +740,23 @@ class Node:
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Node) -> "Node":
+        service_configs = {}
+        service_file_configs = {}
+        for service, node_config in proto.service_configs.items():
+            service_configs[service] = NodeServiceData.from_proto(node_config.data)
+            service_file_configs[service] = dict(node_config.files)
+        emane_configs = {}
+        for emane_config in proto.emane_configs:
+            iface_id = None if emane_config.iface_id == -1 else emane_config.iface_id
+            model = emane_config.model
+            key = (model, iface_id)
+            emane_configs[key] = ConfigOption.from_dict(emane_config.config)
+        config_service_configs = {}
+        for service, service_config in proto.config_service_configs.items():
+            config_service_configs[service] = ConfigServiceData(
+                templates=dict(service_config.templates),
+                config=dict(service_config.config),
+            )
         return Node(
             id=proto.id,
             name=proto.name,
@@ -730,9 +773,43 @@ class Node:
             dir=proto.dir,
             channel=proto.channel,
             canvas=proto.canvas,
+            wlan_config=ConfigOption.from_dict(proto.wlan_config),
+            mobility_config=ConfigOption.from_dict(proto.mobility_config),
+            service_configs=service_configs,
+            service_file_configs=service_file_configs,
+            config_service_configs=config_service_configs,
+            emane_model_configs=emane_configs,
         )
 
     def to_proto(self) -> core_pb2.Node:
+        emane_configs = []
+        for key, config in self.emane_model_configs.items():
+            model, iface_id = key
+            if iface_id is None:
+                iface_id = -1
+            config = {k: v.to_proto() for k, v in config.items()}
+            emane_config = emane_pb2.NodeEmaneConfig(
+                iface_id=iface_id, model=model, config=config
+            )
+            emane_configs.append(emane_config)
+        service_configs = {}
+        for service, service_data in self.service_configs.items():
+            service_configs[service] = services_pb2.NodeServiceConfig(
+                service=service, data=service_data.to_proto()
+            )
+        for service, file_configs in self.service_file_configs.items():
+            service_config = service_configs.get(service)
+            if service_config:
+                service_config.files.update(file_configs)
+            else:
+                service_configs[service] = services_pb2.NodeServiceConfig(
+                    service=service, files=file_configs
+                )
+        config_service_configs = {}
+        for service, service_config in self.config_service_configs.items():
+            config_service_configs[service] = configservices_pb2.ConfigServiceConfig(
+                templates=service_config.templates, config=service_config.config
+            )
         return core_pb2.Node(
             id=self.id,
             name=self.name,
@@ -748,6 +825,11 @@ class Node:
             dir=self.dir,
             channel=self.channel,
             canvas=self.canvas,
+            wlan_config={k: v.to_proto() for k, v in self.wlan_config.items()},
+            mobility_config={k: v.to_proto() for k, v in self.mobility_config.items()},
+            service_configs=service_configs,
+            config_service_configs=config_service_configs,
+            emane_configs=emane_configs,
         )
 
     def set_wlan(self, config: Dict[str, str]) -> None:
@@ -796,32 +878,6 @@ class Session:
             x.node_type: set(x.services) for x in proto.default_services
         }
         hooks = {x.file: Hook.from_proto(x) for x in proto.hooks}
-        # update nodes with their current configurations
-        for model in proto.emane_model_configs:
-            iface_id = None
-            if model.iface_id != -1:
-                iface_id = model.iface_id
-            node = nodes[model.node_id]
-            key = (model.model, iface_id)
-            node.emane_model_configs[key] = ConfigOption.from_dict(model.config)
-        for node_id, mapped_config in proto.wlan_configs.items():
-            node = nodes[node_id]
-            node.wlan_config = ConfigOption.from_dict(mapped_config.config)
-        for config in proto.service_configs:
-            service = config.service
-            node = nodes[config.node_id]
-            node.service_configs[service] = NodeServiceData.from_proto(config.data)
-            for file, data in config.files.items():
-                files = node.service_file_configs.setdefault(service, {})
-                files[file] = data
-        for config in proto.config_service_configs:
-            node = nodes[config.node_id]
-            node.config_service_configs[config.name] = ConfigServiceData(
-                templates=dict(config.templates), config=dict(config.config)
-            )
-        for node_id, mapped_config in proto.mobility_configs.items():
-            node = nodes[node_id]
-            node.mobility_config = ConfigOption.from_dict(mapped_config.config)
         file_path = Path(proto.file) if proto.file else None
         options = ConfigOption.from_dict(proto.options)
         servers = [Server.from_proto(x) for x in proto.servers]
@@ -837,6 +893,35 @@ class Session:
             hooks=hooks,
             metadata=dict(proto.metadata),
             file=file_path,
+            options=options,
+            servers=servers,
+        )
+
+    def to_proto(self) -> core_pb2.Session:
+        nodes = [x.to_proto() for x in self.nodes.values()]
+        links = [x.to_proto() for x in self.links]
+        hooks = [x.to_proto() for x in self.hooks.values()]
+        options = {k: v.to_proto() for k, v in self.options.items()}
+        servers = [x.to_proto() for x in self.servers]
+        default_services = []
+        for node_type, services in self.default_services.items():
+            default_service = services_pb2.ServiceDefaults(
+                node_type=node_type, services=services
+            )
+            default_services.append(default_service)
+        file = str(self.file) if self.file else None
+        return core_pb2.Session(
+            id=self.id,
+            state=self.state.value,
+            nodes=nodes,
+            links=links,
+            dir=self.dir,
+            user=self.user,
+            default_services=default_services,
+            location=self.location.to_proto(),
+            hooks=hooks,
+            metadata=self.metadata,
+            file=file,
             options=options,
             servers=servers,
         )

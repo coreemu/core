@@ -11,16 +11,7 @@ from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tup
 
 import grpc
 
-from core.api.grpc import (
-    configservices_pb2,
-    core_pb2,
-    core_pb2_grpc,
-    emane_pb2,
-    mobility_pb2,
-    services_pb2,
-    wlan_pb2,
-    wrappers,
-)
+from core.api.grpc import core_pb2, core_pb2_grpc, emane_pb2, wrappers
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetNodeConfigServiceRequest,
@@ -233,95 +224,17 @@ class CoreGrpcClient:
         self.proxy: bool = proxy
 
     def start_session(
-        self,
-        session: wrappers.Session,
-        asymmetric_links: List[wrappers.Link] = None,
-        definition: bool = False,
+        self, session: wrappers.Session, definition: bool = False
     ) -> Tuple[bool, List[str]]:
         """
         Start a session.
 
         :param session: session to start
-        :param asymmetric_links: link configuration for asymmetric links
         :param definition: True to only define session data, False to start session
         :return: tuple of result and exception strings
         """
-        nodes = [x.to_proto() for x in session.nodes.values()]
-        links = [x.to_proto() for x in session.links]
-        if asymmetric_links:
-            asymmetric_links = [x.to_proto() for x in asymmetric_links]
-        hooks = [x.to_proto() for x in session.hooks.values()]
-        emane_model_configs = []
-        mobility_configs = []
-        wlan_configs = []
-        service_configs = []
-        service_file_configs = []
-        config_service_configs = []
-        for node in session.nodes.values():
-            for key, config in node.emane_model_configs.items():
-                model, iface_id = key
-                config = wrappers.ConfigOption.to_dict(config)
-                if iface_id is None:
-                    iface_id = -1
-                emane_model_config = emane_pb2.EmaneModelConfig(
-                    node_id=node.id, iface_id=iface_id, model=model, config=config
-                )
-                emane_model_configs.append(emane_model_config)
-            if node.wlan_config:
-                config = wrappers.ConfigOption.to_dict(node.wlan_config)
-                wlan_config = wlan_pb2.WlanConfig(node_id=node.id, config=config)
-                wlan_configs.append(wlan_config)
-            if node.mobility_config:
-                config = wrappers.ConfigOption.to_dict(node.mobility_config)
-                mobility_config = mobility_pb2.MobilityConfig(
-                    node_id=node.id, config=config
-                )
-                mobility_configs.append(mobility_config)
-            for name, config in node.service_configs.items():
-                service_config = services_pb2.ServiceConfig(
-                    node_id=node.id,
-                    service=name,
-                    directories=config.dirs,
-                    files=config.configs,
-                    startup=config.startup,
-                    validate=config.validate,
-                    shutdown=config.shutdown,
-                )
-                service_configs.append(service_config)
-            for service, file_configs in node.service_file_configs.items():
-                for file, data in file_configs.items():
-                    service_file_config = services_pb2.ServiceFileConfig(
-                        node_id=node.id, service=service, file=file, data=data
-                    )
-                    service_file_configs.append(service_file_config)
-            for name, service_config in node.config_service_configs.items():
-                config_service_config = configservices_pb2.ConfigServiceConfig(
-                    node_id=node.id,
-                    name=name,
-                    templates=service_config.templates,
-                    config=service_config.config,
-                )
-                config_service_configs.append(config_service_config)
-        options = {k: v.value for k, v in session.options.items()}
-        servers = [x.to_proto() for x in session.servers]
         request = core_pb2.StartSessionRequest(
-            session_id=session.id,
-            nodes=nodes,
-            links=links,
-            location=session.location.to_proto(),
-            hooks=hooks,
-            emane_model_configs=emane_model_configs,
-            wlan_configs=wlan_configs,
-            mobility_configs=mobility_configs,
-            service_configs=service_configs,
-            service_file_configs=service_file_configs,
-            asymmetric_links=asymmetric_links,
-            config_service_configs=config_service_configs,
-            options=options,
-            user=session.user,
-            definition=definition,
-            metadata=session.metadata,
-            servers=servers,
+            session=session.to_proto(), definition=definition
         )
         response = self.stub.StartSession(request)
         return response.result, list(response.exceptions)

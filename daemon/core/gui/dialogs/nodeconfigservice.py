@@ -31,6 +31,7 @@ class NodeConfigServiceDialog(Dialog):
         if services is None:
             services = set(node.config_services)
         self.current_services: Set[str] = services
+        self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 
     def draw(self) -> None:
@@ -131,13 +132,20 @@ class NodeConfigServiceDialog(Dialog):
             if self.is_custom_service(name):
                 self.current.listbox.itemconfig(tk.END, bg="green")
 
+    def cleanup_custom_services(self) -> None:
+        for service in list(self.node.config_service_configs):
+            if service not in self.node.config_services:
+                self.node.config_service_configs.pop(service)
+
     def click_save(self) -> None:
         self.node.config_services = self.current_services.copy()
+        self.cleanup_custom_services()
         logger.info("saved node config services: %s", self.node.config_services)
         self.destroy()
 
     def click_cancel(self) -> None:
         self.current_services = None
+        self.cleanup_custom_services()
         self.destroy()
 
     def click_remove(self) -> None:
