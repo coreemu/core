@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, ttk
+from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import grpc
@@ -576,12 +576,13 @@ class ServiceConfigDialog(Dialog):
         self.directory_entry.insert("end", d)
 
     def add_directory(self) -> None:
-        directory = self.directory_entry.get()
-        directory = Path(directory)
-        if directory.is_dir():
+        directory = Path(self.directory_entry.get())
+        if directory.is_absolute():
             if str(directory) not in self.temp_directories:
                 self.dir_list.listbox.insert("end", directory)
                 self.temp_directories.append(str(directory))
+        else:
+            messagebox.showerror("Add Directory", "Path must be absolute!", parent=self)
 
     def remove_directory(self) -> None:
         d = self.directory_entry.get()
