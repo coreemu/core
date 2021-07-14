@@ -135,23 +135,8 @@ message GetConfigResponse {
 
 
 message StartSessionRequest {
-    int32 session_id = 1;
-    repeated Node nodes = 2;
-    repeated Link links = 3;
-    repeated Hook hooks = 4;
-    SessionLocation location = 5;
-    repeated wlan.WlanConfig wlan_configs = 6;
-    repeated emane.EmaneModelConfig emane_model_configs = 7;
-    repeated mobility.MobilityConfig mobility_configs = 8;
-    repeated services.ServiceConfig service_configs = 9;
-    repeated services.ServiceFileConfig service_file_configs = 10;
-    repeated Link asymmetric_links = 11;
-    repeated configservices.ConfigServiceConfig config_service_configs = 12;
-    map<string, string> options = 13;
-    string user = 14;
-    bool definition = 15;
-    map<string, string> metadata = 16;
-    repeated Server servers = 17;
+    Session session = 1;
+    bool definition = 2;
 }
 
 message StartSessionResponse {
@@ -577,15 +562,10 @@ message Session {
     repeated services.ServiceDefaults default_services = 7;
     SessionLocation location = 8;
     repeated Hook hooks = 9;
-    repeated emane.GetEmaneModelConfig emane_model_configs = 10;
-    map<int32, common.MappedConfig> wlan_configs = 11;
-    repeated services.NodeServiceConfig service_configs = 12;
-    repeated configservices.ConfigServiceConfig config_service_configs = 13;
-    map<int32, common.MappedConfig> mobility_configs = 14;
-    map<string, string> metadata = 15;
-    string file = 16;
-    map<string, common.ConfigOption> options = 17;
-    repeated Server servers = 18;
+    map<string, string> metadata = 10;
+    string file = 11;
+    map<string, common.ConfigOption> options = 12;
+    repeated Server servers = 13;
 }
 
 message SessionSummary {
@@ -612,6 +592,11 @@ message Node {
     string dir = 13;
     string channel = 14;
     int32 canvas = 15;
+    map<string, common.ConfigOption> wlan_config = 16;
+    map<string, common.ConfigOption> mobility_config = 17;
+    map<string, services.NodeServiceConfig> service_configs = 18;
+    map<string, configservices.ConfigServiceConfig> config_service_configs= 19;
+    repeated emane.NodeEmaneConfig emane_configs = 20;
 }
 
 message Link {

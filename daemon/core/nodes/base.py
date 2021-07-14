@@ -655,6 +655,7 @@ class CoreNode(CoreNodeBase):
         :param dir_path: path to create
         :return: nothing
         """
+        logger.info("creating private directory: %s", dir_path)
         if not str(dir_path).startswith("/"):
             raise CoreError(f"private directory path not fully qualified: {dir_path}")
         host_path = self.host_path(dir_path, is_dir=True)

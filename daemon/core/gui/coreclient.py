@@ -439,7 +439,7 @@ class CoreClient:
     def get_links(self, definition: bool = False) -> Tuple[List[Link], List[Link]]:
         if not definition:
             self.ifaces_manager.set_macs([x.link for x in self.links.values()])
-        links, asym_links = [], []
+        links = []
         for edge in self.links.values():
             link = edge.link
             if not definition:
@@ -449,12 +449,11 @@ class CoreClient:
                     link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
             if edge.asymmetric_link:
-                asym_links.append(edge.asymmetric_link)
-        return links, asym_links
+                links.append(edge.asymmetric_link)
+        return links
 
     def start_session(self, definition: bool = False) -> Tuple[bool, List[str]]:
-        links, asym_links = self.get_links(definition)
-        self.session.links = links
+        self.session.links = self.get_links(definition)
         self.session.metadata = self.get_metadata()
         self.session.servers.clear()
         for server in self.servers.values():
@@ -462,9 +461,7 @@ class CoreClient:
         result = False
         exceptions = []
         try:
-            result, exceptions = self.client.start_session(
-                self.session, asym_links, definition
-            )
+            result, exceptions = self.client.start_session(self.session, definition)
             logger.info(
                 "start session(%s) definition(%s), result: %s",
                 self.session.id,

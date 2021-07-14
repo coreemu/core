@@ -31,6 +31,7 @@ class NodeConfigServiceDialog(Dialog):
         if services is None:
             services = set(node.config_services)
         self.current_services: Set[str] = services
+        self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 
     def draw(self) -> None:
@@ -102,6 +103,7 @@ class NodeConfigServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
+            self.node.config_service_configs.pop(name, None)
         self.draw_current_services()
         self.node.config_services = self.current_services.copy()
 
@@ -146,6 +148,7 @@ class NodeConfigServiceDialog(Dialog):
             service = self.current.listbox.get(cur[0])
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
+            self.node.config_service_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()

@@ -25,6 +25,7 @@ class NodeServiceDialog(Dialog):
         self.current: Optional[ListboxScroll] = None
         services = set(node.services)
         self.current_services: Set[str] = services
+        self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 
     def draw(self) -> None:
@@ -77,7 +78,7 @@ class NodeServiceDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Remove", command=self.click_remove)
         button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
-        button = ttk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=3, sticky=tk.EW)
 
         # trigger group change
@@ -98,6 +99,8 @@ class NodeServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
+            self.node.service_configs.pop(name, None)
+            self.node.service_file_configs.pop(name, None)
         self.current.listbox.delete(0, tk.END)
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
@@ -125,6 +128,9 @@ class NodeServiceDialog(Dialog):
                 "Service Configuration", "Select a service to configure", parent=self
             )
 
+    def click_cancel(self) -> None:
+        self.destroy()
+
     def click_save(self) -> None:
         self.node.services = self.current_services.copy()
         self.destroy()
@@ -135,6 +141,8 @@ class NodeServiceDialog(Dialog):
             service = self.current.listbox.get(cur[0])
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
+            self.node.service_configs.pop(service, None)
+            self.node.service_file_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()
