@@ -78,7 +78,7 @@ class Menubar(tk.Menu):
         self.app.bind_all("<Control-n>", lambda e: self.click_new())
         menu.add_command(label="Save", accelerator="Ctrl+S", command=self.click_save)
         self.app.bind_all("<Control-s>", self.click_save)
-        menu.add_command(label="Save As...", command=self.click_save_xml)
+        menu.add_command(label="Save As...", command=self.click_save_as)
         menu.add_command(
             label="Open...", command=self.click_open_xml, accelerator="Ctrl+O"
         )
@@ -290,11 +290,12 @@ class Menubar(tk.Menu):
 
     def click_save(self, _event: tk.Event = None) -> None:
         if self.core.session.file:
-            self.core.save_xml()
+            if self.core.save_xml():
+                self.add_recent_file_to_gui_config(self.core.session.file)
         else:
-            self.click_save_xml()
+            self.click_save_as()
 
-    def click_save_xml(self, _event: tk.Event = None) -> None:
+    def click_save_as(self, _event: tk.Event = None) -> None:
         init_dir = self.core.get_xml_dir()
         file_path = filedialog.asksaveasfilename(
             initialdir=init_dir,
@@ -303,8 +304,9 @@ class Menubar(tk.Menu):
             defaultextension=".xml",
         )
         if file_path:
-            self.add_recent_file_to_gui_config(file_path)
-            self.core.save_xml(file_path)
+            file_path = Path(file_path)
+            if self.core.save_xml(file_path):
+                self.add_recent_file_to_gui_config(file_path)
 
     def click_open_xml(self, _event: tk.Event = None) -> None:
         init_dir = self.core.get_xml_dir()

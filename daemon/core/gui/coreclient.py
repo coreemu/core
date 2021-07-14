@@ -292,14 +292,17 @@ class CoreClient:
         logger.info("exception event: %s", event)
         self.app.statusbar.add_alert(event)
 
+    def update_session_title(self) -> None:
+        title_file = self.session.file.name if self.session.file else ""
+        self.master.title(f"CORE Session({self.session.id}) {title_file}")
+
     def join_session(self, session_id: int) -> None:
         logger.info("joining session(%s)", session_id)
         self.reset()
         try:
             self.session = self.client.get_session(session_id)
             self.session.user = self.user
-            title_file = self.session.file.name if self.session.file else ""
-            self.master.title(f"CORE Session({self.session.id}) {title_file}")
+            self.update_session_title()
             self.handling_events = self.client.events(
                 self.session.id, self.handle_events
             )
@@ -542,15 +545,16 @@ class CoreClient:
     def get_xml_dir(self) -> str:
         return str(self.session.file.parent) if self.session.file else str(XMLS_PATH)
 
-    def save_xml(self, file_path: str = None) -> None:
+    def save_xml(self, file_path: Path = None) -> bool:
         """
         Save core session as to an xml file
         """
         if not file_path and not self.session.file:
             logger.error("trying to save xml for session with no file")
-            return
+            return False
         if not file_path:
-            file_path = str(self.session.file)
+            file_path = self.session.file
+        result = False
         try:
             if not self.is_runtime():
                 logger.debug("sending session data to the daemon")
@@ -562,10 +566,15 @@ class CoreClient:
                         "Failed to define session",
                         message,
                     )
-            self.client.save_xml(self.session.id, file_path)
+            self.client.save_xml(self.session.id, str(file_path))
+            if self.session.file != file_path:
+                self.session.file = file_path
+                self.update_session_title()
             logger.info("saved xml file %s", file_path)
+            result = True
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Save XML Error", e)
+        return result
 
     def open_xml(self, file_path: Path) -> None:
         """
