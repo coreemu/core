@@ -232,7 +232,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             state = EventTypes.DEFINITION_STATE
         else:
             state = EventTypes.CONFIGURATION_STATE
-            session.directory.mkdir(exist_ok=True)
+        session.directory.mkdir(exist_ok=True)
         session.set_state(state)
         session.user = request.session.user
 
