@@ -23,6 +23,8 @@ class IpConfigDialog(Dialog):
         self.ip4_listbox: Optional[ListboxScroll] = None
         self.ip6_entry: Optional[ttk.Entry] = None
         self.ip6_listbox: Optional[ListboxScroll] = None
+        self.enable_ip4 = tk.BooleanVar(value=self.app.guiconfig.ips.enable_ip4)
+        self.enable_ip6 = tk.BooleanVar(value=self.app.guiconfig.ips.enable_ip6)
         self.draw()
 
     def draw(self) -> None:
@@ -36,10 +38,19 @@ class IpConfigDialog(Dialog):
         frame.rowconfigure(0, weight=1)
         frame.grid(sticky=tk.NSEW, pady=PADY)
 
+        ip4_checkbox = ttk.Checkbutton(
+            frame, text="Enable IP4?", variable=self.enable_ip4
+        )
+        ip4_checkbox.grid(row=0, column=0, sticky=tk.EW)
+        ip6_checkbox = ttk.Checkbutton(
+            frame, text="Enable IP6?", variable=self.enable_ip6
+        )
+        ip6_checkbox.grid(row=0, column=1, sticky=tk.EW)
+
         ip4_frame = ttk.LabelFrame(frame, text="IPv4", padding=FRAME_PAD)
         ip4_frame.columnconfigure(0, weight=1)
-        ip4_frame.rowconfigure(0, weight=1)
-        ip4_frame.grid(row=0, column=0, stick="nsew")
+        ip4_frame.rowconfigure(1, weight=1)
+        ip4_frame.grid(row=1, column=0, stick=tk.NSEW)
         self.ip4_listbox = ListboxScroll(ip4_frame)
         self.ip4_listbox.listbox.bind("<<ListboxSelect>>", self.select_ip4)
         self.ip4_listbox.grid(sticky=tk.NSEW, pady=PADY)
@@ -63,7 +74,7 @@ class IpConfigDialog(Dialog):
         ip6_frame = ttk.LabelFrame(frame, text="IPv6", padding=FRAME_PAD)
         ip6_frame.columnconfigure(0, weight=1)
         ip6_frame.rowconfigure(0, weight=1)
-        ip6_frame.grid(row=0, column=1, stick="nsew")
+        ip6_frame.grid(row=1, column=1, stick=tk.NSEW)
         self.ip6_listbox = ListboxScroll(ip6_frame)
         self.ip6_listbox.listbox.bind("<<ListboxSelect>>", self.select_ip6)
         self.ip6_listbox.grid(sticky=tk.NSEW, pady=PADY)
@@ -86,7 +97,7 @@ class IpConfigDialog(Dialog):
 
         # draw buttons
         frame = ttk.Frame(self.top)
-        frame.grid(stick="ew")
+        frame.grid(stick=tk.EW)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Save", command=self.click_save)
@@ -142,10 +153,18 @@ class IpConfigDialog(Dialog):
             ip6 = self.ip6_listbox.listbox.get(index)
             ip6s.append(ip6)
         ip_config = self.app.guiconfig.ips
-        ip_config.ip4 = self.ip4
-        ip_config.ip6 = self.ip6
+        ip_changed = False
+        if ip_config.ip4 != self.ip4:
+            ip_config.ip4 = self.ip4
+            ip_changed = True
+        if ip_config.ip6 != self.ip6:
+            ip_config.ip6 = self.ip6
+            ip_changed = True
         ip_config.ip4s = ip4s
         ip_config.ip6s = ip6s
-        self.app.core.ifaces_manager.update_ips(self.ip4, self.ip6)
+        ip_config.enable_ip4 = self.enable_ip4.get()
+        ip_config.enable_ip6 = self.enable_ip6.get()
+        if ip_changed:
+            self.app.core.ifaces_manager.update_ips(self.ip4, self.ip6)
         self.app.save_config()
         self.destroy()

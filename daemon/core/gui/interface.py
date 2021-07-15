@@ -160,11 +160,18 @@ class InterfaceManager:
             index += 1
         return index
 
-    def get_ips(self, node: Node) -> [str, str]:
+    def get_ips(self, node: Node) -> [Optional[str], Optional[str]]:
+        enable_ip4 = self.app.guiconfig.ips.enable_ip4
+        enable_ip6 = self.app.guiconfig.ips.enable_ip6
+        ip4, ip6 = None, None
+        if not enable_ip4 and not enable_ip6:
+            return ip4, ip6
         index = self.next_index(node)
-        ip4 = self.current_subnets.ip4[index]
-        ip6 = self.current_subnets.ip6[index]
-        return str(ip4), str(ip6)
+        if enable_ip4:
+            ip4 = str(self.current_subnets.ip4[index])
+        if enable_ip6:
+            ip6 = str(self.current_subnets.ip6[index])
+        return ip4, ip6
 
     def get_subnets(self, iface: Interface) -> Subnets:
         ip4_subnet = self.ip4_subnets
