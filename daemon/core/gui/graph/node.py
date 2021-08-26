@@ -338,7 +338,7 @@ class CanvasNode:
     def canvas_copy(self) -> None:
         self.canvas.clear_selection()
         self.canvas.select_object(self.id)
-        self.canvas.copy()
+        self.canvas.copy_selected()
 
     def show_config(self) -> None:
         dialog = NodeConfigDialog(self.app, self)

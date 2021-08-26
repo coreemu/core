@@ -103,10 +103,15 @@ class CanvasGraph(tk.Canvas):
         """
         Bind any mouse events or hot keys to the matching action
         """
+        self.bind("<Control-c>", self.copy_selected)
+        self.bind("<Control-v>", self.paste_selected)
+        self.bind("<Control-x>", self.cut_selected)
+        self.bind("<Control-d>", self.delete_selected)
+        self.bind("<Control-h>", self.hide_selected)
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<Delete>", self.press_delete)
+        self.bind("<Delete>", self.delete_selected)
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
         self.bind("<MouseWheel>", self.zoom)
@@ -277,7 +282,7 @@ class CanvasGraph(tk.Canvas):
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selected_objects(self) -> None:
+    def delete_selected_objects(self, _event: tk.Event = None) -> None:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -307,7 +312,7 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         self.core.deleted_canvas_nodes(nodes)
 
-    def hide_selected_objects(self) -> None:
+    def hide_selected(self, _event: tk.Event = None) -> None:
         for object_id in self.selection:
             #  delete selection box
             selection_id = self.selection[object_id]
@@ -487,17 +492,6 @@ class CanvasGraph(tk.Canvas):
             if self.select_box and self.manager.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
 
-    def press_delete(self, _event: tk.Event) -> None:
-        """
-        delete selected nodes and any data that relates to it
-        """
-        logger.debug("press delete key")
-        if not self.app.core.is_runtime():
-            self.delete_selected_objects()
-            self.app.default_info()
-        else:
-            logger.debug("node deletion is disabled during runtime state")
-
     def double_click(self, event: tk.Event) -> None:
         selected = self.get_selected(event)
         if selected is not None and selected in self.shapes:
@@ -673,7 +667,7 @@ class CanvasGraph(tk.Canvas):
         edge.complete(dst)
         return edge
 
-    def copy(self) -> None:
+    def copy_selected(self, _event: tk.Event = None) -> None:
         if self.core.is_runtime():
             logger.debug("copy is disabled during runtime state")
             return
@@ -684,7 +678,25 @@ class CanvasGraph(tk.Canvas):
                 canvas_node = self.nodes[node_id]
                 self.to_copy.append(canvas_node)
 
-    def paste(self) -> None:
+    def cut_selected(self, _event: tk.Event = None) -> None:
+        if self.core.is_runtime():
+            logger.debug("cut is disabled during runtime state")
+            return
+        self.copy_selected()
+        self.delete_selected()
+
+    def delete_selected(self, _event: tk.Event = None) -> None:
+        """
+        delete selected nodes and any data that relates to it
+        """
+        logger.debug("press delete key")
+        if self.core.is_runtime():
+            logger.debug("node deletion is disabled during runtime state")
+            return
+        self.delete_selected_objects()
+        self.app.default_info()
+
+    def paste_selected(self, _event: tk.Event = None) -> None:
         if self.core.is_runtime():
             logger.debug("paste is disabled during runtime state")
             return

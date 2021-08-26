@@ -122,11 +122,6 @@ class Menubar(tk.Menu):
         )
         menu.add_command(label="Hide", accelerator="Ctrl+H", command=self.click_hide)
         self.add_cascade(label="Edit", menu=menu)
-        self.app.master.bind_all("<Control-x>", self.click_cut)
-        self.app.master.bind_all("<Control-c>", self.click_copy)
-        self.app.master.bind_all("<Control-v>", self.click_paste)
-        self.app.master.bind_all("<Control-d>", self.click_delete)
-        self.app.master.bind_all("<Control-h>", self.click_hide)
         self.edit_menu = menu
 
     def draw_canvas_menu(self) -> None:
@@ -409,24 +404,24 @@ class Menubar(tk.Menu):
 
     def click_copy(self, _event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.copy()
+        canvas.copy_selected()
 
-    def click_paste(self, _event: tk.Event = None) -> None:
+    def click_paste(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.paste()
+        canvas.paste_selected(event)
 
-    def click_delete(self, _event: tk.Event = None) -> None:
+    def click_delete(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.delete_selected_objects()
+        canvas.delete_selected(event)
 
-    def click_hide(self, _event: tk.Event = None) -> None:
+    def click_hide(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.hide_selected_objects()
+        canvas.hide_selected(event)
 
-    def click_cut(self, _event: tk.Event = None) -> None:
+    def click_cut(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.copy()
-        canvas.delete_selected_objects()
+        canvas.copy_selected(event)
+        canvas.delete_selected(event)
 
     def click_show_hidden(self, _event: tk.Event = None) -> None:
         for canvas in self.manager.all():
