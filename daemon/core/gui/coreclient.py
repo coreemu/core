@@ -43,7 +43,6 @@ from core.gui.dialogs.mobilityplayer import MobilityPlayer
 from core.gui.dialogs.sessions import SessionsDialog
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
-from core.gui.graph.shape import Shape
 from core.gui.interface import InterfaceManager
 from core.gui.nodeutils import NodeDraw
 
@@ -317,45 +316,6 @@ class CoreClient:
     def is_runtime(self) -> bool:
         return self.session and self.session.state == SessionState.RUNTIME
 
-    def parse_metadata(self) -> None:
-        # canvas setting
-        config = self.session.metadata
-        canvas_config = config.get("canvas")
-        logger.debug("canvas metadata: %s", canvas_config)
-        if canvas_config:
-            canvas_config = json.loads(canvas_config)
-            self.app.manager.parse_metadata(canvas_config)
-
-        # load saved shapes
-        shapes_config = config.get("shapes")
-        if shapes_config:
-            shapes_config = json.loads(shapes_config)
-            for shape_config in shapes_config:
-                logger.debug("loading shape: %s", shape_config)
-                Shape.from_metadata(self.app, shape_config)
-
-        # load edges config
-        edges_config = config.get("edges")
-        if edges_config:
-            edges_config = json.loads(edges_config)
-            logger.info("edges config: %s", edges_config)
-            for edge_config in edges_config:
-                edge = self.links[edge_config["token"]]
-                edge.width = edge_config["width"]
-                edge.color = edge_config["color"]
-                edge.redraw()
-
-        # read hidden nodes
-        hidden = config.get("hidden")
-        if hidden:
-            hidden = json.loads(hidden)
-            for _id in hidden:
-                canvas_node = self.canvas_nodes.get(_id)
-                if canvas_node:
-                    canvas_node.hide()
-                else:
-                    logger.warning("invalid node to hide: %s", _id)
-
     def create_new_session(self) -> None:
         """
         Create a new session
@@ -439,7 +399,7 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Edit Node Error", e)
 
-    def get_links(self, definition: bool = False) -> Tuple[List[Link], List[Link]]:
+    def get_links(self, definition: bool = False) -> List[Link]:
         if not definition:
             self.ifaces_manager.set_macs([x.link for x in self.links.values()])
         links = []
