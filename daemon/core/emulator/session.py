@@ -545,7 +545,11 @@ class Session:
         node.canvas = options.canvas
 
         # set node position and broadcast it
-        self.set_node_position(node, options)
+        has_geo = all(i is not None for i in [options.lon, options.lat, options.alt])
+        if has_geo:
+            self.set_node_geo(node, options.lon, options.lat, options.alt)
+        else:
+            self.set_node_pos(node, options.x, options.y)
 
         # add services to needed nodes
         if isinstance(node, (CoreNode, PhysicalNode)):
@@ -583,49 +587,21 @@ class Session:
         self.sdt.add_node(node)
         return node
 
-    def edit_node(self, node_id: int, options: NodeOptions) -> None:
-        """
-        Edit node information.
+    def set_node_pos(self, node: NodeBase, x: float, y: float) -> None:
+        node.setposition(x, y, None)
+        self.sdt.edit_node(
+            node, node.position.lon, node.position.lat, node.position.alt
+        )
 
-        :param node_id: id of node to update
-        :param options: data to update node with
-        :return: nothing
-        :raises core.CoreError: when node to update does not exist
-        """
-        node = self.get_node(node_id, NodeBase)
-        node.icon = options.icon
-        self.set_node_position(node, options)
-        self.sdt.edit_node(node, options.lon, options.lat, options.alt)
-
-    def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
-        """
-        Set position for a node, use lat/lon/alt if needed.
-
-        :param node: node to set position for
-        :param options: data for node
-        :return: nothing
-        """
-        # extract location values
-        x = options.x
-        y = options.y
-        lat = options.lat
-        lon = options.lon
-        alt = options.alt
-        # check if we need to generate position from lat/lon/alt
-        has_empty_position = all(i is None for i in [x, y])
-        has_lat_lon_alt = all(i is not None for i in [lat, lon, alt])
-        using_lat_lon_alt = has_empty_position and has_lat_lon_alt
-        if using_lat_lon_alt:
-            x, y, _ = self.location.getxyz(lat, lon, alt)
-            if math.isinf(x) or math.isinf(y):
-                raise CoreError(
-                    f"invalid geo for current reference/scale: {lon},{lat},{alt}"
-                )
-            node.setposition(x, y, None)
-            node.position.set_geo(lon, lat, alt)
-            self.broadcast_node(node)
-        elif not has_empty_position:
-            node.setposition(x, y, None)
+    def set_node_geo(self, node: NodeBase, lon: float, lat: float, alt: float) -> None:
+        x, y, _ = self.location.getxyz(lat, lon, alt)
+        if math.isinf(x) or math.isinf(y):
+            raise CoreError(
+                f"invalid geo for current reference/scale: {lon},{lat},{alt}"
+            )
+        node.setposition(x, y, None)
+        node.position.set_geo(lon, lat, alt)
+        self.sdt.edit_node(node, lon, lat, alt)
 
     def start_mobility(self, node_ids: List[int] = None) -> None:
         """

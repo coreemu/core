@@ -49,6 +49,8 @@ service CoreApi {
     }
     rpc GetNodeTerminal (GetNodeTerminalRequest) returns (GetNodeTerminalResponse) {
     }
+    rpc MoveNode (MoveNodeRequest) returns (MoveNodeResponse) {
+    }
     rpc MoveNodes (stream MoveNodesRequest) returns (MoveNodesResponse) {
     }
 
@@ -329,10 +331,8 @@ message GetNodeResponse {
 message EditNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
-    Position position = 3;
-    string icon = 4;
-    string source = 5;
-    Geo geo = 6;
+    string icon = 3;
+    string source = 4;
 }
 
 message EditNodeResponse {
@@ -356,6 +356,21 @@ message GetNodeTerminalRequest {
 
 message GetNodeTerminalResponse {
     string terminal = 1;
+}
+
+
+message MoveNodeRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    string source = 3;
+    oneof move_type {
+        Position position = 4;
+        Geo geo = 5;
+    }
+}
+
+message MoveNodeResponse {
+    bool result = 1;
 }
 
 message MoveNodesRequest {

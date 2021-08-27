@@ -391,7 +391,7 @@ class CoreClient:
 
     def edit_node(self, core_node: Node) -> None:
         try:
-            self.client.edit_node(
+            self.client.move_node(
                 self.session.id, core_node.id, core_node.position, source=GUI_SOURCE
             )
         except grpc.RpcError as e:

@@ -75,7 +75,7 @@ from core.api.grpc.wlan_pb2 import (
 )
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
@@ -164,6 +164,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return session.get_node(node_id, _class)
         except CoreError as e:
             context.abort(grpc.StatusCode.NOT_FOUND, str(e))
+
+    def move_node(
+        self,
+        context: ServicerContext,
+        session_id: int,
+        node_id: int,
+        geo: core_pb2.Geo = None,
+        position: core_pb2.Position = None,
+        source: str = None,
+    ):
+        if not geo and not position:
+            raise CoreError("move node must provide a geo or position to move")
+        session = self.get_session(session_id, context)
+        node = self.get_node(session, node_id, context, NodeBase)
+        if geo:
+            session.set_node_geo(node, geo.lon, geo.lat, geo.alt)
+        else:
+            session.set_node_pos(node, position.x, position.y)
+        source = source if source else None
+        session.broadcast_node(node, source=source)
 
     def validate_service(
         self, name: str, context: ServicerContext
@@ -544,6 +564,23 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         links = get_links(node)
         return core_pb2.GetNodeResponse(node=node_proto, ifaces=ifaces, links=links)
 
+    def MoveNode(
+        self, request: core_pb2.MoveNodeRequest, context: ServicerContext
+    ) -> core_pb2.MoveNodeResponse:
+        """
+        Move node, either by x,y position or geospatial.
+
+        :param request: move node request
+        :param context: context object
+        :return: move nodes response
+        """
+        geo = request.geo if request.HasField("geo") else None
+        position = request.position if request.HasField("position") else None
+        self.move_node(
+            context, request.session_id, request.node_id, geo, position, request.source
+        )
+        return core_pb2.MoveNodeResponse(result=True)
+
     def MoveNodes(
         self,
         request_iterator: Iterable[core_pb2.MoveNodesRequest],
@@ -557,27 +594,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: move nodes response
         """
         for request in request_iterator:
-            if not request.WhichOneof("move_type"):
-                raise CoreError("move nodes must provide a move type")
-            session = self.get_session(request.session_id, context)
-            node = self.get_node(session, request.node_id, context, NodeBase)
-            options = NodeOptions()
-            has_geo = request.HasField("geo")
-            if has_geo:
-                logger.info("has geo")
-                lat = request.geo.lat
-                lon = request.geo.lon
-                alt = request.geo.alt
-                options.set_location(lat, lon, alt)
-            else:
-                x = request.position.x
-                y = request.position.y
-                logger.info("has pos: %s,%s", x, y)
-                options.set_position(x, y)
-            session.edit_node(node.id, options)
-            source = request.source if request.source else None
-            if not has_geo:
-                session.broadcast_node(node, source=source)
+            geo = request.geo if request.HasField("geo") else None
+            position = request.position if request.HasField("position") else None
+            self.move_node(
+                context,
+                request.session_id,
+                request.node_id,
+                geo,
+                position,
+                request.source,
+            )
         return core_pb2.MoveNodesResponse()
 
     def EditNode(
@@ -593,28 +619,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logger.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context, NodeBase)
-        options = NodeOptions(icon=request.icon)
-        if request.HasField("position"):
-            x = request.position.x
-            y = request.position.y
-            options.set_position(x, y)
-        has_geo = request.HasField("geo")
-        if has_geo:
-            lat = request.geo.lat
-            lon = request.geo.lon
-            alt = request.geo.alt
-            options.set_location(lat, lon, alt)
-        result = True
-        try:
-            session.edit_node(node.id, options)
-            source = None
-            if request.source:
-                source = request.source
-            if not has_geo:
-                session.broadcast_node(node, source=source)
-        except CoreError:
-            result = False
-        return core_pb2.EditNodeResponse(result=result)
+        node.icon = request.icon or None
+        source = request.source or None
+        session.broadcast_node(node, source=source)
+        return core_pb2.EditNodeResponse(result=True)
 
     def DeleteNode(
         self, request: core_pb2.DeleteNodeRequest, context: ServicerContext

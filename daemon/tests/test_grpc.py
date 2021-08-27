@@ -266,36 +266,63 @@ class TestGrpc:
         assert len(ifaces) == 0
         assert len(links) == 0
 
+    def test_move_node_pos(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        position = Position(x=100.0, y=50.0)
+
+        # then
+        with client.context_connect():
+            result = client.move_node(session.id, node.id, position=position)
+
+        # then
+        assert result is True
+        assert node.position.x == position.x
+        assert node.position.y == position.y
+
+    def test_move_node_geo(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        geo = Geo(lon=0.0, lat=0.0, alt=0.0)
+
+        # then
+        with client.context_connect():
+            result = client.move_node(session.id, node.id, geo=geo)
+
+        # then
+        assert result is True
+        assert node.position.lon == geo.lon
+        assert node.position.lat == geo.lat
+        assert node.position.alt == geo.alt
+
+    def test_move_node_exception(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+
+        # then and when
+        with pytest.raises(CoreError), client.context_connect():
+            client.move_node(session.id, node.id)
+
     def test_edit_node(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node(CoreNode)
+        icon = "test.png"
 
         # then
-        x, y = 10, 10
         with client.context_connect():
-            position = Position(x=x, y=y)
-            result = client.edit_node(session.id, node.id, position)
+            result = client.edit_node(session.id, node.id, icon)
 
         # then
         assert result is True
-        assert node.position.x == x
-        assert node.position.y == y
-
-    def test_edit_node_exception(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        x, y = 10, 10
-        with client.context_connect():
-            position = Position(x=x, y=y)
-            geo = Geo(lat=0, lon=0, alt=0)
-            with pytest.raises(CoreError):
-                client.edit_node(session.id, node.id, position, geo=geo)
+        assert node.icon == icon
 
     @pytest.mark.parametrize("node_id, expected", [(1, True), (2, False)])
     def test_delete_node(

@@ -441,13 +441,7 @@ class CoreGrpcClient:
         return node, ifaces, links
 
     def edit_node(
-        self,
-        session_id: int,
-        node_id: int,
-        position: wrappers.Position = None,
-        icon: str = None,
-        geo: wrappers.Geo = None,
-        source: str = None,
+        self, session_id: int, node_id: int, icon: str = None, source: str = None
     ) -> bool:
         """
         Edit a node's icon and/or location, can only use position(x,y) or
@@ -455,26 +449,48 @@ class CoreGrpcClient:
 
         :param session_id: session id
         :param node_id: node id
-        :param position: x,y location for node
         :param icon: path to icon for gui to use for node
-        :param geo: lon,lat,alt location for node
         :param source: application source
         :return: True for success, False otherwise
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        if position and geo:
-            raise CoreError("cannot edit position and geo at same time")
-        position_proto = position.to_proto() if position else None
-        geo_proto = geo.to_proto() if geo else None
         request = core_pb2.EditNodeRequest(
-            session_id=session_id,
-            node_id=node_id,
-            position=position_proto,
-            icon=icon,
-            source=source,
-            geo=geo_proto,
+            session_id=session_id, node_id=node_id, icon=icon, source=source
         )
         response = self.stub.EditNode(request)
+        return response.result
+
+    def move_node(
+        self,
+        session_id: int,
+        node_id: int,
+        position: wrappers.Position = None,
+        geo: wrappers.Geo = None,
+        source: str = None,
+    ) -> bool:
+        """
+        Move node using provided position or geo location.
+
+        :param session_id: session id
+        :param node_id: node id
+        :param position: x,y position to move to
+        :param geo: geospatial position to move to
+        :param source: source generating motion
+        :return: nothing
+        :raises grpc.RpcError: when session or nodes do not exist
+        """
+        if not position and not geo:
+            raise CoreError("must provide position or geo to move node")
+        position = position.to_proto() if position else None
+        geo = geo.to_proto() if geo else None
+        request = core_pb2.MoveNodeRequest(
+            session_id=session_id,
+            node_id=node_id,
+            position=position,
+            geo=geo,
+            source=source,
+        )
+        response = self.stub.MoveNode(request)
         return response.result
 
     def move_nodes(self, streamer: MoveNodesStreamer) -> None:

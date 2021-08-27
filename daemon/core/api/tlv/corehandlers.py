@@ -716,12 +716,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if message.flags & MessageFlags.ADD.value:
             node = self.session.add_node(_class, node_id, options)
-            if node:
-                if message.flags & MessageFlags.STRING.value:
-                    self.node_status_request[node.id] = True
-
-                if self.session.state == EventTypes.RUNTIME_STATE:
-                    self.send_node_emulation_id(node.id)
+            has_geo = all(
+                i is not None for i in [options.lon, options.lat, options.alt]
+            )
+            if has_geo:
+                self.session.broadcast_node(node)
+            if message.flags & MessageFlags.STRING.value:
+                self.node_status_request[node.id] = True
+            if self.session.state == EventTypes.RUNTIME_STATE:
+                self.send_node_emulation_id(node.id)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
@@ -739,7 +742,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.edit_node(node_id, options)
+            node = self.session.get_node(node_id, NodeBase)
+            node.icon = options.icon
+            has_geo = all(
+                i is not None for i in [options.lon, options.lat, options.alt]
+            )
+            if has_geo:
+                self.session.set_node_geo(node, options.lon, options.lat, options.alt)
+                self.session.broadcast_node(node)
+            else:
+                self.session.set_node_pos(node, options.x, options.y)
 
         return replies
 

@@ -269,6 +269,13 @@ def add_node(core: CoreGrpcClient, args: Namespace) -> None:
 @coreclient
 def edit_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
+    result = core.edit_node(session_id, args.id, args.icon)
+    print(f"edit node: {result}")
+
+
+@coreclient
+def move_node(core: CoreGrpcClient, args: Namespace) -> None:
+    session_id = get_current_session(core, args.session)
     pos = None
     if args.pos:
         x, y = args.pos
@@ -277,8 +284,8 @@ def edit_node(core: CoreGrpcClient, args: Namespace) -> None:
     if args.geo:
         lon, lat, alt = args.geo
         geo = Geo(lon=lon, lat=lat, alt=alt)
-    result = core.edit_node(session_id, args.id, pos, args.icon, geo)
-    print(f"edit node: {result}")
+    result = core.move_node(session_id, args.id, pos, geo)
+    print(f"move node: {result}")
 
 
 @coreclient
@@ -377,12 +384,17 @@ def setup_node_parser(parent: _SubParsersAction) -> None:
 
     edit_parser = subparsers.add_parser("edit", help="edit a node")
     edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    edit_parser.add_argument("-i", "--id", type=int, help="id to use, optional")
-    group = edit_parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
-    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    edit_parser.add_argument("-i", "--id", type=int, help="id to use", required=True)
     edit_parser.add_argument("-ic", "--icon", help="icon to use, optional")
     edit_parser.set_defaults(func=edit_node)
+
+    move_parser = subparsers.add_parser("move", help="move a node")
+    move_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    move_parser.add_argument("-i", "--id", type=int, help="id to use, optional", required=True)
+    group = move_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
+    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    move_parser.set_defaults(func=move_node)
 
     delete_parser = subparsers.add_parser("delete", help="delete a node")
     delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
