@@ -492,7 +492,7 @@ class CoreServices:
         for directory in service.dirs:
             dir_path = Path(directory)
             try:
-                node.privatedir(dir_path)
+                node.create_dir(dir_path)
             except (CoreCommandError, CoreError) as e:
                 logger.warning(
                     "error mounting private dir '%s' for service '%s': %s",
@@ -553,7 +553,7 @@ class CoreServices:
             src = src.split("\n")[0]
             src = utils.expand_corepath(src, node.session, node)
             # TODO: glob here
-            node.nodefilecopy(file_path, src, mode=0o644)
+            node.copy_file(src, file_path, mode=0o644)
             return True
         return False
 
@@ -750,7 +750,7 @@ class CoreServices:
                     continue
             else:
                 cfg = service.generate_config(node, file_name)
-            node.nodefile(file_path, cfg)
+            node.create_file(file_path, cfg)
 
     def service_reconfigure(self, node: CoreNode, service: "CoreService") -> None:
         """
@@ -771,7 +771,7 @@ class CoreServices:
             cfg = service.config_data.get(file_name)
             if cfg is None:
                 cfg = service.generate_config(node, file_name)
-            node.nodefile(file_path, cfg)
+            node.create_file(file_path, cfg)
 
 
 class CoreService:

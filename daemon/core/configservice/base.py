@@ -3,8 +3,9 @@ import enum
 import inspect
 import logging
 import time
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from mako import exceptions
 from mako.lookup import TemplateLookup
@@ -28,6 +29,14 @@ class ConfigServiceBootError(Exception):
     pass
 
 
+@dataclass
+class ShadowDir:
+    path: str
+    src: Optional[str] = None
+    templates: bool = False
+    has_node_paths: bool = False
+
+
 class ConfigService(abc.ABC):
     """
     Base class for creating configurable services.
@@ -38,6 +47,9 @@ class ConfigService(abc.ABC):
 
     # time to wait in seconds for determining if service started successfully
     validation_timer: int = 5
+
+    # directories to shadow and copy files from
+    shadow_directories: List[ShadowDir] = []
 
     def __init__(self, node: CoreNode) -> None:
         """
@@ -135,6 +147,7 @@ class ConfigService(abc.ABC):
         :raises ConfigServiceBootError: when there is an error starting service
         """
         logger.info("node(%s) service(%s) starting...", self.node.name, self.name)
+        self.create_shadow_dirs()
         self.create_dirs()
         self.create_files()
         wait = self.validation_mode == ConfigServiceMode.BLOCKING
@@ -169,6 +182,64 @@ class ConfigService(abc.ABC):
         self.stop()
         self.start()
 
+    def create_shadow_dirs(self) -> None:
+        """
+        Creates a shadow of a host system directory recursively
+        to be mapped and live within a node.
+
+        :return: nothing
+        :raises CoreError: when there is a failure creating a directory or file
+        """
+        for shadow_dir in self.shadow_directories:
+            # setup shadow and src paths, using node unique paths when configured
+            shadow_path = Path(shadow_dir.path)
+            if shadow_dir.src is None:
+                src_path = shadow_path
+            else:
+                src_path = Path(shadow_dir.src)
+            if shadow_dir.has_node_paths:
+                src_path = src_path / self.node.name
+            # validate shadow and src paths
+            if not shadow_path.is_absolute():
+                raise CoreError(f"shadow dir({shadow_path}) is not absolute")
+            if not src_path.is_absolute():
+                raise CoreError(f"shadow source dir({src_path}) is not absolute")
+            if not src_path.is_dir():
+                raise CoreError(f"shadow source dir({src_path}) does not exist")
+            # create root of the shadow path within node
+            logger.info(
+                "node(%s) creating shadow directory(%s) src(%s) node paths(%s) "
+                "templates(%s)",
+                self.node.name,
+                shadow_path,
+                src_path,
+                shadow_dir.has_node_paths,
+                shadow_dir.templates,
+            )
+            self.node.create_dir(shadow_path)
+            # find all directories and files to create
+            dir_paths = []
+            file_paths = []
+            for path in src_path.rglob("*"):
+                shadow_src_path = shadow_path / path.relative_to(src_path)
+                if path.is_dir():
+                    dir_paths.append(shadow_src_path)
+                else:
+                    file_paths.append((path, shadow_src_path))
+            # create all directories within node
+            for path in dir_paths:
+                self.node.create_dir(path)
+            # create all files within node, from templates when configured
+            data = self.data()
+            templates = TemplateLookup(directories=src_path)
+            for path, dst_path in file_paths:
+                if shadow_dir.templates:
+                    template = templates.get_template(path.name)
+                    rendered = self._render(template, data)
+                    self.node.create_file(dst_path, rendered)
+                else:
+                    self.node.copy_file(path, dst_path)
+
     def create_dirs(self) -> None:
         """
         Creates directories for service.
@@ -176,10 +247,11 @@ class ConfigService(abc.ABC):
         :return: nothing
         :raises CoreError: when there is a failure creating a directory
         """
-        for directory in self.directories:
+        logger.debug("creating config service directories")
+        for directory in sorted(self.directories):
             dir_path = Path(directory)
             try:
-                self.node.privatedir(dir_path)
+                self.node.create_dir(dir_path)
             except (CoreCommandError, CoreError):
                 raise CoreError(
                     f"node({self.node.name}) service({self.name}) "
@@ -221,17 +293,21 @@ class ConfigService(abc.ABC):
         :return: mapping of files to templates
         """
         templates = {}
-        for name in self.files:
-            basename = Path(name).name
-            if name in self.custom_templates:
-                template = self.custom_templates[name]
-                template = self.clean_text(template)
-            elif self.templates.has_template(basename):
-                template = self.templates.get_template(basename).source
+        for file in self.files:
+            file_path = Path(file)
+            if file_path.is_absolute():
+                template_path = str(file_path.relative_to("/"))
             else:
-                template = self.get_text_template(name)
+                template_path = str(file_path)
+            if file in self.custom_templates:
+                template = self.custom_templates[file]
                 template = self.clean_text(template)
-            templates[name] = template
+            elif self.templates.has_template(template_path):
+                template = self.templates.get_template(template_path).source
+            else:
+                template = self.get_text_template(file)
+                template = self.clean_text(template)
+            templates[file] = template
         return templates
 
     def create_files(self) -> None:
@@ -241,24 +317,20 @@ class ConfigService(abc.ABC):
         :return: nothing
         """
         data = self.data()
-        for name in self.files:
-            file_path = Path(name)
-            if name in self.custom_templates:
-                text = self.custom_templates[name]
+        for file in sorted(self.files):
+            logger.debug(
+                "node(%s) service(%s) template(%s)", self.node.name, self.name, file
+            )
+            file_path = Path(file)
+            if file in self.custom_templates:
+                text = self.custom_templates[file]
                 rendered = self.render_text(text, data)
             elif self.templates.has_template(file_path.name):
                 rendered = self.render_template(file_path.name, data)
             else:
-                text = self.get_text_template(name)
+                text = self.get_text_template(file)
                 rendered = self.render_text(text, data)
-            logger.debug(
-                "node(%s) service(%s) template(%s): \n%s",
-                self.node.name,
-                self.name,
-                name,
-                rendered,
-            )
-            self.node.nodefile(file_path, rendered)
+            self.node.create_file(file_path, rendered)
 
     def run_startup(self, wait: bool) -> None:
         """

@@ -237,13 +237,36 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+    def create_dir(self, dir_path: Path) -> None:
+        """
+        Create a node private directory.
+
+        :param dir_path: path to create
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         """
         Create a node file with a given mode.
 
         :param file_path: name of file to create
         :param contents: contents of file
         :param mode: mode for file
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+        """
+        Copy source file to node host destination, updating the file mode when
+        provided.
+
+        :param src_path: source file to copy
+        :param dst_path: node host destination
+        :param mode: file mode
         :return: nothing
         """
         raise NotImplementedError
@@ -567,7 +590,7 @@ class CoreNode(CoreNodeBase):
 
             # create private directories
             for dir_path in PRIVATE_DIRS:
-                self.privatedir(dir_path)
+                self.create_dir(dir_path)
 
     def shutdown(self) -> None:
         """
@@ -648,19 +671,23 @@ class CoreNode(CoreNodeBase):
         else:
             return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
-    def privatedir(self, dir_path: Path) -> None:
+    def create_dir(self, dir_path: Path) -> None:
         """
-        Create a private directory.
+        Create a node private directory.
 
         :param dir_path: path to create
         :return: nothing
         """
-        logger.info("creating private directory: %s", dir_path)
-        if not str(dir_path).startswith("/"):
+        if not dir_path.is_absolute():
             raise CoreError(f"private directory path not fully qualified: {dir_path}")
-        host_path = self.host_path(dir_path, is_dir=True)
-        self.host_cmd(f"mkdir -p {host_path}")
-        self.mount(host_path, dir_path)
+        logger.debug("node(%s) creating private directory: %s", self.name, dir_path)
+        parent_path = self._find_parent_path(dir_path)
+        if parent_path:
+            self.host_cmd(f"mkdir -p {parent_path}")
+        else:
+            host_path = self.host_path(dir_path, is_dir=True)
+            self.host_cmd(f"mkdir -p {host_path}")
+            self.mount(host_path, dir_path)
 
     def mount(self, src_path: Path, target_path: Path) -> None:
         """
@@ -880,16 +907,40 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"mkdir -p {directory}")
             self.server.remote_put(src_path, file_path)
 
-    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+    def _find_parent_path(self, path: Path) -> Optional[Path]:
         """
-        Create a node file with a given mode.
+        Check if there is an existing mounted parent directory created for this node.
 
-        :param file_path: name of file to create
+        :param path: existing parent path to use
+        :return: exist parent path if exists, None otherwise
+        """
+        logger.debug("looking for existing parent: %s", path)
+        existing_path = None
+        for parent in path.parents:
+            node_path = self.host_path(parent, is_dir=True)
+            if node_path == self.directory:
+                break
+            if self.path_exists(str(node_path)):
+                relative_path = path.relative_to(parent)
+                existing_path = node_path / relative_path
+                break
+        return existing_path
+
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        """
+        Create file within a node at the given path, using contents and mode.
+
+        :param file_path: desired path for file
         :param contents: contents of file
-        :param mode: mode for file
+        :param mode: mode to create file with
         :return: nothing
         """
-        host_path = self.host_path(file_path)
+        logger.debug("node(%s) create file(%s) mode(%o)", self.name, file_path, mode)
+        host_path = self._find_parent_path(file_path)
+        if host_path:
+            self.host_cmd(f"mkdir -p {host_path.parent}")
+        else:
+            host_path = self.host_path(file_path)
         directory = host_path.parent
         if self.server is None:
             if not directory.exists():
@@ -901,26 +952,35 @@ class CoreNode(CoreNodeBase):
             self.host_cmd(f"mkdir -m {0o755:o} -p {directory}")
             self.server.remote_put_temp(host_path, contents)
             self.host_cmd(f"chmod {mode:o} {host_path}")
-        logger.debug("node(%s) added file: %s; mode: 0%o", self.name, host_path, mode)
 
-    def nodefilecopy(self, file_path: Path, src_path: Path, mode: int = None) -> None:
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
         """
-        Copy a file to a node, following symlinks and preserving metadata.
-        Change file mode if specified.
+        Copy source file to node host destination, updating the file mode when
+        provided.
 
-        :param file_path: file name to copy file to
-        :param src_path: file to copy
-        :param mode: mode to copy to
+        :param src_path: source file to copy
+        :param dst_path: node host destination
+        :param mode: file mode
         :return: nothing
         """
-        host_path = self.host_path(file_path)
+        logger.debug(
+            "node(%s) copying file src(%s) to dst(%s) mode(%o)",
+            self.name,
+            src_path,
+            dst_path,
+            mode or 0,
+        )
+        host_path = self._find_parent_path(dst_path)
+        if host_path:
+            self.host_cmd(f"mkdir -p {host_path.parent}")
+        else:
+            host_path = self.host_path(dst_path)
         if self.server is None:
             shutil.copy2(src_path, host_path)
         else:
             self.server.remote_put(src_path, host_path)
         if mode is not None:
             self.host_cmd(f"chmod {mode:o} {host_path}")
-        logger.info("node(%s) copied file: %s; mode: %s", self.name, host_path, mode)
 
 
 class CoreNetworkBase(NodeBase):

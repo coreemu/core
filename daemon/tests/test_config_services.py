@@ -70,7 +70,7 @@ class TestConfigServices:
 
         # then
         directory = Path(MyService.directories[0])
-        node.privatedir.assert_called_with(directory)
+        node.create_dir.assert_called_with(directory)
 
     def test_create_files_custom(self):
         # given
@@ -84,7 +84,7 @@ class TestConfigServices:
 
         # then
         file_path = Path(MyService.files[0])
-        node.nodefile.assert_called_with(file_path, text)
+        node.create_file.assert_called_with(file_path, text)
 
     def test_create_files_text(self):
         # given
@@ -96,7 +96,7 @@ class TestConfigServices:
 
         # then
         file_path = Path(MyService.files[0])
-        node.nodefile.assert_called_with(file_path, TEMPLATE_TEXT)
+        node.create_file.assert_called_with(file_path, TEMPLATE_TEXT)
 
     def test_run_startup(self):
         # given

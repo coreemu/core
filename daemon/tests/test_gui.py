@@ -441,10 +441,8 @@ class TestGui:
         coretlv.handle_message(message)
 
         if not request.config.getoption("mock"):
-            directory = str(file_path.parent)
-            created_directory = directory[1:].replace("/", ".")
-            create_path = node.directory / created_directory / file_path.name
-            assert create_path.exists()
+            expected_path = node.directory / "var.log/test" / file_path.name
+            assert expected_path.exists()
 
     def test_exec_node_tty(self, coretlv: CoreHandler):
         coretlv.dispatch_replies = mock.MagicMock()

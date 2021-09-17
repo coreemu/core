@@ -690,11 +690,11 @@ class Session:
         :param data: file data
         :return: nothing
         """
-        node = self.get_node(node_id, CoreNodeBase)
+        node = self.get_node(node_id, CoreNode)
         if src_path is not None:
             node.addfile(src_path, file_path)
         elif data is not None:
-            node.nodefile(file_path, data)
+            node.create_file(file_path, data)
 
     def clear(self) -> None:
         """
