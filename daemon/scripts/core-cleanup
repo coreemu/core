@@ -57,6 +57,7 @@ else
 fi
 
 eval "$ifcommand" | awk '
+    /^ctrl[0-9]+\./ {print "removing interface " $1; system("ip link del " $1);}
     /^veth[0-9]+\./ {print "removing interface " $1; system("ip link del " $1);}
     /tmp\./    {print "removing interface " $1; system("ip link del " $1);}
     /gt\./     {print "removing interface " $1; system("ip link del " $1);}
