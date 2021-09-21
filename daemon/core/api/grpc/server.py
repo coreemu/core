@@ -356,7 +356,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: core_pb2.GetSessionsRequest, context: ServicerContext
     ) -> core_pb2.GetSessionsResponse:
         """
-        Delete the session
+        Retrieve running session's
 
         :param request: get-session request
         :param context: context object
