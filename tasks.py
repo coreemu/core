@@ -198,7 +198,7 @@ def install_core(c: Context, hide: bool) -> None:
 
 
 def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
-    c.run("pipx install poetry", hide=hide)
+    c.run("pipx install poetry==1.1.7", hide=hide)
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)

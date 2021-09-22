@@ -1,3 +1,11 @@
+## 2021-09-17 CORE 7.5.2
+
+* Installation
+    * \#596 - fixes issue related to installing poetry by pinning version to 1.1.7
+    * updates pipx installation to pinned version 0.16.4
+* core-daemon
+    * \#600 - fixes known vulnerability for pillow dependency by updating version
+
 ## 2021-04-15 CORE 7.5.1
 
 * core-pygui
