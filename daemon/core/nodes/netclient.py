@@ -1,6 +1,8 @@
 """
 Clients for dealing with bridge/interface commands.
 """
+import logging
+import traceback
 from typing import Callable
 
 import netaddr
@@ -294,7 +296,13 @@ class LinuxNetClient:
         :param value: ageing time value
         :return: nothing
         """
-        self.run(f"{IP} link set {name} type bridge ageing_time {value}")
+        try:
+            self.run(f"{IP} link set {name} type bridge ageing_time {value}")
+        except BaseException as e:
+            logging.debug("%s", traceback.format_exc())
+            logging.error("Failed to run previous command (see debug logs). Now trying: '%s link set %s type bridge' (REF: https://github.com/coreemu/core/issues/623)", IP, name)
+            self.run(f"{IP} link set {name} type bridge")
+            logging.error("Successed running w/o ageing_time... Moving forward.")
 
 
 class OvsNetClient(LinuxNetClient):
