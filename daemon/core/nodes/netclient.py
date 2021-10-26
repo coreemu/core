@@ -294,7 +294,7 @@ class LinuxNetClient:
         :param value: ageing time value
         :return: nothing
         """
-        self.run(f"{IP} link set {name} type bridge ageing_time {value}")
+        self.run(f"{IP} link set {name} type bridge")
 
 
 class OvsNetClient(LinuxNetClient):
