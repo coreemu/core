@@ -370,6 +370,16 @@ class OvsNetClient(LinuxNetClient):
         """
         self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time=0")
 
+    def set_mac_learning(self, name: str, value: int) -> None:
+        """
+        Set mac learning for a Linux bridge.
+
+        :param name: bridge name
+        :param value: ageing time value
+        :return: nothing
+        """
+        self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time={value}")
+
 
 def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:
     """
