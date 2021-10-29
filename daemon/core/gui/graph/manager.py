@@ -89,7 +89,6 @@ class CanvasManager:
             self.app.guiconfig.preferences.width,
             self.app.guiconfig.preferences.height,
         )
-        self.current_dimensions: Tuple[int, int] = self.default_dimensions
         self.show_node_labels: ShowVar = ShowNodeLabels(
             self, tags.NODE_LABEL, value=True
         )
@@ -274,19 +273,15 @@ class CanvasManager:
         if not self.canvases:
             self.add_canvas()
 
-    def redraw_canvases(self, dimensions: Tuple[int, int]) -> None:
-        for canvas in self.canvases.values():
-            canvas.redraw_canvas(dimensions)
-            if canvas.wallpaper:
-                canvas.redraw_wallpaper()
+    def redraw_canvas(self, dimensions: Tuple[int, int]) -> None:
+        canvas = self.current()
+        canvas.redraw_canvas(dimensions)
+        if canvas.wallpaper:
+            canvas.redraw_wallpaper()
 
     def get_metadata(self) -> Dict[str, Any]:
         canvases = [x.get_metadata() for x in self.all()]
-        return dict(
-            gridlines=self.app.manager.show_grid.get(),
-            dimensions=self.app.manager.current_dimensions,
-            canvases=canvases,
-        )
+        return dict(gridlines=self.show_grid.get(), canvases=canvases)
 
     def parse_metadata_canvas(self, metadata: Dict[str, Any]) -> None:
         # canvas setting
@@ -296,11 +291,8 @@ class CanvasManager:
             return
         canvas_config = json.loads(canvas_config)
         # get configured dimensions and gridlines option
-        dimensions = self.default_dimensions
-        dimensions = canvas_config.get("dimensions", dimensions)
         gridlines = canvas_config.get("gridlines", True)
         self.show_grid.set(gridlines)
-        self.redraw_canvases(dimensions)
 
         # get background configurations
         for canvas_config in canvas_config.get("canvases", []):

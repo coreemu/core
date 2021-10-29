@@ -827,6 +827,7 @@ class CanvasGraph(tk.Canvas):
             wallpaper=wallpaper_path,
             wallpaper_style=self.scale_option.get(),
             fit_image=self.adjust_to_dim.get(),
+            dimensions=self.current_dimensions,
         )
 
     def parse_metadata(self, config: Dict[str, Any]) -> None:
@@ -834,6 +835,9 @@ class CanvasGraph(tk.Canvas):
         self.adjust_to_dim.set(fit_image)
         wallpaper_style = config.get("wallpaper_style", 1)
         self.scale_option.set(wallpaper_style)
+        dimensions = config.get("dimensions")
+        if dimensions:
+            self.redraw_canvas(dimensions)
         wallpaper = config.get("wallpaper")
         if wallpaper:
             wallpaper = Path(wallpaper)

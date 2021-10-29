@@ -453,7 +453,7 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_autogrid(self) -> None:
-        width, height = self.manager.current_dimensions
+        width, height = self.manager.current().current_dimensions
         padding = (images.NODE_SIZE / 2) + 10
         layout_size = padding + images.NODE_SIZE
         col_count = width // layout_size
