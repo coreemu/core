@@ -39,14 +39,6 @@ message ConfigMode {
     map<string, string> config = 2;
 }
 
-message GetConfigServicesRequest {
-    int32 session_id = 1;
-}
-
-message GetConfigServicesResponse {
-    repeated ConfigService services = 1;
-}
-
 message GetConfigServiceDefaultsRequest {
     string name = 1;
 }
@@ -57,14 +49,6 @@ message GetConfigServiceDefaultsResponse {
     repeated ConfigMode modes = 3;
 }
 
-message GetNodeConfigServiceConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetNodeConfigServiceConfigsResponse {
-    repeated ConfigServiceConfig configs = 1;
-}
-
 message GetNodeConfigServiceRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -73,24 +57,4 @@ message GetNodeConfigServiceRequest {
 
 message GetNodeConfigServiceResponse {
     map<string, string> config = 1;
-}
-
-message GetNodeConfigServicesRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-}
-
-message GetNodeConfigServicesResponse {
-    repeated string services = 1;
-}
-
-message SetNodeConfigServiceRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string name = 3;
-    map<string, string> config = 4;
-}
-
-message SetNodeConfigServiceResponse {
-    bool result = 1;
 }

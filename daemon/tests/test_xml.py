@@ -1,3 +1,4 @@
+from pathlib import Path
 from tempfile import TemporaryFile
 from xml.etree import ElementTree
 
@@ -34,7 +35,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -85,7 +86,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -148,7 +149,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -210,7 +211,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -261,7 +262,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -321,7 +322,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -390,7 +391,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
@@ -471,7 +472,7 @@ class TestXml:
 
         # save xml
         xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
+        file_path = Path(xml_file.strpath)
         session.save_xml(file_path)
 
         # verify xml file was created and can be parsed

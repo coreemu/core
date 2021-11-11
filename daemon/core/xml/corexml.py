@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from lxml import etree
@@ -16,6 +17,8 @@ from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
 from core.services.coreservices import CoreService
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
@@ -25,7 +28,7 @@ T = TypeVar("T")
 
 
 def write_xml_file(
-    xml_element: etree.Element, file_path: str, doctype: str = None
+    xml_element: etree.Element, file_path: Path, doctype: str = None
 ) -> None:
     xml_data = etree.tostring(
         xml_element,
@@ -34,8 +37,8 @@ def write_xml_file(
         encoding="UTF-8",
         doctype=doctype,
     )
-    with open(file_path, "wb") as xml_file:
-        xml_file.write(xml_data)
+    with file_path.open("wb") as f:
+        f.write(xml_data)
 
 
 def get_type(element: etree.Element, name: str, _type: Generic[T]) -> Optional[T]:
@@ -77,20 +80,6 @@ def create_iface_data(iface_element: etree.Element) -> InterfaceData:
     )
 
 
-def create_emane_config(session: "Session") -> etree.Element:
-    emane_configuration = etree.Element("emane_global_configuration")
-    config = session.emane.get_configs()
-    emulator_element = etree.SubElement(emane_configuration, "emulator")
-    for emulator_config in session.emane.emane_config.emulator_config:
-        value = config[emulator_config.id]
-        add_configuration(emulator_element, emulator_config.id, value)
-    core_element = etree.SubElement(emane_configuration, "core")
-    for core_config in session.emane.emane_config.core_config:
-        value = config[core_config.id]
-        add_configuration(core_element, core_config.id, value)
-    return emane_configuration
-
-
 def create_emane_model_config(
     node_id: int,
     model: "EmaneModelType",
@@ -101,22 +90,22 @@ def create_emane_model_config(
     add_attribute(emane_element, "node", node_id)
     add_attribute(emane_element, "iface", iface_id)
     add_attribute(emane_element, "model", model.name)
-
+    platform_element = etree.SubElement(emane_element, "platform")
+    for platform_config in model.platform_config:
+        value = config[platform_config.id]
+        add_configuration(platform_element, platform_config.id, value)
     mac_element = etree.SubElement(emane_element, "mac")
     for mac_config in model.mac_config:
         value = config[mac_config.id]
         add_configuration(mac_element, mac_config.id, value)
-
     phy_element = etree.SubElement(emane_element, "phy")
     for phy_config in model.phy_config:
         value = config[phy_config.id]
         add_configuration(phy_element, phy_config.id, value)
-
     external_element = etree.SubElement(emane_element, "external")
     for external_config in model.external_config:
         value = config[external_config.id]
         add_configuration(external_element, external_config.id, value)
-
     return emane_element
 
 
@@ -293,13 +282,12 @@ class CoreXmlWriter:
         self.write_session_metadata()
         self.write_default_services()
 
-    def write(self, file_name: str) -> None:
-        self.scenario.set("name", file_name)
-
+    def write(self, path: Path) -> None:
+        self.scenario.set("name", str(path))
         # write out generated xml
         xml_tree = etree.ElementTree(self.scenario)
         xml_tree.write(
-            file_name, xml_declaration=True, pretty_print=True, encoding="UTF-8"
+            str(path), xml_declaration=True, pretty_print=True, encoding="UTF-8"
         )
 
     def write_session_origin(self) -> None:
@@ -374,22 +362,16 @@ class CoreXmlWriter:
             self.scenario.append(metadata_elements)
 
     def write_emane_configs(self) -> None:
-        emane_global_configuration = create_emane_config(self.session)
-        self.scenario.append(emane_global_configuration)
         emane_configurations = etree.Element("emane_configurations")
-        for node_id in self.session.emane.nodes():
-            all_configs = self.session.emane.get_all_configs(node_id)
-            if not all_configs:
-                continue
+        for node_id, model_configs in self.session.emane.node_configs.items():
             node_id, iface_id = utils.parse_iface_config_id(node_id)
-            for model_name in all_configs:
-                config = all_configs[model_name]
-                logging.debug(
+            for model_name, config in model_configs.items():
+                logger.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
-                model = self.session.emane.models[model_name]
+                model_class = self.session.emane.get_model(model_name)
                 emane_configuration = create_emane_model_config(
-                    node_id, model, config, iface_id
+                    node_id, model_class, config, iface_id
                 )
                 emane_configurations.append(emane_configuration)
         if emane_configurations.getchildren():
@@ -404,7 +386,7 @@ class CoreXmlWriter:
 
             for model_name in all_configs:
                 config = all_configs[model_name]
-                logging.debug(
+                logger.debug(
                     "writing mobility config node(%s) model(%s)", node_id, model_name
                 )
                 mobility_configuration = etree.SubElement(
@@ -580,8 +562,8 @@ class CoreXmlReader:
         self.session: "Session" = session
         self.scenario: Optional[etree.ElementTree] = None
 
-    def read(self, file_name: str) -> None:
-        xml_tree = etree.parse(file_name)
+    def read(self, file_path: Path) -> None:
+        xml_tree = etree.parse(str(file_path))
         self.scenario = xml_tree.getroot()
 
         # read xml session content
@@ -593,7 +575,6 @@ class CoreXmlReader:
         self.read_session_origin()
         self.read_service_configs()
         self.read_mobility_configs()
-        self.read_emane_global_config()
         self.read_nodes()
         self.read_links()
         self.read_emane_configs()
@@ -609,7 +590,7 @@ class CoreXmlReader:
             services = []
             for service in node.iterchildren():
                 services.append(service.get("name"))
-            logging.info(
+            logger.info(
                 "reading default services for nodes(%s): %s", node_type, services
             )
             self.session.services.default_services[node_type] = services
@@ -624,7 +605,7 @@ class CoreXmlReader:
             name = data.get("name")
             value = data.get("value")
             configs[name] = value
-        logging.info("reading session metadata: %s", configs)
+        logger.info("reading session metadata: %s", configs)
         self.session.metadata = configs
 
     def read_session_options(self) -> None:
@@ -636,7 +617,7 @@ class CoreXmlReader:
             name = configuration.get("name")
             value = configuration.get("value")
             xml_config[name] = value
-        logging.info("reading session options: %s", xml_config)
+        logger.info("reading session options: %s", xml_config)
         config = self.session.options.get_configs()
         config.update(xml_config)
 
@@ -650,7 +631,7 @@ class CoreXmlReader:
             state = get_int(hook, "state")
             state = EventTypes(state)
             data = hook.text
-            logging.info("reading hook: state(%s) name(%s)", state, name)
+            logger.info("reading hook: state(%s) name(%s)", state, name)
             self.session.add_hook(state, name, data)
 
     def read_servers(self) -> None:
@@ -660,7 +641,7 @@ class CoreXmlReader:
         for server in servers.iterchildren():
             name = server.get("name")
             address = server.get("address")
-            logging.info("reading server: name(%s) address(%s)", name, address)
+            logger.info("reading server: name(%s) address(%s)", name, address)
             self.session.distributed.add_server(name, address)
 
     def read_session_origin(self) -> None:
@@ -672,19 +653,19 @@ class CoreXmlReader:
         lon = get_float(session_origin, "lon")
         alt = get_float(session_origin, "alt")
         if all([lat, lon, alt]):
-            logging.info("reading session reference geo: %s, %s, %s", lat, lon, alt)
+            logger.info("reading session reference geo: %s, %s, %s", lat, lon, alt)
             self.session.location.setrefgeo(lat, lon, alt)
 
         scale = get_float(session_origin, "scale")
         if scale:
-            logging.info("reading session reference scale: %s", scale)
+            logger.info("reading session reference scale: %s", scale)
             self.session.location.refscale = scale
 
         x = get_float(session_origin, "x")
         y = get_float(session_origin, "y")
         z = get_float(session_origin, "z")
         if all([x, y]):
-            logging.info("reading session reference xyz: %s, %s, %s", x, y, z)
+            logger.info("reading session reference xyz: %s, %s, %s", x, y, z)
             self.session.location.refxyz = (x, y, z)
 
     def read_service_configs(self) -> None:
@@ -695,7 +676,7 @@ class CoreXmlReader:
         for service_configuration in service_configurations.iterchildren():
             node_id = get_int(service_configuration, "node")
             service_name = service_configuration.get("name")
-            logging.info(
+            logger.info(
                 "reading custom service(%s) for node(%s)", service_name, node_id
             )
             self.session.services.set_service(node_id, service_name)
@@ -731,28 +712,10 @@ class CoreXmlReader:
                     files.add(name)
                 service.configs = tuple(files)
 
-    def read_emane_global_config(self) -> None:
-        emane_global_configuration = self.scenario.find("emane_global_configuration")
-        if emane_global_configuration is None:
-            return
-        emulator_configuration = emane_global_configuration.find("emulator")
-        configs = {}
-        for config in emulator_configuration.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        core_configuration = emane_global_configuration.find("core")
-        for config in core_configuration.iterchildren():
-            name = config.get("name")
-            value = config.get("value")
-            configs[name] = value
-        self.session.emane.set_configs(config=configs)
-
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")
         if emane_configurations is None:
             return
-
         for emane_configuration in emane_configurations.iterchildren():
             node_id = get_int(emane_configuration, "node")
             iface_id = get_int(emane_configuration, "iface")
@@ -763,38 +726,39 @@ class CoreXmlReader:
             node = self.session.nodes.get(node_id)
             if not node:
                 raise CoreXmlError(f"node for emane config doesn't exist: {node_id}")
-            model = self.session.emane.models.get(model_name)
-            if not model:
-                raise CoreXmlError(f"invalid emane model: {model_name}")
+            self.session.emane.get_model(model_name)
             if iface_id is not None and iface_id not in node.ifaces:
                 raise CoreXmlError(
                     f"invalid interface id({iface_id}) for node({node.name})"
                 )
 
             # read and set emane model configuration
+            platform_configuration = emane_configuration.find("platform")
+            for config in platform_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
             mac_configuration = emane_configuration.find("mac")
             for config in mac_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value
-
             phy_configuration = emane_configuration.find("phy")
             for config in phy_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value
-
             external_configuration = emane_configuration.find("external")
             for config in external_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value
 
-            logging.info(
+            logger.info(
                 "reading emane configuration node(%s) model(%s)", node_id, model_name
             )
             node_id = utils.iface_config_id(node_id, iface_id)
-            self.session.emane.set_model_config(node_id, model_name, configs)
+            self.session.emane.set_config(node_id, model_name, configs)
 
     def read_mobility_configs(self) -> None:
         mobility_configurations = self.scenario.find("mobility_configurations")
@@ -811,7 +775,7 @@ class CoreXmlReader:
                 value = config.get("value")
                 configs[name] = value
 
-            logging.info(
+            logger.info(
                 "reading mobility configuration node(%s) model(%s)", node_id, model_name
             )
             self.session.mobility.set_model_config(node_id, model_name, configs)
@@ -868,7 +832,7 @@ class CoreXmlReader:
             if all([lat, lon, alt]):
                 options.set_location(lat, lon, alt)
 
-        logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
+        logger.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
         self.session.add_node(_class, node_id, options)
 
     def read_network(self, network_element: etree.Element) -> None:
@@ -896,7 +860,7 @@ class CoreXmlReader:
             if all([lat, lon, alt]):
                 options.set_location(lat, lon, alt)
 
-        logging.info(
+        logger.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
         self.session.add_node(_class, node_id, options)
@@ -926,7 +890,7 @@ class CoreXmlReader:
                 for template_element in templates_element.iterchildren():
                     name = template_element.get("name")
                     template = template_element.text
-                    logging.info(
+                    logger.info(
                         "loading xml template(%s): %s", type(template), template
                     )
                     service.set_template(name, template)
@@ -978,12 +942,12 @@ class CoreXmlReader:
                 options.buffer = get_int(options_element, "buffer")
 
             if options.unidirectional == 1 and node_set in node_sets:
-                logging.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
+                logger.info("updating link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.update_link(
                     node1_id, node2_id, iface1_data.id, iface2_data.id, options
                 )
             else:
-                logging.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
+                logger.info("adding link node1(%s) node2(%s)", node1_id, node2_id)
                 self.session.add_link(
                     node1_id, node2_id, iface1_data, iface2_data, options
                 )

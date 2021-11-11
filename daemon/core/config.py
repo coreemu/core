@@ -4,73 +4,71 @@ Common support for configurable CORE objects.
 
 import logging
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type, Union
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
+from core.errors import CoreConfigError
 from core.nodes.network import WlanNode
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.location.mobility import WirelessModel
 
     WirelessModelType = Type[WirelessModel]
 
+_BOOL_OPTIONS: Set[str] = {"0", "1"}
 
+
+@dataclass
 class ConfigGroup:
     """
     Defines configuration group tabs used for display by ConfigurationOptions.
     """
 
-    def __init__(self, name: str, start: int, stop: int) -> None:
-        """
-        Creates a ConfigGroup object.
-
-        :param name: configuration group display name
-        :param start: configurations start index for this group
-        :param stop: configurations stop index for this group
-        """
-        self.name: str = name
-        self.start: int = start
-        self.stop: int = stop
+    name: str
+    start: int
+    stop: int
 
 
+@dataclass
 class Configuration:
     """
     Represents a configuration options.
     """
 
-    def __init__(
-        self,
-        _id: str,
-        _type: ConfigDataTypes,
-        label: str = None,
-        default: str = "",
-        options: List[str] = None,
-    ) -> None:
-        """
-        Creates a Configuration object.
+    id: str
+    type: ConfigDataTypes
+    label: str = None
+    default: str = ""
+    options: List[str] = field(default_factory=list)
 
-        :param _id: unique name for configuration
-        :param _type: configuration data type
-        :param label: configuration label for display
-        :param default: default value for configuration
-        :param options: list options if this is a configuration with a combobox
-        """
-        self.id: str = _id
-        self.type: ConfigDataTypes = _type
-        self.default: str = default
-        if not options:
-            options = []
-        self.options: List[str] = options
-        if not label:
-            label = _id
-        self.label: str = label
-
-    def __str__(self):
-        return (
-            f"{self.__class__.__name__}(id={self.id}, type={self.type}, "
-            f"default={self.default}, options={self.options})"
-        )
+    def __post_init__(self) -> None:
+        self.label = self.label if self.label else self.id
+        if self.type == ConfigDataTypes.BOOL:
+            if self.default and self.default not in _BOOL_OPTIONS:
+                raise CoreConfigError(
+                    f"{self.id} bool value must be one of: {_BOOL_OPTIONS}: "
+                    f"{self.default}"
+                )
+        elif self.type == ConfigDataTypes.FLOAT:
+            if self.default:
+                try:
+                    float(self.default)
+                except ValueError:
+                    raise CoreConfigError(
+                        f"{self.id} is not a valid float: {self.default}"
+                    )
+        elif self.type != ConfigDataTypes.STRING:
+            if self.default:
+                try:
+                    int(self.default)
+                except ValueError:
+                    raise CoreConfigError(
+                        f"{self.id} is not a valid int: {self.default}"
+                    )
 
 
 class ConfigurableOptions:
@@ -182,7 +180,7 @@ class ConfigurableManager:
         :param config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "setting config for node(%s) type(%s): %s", node_id, config_type, config
         )
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
@@ -314,7 +312,7 @@ class ModelManager(ConfigurableManager):
         :param config: model configuration, None for default configuration
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "setting model(%s) for node(%s): %s", model_class.name, node.id, config
         )
         self.set_model_config(node.id, model_class.name, config)
@@ -343,5 +341,5 @@ class ModelManager(ConfigurableManager):
             model_class = self.models[model_name]
             models.append((model_class, config))
 
-        logging.debug("models for node(%s): %s", node.id, models)
+        logger.debug("models for node(%s): %s", node.id, models)
         return models

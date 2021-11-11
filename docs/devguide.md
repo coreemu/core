@@ -104,7 +104,7 @@ vcmd -c /tmp/pycore.50160/n1 -- /sbin/ip -4 ro
 
 A script named *core-cleanup* is provided to clean up any running CORE emulations. It will attempt to kill any
 remaining vnoded processes, kill any EMANE processes, remove the :file:`/tmp/pycore.*` session directories, and remove
-any bridges or *ebtables* rules.  With a *-d* option, it will also kill any running CORE daemon.
+any bridges or *nftables* rules.  With a *-d* option, it will also kill any running CORE daemon.
 
 ### netns command
 
@@ -121,5 +121,5 @@ ip link show type bridge
 # view the netem rules used for applying link effects
 tc qdisc show
 # view the rules that make the wireless LAN work
-ebtables -L
+nft list ruleset
 ```

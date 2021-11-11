@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -26,11 +27,11 @@ class MyService(ConfigService):
     shutdown = [f"pkill {files[0]}"]
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = [
-        Configuration(_id="value1", _type=ConfigDataTypes.STRING, label="Text"),
-        Configuration(_id="value2", _type=ConfigDataTypes.BOOL, label="Boolean"),
+        Configuration(id="value1", type=ConfigDataTypes.STRING, label="Text"),
+        Configuration(id="value2", type=ConfigDataTypes.BOOL, label="Boolean"),
         Configuration(
-            _id="value3",
-            _type=ConfigDataTypes.STRING,
+            id="value3",
+            type=ConfigDataTypes.STRING,
             label="Multiple Choice",
             options=["value1", "value2", "value3"],
         ),
@@ -68,7 +69,8 @@ class TestConfigServices:
         service.create_dirs()
 
         # then
-        node.privatedir.assert_called_with(MyService.directories[0])
+        directory = Path(MyService.directories[0])
+        node.create_dir.assert_called_with(directory)
 
     def test_create_files_custom(self):
         # given
@@ -81,7 +83,8 @@ class TestConfigServices:
         service.create_files()
 
         # then
-        node.nodefile.assert_called_with(MyService.files[0], text)
+        file_path = Path(MyService.files[0])
+        node.create_file.assert_called_with(file_path, text)
 
     def test_create_files_text(self):
         # given
@@ -92,7 +95,8 @@ class TestConfigServices:
         service.create_files()
 
         # then
-        node.nodefile.assert_called_with(MyService.files[0], TEMPLATE_TEXT)
+        file_path = Path(MyService.files[0])
+        node.create_file.assert_called_with(file_path, TEMPLATE_TEXT)
 
     def test_run_startup(self):
         # given

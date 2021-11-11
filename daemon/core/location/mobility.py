@@ -28,6 +28,8 @@ from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.nodes.network import WlanNode
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -40,6 +42,43 @@ def get_mobility_node(session: "Session", node_id: int) -> Union[WlanNode, Emane
         return session.get_node(node_id, WlanNode)
     except CoreError:
         return session.get_node(node_id, EmaneNet)
+
+
+def get_config_int(current: int, config: Dict[str, str], name: str) -> Optional[int]:
+    """
+    Convenience function to get config values as int.
+
+    :param current: current config value to use when one is not provided
+    :param config: config to get values from
+    :param name: name of config value to get
+    :return: current config value when not provided, new value otherwise
+    """
+    value = get_config_float(current, config, name)
+    if value is not None:
+        value = int(value)
+    return value
+
+
+def get_config_float(
+    current: Union[int, float], config: Dict[str, str], name: str
+) -> Optional[float]:
+    """
+    Convenience function to get config values as float.
+
+    :param current: current config value to use when one is not provided
+    :param config: config to get values from
+    :param name: name of config value to get
+    :return: current config value when not provided, new value otherwise
+    """
+    value = config.get(name)
+    if value is not None:
+        if value == "":
+            value = None
+        else:
+            value = float(value)
+    else:
+        value = current
+    return value
 
 
 class MobilityManager(ModelManager):
@@ -81,7 +120,7 @@ class MobilityManager(ModelManager):
         if node_ids is None:
             node_ids = self.nodes()
         for node_id in node_ids:
-            logging.debug(
+            logger.debug(
                 "node(%s) mobility startup: %s", node_id, self.get_all_configs(node_id)
             )
             try:
@@ -95,8 +134,8 @@ class MobilityManager(ModelManager):
                 if node.mobility:
                     self.session.event_loop.add_event(0.0, node.mobility.startup)
             except CoreError:
-                logging.exception("mobility startup error")
-                logging.warning(
+                logger.exception("mobility startup error")
+                logger.warning(
                     "skipping mobility configuration for unknown node: %s", node_id
                 )
 
@@ -114,7 +153,7 @@ class MobilityManager(ModelManager):
         try:
             node = get_mobility_node(self.session, node_id)
         except CoreError:
-            logging.exception(
+            logger.exception(
                 "ignoring event for model(%s), unknown node(%s)", name, node_id
             )
             return
@@ -124,17 +163,17 @@ class MobilityManager(ModelManager):
         for model in models:
             cls = self.models.get(model)
             if not cls:
-                logging.warning("ignoring event for unknown model '%s'", model)
+                logger.warning("ignoring event for unknown model '%s'", model)
                 continue
             if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
                 model = node.mobility
             else:
                 continue
             if model is None:
-                logging.warning("ignoring event, %s has no model", node.name)
+                logger.warning("ignoring event, %s has no model", node.name)
                 continue
             if cls.name != model.name:
-                logging.warning(
+                logger.warning(
                     "ignoring event for %s wrong model %s,%s",
                     node.name,
                     cls.name,
@@ -236,35 +275,35 @@ class BasicRangeModel(WirelessModel):
     name: str = "basic_range"
     options: List[Configuration] = [
         Configuration(
-            _id="range",
-            _type=ConfigDataTypes.UINT32,
+            id="range",
+            type=ConfigDataTypes.UINT32,
             default="275",
             label="wireless range (pixels)",
         ),
         Configuration(
-            _id="bandwidth",
-            _type=ConfigDataTypes.UINT64,
+            id="bandwidth",
+            type=ConfigDataTypes.UINT64,
             default="54000000",
             label="bandwidth (bps)",
         ),
         Configuration(
-            _id="jitter",
-            _type=ConfigDataTypes.UINT64,
+            id="jitter",
+            type=ConfigDataTypes.UINT64,
             default="0",
             label="transmission jitter (usec)",
         ),
         Configuration(
-            _id="delay",
-            _type=ConfigDataTypes.UINT64,
+            id="delay",
+            type=ConfigDataTypes.UINT64,
             default="5000",
             label="transmission delay (usec)",
         ),
         Configuration(
-            _id="error", _type=ConfigDataTypes.STRING, default="0", label="loss (%)"
+            id="error", type=ConfigDataTypes.STRING, default="0", label="loss (%)"
         ),
         Configuration(
-            _id="promiscuous",
-            _type=ConfigDataTypes.BOOL,
+            id="promiscuous",
+            type=ConfigDataTypes.BOOL,
             default="0",
             label="promiscuous mode",
         ),
@@ -292,25 +331,6 @@ class BasicRangeModel(WirelessModel):
         self.loss: Optional[float] = None
         self.jitter: Optional[int] = None
         self.promiscuous: bool = False
-
-    def _get_config(self, current_value: int, config: Dict[str, str], name: str) -> int:
-        """
-        Convenience for updating value to use from a provided configuration.
-
-        :param current_value: current config value to use when one is not provided
-        :param config: config to get values from
-        :param name: name of config value to get
-        :return: current config value when not provided, new value otherwise
-        """
-        value = config.get(name)
-        if value is not None:
-            if value == "":
-                value = None
-            else:
-                value = int(float(value))
-        else:
-            value = current_value
-        return value
 
     def setlinkparams(self) -> None:
         """
@@ -406,20 +426,20 @@ class BasicRangeModel(WirelessModel):
             a = min(iface, iface2)
             b = max(iface, iface2)
 
-            with self.wlan._linked_lock:
-                linked = self.wlan.linked(a, b)
+            with self.wlan.linked_lock:
+                linked = self.wlan.is_linked(a, b)
             if d > self.range:
                 if linked:
-                    logging.debug("was linked, unlinking")
+                    logger.debug("was linked, unlinking")
                     self.wlan.unlink(a, b)
                     self.sendlinkmsg(a, b, unlink=True)
             else:
                 if not linked:
-                    logging.debug("was not linked, linking")
+                    logger.debug("was not linked, linking")
                     self.wlan.link(a, b)
                     self.sendlinkmsg(a, b)
         except KeyError:
-            logging.exception("error getting interfaces during calclinkS")
+            logger.exception("error getting interfaces during calclink")
 
     @staticmethod
     def calcdistance(
@@ -446,15 +466,15 @@ class BasicRangeModel(WirelessModel):
         :param config: values to update configuration
         :return: nothing
         """
-        self.range = self._get_config(self.range, config, "range")
+        self.range = get_config_int(self.range, config, "range")
         if self.range is None:
             self.range = 0
-        logging.debug("wlan %s set range to %s", self.wlan.name, self.range)
-        self.bw = self._get_config(self.bw, config, "bandwidth")
-        self.delay = self._get_config(self.delay, config, "delay")
-        self.loss = self._get_config(self.loss, config, "error")
-        self.jitter = self._get_config(self.jitter, config, "jitter")
-        promiscuous = config["promiscuous"] == "1"
+        logger.debug("wlan %s set range to %s", self.wlan.name, self.range)
+        self.bw = get_config_int(self.bw, config, "bandwidth")
+        self.delay = get_config_int(self.delay, config, "delay")
+        self.loss = get_config_float(self.loss, config, "error")
+        self.jitter = get_config_int(self.jitter, config, "jitter")
+        promiscuous = config.get("promiscuous", "0") == "1"
         if self.promiscuous and not promiscuous:
             self.wlan.net_client.set_mac_learning(self.wlan.brname, LEARNING_ENABLED)
         elif not self.promiscuous and promiscuous:
@@ -506,10 +526,10 @@ class BasicRangeModel(WirelessModel):
         :return: all link data
         """
         all_links = []
-        with self.wlan._linked_lock:
-            for a in self.wlan._linked:
-                for b in self.wlan._linked[a]:
-                    if self.wlan._linked[a][b]:
+        with self.wlan.linked_lock:
+            for a in self.wlan.linked:
+                for b in self.wlan.linked[a]:
+                    if self.wlan.linked[a][b]:
                         all_links.append(self.create_link_data(a, b, flags))
         return all_links
 
@@ -868,40 +888,38 @@ class Ns2ScriptedMobility(WayPointMobility):
     name: str = "ns2script"
     options: List[Configuration] = [
         Configuration(
-            _id="file", _type=ConfigDataTypes.STRING, label="mobility script file"
+            id="file", type=ConfigDataTypes.STRING, label="mobility script file"
         ),
         Configuration(
-            _id="refresh_ms",
-            _type=ConfigDataTypes.UINT32,
+            id="refresh_ms",
+            type=ConfigDataTypes.UINT32,
             default="50",
             label="refresh time (ms)",
         ),
+        Configuration(id="loop", type=ConfigDataTypes.BOOL, default="1", label="loop"),
         Configuration(
-            _id="loop", _type=ConfigDataTypes.BOOL, default="1", label="loop"
-        ),
-        Configuration(
-            _id="autostart",
-            _type=ConfigDataTypes.STRING,
+            id="autostart",
+            type=ConfigDataTypes.STRING,
             label="auto-start seconds (0.0 for runtime)",
         ),
         Configuration(
-            _id="map",
-            _type=ConfigDataTypes.STRING,
+            id="map",
+            type=ConfigDataTypes.STRING,
             label="node mapping (optional, e.g. 0:1,1:2,2:3)",
         ),
         Configuration(
-            _id="script_start",
-            _type=ConfigDataTypes.STRING,
+            id="script_start",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon start",
         ),
         Configuration(
-            _id="script_pause",
-            _type=ConfigDataTypes.STRING,
+            id="script_pause",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon pause",
         ),
         Configuration(
-            _id="script_stop",
-            _type=ConfigDataTypes.STRING,
+            id="script_stop",
+            type=ConfigDataTypes.STRING,
             label="script file to run upon stop",
         ),
     ]
@@ -920,7 +938,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :param _id: object id
         """
         super().__init__(session, _id)
-        self.file: Optional[str] = None
+        self.file: Optional[Path] = None
         self.autostart: Optional[str] = None
         self.nodemap: Dict[int, int] = {}
         self.script_start: Optional[str] = None
@@ -928,8 +946,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         self.script_stop: Optional[str] = None
 
     def update_config(self, config: Dict[str, str]) -> None:
-        self.file = config["file"]
-        logging.info(
+        self.file = Path(config["file"])
+        logger.info(
             "ns-2 scripted mobility configured for WLAN %d using file: %s",
             self.id,
             self.file,
@@ -953,15 +971,15 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        filename = self.findfile(self.file)
+        file_path = self.findfile(self.file)
         try:
-            f = open(filename, "r")
+            f = file_path.open("r")
         except IOError:
-            logging.exception(
+            logger.exception(
                 "ns-2 scripted mobility failed to load file: %s", self.file
             )
             return
-        logging.info("reading ns-2 script file: %s", filename)
+        logger.info("reading ns-2 script file: %s", file_path)
         ln = 0
         ix = iy = iz = None
         inodenum = None
@@ -977,13 +995,13 @@ class Ns2ScriptedMobility(WayPointMobility):
                     # waypoints:
                     #    $ns_ at 1.00 "$node_(6) setdest 500.0 178.0 25.0"
                     parts = line.split()
-                    time = float(parts[2])
+                    line_time = float(parts[2])
                     nodenum = parts[3][1 + parts[3].index("(") : parts[3].index(")")]
                     x = float(parts[5])
                     y = float(parts[6])
                     z = None
                     speed = float(parts[7].strip('"'))
-                    self.addwaypoint(time, self.map(nodenum), x, y, z, speed)
+                    self.addwaypoint(line_time, self.map(nodenum), x, y, z, speed)
                 elif line[:7] == "$node_(":
                     # initial position (time=0, speed=0):
                     #    $node_(6) set X_ 780.0
@@ -1004,38 +1022,38 @@ class Ns2ScriptedMobility(WayPointMobility):
                 else:
                     raise ValueError
             except ValueError:
-                logging.exception(
+                logger.exception(
                     "skipping line %d of file %s '%s'", ln, self.file, line
                 )
                 continue
         if ix is not None and iy is not None:
             self.addinitial(self.map(inodenum), ix, iy, iz)
 
-    def findfile(self, file_name: str) -> str:
+    def findfile(self, file_path: Path) -> Path:
         """
         Locate a script file. If the specified file doesn't exist, look in the
         same directory as the scenario file, or in gui directories.
 
-        :param file_name: file name to find
+        :param file_path: file name to find
         :return: absolute path to the file
         :raises CoreError: when file is not found
         """
-        file_path = Path(file_name).expanduser()
+        file_path = file_path.expanduser()
         if file_path.exists():
-            return str(file_path)
-        if self.session.file_name:
-            file_path = Path(self.session.file_name).parent / file_name
-            if file_path.exists():
-                return str(file_path)
+            return file_path
+        if self.session.file_path:
+            session_file_path = self.session.file_path.parent / file_path
+            if session_file_path.exists():
+                return session_file_path
         if self.session.user:
             user_path = Path(f"~{self.session.user}").expanduser()
-            file_path = user_path / ".core" / "configs" / file_name
-            if file_path.exists():
-                return str(file_path)
-            file_path = user_path / ".coregui" / "mobility" / file_name
-            if file_path.exists():
-                return str(file_path)
-        raise CoreError(f"invalid file: {file_name}")
+            configs_path = user_path / ".core" / "configs" / file_path
+            if configs_path.exists():
+                return configs_path
+            mobility_path = user_path / ".coregui" / "mobility" / file_path
+            if mobility_path.exists():
+                return mobility_path
+        raise CoreError(f"invalid file: {file_path}")
 
     def parsemap(self, mapstr: str) -> None:
         """
@@ -1047,7 +1065,6 @@ class Ns2ScriptedMobility(WayPointMobility):
         self.nodemap = {}
         if mapstr.strip() == "":
             return
-
         for pair in mapstr.split(","):
             parts = pair.split(":")
             try:
@@ -1055,7 +1072,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                     raise ValueError
                 self.nodemap[int(parts[0])] = int(parts[1])
             except ValueError:
-                logging.exception("ns-2 mobility node map error")
+                logger.exception("ns-2 mobility node map error")
 
     def map(self, nodenum: str) -> int:
         """
@@ -1077,19 +1094,19 @@ class Ns2ScriptedMobility(WayPointMobility):
         :return: nothing
         """
         if self.autostart == "":
-            logging.info("not auto-starting ns-2 script for %s", self.net.name)
+            logger.info("not auto-starting ns-2 script for %s", self.net.name)
             return
         try:
             t = float(self.autostart)
         except ValueError:
-            logging.exception(
+            logger.exception(
                 "Invalid auto-start seconds specified '%s' for %s",
                 self.autostart,
                 self.net.name,
             )
             return
         self.movenodesinitial()
-        logging.info("scheduling ns-2 script for %s autostart at %s", self.net.name, t)
+        logger.info("scheduling ns-2 script for %s autostart at %s", self.net.name, t)
         self.state = self.STATE_RUNNING
         self.session.event_loop.add_event(t, self.run)
 
@@ -1099,7 +1116,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        logging.info("starting script: %s", self.file)
+        logger.info("starting script: %s", self.file)
         laststate = self.state
         super().start()
         if laststate == self.STATE_PAUSED:
@@ -1120,7 +1137,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        logging.info("pausing script: %s", self.file)
+        logger.info("pausing script: %s", self.file)
         super().pause()
         self.statescript("pause")
 
@@ -1132,7 +1149,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             position
         :return: nothing
         """
-        logging.info("stopping script: %s", self.file)
+        logger.info("stopping script: %s", self.file)
         super().stop(move_initial=move_initial)
         self.statescript("stop")
 
@@ -1152,8 +1169,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             filename = self.script_stop
         if filename is None or filename == "":
             return
+        filename = Path(filename)
         filename = self.findfile(filename)
         args = f"{BASH} {filename} {typestr}"
-        utils.cmd(
-            args, cwd=self.session.session_dir, env=self.session.get_environment()
-        )
+        utils.cmd(args, cwd=self.session.directory, env=self.session.get_environment())

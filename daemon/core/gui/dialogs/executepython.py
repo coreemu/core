@@ -7,6 +7,8 @@ from core.gui.appconfig import SCRIPT_PATH
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -83,6 +85,6 @@ class ExecutePythonDialog(Dialog):
     def script_execute(self) -> None:
         file = self.file_entry.get()
         options = self.option_entry.get()
-        logging.info("Execute %s with options %s", file, options)
+        logger.info("Execute %s with options %s", file, options)
         self.app.core.execute_script(file)
         self.destroy()

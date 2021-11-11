@@ -51,8 +51,8 @@ filesystem in CORE.
 
 CORE combines these namespaces with Linux Ethernet bridging to form networks.
 Link characteristics are applied using Linux Netem queuing disciplines.
-Ebtables is Ethernet frame filtering on Linux bridges. Wireless networks are
-emulated by controlling which interfaces can send and receive with ebtables
+Nftables provides Ethernet frame filtering on Linux bridges. Wireless networks are
+emulated by controlling which interfaces can send and receive with nftables
 rules.
 
 ## Prior Work

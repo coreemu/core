@@ -4,6 +4,7 @@ that manages a CORE session.
 """
 
 import logging
+import math
 import os
 import pwd
 import shutil
@@ -62,6 +63,8 @@ from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
+logger = logging.getLogger(__name__)
+
 # maps for converting from API call node type values to classes and vice versa
 NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.DEFAULT: CoreNode,
@@ -103,13 +106,13 @@ class Session:
         self.id: int = _id
 
         # define and create session directory when desired
-        self.session_dir: str = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
+        self.directory: Path = Path(tempfile.gettempdir()) / f"pycore.{self.id}"
         if mkdir:
-            os.mkdir(self.session_dir)
+            self.directory.mkdir()
 
         self.name: Optional[str] = None
-        self.file_name: Optional[str] = None
-        self.thumbnail: Optional[str] = None
+        self.file_path: Optional[Path] = None
+        self.thumbnail: Optional[Path] = None
         self.user: Optional[str] = None
         self.event_loop: EventLoop = EventLoop()
         self.link_colors: Dict[int, str] = {}
@@ -197,7 +200,7 @@ class Session:
         :raises core.CoreError: when objects to link is less than 2, or no common
             networks are found
         """
-        logging.info(
+        logger.info(
             "handling wireless linking node1(%s) node2(%s): %s",
             node1.name,
             node2.name,
@@ -208,7 +211,7 @@ class Session:
             raise CoreError("no common network found for wireless link/unlink")
         for common_network, iface1, iface2 in common_networks:
             if not isinstance(common_network, (WlanNode, EmaneNet)):
-                logging.info(
+                logger.info(
                     "skipping common network that is not wireless/emane: %s",
                     common_network,
                 )
@@ -263,7 +266,7 @@ class Session:
         else:
             # peer to peer link
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                logging.info("linking ptp: %s - %s", node1.name, node2.name)
+                logger.info("linking ptp: %s - %s", node1.name, node2.name)
                 start = self.state.should_start()
                 ptp = self.create_node(PtpNet, start)
                 iface1 = node1.new_iface(ptp, iface1_data)
@@ -286,7 +289,7 @@ class Session:
             elif isinstance(node1, CoreNetworkBase) and isinstance(
                 node2, CoreNetworkBase
             ):
-                logging.info(
+                logger.info(
                     "linking network to network: %s - %s", node1.name, node2.name
                 )
                 iface1 = node1.linknet(node2)
@@ -303,10 +306,10 @@ class Session:
             # configure tunnel nodes
             key = options.key
             if isinstance(node1, TunnelNode):
-                logging.info("setting tunnel key for: %s", node1.name)
+                logger.info("setting tunnel key for: %s", node1.name)
                 node1.setkey(key, iface1_data)
             if isinstance(node2, TunnelNode):
-                logging.info("setting tunnel key for: %s", node2.name)
+                logger.info("setting tunnel key for: %s", node2.name)
                 node2.setkey(key, iface2_data)
         self.sdt.add_link(node1_id, node2_id)
         return iface1, iface2
@@ -332,7 +335,7 @@ class Session:
         """
         node1 = self.get_node(node1_id, NodeBase)
         node2 = self.get_node(node2_id, NodeBase)
-        logging.info(
+        logger.info(
             "deleting link(%s) node(%s):interface(%s) node(%s):interface(%s)",
             link_type.name,
             node1.name,
@@ -409,7 +412,7 @@ class Session:
             options = LinkOptions()
         node1 = self.get_node(node1_id, NodeBase)
         node2 = self.get_node(node2_id, NodeBase)
-        logging.info(
+        logger.info(
             "update link(%s) node(%s):interface(%s) node(%s):interface(%s)",
             link_type.name,
             node1.name,
@@ -525,7 +528,7 @@ class Session:
             raise CoreError(f"invalid distributed server: {options.server}")
 
         # create node
-        logging.info(
+        logger.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
             _class.__name__,
             _id,
@@ -542,28 +545,32 @@ class Session:
         node.canvas = options.canvas
 
         # set node position and broadcast it
-        self.set_node_position(node, options)
+        has_geo = all(i is not None for i in [options.lon, options.lat, options.alt])
+        if has_geo:
+            self.set_node_geo(node, options.lon, options.lat, options.alt)
+        else:
+            self.set_node_pos(node, options.x, options.y)
 
         # add services to needed nodes
         if isinstance(node, (CoreNode, PhysicalNode)):
             node.type = options.model
-            logging.debug("set node type: %s", node.type)
-            self.services.add_services(node, node.type, options.services)
+            if options.legacy or options.services:
+                logger.debug("set node type: %s", node.type)
+                self.services.add_services(node, node.type, options.services)
 
             # add config services
-            logging.info("setting node config services: %s", options.config_services)
-            for name in options.config_services:
+            config_services = options.config_services
+            if not options.legacy and not config_services and not node.services:
+                config_services = self.services.default_services.get(node.type, [])
+            logger.info("setting node config services: %s", config_services)
+            for name in config_services:
                 service_class = self.service_manager.get_service(name)
                 node.add_config_service(service_class)
 
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
-            model = self.emane.models.get(options.emane)
-            if not model:
-                raise CoreError(
-                    f"node({node.name}) emane model({options.emane}) does not exist"
-                )
-            node.model = model(self, node.id)
+            model_class = self.emane.get_model(options.emane)
+            node.model = model_class(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
         # set default wlan config if needed
@@ -575,51 +582,26 @@ class Session:
         if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
             self.write_nodes()
             self.add_remove_control_iface(node, remove=False)
-            self.services.boot_services(node)
+            self.boot_node(node)
 
         self.sdt.add_node(node)
         return node
 
-    def edit_node(self, node_id: int, options: NodeOptions) -> None:
-        """
-        Edit node information.
+    def set_node_pos(self, node: NodeBase, x: float, y: float) -> None:
+        node.setposition(x, y, None)
+        self.sdt.edit_node(
+            node, node.position.lon, node.position.lat, node.position.alt
+        )
 
-        :param node_id: id of node to update
-        :param options: data to update node with
-        :return: nothing
-        :raises core.CoreError: when node to update does not exist
-        """
-        node = self.get_node(node_id, NodeBase)
-        node.icon = options.icon
-        self.set_node_position(node, options)
-        self.sdt.edit_node(node, options.lon, options.lat, options.alt)
-
-    def set_node_position(self, node: NodeBase, options: NodeOptions) -> None:
-        """
-        Set position for a node, use lat/lon/alt if needed.
-
-        :param node: node to set position for
-        :param options: data for node
-        :return: nothing
-        """
-        # extract location values
-        x = options.x
-        y = options.y
-        lat = options.lat
-        lon = options.lon
-        alt = options.alt
-
-        # check if we need to generate position from lat/lon/alt
-        has_empty_position = all(i is None for i in [x, y])
-        has_lat_lon_alt = all(i is not None for i in [lat, lon, alt])
-        using_lat_lon_alt = has_empty_position and has_lat_lon_alt
-        if using_lat_lon_alt:
-            x, y, _ = self.location.getxyz(lat, lon, alt)
-            node.setposition(x, y, None)
-            node.position.set_geo(lon, lat, alt)
-            self.broadcast_node(node)
-        elif not has_empty_position:
-            node.setposition(x, y, None)
+    def set_node_geo(self, node: NodeBase, lon: float, lat: float, alt: float) -> None:
+        x, y, _ = self.location.getxyz(lat, lon, alt)
+        if math.isinf(x) or math.isinf(y):
+            raise CoreError(
+                f"invalid geo for current reference/scale: {lon},{lat},{alt}"
+            )
+        node.setposition(x, y, None)
+        node.position.set_geo(lon, lat, alt)
+        self.sdt.edit_node(node, lon, lat, alt)
 
     def start_mobility(self, node_ids: List[int] = None) -> None:
         """
@@ -638,45 +620,42 @@ class Session:
         :return: True if active, False otherwise
         """
         result = self.state in {EventTypes.RUNTIME_STATE, EventTypes.DATACOLLECT_STATE}
-        logging.info("session(%s) checking if active: %s", self.id, result)
+        logger.info("session(%s) checking if active: %s", self.id, result)
         return result
 
-    def open_xml(self, file_name: str, start: bool = False) -> None:
+    def open_xml(self, file_path: Path, start: bool = False) -> None:
         """
         Import a session from the EmulationScript XML format.
 
-        :param file_name: xml file to load session from
+        :param file_path: xml file to load session from
         :param start: instantiate session if true, false otherwise
         :return: nothing
         """
-        logging.info("opening xml: %s", file_name)
-
+        logger.info("opening xml: %s", file_path)
         # clear out existing session
         self.clear()
-
         # set state and read xml
         state = EventTypes.CONFIGURATION_STATE if start else EventTypes.DEFINITION_STATE
         self.set_state(state)
-        self.name = os.path.basename(file_name)
-        self.file_name = file_name
-        CoreXmlReader(self).read(file_name)
-
+        self.name = file_path.name
+        self.file_path = file_path
+        CoreXmlReader(self).read(file_path)
         # start session if needed
         if start:
             self.set_state(EventTypes.INSTANTIATION_STATE)
             self.instantiate()
 
-    def save_xml(self, file_name: str) -> None:
+    def save_xml(self, file_path: Path) -> None:
         """
         Export a session to the EmulationScript XML format.
 
-        :param file_name: file name to write session xml to
+        :param file_path: file name to write session xml to
         :return: nothing
         """
-        CoreXmlWriter(self).write(file_name)
+        CoreXmlWriter(self).write(file_path)
 
     def add_hook(
-        self, state: EventTypes, file_name: str, data: str, source_name: str = None
+        self, state: EventTypes, file_name: str, data: str, src_name: str = None
     ) -> None:
         """
         Store a hook from a received file message.
@@ -684,11 +663,11 @@ class Session:
         :param state: when to run hook
         :param file_name: file name for hook
         :param data: hook data
-        :param source_name: source name
+        :param src_name: source name
         :return: nothing
         """
-        logging.info(
-            "setting state hook: %s - %s source(%s)", state, file_name, source_name
+        logger.info(
+            "setting state hook: %s - %s source(%s)", state, file_name, src_name
         )
         hook = file_name, data
         state_hooks = self.hooks.setdefault(state, [])
@@ -696,26 +675,26 @@ class Session:
 
         # immediately run a hook if it is in the current state
         if self.state == state:
-            logging.info("immediately running new state hook")
+            logger.info("immediately running new state hook")
             self.run_hook(hook)
 
     def add_node_file(
-        self, node_id: int, source_name: str, file_name: str, data: str
+        self, node_id: int, src_path: Path, file_path: Path, data: str
     ) -> None:
         """
         Add a file to a node.
 
         :param node_id: node to add file to
-        :param source_name: source file name
-        :param file_name: file name to add
+        :param src_path: source file path
+        :param file_path: file path to add
         :param data: file data
         :return: nothing
         """
-        node = self.get_node(node_id, CoreNodeBase)
-        if source_name is not None:
-            node.addfile(source_name, file_name)
+        node = self.get_node(node_id, CoreNode)
+        if src_path is not None:
+            node.addfile(src_path, file_path)
         elif data is not None:
-            node.nodefile(file_name, data)
+            node.create_file(file_path, data)
 
     def clear(self) -> None:
         """
@@ -769,9 +748,9 @@ class Session:
         Shutdown all session nodes and remove the session directory.
         """
         if self.state == EventTypes.SHUTDOWN_STATE:
-            logging.info("session(%s) state(%s) already shutdown", self.id, self.state)
+            logger.info("session(%s) state(%s) already shutdown", self.id, self.state)
         else:
-            logging.info("session(%s) state(%s) shutting down", self.id, self.state)
+            logger.info("session(%s) state(%s) shutting down", self.id, self.state)
             self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
             # clear out current core session
             self.clear()
@@ -780,7 +759,7 @@ class Session:
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
-            shutil.rmtree(self.session_dir, ignore_errors=True)
+            shutil.rmtree(self.directory, ignore_errors=True)
 
     def broadcast_event(self, event_data: EventData) -> None:
         """
@@ -864,7 +843,7 @@ class Session:
             return
         self.state = state
         self.state_time = time.monotonic()
-        logging.info("changing session(%s) to state %s", self.id, state.name)
+        logger.info("changing session(%s) to state %s", self.id, state.name)
         self.write_state(state)
         self.run_hooks(state)
         self.run_state_hooks(state)
@@ -879,12 +858,12 @@ class Session:
         :param state: state to write to file
         :return: nothing
         """
-        state_file = os.path.join(self.session_dir, "state")
+        state_file = self.directory / "state"
         try:
-            with open(state_file, "w") as f:
+            with state_file.open("w") as f:
                 f.write(f"{state.value} {state.name}\n")
         except IOError:
-            logging.exception("error writing state file: %s", state.name)
+            logger.exception("error writing state file: %s", state.name)
 
     def run_hooks(self, state: EventTypes) -> None:
         """
@@ -906,24 +885,24 @@ class Session:
         :return: nothing
         """
         file_name, data = hook
-        logging.info("running hook %s", file_name)
-        file_path = os.path.join(self.session_dir, file_name)
-        log_path = os.path.join(self.session_dir, f"{file_name}.log")
+        logger.info("running hook %s", file_name)
+        file_path = self.directory / file_name
+        log_path = self.directory / f"{file_name}.log"
         try:
-            with open(file_path, "w") as f:
+            with file_path.open("w") as f:
                 f.write(data)
-            with open(log_path, "w") as f:
+            with log_path.open("w") as f:
                 args = ["/bin/sh", file_name]
                 subprocess.check_call(
                     args,
                     stdout=f,
                     stderr=subprocess.STDOUT,
                     close_fds=True,
-                    cwd=self.session_dir,
+                    cwd=self.directory,
                     env=self.get_environment(),
                 )
         except (IOError, subprocess.CalledProcessError):
-            logging.exception("error running hook: %s", file_path)
+            logger.exception("error running hook: %s", file_path)
 
     def run_state_hooks(self, state: EventTypes) -> None:
         """
@@ -940,7 +919,7 @@ class Session:
             hook(state)
         except Exception:
             message = f"exception occurred when running {state.name} state hook: {hook}"
-            logging.exception(message)
+            logger.exception(message)
             self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", message)
 
     def add_state_hook(
@@ -983,10 +962,10 @@ class Session:
         """
         self.emane.poststartup()
         # create session deployed xml
-        xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
         xml_writer = corexml.CoreXmlWriter(self)
         corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-        xml_writer.write(xml_file_name)
+        xml_file_path = self.directory / "session-deployed.xml"
+        xml_writer.write(xml_file_path)
 
     def get_environment(self, state: bool = True) -> Dict[str, str]:
         """
@@ -1001,9 +980,9 @@ class Session:
         env["CORE_PYTHON"] = sys.executable
         env["SESSION"] = str(self.id)
         env["SESSION_SHORT"] = self.short_session_id()
-        env["SESSION_DIR"] = self.session_dir
+        env["SESSION_DIR"] = str(self.directory)
         env["SESSION_NAME"] = str(self.name)
-        env["SESSION_FILENAME"] = str(self.file_name)
+        env["SESSION_FILENAME"] = str(self.file_path)
         env["SESSION_USER"] = str(self.user)
         if state:
             env["SESSION_STATE"] = str(self.state)
@@ -1011,8 +990,8 @@ class Session:
         # /etc/core/environment
         # /home/user/.core/environment
         # /tmp/pycore.<session id>/environment
-        core_env_path = Path(constants.CORE_CONF_DIR) / "environment"
-        session_env_path = Path(self.session_dir) / "environment"
+        core_env_path = constants.CORE_CONF_DIR / "environment"
+        session_env_path = self.directory / "environment"
         if self.user:
             user_home_path = Path(f"~{self.user}").expanduser()
             user_env1 = user_home_path / ".core" / "environment"
@@ -1025,23 +1004,23 @@ class Session:
                 try:
                     utils.load_config(path, env)
                 except IOError:
-                    logging.exception("error reading environment file: %s", path)
+                    logger.exception("error reading environment file: %s", path)
         return env
 
-    def set_thumbnail(self, thumb_file: str) -> None:
+    def set_thumbnail(self, thumb_file: Path) -> None:
         """
         Set the thumbnail filename. Move files from /tmp to session dir.
 
         :param thumb_file: tumbnail file to set for session
         :return: nothing
         """
-        if not os.path.exists(thumb_file):
-            logging.error("thumbnail file to set does not exist: %s", thumb_file)
+        if not thumb_file.is_file():
+            logger.error("thumbnail file to set does not exist: %s", thumb_file)
             self.thumbnail = None
             return
-        destination_file = os.path.join(self.session_dir, os.path.basename(thumb_file))
-        shutil.copy(thumb_file, destination_file)
-        self.thumbnail = destination_file
+        dst_path = self.directory / thumb_file.name
+        shutil.copy(thumb_file, dst_path)
+        self.thumbnail = dst_path
 
     def set_user(self, user: str) -> None:
         """
@@ -1054,10 +1033,10 @@ class Session:
         if user:
             try:
                 uid = pwd.getpwnam(user).pw_uid
-                gid = os.stat(self.session_dir).st_gid
-                os.chown(self.session_dir, uid, gid)
+                gid = self.directory.stat().st_gid
+                os.chown(self.directory, uid, gid)
             except IOError:
-                logging.exception("failed to set permission on %s", self.session_dir)
+                logger.exception("failed to set permission on %s", self.directory)
         self.user = user
 
     def create_node(
@@ -1114,7 +1093,7 @@ class Session:
         with self.nodes_lock:
             if _id in self.nodes:
                 node = self.nodes.pop(_id)
-                logging.info("deleted node(%s)", node.name)
+                logger.info("deleted node(%s)", node.name)
         if node:
             node.shutdown()
             self.sdt.delete_node(_id)
@@ -1140,14 +1119,14 @@ class Session:
         Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
         """
-        file_path = os.path.join(self.session_dir, "nodes")
+        file_path = self.directory / "nodes"
         try:
             with self.nodes_lock:
-                with open(file_path, "w") as f:
+                with file_path.open("w") as f:
                     for _id, node in self.nodes.items():
                         f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
         except IOError:
-            logging.exception("error writing nodes file")
+            logger.exception("error writing nodes file")
 
     def exception(
         self, level: ExceptionLevels, source: str, text: str, node_id: int = None
@@ -1238,13 +1217,13 @@ class Session:
         """
         # this is called from instantiate() after receiving an event message
         # for the instantiation state
-        logging.debug(
+        logger.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
             self.state.name,
         )
         if self.state == EventTypes.RUNTIME_STATE:
-            logging.info("valid runtime state found, returning")
+            logger.info("valid runtime state found, returning")
             return
         # start event loop and set to runtime
         self.event_loop.run()
@@ -1258,25 +1237,23 @@ class Session:
         :return: nothing
         """
         if self.state.already_collected():
-            logging.info(
+            logger.info(
                 "session(%s) state(%s) already data collected", self.id, self.state
             )
             return
-        logging.info("session(%s) state(%s) data collection", self.id, self.state)
+        logger.info("session(%s) state(%s) data collection", self.id, self.state)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
 
         # stop event loop
         self.event_loop.stop()
 
-        # stop node services
+        # stop mobility and node services
         with self.nodes_lock:
             funcs = []
-            for node_id in self.nodes:
-                node = self.nodes[node_id]
-                if not isinstance(node, CoreNodeBase) or not node.up:
-                    continue
-                args = (node,)
-                funcs.append((self.services.stop_services, args, {}))
+            for node in self.nodes.values():
+                if isinstance(node, CoreNodeBase) and node.up:
+                    args = (node,)
+                    funcs.append((self.services.stop_services, args, {}))
             utils.threadpool(funcs)
 
         # shutdown emane
@@ -1307,7 +1284,7 @@ class Session:
         :param node: node to boot
         :return: nothing
         """
-        logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
+        logger.info("booting node(%s): %s", node.name, [x.name for x in node.services])
         self.services.boot_services(node)
         node.start_config_services()
 
@@ -1328,7 +1305,7 @@ class Session:
                     funcs.append((self.boot_node, (node,), {}))
             results, exceptions = utils.threadpool(funcs)
             total = time.monotonic() - start
-            logging.debug("boot run time: %s", total)
+            logger.debug("boot run time: %s", total)
         if not exceptions:
             self.update_control_iface_hosts()
         return exceptions
@@ -1356,7 +1333,7 @@ class Session:
         """
         d0 = self.options.get_config("controlnetif0")
         if d0:
-            logging.error("controlnet0 cannot be assigned with a host interface")
+            logger.error("controlnet0 cannot be assigned with a host interface")
         d1 = self.options.get_config("controlnetif1")
         d2 = self.options.get_config("controlnetif2")
         d3 = self.options.get_config("controlnetif3")
@@ -1401,7 +1378,7 @@ class Session:
         :param conf_required: flag to check if conf is required
         :return: control net node
         """
-        logging.debug(
+        logger.debug(
             "add/remove control net: index(%s) remove(%s) conf_required(%s)",
             net_index,
             remove,
@@ -1415,7 +1392,7 @@ class Session:
                 return None
             else:
                 prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
-        logging.debug("prefix spec: %s", prefix_spec)
+        logger.debug("prefix spec: %s", prefix_spec)
         server_iface = self.get_control_net_server_ifaces()[net_index]
 
         # return any existing controlnet bridge
@@ -1438,7 +1415,7 @@ class Session:
         if net_index == 0:
             updown_script = self.options.get_config("controlnet_updown_script")
             if not updown_script:
-                logging.debug("controlnet updown script not configured")
+                logger.debug("controlnet updown script not configured")
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
@@ -1452,7 +1429,7 @@ class Session:
         else:
             prefix = prefixes[0]
 
-        logging.info(
+        logger.info(
             "controlnet(%s) prefix(%s) updown(%s) serverintf(%s)",
             _id,
             prefix,
@@ -1515,7 +1492,7 @@ class Session:
             msg = f"Control interface not added to node {node.id}. "
             msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
-            logging.exception(msg)
+            logger.exception(msg)
 
     def update_control_iface_hosts(
         self, net_index: int = 0, remove: bool = False
@@ -1533,12 +1510,12 @@ class Session:
         try:
             control_net = self.get_control_net(net_index)
         except CoreError:
-            logging.exception("error retrieving control net node")
+            logger.exception("error retrieving control net node")
             return
 
         header = f"CORE session {self.id} host entries"
         if remove:
-            logging.info("Removing /etc/hosts file entries.")
+            logger.info("Removing /etc/hosts file entries.")
             utils.file_demunge("/etc/hosts", header)
             return
 
@@ -1548,7 +1525,7 @@ class Session:
             for ip in iface.ips():
                 entries.append(f"{ip.ip} {name}")
 
-        logging.info("Adding %d /etc/hosts file entries.", len(entries))
+        logger.info("Adding %d /etc/hosts file entries.", len(entries))
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
     def runtime(self) -> float:
@@ -1577,7 +1554,7 @@ class Session:
         current_time = self.runtime()
         if current_time > 0:
             if event_time <= current_time:
-                logging.warning(
+                logger.warning(
                     "could not schedule past event for time %s (run time is now %s)",
                     event_time,
                     current_time,
@@ -1589,7 +1566,7 @@ class Session:
         )
         if not name:
             name = ""
-        logging.info(
+        logger.info(
             "scheduled event %s at time %s data=%s",
             name,
             event_time + current_time,
@@ -1608,12 +1585,12 @@ class Session:
         :return: nothing
         """
         if data is None:
-            logging.warning("no data for event node(%s) name(%s)", node_id, name)
+            logger.warning("no data for event node(%s) name(%s)", node_id, name)
             return
         now = self.runtime()
         if not name:
             name = ""
-        logging.info("running event %s at time %s cmd=%s", name, now, data)
+        logger.info("running event %s at time %s cmd=%s", name, now, data)
         if not node_id:
             utils.mute_detach(data)
         else:

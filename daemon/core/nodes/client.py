@@ -3,6 +3,7 @@ client.py: implementation of the VnodeClient class for issuing commands
 over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls using the vcmd shell.
 """
+from pathlib import Path
 
 from core import utils
 from core.executables import BASH, VCMD
@@ -13,7 +14,7 @@ class VnodeClient:
     Provides client functionality for interacting with a virtual node.
     """
 
-    def __init__(self, name: str, ctrlchnlname: str) -> None:
+    def __init__(self, name: str, ctrlchnlname: Path) -> None:
         """
         Create a VnodeClient instance.
 
@@ -21,7 +22,7 @@ class VnodeClient:
         :param ctrlchnlname: control channel name
         """
         self.name: str = name
-        self.ctrlchnlname: str = ctrlchnlname
+        self.ctrlchnlname: Path = ctrlchnlname
 
     def _verify_connection(self) -> None:
         """

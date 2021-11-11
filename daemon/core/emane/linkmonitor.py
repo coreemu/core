@@ -6,9 +6,12 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from lxml import etree
 
+from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.nodes.network import CtrlNet
+
+logger = logging.getLogger(__name__)
 
 try:
     from emane import shell
@@ -17,12 +20,11 @@ except ImportError:
         from emanesh import shell
     except ImportError:
         shell = None
-        logging.debug("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 if TYPE_CHECKING:
     from core.emane.emanemanager import EmaneManager
 
-DEFAULT_PORT: int = 47_000
 MAC_COMPONENT_INDEX: int = 1
 EMANE_RFPIPE: str = "rfpipemaclayer"
 EMANE_80211: str = "ieee80211abgmaclayer"
@@ -77,10 +79,10 @@ class EmaneLink:
 
 
 class EmaneClient:
-    def __init__(self, address: str) -> None:
+    def __init__(self, address: str, port: int) -> None:
         self.address: str = address
         self.client: shell.ControlPortClient = shell.ControlPortClient(
-            self.address, DEFAULT_PORT
+            self.address, port
         )
         self.nems: Dict[int, LossTable] = {}
         self.setup()
@@ -91,7 +93,7 @@ class EmaneClient:
             # get mac config
             mac_id, _, emane_model = components[MAC_COMPONENT_INDEX]
             mac_config = self.client.getConfiguration(mac_id)
-            logging.debug(
+            logger.debug(
                 "address(%s) nem(%s) emane(%s)", self.address, nem_id, emane_model
             )
 
@@ -101,9 +103,9 @@ class EmaneClient:
             elif emane_model == EMANE_RFPIPE:
                 loss_table = self.handle_rfpipe(mac_config)
             else:
-                logging.warning("unknown emane link model: %s", emane_model)
+                logger.warning("unknown emane link model: %s", emane_model)
                 continue
-            logging.info("monitoring links nem(%s) model(%s)", nem_id, emane_model)
+            logger.info("monitoring links nem(%s) model(%s)", nem_id, emane_model)
             loss_table.mac_id = mac_id
             self.nems[nem_id] = loss_table
 
@@ -138,12 +140,12 @@ class EmaneClient:
 
     def handle_tdma(self, config: Dict[str, Tuple]):
         pcr = config["pcrcurveuri"][0][0]
-        logging.debug("tdma pcr: %s", pcr)
+        logger.debug("tdma pcr: %s", pcr)
 
     def handle_80211(self, config: Dict[str, Tuple]) -> LossTable:
         unicastrate = config["unicastrate"][0][0]
         pcr = config["pcrcurveuri"][0][0]
-        logging.debug("80211 pcr: %s", pcr)
+        logger.debug("80211 pcr: %s", pcr)
         tree = etree.parse(pcr)
         root = tree.getroot()
         table = root.find("table")
@@ -159,7 +161,7 @@ class EmaneClient:
 
     def handle_rfpipe(self, config: Dict[str, Tuple]) -> LossTable:
         pcr = config["pcrcurveuri"][0][0]
-        logging.debug("rfpipe pcr: %s", pcr)
+        logger.debug("rfpipe pcr: %s", pcr)
         tree = etree.parse(pcr)
         root = tree.getroot()
         table = root.find("table")
@@ -187,12 +189,13 @@ class EmaneLinkMonitor:
         self.running: bool = False
 
     def start(self) -> None:
-        self.loss_threshold = int(self.emane_manager.get_config("loss_threshold"))
-        self.link_interval = int(self.emane_manager.get_config("link_interval"))
-        self.link_timeout = int(self.emane_manager.get_config("link_timeout"))
+        options = self.emane_manager.session.options
+        self.loss_threshold = options.get_config_int("loss_threshold")
+        self.link_interval = options.get_config_int("link_interval")
+        self.link_timeout = options.get_config_int("link_timeout")
         self.initialize()
         if not self.clients:
-            logging.info("no valid emane models to monitor links")
+            logger.info("no valid emane models to monitor links")
             return
         self.scheduler = sched.scheduler()
         self.scheduler.enter(0, 0, self.check_links)
@@ -202,22 +205,28 @@ class EmaneLinkMonitor:
 
     def initialize(self) -> None:
         addresses = self.get_addresses()
-        for address in addresses:
-            client = EmaneClient(address)
+        for address, port in addresses:
+            client = EmaneClient(address, port)
             if client.nems:
                 self.clients.append(client)
 
-    def get_addresses(self) -> List[str]:
+    def get_addresses(self) -> List[Tuple[str, int]]:
         addresses = []
         nodes = self.emane_manager.getnodes()
         for node in nodes:
+            control = None
+            ports = []
             for iface in node.get_ifaces():
                 if isinstance(iface.net, CtrlNet):
                     ip4 = iface.get_ip4()
                     if ip4:
-                        address = str(ip4.ip)
-                        addresses.append(address)
-                    break
+                        control = str(ip4.ip)
+                if isinstance(iface.net, EmaneNet):
+                    port = self.emane_manager.get_nem_port(iface)
+                    ports.append(port)
+            if control:
+                for port in ports:
+                    addresses.append((control, port))
         return addresses
 
     def check_links(self) -> None:
@@ -228,7 +237,7 @@ class EmaneLinkMonitor:
                 client.check_links(self.links, self.loss_threshold)
             except shell.ControlPortException:
                 if self.running:
-                    logging.exception("link monitor error")
+                    logger.exception("link monitor error")
 
         # find new links
         current_links = set(self.links.keys())

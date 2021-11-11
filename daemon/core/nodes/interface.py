@@ -4,6 +4,7 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
+from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 import netaddr
@@ -13,6 +14,8 @@ from core.emulator.data import LinkOptions
 from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError, CoreError
 from core.nodes.netclient import LinuxNetClient, get_net_client
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
@@ -79,7 +82,7 @@ class CoreInterface:
         self,
         args: str,
         env: Dict[str, str] = None,
-        cwd: str = None,
+        cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
     ) -> str:
@@ -273,7 +276,7 @@ class CoreInterface:
         :return: True if parameter changed, False otherwise
         """
         # treat None and 0 as unchanged values
-        logging.debug("setting param: %s - %s", key, value)
+        logger.debug("setting param: %s - %s", key, value)
         if value is None or value < 0:
             return False
 
@@ -456,7 +459,7 @@ class TunTap(CoreInterface):
         try:
             self.node.node_net_client.device_flush(self.name)
         except CoreCommandError:
-            logging.exception("error shutting down tunnel tap")
+            logger.exception("error shutting down tunnel tap")
 
         self.up = False
 
@@ -481,14 +484,14 @@ class TunTap(CoreInterface):
             msg = f"attempt {i} failed with nonzero exit status {r}"
             if i < attempts + 1:
                 msg += ", retrying..."
-                logging.info(msg)
+                logger.info(msg)
                 time.sleep(delay)
                 delay += delay
                 if delay > maxretrydelay:
                     delay = maxretrydelay
             else:
                 msg += ", giving up"
-                logging.info(msg)
+                logger.info(msg)
 
         return result
 
@@ -499,7 +502,7 @@ class TunTap(CoreInterface):
 
         :return: wait for device local response
         """
-        logging.debug("waiting for device local: %s", self.localname)
+        logger.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
             try:
@@ -516,7 +519,7 @@ class TunTap(CoreInterface):
 
         :return: nothing
         """
-        logging.debug("waiting for device node: %s", self.name)
+        logger.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
             try:
@@ -633,5 +636,5 @@ class GreTap(CoreInterface):
                 self.net_client.device_down(self.localname)
                 self.net_client.delete_device(self.localname)
             except CoreCommandError:
-                logging.exception("error during shutdown")
+                logger.exception("error during shutdown")
             self.localname = None

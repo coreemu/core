@@ -6,17 +6,21 @@ from logging.handlers import TimedRotatingFileHandler
 from core.gui import appconfig, images
 from core.gui.app import Application
 
-if __name__ == "__main__":
+
+def main() -> None:
     # parse flags
     parser = argparse.ArgumentParser(description=f"CORE Python GUI")
     parser.add_argument("-l", "--level", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], default="INFO",
                         help="logging level")
     parser.add_argument("-p", "--proxy", action="store_true", help="enable proxy")
     parser.add_argument("-s", "--session", type=int, help="session id to join")
+    parser.add_argument("--create-dir", action="store_true", help="create gui directory and exit")
     args = parser.parse_args()
 
     # check home directory exists and create if necessary
     appconfig.check_directory()
+    if args.create_dir:
+        return
 
     # setup logging
     log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
@@ -30,3 +34,7 @@ if __name__ == "__main__":
     images.load_all()
     app = Application(args.proxy, args.session)
     app.mainloop()
+
+
+if __name__ == "__main__":
+    main()

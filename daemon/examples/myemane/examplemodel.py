@@ -1,6 +1,7 @@
 """
 Example custom emane model.
 """
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
 from core.config import Configuration
@@ -39,17 +40,34 @@ class ExampleModel(emanemodel.EmaneModel):
 
     name: str = "emane_example"
     mac_library: str = "rfpipemaclayer"
-    mac_xml: str = "/usr/share/emane/manifest/rfpipemaclayer.xml"
+    mac_xml: str = "rfpipemaclayer.xml"
     mac_defaults: Dict[str, str] = {
         "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
     }
-    mac_config: List[Configuration] = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_config: List[Configuration] = []
     phy_library: Optional[str] = None
-    phy_xml: str = "/usr/share/emane/manifest/emanephy.xml"
+    phy_xml: str = "emanephy.xml"
     phy_defaults: Dict[str, str] = {
         "subid": "1",
         "propagationmodel": "2ray",
         "noisemode": "none",
     }
-    phy_config: List[Configuration] = emanemanifest.parse(phy_xml, phy_defaults)
+    phy_config: List[Configuration] = []
     config_ignore: Set[str] = set()
+
+    @classmethod
+    def load(cls, emane_prefix: Path) -> None:
+        """
+        Called after being loaded within the EmaneManager. Provides configured
+        emane_prefix for parsing xml files.
+
+        :param emane_prefix: configured emane prefix path
+        :return: nothing
+        """
+        manifest_path = "share/emane/manifest"
+        # load mac configuration
+        mac_xml_path = emane_prefix / manifest_path / cls.mac_xml
+        cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
+        # load phy configuration
+        phy_xml_path = emane_prefix / manifest_path / cls.phy_xml
+        cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)

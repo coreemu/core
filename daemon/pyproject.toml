@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "7.5.2"
+version = "8.0.0"
 description = "CORE Common Open Research Emulator"
 authors = ["Boeing Research and Technology"]
 license = "BSD-2-Clause"
@@ -21,7 +21,7 @@ dataclasses = { version = "*", python = "~3.6" }
 fabric = "2.5.0"
 grpcio = "1.27.2"
 invoke = "1.4.1"
-lxml = "4.5.1"
+lxml = "4.6.3"
 mako = "1.1.3"
 netaddr = "0.7.19"
 pillow = "8.3.2"

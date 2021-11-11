@@ -1,8 +1,8 @@
 import logging
-import os
 import tkinter as tk
 import webbrowser
 from functools import partial
+from pathlib import Path
 from tkinter import filedialog, messagebox
 from typing import TYPE_CHECKING, Optional
 
@@ -26,6 +26,8 @@ from core.gui.dialogs.throughput import ThroughputDialog
 from core.gui.graph.manager import CanvasManager
 from core.gui.observers import ObserversMenu
 from core.gui.task import ProgressTask
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -76,7 +78,7 @@ class Menubar(tk.Menu):
         self.app.bind_all("<Control-n>", lambda e: self.click_new())
         menu.add_command(label="Save", accelerator="Ctrl+S", command=self.click_save)
         self.app.bind_all("<Control-s>", self.click_save)
-        menu.add_command(label="Save As...", command=self.click_save_xml)
+        menu.add_command(label="Save As...", command=self.click_save_as)
         menu.add_command(
             label="Open...", command=self.click_open_xml, accelerator="Ctrl+O"
         )
@@ -84,7 +86,7 @@ class Menubar(tk.Menu):
         self.recent_menu = tk.Menu(menu)
         for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
-                label=i, command=partial(self.open_recent_files, i)
+                label=i, command=partial(self.open_recent_files, Path(i))
             )
         menu.add_cascade(label="Recent Files", menu=self.recent_menu)
         menu.add_separator()
@@ -120,11 +122,6 @@ class Menubar(tk.Menu):
         )
         menu.add_command(label="Hide", accelerator="Ctrl+H", command=self.click_hide)
         self.add_cascade(label="Edit", menu=menu)
-        self.app.master.bind_all("<Control-x>", self.click_cut)
-        self.app.master.bind_all("<Control-c>", self.click_copy)
-        self.app.master.bind_all("<Control-v>", self.click_paste)
-        self.app.master.bind_all("<Control-d>", self.click_delete)
-        self.app.master.bind_all("<Control-h>", self.click_hide)
         self.edit_menu = menu
 
     def draw_canvas_menu(self) -> None:
@@ -272,27 +269,28 @@ class Menubar(tk.Menu):
         menu.add_command(label="About", command=self.click_about)
         self.add_cascade(label="Help", menu=menu)
 
-    def open_recent_files(self, filename: str) -> None:
-        if os.path.isfile(filename):
-            logging.debug("Open recent file %s", filename)
-            self.open_xml_task(filename)
+    def open_recent_files(self, file_path: Path) -> None:
+        if file_path.is_file():
+            logger.debug("Open recent file %s", file_path)
+            self.open_xml_task(file_path)
         else:
-            logging.warning("File does not exist %s", filename)
+            logger.warning("File does not exist %s", file_path)
 
     def update_recent_files(self) -> None:
         self.recent_menu.delete(0, tk.END)
         for i in self.app.guiconfig.recentfiles:
             self.recent_menu.add_command(
-                label=i, command=partial(self.open_recent_files, i)
+                label=i, command=partial(self.open_recent_files, Path(i))
             )
 
-    def click_save(self, _event=None) -> None:
+    def click_save(self, _event: tk.Event = None) -> None:
         if self.core.session.file:
-            self.core.save_xml()
+            if self.core.save_xml():
+                self.add_recent_file_to_gui_config(self.core.session.file)
         else:
-            self.click_save_xml()
+            self.click_save_as()
 
-    def click_save_xml(self, _event: tk.Event = None) -> None:
+    def click_save_as(self, _event: tk.Event = None) -> None:
         init_dir = self.core.get_xml_dir()
         file_path = filedialog.asksaveasfilename(
             initialdir=init_dir,
@@ -301,8 +299,9 @@ class Menubar(tk.Menu):
             defaultextension=".xml",
         )
         if file_path:
-            self.add_recent_file_to_gui_config(file_path)
-            self.core.save_xml(file_path)
+            file_path = Path(file_path)
+            if self.core.save_xml(file_path):
+                self.add_recent_file_to_gui_config(file_path)
 
     def click_open_xml(self, _event: tk.Event = None) -> None:
         init_dir = self.core.get_xml_dir()
@@ -312,9 +311,10 @@ class Menubar(tk.Menu):
             filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
         if file_path:
+            file_path = Path(file_path)
             self.open_xml_task(file_path)
 
-    def open_xml_task(self, file_path: str) -> None:
+    def open_xml_task(self, file_path: Path) -> None:
         self.add_recent_file_to_gui_config(file_path)
         self.prompt_save_running_session()
         task = ProgressTask(self.app, "Open XML", self.core.open_xml, args=(file_path,))
@@ -324,21 +324,14 @@ class Menubar(tk.Menu):
         dialog = ExecutePythonDialog(self.app)
         dialog.show()
 
-    def add_recent_file_to_gui_config(self, file_path) -> None:
+    def add_recent_file_to_gui_config(self, file_path: Path) -> None:
         recent_files = self.app.guiconfig.recentfiles
-        num_files = len(recent_files)
-        if num_files == 0:
-            recent_files.insert(0, file_path)
-        elif 0 < num_files <= MAX_FILES:
-            if file_path in recent_files:
-                recent_files.remove(file_path)
-                recent_files.insert(0, file_path)
-            else:
-                if num_files == MAX_FILES:
-                    recent_files.pop()
-                recent_files.insert(0, file_path)
-        else:
-            logging.error("unexpected number of recent files")
+        file_path = str(file_path)
+        if file_path in recent_files:
+            recent_files.remove(file_path)
+        recent_files.insert(0, file_path)
+        if len(recent_files) > MAX_FILES:
+            recent_files.pop()
         self.app.save_config()
         self.app.menubar.update_recent_files()
 
@@ -411,47 +404,47 @@ class Menubar(tk.Menu):
 
     def click_copy(self, _event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.copy()
+        canvas.copy_selected()
 
-    def click_paste(self, _event: tk.Event = None) -> None:
+    def click_paste(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.paste()
+        canvas.paste_selected(event)
 
-    def click_delete(self, _event: tk.Event = None) -> None:
+    def click_delete(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.delete_selected_objects()
+        canvas.delete_selected(event)
 
-    def click_hide(self, _event: tk.Event = None) -> None:
+    def click_hide(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.hide_selected_objects()
+        canvas.hide_selected(event)
 
-    def click_cut(self, _event: tk.Event = None) -> None:
+    def click_cut(self, event: tk.Event = None) -> None:
         canvas = self.manager.current()
-        canvas.copy()
-        canvas.delete_selected_objects()
+        canvas.copy_selected(event)
+        canvas.delete_selected(event)
 
     def click_show_hidden(self, _event: tk.Event = None) -> None:
         for canvas in self.manager.all():
             canvas.show_hidden()
 
     def click_session_options(self) -> None:
-        logging.debug("Click options")
+        logger.debug("Click options")
         dialog = SessionOptionsDialog(self.app)
         if not dialog.has_error:
             dialog.show()
 
     def click_sessions(self) -> None:
-        logging.debug("Click change sessions")
+        logger.debug("Click change sessions")
         dialog = SessionsDialog(self.app)
         dialog.show()
 
     def click_hooks(self) -> None:
-        logging.debug("Click hooks")
+        logger.debug("Click hooks")
         dialog = HooksDialog(self.app)
         dialog.show()
 
     def click_servers(self) -> None:
-        logging.debug("Click emulation servers")
+        logger.debug("Click emulation servers")
         dialog = ServersDialog(self.app)
         dialog.show()
 
@@ -460,11 +453,11 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_autogrid(self) -> None:
-        width, height = self.manager.current_dimensions
+        width, height = self.manager.current().current_dimensions
         padding = (images.NODE_SIZE / 2) + 10
         layout_size = padding + images.NODE_SIZE
         col_count = width // layout_size
-        logging.info(
+        logger.info(
             "auto grid layout: dimension(%s, %s) col(%s)", width, height, col_count
         )
         canvas = self.manager.current()

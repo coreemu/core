@@ -60,7 +60,7 @@ def patcher(request):
         patch_manager.patch_obj(
             LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
         )
-        patch_manager.patch_obj(CoreNode, "nodefile")
+        patch_manager.patch_obj(CoreNode, "create_file")
         patch_manager.patch_obj(Session, "write_state")
         patch_manager.patch_obj(Session, "write_nodes")
     yield patch_manager
@@ -78,6 +78,7 @@ def global_coreemu(patcher):
 def global_session(request, patcher, global_coreemu):
     mkdir = not request.config.getoption("mock")
     session = Session(1000, {"emane_prefix": "/usr"}, mkdir)
+    session.service_manager = global_coreemu.service_manager
     yield session
     session.shutdown()
 

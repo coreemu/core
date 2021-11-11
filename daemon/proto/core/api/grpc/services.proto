@@ -66,14 +66,6 @@ message NodeServiceConfig {
     map<string, string> files = 4;
 }
 
-message GetServicesRequest {
-
-}
-
-message GetServicesResponse {
-    repeated Service services = 1;
-}
-
 message GetServiceDefaultsRequest {
     int32 session_id = 1;
 }
@@ -89,14 +81,6 @@ message SetServiceDefaultsRequest {
 
 message SetServiceDefaultsResponse {
     bool result = 1;
-}
-
-message GetNodeServiceConfigsRequest {
-    int32 session_id = 1;
-}
-
-message GetNodeServiceConfigsResponse {
-    repeated NodeServiceConfig configs = 1;
 }
 
 message GetNodeServiceRequest {
@@ -118,24 +102,6 @@ message GetNodeServiceFileRequest {
 
 message GetNodeServiceFileResponse {
     string data = 1;
-}
-
-message SetNodeServiceRequest {
-    int32 session_id = 1;
-    ServiceConfig config = 2;
-}
-
-message SetNodeServiceResponse {
-    bool result = 1;
-}
-
-message SetNodeServiceFileRequest {
-    int32 session_id = 1;
-    ServiceFileConfig config = 2;
-}
-
-message SetNodeServiceFileResponse {
-    bool result = 1;
 }
 
 message ServiceActionRequest {

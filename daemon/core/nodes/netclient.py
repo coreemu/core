@@ -38,7 +38,7 @@ class LinuxNetClient:
         :param device: device to add route to
         :return: nothing
         """
-        self.run(f"{IP} route add {route} dev {device}")
+        self.run(f"{IP} route replace {route} dev {device}")
 
     def device_up(self, device: str) -> None:
         """
@@ -361,14 +361,15 @@ class OvsNetClient(LinuxNetClient):
                     return True
         return False
 
-    def disable_mac_learning(self, name: str) -> None:
+    def set_mac_learning(self, name: str, value: int) -> None:
         """
-        Disable mac learning for a OVS bridge.
+        Set mac learning for an OVS bridge.
 
         :param name: bridge name
+        :param value: ageing time value
         :return: nothing
         """
-        self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time=0")
+        self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time={value}")
 
 
 def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:

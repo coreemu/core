@@ -10,6 +10,8 @@ from core.api.tlv.enumerations import ConfigTlvs, NodeTlvs
 from core.config import ConfigGroup, ConfigurableOptions
 from core.emulator.data import ConfigData, NodeData
 
+logger = logging.getLogger(__name__)
+
 
 def convert_node(node_data: NodeData):
     """
@@ -139,9 +141,9 @@ class ConfigShim:
         captions = None
         data_types = []
         possible_values = []
-        logging.debug("configurable: %s", configurable_options)
-        logging.debug("configuration options: %s", configurable_options.configurations)
-        logging.debug("configuration data: %s", config)
+        logger.debug("configurable: %s", configurable_options)
+        logger.debug("configuration options: %s", configurable_options.configurations)
+        logger.debug("configuration data: %s", config)
         for configuration in configurable_options.configurations():
             if not captions:
                 captions = configuration.label

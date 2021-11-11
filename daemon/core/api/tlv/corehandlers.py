@@ -3,7 +3,6 @@ socket server request handlers leveraged by core servers.
 """
 
 import logging
-import os
 import shlex
 import shutil
 import socketserver
@@ -11,6 +10,7 @@ import sys
 import threading
 import time
 from itertools import repeat
+from pathlib import Path
 from queue import Empty, Queue
 from typing import Optional
 
@@ -29,6 +29,7 @@ from core.api.tlv.enumerations import (
     NodeTlvs,
     SessionTlvs,
 )
+from core.emane.modelmanager import EmaneModelManager
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -54,6 +55,8 @@ from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
 from core.nodes.network import WlanNode
 from core.nodes.physical import Rj45Node
 from core.services.coreservices import ServiceManager, ServiceShim
+
+logger = logging.getLogger(__name__)
 
 
 class CoreHandler(socketserver.BaseRequestHandler):
@@ -104,7 +107,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         :return: nothing
         """
-        logging.debug("new TCP connection: %s", self.client_address)
+        logger.debug("new TCP connection: %s", self.client_address)
 
     def finish(self):
         """
@@ -113,40 +116,40 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         :return: nothing
         """
-        logging.debug("finishing request handler")
-        logging.debug("remaining message queue size: %s", self.message_queue.qsize())
+        logger.debug("finishing request handler")
+        logger.debug("remaining message queue size: %s", self.message_queue.qsize())
 
         # give some time for message queue to deplete
         timeout = 10
         wait = 0
         while not self.message_queue.empty():
-            logging.debug("waiting for message queue to empty: %s seconds", wait)
+            logger.debug("waiting for message queue to empty: %s seconds", wait)
             time.sleep(1)
             wait += 1
             if wait == timeout:
-                logging.warning("queue failed to be empty, finishing request handler")
+                logger.warning("queue failed to be empty, finishing request handler")
                 break
 
-        logging.info("client disconnected: notifying threads")
+        logger.info("client disconnected: notifying threads")
         self.done = True
         for thread in self.handler_threads:
-            logging.info("waiting for thread: %s", thread.getName())
+            logger.info("waiting for thread: %s", thread.getName())
             thread.join(timeout)
             if thread.is_alive():
-                logging.warning(
+                logger.warning(
                     "joining %s failed: still alive after %s sec",
                     thread.getName(),
                     timeout,
                 )
 
-        logging.info("connection closed: %s", self.client_address)
+        logger.info("connection closed: %s", self.client_address)
         if self.session:
             # remove client from session broker and shutdown if there are no clients
             self.remove_session_handlers()
             clients = self.session_clients[self.session.id]
             clients.remove(self)
             if not clients and not self.session.is_active():
-                logging.info(
+                logger.info(
                     "no session clients left and not active, initiating shutdown"
                 )
                 self.coreemu.delete_session(self.session.id)
@@ -167,39 +170,27 @@ class CoreHandler(socketserver.BaseRequestHandler):
         date_list = []
         thumb_list = []
         num_sessions = 0
-
         with self._sessions_lock:
             for _id in self.coreemu.sessions:
                 session = self.coreemu.sessions[_id]
                 num_sessions += 1
                 id_list.append(str(_id))
-
                 name = session.name
                 if not name:
                     name = ""
                 name_list.append(name)
-
-                file_name = session.file_name
-                if not file_name:
-                    file_name = ""
-                file_list.append(file_name)
-
+                file_name = str(session.file_path) if session.file_path else ""
+                file_list.append(str(file_name))
                 node_count_list.append(str(session.get_node_count()))
-
                 date_list.append(time.ctime(session.state_time))
-
-                thumb = session.thumbnail
-                if not thumb:
-                    thumb = ""
+                thumb = str(session.thumbnail) if session.thumbnail else ""
                 thumb_list.append(thumb)
-
         session_ids = "|".join(id_list)
         names = "|".join(name_list)
         files = "|".join(file_list)
         node_counts = "|".join(node_count_list)
         dates = "|".join(date_list)
         thumbs = "|".join(thumb_list)
-
         if num_sessions > 0:
             tlv_data = b""
             if len(session_ids) > 0:
@@ -221,7 +212,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             message = coreapi.CoreSessionMessage.pack(flags, tlv_data)
         else:
             message = None
-
         return message
 
     def handle_broadcast_event(self, event_data):
@@ -231,7 +221,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.EventData event_data: event data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast event: %s", event_data)
+        logger.debug("handling broadcast event: %s", event_data)
 
         tlv_data = structutils.pack_values(
             coreapi.CoreEventTlv,
@@ -249,7 +239,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending event message")
+            logger.exception("error sending event message")
 
     def handle_broadcast_file(self, file_data):
         """
@@ -258,7 +248,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.FileData file_data: file data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast file: %s", file_data)
+        logger.debug("handling broadcast file: %s", file_data)
 
         tlv_data = structutils.pack_values(
             coreapi.CoreFileTlv,
@@ -279,7 +269,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending file message")
+            logger.exception("error sending file message")
 
     def handle_broadcast_config(self, config_data):
         """
@@ -288,12 +278,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.ConfigData config_data: config data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast config: %s", config_data)
+        logger.debug("handling broadcast config: %s", config_data)
         message = dataconversion.convert_config(config_data)
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending config message")
+            logger.exception("error sending config message")
 
     def handle_broadcast_exception(self, exception_data):
         """
@@ -302,7 +292,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.ExceptionData exception_data: exception data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast exception: %s", exception_data)
+        logger.debug("handling broadcast exception: %s", exception_data)
         tlv_data = structutils.pack_values(
             coreapi.CoreExceptionTlv,
             [
@@ -319,7 +309,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending exception message")
+            logger.exception("error sending exception message")
 
     def handle_broadcast_node(self, node_data):
         """
@@ -328,12 +318,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.NodeData node_data: node data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast node: %s", node_data)
+        logger.debug("handling broadcast node: %s", node_data)
         message = dataconversion.convert_node(node_data)
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending node message")
+            logger.exception("error sending node message")
 
     def handle_broadcast_link(self, link_data):
         """
@@ -342,7 +332,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param core.emulator.data.LinkData link_data: link data to handle
         :return: nothing
         """
-        logging.debug("handling broadcast link: %s", link_data)
+        logger.debug("handling broadcast link: %s", link_data)
         options_data = link_data.options
         loss = ""
         if options_data.loss is not None:
@@ -394,7 +384,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             self.sendall(message)
         except IOError:
-            logging.exception("error sending Event Message")
+            logger.exception("error sending Event Message")
 
     def register(self):
         """
@@ -402,7 +392,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         :return: register message data
         """
-        logging.info(
+        logger.info(
             "GUI has connected to session %d at %s", self.session.id, time.ctime()
         )
         tlv_data = b""
@@ -430,8 +420,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.emane.config_type.value, self.session.emane.name
         )
-        for model_name in self.session.emane.models:
-            model_class = self.session.emane.models[model_name]
+        for model_name, model_class in EmaneModelManager.models.items():
             tlv_data += coreapi.CoreRegisterTlv.pack(
                 model_class.config_type.value, model_class.name
             )
@@ -474,14 +463,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
             header
         )
         if message_len == 0:
-            logging.warning("received message with no data")
+            logger.warning("received message with no data")
 
         data = b""
         while len(data) < message_len:
             data += self.request.recv(message_len - len(data))
             if len(data) > message_len:
                 error_message = f"received message length does not match received data ({len(data)} != {message_len})"
-                logging.error(error_message)
+                logger.error(error_message)
                 raise IOError(error_message)
 
         try:
@@ -490,7 +479,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         except KeyError:
             message = coreapi.CoreMessage(message_flags, header, data)
             message.message_type = message_type
-            logging.exception("unimplemented core message type: %s", message.type_str())
+            logger.exception("unimplemented core message type: %s", message.type_str())
 
         return message
 
@@ -501,7 +490,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message to queue
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "queueing msg (queuedtimes = %s): type %s",
             message.queuedtimes,
             MessageTypes(message.message_type),
@@ -531,11 +520,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message to handle
         :return: nothing
         """
-        logging.debug(
+        logger.debug(
             "%s handling message:\n%s", threading.currentThread().getName(), message
         )
         if message.message_type not in self.message_handlers:
-            logging.error("no handler for message type: %s", message.type_str())
+            logger.error("no handler for message type: %s", message.type_str())
             return
 
         message_handler = self.message_handlers[message.message_type]
@@ -545,7 +534,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.dispatch_replies(replies, message)
         except Exception as e:
             self.send_exception(ExceptionLevels.ERROR, "corehandler", str(e))
-            logging.exception(
+            logger.exception(
                 "%s: exception while handling message: %s",
                 threading.currentThread().getName(),
                 message,
@@ -573,12 +562,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 # multiple TLVs of same type cause KeyError exception
                 reply_message = f"CoreMessage (type {message_type} flags {message_flags} length {message_length})"
 
-            logging.debug("sending reply:\n%s", reply_message)
+            logger.debug("sending reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
             except IOError:
-                logging.exception("error dispatching reply")
+                logger.exception("error dispatching reply")
 
     def handle(self):
         """
@@ -593,7 +582,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         # TODO: add shutdown handler for session
         self.session = self.coreemu.create_session(port)
-        logging.debug("created new session for client: %s", self.session.id)
+        logger.debug("created new session for client: %s", self.session.id)
         clients = self.session_clients.setdefault(self.session.id, [])
         clients.append(self)
 
@@ -607,10 +596,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
             try:
                 message = self.receive_message()
             except EOFError:
-                logging.info("client disconnected")
+                logger.info("client disconnected")
                 break
             except IOError:
-                logging.exception("error receiving message")
+                logger.exception("error receiving message")
                 break
 
             message.queuedtimes = 0
@@ -632,7 +621,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if client == self:
                     continue
 
-                logging.debug("BROADCAST TO OTHER CLIENT: %s", client)
+                logger.debug("BROADCAST TO OTHER CLIENT: %s", client)
                 client.sendall(message.raw_message)
 
     def send_exception(self, level, source, text, node=None):
@@ -656,7 +645,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.handle_broadcast_exception(exception_data)
 
     def add_session_handlers(self):
-        logging.debug("adding session broadcast handlers")
+        logger.debug("adding session broadcast handlers")
         self.session.event_handlers.append(self.handle_broadcast_event)
         self.session.exception_handlers.append(self.handle_broadcast_exception)
         self.session.node_handlers.append(self.handle_broadcast_node)
@@ -665,7 +654,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.session.config_handlers.append(self.handle_broadcast_config)
 
     def remove_session_handlers(self):
-        logging.debug("removing session broadcast handlers")
+        logger.debug("removing session broadcast handlers")
         self.session.event_handlers.remove(self.handle_broadcast_event)
         self.session.exception_handlers.remove(self.handle_broadcast_exception)
         self.session.node_handlers.remove(self.handle_broadcast_node)
@@ -685,7 +674,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             message.flags & MessageFlags.ADD.value
             and message.flags & MessageFlags.DELETE.value
         ):
-            logging.warning("ignoring invalid message: add and delete flag both set")
+            logger.warning("ignoring invalid message: add and delete flag both set")
             return ()
 
         _class = CoreNode
@@ -699,8 +688,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options = NodeOptions(
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value),
+            legacy=True,
         )
-
         options.set_position(
             x=message.get_tlv(NodeTlvs.X_POSITION.value),
             y=message.get_tlv(NodeTlvs.Y_POSITION.value),
@@ -727,12 +716,15 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if message.flags & MessageFlags.ADD.value:
             node = self.session.add_node(_class, node_id, options)
-            if node:
-                if message.flags & MessageFlags.STRING.value:
-                    self.node_status_request[node.id] = True
-
-                if self.session.state == EventTypes.RUNTIME_STATE:
-                    self.send_node_emulation_id(node.id)
+            has_geo = all(
+                i is not None for i in [options.lon, options.lat, options.alt]
+            )
+            if has_geo:
+                self.session.broadcast_node(node)
+            if message.flags & MessageFlags.STRING.value:
+                self.node_status_request[node.id] = True
+            if self.session.state == EventTypes.RUNTIME_STATE:
+                self.send_node_emulation_id(node.id)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
@@ -750,7 +742,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.edit_node(node_id, options)
+            node = self.session.get_node(node_id, NodeBase)
+            node.icon = options.icon
+            has_geo = all(
+                i is not None for i in [options.lon, options.lat, options.alt]
+            )
+            if has_geo:
+                self.session.set_node_geo(node, options.lon, options.lat, options.alt)
+                self.session.broadcast_node(node)
+            else:
+                self.session.set_node_pos(node, options.x, options.y)
 
         return replies
 
@@ -801,13 +802,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if dup is not None:
             options.dup = int(dup)
 
+        # fix for rj45 nodes missing iface id
+        node1 = self.session.get_node(node1_id, NodeBase)
+        node2 = self.session.get_node(node2_id, NodeBase)
+        if isinstance(node1, Rj45Node) and iface1_data.id is None:
+            iface1_data.id = 0
+        if isinstance(node2, Rj45Node) and iface2_data.id is None:
+            iface2_data.id = 0
+
         if message.flags & MessageFlags.ADD.value:
             self.session.add_link(
                 node1_id, node2_id, iface1_data, iface2_data, options, link_type
             )
         elif message.flags & MessageFlags.DELETE.value:
-            node1 = self.session.get_node(node1_id, NodeBase)
-            node2 = self.session.get_node(node2_id, NodeBase)
             if isinstance(node1, Rj45Node):
                 iface1_data.id = node1.iface_id
             if isinstance(node2, Rj45Node):
@@ -905,7 +912,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     else:
                         node.cmd(command, wait=False)
         except CoreError:
-            logging.exception("error getting object: %s", node_id)
+            logger.exception("error getting object: %s", node_id)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
             if not message.flags & MessageFlags.LOCAL.value:
@@ -927,26 +934,22 @@ class CoreHandler(socketserver.BaseRequestHandler):
         execute_server = message.get_tlv(RegisterTlvs.EXECUTE_SERVER.value)
         if execute_server:
             try:
-                logging.info("executing: %s", execute_server)
+                logger.info("executing: %s", execute_server)
                 if message.flags & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
-                file_name = sys.argv[0]
-
-                if os.path.splitext(file_name)[1].lower() == ".xml":
+                file_path = Path(sys.argv[0])
+                if file_path.suffix == ".xml":
                     session = self.coreemu.create_session()
                     try:
-                        session.open_xml(file_name)
+                        session.open_xml(file_path)
                     except Exception:
                         self.coreemu.delete_session(session.id)
                         raise
                 else:
                     thread = threading.Thread(
                         target=utils.execute_file,
-                        args=(
-                            file_name,
-                            {"__file__": file_name, "coreemu": self.coreemu},
-                        ),
+                        args=(file_path, {"coreemu": self.coreemu}),
                         daemon=True,
                     )
                     thread.start()
@@ -957,26 +960,26 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
                         sid = new_sid.pop()
-                        logging.info("executed: %s as session %d", execute_server, sid)
+                        logger.info("executed: %s as session %d", execute_server, sid)
                     except KeyError:
-                        logging.info(
+                        logger.info(
                             "executed %s with unknown session ID", execute_server
                         )
                         return replies
 
-                    logging.debug("checking session %d for RUNTIME state", sid)
+                    logger.debug("checking session %d for RUNTIME state", sid)
                     session = self.coreemu.sessions.get(sid)
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
                     while session.state != EventTypes.RUNTIME_STATE:
-                        logging.debug(
+                        logger.debug(
                             "waiting for session %d to enter RUNTIME state", sid
                         )
                         time.sleep(1)
                         retries -= 1
                         if retries <= 0:
-                            logging.debug("session %d did not enter RUNTIME state", sid)
+                            logger.debug("session %d did not enter RUNTIME state", sid)
                             return replies
 
                     tlv_data = coreapi.CoreRegisterTlv.pack(
@@ -988,7 +991,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     message = coreapi.CoreRegMessage.pack(0, tlv_data)
                     replies.append(message)
             except Exception as e:
-                logging.exception("error executing: %s", execute_server)
+                logger.exception("error executing: %s", execute_server)
                 tlv_data = coreapi.CoreExceptionTlv.pack(ExceptionTlvs.LEVEL.value, 2)
                 tlv_data += coreapi.CoreExceptionTlv.pack(
                     ExceptionTlvs.TEXT.value, str(e)
@@ -1000,7 +1003,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         gui = message.get_tlv(RegisterTlvs.GUI.value)
         if gui is None:
-            logging.debug("ignoring Register message")
+            logger.debug("ignoring Register message")
         else:
             # register capabilities with the GUI
             replies.append(self.register())
@@ -1031,7 +1034,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             network_id=message.get_tlv(ConfigTlvs.NETWORK_ID.value),
             opaque=message.get_tlv(ConfigTlvs.OPAQUE.value),
         )
-        logging.debug(
+        logger.debug(
             "configuration message for %s node %s", config_data.object, config_data.node
         )
         message_type = ConfigFlags(config_data.type)
@@ -1055,9 +1058,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.handle_config_mobility(message_type, config_data)
         elif config_data.object in self.session.mobility.models:
             replies = self.handle_config_mobility_models(message_type, config_data)
-        elif config_data.object == self.session.emane.name:
-            replies = self.handle_config_emane(message_type, config_data)
-        elif config_data.object in self.session.emane.models:
+        elif config_data.object in EmaneModelManager.models:
             replies = self.handle_config_emane_models(message_type, config_data)
         else:
             raise Exception("no handler for configuration: %s", config_data.object)
@@ -1106,7 +1107,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.location.reset()
         else:
             if not config_data.data_values:
-                logging.warning("location data missing")
+                logger.warning("location data missing")
             else:
                 values = [float(x) for x in config_data.data_values.split("|")]
 
@@ -1119,7 +1120,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 # geographic reference point
                 self.session.location.setrefgeo(lat, lon, alt)
                 self.session.location.refscale = values[5]
-                logging.info(
+                logger.info(
                     "location configured: %s = %s scale=%s",
                     self.session.location.refxyz,
                     self.session.location.refgeo,
@@ -1156,7 +1157,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
     def handle_config_broker(self, message_type, config_data):
         if message_type not in [ConfigFlags.REQUEST, ConfigFlags.RESET]:
             if not config_data.data_values:
-                logging.info("emulation server data missing")
+                logger.info("emulation server data missing")
             else:
                 values = config_data.data_values.split("|")
 
@@ -1180,7 +1181,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             session_id = config_data.session
             opaque = config_data.opaque
 
-            logging.debug(
+            logger.debug(
                 "configuration request: node(%s) session(%s) opaque(%s)",
                 node_id,
                 session_id,
@@ -1210,10 +1211,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 values = []
                 group_strings = []
                 start_index = 1
-                logging.debug("sorted groups: %s", groups)
+                logger.debug("sorted groups: %s", groups)
                 for group in groups:
                     services = sorted(group_map[group], key=lambda x: x.name.lower())
-                    logging.debug("sorted services for group(%s): %s", group, services)
+                    logger.debug("sorted services for group(%s): %s", group, services)
                     end_index = start_index + len(services) - 1
                     group_strings.append(f"{group}:{start_index}-{end_index}")
                     start_index += len(services)
@@ -1237,7 +1238,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 node = self.session.get_node(node_id, CoreNodeBase)
                 if node is None:
-                    logging.warning(
+                    logger.warning(
                         "request to configure service for unknown node %s", node_id
                     )
                     return replies
@@ -1296,7 +1297,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             error_message = "services config message that I don't know how to handle"
             if values is None:
-                logging.error(error_message)
+                logger.error(error_message)
             else:
                 if opaque is None:
                     values = values.split("|")
@@ -1305,11 +1306,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         data_types is None
                         or data_types[0] != ConfigDataTypes.STRING.value
                     ):
-                        logging.info(error_message)
+                        logger.info(error_message)
                         return None
                     key = values.pop(0)
                     self.session.services.default_services[key] = values
-                    logging.debug("default services for type %s set to %s", key, values)
+                    logger.debug("default services for type %s set to %s", key, values)
                 elif node_id:
                     services = ServiceShim.servicesfromopaque(opaque)
                     if services:
@@ -1348,16 +1349,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
         values_str = config_data.data_values
 
         node_id = utils.iface_config_id(node_id, iface_id)
-        logging.debug(
+        logger.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
         )
         if message_type == ConfigFlags.REQUEST:
-            logging.info("replying to configure request for model: %s", object_name)
+            logger.info("replying to configure request for model: %s", object_name)
             typeflags = ConfigFlags.NONE.value
 
             model_class = self.session.mobility.models.get(object_name)
             if not model_class:
-                logging.warning("model class does not exist: %s", object_name)
+                logger.warning("model class does not exist: %s", object_name)
                 return []
 
             config = self.session.mobility.get_model_config(node_id, object_name)
@@ -1368,7 +1369,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
             if not object_name:
-                logging.warning("no configuration object for node: %s", node_id)
+                logger.warning("no configuration object for node: %s", node_id)
                 return []
 
             parsed_config = {}
@@ -1382,39 +1383,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if object_name == BasicRangeModel.name:
                         node.updatemodel(parsed_config)
                 except CoreError:
-                    logging.error(
+                    logger.error(
                         "skipping mobility configuration for unknown node: %s", node_id
                     )
-
-        return replies
-
-    def handle_config_emane(self, message_type, config_data):
-        replies = []
-        node_id = config_data.node
-        object_name = config_data.object
-        iface_id = config_data.iface_id
-        values_str = config_data.data_values
-
-        node_id = utils.iface_config_id(node_id, iface_id)
-        logging.debug(
-            "received configure message for %s nodenum: %s", object_name, node_id
-        )
-        if message_type == ConfigFlags.REQUEST:
-            logging.info("replying to configure request for %s model", object_name)
-            typeflags = ConfigFlags.NONE.value
-            config = self.session.emane.get_configs()
-            config_response = ConfigShim.config_data(
-                0, node_id, typeflags, self.session.emane.emane_config, config
-            )
-            replies.append(config_response)
-        elif message_type != ConfigFlags.RESET:
-            if not object_name:
-                logging.info("no configuration object for node %s", node_id)
-                return []
-
-            if values_str:
-                config = ConfigShim.str_to_dict(values_str)
-                self.session.emane.set_configs(config)
 
         return replies
 
@@ -1426,19 +1397,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         values_str = config_data.data_values
 
         node_id = utils.iface_config_id(node_id, iface_id)
-        logging.debug(
+        logger.debug(
             "received configure message for %s nodenum: %s", object_name, node_id
         )
         if message_type == ConfigFlags.REQUEST:
-            logging.info("replying to configure request for model: %s", object_name)
+            logger.info("replying to configure request for model: %s", object_name)
             typeflags = ConfigFlags.NONE.value
 
-            model_class = self.session.emane.models.get(object_name)
+            model_class = self.session.emane.get_model(object_name)
             if not model_class:
-                logging.warning("model class does not exist: %s", object_name)
+                logger.warning("model class does not exist: %s", object_name)
                 return []
 
-            config = self.session.emane.get_model_config(node_id, object_name)
+            config = self.session.emane.get_config(node_id, object_name)
             config_response = ConfigShim.config_data(
                 0, node_id, typeflags, model_class, config
             )
@@ -1446,14 +1417,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
         elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
             if not object_name:
-                logging.warning("no configuration object for node: %s", node_id)
+                logger.warning("no configuration object for node: %s", node_id)
                 return []
-
             parsed_config = {}
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-
-            self.session.emane.set_model_config(node_id, object_name, parsed_config)
+            self.session.emane.node_models[node_id] = object_name
+            self.session.emane.set_config(node_id, object_name, parsed_config)
 
         return replies
 
@@ -1465,21 +1435,21 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
-            node_num = message.get_tlv(FileTlvs.NODE.value)
+            node_id = message.get_tlv(FileTlvs.NODE.value)
             file_name = message.get_tlv(FileTlvs.NAME.value)
             file_type = message.get_tlv(FileTlvs.TYPE.value)
-            source_name = message.get_tlv(FileTlvs.SOURCE_NAME.value)
+            src_path = message.get_tlv(FileTlvs.SOURCE_NAME.value)
+            if src_path:
+                src_path = Path(src_path)
             data = message.get_tlv(FileTlvs.DATA.value)
             compressed_data = message.get_tlv(FileTlvs.COMPRESSED_DATA.value)
 
             if compressed_data:
-                logging.warning(
-                    "Compressed file data not implemented for File message."
-                )
+                logger.warning("Compressed file data not implemented for File message.")
                 return ()
 
-            if source_name and data:
-                logging.warning(
+            if src_path and data:
+                logger.warning(
                     "ignoring invalid File message: source and data TLVs are both present"
                 )
                 return ()
@@ -1490,29 +1460,30 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(":")[:2]
                     self.session.services.set_service_file(
-                        node_num, service_name, file_name, data
+                        node_id, service_name, file_name, data
                     )
                     return ()
                 elif file_type.startswith("hook:"):
                     _, state = file_type.split(":")[:2]
                     if not state.isdigit():
-                        logging.error("error setting hook having state '%s'", state)
+                        logger.error("error setting hook having state '%s'", state)
                         return ()
                     state = int(state)
                     state = EventTypes(state)
-                    self.session.add_hook(state, file_name, data, source_name)
+                    self.session.add_hook(state, file_name, data, src_path)
                     return ()
 
             # writing a file to the host
-            if node_num is None:
-                if source_name is not None:
-                    shutil.copy2(source_name, file_name)
+            if node_id is None:
+                if src_path is not None:
+                    shutil.copy2(src_path, file_name)
                 else:
-                    with open(file_name, "w") as open_file:
-                        open_file.write(data)
+                    with file_name.open("w") as f:
+                        f.write(data)
                 return ()
 
-            self.session.add_node_file(node_num, source_name, file_name, data)
+            file_path = Path(file_name)
+            self.session.add_node_file(node_id, src_path, file_path, data)
         else:
             raise NotImplementedError
 
@@ -1525,7 +1496,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: interface message to handle
         :return: reply messages
         """
-        logging.info("ignoring Interface message")
+        logger.info("ignoring Interface message")
         return ()
 
     def handle_event_message(self, message):
@@ -1551,7 +1522,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             raise NotImplementedError("Event message missing event type")
         node_id = event_data.node
 
-        logging.debug("handling event %s at %s", event_type.name, time.ctime())
+        logger.debug("handling event %s at %s", event_type.name, time.ctime())
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
                 node = self.session.get_node(node_id, NodeBase)
@@ -1563,31 +1534,37 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.start_mobility(node_ids=[node.id])
                     return ()
 
-                logging.warning(
+                logger.warning(
                     "dropping unhandled event message for node: %s", node.name
                 )
                 return ()
-            self.session.set_state(event_type)
 
         if event_type == EventTypes.DEFINITION_STATE:
+            self.session.set_state(event_type)
             # clear all session objects in order to receive new definitions
             self.session.clear()
+        elif event_type == EventTypes.CONFIGURATION_STATE:
+            self.session.set_state(event_type)
         elif event_type == EventTypes.INSTANTIATION_STATE:
+            self.session.set_state(event_type)
             if len(self.handler_threads) > 1:
                 # TODO: sync handler threads here before continuing
                 time.sleep(2.0)  # XXX
             # done receiving node/link configuration, ready to instantiate
             self.session.instantiate()
 
-            # after booting nodes attempt to send emulation id for nodes waiting on status
+            # after booting nodes attempt to send emulation id for nodes
+            # waiting on status
             for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
-            logging.warning("Unexpected event message: RUNTIME state received")
+            self.session.set_state(event_type)
+            logger.warning("Unexpected event message: RUNTIME state received")
         elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
         elif event_type == EventTypes.SHUTDOWN_STATE:
-            logging.warning("Unexpected event message: SHUTDOWN state received")
+            self.session.set_state(event_type)
+            logger.warning("Unexpected event message: SHUTDOWN state received")
         elif event_type in {
             EventTypes.START,
             EventTypes.STOP,
@@ -1607,26 +1584,26 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.mobility_event(event_data)
                     handled = True
             if not handled:
-                logging.warning(
+                logger.warning(
                     "unhandled event message: event type %s, name %s ",
                     event_type.name,
                     name,
                 )
         elif event_type == EventTypes.FILE_OPEN:
-            filename = event_data.name
-            self.session.open_xml(filename, start=False)
+            file_path = Path(event_data.name)
+            self.session.open_xml(file_path, start=False)
             self.send_objects()
             return ()
         elif event_type == EventTypes.FILE_SAVE:
-            filename = event_data.name
-            self.session.save_xml(filename)
+            file_path = Path(event_data.name)
+            self.session.save_xml(file_path)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node_id = event_data.node
             name = event_data.name
             data = event_data.data
             if etime is None:
-                logging.warning("Event message scheduled event missing start time")
+                logger.warning("Event message scheduled event missing start time")
                 return ()
             if message.flags & MessageFlags.ADD.value:
                 self.session.add_event(
@@ -1652,7 +1629,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         try:
             node = self.session.get_node(node_id, CoreNodeBase)
         except CoreError:
-            logging.warning(
+            logger.warning(
                 "ignoring event for service '%s', unknown node '%s'", name, node_id
             )
             return
@@ -1694,7 +1671,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if num > 1:
                     unknown_data += ", "
                 num -= 1
-            logging.warning("Event requested for unknown service(s): %s", unknown_data)
+            logger.warning("Event requested for unknown service(s): %s", unknown_data)
             unknown_data = f"Unknown:{unknown_data}"
 
         event_data = EventData(
@@ -1722,7 +1699,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         files = coreapi.str_to_list(file_str)
         thumb = message.get_tlv(SessionTlvs.THUMB.value)
         user = message.get_tlv(SessionTlvs.USER.value)
-        logging.debug(
+        logger.debug(
             "SESSION message flags=0x%x sessions=%s", message.flags, session_id_str
         )
 
@@ -1733,20 +1710,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     session = self.session
                 else:
                     session = self.coreemu.sessions.get(session_id)
-
                 if session is None:
-                    logging.warning("session %s not found", session_id)
+                    logger.warning("session %s not found", session_id)
                     continue
-
                 if names is not None:
                     session.name = names[index]
-
                 if files is not None:
-                    session.file_name = files[index]
-
+                    session.file_path = Path(files[index])
                 if thumb:
+                    thumb = Path(thumb)
                     session.set_thumbnail(thumb)
-
                 if user:
                     session.set_user(user)
         elif (
@@ -1762,14 +1735,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
-                    logging.info(
+                    logger.info(
                         "session %s not found (flags=0x%x)", session_id, message.flags
                     )
                     continue
 
                 if message.flags & MessageFlags.ADD.value:
                     # connect to the first session that exists
-                    logging.info("request to connect to session %s", session_id)
+                    logger.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
                     self.remove_session_handlers()
@@ -1786,7 +1759,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     clients.append(self)
 
                     # add broadcast handlers
-                    logging.info("adding session broadcast handlers")
+                    logger.info("adding session broadcast handlers")
                     self.add_session_handlers()
 
                     if user:
@@ -1796,12 +1769,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         self.send_objects()
                 elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
-                    logging.info("request to terminate session %s", session_id)
+                    logger.info("request to terminate session %s", session_id)
                     self.coreemu.delete_session(session_id)
                 else:
-                    logging.warning(
-                        "unhandled session flags for session %s", session_id
-                    )
+                    logger.warning("unhandled session flags for session %s", session_id)
 
         return ()
 
@@ -1823,9 +1794,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             try:
                 self.sendall(reply)
             except IOError:
-                logging.exception(
-                    "error sending node emulation id message: %s", node_id
-                )
+                logger.exception("error sending node emulation id message: %s", node_id)
 
             del self.node_status_request[node_id]
 
@@ -1851,7 +1820,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             for model_name in mobility_configs:
                 config = mobility_configs[model_name]
                 model_class = self.session.mobility.models[model_name]
-                logging.debug(
+                logger.debug(
                     "mobility config: node(%s) class(%s) values(%s)",
                     node_id,
                     model_class,
@@ -1862,21 +1831,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 )
                 self.session.broadcast_config(config_data)
 
-        # send global emane config
-        config = self.session.emane.get_configs()
-        logging.debug("global emane config: values(%s)", config)
-        config_data = ConfigShim.config_data(
-            0, None, ConfigFlags.UPDATE.value, self.session.emane.emane_config, config
-        )
-        self.session.broadcast_config(config_data)
-
         # send emane model configs
-        for node_id in self.session.emane.nodes():
-            emane_configs = self.session.emane.get_all_configs(node_id)
-            for model_name in emane_configs:
-                config = emane_configs[model_name]
-                model_class = self.session.emane.models[model_name]
-                logging.debug(
+        for node_id, model_configs in self.session.emane.node_configs.items():
+            for model_name, config in model_configs.items():
+                model_class = self.session.emane.get_model(model_name)
+                logger.debug(
                     "emane config: node(%s) class(%s) values(%s)",
                     node_id,
                     model_class,
@@ -1957,7 +1916,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.broadcast_config(config_data)
 
         node_count = self.session.get_node_count()
-        logging.info(
+        logger.info(
             "informed GUI about %d nodes and %d links", node_count, len(all_links)
         )
 
@@ -1997,11 +1956,11 @@ class CoreUdpHandler(CoreHandler):
             header
         )
         if message_len == 0:
-            logging.warning("received message with no data")
+            logger.warning("received message with no data")
             return
 
         if len(data) != coreapi.CoreMessage.header_len + message_len:
-            logging.error(
+            logger.error(
                 "received message length does not match received data (%s != %s)",
                 len(data),
                 coreapi.CoreMessage.header_len + message_len,
@@ -2019,7 +1978,7 @@ class CoreUdpHandler(CoreHandler):
                 message_flags, header, data[coreapi.CoreMessage.header_len :]
             )
             message.msgtype = message_type
-            logging.exception("unimplemented core message type: %s", message.type_str())
+            logger.exception("unimplemented core message type: %s", message.type_str())
 
     def handle(self):
         message = self.receive_message()
@@ -2029,12 +1988,12 @@ class CoreUdpHandler(CoreHandler):
             for session_id in sessions:
                 session = self.server.mainserver.coreemu.sessions.get(session_id)
                 if session:
-                    logging.debug("session handling message: %s", session.id)
+                    logger.debug("session handling message: %s", session.id)
                     self.session = session
                     self.handle_message(message)
                     self.broadcast(message)
                 else:
-                    logging.error(
+                    logger.error(
                         "session %d in %s message not found.",
                         session_id,
                         message.type_str(),
@@ -2058,7 +2017,7 @@ class CoreUdpHandler(CoreHandler):
                 self.handle_message(message)
                 self.broadcast(message)
             else:
-                logging.error(
+                logger.error(
                     "no active session, dropping %s message.", message.type_str()
                 )
 
@@ -2071,7 +2030,7 @@ class CoreUdpHandler(CoreHandler):
             try:
                 client.sendall(message.raw_message)
             except IOError:
-                logging.error("error broadcasting")
+                logger.error("error broadcasting")
 
     def finish(self):
         return socketserver.BaseRequestHandler.finish(self)

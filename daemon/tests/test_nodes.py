@@ -24,19 +24,30 @@ class TestNodes:
         assert node.alive()
         assert node.up
 
-    def test_node_update(self, session: Session):
+    def test_node_set_pos(self, session: Session):
         # given
         node = session.add_node(CoreNode)
-        position_value = 100
-        update_options = NodeOptions()
-        update_options.set_position(x=position_value, y=position_value)
+        x, y = 100.0, 50.0
 
         # when
-        session.edit_node(node.id, update_options)
+        session.set_node_pos(node, x, y)
 
         # then
-        assert node.position.x == position_value
-        assert node.position.y == position_value
+        assert node.position.x == x
+        assert node.position.y == y
+
+    def test_node_set_geo(self, session: Session):
+        # given
+        node = session.add_node(CoreNode)
+        lon, lat, alt = 0.0, 0.0, 0.0
+
+        # when
+        session.set_node_geo(node, lon, lat, alt)
+
+        # then
+        assert node.position.lon == lon
+        assert node.position.lat == lat
+        assert node.position.alt == alt
 
     def test_node_delete(self, session: Session):
         # given

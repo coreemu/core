@@ -10,6 +10,8 @@ from core.gui import appconfig, themes, validation
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -161,7 +163,7 @@ class ConfigFrame(ttk.Notebook):
                     )
                     entry.grid(row=index, column=1, sticky=tk.EW)
                 else:
-                    logging.error("unhandled config option type: %s", option.type)
+                    logger.error("unhandled config option type: %s", option.type)
                 self.values[option.name] = value
 
     def parse_config(self) -> Dict[str, str]:

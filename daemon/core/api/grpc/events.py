@@ -14,6 +14,8 @@ from core.emulator.data import (
 )
 from core.emulator.session import Session
 
+logger = logging.getLogger(__name__)
+
 
 def handle_node_event(node_data: NodeData) -> core_pb2.Event:
     """
@@ -199,7 +201,7 @@ class EventStreamer:
             elif isinstance(data, FileData):
                 event = handle_file_event(data)
             else:
-                logging.error("unknown event: %s", data)
+                logger.error("unknown event: %s", data)
         except Empty:
             pass
         if event:

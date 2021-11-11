@@ -1,10 +1,11 @@
-# LXD Support
+# LXC Support
 
-Information on how LXD can be leveraged and included to create
-nodes based on LXC containers and images to interface with
-existing CORE nodes, when needed.
+LXC nodes are provided by way of LXD to create nodes using predefined
+images and provide file system separation.
 
 ## Installation
+
+### Debian Systems
 
 ```shell
 sudo snap install lxd
@@ -38,8 +39,3 @@ newgrp lxd
 
 * LXD 3.14
 * nsenter from util-linux 2.31.1
-
-## Examples
-
-This directory provides a few small examples creating LXC nodes
-using LXD and linking them to themselves or with standard CORE nodes.
