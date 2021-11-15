@@ -29,6 +29,7 @@ networking scenarios, security studies, and increasing the size of physical test
 |[gRPC API](grpc.md)|Covers how control core using gRPC|
 |[Distributed](distributed.md)|Details for running CORE across multiple servers|
 |[Control Network](ctrlnet.md)|How to use control networks to communicate with nodes from host|
+|[Config Services](configservices.md)|Overview of provided config services and creating custom ones|
 |[Services](services.md)|Overview of provided services and creating custom ones|
 |[EMANE](emane.md)|Overview of EMANE integration and integrating custom EMANE models|
 |[Performance](performance.md)|Notes on performance when using CORE|
