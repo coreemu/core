@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 from core import utils
 from core.config import (
     ConfigBool,
+    ConfigFloat,
     ConfigGroup,
     ConfigInt,
     ConfigString,
@@ -280,7 +281,7 @@ class BasicRangeModel(WirelessModel):
         ConfigInt(id="bandwidth", default="54000000", label="bandwidth (bps)"),
         ConfigInt(id="jitter", default="0", label="transmission jitter (usec)"),
         ConfigInt(id="delay", default="5000", label="transmission delay (usec)"),
-        ConfigString(id="error", default="0", label="loss (%)"),
+        ConfigFloat(id="error", default="0.0", label="loss (%)"),
         ConfigBool(id="promiscuous", default="0", label="promiscuous mode"),
     ]
 
