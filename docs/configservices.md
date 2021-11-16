@@ -118,9 +118,8 @@ running the shell files generated.
 ```python
 from typing import Dict, List
 
-from core.config import Configuration
+from core.config import ConfigString, ConfigBool, Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode, ShadowDir
-from core.emulator.enumerations import ConfigDataTypes
 
 # class that subclasses ConfigService
 class ExampleService(ConfigService):
@@ -152,14 +151,9 @@ class ExampleService(ConfigService):
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     # configurable values that this service can use, for file generation
     default_configs: List[Configuration] = [
-        Configuration(id="value1", type=ConfigDataTypes.STRING, label="Text"),
-        Configuration(id="value2", type=ConfigDataTypes.BOOL, label="Boolean"),
-        Configuration(
-            id="value3",
-            type=ConfigDataTypes.STRING,
-            label="Multiple Choice",
-            options=["value1", "value2", "value3"],
-        ),
+        ConfigString(id="value1", label="Text"),
+        ConfigBool(id="value2", label="Boolean"),
+        ConfigString(id="value3", label="Multiple Choice", options=["value1", "value2", "value3"]),
     ]
     # sets of values to set for the configuration defined above, can be used to
     # provide convenient sets of values to typically use

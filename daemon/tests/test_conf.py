@@ -1,13 +1,12 @@
 import pytest
 
 from core.config import (
+    ConfigString,
     ConfigurableManager,
     ConfigurableOptions,
-    Configuration,
     ModelManager,
 )
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import ConfigDataTypes
 from core.emulator.session import Session
 from core.location.mobility import BasicRangeModel
 from core.nodes.network import WlanNode
@@ -16,10 +15,7 @@ from core.nodes.network import WlanNode
 class TestConfigurableOptions(ConfigurableOptions):
     name1 = "value1"
     name2 = "value2"
-    options = [
-        Configuration(id=name1, type=ConfigDataTypes.STRING, label=name1),
-        Configuration(id=name2, type=ConfigDataTypes.STRING, label=name2),
-    ]
+    options = [ConfigString(id=name1, label=name1), ConfigString(id=name2, label=name2)]
 
 
 class TestConf:

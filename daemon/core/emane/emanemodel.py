@@ -5,10 +5,9 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from core.config import ConfigGroup, Configuration
+from core.config import ConfigBool, ConfigGroup, ConfigString, Configuration
 from core.emane import emanemanifest
 from core.emulator.data import LinkOptions
-from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.nodes.interface import CoreInterface
@@ -55,13 +54,9 @@ class EmaneModel(WirelessModel):
 
     # support for external configurations
     external_config: List[Configuration] = [
-        Configuration("external", ConfigDataTypes.BOOL, default="0"),
-        Configuration(
-            "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
-        ),
-        Configuration(
-            "transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002"
-        ),
+        ConfigBool(id="external", default="0"),
+        ConfigString(id="platformendpoint", default="127.0.0.1:40001"),
+        ConfigString(id="transportendpoint", default="127.0.0.1:50002"),
     ]
 
     config_ignore: Set[str] = set()

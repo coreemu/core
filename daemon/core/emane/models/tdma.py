@@ -7,10 +7,9 @@ from pathlib import Path
 from typing import Set
 
 from core import constants, utils
-from core.config import Configuration
+from core.config import ConfigString
 from core.emane import emanemodel
 from core.emane.nodes import EmaneNet
-from core.emulator.enumerations import ConfigDataTypes
 from core.nodes.interface import CoreInterface
 
 logger = logging.getLogger(__name__)
@@ -38,9 +37,8 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             / "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml"
         )
         super().load(emane_prefix)
-        config_item = Configuration(
+        config_item = ConfigString(
             id=cls.schedule_name,
-            type=ConfigDataTypes.STRING,
             default=str(cls.default_schedule),
             label="TDMA schedule file (core)",
         )

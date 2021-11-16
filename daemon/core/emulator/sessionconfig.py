@@ -1,7 +1,14 @@
 from typing import Any, List
 
-from core.config import ConfigurableManager, ConfigurableOptions, Configuration
-from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
+from core.config import (
+    ConfigBool,
+    ConfigInt,
+    ConfigString,
+    ConfigurableManager,
+    ConfigurableOptions,
+    Configuration,
+)
+from core.emulator.enumerations import RegisterTlvs
 from core.plugins.sdt import Sdt
 
 
@@ -12,89 +19,27 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
 
     name: str = "session"
     options: List[Configuration] = [
-        Configuration(
-            id="controlnet", type=ConfigDataTypes.STRING, label="Control Network"
+        ConfigString(id="controlnet", label="Control Network"),
+        ConfigString(id="controlnet0", label="Control Network 0"),
+        ConfigString(id="controlnet1", label="Control Network 1"),
+        ConfigString(id="controlnet2", label="Control Network 2"),
+        ConfigString(id="controlnet3", label="Control Network 3"),
+        ConfigString(id="controlnet_updown_script", label="Control Network Script"),
+        ConfigBool(id="enablerj45", default="1", label="Enable RJ45s"),
+        ConfigBool(id="preservedir", default="0", label="Preserve session dir"),
+        ConfigBool(id="enablesdt", default="0", label="Enable SDT3D output"),
+        ConfigString(id="sdturl", default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL"),
+        ConfigBool(id="ovs", default="0", label="Enable OVS"),
+        ConfigInt(id="platform_id_start", default="1", label="EMANE Platform ID Start"),
+        ConfigInt(id="nem_id_start", default="1", label="EMANE NEM ID Start"),
+        ConfigBool(id="link_enabled", default="1", label="EMANE Links?"),
+        ConfigInt(
+            id="loss_threshold", default="30", label="EMANE Link Loss Threshold (%)"
         ),
-        Configuration(
-            id="controlnet0", type=ConfigDataTypes.STRING, label="Control Network 0"
+        ConfigInt(
+            id="link_interval", default="1", label="EMANE Link Check Interval (sec)"
         ),
-        Configuration(
-            id="controlnet1", type=ConfigDataTypes.STRING, label="Control Network 1"
-        ),
-        Configuration(
-            id="controlnet2", type=ConfigDataTypes.STRING, label="Control Network 2"
-        ),
-        Configuration(
-            id="controlnet3", type=ConfigDataTypes.STRING, label="Control Network 3"
-        ),
-        Configuration(
-            id="controlnet_updown_script",
-            type=ConfigDataTypes.STRING,
-            label="Control Network Script",
-        ),
-        Configuration(
-            id="enablerj45",
-            type=ConfigDataTypes.BOOL,
-            default="1",
-            label="Enable RJ45s",
-        ),
-        Configuration(
-            id="preservedir",
-            type=ConfigDataTypes.BOOL,
-            default="0",
-            label="Preserve session dir",
-        ),
-        Configuration(
-            id="enablesdt",
-            type=ConfigDataTypes.BOOL,
-            default="0",
-            label="Enable SDT3D output",
-        ),
-        Configuration(
-            id="sdturl",
-            type=ConfigDataTypes.STRING,
-            default=Sdt.DEFAULT_SDT_URL,
-            label="SDT3D URL",
-        ),
-        Configuration(
-            id="ovs", type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
-        ),
-        Configuration(
-            id="platform_id_start",
-            type=ConfigDataTypes.INT32,
-            default="1",
-            label="EMANE Platform ID Start",
-        ),
-        Configuration(
-            id="nem_id_start",
-            type=ConfigDataTypes.INT32,
-            default="1",
-            label="EMANE NEM ID Start",
-        ),
-        Configuration(
-            id="link_enabled",
-            type=ConfigDataTypes.BOOL,
-            default="1",
-            label="EMANE Links?",
-        ),
-        Configuration(
-            id="loss_threshold",
-            type=ConfigDataTypes.INT32,
-            default="30",
-            label="EMANE Link Loss Threshold (%)",
-        ),
-        Configuration(
-            id="link_interval",
-            type=ConfigDataTypes.INT32,
-            default="1",
-            label="EMANE Link Check Interval (sec)",
-        ),
-        Configuration(
-            id="link_timeout",
-            type=ConfigDataTypes.INT32,
-            default="4",
-            label="EMANE Link Timeout (sec)",
-        ),
+        ConfigInt(id="link_timeout", default="4", label="EMANE Link Timeout (sec)"),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 

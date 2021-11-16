@@ -12,16 +12,18 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
 
 from core import utils
-from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
+from core.config import (
+    ConfigBool,
+    ConfigGroup,
+    ConfigInt,
+    ConfigString,
+    ConfigurableOptions,
+    Configuration,
+    ModelManager,
+)
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, LinkData, LinkOptions
-from core.emulator.enumerations import (
-    ConfigDataTypes,
-    EventTypes,
-    LinkTypes,
-    MessageFlags,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags, RegisterTlvs
 from core.errors import CoreError
 from core.executables import BASH
 from core.nodes.base import CoreNode
@@ -274,39 +276,12 @@ class BasicRangeModel(WirelessModel):
 
     name: str = "basic_range"
     options: List[Configuration] = [
-        Configuration(
-            id="range",
-            type=ConfigDataTypes.UINT32,
-            default="275",
-            label="wireless range (pixels)",
-        ),
-        Configuration(
-            id="bandwidth",
-            type=ConfigDataTypes.UINT64,
-            default="54000000",
-            label="bandwidth (bps)",
-        ),
-        Configuration(
-            id="jitter",
-            type=ConfigDataTypes.UINT64,
-            default="0",
-            label="transmission jitter (usec)",
-        ),
-        Configuration(
-            id="delay",
-            type=ConfigDataTypes.UINT64,
-            default="5000",
-            label="transmission delay (usec)",
-        ),
-        Configuration(
-            id="error", type=ConfigDataTypes.STRING, default="0", label="loss (%)"
-        ),
-        Configuration(
-            id="promiscuous",
-            type=ConfigDataTypes.BOOL,
-            default="0",
-            label="promiscuous mode",
-        ),
+        ConfigInt(id="range", default="275", label="wireless range (pixels)"),
+        ConfigInt(id="bandwidth", default="54000000", label="bandwidth (bps)"),
+        ConfigInt(id="jitter", default="0", label="transmission jitter (usec)"),
+        ConfigInt(id="delay", default="5000", label="transmission delay (usec)"),
+        ConfigString(id="error", default="0", label="loss (%)"),
+        ConfigBool(id="promiscuous", default="0", label="promiscuous mode"),
     ]
 
     @classmethod
@@ -887,41 +862,14 @@ class Ns2ScriptedMobility(WayPointMobility):
 
     name: str = "ns2script"
     options: List[Configuration] = [
-        Configuration(
-            id="file", type=ConfigDataTypes.STRING, label="mobility script file"
-        ),
-        Configuration(
-            id="refresh_ms",
-            type=ConfigDataTypes.UINT32,
-            default="50",
-            label="refresh time (ms)",
-        ),
-        Configuration(id="loop", type=ConfigDataTypes.BOOL, default="1", label="loop"),
-        Configuration(
-            id="autostart",
-            type=ConfigDataTypes.STRING,
-            label="auto-start seconds (0.0 for runtime)",
-        ),
-        Configuration(
-            id="map",
-            type=ConfigDataTypes.STRING,
-            label="node mapping (optional, e.g. 0:1,1:2,2:3)",
-        ),
-        Configuration(
-            id="script_start",
-            type=ConfigDataTypes.STRING,
-            label="script file to run upon start",
-        ),
-        Configuration(
-            id="script_pause",
-            type=ConfigDataTypes.STRING,
-            label="script file to run upon pause",
-        ),
-        Configuration(
-            id="script_stop",
-            type=ConfigDataTypes.STRING,
-            label="script file to run upon stop",
-        ),
+        ConfigString(id="file", label="mobility script file"),
+        ConfigInt(id="refresh_ms", default="50", label="refresh time (ms)"),
+        ConfigBool(id="loop", default="1", label="loop"),
+        ConfigString(id="autostart", label="auto-start seconds (0.0 for runtime)"),
+        ConfigString(id="map", label="node mapping (optional, e.g. 0:1,1:2,2:3)"),
+        ConfigString(id="script_start", label="script file to run upon start"),
+        ConfigString(id="script_pause", label="script file to run upon pause"),
+        ConfigString(id="script_stop", label="script file to run upon stop"),
     ]
 
     @classmethod

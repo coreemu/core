@@ -4,9 +4,8 @@ EMANE Bypass model for CORE
 from pathlib import Path
 from typing import List, Set
 
-from core.config import Configuration
+from core.config import ConfigBool, Configuration
 from core.emane import emanemodel
-from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(emanemodel.EmaneModel):
@@ -18,9 +17,8 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     # mac definitions
     mac_library: str = "bypassmaclayer"
     mac_config: List[Configuration] = [
-        Configuration(
+        ConfigBool(
             id="none",
-            type=ConfigDataTypes.BOOL,
             default="0",
             label="There are no parameters for the bypass model.",
         )

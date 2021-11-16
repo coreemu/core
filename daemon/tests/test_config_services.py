@@ -3,13 +3,12 @@ from unittest import mock
 
 import pytest
 
-from core.config import Configuration
+from core.config import ConfigBool, ConfigString
 from core.configservice.base import (
     ConfigService,
     ConfigServiceBootError,
     ConfigServiceMode,
 )
-from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreCommandError, CoreError
 
 TEMPLATE_TEXT = "echo hello"
@@ -27,13 +26,10 @@ class MyService(ConfigService):
     shutdown = [f"pkill {files[0]}"]
     validation_mode = ConfigServiceMode.BLOCKING
     default_configs = [
-        Configuration(id="value1", type=ConfigDataTypes.STRING, label="Text"),
-        Configuration(id="value2", type=ConfigDataTypes.BOOL, label="Boolean"),
-        Configuration(
-            id="value3",
-            type=ConfigDataTypes.STRING,
-            label="Multiple Choice",
-            options=["value1", "value2", "value3"],
+        ConfigString(id="value1", label="Text"),
+        ConfigBool(id="value2", label="Boolean"),
+        ConfigString(
+            id="value3", label="Multiple Choice", options=["value1", "value2", "value3"]
         ),
     ]
     modes = {

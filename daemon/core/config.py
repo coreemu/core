@@ -36,7 +36,7 @@ class ConfigGroup:
 @dataclass
 class Configuration:
     """
-    Represents a configuration options.
+    Represents a configuration option.
     """
 
     id: str
@@ -69,6 +69,42 @@ class Configuration:
                     raise CoreConfigError(
                         f"{self.id} is not a valid int: {self.default}"
                     )
+
+
+@dataclass
+class ConfigBool(Configuration):
+    """
+    Represents a boolean configuration option.
+    """
+
+    type: ConfigDataTypes = ConfigDataTypes.BOOL
+
+
+@dataclass
+class ConfigFloat(Configuration):
+    """
+    Represents a float configuration option.
+    """
+
+    type: ConfigDataTypes = ConfigDataTypes.FLOAT
+
+
+@dataclass
+class ConfigInt(Configuration):
+    """
+    Represents an integer configuration option.
+    """
+
+    type: ConfigDataTypes = ConfigDataTypes.INT32
+
+
+@dataclass
+class ConfigString(Configuration):
+    """
+    Represents a string configuration option.
+    """
+
+    type: ConfigDataTypes = ConfigDataTypes.STRING
 
 
 class ConfigurableOptions:
