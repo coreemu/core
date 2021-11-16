@@ -91,7 +91,14 @@ After the installation complete it will have installed the following scripts.
 Please make sure to uninstall any previous installations of CORE cleanly
 before proceeding to install.
 
-Previous install was built from source:
+Clearing out a current install from 7.0.0+, making sure to provide options
+used for install (`-l` or `-p`).
+```shell
+cd <CORE_REPO>
+inv uninstall
+```
+
+Previous install was built from source for CORE release older than 7.0.0:
 ```shell
 cd <CORE_REPO>
 sudo make uninstall
