@@ -39,7 +39,7 @@ CentOS:
 
 To additionally install EMANE:
 ```shell
-reload
+reset
 inv install-emane
 ```
 
