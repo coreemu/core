@@ -14,7 +14,6 @@ from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
-EMANE_CHECKOUT: str = "v1.2.5"
 OSPFMDR_CHECKOUT: str = "f21688cdcac30fb10b1ebac0063eb24e4583e9b4"
 REDHAT_LIKE = {
     "redhat",
@@ -369,15 +368,15 @@ def install(
 
 @task(
     help={
+        "emane-version": "version of emane install",
         "verbose": "enable verbose",
-        "local": "used determine if core is installed locally, default is False",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
     },
 )
-def install_emane(c, verbose=False, local=False, install_type=None):
+def install_emane(c, emane_version, verbose=False, install_type=None):
     """
-    install emane and the python bindings
+    install emane python bindings into the core virtual environment
     """
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
@@ -405,24 +404,19 @@ def install_emane(c, verbose=False, local=False, install_type=None):
     emane_url = "https://github.com/adjacentlink/emane.git"
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
-    with p.start("building emane"):
+    with p.start("setup emane"):
         with c.cd(emane_dir):
-            c.run(f"git checkout {EMANE_CHECKOUT}", hide=hide)
+            c.run(f"git checkout {emane_version}", hide=hide)
             c.run("./autogen.sh", hide=hide)
             c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
+    with p.start("build emane python bindings"):
+        with c.cd(str(emane_python_dir)):
             c.run("make -j$(nproc)", hide=hide)
-    with p.start("installing emane"):
-        with c.cd(emane_dir):
-            c.run("sudo make install", hide=hide)
-    with p.start("installing python binding for core"):
-        if local:
-            with c.cd(str(emane_python_dir)):
-                c.run("sudo python3 -m pip install .", hide=hide)
-        else:
-            with c.cd(DAEMON_DIR):
-                c.run(
-                    f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
-                )
+    with p.start("installing emane python bindings for core virtual environment"):
+        with c.cd(DAEMON_DIR):
+            c.run(
+                f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
+            )
 
 
 @task(

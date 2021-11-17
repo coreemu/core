@@ -24,6 +24,16 @@ Verified:
 * Ubuntu - 18.04, 20.04
 * CentOS - 7.8, 8.0
 
+> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN functionality
+
+Enabling ebtables legacy:
+```shell
+sudo apt install ebtables
+update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+```
+
+> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not function properly
+
 > **NOTE:** CentOS 8 does not have the netem kernel mod available by default
 
 CentOS 8 Enabled netem:
@@ -175,17 +185,18 @@ an installation to your use case.
 ```shell
 cd <repo>
 
-# Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
+#Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
 #
-# Docstring:
-#   install core, poetry, scripts, service, and ospf mdr
+#Docstring:
+#  install core, poetry, scripts, service, and ospf mdr
 #
-# Options:
-#   -d, --dev                          install development mode
-#   -i STRING, --install-type=STRING
-#   -l, --local                        determines if core will install to local system, default is False
-#   -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
-#   -v, --verbose                      enable verbose
+#Options:
+#  -d, --dev                          install development mode
+#  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
+#  -l, --local                        determines if core will install to local system, default is False
+#  -o, --[no-]ospf                    disable ospf installation
+#  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
+#  -v, --verbose                      enable verbose
 
 # install virtual environment
 inv install -p <prefix>
@@ -218,49 +229,16 @@ python3 <script>
 
 ## Installing EMANE
 > **NOTE:** installng emane for the virtual environment is known to work for 1.21+
-> **NOTE:** automated install currently targets 1.25
 
-There is an invoke task to help with installing EMANE, which attempts to
-build EMANE from source, but has issue on systems with older protobuf-compilers.
+The recommended way to install EMANE is using prebuilt packages, otherwise
+you can follow their instructions for installing from source. Installation
+information can be found [here](https://github.com/adjacentlink/emane/wiki/Install).
 
+There is an invoke task to help install the EMANE bindings into the CORE virtual
+environment, when needed.
 ```shell
 cd <CORE_REPO>
-
-# install to virtual environment
 inv install-emane
-
-# install locally to system python3
-inv install-emane -l
-```
-
-Alternatively EMANE can be installed from deb or RPM packages or from source. See the
-[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
-With the caveat that the python bindings need to be installed into CORE's
-virtualenv, unless installed locally.
-
-### Installing EMANE Python Bindings for Virtual Environment
-
-If you need to just install the EMANE python bindings to the CORE virtual
-environment, since you are installing EMANE itself from pre-built packages.
-You can run the following
-
-Leveraging the following wiki:
-[build EMANE](https://github.com/adjacentlink/emane/wiki/Build)
-
-The following would install the EMANE python bindings after being
-successfully built.
-```shell
-# clone and build emane python bindings
-git clone https://github.com/adjacentlink/emane.git
-cd emane
-./autogen.sh
-PYTHON=python3 ./configure --prefix=/usr
-cd src/python
-make
-
-# install to core virtual environment
-cd <CORE_REPO>/daemon
-poetry run pip install <EMANE_REPO>/src/python
 ```
 
 ## Using Invoke Tasks
@@ -272,15 +250,13 @@ inv --list
 
 Available tasks:
 
-  daemon            start core-daemon
-  install           install core, poetry, scripts, service, and ospf mdr
-  install-emane     install emane and the python bindings
-  install-scripts   install core script files, modified to leverage virtual environment
-  install-service   install systemd core service
-  test              run core tests
-  test-emane        run core emane tests
-  test-mock         run core tests using mock to avoid running as sudo
-  uninstall         uninstall core, scripts, service, virtual environment, and clean build directory
+  install         install core, poetry, scripts, service, and ospf mdr
+  install-emane   install emane python bindings into the core virtual environment
+  reinstall       run the uninstall task, get latest from specified branch, and run install task
+  test            run core tests
+  test-emane      run core emane tests
+  test-mock       run core tests using mock to avoid running as sudo
+  uninstall       uninstall core, scripts, service, virtual environment, and clean build directory
 ```
 
 Print help for a given task:
@@ -293,7 +269,10 @@ Docstring:
   install core, poetry, scripts, service, and ospf mdr
 
 Options:
-  -d, --dev                    install development mode
-  -p STRING, --prefix=STRING   prefix where scripts are installed, default is /usr/local
-  -v, --verbose                enable verbose
+  -d, --dev                          install development mode
+  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
+  -l, --local                        determines if core will install to local system, default is False
+  -o, --[no-]ospf                    disable ospf installation
+  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
+  -v, --verbose                      enable verbose
 ```
