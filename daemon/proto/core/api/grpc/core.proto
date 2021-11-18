@@ -466,6 +466,7 @@ message GetInterfacesResponse {
 
 message ExecuteScriptRequest {
     string script = 1;
+    string args = 2;
 }
 
 message ExecuteScriptResponse {

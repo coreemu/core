@@ -3,7 +3,6 @@ import logging
 import os
 import re
 import tempfile
-import threading
 import time
 from concurrent import futures
 from pathlib import Path
@@ -1236,13 +1235,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def ExecuteScript(self, request, context):
         existing_sessions = set(self.coreemu.sessions.keys())
         file_path = Path(request.script)
-        thread = threading.Thread(
-            target=utils.execute_file,
-            args=(file_path, {"coreemu": self.coreemu}),
-            daemon=True,
-        )
-        thread.start()
-        thread.join()
+        utils.execute_script(self.coreemu, file_path, request.args)
         current_sessions = set(self.coreemu.sessions.keys())
         new_sessions = list(current_sessions.difference(existing_sessions))
         new_session = -1

@@ -801,8 +801,8 @@ class CoreClient:
         )
         return config
 
-    def execute_script(self, script) -> None:
-        session_id = self.client.execute_script(script)
+    def execute_script(self, script: str, options: str) -> None:
+        session_id = self.client.execute_script(script, options)
         logger.info("execute python script %s", session_id)
         if session_id != -1:
             self.join_session(session_id)

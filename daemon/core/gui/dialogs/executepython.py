@@ -86,5 +86,5 @@ class ExecutePythonDialog(Dialog):
         file = self.file_entry.get()
         options = self.option_entry.get()
         logger.info("Execute %s with options %s", file, options)
-        self.app.core.execute_script(file)
+        self.app.core.execute_script(file, options)
         self.destroy()

@@ -15,6 +15,7 @@ import random
 import shlex
 import shutil
 import sys
+import threading
 from pathlib import Path
 from subprocess import PIPE, STDOUT, Popen
 from typing import (
@@ -39,12 +40,31 @@ from core.errors import CoreCommandError, CoreError
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
+    from core.emulator.coreemu import CoreEmu
     from core.emulator.session import Session
     from core.nodes.base import CoreNode
 T = TypeVar("T")
 
 DEVNULL = open(os.devnull, "wb")
 IFACE_CONFIG_FACTOR: int = 1000
+
+
+def execute_script(coreemu: "CoreEmu", file_path: Path, args: str) -> None:
+    """
+    Provides utility function to execute a python script in context of the
+    provide coreemu instance.
+
+    :param coreemu: coreemu to provide to script
+    :param file_path: python script to execute
+    :param args: args to provide script
+    :return: nothing
+    """
+    sys.argv = shlex.split(args)
+    thread = threading.Thread(
+        target=execute_file, args=(file_path, {"coreemu": coreemu}), daemon=True
+    )
+    thread.start()
+    thread.join()
 
 
 def execute_file(

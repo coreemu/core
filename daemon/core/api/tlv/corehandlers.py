@@ -3,7 +3,6 @@ socket server request handlers leveraged by core servers.
 """
 
 import logging
-import shlex
 import shutil
 import socketserver
 import sys
@@ -935,9 +934,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if execute_server:
             try:
                 logger.info("executing: %s", execute_server)
+                old_session_ids = set()
                 if message.flags & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
-                sys.argv = shlex.split(execute_server)
                 file_path = Path(sys.argv[0])
                 if file_path.suffix == ".xml":
                     session = self.coreemu.create_session()
@@ -947,13 +946,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         self.coreemu.delete_session(session.id)
                         raise
                 else:
-                    thread = threading.Thread(
-                        target=utils.execute_file,
-                        args=(file_path, {"coreemu": self.coreemu}),
-                        daemon=True,
-                    )
-                    thread.start()
-                    thread.join()
+                    utils.execute_script(self.coreemu, file_path, execute_server)
 
                 if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(self.coreemu.sessions.keys())

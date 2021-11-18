@@ -978,14 +978,15 @@ class CoreGrpcClient:
         response = self.stub.GetEmaneEventChannel(request)
         return wrappers.EmaneEventChannel.from_proto(response)
 
-    def execute_script(self, script: str) -> Optional[int]:
+    def execute_script(self, script: str, args: str) -> Optional[int]:
         """
         Executes a python script given context of the current CoreEmu object.
 
         :param script: script to execute
+        :param args: arguments to provide to script
         :return: create session id for script executed
         """
-        request = ExecuteScriptRequest(script=script)
+        request = ExecuteScriptRequest(script=script, args=args)
         response = self.stub.ExecuteScript(request)
         return response.session_id if response.session_id else None
 
