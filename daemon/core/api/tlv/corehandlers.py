@@ -3,6 +3,7 @@ socket server request handlers leveraged by core servers.
 """
 
 import logging
+import shlex
 import shutil
 import socketserver
 import sys
@@ -937,6 +938,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 old_session_ids = set()
                 if message.flags & MessageFlags.STRING.value:
                     old_session_ids = set(self.coreemu.sessions.keys())
+                sys.argv = shlex.split(execute_server)
                 file_path = Path(sys.argv[0])
                 if file_path.suffix == ".xml":
                     session = self.coreemu.create_session()
