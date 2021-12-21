@@ -296,6 +296,16 @@ class LinuxNetClient:
         """
         self.run(f"{IP} link set {name} type bridge ageing_time {value}")
 
+    def set_mtu(self, name: str, value: int) -> None:
+        """
+        Sets the mtu value for a device.
+
+        :param name: name of device to set value for
+        :param value: mtu value to set
+        :return: nothing
+        """
+        self.run(f"{IP} link set {name} mtu {value}")
+
 
 class OvsNetClient(LinuxNetClient):
     """

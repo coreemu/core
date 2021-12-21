@@ -176,12 +176,20 @@ class PhysicalNode(CoreNodeBase):
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
-            _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
+            _, remote_tap = self.session.distributed.create_gre_tunnel(
+                net, self.server, iface_data.mtu
+            )
             self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
             return remote_tap
         else:
             # this is reached when configuring services (self.up=False)
-            iface = GreTap(node=self, name=name, session=self.session, start=False)
+            iface = GreTap(
+                node=self,
+                name=name,
+                session=self.session,
+                start=False,
+                mtu=iface_data.mtu,
+            )
             self.adopt_iface(iface, iface_id, iface_data.mac, ips)
             return iface
 

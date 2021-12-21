@@ -290,12 +290,14 @@ class CoreNetwork(CoreNetworkBase):
 
     def startup(self) -> None:
         """
-        Linux bridge starup logic.
+        Linux bridge startup logic.
 
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
         self.net_client.create_bridge(self.brname)
+        if self.mtu > 0:
+            self.net_client.set_mtu(self.brname, self.mtu)
         self.has_nftables_chain = False
         self.up = True
         nft_queue.start(self)
@@ -584,6 +586,7 @@ class GreTapBridge(CoreNetwork):
                 localip=localip,
                 ttl=ttl,
                 key=self.grekey,
+                mtu=self.mtu,
             )
 
     def startup(self) -> None:
@@ -619,7 +622,7 @@ class GreTapBridge(CoreNetwork):
         :return: nothing
         """
         if self.gretap:
-            raise ValueError(f"gretap already exists for {self.name}")
+            raise CoreError(f"gretap already exists for {self.name}")
         remoteip = ips[0].split("/")[0]
         localip = None
         if len(ips) > 1:
@@ -630,6 +633,7 @@ class GreTapBridge(CoreNetwork):
             localip=localip,
             ttl=self.ttl,
             key=self.grekey,
+            mtu=self.mtu,
         )
         self.attach(self.gretap)
 

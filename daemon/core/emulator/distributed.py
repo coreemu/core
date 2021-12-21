@@ -187,6 +187,7 @@ class DistributedController:
 
         :return: nothing
         """
+        mtu = self.session.options.get_config_int("mtu")
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
             if not isinstance(node, CoreNetwork):
@@ -195,17 +196,17 @@ class DistributedController:
                 continue
             for name in self.servers:
                 server = self.servers[name]
-                self.create_gre_tunnel(node, server)
+                self.create_gre_tunnel(node, server, mtu)
 
     def create_gre_tunnel(
-        self, node: CoreNetwork, server: DistributedServer
+        self, node: CoreNetwork, server: DistributedServer, mtu: int
     ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
 
         :param node: node to create gre tunnel for
-        :param server: server to create
-            tunnel for
+        :param server: server to create tunnel for
+        :param mtu: mtu for gre taps
         :return: local and remote gre taps created for tunnel
         """
         host = server.host
@@ -215,14 +216,14 @@ class DistributedController:
             return tunnel
         # local to server
         logger.info("local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key)
-        local_tap = GreTap(session=self.session, remoteip=host, key=key)
+        local_tap = GreTap(session=self.session, remoteip=host, key=key, mtu=mtu)
         local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
         # server to local
         logger.info(
             "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
         )
         remote_tap = GreTap(
-            session=self.session, remoteip=self.address, key=key, server=server
+            session=self.session, remoteip=self.address, key=key, server=server, mtu=mtu
         )
         remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
         # save tunnels for shutdown

@@ -378,6 +378,9 @@ class Veth(CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         self.net_client.create_veth(self.localname, self.name)
+        if self.mtu > 0:
+            self.net_client.set_mtu(self.name, self.mtu)
+            self.net_client.set_mtu(self.localname, self.mtu)
         self.net_client.device_up(self.localname)
         self.up = True
 
@@ -455,12 +458,10 @@ class TunTap(CoreInterface):
         """
         if not self.up:
             return
-
         try:
             self.node.node_net_client.device_flush(self.name)
         except CoreCommandError:
             logger.exception("error shutting down tunnel tap")
-
         self.up = False
 
     def waitfor(
@@ -584,7 +585,7 @@ class GreTap(CoreInterface):
         node: "CoreNode" = None,
         name: str = None,
         session: "Session" = None,
-        mtu: int = 1458,
+        mtu: int = DEFAULT_MTU,
         remoteip: str = None,
         _id: int = None,
         localip: str = None,
@@ -622,6 +623,8 @@ class GreTap(CoreInterface):
         if remoteip is None:
             raise CoreError("missing remote IP required for GRE TAP device")
         self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
+        if self.mtu > 0:
+            self.net_client.set_mtu(self.localname, self.mtu)
         self.net_client.device_up(self.localname)
         self.up = True
 

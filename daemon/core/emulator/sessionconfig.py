@@ -40,6 +40,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
             id="link_interval", default="1", label="EMANE Link Check Interval (sec)"
         ),
         ConfigInt(id="link_timeout", default="4", label="EMANE Link Timeout (sec)"),
+        ConfigInt(id="mtu", default="0", label="MTU for All Devices"),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 

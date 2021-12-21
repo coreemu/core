@@ -46,7 +46,7 @@ from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import CoreInterface
+from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
@@ -253,7 +253,12 @@ class Session:
         node2 = self.get_node(node2_id, NodeBase)
         iface1 = None
         iface2 = None
-
+        # set mtu
+        mtu = self.options.get_config_int("mtu") or DEFAULT_MTU
+        if iface1_data:
+            iface1_data.mtu = mtu
+        if iface2_data:
+            iface2_data.mtu = mtu
         # wireless link
         if link_type == LinkTypes.WIRELESS:
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
@@ -567,12 +572,18 @@ class Session:
                 service_class = self.service_manager.get_service(name)
                 node.add_config_service(service_class)
 
+        # set network mtu, if configured
+        mtu = self.options.get_config_int("mtu")
+        if isinstance(node, CoreNetworkBase) and mtu > 0:
+            node.mtu = mtu
+
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
             model_class = self.emane.get_model(options.emane)
             node.model = model_class(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
+
         # set default wlan config if needed
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(_id, BasicRangeModel.name)
