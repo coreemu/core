@@ -33,25 +33,28 @@ class CoreInterface:
     def __init__(
         self,
         session: "Session",
-        node: "CoreNode",
         name: str,
         localname: str,
-        mtu: int,
+        mtu: int = DEFAULT_MTU,
         server: "DistributedServer" = None,
+        node: "CoreNode" = None,
     ) -> None:
         """
         Creates a CoreInterface instance.
 
         :param session: core session instance
-        :param node: node for interface
         :param name: interface name
         :param localname: interface local name
         :param mtu: mtu value
-        :param server: remote server node
-            will run on, default is None for localhost
+        :param server: remote server node will run on, default is None for localhost
+        :param node: node for interface
         """
+        if len(name) >= 16:
+            raise CoreError(f"interface name ({name}) too long, max 16")
+        if len(localname) >= 16:
+            raise CoreError(f"interface local name ({localname}) too long, max 16")
         self.session: "Session" = session
-        self.node: "CoreNode" = node
+        self.node: Optional["CoreNode"] = node
         self.name: str = name
         self.localname: str = localname
         self.up: bool = False
@@ -128,7 +131,6 @@ class CoreInterface:
         if self.net:
             self.detachnet()
             self.net = None
-
         net.attach(self)
         self.net = net
 
@@ -279,11 +281,9 @@ class CoreInterface:
         logger.debug("setting param: %s - %s", key, value)
         if value is None or value < 0:
             return False
-
         current_value = self._params.get(key)
         if current_value is not None and current_value == value:
             return False
-
         self._params[key] = value
         return True
 
@@ -342,33 +342,32 @@ class Veth(CoreInterface):
     Provides virtual ethernet functionality for core nodes.
     """
 
-    def __init__(
-        self,
-        session: "Session",
-        node: "CoreNode",
-        name: str,
-        localname: str,
-        mtu: int = DEFAULT_MTU,
-        server: "DistributedServer" = None,
-        start: bool = True,
-    ) -> None:
+    def adopt_node(self, iface_id: int, name: str, start: bool) -> None:
         """
-        Creates a VEth instance.
+        Adopt this interface to the provided node, configuring and associating
+        with the node as needed.
 
-        :param session: core session instance
-        :param node: related core node
-        :param name: interface name
-        :param localname: interface local name
-        :param mtu: interface mtu
-        :param server: remote server node
-            will run on, default is None for localhost
-        :param start: start flag
-        :raises CoreCommandError: when there is a command exception
+        :param iface_id: interface id for node
+        :param name: name of interface fo rnode
+        :param start: True to start interface, False otherwise
+        :return: nothing
         """
-        # note that net arg is ignored
-        super().__init__(session, node, name, localname, mtu, server)
         if start:
             self.startup()
+            self.net_client.device_ns(self.name, str(self.node.pid))
+            self.node.node_net_client.checksums_off(self.name)
+            self.flow_id = self.node.node_net_client.get_ifindex(self.name)
+            logger.debug("interface flow index: %s - %s", self.name, self.flow_id)
+            mac = self.node.node_net_client.get_mac(self.name)
+            logger.debug("interface mac: %s - %s", self.name, mac)
+            self.set_mac(mac)
+            self.node.node_net_client.device_name(self.name, name)
+        self.name = name
+        try:
+            self.node.add_iface(self, iface_id)
+        except CoreError as e:
+            self.shutdown()
+            raise e
 
     def startup(self) -> None:
         """
@@ -409,32 +408,6 @@ class TunTap(CoreInterface):
     """
     TUN/TAP virtual device in TAP mode
     """
-
-    def __init__(
-        self,
-        session: "Session",
-        node: "CoreNode",
-        name: str,
-        localname: str,
-        mtu: int = DEFAULT_MTU,
-        server: "DistributedServer" = None,
-        start: bool = True,
-    ) -> None:
-        """
-        Create a TunTap instance.
-
-        :param session: core session instance
-        :param node: related core node
-        :param name: interface name
-        :param localname: local interface name
-        :param mtu: interface mtu
-        :param server: remote server node
-            will run on, default is None for localhost
-        :param start: start flag
-        """
-        super().__init__(session, node, name, localname, mtu, server)
-        if start:
-            self.startup()
 
     def startup(self) -> None:
         """
@@ -582,47 +555,53 @@ class GreTap(CoreInterface):
 
     def __init__(
         self,
+        session: "Session",
+        remoteip: str,
+        key: int = None,
         node: "CoreNode" = None,
-        name: str = None,
-        session: "Session" = None,
         mtu: int = DEFAULT_MTU,
-        remoteip: str = None,
         _id: int = None,
         localip: str = None,
         ttl: int = 255,
-        key: int = None,
-        start: bool = True,
         server: "DistributedServer" = None,
     ) -> None:
         """
         Creates a GreTap instance.
 
-        :param node: related core node
-        :param name: interface name
         :param session: core session instance
-        :param mtu: interface mtu
         :param remoteip: remote address
+        :param key: gre tap key
+        :param node: related core node
+        :param mtu: interface mtu
         :param _id: object id
         :param localip: local address
         :param ttl: ttl value
-        :param key: gre tap key
-        :param start: start flag
         :param server: remote server node
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
         if _id is None:
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF
-        self.id = _id
+        self.id: int = _id
         sessionid = session.short_session_id()
         localname = f"gt.{self.id}.{sessionid}"
-        super().__init__(session, node, name, localname, mtu, server)
-        self.transport_type = TransportType.RAW
-        if not start:
-            return
-        if remoteip is None:
-            raise CoreError("missing remote IP required for GRE TAP device")
-        self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
+        name = f"{localname}p"
+        super().__init__(session, name, localname, mtu, server, node)
+        self.transport_type: TransportType = TransportType.RAW
+        self.remote_ip: str = remoteip
+        self.ttl: int = ttl
+        self.key: Optional[int] = key
+        self.local_ip: Optional[str] = localip
+
+    def startup(self) -> None:
+        """
+        Startup logic for a GreTap.
+
+        :return: nothing
+        """
+        self.net_client.create_gretap(
+            self.localname, self.remote_ip, self.local_ip, self.ttl, self.key
+        )
         if self.mtu > 0:
             self.net_client.set_mtu(self.localname, self.mtu)
         self.net_client.device_up(self.localname)

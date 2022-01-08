@@ -95,14 +95,14 @@ class LinuxNetClient:
         """
         return self.run(f"cat /sys/class/net/{device}/address")
 
-    def get_ifindex(self, device: str) -> str:
+    def get_ifindex(self, device: str) -> int:
         """
         Retrieve ifindex for a given device.
 
         :param device: device to get ifindex for
         :return: ifindex
         """
-        return self.run(f"cat /sys/class/net/{device}/ifindex")
+        return int(self.run(f"cat /sys/class/net/{device}/ifindex"))
 
     def device_ns(self, device: str, namespace: str) -> None:
         """

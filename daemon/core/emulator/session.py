@@ -1496,6 +1496,7 @@ class Session:
                 mac=utils.random_mac(),
                 ip4=ip4,
                 ip4_mask=ip4_mask,
+                mtu=DEFAULT_MTU,
             )
             iface = node.new_iface(control_net, iface_data)
             iface.control = True

@@ -484,21 +484,15 @@ class CoreNetwork(CoreNetworkBase):
             _id = f"{self.id:x}"
         except TypeError:
             _id = str(self.id)
-
         try:
             net_id = f"{net.id:x}"
         except TypeError:
             net_id = str(net.id)
-
         localname = f"veth{_id}.{net_id}.{sessionid}"
-        if len(localname) >= 16:
-            raise ValueError(f"interface local name {localname} too long")
-
         name = f"veth{net_id}.{_id}.{sessionid}"
-        if len(name) >= 16:
-            raise ValueError(f"interface name {name} too long")
-
-        iface = Veth(self.session, None, name, localname, start=self.up)
+        iface = Veth(self.session, name, localname)
+        if self.up:
+            iface.startup()
         self.attach(iface)
         if net.up and net.brname:
             iface.net_client.set_iface_master(net.brname, iface.name)
@@ -578,14 +572,14 @@ class GreTapBridge(CoreNetwork):
         self.localip: Optional[str] = localip
         self.ttl: int = ttl
         self.gretap: Optional[GreTap] = None
-        if remoteip is not None:
+        if self.remoteip is not None:
             self.gretap = GreTap(
+                session,
+                remoteip,
+                key=self.grekey,
                 node=self,
-                session=session,
-                remoteip=remoteip,
                 localip=localip,
                 ttl=ttl,
-                key=self.grekey,
                 mtu=self.mtu,
             )
 
@@ -597,6 +591,7 @@ class GreTapBridge(CoreNetwork):
         """
         super().startup()
         if self.gretap:
+            self.gretap.startup()
             self.attach(self.gretap)
 
     def shutdown(self) -> None:
@@ -628,13 +623,14 @@ class GreTapBridge(CoreNetwork):
         if len(ips) > 1:
             localip = ips[1].split("/")[0]
         self.gretap = GreTap(
-            session=self.session,
-            remoteip=remoteip,
+            self.session,
+            remoteip,
+            key=self.grekey,
             localip=localip,
             ttl=self.ttl,
-            key=self.grekey,
             mtu=self.mtu,
         )
+        self.startup()
         self.attach(self.gretap)
 
     def setkey(self, key: int, iface_data: InterfaceData) -> None:

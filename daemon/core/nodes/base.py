@@ -712,9 +712,7 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             return super().next_iface_id()
 
-    def newveth(
-        self, iface_id: int = None, ifname: str = None, mtu: int = DEFAULT_MTU
-    ) -> int:
+    def newveth(self, iface_id: int = None, ifname: str = None, mtu: int = None) -> int:
         """
         Create a new interface.
 
@@ -724,6 +722,7 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         with self.lock:
+            mtu = mtu if mtu is not None else DEFAULT_MTU
             iface_id = iface_id if iface_id is not None else self.next_iface_id()
             ifname = ifname if ifname is not None else f"eth{iface_id}"
             sessionid = self.session.short_session_id()
@@ -732,32 +731,9 @@ class CoreNode(CoreNodeBase):
             except TypeError:
                 suffix = f"{self.id}.{iface_id}.{sessionid}"
             localname = f"veth{suffix}"
-            if len(localname) >= 16:
-                raise CoreError(f"interface local name ({localname}) too long")
             name = f"{localname}p"
-            if len(name) >= 16:
-                raise CoreError(f"interface name ({name}) too long")
-            veth = Veth(self.session, self, name, localname, mtu, self.server, self.up)
-            if self.up:
-                self.net_client.device_ns(veth.name, str(self.pid))
-                self.node_net_client.device_name(veth.name, ifname)
-                self.node_net_client.checksums_off(ifname)
-            veth.name = ifname
-            if self.up:
-                flow_id = self.node_net_client.get_ifindex(veth.name)
-                veth.flow_id = int(flow_id)
-                logger.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                mac = self.node_net_client.get_mac(veth.name)
-                logger.debug("interface mac: %s - %s", veth.name, mac)
-                veth.set_mac(mac)
-            try:
-                # add network interface to the node. If unsuccessful, destroy the
-                # network interface and raise exception.
-                self.add_iface(veth, iface_id)
-            except CoreError as e:
-                veth.shutdown()
-                del veth
-                raise e
+            veth = Veth(self.session, name, localname, mtu, self.server, self)
+            veth.adopt_node(iface_id, ifname, self.up)
             return iface_id
 
     def newtuntap(self, iface_id: int = None, ifname: str = None) -> int:
@@ -774,12 +750,13 @@ class CoreNode(CoreNodeBase):
             sessionid = self.session.short_session_id()
             localname = f"tap{self.id}.{iface_id}.{sessionid}"
             name = ifname
-            tuntap = TunTap(self.session, self, name, localname, start=self.up)
+            tuntap = TunTap(self.session, name, localname, node=self)
+            if self.up:
+                tuntap.startup()
             try:
                 self.add_iface(tuntap, iface_id)
             except CoreError as e:
                 tuntap.shutdown()
-                del tuntap
                 raise e
             return iface_id
 

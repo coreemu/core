@@ -14,7 +14,7 @@ from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import CoreNetwork, GreTap
+from core.nodes.network import CoreNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -173,25 +173,11 @@ class PhysicalNode(CoreNodeBase):
         name = iface_data.name
         if name is None:
             name = f"gt{iface_id}"
-        if self.up:
-            # this is reached when this node is linked to a network node
-            # tunnel to net not built yet, so build it now and adopt it
-            _, remote_tap = self.session.distributed.create_gre_tunnel(
-                net, self.server, iface_data.mtu
-            )
-            self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
-            return remote_tap
-        else:
-            # this is reached when configuring services (self.up=False)
-            iface = GreTap(
-                node=self,
-                name=name,
-                session=self.session,
-                start=False,
-                mtu=iface_data.mtu,
-            )
-            self.adopt_iface(iface, iface_id, iface_data.mac, ips)
-            return iface
+        _, remote_tap = self.session.distributed.create_gre_tunnel(
+            net, self.server, iface_data.mtu, self.up
+        )
+        self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
+        return remote_tap
 
     def privatedir(self, dir_path: Path) -> None:
         if not str(dir_path).startswith("/"):
