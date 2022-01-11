@@ -2,7 +2,7 @@
 
 CORE: Common Open Research Emulator
 
-Copyright (c)2005-2021 the Boeing Company.
+Copyright (c)2005-2022 the Boeing Company.
 
 See the LICENSE file included in this distribution.
 
@@ -20,27 +20,16 @@ The following should get you up and running on Ubuntu 18+ and CentOS 7+
 from a clean install, it will prompt you for sudo password. This would
 install CORE into a python3 virtual environment and install
 [OSPF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr) from source.
-For more details on installation see [here](https://coreemu.github.io/core/install.html).
+For more detailed installation see [here](https://coreemu.github.io/core/install.html).
 
 ```shell
 git clone https://github.com/coreemu/core.git
 cd core
-```
-
-Ubuntu:
-```shell
-./install.sh
-```
-
-CentOS:
-```shell
+./setup.sh
+# Ubuntu
+inv install
+# CentOS
 ./install.sh -p /usr
-```
-
-To additionally install EMANE:
-```shell
-reset
-inv install-emane
 ```
 
 ## Documentation & Support

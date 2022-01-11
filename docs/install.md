@@ -105,7 +105,7 @@ Clearing out a current install from 7.0.0+, making sure to provide options
 used for install (`-l` or `-p`).
 ```shell
 cd <CORE_REPO>
-inv uninstall
+inv uninstall <options>
 ```
 
 Previous install was built from source for CORE release older than 7.0.0:
@@ -125,16 +125,29 @@ sudo apt remove core
 ```
 
 ## Automated Install
-The automated install will do the following:
-* install base tools needed for installation
-  * python3, pip, pipx, invoke, poetry
-* installs system dependencies for building core
-* clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
-* installs core into poetry managed virtual environment or locally, if flag is passed
-* installs scripts pointing pointing to appropriate python location based on install type
-* installs systemd service pointing to appropriate python location based on install type
+First we will need to clone and navigate to the CORE repo.
+```shell
+# clone CORE repo
+git clone https://github.com/coreemu/core.git
+cd core
+```
 
-After installation has completed you should be able to run `core-daemon` and `core-gui`.
+First you can use `setup.sh` as a convenience to install tooling for running invoke tasks:
+
+> **NOTE:** `setup.sh` will attempt to determine your OS by way of `/etc/os-release`, currently it supports
+> attempts to install OSs that are debian/redhat like (yum/apt).
+
+* python3, pip, venv
+* pipx 0.16.4 via pip
+* invoke 1.4.1 via pipx
+* poetry 1.1.7 via pipx
+
+Then you can run `inv install <options>`:
+* installs system dependencies for building core
+* installs core into poetry managed virtual environment or locally, if flag is passed
+* installs scripts pointing to appropriate python location based on install type
+* installs systemd service pointing to appropriate python location based on install type
+* clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
 
 > **NOTE:** installing locally comes with its own risks, it can result it potential
 > dependency conflicts with system package manager installed python dependencies
@@ -142,28 +155,47 @@ After installation has completed you should be able to run `core-daemon` and `co
 > **NOTE:** provide a prefix that will be found on path when running as sudo,
 > if the default prefix /usr/local will not be valid
 
-`install.sh` will attempt to determine your OS by way of `/etc/os-release`, currently it supports
-attempts to install OSs that are debian/redhat like (yum/apt).
 ```shell
-# make sure pip is the latest version before moving forward
-python3 -m pip install -U pip
+inv -h install
 
-# clone CORE repo
-git clone https://github.com/coreemu/core.git
-cd core
+Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
 
-# script usage: install.sh [-v] [-d] [-l] [-p <prefix>]
-#
-# -v enable verbose install
-# -d enable developer install
-# -l enable local install, not compatible with developer install
-# -p install prefix, defaults to /usr/local
+Docstring:
+  install core, poetry, scripts, service, and ospf mdr
+
+Options:
+  -d, --dev                          install development mode
+  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
+  -l, --local                        determines if core will install to local system, default is False
+  -o, --[no-]ospf                    disable ospf installation
+  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
+  -v, --verbose                      enable verbose
 
 # install core to virtual environment
 ./install.sh -p <prefix>
 
 # install core locally
 ./install.sh -p <prefix> -l
+```
+
+After installation has completed you should be able to run `core-daemon` and `core-gui`.
+
+## Using Invoke Tasks
+The invoke tool installed by way of pipx provides conveniences for running
+CORE tasks to help ensure usage of the create python virtual environment.
+
+```shell
+inv --list
+
+Available tasks:
+
+  install         install core, poetry, scripts, service, and ospf mdr
+  install-emane   install emane python bindings into the core virtual environment
+  reinstall       run the uninstall task, get latest from specified branch, and run install task
+  test            run core tests
+  test-emane      run core emane tests
+  test-mock       run core tests using mock to avoid running as sudo
+  uninstall       uninstall core, scripts, service, virtual environment, and clean build directory
 ```
 
 ### Enabling Service
@@ -183,27 +215,6 @@ an installation to your use case.
 * make sure you have python3 invoke available to leverage `<repo>/tasks.py`
 
 ```shell
-cd <repo>
-
-#Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
-#
-#Docstring:
-#  install core, poetry, scripts, service, and ospf mdr
-#
-#Options:
-#  -d, --dev                          install development mode
-#  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
-#  -l, --local                        determines if core will install to local system, default is False
-#  -o, --[no-]ospf                    disable ospf installation
-#  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
-#  -v, --verbose                      enable verbose
-
-# install virtual environment
-inv install -p <prefix>
-
-# indstall locally
-inv install -p <prefix> -l
-
 # this will print the commands that would be ran for a given installation
 # type without actually running them, they may help in being used as
 # the basis for translating to your OS
@@ -239,40 +250,4 @@ environment, when needed.
 ```shell
 cd <CORE_REPO>
 inv install-emane
-```
-
-## Using Invoke Tasks
-The invoke tool installed by way of pipx provides conveniences for running
-CORE tasks to help ensure usage of the create python virtual environment.
-
-```shell
-inv --list
-
-Available tasks:
-
-  install         install core, poetry, scripts, service, and ospf mdr
-  install-emane   install emane python bindings into the core virtual environment
-  reinstall       run the uninstall task, get latest from specified branch, and run install task
-  test            run core tests
-  test-emane      run core emane tests
-  test-mock       run core tests using mock to avoid running as sudo
-  uninstall       uninstall core, scripts, service, virtual environment, and clean build directory
-```
-
-Print help for a given task:
-```shell
-inv -h install
-
-Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
-
-Docstring:
-  install core, poetry, scripts, service, and ospf mdr
-
-Options:
-  -d, --dev                          install development mode
-  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
-  -l, --local                        determines if core will install to local system, default is False
-  -o, --[no-]ospf                    disable ospf installation
-  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
-  -v, --verbose                      enable verbose
 ```
