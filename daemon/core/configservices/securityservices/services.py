@@ -1,8 +1,7 @@
 from typing import Any, Dict, List
 
-from core.config import Configuration
+from core.config import ConfigString, Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
-from core.emulator.enumerations import ConfigDataTypes
 
 GROUP_NAME: str = "Security"
 
@@ -19,24 +18,9 @@ class VpnClient(ConfigService):
     shutdown: List[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = [
-        Configuration(
-            _id="keydir",
-            _type=ConfigDataTypes.STRING,
-            label="Key Dir",
-            default="/etc/core/keys",
-        ),
-        Configuration(
-            _id="keyname",
-            _type=ConfigDataTypes.STRING,
-            label="Key Name",
-            default="client1",
-        ),
-        Configuration(
-            _id="server",
-            _type=ConfigDataTypes.STRING,
-            label="Server",
-            default="10.0.2.10",
-        ),
+        ConfigString(id="keydir", label="Key Dir", default="/etc/core/keys"),
+        ConfigString(id="keyname", label="Key Name", default="client1"),
+        ConfigString(id="server", label="Server", default="10.0.2.10"),
     ]
     modes: Dict[str, Dict[str, str]] = {}
 
@@ -53,24 +37,9 @@ class VpnServer(ConfigService):
     shutdown: List[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = [
-        Configuration(
-            _id="keydir",
-            _type=ConfigDataTypes.STRING,
-            label="Key Dir",
-            default="/etc/core/keys",
-        ),
-        Configuration(
-            _id="keyname",
-            _type=ConfigDataTypes.STRING,
-            label="Key Name",
-            default="server",
-        ),
-        Configuration(
-            _id="subnet",
-            _type=ConfigDataTypes.STRING,
-            label="Subnet",
-            default="10.0.200.0",
-        ),
+        ConfigString(id="keydir", label="Key Dir", default="/etc/core/keys"),
+        ConfigString(id="keyname", label="Key Name", default="server"),
+        ConfigString(id="subnet", label="Subnet", default="10.0.200.0"),
     ]
     modes: Dict[str, Dict[str, str]] = {}
 

@@ -236,7 +236,7 @@ max-lease-time 7200;
 ddns-update-style none;
 """
         for iface in node.get_ifaces(control=False):
-            cfg += "\n".join(map(cls.subnetentry, iface.ips()))
+            cfg += "\n".join(map(cls.subnetentry, iface.ip4s))
             cfg += "\n"
         return cfg
 
@@ -246,15 +246,13 @@ ddns-update-style none;
         Generate a subnet declaration block given an IPv4 prefix string
         for inclusion in the dhcpd3 config file.
         """
-        address = str(ip.ip)
-        if netaddr.valid_ipv6(address):
+        if ip.size == 1:
             return ""
-        else:
-            # divide the address space in half
-            index = (ip.size - 2) / 2
-            rangelow = ip[index]
-            rangehigh = ip[-2]
-            return """
+        # divide the address space in half
+        index = (ip.size - 2) / 2
+        rangelow = ip[index]
+        rangehigh = ip[-2]
+        return """
 subnet %s netmask %s {
   pool {
     range %s %s;
@@ -263,12 +261,12 @@ subnet %s netmask %s {
   }
 }
 """ % (
-                ip.ip,
-                ip.netmask,
-                rangelow,
-                rangehigh,
-                address,
-            )
+            ip.cidr.ip,
+            ip.netmask,
+            rangelow,
+            rangehigh,
+            ip.ip,
+        )
 
 
 class DhcpClientService(UtilService):

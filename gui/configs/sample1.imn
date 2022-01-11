@@ -106,54 +106,6 @@ node n5 {
     interface-peer {eth0 n10}
     interface-peer {eth1 n15}
     services {zebra OSPFv2 OSPFv3MDR IPForward}
-    custom-config {
-	custom-config-id service:zebra
-	custom-command zebra
-	config {
-	files=('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh', )
-	}
-    }
-    custom-config {
-	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
-	custom-command /usr/local/etc/quagga/Quagga.conf
-	config {
-	interface eth0
-	  ip address 10.0.0.5/32
-	  ipv6 address a::3/128
-	  ipv6 ospf6 instance-id 65
-	  ipv6 ospf6 hello-interval 2
-	  ipv6 ospf6 dead-interval 6
-	  ipv6 ospf6 retransmit-interval 5
-	  ipv6 ospf6 network manet-designated-router
-	  ipv6 ospf6 diffhellos
-	  ipv6 ospf6 adjacencyconnectivity uniconnected
-	  ipv6 ospf6 lsafullness mincostlsa
-	!
-	interface eth1
-	  ip address 10.0.6.2/24
-	  !ip ospf hello-interval 2
-	  !ip ospf dead-interval 6
-	  !ip ospf retransmit-interval 5
-	  !ip ospf network point-to-point
-	  ipv6 address a:6::2/64
-	!
-	router ospf
-	  router-id 10.0.0.5
-	  network 10.0.0.5/32 area 0
-	  network 10.0.6.0/24 area 0
-	  redistribute connected metric-type 1
-	  redistribute ospf6 metric-type 1
-	!
-	router ospf6
-	  router-id 10.0.0.5
-	  interface eth0 area 0.0.0.0
-	  redistribute connected
-	  redistribute ospf
-	!
-	
-	
-	}
-    }
 }
 
 node n6 {

@@ -18,6 +18,8 @@ from core.gui.graph.node import CanvasNode, ShadowNode
 from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType, is_draw_shape, is_marker
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.manager import CanvasManager
@@ -101,10 +103,15 @@ class CanvasGraph(tk.Canvas):
         """
         Bind any mouse events or hot keys to the matching action
         """
+        self.bind("<Control-c>", self.copy_selected)
+        self.bind("<Control-v>", self.paste_selected)
+        self.bind("<Control-x>", self.cut_selected)
+        self.bind("<Control-d>", self.delete_selected)
+        self.bind("<Control-h>", self.hide_selected)
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<Delete>", self.press_delete)
+        self.bind("<Delete>", self.delete_selected)
         self.bind("<Control-1>", self.ctrl_click)
         self.bind("<Double-Button-1>", self.double_click)
         self.bind("<MouseWheel>", self.zoom)
@@ -184,7 +191,7 @@ class CanvasGraph(tk.Canvas):
         """
         Draw a node or finish drawing an edge according to the current graph mode
         """
-        logging.debug("click release")
+        logger.debug("click release")
         x, y = self.canvas_xy(event)
         if not self.inside_canvas(x, y):
             return
@@ -210,7 +217,7 @@ class CanvasGraph(tk.Canvas):
         else:
             self.focus_set()
             self.selected = self.get_selected(event)
-            logging.debug(
+            logger.debug(
                 "click release selected(%s) mode(%s)", self.selected, self.manager.mode
             )
             if self.manager.mode == GraphMode.EDGE:
@@ -228,7 +235,7 @@ class CanvasGraph(tk.Canvas):
         edge = self.drawing_edge
         self.drawing_edge = None
         # edge dst must be a node
-        logging.debug("current selected: %s", self.selected)
+        logger.debug("current selected: %s", self.selected)
         dst_node = self.nodes.get(self.selected)
         if not dst_node:
             edge.delete()
@@ -275,7 +282,7 @@ class CanvasGraph(tk.Canvas):
         if select_id is not None:
             self.move(select_id, x_offset, y_offset)
 
-    def delete_selected_objects(self) -> None:
+    def delete_selected_objects(self, _event: tk.Event = None) -> None:
         edges = set()
         nodes = []
         for object_id in self.selection:
@@ -305,7 +312,7 @@ class CanvasGraph(tk.Canvas):
         self.selection.clear()
         self.core.deleted_canvas_nodes(nodes)
 
-    def hide_selected_objects(self) -> None:
+    def hide_selected(self, _event: tk.Event = None) -> None:
         for object_id in self.selection:
             #  delete selection box
             selection_id = self.selection[object_id]
@@ -331,8 +338,8 @@ class CanvasGraph(tk.Canvas):
             self.offset[0] * factor + event.x * (1 - factor),
             self.offset[1] * factor + event.y * (1 - factor),
         )
-        logging.debug("ratio: %s", self.ratio)
-        logging.debug("offset: %s", self.offset)
+        logger.debug("ratio: %s", self.ratio)
+        logger.debug("offset: %s", self.offset)
         self.app.statusbar.set_zoom(self.ratio)
         if self.wallpaper:
             self.redraw_wallpaper()
@@ -347,10 +354,10 @@ class CanvasGraph(tk.Canvas):
 
         self.cursor = x, y
         selected = self.get_selected(event)
-        logging.debug("click press(%s): %s", self.cursor, selected)
+        logger.debug("click press(%s): %s", self.cursor, selected)
         x_check = self.cursor[0] - self.offset[0]
         y_check = self.cursor[1] - self.offset[1]
-        logging.debug("click press offset(%s, %s)", x_check, y_check)
+        logger.debug("click press offset(%s, %s)", x_check, y_check)
         is_node = selected in self.nodes
         if self.manager.mode == GraphMode.EDGE and is_node:
             node = self.nodes[selected]
@@ -387,7 +394,7 @@ class CanvasGraph(tk.Canvas):
                     node = self.nodes[selected]
                     self.select_object(node.id)
                     self.selected = selected
-                    logging.debug(
+                    logger.debug(
                         "selected node(%s), coords: (%s, %s)",
                         node.core_node.name,
                         node.core_node.position.x,
@@ -397,7 +404,7 @@ class CanvasGraph(tk.Canvas):
                     shadow_node = self.shadow_nodes[selected]
                     self.select_object(shadow_node.id)
                     self.selected = selected
-                    logging.debug(
+                    logger.debug(
                         "selected shadow node(%s), coords: (%s, %s)",
                         shadow_node.node.core_node.name,
                         shadow_node.node.core_node.position.x,
@@ -418,7 +425,7 @@ class CanvasGraph(tk.Canvas):
         self.cursor = x, y
 
         # handle multiple selections
-        logging.debug("control left click: %s", event)
+        logger.debug("control left click: %s", event)
         selected = self.get_selected(event)
         if (
             selected not in self.selection
@@ -484,17 +491,6 @@ class CanvasGraph(tk.Canvas):
         else:
             if self.select_box and self.manager.mode == GraphMode.SELECT:
                 self.select_box.shape_motion(x, y)
-
-    def press_delete(self, _event: tk.Event) -> None:
-        """
-        delete selected nodes and any data that relates to it
-        """
-        logging.debug("press delete key")
-        if not self.app.core.is_runtime():
-            self.delete_selected_objects()
-            self.app.default_info()
-        else:
-            logging.debug("node deletion is disabled during runtime state")
 
     def double_click(self, event: tk.Event) -> None:
         selected = self.get_selected(event)
@@ -606,10 +602,10 @@ class CanvasGraph(tk.Canvas):
         self.draw_wallpaper(image)
 
     def redraw_canvas(self, dimensions: Tuple[int, int] = None) -> None:
-        logging.debug("redrawing canvas to dimensions: %s", dimensions)
+        logger.debug("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
-        logging.debug("resetting scaling: %s %s", self.ratio, self.offset)
+        logger.debug("resetting scaling: %s %s", self.ratio, self.offset)
         factor = 1 / self.ratio
         self.scale(tk.ALL, self.offset[0], self.offset[1], factor, factor)
         self.move(tk.ALL, -self.offset[0], -self.offset[1])
@@ -628,11 +624,11 @@ class CanvasGraph(tk.Canvas):
 
     def redraw_wallpaper(self) -> None:
         if self.adjust_to_dim.get():
-            logging.debug("drawing wallpaper to canvas dimensions")
+            logger.debug("drawing wallpaper to canvas dimensions")
             self.resize_to_wallpaper()
         else:
             option = ScaleOption(self.scale_option.get())
-            logging.debug("drawing canvas using scaling option: %s", option)
+            logger.debug("drawing canvas using scaling option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
                 self.wallpaper_upper_left()
             elif option == ScaleOption.CENTERED:
@@ -640,7 +636,7 @@ class CanvasGraph(tk.Canvas):
             elif option == ScaleOption.SCALED:
                 self.wallpaper_scaled()
             elif option == ScaleOption.TILED:
-                logging.warning("tiled background not implemented yet")
+                logger.warning("tiled background not implemented yet")
         self.organize()
 
     def organize(self) -> None:
@@ -648,7 +644,7 @@ class CanvasGraph(tk.Canvas):
             self.tag_raise(tag)
 
     def set_wallpaper(self, filename: Optional[str]) -> None:
-        logging.info("setting canvas(%s) background: %s", self.id, filename)
+        logger.info("setting canvas(%s) background: %s", self.id, filename)
         if filename:
             img = Image.open(filename)
             self.wallpaper = img
@@ -671,20 +667,38 @@ class CanvasGraph(tk.Canvas):
         edge.complete(dst)
         return edge
 
-    def copy(self) -> None:
+    def copy_selected(self, _event: tk.Event = None) -> None:
         if self.core.is_runtime():
-            logging.debug("copy is disabled during runtime state")
+            logger.debug("copy is disabled during runtime state")
             return
         if self.selection:
-            logging.debug("to copy nodes: %s", self.selection)
+            logger.debug("to copy nodes: %s", self.selection)
             self.to_copy.clear()
             for node_id in self.selection.keys():
                 canvas_node = self.nodes[node_id]
                 self.to_copy.append(canvas_node)
 
-    def paste(self) -> None:
+    def cut_selected(self, _event: tk.Event = None) -> None:
         if self.core.is_runtime():
-            logging.debug("paste is disabled during runtime state")
+            logger.debug("cut is disabled during runtime state")
+            return
+        self.copy_selected()
+        self.delete_selected()
+
+    def delete_selected(self, _event: tk.Event = None) -> None:
+        """
+        delete selected nodes and any data that relates to it
+        """
+        logger.debug("press delete key")
+        if self.core.is_runtime():
+            logger.debug("node deletion is disabled during runtime state")
+            return
+        self.delete_selected_objects()
+        self.app.default_info()
+
+    def paste_selected(self, _event: tk.Event = None) -> None:
+        if self.core.is_runtime():
+            logger.debug("paste is disabled during runtime state")
             return
         # maps original node canvas id to copy node canvas id
         copy_map = {}
@@ -813,6 +827,7 @@ class CanvasGraph(tk.Canvas):
             wallpaper=wallpaper_path,
             wallpaper_style=self.scale_option.get(),
             fit_image=self.adjust_to_dim.get(),
+            dimensions=self.current_dimensions,
         )
 
     def parse_metadata(self, config: Dict[str, Any]) -> None:
@@ -820,12 +835,15 @@ class CanvasGraph(tk.Canvas):
         self.adjust_to_dim.set(fit_image)
         wallpaper_style = config.get("wallpaper_style", 1)
         self.scale_option.set(wallpaper_style)
+        dimensions = config.get("dimensions")
+        if dimensions:
+            self.redraw_canvas(dimensions)
         wallpaper = config.get("wallpaper")
         if wallpaper:
             wallpaper = Path(wallpaper)
             if not wallpaper.is_file():
                 wallpaper = appconfig.BACKGROUNDS_PATH.joinpath(wallpaper)
-            logging.info("canvas(%s), wallpaper: %s", self.id, wallpaper)
+            logger.info("canvas(%s), wallpaper: %s", self.id, wallpaper)
             if wallpaper.is_file():
                 self.set_wallpaper(str(wallpaper))
             else:

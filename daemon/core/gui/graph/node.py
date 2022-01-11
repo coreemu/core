@@ -24,6 +24,8 @@ from core.gui.graph.edges import CanvasEdge, CanvasWirelessEdge
 from core.gui.graph.tooltip import CanvasTooltip
 from core.gui.images import ImageEnum
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.graph import CanvasGraph
@@ -87,7 +89,7 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
 
     def delete(self) -> None:
-        logging.debug("Delete canvas node for %s", self.core_node)
+        logger.debug("Delete canvas node for %s", self.core_node)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
         self.delete_antennas()
@@ -110,7 +112,7 @@ class CanvasNode:
         """
         delete one antenna
         """
-        logging.debug("Delete an antenna on %s", self.core_node.name)
+        logger.debug("Delete an antenna on %s", self.core_node.name)
         if self.antennas:
             antenna_id = self.antennas.pop()
             self.canvas.delete(antenna_id)
@@ -120,7 +122,7 @@ class CanvasNode:
         """
         delete all antennas
         """
-        logging.debug("Remove all antennas for %s", self.core_node.name)
+        logger.debug("Remove all antennas for %s", self.core_node.name)
         for antenna_id in self.antennas:
             self.canvas.delete(antenna_id)
         self.antennas.clear()
@@ -253,9 +255,11 @@ class CanvasNode:
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if nutils.is_container(self.core_node):
-                self.context.add_command(label="Services", command=self.show_services)
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
+                )
+                self.context.add_command(
+                    label="Services (Deprecated)", command=self.show_services
                 )
             if is_emane:
                 self.context.add_command(
@@ -334,7 +338,7 @@ class CanvasNode:
     def canvas_copy(self) -> None:
         self.canvas.clear_selection()
         self.canvas.select_object(self.id)
-        self.canvas.copy()
+        self.canvas.copy_selected()
 
     def show_config(self) -> None:
         dialog = NodeConfigDialog(self.app, self)
@@ -400,7 +404,7 @@ class CanvasNode:
 
     def update_icon(self, icon_path: str) -> None:
         if not Path(icon_path).exists():
-            logging.error(f"node icon does not exist: {icon_path}")
+            logger.error(f"node icon does not exist: {icon_path}")
             return
         self.core_node.icon = icon_path
         self.image = images.from_file(icon_path, width=images.NODE_SIZE)
@@ -459,10 +463,10 @@ class CanvasNode:
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id
         try:
-            response = self.app.core.client.service_action(
+            result = self.app.core.client.service_action(
                 session_id, self.core_node.id, service, action
             )
-            if not response.result:
+            if not result:
                 self.app.show_error("Service Action Error", "Action Failed!")
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Service Error", e)

@@ -521,7 +521,7 @@ on platform. See the table below for a brief overview of wireless model types.
 
 |Model|Type|Supported Platform(s)|Fidelity|Description|
 |-----|----|---------------------|--------|-----------|
-|Basic|on/off|Linux|Low|Ethernet bridging with ebtables|
+|Basic|on/off|Linux|Low|Ethernet bridging with nftables|
 |EMANE|Plug-in|Linux|High|TAP device connected to EMANE emulator with pluggable MAC and PHY radio types|
 
 To quickly build a wireless network, you can first place several router nodes

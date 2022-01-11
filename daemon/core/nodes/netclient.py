@@ -38,7 +38,7 @@ class LinuxNetClient:
         :param device: device to add route to
         :return: nothing
         """
-        self.run(f"{IP} route add {route} dev {device}")
+        self.run(f"{IP} route replace {route} dev {device}")
 
     def device_up(self, device: str) -> None:
         """
@@ -95,14 +95,14 @@ class LinuxNetClient:
         """
         return self.run(f"cat /sys/class/net/{device}/address")
 
-    def get_ifindex(self, device: str) -> str:
+    def get_ifindex(self, device: str) -> int:
         """
         Retrieve ifindex for a given device.
 
         :param device: device to get ifindex for
         :return: ifindex
         """
-        return self.run(f"cat /sys/class/net/{device}/ifindex")
+        return int(self.run(f"cat /sys/class/net/{device}/ifindex"))
 
     def device_ns(self, device: str, namespace: str) -> None:
         """
@@ -296,6 +296,16 @@ class LinuxNetClient:
         """
         self.run(f"{IP} link set {name} type bridge ageing_time {value}")
 
+    def set_mtu(self, name: str, value: int) -> None:
+        """
+        Sets the mtu value for a device.
+
+        :param name: name of device to set value for
+        :param value: mtu value to set
+        :return: nothing
+        """
+        self.run(f"{IP} link set {name} mtu {value}")
+
 
 class OvsNetClient(LinuxNetClient):
     """
@@ -361,14 +371,15 @@ class OvsNetClient(LinuxNetClient):
                     return True
         return False
 
-    def disable_mac_learning(self, name: str) -> None:
+    def set_mac_learning(self, name: str, value: int) -> None:
         """
-        Disable mac learning for a OVS bridge.
+        Set mac learning for an OVS bridge.
 
         :param name: bridge name
+        :param value: ageing time value
         :return: nothing
         """
-        self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time=0")
+        self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time={value}")
 
 
 def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:

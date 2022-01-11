@@ -22,6 +22,7 @@ from core.gui.statusbar import StatusBar
 from core.gui.themes import PADY
 from core.gui.toolbar import Toolbar
 
+logger = logging.getLogger(__name__)
 WIDTH: int = 1000
 HEIGHT: int = 800
 
@@ -171,7 +172,7 @@ class Application(ttk.Frame):
     def show_grpc_exception(
         self, message: str, e: grpc.RpcError, blocking: bool = False
     ) -> None:
-        logging.exception("app grpc exception", exc_info=e)
+        logger.exception("app grpc exception", exc_info=e)
         dialog = ErrorDialog(self, "GRPC Exception", message, e.details())
         if blocking:
             dialog.show()
@@ -179,7 +180,7 @@ class Application(ttk.Frame):
             self.after(0, lambda: dialog.show())
 
     def show_exception(self, message: str, e: Exception) -> None:
-        logging.exception("app exception", exc_info=e)
+        logger.exception("app exception", exc_info=e)
         self.after(
             0, lambda: ErrorDialog(self, "App Exception", message, str(e)).show()
         )

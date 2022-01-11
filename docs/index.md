@@ -20,15 +20,16 @@ networking scenarios, security studies, and increasing the size of physical test
 
 | Topic | Description|
 |-------|------------|
-|[Architecture](architecture.md)|Overview of the architecture|
 |[Installation](install.md)|How to install CORE and its requirements|
+|[Architecture](architecture.md)|Overview of the architecture|
+|[Node Types](nodetypes.md)|Overview of node types supported within CORE|
 |[GUI](gui.md)|How to use the GUI|
 |[(BETA) Python GUI](pygui.md)|How to use the BETA python based GUI|
 |[Python API](python.md)|Covers how to control core directly using python|
 |[gRPC API](grpc.md)|Covers how control core using gRPC|
 |[Distributed](distributed.md)|Details for running CORE across multiple servers|
-|[Node Types](nodetypes.md)|Overview of node types supported within CORE|
-|[CTRLNET](ctrlnet.md)|How to use control networks to communicate with nodes from host|
+|[Control Network](ctrlnet.md)|How to use control networks to communicate with nodes from host|
+|[Config Services](configservices.md)|Overview of provided config services and creating custom ones|
 |[Services](services.md)|Overview of provided services and creating custom ones|
 |[EMANE](emane.md)|Overview of EMANE integration and integrating custom EMANE models|
 |[Performance](performance.md)|Notes on performance when using CORE|

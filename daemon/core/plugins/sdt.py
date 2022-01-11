@@ -15,6 +15,8 @@ from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
 from core.nodes.network import WlanNode
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
@@ -109,7 +111,7 @@ class Sdt:
             return False
 
         self.seturl()
-        logging.info("connecting to SDT at %s://%s", self.protocol, self.address)
+        logger.info("connecting to SDT at %s://%s", self.protocol, self.address)
         if self.sock is None:
             try:
                 if self.protocol.lower() == "udp":
@@ -119,7 +121,7 @@ class Sdt:
                     # Default to tcp
                     self.sock = socket.create_connection(self.address, 5)
             except IOError:
-                logging.exception("SDT socket connect error")
+                logger.exception("SDT socket connect error")
                 return False
 
         if not self.initialize():
@@ -157,7 +159,7 @@ class Sdt:
             try:
                 self.sock.close()
             except IOError:
-                logging.error("error closing socket")
+                logger.error("error closing socket")
             finally:
                 self.sock = None
 
@@ -191,11 +193,11 @@ class Sdt:
 
         try:
             cmd = f"{cmdstr}\n".encode()
-            logging.debug("sdt cmd: %s", cmd)
+            logger.debug("sdt cmd: %s", cmd)
             self.sock.sendall(cmd)
             return True
         except IOError:
-            logging.exception("SDT connection error")
+            logger.exception("SDT connection error")
             self.sock = None
             self.connected = False
             return False
@@ -250,7 +252,7 @@ class Sdt:
         :param node: node to add
         :return: nothing
         """
-        logging.debug("sdt add node: %s - %s", node.id, node.name)
+        logger.debug("sdt add node: %s - %s", node.id, node.name)
         if not self.connect():
             return
         pos = self.get_node_position(node)
@@ -262,8 +264,8 @@ class Sdt:
         icon = node.icon
         if icon:
             node_type = node.name
-            icon = icon.replace("$CORE_DATA_DIR", CORE_DATA_DIR)
-            icon = icon.replace("$CORE_CONF_DIR", CORE_CONF_DIR)
+            icon = icon.replace("$CORE_DATA_DIR", str(CORE_DATA_DIR))
+            icon = icon.replace("$CORE_CONF_DIR", str(CORE_CONF_DIR))
             self.cmd(f"sprite {node_type} image {icon}")
         self.cmd(
             f'node {node.id} nodeLayer "{NODE_LAYER}" '
@@ -280,7 +282,7 @@ class Sdt:
         :param alt: node altitude
         :return: nothing
         """
-        logging.debug("sdt update node: %s - %s", node.id, node.name)
+        logger.debug("sdt update node: %s - %s", node.id, node.name)
         if not self.connect():
             return
 
@@ -300,7 +302,7 @@ class Sdt:
         :param node_id: node id to delete
         :return: nothing
         """
-        logging.debug("sdt delete node: %s", node_id)
+        logger.debug("sdt delete node: %s", node_id)
         if not self.connect():
             return
         self.cmd(f"delete node,{node_id}")
@@ -315,7 +317,7 @@ class Sdt:
         if not self.connect():
             return
         node = node_data.node
-        logging.debug("sdt handle node update: %s - %s", node.id, node.name)
+        logger.debug("sdt handle node update: %s - %s", node.id, node.name)
         if node_data.message_type == MessageFlags.DELETE:
             self.cmd(f"delete node,{node.id}")
         else:
@@ -356,7 +358,7 @@ class Sdt:
         :param label: label for link
         :return: nothing
         """
-        logging.debug("sdt add link: %s, %s, %s", node1_id, node2_id, network_id)
+        logger.debug("sdt add link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
         if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):
@@ -396,7 +398,7 @@ class Sdt:
         :param network_id: network link is associated with, None otherwise
         :return: nothing
         """
-        logging.debug("sdt delete link: %s, %s, %s", node1_id, node2_id, network_id)
+        logger.debug("sdt delete link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
         if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):
@@ -416,7 +418,7 @@ class Sdt:
         :param label: label to update
         :return: nothing
         """
-        logging.debug("sdt edit link: %s, %s, %s", node1_id, node2_id, network_id)
+        logger.debug("sdt edit link: %s, %s, %s", node1_id, node2_id, network_id)
         if not self.connect():
             return
         if self.wireless_net_check(node1_id) or self.wireless_net_check(node2_id):

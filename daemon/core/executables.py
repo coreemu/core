@@ -7,15 +7,15 @@ SYSCTL: str = "sysctl"
 IP: str = "ip"
 ETHTOOL: str = "ethtool"
 TC: str = "tc"
-EBTABLES: str = "ebtables"
 MOUNT: str = "mount"
 UMOUNT: str = "umount"
 OVS_VSCTL: str = "ovs-vsctl"
 TEST: str = "test"
+NFTABLES: str = "nft"
 
 COMMON_REQUIREMENTS: List[str] = [
     BASH,
-    EBTABLES,
+    NFTABLES,
     ETHTOOL,
     IP,
     MOUNT,

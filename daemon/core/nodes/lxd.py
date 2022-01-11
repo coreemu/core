@@ -1,7 +1,7 @@
 import json
 import logging
-import os
 import time
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Callable, Dict, Optional
 
@@ -11,6 +11,8 @@ from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -57,11 +59,10 @@ class LxdClient:
         args = self.create_cmd(cmd)
         return utils.cmd(args, wait=wait, shell=shell)
 
-    def copy_file(self, source: str, destination: str) -> None:
-        if destination[0] != "/":
-            destination = os.path.join("/root/", destination)
-
-        args = f"lxc file push {source} {self.name}/{destination}"
+    def copy_file(self, src_path: Path, dst_path: Path) -> None:
+        if not str(dst_path).startswith("/"):
+            dst_path = Path("/root/") / dst_path
+        args = f"lxc file push {src_path} {self.name}/{dst_path}"
         self.run(args)
 
 
@@ -73,7 +74,7 @@ class LxcNode(CoreNode):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: str = None,
+        directory: str = None,
         server: DistributedServer = None,
         image: str = None,
     ) -> None:
@@ -83,7 +84,7 @@ class LxcNode(CoreNode):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param nodedir: node directory
+        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
@@ -91,7 +92,7 @@ class LxcNode(CoreNode):
         if image is None:
             image = "ubuntu"
         self.image: str = image
-        super().__init__(session, _id, name, nodedir, server)
+        super().__init__(session, _id, name, directory, server)
 
     def alive(self) -> bool:
         """
@@ -139,81 +140,77 @@ class LxcNode(CoreNode):
         """
         return f"lxc exec {self.name} -- {sh}"
 
-    def privatedir(self, path: str) -> None:
+    def create_dir(self, dir_path: Path) -> None:
         """
         Create a private directory.
 
-        :param path: path to create
+        :param dir_path: path to create
         :return: nothing
         """
-        logging.info("creating node dir: %s", path)
-        args = f"mkdir -p {path}"
+        logger.info("creating node dir: %s", dir_path)
+        args = f"mkdir -p {dir_path}"
         self.cmd(args)
 
-    def mount(self, source: str, target: str) -> None:
+    def mount(self, src_path: Path, target_path: Path) -> None:
         """
         Create and mount a directory.
 
-        :param source: source directory to mount
-        :param target: target directory to create
+        :param src_path: source directory to mount
+        :param target_path: target directory to create
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.debug("mounting source(%s) target(%s)", source, target)
+        logger.debug("mounting source(%s) target(%s)", src_path, target_path)
         raise Exception("not supported")
 
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
         """
         Create a node file with a given mode.
 
-        :param filename: name of file to create
+        :param file_path: name of file to create
         :param contents: contents of file
         :param mode: mode for file
         :return: nothing
         """
-        logging.debug("nodefile filename(%s) mode(%s)", filename, mode)
-
-        directory = os.path.dirname(filename)
+        logger.debug("node(%s) create file(%s) mode(%o)", self.name, file_path, mode)
         temp = NamedTemporaryFile(delete=False)
         temp.write(contents.encode("utf-8"))
         temp.close()
-
-        if directory:
+        temp_path = Path(temp.name)
+        directory = file_path.parent
+        if str(directory) != ".":
             self.cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
-            self.server.remote_put(temp.name, temp.name)
-        self.client.copy_file(temp.name, filename)
-        self.cmd(f"chmod {mode:o} {filename}")
+            self.server.remote_put(temp_path, temp_path)
+        self.client.copy_file(temp_path, file_path)
+        self.cmd(f"chmod {mode:o} {file_path}")
         if self.server is not None:
-            self.host_cmd(f"rm -f {temp.name}")
-        os.unlink(temp.name)
-        logging.debug("node(%s) added file: %s; mode: 0%o", self.name, filename, mode)
+            self.host_cmd(f"rm -f {temp_path}")
+        temp_path.unlink()
+        logger.debug("node(%s) added file: %s; mode: 0%o", self.name, file_path, mode)
 
-    def nodefilecopy(self, filename: str, srcfilename: str, mode: int = None) -> None:
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
 
-        :param filename: file name to copy file to
-        :param srcfilename: file to copy
+        :param dst_path: file name to copy file to
+        :param src_path: file to copy
         :param mode: mode to copy to
         :return: nothing
         """
-        logging.info(
-            "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
+        logger.info(
+            "node file copy file(%s) source(%s) mode(%o)", dst_path, src_path, mode or 0
         )
-        directory = os.path.dirname(filename)
-        self.cmd(f"mkdir -p {directory}")
-
-        if self.server is None:
-            source = srcfilename
-        else:
+        self.cmd(f"mkdir -p {dst_path.parent}")
+        if self.server:
             temp = NamedTemporaryFile(delete=False)
-            source = temp.name
-            self.server.remote_put(source, temp.name)
-
-        self.client.copy_file(source, filename)
-        self.cmd(f"chmod {mode:o} {filename}")
+            temp_path = Path(temp.name)
+            src_path = temp_path
+            self.server.remote_put(src_path, temp_path)
+        self.client.copy_file(src_path, dst_path)
+        if mode is not None:
+            self.cmd(f"chmod {mode:o} {dst_path}")
 
     def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
         super().add_iface(iface, iface_id)

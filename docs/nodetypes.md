@@ -5,18 +5,30 @@
 
 ## Overview
 
-Different node types can be configured in CORE, and each node type has a
-*machine type* that indicates how the node will be represented at run time.
-Different machine types allow for different options.
+Different node types can be used within CORE, each with their own
+tradeoffs and functionality.
 
-## Netns Nodes
+## CORE Nodes
 
-The *netns* machine type is the default. This is for nodes that will be
-backed by Linux network namespaces. This machine type uses very little
-system resources in order to emulate a network. Another reason this is
-designated as the default machine type is because this technology typically
-requires no changes to the kernel; it is available out-of-the-box from the
-latest mainstream Linux distributions.
+CORE nodes are the standard node type typically used in CORE. They are
+backed by Linux network namespaces. They use very little system resources
+in order to emulate a network. They do however share the hosts file system
+as they do not get their own. CORE nodes will have a directory uniquely
+created for them as a place to keep their files and mounted directories
+(`/tmp/pycore.<session id>/<node name.conf`),
+which will usually be wiped and removed upon shutdown.
+
+## Docker Nodes
+
+Docker nodes provide a convenience for running nodes using predefind images
+and filesystems that CORE nodes do not provide. Details for using Docker
+nodes can be found [here](docker.md).
+
+## LXC Nodes
+
+LXC nodes provide a convenience for running nodes using predefind images
+and filesystems that CORE nodes do not provide. Details for using LXC
+nodes can be found [here](lxc.md).
 
 ## Physical Nodes
 

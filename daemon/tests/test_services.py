@@ -1,5 +1,5 @@
 import itertools
-import os
+from pathlib import Path
 
 import pytest
 from mock import MagicMock
@@ -9,8 +9,8 @@ from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
-_PATH = os.path.abspath(os.path.dirname(__file__))
-_SERVICES_PATH = os.path.join(_PATH, "myservices")
+_PATH: Path = Path(__file__).resolve().parent
+_SERVICES_PATH = _PATH / "myservices"
 
 SERVICE_ONE = "MyService"
 SERVICE_TWO = "MyService2"
@@ -64,15 +64,15 @@ class TestServices:
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node(CoreNode)
-        file_name = my_service.configs[0]
-        file_path = node.hostfilename(file_name)
+        file_path = Path(my_service.configs[0])
+        file_path = node.host_path(file_path)
 
         # when
         session.services.create_service_files(node, my_service)
 
         # then
         if not request.config.getoption("mock"):
-            assert os.path.exists(file_path)
+            assert file_path.exists()
 
     def test_service_validate(self, session: Session):
         # given

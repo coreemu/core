@@ -6,6 +6,7 @@ import logging
 import os
 import threading
 from collections import OrderedDict
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Callable, Dict, Tuple
 
@@ -18,6 +19,8 @@ from core.errors import CoreCommandError, CoreError
 from core.executables import get_requirements
 from core.nodes.interface import GreTap
 from core.nodes.network import CoreNetwork, CtrlNet
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -61,7 +64,7 @@ class DistributedServer:
         replace_env = env is not None
         if not wait:
             cmd += " &"
-        logging.debug(
+        logger.debug(
             "remote cmd server(%s) cwd(%s) wait(%s): %s", self.host, cwd, wait, cmd
         )
         try:
@@ -79,23 +82,23 @@ class DistributedServer:
             stdout, stderr = e.streams_for_display()
             raise CoreCommandError(e.result.exited, cmd, stdout, stderr)
 
-    def remote_put(self, source: str, destination: str) -> None:
+    def remote_put(self, src_path: Path, dst_path: Path) -> None:
         """
         Push file to remote server.
 
-        :param source: source file to push
-        :param destination: destination file location
+        :param src_path: source file to push
+        :param dst_path: destination file location
         :return: nothing
         """
         with self.lock:
-            self.conn.put(source, destination)
+            self.conn.put(str(src_path), str(dst_path))
 
-    def remote_put_temp(self, destination: str, data: str) -> None:
+    def remote_put_temp(self, dst_path: Path, data: str) -> None:
         """
         Remote push file contents to a remote server, using a temp file as an
         intermediate step.
 
-        :param destination: file destination for data
+        :param dst_path: file destination for data
         :param data: data to store in remote file
         :return: nothing
         """
@@ -103,7 +106,7 @@ class DistributedServer:
             temp = NamedTemporaryFile(delete=False)
             temp.write(data.encode("utf-8"))
             temp.close()
-            self.conn.put(temp.name, destination)
+            self.conn.put(temp.name, str(dst_path))
             os.unlink(temp.name)
 
 
@@ -144,7 +147,7 @@ class DistributedController:
                     f"command({requirement})"
                 )
         self.servers[name] = server
-        cmd = f"mkdir -p {self.session.session_dir}"
+        cmd = f"mkdir -p {self.session.directory}"
         server.remote_cmd(cmd)
 
     def execute(self, func: Callable[[DistributedServer], None]) -> None:
@@ -170,13 +173,11 @@ class DistributedController:
             tunnels = self.tunnels[key]
             for tunnel in tunnels:
                 tunnel.shutdown()
-
         # remove all remote session directories
         for name in self.servers:
             server = self.servers[name]
-            cmd = f"rm -rf {self.session.session_dir}"
+            cmd = f"rm -rf {self.session.directory}"
             server.remote_cmd(cmd)
-
         # clear tunnels
         self.tunnels.clear()
 
@@ -186,6 +187,7 @@ class DistributedController:
 
         :return: nothing
         """
+        mtu = self.session.options.get_config_int("mtu")
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
             if not isinstance(node, CoreNetwork):
@@ -194,17 +196,18 @@ class DistributedController:
                 continue
             for name in self.servers:
                 server = self.servers[name]
-                self.create_gre_tunnel(node, server)
+                self.create_gre_tunnel(node, server, mtu, True)
 
     def create_gre_tunnel(
-        self, node: CoreNetwork, server: DistributedServer
+        self, node: CoreNetwork, server: DistributedServer, mtu: int, start: bool
     ) -> Tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
 
         :param node: node to create gre tunnel for
-        :param server: server to create
-            tunnel for
+        :param server: server to create tunnel for
+        :param mtu: mtu for gre taps
+        :param start: True to start gre taps, False otherwise
         :return: local and remote gre taps created for tunnel
         """
         host = server.host
@@ -212,23 +215,20 @@ class DistributedController:
         tunnel = self.tunnels.get(key)
         if tunnel is not None:
             return tunnel
-
         # local to server
-        logging.info(
-            "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
-        )
-        local_tap = GreTap(session=self.session, remoteip=host, key=key)
-        local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
-
+        logger.info("local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key)
+        local_tap = GreTap(self.session, host, key=key, mtu=mtu)
+        if start:
+            local_tap.startup()
+            local_tap.net_client.set_iface_master(node.brname, local_tap.localname)
         # server to local
-        logging.info(
+        logger.info(
             "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
         )
-        remote_tap = GreTap(
-            session=self.session, remoteip=self.address, key=key, server=server
-        )
-        remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
-
+        remote_tap = GreTap(self.session, self.address, key=key, server=server, mtu=mtu)
+        if start:
+            remote_tap.startup()
+            remote_tap.net_client.set_iface_master(node.brname, remote_tap.localname)
         # save tunnels for shutdown
         tunnel = (local_tap, remote_tap)
         self.tunnels[key] = tunnel
@@ -244,7 +244,7 @@ class DistributedController:
         :param node2_id: node two id
         :return: tunnel key for the node pair
         """
-        logging.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
+        logger.debug("creating tunnel key for: %s, %s", node1_id, node2_id)
         key = (
             (self.session.id << 16)
             ^ utils.hashkey(node1_id)

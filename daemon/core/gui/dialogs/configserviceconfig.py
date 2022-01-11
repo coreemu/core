@@ -18,6 +18,8 @@ from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ConfigFrame, ListboxScroll
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.coreclient import CoreClient
@@ -73,7 +75,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def load(self) -> None:
         try:
-            self.core.create_nodes_and_links()
+            self.core.start_session(definition=True)
             service = self.core.config_services[self.service_name]
             self.dependencies = service.dependencies[:]
             self.executables = service.executables[:]
@@ -86,18 +88,18 @@ class ConfigServiceConfigDialog(Dialog):
             self.validation_time = service.validation_timer
             self.validation_period.set(service.validation_period)
 
-            response = self.core.client.get_config_service_defaults(self.service_name)
-            self.original_service_files = response.templates
+            defaults = self.core.client.get_config_service_defaults(self.service_name)
+            self.original_service_files = defaults.templates
             self.temp_service_files = dict(self.original_service_files)
-            self.modes = sorted(x.name for x in response.modes)
-            self.mode_configs = {x.name: x.config for x in response.modes}
-            self.config = ConfigOption.from_dict(response.config)
+            self.modes = sorted(defaults.modes)
+            self.mode_configs = defaults.modes
+            self.config = ConfigOption.from_dict(defaults.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
             service_config = self.node.config_service_configs.get(self.service_name)
             if service_config:
                 for key, value in service_config.config.items():
                     self.config[key].value = value
-                logging.info("default config: %s", self.default_config)
+                logger.info("default config: %s", self.default_config)
                 for file, data in service_config.templates.items():
                     self.modified_files.add(file)
                     self.temp_service_files[file] = data
@@ -181,7 +183,7 @@ class ConfigServiceConfigDialog(Dialog):
             self.modes_combobox.bind("<<ComboboxSelected>>", self.handle_mode_changed)
             self.modes_combobox.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
-        logging.info("config service config: %s", self.config)
+        logger.info("config service config: %s", self.config)
         self.config_frame = ConfigFrame(tab, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
@@ -308,9 +310,9 @@ class ConfigServiceConfigDialog(Dialog):
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-        service_config = self.node.config_service_configs.get(self.service_name)
-        if not service_config:
-            service_config = ConfigServiceData()
+        service_config = self.node.config_service_configs.setdefault(
+            self.service_name, ConfigServiceData()
+        )
         if self.config_frame:
             self.config_frame.parse_config()
             service_config.config = {x.name: x.value for x in self.config.values()}
@@ -328,7 +330,7 @@ class ConfigServiceConfigDialog(Dialog):
     def handle_mode_changed(self, event: tk.Event) -> None:
         mode = self.modes_combobox.get()
         config = self.mode_configs[mode]
-        logging.info("mode config: %s", config)
+        logger.info("mode config: %s", config)
         self.config_frame.set_values(config)
 
     def update_template_file_data(self, event: tk.Event) -> None:
@@ -350,7 +352,7 @@ class ConfigServiceConfigDialog(Dialog):
 
     def click_defaults(self) -> None:
         self.node.config_service_configs.pop(self.service_name, None)
-        logging.info(
+        logger.info(
             "cleared config service config: %s", self.node.config_service_configs
         )
         self.temp_service_files = dict(self.original_service_files)
@@ -358,7 +360,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.template_text.text.delete(1.0, "end")
         self.template_text.text.insert("end", self.temp_service_files[filename])
         if self.config_frame:
-            logging.info("resetting defaults: %s", self.default_config)
+            logger.info("resetting defaults: %s", self.default_config)
             self.config_frame.set_values(self.default_config)
 
     def click_copy(self) -> None:

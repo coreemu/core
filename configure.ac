@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 7.5.2)
+AC_INIT(core, 8.0.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -123,9 +123,9 @@ if test "x$enable_daemon" = "xyes"; then
     AC_MSG_ERROR([Could not locate sysctl (from procps package).])
   fi
 
-  AC_CHECK_PROG(ebtables_path, ebtables, $as_dir, no, $SEARCHPATH)
-  if test "x$ebtables_path" = "xno" ; then
-    AC_MSG_ERROR([Could not locate ebtables (from ebtables package).])
+  AC_CHECK_PROG(nftables_path, nft, $as_dir, no, $SEARCHPATH)
+  if test "x$nftables_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate nftables (from nftables package).])
   fi
 
   AC_CHECK_PROG(ip_path, ip, $as_dir, no, $SEARCHPATH)

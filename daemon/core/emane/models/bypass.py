@@ -1,11 +1,11 @@
 """
 EMANE Bypass model for CORE
 """
+from pathlib import Path
 from typing import List, Set
 
-from core.config import Configuration
+from core.config import ConfigBool, Configuration
 from core.emane import emanemodel
-from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(emanemodel.EmaneModel):
@@ -17,9 +17,8 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     # mac definitions
     mac_library: str = "bypassmaclayer"
     mac_config: List[Configuration] = [
-        Configuration(
-            _id="none",
-            _type=ConfigDataTypes.BOOL,
+        ConfigBool(
+            id="none",
             default="0",
             label="There are no parameters for the bypass model.",
         )
@@ -30,6 +29,5 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     phy_config: List[Configuration] = []
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        # ignore default logic
-        pass
+    def load(cls, emane_prefix: Path) -> None:
+        cls._load_platform_config(emane_prefix)

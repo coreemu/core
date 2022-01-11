@@ -2,9 +2,9 @@
 Unit tests for testing basic CORE networks.
 """
 
-import os
 import threading
-from typing import Type
+from pathlib import Path
+from typing import List, Type
 
 import pytest
 
@@ -16,9 +16,9 @@ from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import HubNode, PtpNet, SwitchNode, WlanNode
 
-_PATH = os.path.abspath(os.path.dirname(__file__))
-_MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_WIRED = [PtpNet, HubNode, SwitchNode]
+_PATH: Path = Path(__file__).resolve().parent
+_MOBILITY_FILE: Path = _PATH / "mobility.scen"
+_WIRED: List = [PtpNet, HubNode, SwitchNode]
 
 
 def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):
@@ -195,7 +195,7 @@ class TestCore:
 
         # configure mobility script for session
         config = {
-            "file": _MOBILITY_FILE,
+            "file": str(_MOBILITY_FILE),
             "refresh_ms": "50",
             "loop": "1",
             "autostart": "0.0",

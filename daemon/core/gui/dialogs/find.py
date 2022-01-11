@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Optional
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -139,8 +141,8 @@ class FindDialog(Dialog):
             _x, _y, _, _ = canvas_node.canvas.bbox(canvas_node.id)
             oid = canvas_node.canvas.find_withtag("rectangle")
             x0, y0, x1, y1 = canvas_node.canvas.bbox(oid[0])
-            logging.debug("Dist to most left: %s", abs(x0 - _x))
-            logging.debug("White canvas width: %s", abs(x0 - x1))
+            logger.debug("Dist to most left: %s", abs(x0 - _x))
+            logger.debug("White canvas width: %s", abs(x0 - x1))
 
             # calculate the node's location
             # (as fractions of white canvas's width and height)

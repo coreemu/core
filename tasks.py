@@ -14,8 +14,7 @@ from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
-EMANE_CHECKOUT: str = "v1.2.5"
-OSPFMDR_CHECKOUT: str = "e2b4e416b7001c5dca0224fe728249c9688e4c7a"
+OSPFMDR_CHECKOUT: str = "f21688cdcac30fb10b1ebac0063eb24e4583e9b4"
 REDHAT_LIKE = {
     "redhat",
     "fedora",
@@ -159,14 +158,14 @@ def check_existing_core(c: Context, hide: bool) -> None:
 def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
     if os_info.like == OsLike.DEBIAN:
         c.run(
-            "sudo apt install -y automake pkg-config gcc libev-dev ebtables "
+            "sudo apt install -y automake pkg-config gcc libev-dev nftables "
             "iproute2 ethtool tk python3-tk bash",
             hide=hide
         )
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
-            "libev-devel iptables-ebtables iproute python3-devel python3-tkinter "
+            "libev-devel nftables iproute python3-devel python3-tkinter "
             "tk ethtool make bash",
             hide=hide
         )
@@ -178,18 +177,6 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
                 print("run the following, restart, and try again")
                 print("sudo yum update")
                 sys.exit(1)
-
-    # attempt to setup legacy ebtables when an nftables based version is found
-    r = c.run("ebtables -V", hide=hide)
-    if "nf_tables" in r.stdout:
-        if not c.run(
-            "sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy",
-            warn=True,
-            hide=hide
-        ):
-            print(
-                "\nWARNING: unable to setup ebtables-legacy, WLAN will not work"
-            )
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
@@ -210,7 +197,6 @@ def install_core(c: Context, hide: bool) -> None:
 
 
 def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
-    c.run("pipx install poetry==1.1.7", hide=hide)
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)
@@ -247,12 +233,6 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-@task(
-    help={
-        "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
-    },
-)
 def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     """
     install systemd core service
@@ -283,20 +263,14 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
         print(f"ERROR: systemd service path not found: {systemd_dir}")
 
 
-@task(
-    help={
-        "verbose": "enable verbose",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
-        "local": "determines if core will install to local system, default is False",
-    },
-)
-def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
+def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     """
-    install core script files, modified to leverage virtual environment
+    install core files (scripts, examples, and configuration)
     """
     hide = not verbose
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
+    # install scripts
     for script in Path("daemon/scripts").iterdir():
         dest = bin_dir.joinpath(script.name)
         with open(script, "r") as f:
@@ -315,7 +289,6 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         # copy normal links
         else:
             c.run(f"sudo cp {script} {dest}", hide=hide)
-
     # setup core python helper
     if not local:
         core_python = bin_dir.joinpath("core-python")
@@ -328,12 +301,15 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
         os.unlink(temp.name)
-
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
     c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
+    # install examples
+    examples_dir = f"{prefix}/share/core"
+    c.run(f"sudo mkdir -p {examples_dir}", hide=hide)
+    c.run(f"sudo cp -r daemon/examples {examples_dir}", hide=hide)
 
 
 @task(
@@ -344,10 +320,17 @@ def install_scripts(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
+        "ospf": "disable ospf installation",
     },
 )
 def install(
-    c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX, install_type=None
+    c,
+    dev=False,
+    verbose=False,
+    local=False,
+    prefix=DEFAULT_PREFIX,
+    install_type=None,
+    ospf=True,
 ):
     """
     install core, poetry, scripts, service, and ospf mdr
@@ -372,26 +355,27 @@ def install(
     install_type = "core" if local else "core virtual environment"
     with p.start(f"installing {install_type}"):
         install_poetry(c, dev, local, hide)
-    with p.start("installing scripts and /etc/core"):
-        install_scripts(c, local, hide, prefix)
+    with p.start("installing scripts, examples, and configuration"):
+        install_core_files(c, local, hide, prefix)
     with p.start("installing systemd service"):
         install_service(c, hide, prefix)
-    with p.start("installing ospf mdr"):
-        install_ospf_mdr(c, os_info, hide)
+    if ospf:
+        with p.start("installing ospf mdr"):
+            install_ospf_mdr(c, os_info, hide)
     print("\ninstall complete!")
 
 
 @task(
     help={
+        "emane-version": "version of emane install",
         "verbose": "enable verbose",
-        "local": "used determine if core is installed locally, default is False",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
     },
 )
-def install_emane(c, verbose=False, local=False, install_type=None):
+def install_emane(c, emane_version, verbose=False, install_type=None):
     """
-    install emane and the python bindings
+    install emane python bindings into the core virtual environment
     """
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
@@ -419,24 +403,19 @@ def install_emane(c, verbose=False, local=False, install_type=None):
     emane_url = "https://github.com/adjacentlink/emane.git"
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
-    with p.start("building emane"):
+    with p.start("setup emane"):
         with c.cd(emane_dir):
-            c.run(f"git checkout {EMANE_CHECKOUT}", hide=hide)
+            c.run(f"git checkout {emane_version}", hide=hide)
             c.run("./autogen.sh", hide=hide)
             c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
+    with p.start("build emane python bindings"):
+        with c.cd(str(emane_python_dir)):
             c.run("make -j$(nproc)", hide=hide)
-    with p.start("installing emane"):
-        with c.cd(emane_dir):
-            c.run("sudo make install", hide=hide)
-    with p.start("installing python binding for core"):
-        if local:
-            with c.cd(str(emane_python_dir)):
-                c.run("sudo python3 -m pip install .", hide=hide)
-        else:
-            with c.cd(DAEMON_DIR):
-                c.run(
-                    f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
-                )
+    with p.start("installing emane python bindings for core virtual environment"):
+        with c.cd(DAEMON_DIR):
+            c.run(
+                f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
+            )
 
 
 @task(
@@ -444,10 +423,16 @@ def install_emane(c, verbose=False, local=False, install_type=None):
         "dev": "uninstall development mode",
         "verbose": "enable verbose",
         "local": "determines if core was installed local to system, default is False",
-        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}"
+        "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
     },
 )
-def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
+def uninstall(
+    c,
+    dev=False,
+    verbose=False,
+    local=False,
+    prefix=DEFAULT_PREFIX,
+):
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
@@ -481,6 +466,9 @@ def uninstall(c, dev=False, verbose=False, local=False, prefix=DEFAULT_PREFIX):
         for script in Path("daemon/scripts").iterdir():
             dest = bin_dir.joinpath(script.name)
             c.run(f"sudo rm -f {dest}", hide=hide)
+    with p.start("uninstalling examples"):
+        examples_dir = Path(prefix).joinpath("share/core")
+        c.run(f"sudo rm -rf {examples_dir}")
 
     # remove core-python symlink
     if not local:
@@ -533,20 +521,6 @@ def reinstall(
         if not Path("tasks.py").exists():
             raise FileNotFoundError(f"missing tasks.py on branch: {branch}")
     install(c, dev, verbose, local, prefix, install_type)
-
-
-@task
-def daemon(c):
-    """
-    start core-daemon
-    """
-    python = get_python(c)
-    with c.cd(DAEMON_DIR):
-        c.run(
-            f"sudo {python} scripts/core-daemon "
-            "-f data/core.conf -l data/logging.conf",
-            pty=True
-        )
 
 
 @task

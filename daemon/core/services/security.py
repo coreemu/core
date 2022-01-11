@@ -11,6 +11,8 @@ from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
 from core.services.coreservices import CoreService
 
+logger = logging.getLogger(__name__)
+
 
 class VPNClient(CoreService):
     name: str = "VPNClient"
@@ -33,7 +35,7 @@ class VPNClient(CoreService):
             with open(fname, "r") as f:
                 cfg += f.read()
         except IOError:
-            logging.exception(
+            logger.exception(
                 "error opening VPN client configuration template (%s)", fname
             )
         return cfg
@@ -61,7 +63,7 @@ class VPNServer(CoreService):
             with open(fname, "r") as f:
                 cfg += f.read()
         except IOError:
-            logging.exception(
+            logger.exception(
                 "Error opening VPN server configuration template (%s)", fname
             )
         return cfg
@@ -89,7 +91,7 @@ class IPsec(CoreService):
             with open(fname, "r") as f:
                 cfg += f.read()
         except IOError:
-            logging.exception("Error opening IPsec configuration template (%s)", fname)
+            logger.exception("Error opening IPsec configuration template (%s)", fname)
         return cfg
 
 
@@ -112,7 +114,7 @@ class Firewall(CoreService):
             with open(fname, "r") as f:
                 cfg += f.read()
         except IOError:
-            logging.exception(
+            logger.exception(
                 "Error opening Firewall configuration template (%s)", fname
             )
         return cfg

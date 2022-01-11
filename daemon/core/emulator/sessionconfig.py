@@ -1,7 +1,14 @@
 from typing import Any, List
 
-from core.config import ConfigurableManager, ConfigurableOptions, Configuration
-from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
+from core.config import (
+    ConfigBool,
+    ConfigInt,
+    ConfigString,
+    ConfigurableManager,
+    ConfigurableOptions,
+    Configuration,
+)
+from core.emulator.enumerations import RegisterTlvs
 from core.plugins.sdt import Sdt
 
 
@@ -12,53 +19,28 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
 
     name: str = "session"
     options: List[Configuration] = [
-        Configuration(
-            _id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"
+        ConfigString(id="controlnet", label="Control Network"),
+        ConfigString(id="controlnet0", label="Control Network 0"),
+        ConfigString(id="controlnet1", label="Control Network 1"),
+        ConfigString(id="controlnet2", label="Control Network 2"),
+        ConfigString(id="controlnet3", label="Control Network 3"),
+        ConfigString(id="controlnet_updown_script", label="Control Network Script"),
+        ConfigBool(id="enablerj45", default="1", label="Enable RJ45s"),
+        ConfigBool(id="preservedir", default="0", label="Preserve session dir"),
+        ConfigBool(id="enablesdt", default="0", label="Enable SDT3D output"),
+        ConfigString(id="sdturl", default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL"),
+        ConfigBool(id="ovs", default="0", label="Enable OVS"),
+        ConfigInt(id="platform_id_start", default="1", label="EMANE Platform ID Start"),
+        ConfigInt(id="nem_id_start", default="1", label="EMANE NEM ID Start"),
+        ConfigBool(id="link_enabled", default="1", label="EMANE Links?"),
+        ConfigInt(
+            id="loss_threshold", default="30", label="EMANE Link Loss Threshold (%)"
         ),
-        Configuration(
-            _id="controlnet0", _type=ConfigDataTypes.STRING, label="Control Network 0"
+        ConfigInt(
+            id="link_interval", default="1", label="EMANE Link Check Interval (sec)"
         ),
-        Configuration(
-            _id="controlnet1", _type=ConfigDataTypes.STRING, label="Control Network 1"
-        ),
-        Configuration(
-            _id="controlnet2", _type=ConfigDataTypes.STRING, label="Control Network 2"
-        ),
-        Configuration(
-            _id="controlnet3", _type=ConfigDataTypes.STRING, label="Control Network 3"
-        ),
-        Configuration(
-            _id="controlnet_updown_script",
-            _type=ConfigDataTypes.STRING,
-            label="Control Network Script",
-        ),
-        Configuration(
-            _id="enablerj45",
-            _type=ConfigDataTypes.BOOL,
-            default="1",
-            label="Enable RJ45s",
-        ),
-        Configuration(
-            _id="preservedir",
-            _type=ConfigDataTypes.BOOL,
-            default="0",
-            label="Preserve session dir",
-        ),
-        Configuration(
-            _id="enablesdt",
-            _type=ConfigDataTypes.BOOL,
-            default="0",
-            label="Enable SDT3D output",
-        ),
-        Configuration(
-            _id="sdturl",
-            _type=ConfigDataTypes.STRING,
-            default=Sdt.DEFAULT_SDT_URL,
-            label="SDT3D URL",
-        ),
-        Configuration(
-            _id="ovs", _type=ConfigDataTypes.BOOL, default="0", label="Enable OVS"
-        ),
+        ConfigInt(id="link_timeout", default="4", label="EMANE Link Timeout (sec)"),
+        ConfigInt(id="mtu", default="0", label="MTU for All Devices"),
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
@@ -112,3 +94,13 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         if value is not None:
             value = int(value)
         return value
+
+    def config_reset(self, node_id: int = None) -> None:
+        """
+        Clear prior configuration files and reset to default values.
+
+        :param node_id: node id to store configuration for
+        :return: nothing
+        """
+        super().config_reset(node_id)
+        self.set_configs(self.default_values())
