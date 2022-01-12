@@ -5,7 +5,7 @@ LABEL Description="CORE Docker Image"
 # define variables
 ARG DEBIAN_FRONTEND=noninteractive
 ARG PREFIX=/usr/local
-ARG BRANCH=develop
+ARG BRANCH=master
 ARG CORE_TARBALL=core.tar.gz
 ARG OSPF_TARBALL=ospf.tar.gz
 
@@ -98,4 +98,3 @@ RUN wget -q https://adjacentlink.com/downloads/emane/emane-1.2.7-release-1.ubunt
     rm emane-1.2.7-release-1.ubuntu-20_04.amd64.tar.gz && \
     rm -rf emane-1.2.7-release-1
 CMD ["systemctl", "start", "core-daemon"]
-# sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core

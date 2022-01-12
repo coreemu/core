@@ -221,6 +221,23 @@ an installation to your use case.
 inv install --dry -v -p <prefix> -i <install type>
 ```
 
+## Dockerfile Install
+You can leverage the provided Dockerfile, to run and launch CORE within a Docker container.
+
+```shell
+# clone core
+git clone https://github.com/coreemu/core.git
+cd core
+# build image
+sudo docker build -t core .
+# start container
+sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
+# enable xhost access to the root user
+xhost +local:root
+# launch core-gui
+sudo docker exec -it core core-gui
+```
+
 ## Running User Scripts
 If you create your own python scripts to run CORE directly or using the gRPC/TLV
 APIs you will need to make sure you are running them within context of the
