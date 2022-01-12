@@ -810,6 +810,30 @@ class CoreGrpcClient:
         response = self.stub.ServiceAction(request)
         return response.result
 
+    def config_service_action(
+        self,
+        session_id: int,
+        node_id: int,
+        service: str,
+        action: wrappers.ServiceAction,
+    ) -> bool:
+        """
+        Send an action to a config service for a node.
+
+        :param session_id: session id
+        :param node_id: node id
+        :param service: config service name
+        :param action: action for service (start, stop, restart,
+            validate)
+        :return: True for success, False otherwise
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
+        request = ServiceActionRequest(
+            session_id=session_id, node_id=node_id, service=service, action=action.value
+        )
+        response = self.stub.ConfigServiceAction(request)
+        return response.result
+
     def get_wlan_config(
         self, session_id: int, node_id: int
     ) -> Dict[str, wrappers.ConfigOption]:

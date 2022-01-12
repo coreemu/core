@@ -707,6 +707,22 @@ class TestGrpc:
         # then
         assert result is True
 
+    def test_config_service_action(self, grpc_server: CoreGrpcServer):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node(CoreNode)
+        service_name = "DefaultRoute"
+
+        # then
+        with client.context_connect():
+            result = client.config_service_action(
+                session.id, node.id, service_name, ServiceAction.STOP
+            )
+
+        # then
+        assert result is True
+
     def test_node_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()

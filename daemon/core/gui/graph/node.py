@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 import grpc
 from PIL.ImageTk import PhotoImage
 
-from core.api.grpc.services_pb2 import ServiceAction
-from core.api.grpc.wrappers import Interface, Node, NodeType
+from core.api.grpc.wrappers import Interface, Node, NodeType, ServiceAction
 from core.gui import images
 from core.gui import nodeutils as nutils
 from core.gui import themes
@@ -238,7 +237,7 @@ class CanvasNode:
                 )
             if nutils.is_container(self.core_node):
                 services_menu = tk.Menu(self.context)
-                for service in sorted(self.core_node.services):
+                for service in sorted(self.core_node.config_services):
                     service_menu = tk.Menu(services_menu)
                     themes.style_menu(service_menu)
                     start_func = functools.partial(self.start_service, service)
@@ -463,7 +462,7 @@ class CanvasNode:
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id
         try:
-            result = self.app.core.client.service_action(
+            result = self.app.core.client.config_service_action(
                 session_id, self.core_node.id, service, action
             )
             if not result:

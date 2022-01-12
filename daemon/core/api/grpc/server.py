@@ -72,6 +72,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
+from core.configservice.base import ConfigServiceBootError
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
@@ -984,6 +985,48 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if not status:
             result = True
 
+        return ServiceActionResponse(result=result)
+
+    def ConfigServiceAction(
+        self, request: ServiceActionRequest, context: ServicerContext
+    ) -> ServiceActionResponse:
+        """
+        Take action whether to start, stop, restart, validate the config service or
+        none of the above.
+
+        :param request: service action request
+        :param context: context object
+        :return: service action response about status of action
+        """
+        logger.debug("service action: %s", request)
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
+        service = node.config_services.get(request.service)
+        if not service:
+            context.abort(grpc.StatusCode.NOT_FOUND, "config service not found")
+        result = False
+        if request.action == ServiceAction.START:
+            try:
+                service.start()
+                result = True
+            except ConfigServiceBootError:
+                pass
+        elif request.action == ServiceAction.STOP:
+            service.stop()
+            result = True
+        elif request.action == ServiceAction.RESTART:
+            service.stop()
+            try:
+                service.start()
+                result = True
+            except ConfigServiceBootError:
+                pass
+        elif request.action == ServiceAction.VALIDATE:
+            try:
+                service.run_validation()
+                result = True
+            except ConfigServiceBootError:
+                pass
         return ServiceActionResponse(result=result)
 
     def GetWlanConfig(
