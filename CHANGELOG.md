@@ -1,3 +1,56 @@
+## 2022-01-12 CORE 8.0.0
+
+*Breaking Changes
+    * heavily refactored gRPC client, removing some calls, adding others, all using type hinted classes representing their protobuf counterparts
+    * emane adjustments to run each nem in its own process, includes adjustments to configuration, which may cause issues
+    * internal daemon cleanup and refactoring, in a script directly driving a scenario is used
+* Installation
+    * added options to allow installation without ospf mdr
+    * removed tasks that are no longer needed
+    * updates to properly install/remove example files
+    * pipx/poetry/invoke versions are now locked to help avoid update related issues
+    * install.sh is now setup.sh and is a convenience to get tool setup to run invoke
+* Documentation
+    * formally added notes for Docker and LXD based node types
+    * added config services
+    * Updated README to have quick notes for installation
+    * \#563 - update to note how to enable core service
+* Examples
+    * \#598 - update to fix sample1.imn to working order
+* core-daemon
+    * emane global configuration is now configurable per nem
+    * fixed wlan loss to support float values
+    * improved default service loading to use full core path
+    * improved emane model loading to occur one time
+    * fixed handling rj45 link edits from tlv api
+    * fixed wlan config getting a default value for the promiscuous setting when not provided
+    * ebtables usage has now been replaced with nftables
+    * \#564 - logging is now using module named loggers
+    * \#573 - emane processes are not created 1 to 1 with nems
+    * \#608 - update lxml version
+    * \#609 - update pyyaml version
+    * \#623 - fixed issue with ovs mode and mac learning
+* core-gui
+    * config services are now the default service type
+    * legacy services are marked as deprecated
+    * fix to properly load session options
+    * logging is now using module named loggers
+    * save as will not update the current session file name as expected
+    * fix to properly clear out removed customized services
+    * adding directories to a service that do not exist, is now valid
+    * added flag to exit after creating gui directory from command line
+    * added new options to enable/disable ip4/ip6 assignment
+    * improved canvas draw order, when joining sessions
+    * improved node copy/paste to avoid issues when pasting text into service config dialogs
+    * each canvas will not correctly save and load their size from xml
+* gRPC API
+    * session options are now returned for GetSession
+    * fixed issue not properly creating the session directory during start session definition state
+    * updates to separate editing a node and moving a node, new MoveNode call added, EditNode is now used for editing icons
+* Services
+    * fixed default route config service
+    * config services now have options for shadowing directories, including per node customization
+
 ## 2021-09-17 CORE 7.5.2
 
 * Installation
