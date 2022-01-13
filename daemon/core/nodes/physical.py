@@ -3,9 +3,9 @@ PhysicalNode class for including real systems in the emulated network.
 """
 
 import logging
-import os
 import threading
-from typing import IO, TYPE_CHECKING, List, Optional, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -14,7 +14,9 @@ from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import CoreNetwork, GreTap
+from core.nodes.network import CoreNetwork
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
@@ -26,15 +28,15 @@ class PhysicalNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        nodedir: str = None,
+        directory: Path = None,
         server: DistributedServer = None,
     ) -> None:
         super().__init__(session, _id, name, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
-        self.nodedir: Optional[str] = nodedir
+        self.directory: Optional[Path] = directory
         self.lock: threading.RLock = threading.RLock()
-        self._mounts: List[Tuple[str, str]] = []
+        self._mounts: List[Tuple[Path, Path]] = []
 
     def startup(self) -> None:
         with self.lock:
@@ -44,15 +46,12 @@ class PhysicalNode(CoreNodeBase):
     def shutdown(self) -> None:
         if not self.up:
             return
-
         with self.lock:
             while self._mounts:
-                _source, target = self._mounts.pop(-1)
-                self.umount(target)
-
+                _, target_path = self._mounts.pop(-1)
+                self.umount(target_path)
             for iface in self.get_ifaces():
                 iface.shutdown()
-
             self.rmnodedir()
 
     def path_exists(self, path: str) -> bool:
@@ -166,7 +165,7 @@ class PhysicalNode(CoreNodeBase):
     def new_iface(
         self, net: CoreNetworkBase, iface_data: InterfaceData
     ) -> CoreInterface:
-        logging.info("creating interface")
+        logger.info("creating interface")
         ips = iface_data.get_ips()
         iface_id = iface_data.id
         if iface_id is None:
@@ -174,67 +173,46 @@ class PhysicalNode(CoreNodeBase):
         name = iface_data.name
         if name is None:
             name = f"gt{iface_id}"
-        if self.up:
-            # this is reached when this node is linked to a network node
-            # tunnel to net not built yet, so build it now and adopt it
-            _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
-            self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
-            return remote_tap
-        else:
-            # this is reached when configuring services (self.up=False)
-            iface = GreTap(node=self, name=name, session=self.session, start=False)
-            self.adopt_iface(iface, iface_id, iface_data.mac, ips)
-            return iface
-
-    def privatedir(self, path: str) -> None:
-        if path[0] != "/":
-            raise ValueError(f"path not fully qualified: {path}")
-        hostpath = os.path.join(
-            self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
+        _, remote_tap = self.session.distributed.create_gre_tunnel(
+            net, self.server, iface_data.mtu, self.up
         )
-        os.mkdir(hostpath)
-        self.mount(hostpath, path)
+        self.adopt_iface(remote_tap, iface_id, iface_data.mac, ips)
+        return remote_tap
 
-    def mount(self, source: str, target: str) -> None:
-        source = os.path.abspath(source)
-        logging.info("mounting %s at %s", source, target)
-        os.makedirs(target)
-        self.host_cmd(f"{MOUNT} --bind {source} {target}", cwd=self.nodedir)
-        self._mounts.append((source, target))
+    def privatedir(self, dir_path: Path) -> None:
+        if not str(dir_path).startswith("/"):
+            raise CoreError(f"private directory path not fully qualified: {dir_path}")
+        host_path = self.host_path(dir_path, is_dir=True)
+        self.host_cmd(f"mkdir -p {host_path}")
+        self.mount(host_path, dir_path)
 
-    def umount(self, target: str) -> None:
-        logging.info("unmounting '%s'", target)
+    def mount(self, src_path: Path, target_path: Path) -> None:
+        logger.debug("node(%s) mounting: %s at %s", self.name, src_path, target_path)
+        self.cmd(f"mkdir -p {target_path}")
+        self.host_cmd(f"{MOUNT} --bind {src_path} {target_path}", cwd=self.directory)
+        self._mounts.append((src_path, target_path))
+
+    def umount(self, target_path: Path) -> None:
+        logger.info("unmounting '%s'", target_path)
         try:
-            self.host_cmd(f"{UMOUNT} -l {target}", cwd=self.nodedir)
+            self.host_cmd(f"{UMOUNT} -l {target_path}", cwd=self.directory)
         except CoreCommandError:
-            logging.exception("unmounting failed for %s", target)
+            logger.exception("unmounting failed for %s", target_path)
 
-    def opennodefile(self, filename: str, mode: str = "w") -> IO:
-        dirname, basename = os.path.split(filename)
-        if not basename:
-            raise ValueError("no basename for filename: " + filename)
-
-        if dirname and dirname[0] == "/":
-            dirname = dirname[1:]
-
-        dirname = dirname.replace("/", ".")
-        dirname = os.path.join(self.nodedir, dirname)
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0o755)
-
-        hostfilename = os.path.join(dirname, basename)
-        return open(hostfilename, mode)
-
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
-        with self.opennodefile(filename, "w") as f:
+    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        host_path = self.host_path(file_path)
+        directory = host_path.parent
+        if not directory.is_dir():
+            directory.mkdir(parents=True, mode=0o755)
+        with host_path.open("w") as f:
             f.write(contents)
-            os.chmod(f.name, mode)
-            logging.info("created nodefile: '%s'; mode: 0%o", f.name, mode)
+        host_path.chmod(mode)
+        logger.info("created nodefile: '%s'; mode: 0%o", host_path, mode)
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         return self.host_cmd(args, wait=wait)
 
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: str, file_path: str) -> None:
         raise CoreError("physical node does not support addfile")
 
 
@@ -433,7 +411,7 @@ class Rj45Node(CoreNodeBase):
                 if items[1][:4] == "fe80":
                     continue
                 self.old_addrs.append((items[1], None))
-        logging.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
+        logger.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
 
     def restorestate(self) -> None:
         """
@@ -443,7 +421,7 @@ class Rj45Node(CoreNodeBase):
         :raises CoreCommandError: when there is a command exception
         """
         localname = self.iface.localname
-        logging.info("restoring rj45 state: %s", localname)
+        logger.info("restoring rj45 state: %s", localname)
         for addr in self.old_addrs:
             self.net_client.create_address(localname, addr[0], addr[1])
         if self.old_up:
@@ -464,10 +442,10 @@ class Rj45Node(CoreNodeBase):
     def termcmdstring(self, sh: str) -> str:
         raise CoreError("rj45 does not support terminal commands")
 
-    def addfile(self, srcname: str, filename: str) -> None:
+    def addfile(self, src_path: str, file_path: str) -> None:
         raise CoreError("rj45 does not support addfile")
 
-    def nodefile(self, filename: str, contents: str, mode: int = 0o644) -> None:
+    def nodefile(self, file_path: str, contents: str, mode: int = 0o644) -> None:
         raise CoreError("rj45 does not support nodefile")
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:

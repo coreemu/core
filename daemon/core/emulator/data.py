@@ -91,6 +91,7 @@ class NodeOptions:
     server: str = None
     image: str = None
     emane: str = None
+    legacy: bool = False
 
     def set_position(self, x: float, y: float) -> None:
         """
@@ -141,6 +142,7 @@ class InterfaceData:
     ip4_mask: int = None
     ip6: str = None
     ip6_mask: int = None
+    mtu: int = None
 
     def get_ips(self) -> List[str]:
         """

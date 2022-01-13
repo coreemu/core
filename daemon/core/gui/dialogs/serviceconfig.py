@@ -1,7 +1,7 @@
 import logging
-import os
 import tkinter as tk
-from tkinter import filedialog, ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 import grpc
@@ -15,6 +15,8 @@ from core.gui.images import ImageEnum
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CodeText, ListboxScroll
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.coreclient import CoreClient
@@ -26,7 +28,7 @@ class ServiceConfigDialog(Dialog):
     def __init__(
         self, master: tk.BaseWidget, app: "Application", service_name: str, node: Node
     ) -> None:
-        title = f"{service_name} Service"
+        title = f"{service_name} Service (Deprecated)"
         super().__init__(app, title, master=master)
         self.core: "CoreClient" = app.core
         self.node: Node = node
@@ -76,7 +78,7 @@ class ServiceConfigDialog(Dialog):
 
     def load(self) -> None:
         try:
-            self.app.core.create_nodes_and_links()
+            self.core.start_session(definition=True)
             default_config = self.app.core.get_node_service(
                 self.node.id, self.service_name
             )
@@ -388,7 +390,7 @@ class ServiceConfigDialog(Dialog):
                 1.0, "end"
             )
         else:
-            logging.debug("file already existed")
+            logger.debug("file already existed")
 
     def delete_filename(self) -> None:
         cbb = self.filename_combobox
@@ -447,36 +449,31 @@ class ServiceConfigDialog(Dialog):
             self.current_service_color("")
             self.destroy()
             return
-
-        try:
-            if (
-                self.is_custom_command()
-                or self.has_new_files()
-                or self.is_custom_directory()
-            ):
-                startup, validate, shutdown = self.get_commands()
-                config = self.core.set_node_service(
-                    self.node.id,
-                    self.service_name,
-                    dirs=self.temp_directories,
-                    files=list(self.filename_combobox["values"]),
-                    startups=startup,
-                    validations=validate,
-                    shutdowns=shutdown,
-                )
-                self.node.service_configs[self.service_name] = config
-            for file in self.modified_files:
-                file_configs = self.node.service_file_configs.setdefault(
-                    self.service_name, {}
-                )
-                file_configs[file] = self.temp_service_files[file]
-                # TODO: check if this is really needed
-                self.app.core.set_node_service_file(
-                    self.node.id, self.service_name, file, self.temp_service_files[file]
-                )
-            self.current_service_color("green")
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Save Service Config Error", e)
+        files = set(self.filenames)
+        if (
+            self.is_custom_command()
+            or self.has_new_files()
+            or self.is_custom_directory()
+        ):
+            startup, validate, shutdown = self.get_commands()
+            files = set(self.filename_combobox["values"])
+            service_data = NodeServiceData(
+                configs=list(files),
+                dirs=self.temp_directories,
+                startup=startup,
+                validate=validate,
+                shutdown=shutdown,
+            )
+            logger.info("setting service data: %s", service_data)
+            self.node.service_configs[self.service_name] = service_data
+        for file in self.modified_files:
+            if file not in files:
+                continue
+            file_configs = self.node.service_file_configs.setdefault(
+                self.service_name, {}
+            )
+            file_configs[file] = self.temp_service_files[file]
+        self.current_service_color("green")
         self.destroy()
 
     def display_service_file_data(self, event: tk.Event) -> None:
@@ -579,11 +576,13 @@ class ServiceConfigDialog(Dialog):
         self.directory_entry.insert("end", d)
 
     def add_directory(self) -> None:
-        d = self.directory_entry.get()
-        if os.path.isdir(d):
-            if d not in self.temp_directories:
-                self.dir_list.listbox.insert("end", d)
-                self.temp_directories.append(d)
+        directory = Path(self.directory_entry.get())
+        if directory.is_absolute():
+            if str(directory) not in self.temp_directories:
+                self.dir_list.listbox.insert("end", directory)
+                self.temp_directories.append(str(directory))
+        else:
+            messagebox.showerror("Add Directory", "Path must be absolute!", parent=self)
 
     def remove_directory(self) -> None:
         d = self.directory_entry.get()
@@ -594,7 +593,7 @@ class ServiceConfigDialog(Dialog):
                 i = dirs.index(d)
                 self.dir_list.listbox.delete(i)
             except ValueError:
-                logging.debug("directory is not in the list")
+                logger.debug("directory is not in the list")
         self.directory_entry.delete(0, "end")
 
     def directory_select(self, event) -> None:

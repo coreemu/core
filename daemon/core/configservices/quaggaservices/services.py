@@ -9,6 +9,7 @@ from core.nodes.base import CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import WlanNode
 
+logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
 QUAGGA_STATE_DIR: str = "/var/run/quagga"
 
@@ -101,9 +102,9 @@ class Zebra(ConfigService):
             ip4s = []
             ip6s = []
             for ip4 in iface.ip4s:
-                ip4s.append(str(ip4.ip))
+                ip4s.append(str(ip4))
             for ip6 in iface.ip6s:
-                ip6s.append(str(ip6.ip))
+                ip6s.append(str(ip6))
             ifaces.append((iface, ip4s, ip6s, iface.control))
 
         return dict(
@@ -225,12 +226,6 @@ class Ospfv3mdr(Ospfv3):
     """
 
     name: str = "OSPFv3MDR"
-
-    def data(self) -> Dict[str, Any]:
-        for iface in self.node.get_ifaces():
-            is_wireless = isinstance(iface.net, (WlanNode, EmaneNet))
-            logging.info("MDR wireless: %s", is_wireless)
-        return dict()
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
         config = super().quagga_iface_config(iface)

@@ -4,6 +4,8 @@ Utilities for working with python struct data.
 
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 def pack_values(clazz, packers):
     """
@@ -15,7 +17,7 @@ def pack_values(clazz, packers):
     """
 
     # iterate through tuples of values to pack
-    logging.debug("packing: %s", packers)
+    logger.debug("packing: %s", packers)
     data = b""
     for packer in packers:
         # check if a transformer was provided for valid values
@@ -37,7 +39,7 @@ def pack_values(clazz, packers):
             value = transformer(value)
 
         # pack and add to existing data
-        logging.debug("packing: %s - %s type(%s)", tlv_type, value, type(value))
+        logger.debug("packing: %s - %s type(%s)", tlv_type, value, type(value))
         data += clazz.pack(tlv_type.value, value)
 
     return data

@@ -3,7 +3,7 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 import logging
-import os
+from pathlib import Path
 from typing import Dict, List
 
 from lxml import etree
@@ -14,6 +14,8 @@ from core.emulator.data import LinkOptions
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
+logger = logging.getLogger(__name__)
+
 try:
     from emane.events.commeffectevent import CommEffectEvent
 except ImportError:
@@ -21,7 +23,7 @@ except ImportError:
         from emanesh.events.commeffectevent import CommEffectEvent
     except ImportError:
         CommEffectEvent = None
-        logging.debug("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 def convert_none(x: float) -> int:
@@ -48,17 +50,26 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     external_config: List[Configuration] = []
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        shim_xml_path = os.path.join(emane_prefix, "share/emane/manifest", cls.shim_xml)
+    def load(cls, emane_prefix: Path) -> None:
+        cls._load_platform_config(emane_prefix)
+        shim_xml_path = emane_prefix / "share/emane/manifest" / cls.shim_xml
         cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod
     def configurations(cls) -> List[Configuration]:
-        return cls.config_shim
+        return cls.platform_config + cls.config_shim
 
     @classmethod
     def config_groups(cls) -> List[ConfigGroup]:
-        return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
+        platform_len = len(cls.platform_config)
+        return [
+            ConfigGroup("Platform Parameters", 1, platform_len),
+            ConfigGroup(
+                "CommEffect SHIM Parameters",
+                platform_len + 1,
+                len(cls.configurations()),
+            ),
+        ]
 
     def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
         """
@@ -111,21 +122,15 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         Generate CommEffect events when a Link Message is received having
         link parameters.
         """
-        service = self.session.emane.service
-        if service is None:
-            logging.warning("%s: EMANE event service unavailable", self.name)
-            return
-
         if iface is None or iface2 is None:
-            logging.warning("%s: missing NEM information", self.name)
+            logger.warning("%s: missing NEM information", self.name)
             return
-
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
         nem1 = self.session.emane.get_nem_id(iface)
         nem2 = self.session.emane.get_nem_id(iface2)
-        logging.info("sending comm effect event")
+        logger.info("sending comm effect event")
         event.append(
             nem1,
             latency=convert_none(options.delay),
@@ -135,4 +140,4 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             unicast=int(convert_none(options.bandwidth)),
             broadcast=int(convert_none(options.bandwidth)),
         )
-        service.publish(nem2, event)
+        self.session.emane.publish_event(nem2, event)

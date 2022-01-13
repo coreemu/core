@@ -5,6 +5,8 @@ from core.gui.dialogs.shapemod import ShapeDialog
 from core.gui.graph import tags
 from core.gui.graph.shapeutils import ShapeType
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.graph import CanvasGraph
@@ -92,7 +94,7 @@ class Shape:
             shape = Shape(app, canvas, shape_type, *coords, data=data)
             canvas.shapes[shape.id] = shape
         except ValueError:
-            logging.exception("unknown shape: %s", shape_type)
+            logger.exception("unknown shape: %s", shape_type)
 
     def draw(self) -> None:
         if self.created:
@@ -139,7 +141,7 @@ class Shape:
                 state=self.app.manager.show_annotations.state(),
             )
         else:
-            logging.error("unknown shape type: %s", self.shape_type)
+            logger.error("unknown shape type: %s", self.shape_type)
         self.created = True
 
     def get_font(self) -> List[Union[int, str]]:
@@ -192,7 +194,7 @@ class Shape:
             self.canvas.move(self.text_id, x_offset, y_offset)
 
     def delete(self) -> None:
-        logging.debug("Delete shape, id(%s)", self.id)
+        logger.debug("Delete shape, id(%s)", self.id)
         self.canvas.delete(self.id)
         self.canvas.delete(self.text_id)
 

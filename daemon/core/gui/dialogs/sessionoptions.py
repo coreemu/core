@@ -1,14 +1,13 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
-import grpc
-
-from core.api.grpc.wrappers import ConfigOption
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ConfigFrame
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -19,25 +18,15 @@ class SessionOptionsDialog(Dialog):
         super().__init__(app, "Session Options")
         self.config_frame: Optional[ConfigFrame] = None
         self.has_error: bool = False
-        self.config: Dict[str, ConfigOption] = self.get_config()
         self.enabled: bool = not self.app.core.is_runtime()
         if not self.has_error:
             self.draw()
 
-    def get_config(self) -> Dict[str, ConfigOption]:
-        try:
-            session_id = self.app.core.session.id
-            response = self.app.core.client.get_session_options(session_id)
-            return ConfigOption.from_dict(response.config)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get Session Options Error", e)
-            self.has_error = True
-            self.destroy()
-
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-        self.config_frame = ConfigFrame(self.top, self.app, self.config, self.enabled)
+        options = self.app.core.session.options
+        self.config_frame = ConfigFrame(self.top, self.app, options, self.enabled)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
 
@@ -53,10 +42,6 @@ class SessionOptionsDialog(Dialog):
 
     def save(self) -> None:
         config = self.config_frame.parse_config()
-        try:
-            session_id = self.app.core.session.id
-            response = self.app.core.client.set_session_options(session_id, config)
-            logging.info("saved session config: %s", response)
-        except grpc.RpcError as e:
-            self.app.show_grpc_exception("Set Session Options Error", e)
+        for key, value in config.items():
+            self.app.core.session.options[key].value = value
         self.destroy()

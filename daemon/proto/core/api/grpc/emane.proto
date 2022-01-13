@@ -4,31 +4,6 @@ package emane;
 
 import "core/api/grpc/common.proto";
 
-message GetEmaneConfigRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneConfigResponse {
-    map<string, common.ConfigOption> config = 1;
-}
-
-message SetEmaneConfigRequest {
-    int32 session_id = 1;
-    map<string, string> config = 2;
-}
-
-message SetEmaneConfigResponse {
-    bool result = 1;
-}
-
-message GetEmaneModelsRequest {
-    int32 session_id = 1;
-}
-
-message GetEmaneModelsResponse {
-    repeated string models = 1;
-}
-
 message GetEmaneModelConfigRequest {
     int32 session_id = 1;
     int32 node_id = 2;
@@ -49,10 +24,6 @@ message SetEmaneModelConfigResponse {
     bool result = 1;
 }
 
-message GetEmaneModelConfigsRequest {
-    int32 session_id = 1;
-}
-
 message GetEmaneModelConfig {
     int32 node_id = 1;
     string model = 2;
@@ -60,12 +31,15 @@ message GetEmaneModelConfig {
     map<string, common.ConfigOption> config = 4;
 }
 
-message GetEmaneModelConfigsResponse {
-    repeated GetEmaneModelConfig configs = 1;
+message NodeEmaneConfig {
+    int32 iface_id = 1;
+    string model = 2;
+    map<string, common.ConfigOption> config = 3;
 }
 
 message GetEmaneEventChannelRequest {
     int32 session_id = 1;
+    int32 nem_id = 2;
 }
 
 message GetEmaneEventChannelResponse {

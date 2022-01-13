@@ -13,6 +13,8 @@ from core.gui.nodeutils import NodeDraw
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll, image_chooser
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -209,7 +211,7 @@ class CustomNodesDialog(Dialog):
                 name, node_draw.image_file, list(node_draw.services)
             )
             self.app.guiconfig.nodes.append(custom_node)
-        logging.info("saving custom nodes: %s", self.app.guiconfig.nodes)
+        logger.info("saving custom nodes: %s", self.app.guiconfig.nodes)
         self.app.save_config()
         self.destroy()
 
@@ -219,7 +221,7 @@ class CustomNodesDialog(Dialog):
             image_file = str(Path(self.image_file).absolute())
             custom_node = CustomNode(name, image_file, list(self.services))
             node_draw = NodeDraw.from_custom(custom_node)
-            logging.info(
+            logger.info(
                 "created new custom node (%s), image file (%s), services: (%s)",
                 name,
                 image_file,
@@ -239,7 +241,7 @@ class CustomNodesDialog(Dialog):
             node_draw.image_file = str(Path(self.image_file).absolute())
             node_draw.image = self.image
             node_draw.services = set(self.services)
-            logging.debug(
+            logger.debug(
                 "edit custom node (%s), image: (%s), services (%s)",
                 node_draw.model,
                 node_draw.image_file,

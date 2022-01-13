@@ -1,7 +1,7 @@
 """
 rfpipe.py: EMANE RF-PIPE model for CORE
 """
-import os
+from pathlib import Path
 
 from core.emane import emanemodel
 
@@ -15,8 +15,8 @@ class EmaneRfPipeModel(emanemodel.EmaneModel):
     mac_xml: str = "rfpipemaclayer.xml"
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
-        cls.mac_defaults["pcrcurveuri"] = os.path.join(
-            emane_prefix, "share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
+    def load(cls, emane_prefix: Path) -> None:
+        cls.mac_defaults["pcrcurveuri"] = str(
+            emane_prefix / "share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
         )
         super().load(emane_prefix)

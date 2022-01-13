@@ -1,3 +1,4 @@
+import json
 import logging
 import tkinter as tk
 from copy import deepcopy
@@ -16,8 +17,11 @@ from core.gui.graph.edges import (
 from core.gui.graph.enums import GraphMode
 from core.gui.graph.graph import CanvasGraph
 from core.gui.graph.node import CanvasNode
+from core.gui.graph.shape import Shape
 from core.gui.graph.shapeutils import ShapeType
 from core.gui.nodeutils import NodeDraw
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.gui.app import Application
@@ -85,7 +89,6 @@ class CanvasManager:
             self.app.guiconfig.preferences.width,
             self.app.guiconfig.preferences.height,
         )
-        self.current_dimensions: Tuple[int, int] = self.default_dimensions
         self.show_node_labels: ShowVar = ShowNodeLabels(
             self, tags.NODE_LABEL, value=True
         )
@@ -166,7 +169,7 @@ class CanvasManager:
             canvas_id = self._next_id()
         self.notebook.add(tab, text=f"Canvas {canvas_id}")
         unique_id = self.notebook.tabs()[-1]
-        logging.info("creating canvas(%s)", canvas_id)
+        logger.info("creating canvas(%s)", canvas_id)
         self.canvas_ids[unique_id] = canvas_id
         self.unique_ids[canvas_id] = unique_id
 
@@ -205,7 +208,7 @@ class CanvasManager:
                 edge.delete()
 
     def join(self, session: Session) -> None:
-        # clear out all canvas
+        # clear out all canvases
         for canvas_id in self.notebook.tabs():
             self.notebook.forget(canvas_id)
         self.canvases.clear()
@@ -213,7 +216,7 @@ class CanvasManager:
         self.unique_ids.clear()
         self.edges.clear()
         self.wireless_edges.clear()
-        logging.info("cleared canvases")
+        logger.info("cleared canvases")
 
         # reset settings
         self.show_node_labels.set(True)
@@ -232,6 +235,10 @@ class CanvasManager:
         self.draw_session(session)
 
     def draw_session(self, session: Session) -> None:
+        # draw canvas configurations and shapes
+        self.parse_metadata_canvas(session.metadata)
+        self.parse_metadata_shapes(session.metadata)
+
         # create session nodes
         for core_node in session.nodes.values():
             # add node, avoiding ignored nodes
@@ -254,50 +261,92 @@ class CanvasManager:
             else:
                 self.add_wired_edge(node1, node2, link)
 
-        # parse metadata and organize canvases
-        self.core.parse_metadata()
+        # organize canvas order
         for canvas in self.canvases.values():
             canvas.organize()
+
+        # parse metada for edge configs and hidden nodes
+        self.parse_metadata_edges(session.metadata)
+        self.parse_metadata_hidden(session.metadata)
 
         # create a default canvas if none were created prior
         if not self.canvases:
             self.add_canvas()
 
-    def redraw_canvases(self, dimensions: Tuple[int, int]) -> None:
-        for canvas in self.canvases.values():
-            canvas.redraw_canvas(dimensions)
-            if canvas.wallpaper:
-                canvas.redraw_wallpaper()
+    def redraw_canvas(self, dimensions: Tuple[int, int]) -> None:
+        canvas = self.current()
+        canvas.redraw_canvas(dimensions)
+        if canvas.wallpaper:
+            canvas.redraw_wallpaper()
 
     def get_metadata(self) -> Dict[str, Any]:
         canvases = [x.get_metadata() for x in self.all()]
-        return dict(
-            gridlines=self.app.manager.show_grid.get(),
-            dimensions=self.app.manager.current_dimensions,
-            canvases=canvases,
-        )
+        return dict(gridlines=self.show_grid.get(), canvases=canvases)
 
-    def parse_metadata(self, config: Dict[str, Any]) -> None:
+    def parse_metadata_canvas(self, metadata: Dict[str, Any]) -> None:
+        # canvas setting
+        canvas_config = metadata.get("canvas")
+        logger.debug("canvas metadata: %s", canvas_config)
+        if not canvas_config:
+            return
+        canvas_config = json.loads(canvas_config)
         # get configured dimensions and gridlines option
-        dimensions = self.default_dimensions
-        dimensions = config.get("dimensions", dimensions)
-        gridlines = config.get("gridlines", True)
+        gridlines = canvas_config.get("gridlines", True)
         self.show_grid.set(gridlines)
-        self.redraw_canvases(dimensions)
 
         # get background configurations
-        for canvas_config in config.get("canvases", []):
+        for canvas_config in canvas_config.get("canvases", []):
             canvas_id = canvas_config.get("id")
             if canvas_id is None:
-                logging.error("canvas config id not provided")
+                logger.error("canvas config id not provided")
                 continue
             canvas = self.get(canvas_id)
             canvas.parse_metadata(canvas_config)
 
+    def parse_metadata_shapes(self, metadata: Dict[str, Any]) -> None:
+        # load saved shapes
+        shapes_config = metadata.get("shapes")
+        if not shapes_config:
+            return
+        shapes_config = json.loads(shapes_config)
+        for shape_config in shapes_config:
+            logger.debug("loading shape: %s", shape_config)
+            Shape.from_metadata(self.app, shape_config)
+
+    def parse_metadata_edges(self, metadata: Dict[str, Any]) -> None:
+        # load edges config
+        edges_config = metadata.get("edges")
+        if not edges_config:
+            return
+        edges_config = json.loads(edges_config)
+        logger.info("edges config: %s", edges_config)
+        for edge_config in edges_config:
+            edge_token = edge_config["token"]
+            edge = self.core.links.get(edge_token)
+            if edge:
+                edge.width = edge_config["width"]
+                edge.color = edge_config["color"]
+                edge.redraw()
+            else:
+                logger.warning("invalid edge token to configure: %s", edge_token)
+
+    def parse_metadata_hidden(self, metadata: Dict[str, Any]) -> None:
+        # read hidden nodes
+        hidden_config = metadata.get("hidden")
+        if not hidden_config:
+            return
+        hidden_config = json.loads(hidden_config)
+        for node_id in hidden_config:
+            canvas_node = self.core.canvas_nodes.get(node_id)
+            if canvas_node:
+                canvas_node.hide()
+            else:
+                logger.warning("invalid node to hide: %s", node_id)
+
     def add_core_node(self, core_node: Node) -> None:
         # get canvas tab for node
         canvas_id = core_node.canvas if core_node.canvas > 0 else 1
-        logging.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
+        logger.info("adding core node canvas(%s): %s", core_node.name, canvas_id)
         canvas = self.get(canvas_id)
         image = nutils.get_icon(core_node, self.app)
         x = core_node.position.x
@@ -354,7 +403,7 @@ class CanvasManager:
         network_id = link.network_id if link.network_id else None
         token = create_wireless_token(src.id, dst.id, network_id)
         if token in self.wireless_edges:
-            logging.warning("ignoring link that already exists: %s", link)
+            logger.warning("ignoring link that already exists: %s", link)
             return
         edge = CanvasWirelessEdge(self.app, src, dst, network_id, token, link)
         self.wireless_edges[token] = edge

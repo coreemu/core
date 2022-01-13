@@ -46,3 +46,11 @@ class CoreServiceBootError(Exception):
     """
 
     pass
+
+
+class CoreConfigError(Exception):
+    """
+    Used when there is an error defining a configurable option.
+    """
+
+    pass

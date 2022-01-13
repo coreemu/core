@@ -172,7 +172,7 @@ will draw the link with a dashed line.
 Wireless nodes, i.e. those connected to a WLAN node, can be assigned to
 different emulation servers and participate in the same wireless network
 only if an EMANE model is used for the WLAN. The basic range model does
-not work across multiple servers due to the Linux bridging and ebtables
+not work across multiple servers due to the Linux bridging and nftables
 rules that are used.
 
 **NOTE: The basic range wireless model does not support distributed emulation,

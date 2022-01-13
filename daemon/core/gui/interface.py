@@ -9,6 +9,8 @@ from core.gui import nodeutils as nutils
 from core.gui.graph.edges import CanvasEdge
 from core.gui.graph.node import CanvasNode
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -158,11 +160,18 @@ class InterfaceManager:
             index += 1
         return index
 
-    def get_ips(self, node: Node) -> [str, str]:
+    def get_ips(self, node: Node) -> [Optional[str], Optional[str]]:
+        enable_ip4 = self.app.guiconfig.ips.enable_ip4
+        enable_ip6 = self.app.guiconfig.ips.enable_ip6
+        ip4, ip6 = None, None
+        if not enable_ip4 and not enable_ip6:
+            return ip4, ip6
         index = self.next_index(node)
-        ip4 = self.current_subnets.ip4[index]
-        ip6 = self.current_subnets.ip6[index]
-        return str(ip4), str(ip6)
+        if enable_ip4:
+            ip4 = str(self.current_subnets.ip4[index])
+        if enable_ip6:
+            ip6 = str(self.current_subnets.ip6[index])
+        return ip4, ip6
 
     def get_subnets(self, iface: Interface) -> Subnets:
         ip4_subnet = self.ip4_subnets
@@ -196,12 +205,12 @@ class InterfaceManager:
             else:
                 self.current_subnets = self.next_subnets()
         else:
-            logging.info("ignoring subnet change for link between network nodes")
+            logger.info("ignoring subnet change for link between network nodes")
 
     def find_subnets(
         self, canvas_node: CanvasNode, visited: Set[int] = None
     ) -> Optional[IPNetwork]:
-        logging.info("finding subnet for node: %s", canvas_node.core_node.name)
+        logger.info("finding subnet for node: %s", canvas_node.core_node.name)
         subnets = None
         if not visited:
             visited = set()
@@ -220,7 +229,7 @@ class InterfaceManager:
             else:
                 subnets = self.find_subnets(check_node, visited)
             if subnets:
-                logging.info("found subnets: %s", subnets)
+                logger.info("found subnets: %s", subnets)
                 break
         return subnets
 
@@ -244,7 +253,7 @@ class InterfaceManager:
             iface1=src_iface,
             iface2=dst_iface,
         )
-        logging.info("added link between %s and %s", src_node.name, dst_node.name)
+        logger.info("added link between %s and %s", src_node.name, dst_node.name)
         return link
 
     def create_iface(self, canvas_node: CanvasNode, wireless_link: bool) -> Interface:
@@ -266,5 +275,5 @@ class InterfaceManager:
             ip6=ip6,
             ip6_mask=ip6_mask,
         )
-        logging.info("create node(%s) interface(%s)", node.name, iface)
+        logger.info("create node(%s) interface(%s)", node.name, iface)
         return iface

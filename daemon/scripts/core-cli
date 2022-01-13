@@ -9,25 +9,24 @@ from argparse import (
 )
 from functools import wraps
 from pathlib import Path
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import grpc
 import netaddr
-from google.protobuf.json_format import MessageToJson
 from netaddr import EUI, AddrFormatError, IPNetwork
 
 from core.api.grpc.client import CoreGrpcClient
-from core.api.grpc.core_pb2 import (
+from core.api.grpc.wrappers import (
     Geo,
     Interface,
+    Link,
     LinkOptions,
     Node,
     NodeType,
     Position,
-    SessionState,
 )
 
-NODE_TYPES = [k for k, v in NodeType.Enum.items() if v != NodeType.PEER_TO_PEER]
+NODE_TYPES = [x for x in NodeType if x != NodeType.PEER_TO_PEER]
 
 
 def coreclient(func):
@@ -105,11 +104,11 @@ def file_type(value: str) -> str:
 def get_current_session(core: CoreGrpcClient, session_id: Optional[int]) -> int:
     if session_id:
         return session_id
-    response = core.get_sessions()
-    if not response.sessions:
+    sessions = core.get_sessions()
+    if not sessions:
         print("no current session to interact with")
         sys.exit(1)
-    return response.sessions[0].id
+    return sessions[0].id
 
 
 def create_iface(iface_id: int, mac: str, ip4_net: IPNetwork, ip6_net: IPNetwork) -> Interface:
@@ -137,24 +136,16 @@ def print_iface(iface: Interface) -> None:
     print(f"{iface.id:<3} | {iface.mac:<17} | {iface_ip4:<18} | {iface_ip6}")
 
 
-def print_json(message: Any) -> None:
-    json = MessageToJson(message, preserving_proto_field_name=True)
-    print(json)
-
-
 @coreclient
 def get_wlan_config(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
-    response = core.get_wlan_config(session_id, args.node)
-    if args.json:
-        print_json(response)
-    else:
-        size = 0
-        for option in response.config.values():
-            size = max(size, len(option.name))
-        print(f"{'Name':<{size}.{size}} | Value")
-        for option in response.config.values():
-            print(f"{option.name:<{size}.{size}} | {option.value}")
+    config = core.get_wlan_config(session_id, args.node)
+    size = 0
+    for option in config.values():
+        size = max(size, len(option.name))
+    print(f"{'Name':<{size}.{size}} | Value")
+    for option in config.values():
+        print(f"{option.name:<{size}.{size}} | {option.value}")
 
 
 @coreclient
@@ -171,110 +162,87 @@ def set_wlan_config(core: CoreGrpcClient, args: Namespace) -> None:
         config["jitter"] = str(args.jitter)
     if args.range:
         config["range"] = str(args.range)
-    response = core.set_wlan_config(session_id, args.node, config)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"set wlan config: {response.result}")
+    result = core.set_wlan_config(session_id, args.node, config)
+    print(f"set wlan config: {result}")
 
 
 @coreclient
 def open_xml(core: CoreGrpcClient, args: Namespace) -> None:
-    response = core.open_xml(args.file, args.start)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"opened xml: {response.result}")
+    result, session_id = core.open_xml(args.file, args.start)
+    print(f"opened xml: {result},{session_id}")
 
 
 @coreclient
 def query_sessions(core: CoreGrpcClient, args: Namespace) -> None:
-    response = core.get_sessions()
-    if args.json:
-        print_json(response)
-    else:
-        print("Session ID | Session State | Nodes")
-        for s in response.sessions:
-            state = SessionState.Enum.Name(s.state)
-            print(f"{s.id:<10} | {state:<13} | {s.nodes}")
+    sessions = core.get_sessions()
+    print("Session ID | Session State | Nodes")
+    for session in sessions:
+        print(f"{session.id:<10} | {session.state.name:<13} | {session.nodes}")
 
 
 @coreclient
 def query_session(core: CoreGrpcClient, args: Namespace) -> None:
-    response = core.get_session(args.id)
-    if args.json:
-        print_json(response)
-    else:
-        print("Nodes")
-        print("Node ID | Node Name | Node Type")
-        names = {}
-        for node in response.session.nodes:
-            names[node.id] = node.name
-            node_type = NodeType.Enum.Name(node.type)
-            print(f"{node.id:<7} | {node.name:<9} | {node_type}")
-
-        print("\nLinks")
-        for link in response.session.links:
-            n1 = names[link.node1_id]
-            n2 = names[link.node2_id]
-            print(f"Node   | ", end="")
-            print_iface_header()
-            print(f"{n1:<6} | ", end="")
-            if link.HasField("iface1"):
-                print_iface(link.iface1)
-            else:
-                print()
-            print(f"{n2:<6} | ", end="")
-            if link.HasField("iface2"):
-                print_iface(link.iface2)
-            else:
-                print()
+    session = core.get_session(args.id)
+    print("Nodes")
+    print("Node ID | Node Name | Node Type")
+    for node in session.nodes.values():
+        print(f"{node.id:<7} | {node.name:<9} | {node.type.name}")
+    print("\nLinks")
+    for link in session.links:
+        n1 = session.nodes[link.node1_id].name
+        n2 = session.nodes[link.node2_id].name
+        print(f"Node   | ", end="")
+        print_iface_header()
+        print(f"{n1:<6} | ", end="")
+        if link.iface1:
+            print_iface(link.iface1)
+        else:
             print()
+        print(f"{n2:<6} | ", end="")
+        if link.iface2:
+            print_iface(link.iface2)
+        else:
+            print()
+        print()
 
 
 @coreclient
 def query_node(core: CoreGrpcClient, args: Namespace) -> None:
-    names = {}
-    response = core.get_session(args.id)
-    for node in response.session.nodes:
-        names[node.id] = node.name
-
-    response = core.get_node(args.id, args.node)
-    if args.json:
-        print_json(response)
-    else:
-        node = response.node
-        node_type = NodeType.Enum.Name(node.type)
-        print("ID   | Name    | Type")
-        print(f"{node.id:<4} | {node.name:<7} | {node_type}")
+    session = core.get_session(args.id)
+    node, ifaces, _ = core.get_node(args.id, args.node)
+    print("ID   | Name    | Type    | XY")
+    xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
+    print(f"{node.id:<4} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos}")
+    if node.geo:
+        print("Geo")
+        print(f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}")
+    if ifaces:
         print("Interfaces")
         print("Connected To | ", end="")
         print_iface_header()
-        for iface in response.ifaces:
+        for iface in ifaces:
             if iface.net_id == node.id:
                 if iface.node_id:
-                    name = names[iface.node_id]
+                    name = session.nodes[iface.node_id].name
                 else:
-                    name = names[iface.net2_id]
+                    name = session.nodes[iface.net2_id].name
             else:
-                name = names.get(iface.net_id, "")
+                net_node = session.nodes.get(iface.net_id)
+                name = net_node.name if net_node else ""
             print(f"{name:<12} | ", end="")
             print_iface(iface)
 
 
 @coreclient
 def delete_session(core: CoreGrpcClient, args: Namespace) -> None:
-    response = core.delete_session(args.id)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"delete session({args.id}): {response.result}")
+    result = core.delete_session(args.id)
+    print(f"delete session({args.id}): {result}")
 
 
 @coreclient
 def add_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
-    node_type = NodeType.Enum.Value(args.type)
+    node_type = NodeType[args.type]
     pos = None
     if args.pos:
         x, y = args.pos
@@ -294,15 +262,19 @@ def add_node(core: CoreGrpcClient, args: Namespace) -> None:
         position=pos,
         geo=geo,
     )
-    response = core.add_node(session_id, node)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"created node: {response.node_id}")
+    node_id = core.add_node(session_id, node)
+    print(f"created node: {node_id}")
 
 
 @coreclient
 def edit_node(core: CoreGrpcClient, args: Namespace) -> None:
+    session_id = get_current_session(core, args.session)
+    result = core.edit_node(session_id, args.id, args.icon)
+    print(f"edit node: {result}")
+
+
+@coreclient
+def move_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     pos = None
     if args.pos:
@@ -312,21 +284,15 @@ def edit_node(core: CoreGrpcClient, args: Namespace) -> None:
     if args.geo:
         lon, lat, alt = args.geo
         geo = Geo(lon=lon, lat=lat, alt=alt)
-    response = core.edit_node(session_id, args.id, pos, args.icon, geo)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"edit node: {response.result}")
+    result = core.move_node(session_id, args.id, pos, geo)
+    print(f"move node: {result}")
 
 
 @coreclient
 def delete_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
-    response = core.delete_node(session_id, args.id)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"deleted node: {response.result}")
+    result = core.delete_node(session_id, args.id)
+    print(f"deleted node: {result}")
 
 
 @coreclient
@@ -346,11 +312,9 @@ def add_link(core: CoreGrpcClient, args: Namespace) -> None:
         dup=args.duplicate,
         unidirectional=args.uni,
     )
-    response = core.add_link(session_id, args.node1, args.node2, iface1, iface2, options)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"add link: {response.result}")
+    link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2, options=options)
+    result, _, _ = core.add_link(session_id, link)
+    print(f"add link: {result}")
 
 
 @coreclient
@@ -364,23 +328,21 @@ def edit_link(core: CoreGrpcClient, args: Namespace) -> None:
         dup=args.duplicate,
         unidirectional=args.uni,
     )
-    response = core.edit_link(
-        session_id, args.node1, args.node2, options, args.iface1, args.iface2
-    )
-    if args.json:
-        print_json(response)
-    else:
-        print(f"edit link: {response.result}")
+    iface1 = Interface(args.iface1)
+    iface2 = Interface(args.iface2)
+    link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2, options=options)
+    result = core.edit_link(session_id, link)
+    print(f"edit link: {result}")
 
 
 @coreclient
 def delete_link(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
-    response = core.delete_link(session_id, args.node1, args.node2, args.iface1, args.iface2)
-    if args.json:
-        print_json(response)
-    else:
-        print(f"delete link: {response.result}")
+    iface1 = Interface(args.iface1)
+    iface2 = Interface(args.iface2)
+    link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2)
+    result = core.delete_link(session_id, link)
+    print(f"delete link: {result}")
 
 
 def setup_sessions_parser(parent: _SubParsersAction) -> None:
@@ -422,12 +384,17 @@ def setup_node_parser(parent: _SubParsersAction) -> None:
 
     edit_parser = subparsers.add_parser("edit", help="edit a node")
     edit_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    edit_parser.add_argument("-i", "--id", type=int, help="id to use, optional")
-    group = edit_parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
-    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    edit_parser.add_argument("-i", "--id", type=int, help="id to use", required=True)
     edit_parser.add_argument("-ic", "--icon", help="icon to use, optional")
     edit_parser.set_defaults(func=edit_node)
+
+    move_parser = subparsers.add_parser("move", help="move a node")
+    move_parser.formatter_class = ArgumentDefaultsHelpFormatter
+    move_parser.add_argument("-i", "--id", type=int, help="id to use, optional", required=True)
+    group = move_parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-p", "--pos", type=position_type, help="x,y position")
+    group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
+    move_parser.set_defaults(func=move_node)
 
     delete_parser = subparsers.add_parser("delete", help="delete a node")
     delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
@@ -544,9 +511,6 @@ def setup_wlan_parser(parent: _SubParsersAction) -> None:
 
 def main() -> None:
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-        "-js", "--json", action="store_true", help="print responses to terminal as json"
-    )
     subparsers = parser.add_subparsers(help="supported commands")
     subparsers.required = True
     subparsers.dest = "command"

@@ -15,20 +15,24 @@ containers, as a general rule you should select a machine having as much RAM and
 
 * Linux Kernel v3.3+
 * iproute2 4.5+ is a requirement for bridge related commands
-* ebtables not backed by nftables
+* nftables compatible kernel and nft command line tool
 
 ### Supported Linux Distributions
 Plan is to support recent Ubuntu and CentOS LTS releases.
 
 Verified:
 * Ubuntu - 18.04, 20.04
-* CentOS - 7.8, 8.0*
+* CentOS - 7.8, 8.0
 
-> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN
-> functionality
+> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN functionality
 
-> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not
-> function properly
+Enabling ebtables legacy:
+```shell
+sudo apt install ebtables
+update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+```
+
+> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not function properly
 
 > **NOTE:** CentOS 8 does not have the netem kernel mod available by default
 
@@ -97,7 +101,14 @@ After the installation complete it will have installed the following scripts.
 Please make sure to uninstall any previous installations of CORE cleanly
 before proceeding to install.
 
-Previous install was built from source:
+Clearing out a current install from 7.0.0+, making sure to provide options
+used for install (`-l` or `-p`).
+```shell
+cd <CORE_REPO>
+inv uninstall <options>
+```
+
+Previous install was built from source for CORE release older than 7.0.0:
 ```shell
 cd <CORE_REPO>
 sudo make uninstall
@@ -114,16 +125,29 @@ sudo apt remove core
 ```
 
 ## Automated Install
-The automated install will do the following:
-* install base tools needed for installation
-  * python3, pip, pipx, invoke, poetry
-* installs system dependencies for building core
-* clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
-* installs core into poetry managed virtual environment or locally, if flag is passed
-* installs scripts pointing pointing to appropriate python location based on install type
-* installs systemd service pointing to appropriate python location based on install type
+First we will need to clone and navigate to the CORE repo.
+```shell
+# clone CORE repo
+git clone https://github.com/coreemu/core.git
+cd core
+```
 
-After installation has completed you should be able to run `core-daemon` and `core-gui`.
+First you can use `setup.sh` as a convenience to install tooling for running invoke tasks:
+
+> **NOTE:** `setup.sh` will attempt to determine your OS by way of `/etc/os-release`, currently it supports
+> attempts to install OSs that are debian/redhat like (yum/apt).
+
+* python3, pip, venv
+* pipx 0.16.4 via pip
+* invoke 1.4.1 via pipx
+* poetry 1.1.7 via pipx
+
+Then you can run `inv install <options>`:
+* installs system dependencies for building core
+* installs core into poetry managed virtual environment or locally, if flag is passed
+* installs scripts pointing to appropriate python location based on install type
+* installs systemd service pointing to appropriate python location based on install type
+* clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
 
 > **NOTE:** installing locally comes with its own risks, it can result it potential
 > dependency conflicts with system package manager installed python dependencies
@@ -131,28 +155,56 @@ After installation has completed you should be able to run `core-daemon` and `co
 > **NOTE:** provide a prefix that will be found on path when running as sudo,
 > if the default prefix /usr/local will not be valid
 
-`install.sh` will attempt to determine your OS by way of `/etc/os-release`, currently it supports
-attempts to install OSs that are debian/redhat like (yum/apt).
 ```shell
-# make sure pip is the latest version before moving forward
-python3 -m pip install -U pip
+inv -h install
 
-# clone CORE repo
-git clone https://github.com/coreemu/core.git
-cd core
+Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
 
-# script usage: install.sh [-v] [-d] [-l] [-p <prefix>]
-#
-# -v enable verbose install
-# -d enable developer install
-# -l enable local install, not compatible with developer install
-# -p install prefix, defaults to /usr/local
+Docstring:
+  install core, poetry, scripts, service, and ospf mdr
+
+Options:
+  -d, --dev                          install development mode
+  -i STRING, --install-type=STRING   used to force an install type, can be one of the following (redhat, debian)
+  -l, --local                        determines if core will install to local system, default is False
+  -o, --[no-]ospf                    disable ospf installation
+  -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
+  -v, --verbose                      enable verbose
 
 # install core to virtual environment
 ./install.sh -p <prefix>
 
 # install core locally
 ./install.sh -p <prefix> -l
+```
+
+After installation has completed you should be able to run `core-daemon` and `core-gui`.
+
+## Using Invoke Tasks
+The invoke tool installed by way of pipx provides conveniences for running
+CORE tasks to help ensure usage of the create python virtual environment.
+
+```shell
+inv --list
+
+Available tasks:
+
+  install         install core, poetry, scripts, service, and ospf mdr
+  install-emane   install emane python bindings into the core virtual environment
+  reinstall       run the uninstall task, get latest from specified branch, and run install task
+  test            run core tests
+  test-emane      run core emane tests
+  test-mock       run core tests using mock to avoid running as sudo
+  uninstall       uninstall core, scripts, service, virtual environment, and clean build directory
+```
+
+### Enabling Service
+After installation, the core service is not enabled by default. If you desire to use the
+service, run the following commands.
+
+```shell
+sudo systemctl enable core-daemon
+sudo systemctl start core-daemon
 ```
 
 ### Unsupported Linux Distribution
@@ -163,30 +215,27 @@ an installation to your use case.
 * make sure you have python3 invoke available to leverage `<repo>/tasks.py`
 
 ```shell
-cd <repo>
-
-# Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
-#
-# Docstring:
-#   install core, poetry, scripts, service, and ospf mdr
-#
-# Options:
-#   -d, --dev                          install development mode
-#   -i STRING, --install-type=STRING
-#   -l, --local                        determines if core will install to local system, default is False
-#   -p STRING, --prefix=STRING         prefix where scripts are installed, default is /usr/local
-#   -v, --verbose                      enable verbose
-
-# install virtual environment
-inv install -p <prefix>
-
-# indstall locally
-inv install -p <prefix> -l
-
 # this will print the commands that would be ran for a given installation
 # type without actually running them, they may help in being used as
 # the basis for translating to your OS
 inv install --dry -v -p <prefix> -i <install type>
+```
+
+## Dockerfile Install
+You can leverage the provided Dockerfile, to run and launch CORE within a Docker container.
+
+```shell
+# clone core
+git clone https://github.com/coreemu/core.git
+cd core
+# build image
+sudo docker build -t core .
+# start container
+sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
+# enable xhost access to the root user
+xhost +local:root
+# launch core-gui
+sudo docker exec -it core core-gui
 ```
 
 ## Running User Scripts
@@ -208,82 +257,14 @@ python3 <script>
 
 ## Installing EMANE
 > **NOTE:** installng emane for the virtual environment is known to work for 1.21+
-> **NOTE:** automated install currently targets 1.25
 
-There is an invoke task to help with installing EMANE, which attempts to
-build EMANE from source, but has issue on systems with older protobuf-compilers.
+The recommended way to install EMANE is using prebuilt packages, otherwise
+you can follow their instructions for installing from source. Installation
+information can be found [here](https://github.com/adjacentlink/emane/wiki/Install).
 
+There is an invoke task to help install the EMANE bindings into the CORE virtual
+environment, when needed.
 ```shell
 cd <CORE_REPO>
-
-# install to virtual environment
 inv install-emane
-
-# install locally to system python3
-inv install-emane -l
-```
-
-Alternatively EMANE can be installed from deb or RPM packages or from source. See the
-[EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
-With the caveat that the python bindings need to be installed into CORE's
-virtualenv, unless installed locally.
-
-### Installing EMANE Python Bindings for Virtual Environment
-
-If you need to just install the EMANE python bindings to the CORE virtual
-environment, since you are installing EMANE itself from pre-built packages.
-You can run the following
-
-Leveraging the following wiki:
-[build EMANE](https://github.com/adjacentlink/emane/wiki/Build)
-
-The following would install the EMANE python bindings after being
-successfully built.
-```shell
-# clone and build emane python bindings
-git clone https://github.com/adjacentlink/emane.git
-cd emane
-./autogen.sh
-PYTHON=python3 ./configure --prefix=/usr
-cd src/python
-make
-
-# install to core virtual environment
-cd <CORE_REPO>/daemon
-poetry run pip install <EMANE_REPO>/src/python
-```
-
-## Using Invoke Tasks
-The invoke tool installed by way of pipx provides conveniences for running
-CORE tasks to help ensure usage of the create python virtual environment.
-
-```shell
-inv --list
-
-Available tasks:
-
-  daemon            start core-daemon
-  install           install core, poetry, scripts, service, and ospf mdr
-  install-emane     install emane and the python bindings
-  install-scripts   install core script files, modified to leverage virtual environment
-  install-service   install systemd core service
-  test              run core tests
-  test-emane        run core emane tests
-  test-mock         run core tests using mock to avoid running as sudo
-  uninstall         uninstall core, scripts, service, virtual environment, and clean build directory
-```
-
-Print help for a given task:
-```shell
-inv -h install
-
-Usage: inv[oke] [--core-opts] install [--options] [other tasks here ...]
-
-Docstring:
-  install core, poetry, scripts, service, and ospf mdr
-
-Options:
-  -d, --dev                    install development mode
-  -p STRING, --prefix=STRING   prefix where scripts are installed, default is /usr/local
-  -v, --verbose                enable verbose
 ```

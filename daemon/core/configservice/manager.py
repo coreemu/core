@@ -1,10 +1,14 @@
 import logging
 import pathlib
+import pkgutil
+from pathlib import Path
 from typing import Dict, List, Type
 
-from core import utils
+from core import configservices, utils
 from core.configservice.base import ConfigService
 from core.errors import CoreError
+
+logger = logging.getLogger(__name__)
 
 
 class ConfigServiceManager:
@@ -28,7 +32,7 @@ class ConfigServiceManager:
         """
         service_class = self.services.get(name)
         if service_class is None:
-            raise CoreError(f"service does not exit {name}")
+            raise CoreError(f"service does not exist {name}")
         return service_class
 
     def add(self, service: Type[ConfigService]) -> None:
@@ -40,7 +44,7 @@ class ConfigServiceManager:
         :raises CoreError: when service is a duplicate or has unmet executables
         """
         name = service.name
-        logging.debug(
+        logger.debug(
             "loading service: class(%s) name(%s)", service.__class__.__name__, name
         )
 
@@ -55,27 +59,46 @@ class ConfigServiceManager:
             except CoreError as e:
                 raise CoreError(f"config service({service.name}): {e}")
 
-            # make service available
+        # make service available
         self.services[name] = service
 
-    def load(self, path: str) -> List[str]:
+    def load_locals(self) -> List[str]:
         """
-        Search path provided for configurable services and add them for being managed.
+        Search and add config service from local core module.
+
+        :return: list of errors when loading services
+        """
+        errors = []
+        for module_info in pkgutil.walk_packages(
+            configservices.__path__, f"{configservices.__name__}."
+        ):
+            services = utils.load_module(module_info.name, ConfigService)
+            for service in services:
+                try:
+                    self.add(service)
+                except CoreError as e:
+                    errors.append(service.name)
+                    logger.debug("not loading config service(%s): %s", service.name, e)
+        return errors
+
+    def load(self, path: Path) -> List[str]:
+        """
+        Search path provided for config services and add them for being managed.
 
         :param path: path to search configurable services
-        :return: list errors when loading and adding services
+        :return: list errors when loading services
         """
         path = pathlib.Path(path)
         subdirs = [x for x in path.iterdir() if x.is_dir()]
         subdirs.append(path)
         service_errors = []
         for subdir in subdirs:
-            logging.debug("loading config services from: %s", subdir)
-            services = utils.load_classes(str(subdir), ConfigService)
+            logger.debug("loading config services from: %s", subdir)
+            services = utils.load_classes(subdir, ConfigService)
             for service in services:
                 try:
                     self.add(service)
                 except CoreError as e:
                     service_errors.append(service.name)
-                    logging.debug("not loading service(%s): %s", service.name, e)
+                    logger.debug("not loading service(%s): %s", service.name, e)
         return service_errors

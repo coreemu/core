@@ -2,18 +2,20 @@
 Defines Emane Models used within CORE.
 """
 import logging
-import os
+from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from core.config import ConfigGroup, Configuration
+from core.config import ConfigBool, ConfigGroup, ConfigString, Configuration
 from core.emane import emanemanifest
-from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkOptions
-from core.emulator.enumerations import ConfigDataTypes
 from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.nodes.interface import CoreInterface
 from core.xml import emanexml
+
+logger = logging.getLogger(__name__)
+DEFAULT_DEV: str = "ctrl0"
+MANIFEST_PATH: str = "share/emane/manifest"
 
 
 class EmaneModel(WirelessModel):
@@ -22,6 +24,17 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+
+    # default platform configuration settings
+    platform_controlport: str = "controlportendpoint"
+    platform_xml: str = "nemmanager.xml"
+    platform_defaults: Dict[str, str] = {
+        "eventservicedevice": DEFAULT_DEV,
+        "eventservicegroup": "224.1.2.8:45703",
+        "otamanagerdevice": DEFAULT_DEV,
+        "otamanagergroup": "224.1.2.8:45702",
+    }
+    platform_config: List[Configuration] = []
 
     # default mac configuration settings
     mac_library: Optional[str] = None
@@ -41,34 +54,44 @@ class EmaneModel(WirelessModel):
 
     # support for external configurations
     external_config: List[Configuration] = [
-        Configuration("external", ConfigDataTypes.BOOL, default="0"),
-        Configuration(
-            "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
-        ),
-        Configuration(
-            "transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002"
-        ),
+        ConfigBool(id="external", default="0"),
+        ConfigString(id="platformendpoint", default="127.0.0.1:40001"),
+        ConfigString(id="transportendpoint", default="127.0.0.1:50002"),
     ]
 
     config_ignore: Set[str] = set()
 
     @classmethod
-    def load(cls, emane_prefix: str) -> None:
+    def load(cls, emane_prefix: Path) -> None:
         """
-        Called after being loaded within the EmaneManager. Provides configured emane_prefix for
-        parsing xml files.
+        Called after being loaded within the EmaneManager. Provides configured
+        emane_prefix for parsing xml files.
 
         :param emane_prefix: configured emane prefix path
         :return: nothing
         """
-        manifest_path = "share/emane/manifest"
+        cls._load_platform_config(emane_prefix)
         # load mac configuration
-        mac_xml_path = os.path.join(emane_prefix, manifest_path, cls.mac_xml)
+        mac_xml_path = emane_prefix / MANIFEST_PATH / cls.mac_xml
         cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
-
         # load phy configuration
-        phy_xml_path = os.path.join(emane_prefix, manifest_path, cls.phy_xml)
+        phy_xml_path = emane_prefix / MANIFEST_PATH / cls.phy_xml
         cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
+    @classmethod
+    def _load_platform_config(cls, emane_prefix: Path) -> None:
+        platform_xml_path = emane_prefix / MANIFEST_PATH / cls.platform_xml
+        cls.platform_config = emanemanifest.parse(
+            platform_xml_path, cls.platform_defaults
+        )
+        # remove controlport configuration, since core will set this directly
+        controlport_index = None
+        for index, configuration in enumerate(cls.platform_config):
+            if configuration.id == cls.platform_controlport:
+                controlport_index = index
+                break
+        if controlport_index is not None:
+            cls.platform_config.pop(controlport_index)
 
     @classmethod
     def configurations(cls) -> List[Configuration]:
@@ -77,7 +100,9 @@ class EmaneModel(WirelessModel):
 
         :return: all configurations
         """
-        return cls.mac_config + cls.phy_config + cls.external_config
+        return (
+            cls.platform_config + cls.mac_config + cls.phy_config + cls.external_config
+        )
 
     @classmethod
     def config_groups(cls) -> List[ConfigGroup]:
@@ -86,11 +111,13 @@ class EmaneModel(WirelessModel):
 
         :return: list of configuration groups.
         """
-        mac_len = len(cls.mac_config)
+        platform_len = len(cls.platform_config)
+        mac_len = len(cls.mac_config) + platform_len
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
         return [
-            ConfigGroup("MAC Parameters", 1, mac_len),
+            ConfigGroup("Platform Parameters", 1, platform_len),
+            ConfigGroup("MAC Parameters", platform_len + 1, mac_len),
             ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
@@ -110,13 +137,14 @@ class EmaneModel(WirelessModel):
         emanexml.create_phy_xml(self, iface, config)
         emanexml.create_transport_xml(iface, config)
 
-    def post_startup(self) -> None:
+    def post_startup(self, iface: CoreInterface) -> None:
         """
         Logic to execute after the emane manager is finished with startup.
 
+        :param iface: interface for post startup
         :return: nothing
         """
-        logging.debug("emane model(%s) has no post setup tasks", self.name)
+        logger.debug("emane model(%s) has no post setup tasks", self.name)
 
     def update(self, moved_ifaces: List[CoreInterface]) -> None:
         """
@@ -128,10 +156,9 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         try:
-            emane_net = self.session.get_node(self.id, EmaneNet)
-            emane_net.setnempositions(moved_ifaces)
+            self.session.emane.set_nem_positions(moved_ifaces)
         except CoreError:
-            logging.exception("error during update")
+            logger.exception("error during update")
 
     def linkconfig(
         self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
@@ -144,4 +171,4 @@ class EmaneModel(WirelessModel):
         :param iface2: interface two
         :return: nothing
         """
-        logging.warning("emane model(%s) does not support link config", self.name)
+        logger.warning("emane model(%s) does not support link config", self.name)

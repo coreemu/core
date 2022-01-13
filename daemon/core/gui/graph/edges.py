@@ -11,6 +11,8 @@ from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
 from core.gui.utils import bandwidth_text, delay_jitter_text
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
     from core.gui.graph.graph import CanvasGraph
@@ -393,7 +395,7 @@ class Edge:
             self.dst.canvas.coords(self.dst_label2, *dst_pos)
 
     def delete(self) -> None:
-        logging.debug("deleting canvas edge, id: %s", self.id)
+        logger.debug("deleting canvas edge, id: %s", self.id)
         self.src.canvas.delete(self.id)
         self.src.canvas.delete(self.src_label)
         self.src.canvas.delete(self.dst_label)
@@ -488,7 +490,7 @@ class CanvasWirelessEdge(Edge):
         token: str,
         link: Link,
     ) -> None:
-        logging.debug("drawing wireless link from node %s to node %s", src, dst)
+        logger.debug("drawing wireless link from node %s to node %s", src, dst)
         super().__init__(app, src, dst)
         self.src.wireless_edges.add(self)
         self.dst.wireless_edges.add(self)
@@ -622,7 +624,7 @@ class CanvasEdge(Edge):
             self.draw_link_options()
 
     def complete(self, dst: "CanvasNode", link: Link = None) -> None:
-        logging.debug(
+        logger.debug(
             "completing wired link from node(%s) to node(%s)",
             self.src.core_node.name,
             dst.core_node.name,

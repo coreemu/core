@@ -16,7 +16,7 @@ import grpc
 
 from core import utils
 from core.api.grpc.client import CoreGrpcClient
-from core.api.grpc.core_pb2 import NodeType
+from core.api.grpc.wrappers import NodeType
 
 SDT_HOST = "127.0.0.1"
 SDT_PORT = 50000
@@ -60,15 +60,15 @@ class SdtClient:
 
 class RouterMonitor:
     def __init__(
-        self,
-        session: int,
-        src: str,
-        dst: str,
-        pkt: str,
-        rate: int,
-        dead: int,
-        sdt_host: str,
-        sdt_port: int,
+            self,
+            session: int,
+            src: str,
+            dst: str,
+            pkt: str,
+            rate: int,
+            dead: int,
+            sdt_host: str,
+            sdt_port: int,
     ) -> None:
         self.queue = Queue()
         self.core = CoreGrpcClient()
@@ -92,16 +92,15 @@ class RouterMonitor:
                 self.session = self.get_session()
             print("session: ", self.session)
             try:
-                response = self.core.get_session(self.session)
-                nodes = response.session.nodes
+                session = self.core.get_session(self.session)
                 node_map = {}
-                for node in nodes:
+                for node in session.nodes.values():
                     if node.type != NodeType.DEFAULT:
                         continue
                     node_map[node.id] = node.channel
                     if self.src_id is None:
-                        response = self.core.get_node(self.session, node.id)
-                        for iface in response.ifaces:
+                        _, ifaces, _ = self.core.get_node(self.session, node.id)
+                        for iface in ifaces:
                             if self.src == iface.ip4:
                                 self.src_id = node.id
                                 break
@@ -117,8 +116,7 @@ class RouterMonitor:
         return node_map
 
     def get_session(self) -> int:
-        response = self.core.get_sessions()
-        sessions = response.sessions
+        sessions = self.core.get_sessions()
         session = None
         if sessions:
             session = sessions[0]

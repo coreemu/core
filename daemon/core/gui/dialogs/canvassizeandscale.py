@@ -24,7 +24,7 @@ class SizeAndScaleDialog(Dialog):
         super().__init__(app, "Canvas Size and Scale")
         self.manager: CanvasManager = self.app.manager
         self.section_font: font.Font = font.Font(weight=font.BOLD)
-        width, height = self.manager.current_dimensions
+        width, height = self.manager.current().current_dimensions
         self.pixel_width: tk.IntVar = tk.IntVar(value=width)
         self.pixel_height: tk.IntVar = tk.IntVar(value=height)
         location = self.app.core.session.location
@@ -189,7 +189,7 @@ class SizeAndScaleDialog(Dialog):
 
     def click_apply(self) -> None:
         width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.manager.redraw_canvases((width, height))
+        self.manager.redraw_canvas((width, height))
         location = self.app.core.session.location
         location.x = self.x.get()
         location.y = self.y.get()

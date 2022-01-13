@@ -19,40 +19,6 @@ if TYPE_CHECKING:
     from core.gui.app import Application
 
 
-class GlobalEmaneDialog(Dialog):
-    def __init__(self, master: tk.BaseWidget, app: "Application") -> None:
-        super().__init__(app, "EMANE Configuration", master=master)
-        self.config_frame: Optional[ConfigFrame] = None
-        self.enabled: bool = not self.app.core.is_runtime()
-        self.draw()
-
-    def draw(self) -> None:
-        self.top.columnconfigure(0, weight=1)
-        self.top.rowconfigure(0, weight=1)
-        session = self.app.core.session
-        self.config_frame = ConfigFrame(
-            self.top, self.app, session.emane_config, self.enabled
-        )
-        self.config_frame.draw_config()
-        self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
-        self.draw_buttons()
-
-    def draw_buttons(self) -> None:
-        frame = ttk.Frame(self.top)
-        frame.grid(sticky=tk.EW)
-        for i in range(2):
-            frame.columnconfigure(i, weight=1)
-        state = tk.NORMAL if self.enabled else tk.DISABLED
-        button = ttk.Button(frame, text="Apply", command=self.click_apply, state=state)
-        button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
-        button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, sticky=tk.EW)
-
-    def click_apply(self) -> None:
-        self.config_frame.parse_config()
-        self.destroy()
-
-
 class EmaneModelDialog(Dialog):
     def __init__(
         self,
@@ -115,7 +81,7 @@ class EmaneConfigDialog(Dialog):
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(1)
         self.emane_models: List[str] = [
-            x.split("_")[1] for x in self.app.core.session.emane_models
+            x.split("_")[1] for x in self.app.core.emane_models
         ]
         model = self.node.emane.split("_")[1]
         self.emane_model: tk.StringVar = tk.StringVar(value=model)
@@ -179,9 +145,7 @@ class EmaneConfigDialog(Dialog):
     def draw_emane_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky=tk.EW, pady=PADY)
-        for i in range(2):
-            frame.columnconfigure(i, weight=1)
-
+        frame.columnconfigure(0, weight=1)
         image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
         self.emane_model_button = ttk.Button(
             frame,
@@ -191,18 +155,7 @@ class EmaneConfigDialog(Dialog):
             command=self.click_model_config,
         )
         self.emane_model_button.image = image
-        self.emane_model_button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
-
-        image = images.from_enum(ImageEnum.EDITNODE, width=images.BUTTON_SIZE)
-        button = ttk.Button(
-            frame,
-            text="EMANE options",
-            image=image,
-            compound=tk.RIGHT,
-            command=self.click_emane_config,
-        )
-        button.image = image
-        button.grid(row=0, column=1, sticky=tk.EW)
+        self.emane_model_button.grid(padx=PADX, sticky=tk.EW)
 
     def draw_apply_and_cancel(self) -> None:
         frame = ttk.Frame(self.top)
@@ -214,10 +167,6 @@ class EmaneConfigDialog(Dialog):
         button.grid(row=0, column=0, padx=PADX, sticky=tk.EW)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky=tk.EW)
-
-    def click_emane_config(self) -> None:
-        dialog = GlobalEmaneDialog(self, self.app)
-        dialog.show()
 
     def click_model_config(self) -> None:
         """

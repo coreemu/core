@@ -4,6 +4,8 @@ import time
 import tkinter as tk
 from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
@@ -43,7 +45,7 @@ class ProgressTask:
             if self.callback:
                 self.app.after(0, self.callback, *values)
         except Exception as e:
-            logging.exception("progress task exception")
+            logger.exception("progress task exception")
             self.app.show_exception("Task Error", e)
         finally:
             self.app.after(0, self.complete)

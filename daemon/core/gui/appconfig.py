@@ -120,25 +120,18 @@ class IpConfigs(yaml.YAMLObject):
     yaml_tag: str = "!IpConfigs"
     yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
 
-    def __init__(
-        self,
-        ip4: str = None,
-        ip6: str = None,
-        ip4s: List[str] = None,
-        ip6s: List[str] = None,
-    ) -> None:
-        if ip4s is None:
-            ip4s = ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
-        self.ip4s: List[str] = ip4s
-        if ip6s is None:
-            ip6s = ["2001::", "2002::", "a::"]
-        self.ip6s: List[str] = ip6s
-        if ip4 is None:
-            ip4 = self.ip4s[0]
-        self.ip4: str = ip4
-        if ip6 is None:
-            ip6 = self.ip6s[0]
-        self.ip6: str = ip6
+    def __init__(self, **kwargs) -> None:
+        self.__setstate__(kwargs)
+
+    def __setstate__(self, kwargs):
+        self.ip4s: List[str] = kwargs.get(
+            "ip4s", ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
+        )
+        self.ip4: str = kwargs.get("ip4", self.ip4s[0])
+        self.ip6s: List[str] = kwargs.get("ip6s", ["2001::", "2002::", "a::"])
+        self.ip6: str = kwargs.get("ip6", self.ip6s[0])
+        self.enable_ip4: bool = kwargs.get("enable_ip4", True)
+        self.enable_ip6: bool = kwargs.get("enable_ip6", True)
 
 
 class GuiConfig(yaml.YAMLObject):
@@ -223,7 +216,7 @@ def check_directory() -> None:
 
 def read() -> GuiConfig:
     with CONFIG_PATH.open("r") as f:
-        return yaml.load(f, Loader=yaml.SafeLoader)
+        return yaml.safe_load(f)
 
 
 def save(config: GuiConfig) -> None:

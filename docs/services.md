@@ -149,12 +149,11 @@ ideas for a service before adding a new service type.
    to do what you want. It could generate config/script files, mount per-node
    directories, start processes/scripts, etc. sample.py is a Python file that
    defines one or more classes to be imported. You can create multiple Python
-   files that will be imported. Add any new filenames to the __init__.py file.
+   files that will be imported.
 
 2. Put these files in a directory such as /home/username/.core/myservices
    Note that the last component of this directory name **myservices** should not
-   be named something like **services** which conflicts with an existing Python
-   name (the syntax 'from myservices import *' is used).
+   be named something like **services** which conflicts with an existing module.
 
 3. Add a **custom_services_dir = /home/username/.core/myservices** entry to the
    /etc/core/core.conf file.

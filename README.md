@@ -2,7 +2,7 @@
 
 CORE: Common Open Research Emulator
 
-Copyright (c)2005-2020 the Boeing Company.
+Copyright (c)2005-2022 the Boeing Company.
 
 See the LICENSE file included in this distribution.
 
@@ -13,6 +13,24 @@ networks on one or more machines. You can connect these emulated
 networks to live networks. CORE consists of a GUI for drawing
 topologies of lightweight virtual machines, and Python modules for
 scripting network emulation.
+
+## Quick Start
+
+The following should get you up and running on Ubuntu 18+ and CentOS 7+
+from a clean install, it will prompt you for sudo password. This would
+install CORE into a python3 virtual environment and install
+[OSPF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr) from source.
+For more detailed installation see [here](https://coreemu.github.io/core/install.html).
+
+```shell
+git clone https://github.com/coreemu/core.git
+cd core
+./setup.sh
+# Ubuntu
+inv install
+# CentOS
+./install.sh -p /usr
+```
 
 ## Documentation & Support
 
