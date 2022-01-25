@@ -276,20 +276,22 @@ class Session:
                 ptp = self.create_node(PtpNet, start)
                 iface1 = node1.new_iface(ptp, iface1_data)
                 iface2 = node2.new_iface(ptp, iface2_data)
-                ptp.linkconfig(iface1, options)
+                iface1.config(options)
                 if not options.unidirectional:
-                    ptp.linkconfig(iface2, options)
+                    iface2.config(options)
             # link node to net
             elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
+                logger.info("linking node to net: %s - %s", node1.name, node2.name)
                 iface1 = node1.new_iface(node2, iface1_data)
                 if not isinstance(node2, (EmaneNet, WlanNode)):
-                    node2.linkconfig(iface1, options)
+                    iface1.config(options)
             # link net to node
             elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
+                logger.info("linking net to node: %s - %s", node1.name, node2.name)
                 iface2 = node2.new_iface(node1, iface2_data)
                 wireless_net = isinstance(node1, (EmaneNet, WlanNode))
                 if not options.unidirectional and not wireless_net:
-                    node1.linkconfig(iface2, options)
+                    iface2.config(options)
             # network to network
             elif isinstance(node1, CoreNetworkBase) and isinstance(
                 node2, CoreNetworkBase
@@ -298,11 +300,10 @@ class Session:
                     "linking network to network: %s - %s", node1.name, node2.name
                 )
                 iface1 = node1.linknet(node2)
-                node1.linkconfig(iface1, options)
+                use_local = iface1.net == node1
+                iface1.config(options, use_local=use_local)
                 if not options.unidirectional:
-                    iface1.swapparams("_params_up")
-                    node2.linkconfig(iface1, options)
-                    iface1.swapparams("_params_up")
+                    iface1.config(options, use_local=not use_local)
             else:
                 raise CoreError(
                     f"cannot link node1({type(node1)}) node2({type(node2)})"
@@ -379,16 +380,18 @@ class Session:
             elif isinstance(node1, CoreNetworkBase) and isinstance(
                 node2, CoreNetworkBase
             ):
-                for iface in node1.get_ifaces(control=False):
-                    if iface.othernet == node2:
-                        node1.detach(iface)
-                        iface.shutdown()
-                        break
-                for iface in node2.get_ifaces(control=False):
-                    if iface.othernet == node1:
-                        node2.detach(iface)
-                        iface.shutdown()
-                        break
+                iface1 = node1.get_linked_iface(node2)
+                if iface1:
+                    node1.detach(iface1)
+                    iface1.shutdown()
+                iface2 = node2.get_linked_iface(node1)
+                if iface2:
+                    node2.detach(iface2)
+                    iface2.shutdown()
+                if not iface1 and not iface2:
+                    raise CoreError(
+                        f"node1({node1.name}) and node2({node2.name}) are not connected"
+                    )
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
@@ -432,11 +435,11 @@ class Session:
         else:
             if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
                 iface1 = node1.ifaces.get(iface1_id)
-                iface2 = node2.ifaces.get(iface2_id)
                 if not iface1:
                     raise CoreError(
                         f"node({node1.name}) missing interface({iface1_id})"
                     )
+                iface2 = node2.ifaces.get(iface2_id)
                 if not iface2:
                     raise CoreError(
                         f"node({node2.name}) missing interface({iface2_id})"
@@ -446,39 +449,40 @@ class Session:
                         f"node1({node1.name}) node2({node2.name}) "
                         "not connected to same net"
                     )
-                ptp = iface1.net
-                ptp.linkconfig(iface1, options, iface2)
+                iface1.config(options)
                 if not options.unidirectional:
-                    ptp.linkconfig(iface2, options, iface1)
+                    iface2.config(options)
             elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
                 iface = node1.get_iface(iface1_id)
-                node2.linkconfig(iface, options)
+                if iface.net != node2:
+                    raise CoreError(
+                        f"node1({node1.name}) iface1({iface1_id})"
+                        f" is not linked to node1({node2.name})"
+                    )
+                iface.config(options)
             elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
                 iface = node2.get_iface(iface2_id)
-                node1.linkconfig(iface, options)
+                if iface.net != node1:
+                    raise CoreError(
+                        f"node2({node2.name}) iface2({iface2_id})"
+                        f" is not linked to node1({node1.name})"
+                    )
+                iface.config(options)
             elif isinstance(node1, CoreNetworkBase) and isinstance(
                 node2, CoreNetworkBase
             ):
                 iface = node1.get_linked_iface(node2)
-                upstream = False
                 if not iface:
-                    upstream = True
                     iface = node2.get_linked_iface(node1)
-                if not iface:
-                    raise CoreError("modify unknown link between nets")
-                if upstream:
-                    iface.swapparams("_params_up")
-                    node1.linkconfig(iface, options)
-                    iface.swapparams("_params_up")
+                if iface:
+                    use_local = iface.net == node1
+                    iface.config(options, use_local=use_local)
+                    if not options.unidirectional:
+                        iface.config(options, use_local=not use_local)
                 else:
-                    node1.linkconfig(iface, options)
-                if not options.unidirectional:
-                    if upstream:
-                        node2.linkconfig(iface, options)
-                    else:
-                        iface.swapparams("_params_up")
-                        node2.linkconfig(iface, options)
-                        iface.swapparams("_params_up")
+                    raise CoreError(
+                        f"node1({node1.name}) and node2({node2.name}) are not linked"
+                    )
             else:
                 raise CoreError(
                     f"cannot update link node1({type(node1)}) node2({type(node2)})"

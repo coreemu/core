@@ -13,7 +13,7 @@ import netaddr
 
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
-from core.emulator.data import InterfaceData, LinkData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, VNODED
@@ -997,20 +997,6 @@ class CoreNetworkBase(NodeBase):
 
         :param net: network to link with
         :return: created interface
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def linkconfig(
-        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
-    ) -> None:
-        """
-        Configure link parameters by applying tc queuing disciplines on the interface.
-
-        :param iface: interface one
-        :param options: options for configuring link
-        :param iface2: interface two
-        :return: nothing
         """
         raise NotImplementedError
 

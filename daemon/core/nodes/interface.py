@@ -3,6 +3,7 @@ virtual ethernet classes that implement the interfaces available under Linux.
 """
 
 import logging
+import math
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
@@ -13,6 +14,7 @@ from core import utils
 from core.emulator.data import LinkOptions
 from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError, CoreError
+from core.executables import TC
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
@@ -335,6 +337,92 @@ class CoreInterface:
         :return: True if virtual interface, False otherwise
         """
         return self.transport_type == TransportType.VIRTUAL
+
+    def _set_params_change(self, **kwargs: float) -> bool:
+        """
+        Set parameters to change.
+
+        :param kwargs: parameter name and values to change
+        :return: True if any parameter changed, False otherwise
+        """
+        return any([self.setparam(k, v) for k, v in kwargs.items()])
+
+    def config(self, options: LinkOptions, use_local: bool = True) -> None:
+        """
+        Configure interface using tc based on existing state and provided
+        link options.
+
+        :param options: options to configure with
+        :param use_local: True to use localname for device, False for name
+        :return: nothing
+        """
+        # determine if any settings have changed
+        if use_local:
+            devname = self.localname
+            changed = self._set_params_change(
+                bw=options.bandwidth,
+                delay=options.delay,
+                loss=options.loss,
+                duplicate=options.dup,
+                jitter=options.jitter,
+                buffer=options.buffer,
+            )
+        else:
+            devname = self.name
+            changed = self._set_params_change(
+                n_bw=options.bandwidth,
+                n_delay=options.delay,
+                n_loss=options.loss,
+                n_duplicate=options.dup,
+                n_jitter=options.jitter,
+                n_buffer=options.buffer,
+            )
+        if not changed:
+            return
+        # delete tc configuration or create and add it
+        if all(
+            [
+                options.delay is None or options.delay <= 0,
+                options.jitter is None or options.jitter <= 0,
+                options.loss is None or options.loss <= 0,
+                options.dup is None or options.dup <= 0,
+                options.bandwidth is None or options.bandwidth <= 0,
+                options.buffer is None or options.buffer <= 0,
+            ]
+        ):
+            if not self.getparam("has_netem"):
+                return
+            if self.up:
+                cmd = f"{TC} qdisc delete dev {devname} root handle 10:"
+                self.host_cmd(cmd)
+            self.setparam("has_netem", False)
+        else:
+            netem = ""
+            if options.bandwidth is not None:
+                limit = 1000
+                bw = options.bandwidth / 1000
+                if options.buffer is not None and options.buffer > 0:
+                    limit = options.buffer
+                elif options.delay and options.bandwidth:
+                    delay = options.delay / 1000
+                    limit = max(2, math.ceil((2 * bw * delay) / (8 * self.mtu)))
+                netem += f" rate {bw}kbit"
+                netem += f" limit {limit}"
+            if options.delay is not None:
+                netem += f" delay {options.delay}us"
+            if options.jitter is not None:
+                if options.delay is None:
+                    netem += f" delay 0us {options.jitter}us 25%"
+                else:
+                    netem += f" {options.jitter}us 25%"
+            if options.loss is not None and options.loss > 0:
+                netem += f" loss {min(options.loss, 100)}%"
+            if options.dup is not None and options.dup > 0:
+                netem += f" duplicate {min(options.dup, 100)}%"
+            if self.up:
+                cmd = f"{TC} qdisc replace dev {devname} root handle 10: netem {netem}"
+                self.host_cmd(cmd)
+            self.setparam("has_netem", True)
 
 
 class Veth(CoreInterface):

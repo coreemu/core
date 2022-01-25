@@ -7,14 +7,13 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from core.emulator.data import InterfaceData, LinkOptions
+from core.emulator.data import InterfaceData
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import CoreNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -142,17 +141,6 @@ class PhysicalNode(CoreNodeBase):
             self.add_ip(iface_id, ip)
         if self.up:
             self.net_client.device_up(iface.localname)
-
-    def linkconfig(
-        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
-    ) -> None:
-        """
-        Apply tc queing disciplines using linkconfig.
-        """
-        linux_bridge = CoreNetwork(self.session)
-        linux_bridge.up = True
-        linux_bridge.linkconfig(iface, options, iface2)
-        del linux_bridge
 
     def next_iface_id(self) -> int:
         with self.lock:

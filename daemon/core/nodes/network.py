@@ -3,7 +3,6 @@ Defines network nodes used within core.
 """
 
 import logging
-import math
 import threading
 import time
 from collections import OrderedDict
@@ -14,7 +13,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type
 import netaddr
 
 from core import utils
-from core.emulator.data import InterfaceData, LinkData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -23,7 +22,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreCommandError, CoreError
-from core.executables import NFTABLES, TC
+from core.executables import NFTABLES
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
@@ -399,77 +398,6 @@ class CoreNetwork(CoreNetworkBase):
                 return
             self.linked[iface1][iface2] = True
         nft_queue.update(self)
-
-    def linkconfig(
-        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
-    ) -> None:
-        """
-        Configure link parameters by applying tc queuing disciplines on the interface.
-
-        :param iface: interface one
-        :param options: options for configuring link
-        :param iface2: interface two
-        :return: nothing
-        """
-        # determine if any settings have changed
-        changed = any(
-            [
-                iface.setparam("bw", options.bandwidth),
-                iface.setparam("delay", options.delay),
-                iface.setparam("loss", options.loss),
-                iface.setparam("duplicate", options.dup),
-                iface.setparam("jitter", options.jitter),
-                iface.setparam("buffer", options.buffer),
-            ]
-        )
-        if not changed:
-            return
-
-        # delete tc configuration or create and add it
-        devname = iface.localname
-        if all(
-            [
-                options.delay is None or options.delay <= 0,
-                options.jitter is None or options.jitter <= 0,
-                options.loss is None or options.loss <= 0,
-                options.dup is None or options.dup <= 0,
-                options.bandwidth is None or options.bandwidth <= 0,
-                options.buffer is None or options.buffer <= 0,
-            ]
-        ):
-            if not iface.getparam("has_netem"):
-                return
-            if self.up:
-                cmd = f"{TC} qdisc delete dev {devname} root handle 10:"
-                iface.host_cmd(cmd)
-            iface.setparam("has_netem", False)
-        else:
-            netem = ""
-            if options.bandwidth is not None:
-                limit = 1000
-                bw = options.bandwidth / 1000
-                if options.buffer is not None and options.buffer > 0:
-                    limit = options.buffer
-                elif options.delay and options.bandwidth:
-                    delay = options.delay / 1000
-                    limit = max(2, math.ceil((2 * bw * delay) / (8 * iface.mtu)))
-                netem += f" rate {bw}kbit"
-                netem += f" limit {limit}"
-            if options.delay is not None:
-                netem += f" delay {options.delay}us"
-            if options.jitter is not None:
-                if options.delay is None:
-                    netem += f" delay 0us {options.jitter}us 25%"
-                else:
-                    netem += f" {options.jitter}us 25%"
-            if options.loss is not None and options.loss > 0:
-                netem += f" loss {min(options.loss, 100)}%"
-            if options.dup is not None and options.dup > 0:
-                netem += f" duplicate {min(options.dup, 100)}%"
-            if self.up:
-                cmd = f"{TC} qdisc replace dev {devname} root handle 10: netem {netem}"
-                iface.host_cmd(cmd)
-            iface.setparam("has_netem", True)
 
     def linknet(self, net: CoreNetworkBase) -> CoreInterface:
         """

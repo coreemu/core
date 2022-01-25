@@ -321,7 +321,7 @@ class BasicRangeModel(WirelessModel):
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                self.wlan.linkconfig(iface, options)
+                iface.config(options)
 
     def get_position(self, iface: CoreInterface) -> Tuple[float, float, float]:
         """
