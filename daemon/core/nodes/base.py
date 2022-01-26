@@ -1063,9 +1063,7 @@ class CoreNetworkBase(NodeBase):
                     continue
                 if iface.local_options != iface.options:
                     unidirectional = 1
-                iface_data = None
-            else:
-                iface_data = iface.get_data()
+            iface_data = iface.get_data()
             link_data = LinkData(
                 message_type=flags,
                 type=self.linktype,
