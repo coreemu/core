@@ -1055,7 +1055,7 @@ class CoreNetworkBase(NodeBase):
             unidirectional = 0
             linked_node = iface.node
             if linked_node is None:
-                # two layer-2 switches/hubs linked together via linknet()
+                # two layer-2 switches/hubs linked together
                 if not iface.othernet:
                     continue
                 linked_node = iface.othernet
@@ -1063,7 +1063,9 @@ class CoreNetworkBase(NodeBase):
                     continue
                 if iface.local_options != iface.options:
                     unidirectional = 1
-            iface_data = iface.get_data()
+                iface_data = None
+            else:
+                iface_data = iface.get_data()
             link_data = LinkData(
                 message_type=flags,
                 type=self.linktype,
