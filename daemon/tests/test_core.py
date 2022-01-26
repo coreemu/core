@@ -130,12 +130,6 @@ class TestCore:
         assert 0 in node1.ifaces
         assert 0 in node2.ifaces
 
-        # check interface parameters
-        iface = node1.get_iface(0)
-        iface.setparam("test", 1)
-        assert iface.getparam("test") == 1
-        assert iface.getparams()
-
         # delete interface and test that if no longer exists
         node1.delete_iface(0)
         assert 0 not in node1.ifaces

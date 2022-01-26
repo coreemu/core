@@ -1049,11 +1049,10 @@ class CoreNetworkBase(NodeBase):
         :return: list of link data
         """
         all_links = []
-
         # build a link message from this network node to each node having a
         # connected interface
         for iface in self.get_ifaces():
-            uni = False
+            unidirectional = 0
             linked_node = iface.node
             if linked_node is None:
                 # two layer-2 switches/hubs linked together via linknet()
@@ -1062,53 +1061,29 @@ class CoreNetworkBase(NodeBase):
                 linked_node = iface.othernet
                 if linked_node.id == self.id:
                     continue
-                iface.swapparams("_params_up")
-                upstream_params = iface.getparams()
-                iface.swapparams("_params_up")
-                if iface.getparams() != upstream_params:
-                    uni = True
-
-            unidirectional = 0
-            if uni:
-                unidirectional = 1
-
-            mac = str(iface.mac) if iface.mac else None
-            iface2_data = InterfaceData(
-                id=linked_node.get_iface_id(iface), name=iface.name, mac=mac
-            )
-            ip4 = iface.get_ip4()
-            if ip4:
-                iface2_data.ip4 = str(ip4.ip)
-                iface2_data.ip4_mask = ip4.prefixlen
-            ip6 = iface.get_ip6()
-            if ip6:
-                iface2_data.ip6 = str(ip6.ip)
-                iface2_data.ip6_mask = ip6.prefixlen
-
-            options_data = iface.get_link_options(unidirectional)
+                if iface.local_options != iface.options:
+                    unidirectional = 1
+            iface_data = iface.get_data()
             link_data = LinkData(
                 message_type=flags,
                 type=self.linktype,
                 node1_id=self.id,
                 node2_id=linked_node.id,
-                iface2=iface2_data,
-                options=options_data,
+                iface2=iface_data,
+                options=iface.local_options,
             )
+            link_data.options.unidirectional = unidirectional
             all_links.append(link_data)
-
-            if not uni:
-                continue
-            iface.swapparams("_params_up")
-            options_data = iface.get_link_options(unidirectional)
-            link_data = LinkData(
-                message_type=MessageFlags.NONE,
-                type=self.linktype,
-                node1_id=linked_node.id,
-                node2_id=self.id,
-                options=options_data,
-            )
-            iface.swapparams("_params_up")
-            all_links.append(link_data)
+            if unidirectional:
+                link_data = LinkData(
+                    message_type=MessageFlags.NONE,
+                    type=self.linktype,
+                    node1_id=linked_node.id,
+                    node2_id=self.id,
+                    options=iface.options,
+                )
+                link_data.options.unidirectional = unidirectional
+                all_links.append(link_data)
         return all_links
 
 

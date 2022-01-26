@@ -6,7 +6,6 @@ from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
-from core.nodes.interface import CoreInterface
 from core.nodes.network import SwitchNode
 
 INVALID_ID: int = 100
@@ -33,26 +32,6 @@ def create_ptp_network(
     return node1, node2
 
 
-def check_iface_match(iface: CoreInterface, options: LinkOptions) -> bool:
-    result = iface.getparam("delay") == options.delay
-    result &= iface.getparam("bw") == options.bandwidth
-    result &= iface.getparam("loss") == options.loss
-    result &= iface.getparam("duplicate") == options.dup
-    result &= iface.getparam("jitter") == options.jitter
-    result &= iface.getparam("buffer") == options.buffer
-    return result
-
-
-def check_iface_diff(iface: CoreInterface, options: LinkOptions) -> bool:
-    result = iface.getparam("delay") != options.delay
-    result &= iface.getparam("bw") != options.bandwidth
-    result &= iface.getparam("loss") != options.loss
-    result &= iface.getparam("duplicate") != options.dup
-    result &= iface.getparam("jitter") != options.jitter
-    result &= iface.getparam("buffer") != options.buffer
-    return result
-
-
 class TestLinks:
     def test_add_node_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -71,8 +50,10 @@ class TestLinks:
         assert node2.get_iface(iface2_data.id)
         assert iface1 is not None
         assert iface2 is not None
-        assert check_iface_match(iface1, LINK_OPTIONS)
-        assert check_iface_match(iface2, LINK_OPTIONS)
+        assert iface1.local_options == LINK_OPTIONS
+        assert iface1.has_local_netem
+        assert iface2.local_options == LINK_OPTIONS
+        assert iface2.has_local_netem
 
     def test_add_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -89,7 +70,8 @@ class TestLinks:
         assert node2.links()
         assert node1.get_iface(iface1_data.id)
         assert iface is not None
-        assert check_iface_match(iface, LINK_OPTIONS)
+        assert iface.local_options == LINK_OPTIONS
+        assert iface.has_local_netem
 
     def test_add_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -106,7 +88,8 @@ class TestLinks:
         assert node1.links()
         assert node2.get_iface(iface2_data.id)
         assert iface is not None
-        assert check_iface_match(iface, LINK_OPTIONS)
+        assert iface.local_options == LINK_OPTIONS
+        assert iface.has_local_netem
 
     def test_add_net_to_net(self, session):
         # given
@@ -119,7 +102,10 @@ class TestLinks:
         # then
         assert node1.links()
         assert iface is not None
-        assert check_iface_match(iface, LINK_OPTIONS)
+        assert iface.local_options == LINK_OPTIONS
+        assert iface.options == LINK_OPTIONS
+        assert iface.has_local_netem
+        assert iface.has_netem
 
     def test_add_node_to_node_uni(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -159,8 +145,10 @@ class TestLinks:
         assert node2.get_iface(iface2_data.id)
         assert iface1 is not None
         assert iface2 is not None
-        assert check_iface_match(iface1, link_options1)
-        assert check_iface_match(iface2, link_options2)
+        assert iface1.local_options == link_options1
+        assert iface1.has_local_netem
+        assert iface2.local_options == link_options2
+        assert iface2.has_local_netem
 
     def test_update_node_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -168,7 +156,7 @@ class TestLinks:
         node2 = session.add_node(SwitchNode)
         iface1_data = ip_prefixes.create_iface(node1)
         iface1, _ = session.add_link(node1.id, node2.id, iface1_data)
-        assert check_iface_diff(iface1, LINK_OPTIONS)
+        assert iface1.local_options != LINK_OPTIONS
 
         # when
         session.update_link(
@@ -176,7 +164,8 @@ class TestLinks:
         )
 
         # then
-        assert check_iface_match(iface1, LINK_OPTIONS)
+        assert iface1.local_options == LINK_OPTIONS
+        assert iface1.has_local_netem
 
     def test_update_net_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -184,7 +173,7 @@ class TestLinks:
         node2 = session.add_node(CoreNode)
         iface2_data = ip_prefixes.create_iface(node2)
         _, iface2 = session.add_link(node1.id, node2.id, iface2_data=iface2_data)
-        assert check_iface_diff(iface2, LINK_OPTIONS)
+        assert iface2.local_options != LINK_OPTIONS
 
         # when
         session.update_link(
@@ -192,7 +181,8 @@ class TestLinks:
         )
 
         # then
-        assert check_iface_match(iface2, LINK_OPTIONS)
+        assert iface2.local_options == LINK_OPTIONS
+        assert iface2.has_local_netem
 
     def test_update_ptp(self, session: Session, ip_prefixes: IpPrefixes):
         # given
@@ -201,8 +191,8 @@ class TestLinks:
         iface1_data = ip_prefixes.create_iface(node1)
         iface2_data = ip_prefixes.create_iface(node2)
         iface1, iface2 = session.add_link(node1.id, node2.id, iface1_data, iface2_data)
-        assert check_iface_diff(iface1, LINK_OPTIONS)
-        assert check_iface_diff(iface2, LINK_OPTIONS)
+        assert iface1.local_options != LINK_OPTIONS
+        assert iface2.local_options != LINK_OPTIONS
 
         # when
         session.update_link(
@@ -210,21 +200,46 @@ class TestLinks:
         )
 
         # then
-        assert check_iface_match(iface1, LINK_OPTIONS)
-        assert check_iface_match(iface2, LINK_OPTIONS)
+        assert iface1.local_options == LINK_OPTIONS
+        assert iface1.has_local_netem
+        assert iface2.local_options == LINK_OPTIONS
+        assert iface2.has_local_netem
 
     def test_update_net_to_net(self, session: Session, ip_prefixes: IpPrefixes):
         # given
         node1 = session.add_node(SwitchNode)
         node2 = session.add_node(SwitchNode)
         iface1, _ = session.add_link(node1.id, node2.id)
-        assert check_iface_diff(iface1, LINK_OPTIONS)
+        assert iface1.local_options != LINK_OPTIONS
 
         # when
         session.update_link(node1.id, node2.id, options=LINK_OPTIONS)
 
         # then
-        assert check_iface_match(iface1, LINK_OPTIONS)
+        assert iface1.local_options == LINK_OPTIONS
+        assert iface1.has_local_netem
+        assert iface1.options == LINK_OPTIONS
+        assert iface1.has_netem
+
+    def test_clear_net_to_net(self, session: Session, ip_prefixes: IpPrefixes):
+        # given
+        node1 = session.add_node(SwitchNode)
+        node2 = session.add_node(SwitchNode)
+        iface1, _ = session.add_link(node1.id, node2.id, options=LINK_OPTIONS)
+        assert iface1.local_options == LINK_OPTIONS
+        assert iface1.has_local_netem
+        assert iface1.options == LINK_OPTIONS
+        assert iface1.has_netem
+
+        # when
+        options = LinkOptions(delay=0, bandwidth=0, loss=0.0, dup=0, jitter=0, buffer=0)
+        session.update_link(node1.id, node2.id, options=options)
+
+        # then
+        assert iface1.local_options.is_clear()
+        assert not iface1.has_local_netem
+        assert iface1.options.is_clear()
+        assert not iface1.has_netem
 
     def test_delete_node_to_node(self, session: Session, ip_prefixes: IpPrefixes):
         # given

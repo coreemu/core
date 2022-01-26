@@ -743,41 +743,12 @@ class PtpNet(CoreNetwork):
         all_links = []
         if len(self.ifaces) != 2:
             return all_links
-
         ifaces = self.get_ifaces()
         iface1 = ifaces[0]
         iface2 = ifaces[1]
-        unidirectional = 0
-        if iface1.getparams() != iface2.getparams():
-            unidirectional = 1
-
-        mac = str(iface1.mac) if iface1.mac else None
-        iface1_data = InterfaceData(
-            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=mac
-        )
-        ip4 = iface1.get_ip4()
-        if ip4:
-            iface1_data.ip4 = str(ip4.ip)
-            iface1_data.ip4_mask = ip4.prefixlen
-        ip6 = iface1.get_ip6()
-        if ip6:
-            iface1_data.ip6 = str(ip6.ip)
-            iface1_data.ip6_mask = ip6.prefixlen
-
-        mac = str(iface2.mac) if iface2.mac else None
-        iface2_data = InterfaceData(
-            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=mac
-        )
-        ip4 = iface2.get_ip4()
-        if ip4:
-            iface2_data.ip4 = str(ip4.ip)
-            iface2_data.ip4_mask = ip4.prefixlen
-        ip6 = iface2.get_ip6()
-        if ip6:
-            iface2_data.ip6 = str(ip6.ip)
-            iface2_data.ip6_mask = ip6.prefixlen
-
-        options_data = iface1.get_link_options(unidirectional)
+        unidirectional = 0 if iface1.local_options == iface2.local_options else 1
+        iface1_data = iface1.get_data()
+        iface2_data = iface2.get_data()
         link_data = LinkData(
             message_type=flags,
             type=self.linktype,
@@ -785,25 +756,23 @@ class PtpNet(CoreNetwork):
             node2_id=iface2.node.id,
             iface1=iface1_data,
             iface2=iface2_data,
-            options=options_data,
+            options=iface1.local_options,
         )
+        link_data.options.unidirectional = unidirectional
         all_links.append(link_data)
-
         # build a 2nd link message for the upstream link parameters
         # (swap if1 and if2)
         if unidirectional:
-            iface1_data = InterfaceData(id=iface2.node.get_iface_id(iface2))
-            iface2_data = InterfaceData(id=iface1.node.get_iface_id(iface1))
-            options_data = iface2.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 type=self.linktype,
                 node1_id=iface2.node.id,
                 node2_id=iface1.node.id,
-                iface1=iface1_data,
-                iface2=iface2_data,
-                options=options_data,
+                iface1=InterfaceData(id=iface2_data.id),
+                iface2=InterfaceData(id=iface1_data.id),
+                options=iface2.local_options,
             )
+            link_data.options.unidirectional = unidirectional
             all_links.append(link_data)
         return all_links
 
