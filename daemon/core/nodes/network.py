@@ -194,7 +194,7 @@ class NftablesQueue:
                 self.cmds.append(f"add table bridge {net.brname}")
                 self.cmds.append(
                     f"add chain bridge {net.brname} {self.chain} {{type filter hook "
-                    f"forward priority 0\\; policy {policy}\\;}}"
+                    f"forward priority -1\\; policy {policy}\\;}}"
                 )
             # add default rule to accept all traffic not for this bridge
             self.cmds.append(
