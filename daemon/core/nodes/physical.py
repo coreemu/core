@@ -233,7 +233,7 @@ class Rj45Node(CoreNodeBase):
         """
         super().__init__(session, _id, name, server)
         self.iface: CoreInterface = CoreInterface(
-            session, self, name, name, mtu, server
+            session, name, name, mtu, server, self
         )
         self.iface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
@@ -438,3 +438,12 @@ class Rj45Node(CoreNodeBase):
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         raise CoreError("rj45 does not support cmds")
+
+    def create_dir(self, dir_path: Path) -> None:
+        raise CoreError("rj45 does not support creating directories")
+
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        raise CoreError("rj45 does not support creating files")
+
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+        raise CoreError("rj45 does not support copying files")
