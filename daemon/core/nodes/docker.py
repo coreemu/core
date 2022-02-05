@@ -201,7 +201,7 @@ class DockerNode(CoreNode):
         temp.write(contents.encode("utf-8"))
         temp.close()
         temp_path = Path(temp.name)
-        directory = file_path.name
+        directory = file_path.parent
         if str(directory) != ".":
             self.cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
