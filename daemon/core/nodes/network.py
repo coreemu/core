@@ -4,7 +4,6 @@ Defines network nodes used within core.
 
 import logging
 import threading
-import time
 from collections import OrderedDict
 from pathlib import Path
 from queue import Queue
@@ -80,49 +79,31 @@ class NftablesQueue:
         self.cmds: List[str] = []
         # list of WLANs requiring update
         self.updates: SetQueue = SetQueue()
-        # timestamps of last WLAN update; this keeps track of WLANs that are
-        # using this queue
-        self.last_update_time: Dict["CoreNetwork", float] = {}
 
-    def start(self, net: "CoreNetwork") -> None:
+    def start(self) -> None:
         """
         Start thread to listen for updates for the provided network.
-        :param net: network to start checking updates
+
         :return: nothing
         """
         with self.lock:
-            self.last_update_time[net] = time.monotonic()
-        if self.running:
-            return
-        self.running = True
-        self.run_thread = threading.Thread(target=self.run, daemon=True)
-        self.run_thread.start()
+            if not self.running:
+                self.running = True
+                self.run_thread = threading.Thread(target=self.run, daemon=True)
+                self.run_thread.start()
 
-    def stop(self, net: "CoreNetwork") -> None:
+    def stop(self) -> None:
         """
         Stop updates for network, when no networks remain, stop update thread.
-        :param net: network to stop watching updates
+
         :return: nothing
         """
         with self.lock:
-            self.last_update_time.pop(net, None)
-            if self.last_update_time:
-                return
-            self.running = False
-            if self.run_thread:
+            if self.running:
+                self.running = False
                 self.updates.put(None)
                 self.run_thread.join()
                 self.run_thread = None
-
-    def last_update(self, net: "CoreNetwork") -> float:
-        """
-        Return the time elapsed since this network was last updated.
-        :param net: network node
-        :return: elapsed time
-        """
-        now = time.monotonic()
-        last_update = self.last_update_time.setdefault(net, now)
-        return now - last_update
 
     def run(self) -> None:
         """
@@ -136,17 +117,14 @@ class NftablesQueue:
             net = self.updates.get()
             if net is None:
                 break
-            if not net.up:
-                self.last_update_time[net] = time.monotonic()
-            elif self.last_update(net) > self.rate:
-                with self.lock:
-                    self.build_cmds(net)
-                    self.commit(net)
-                self.last_update_time[net] = time.monotonic()
+            with self.lock:
+                self.build_cmds(net)
+                self.commit(net)
 
     def commit(self, net: "CoreNetwork") -> None:
         """
         Commit changes to nftables for the provided network.
+
         :param net: network to commit nftables changes
         :return: nothing
         """
@@ -164,6 +142,7 @@ class NftablesQueue:
     def update(self, net: "CoreNetwork") -> None:
         """
         Flag this network has an update, so the nftables chain will be rebuilt.
+
         :param net: wlan network
         :return: nothing
         """
@@ -182,6 +161,7 @@ class NftablesQueue:
     def build_cmds(self, net: "CoreNetwork") -> None:
         """
         Inspect linked nodes for a network, and rebuild the nftables chain commands.
+
         :param net: network to build commands for
         :return: nothing
         """
@@ -299,7 +279,7 @@ class CoreNetwork(CoreNetworkBase):
             self.net_client.set_mtu(self.brname, self.mtu)
         self.has_nftables_chain = False
         self.up = True
-        nft_queue.start(self)
+        nft_queue.start()
 
     def shutdown(self) -> None:
         """
@@ -309,7 +289,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if not self.up:
             return
-        nft_queue.stop(self)
+        nft_queue.stop()
         try:
             self.net_client.delete_bridge(self.brname)
             if self.has_nftables_chain:
