@@ -24,16 +24,6 @@ Verified:
 * Ubuntu - 18.04, 20.04
 * CentOS - 7.8, 8.0
 
-> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN functionality
-
-Enabling ebtables legacy:
-```shell
-sudo apt install ebtables
-update-alternatives --set ebtables /usr/sbin/ebtables-legacy
-```
-
-> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not function properly
-
 > **NOTE:** CentOS 8 does not have the netem kernel mod available by default
 
 CentOS 8 Enabled netem:
