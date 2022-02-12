@@ -130,7 +130,7 @@ First you can use `setup.sh` as a convenience to install tooling for running inv
 * python3, pip, venv
 * pipx 0.16.4 via pip
 * invoke 1.4.1 via pipx
-* poetry 1.1.7 via pipx
+* poetry 1.1.12 via pipx
 
 Then you can run `inv install <options>`:
 * installs system dependencies for building core
