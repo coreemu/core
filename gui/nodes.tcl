@@ -21,10 +21,14 @@ array set g_node_types_default {
 	5 {prouter router_green.gif router_green.gif \
 	    {} \
 	    physical {built-in type for physical nodes}}
+	6 {docker docker.png docker.png {} \
+	    docker {built-in type for docker containers}}
+	7 {lxc lxc.png lxc.png {} \
+	    lxc {built-in type for lxc containers}}
 }
 
 # possible machine types for nodes
-set MACHINE_TYPES "netns physical"
+set MACHINE_TYPES "netns physical docker lxc"
 
 # array populated from nodes.conf file
 array set g_node_types { }
@@ -178,15 +182,15 @@ proc getNodeTypeServices { type } {
     return ""
 }
 
-# return the machine type (e.g. netns, physical) of the currently selected
+# return the machine type (e.g. netns, physical docker lxc) of the currently selected
 # node type from the toolbar
-proc getNodeTypeMachineType { type } {
-    global MACHINE_TYPES g_node_types
-    set default_machine_type [lindex $MACHINE_TYPES 0]
-    set i [getNodeTypeIndex $type]
-    if { $i < 0 } { return $default_machine_type }; # failsafe
-    return [lindex $g_node_types($i) 4]
-}
+#proc getNodeTypeMachineType { type } {
+#    global MACHINE_TYPES g_node_types
+#    set default_machine_type [lindex $MACHINE_TYPES 0]
+#    set i [getNodeTypeIndex $type]
+#    if { $i < 0 } { return $default_machine_type }; # failsafe
+#    return [lindex $g_node_types($i) 4]
+#}
 
 proc getNodeTypeProfile { type } {
     global g_node_types
@@ -202,7 +206,7 @@ proc getNodeTypeProfile { type } {
     return ""
 }
 
-# return the machine type (e.g. netns, physical) of the currently selected
+# return the machine type (e.g. netns, physical, docker lxc) of the currently selected
 # node type from the toolbar
 proc getNodeTypeMachineType { type } {
     global MACHINE_TYPES g_node_types
@@ -714,6 +718,8 @@ proc tunnel.layer {}    { return LINK }
 proc wlan.layer {}      { return LINK }
 proc router.layer {}    { return NETWORK }
 proc router.shellcmd { n } { return "vtysh" }
+proc docker.layer {}    { return NETWORK }
+proc lxc.layer {}    { return NETWORK }
 
 # load the nodes.conf file when this file is loaded
 loadNodesConf

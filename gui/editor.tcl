@@ -36,7 +36,6 @@
 #  edit mode. It is also used for all the GUI related actions.
 #****
 
-
 proc animateCursor {} {
     global cursorState
     global clock_seconds
@@ -333,7 +332,7 @@ proc redrawAll {} {
 
 proc drawNode { c node } {
     global showNodeLabels
-    global router pc host lanswitch rj45 hub pseudo
+    global router pc host lanswitch rj45 hub pseudo docker lxc
     global curcanvas zoom
     global wlan
     if { $c == "" } { set c .c } ;# default canvas
@@ -348,9 +347,9 @@ proc drawNode { c node } {
     set cimg ""
     set imgzoom $zoom
     if { $zoom == 0.75 || $zoom == 1.5 } { set imgzoom 1.0 }
-    if { $type == "router" } {
-	set model [getNodeModel $node]
-	set cimg [getNodeTypeImage $model normal]
+    if { $type == "router" || $type == "docker" || $type == "lxc" } {
+		set model [getNodeModel $node]
+		set cimg [getNodeTypeImage $model normal]
     }
     set tmp [absPathname [getCustomImage $node]]
     if { $tmp != "" } { set cimg $tmp }
@@ -375,14 +374,14 @@ proc drawNode { c node } {
 	}
     }
     if { $cimg == "" } {
-    if { $type == "pseudo" } {
-        $c create image $x $y -image [set $type] -tags "node $node"
-    } else {
-        # create scaled images based on zoom level
-	global $type$imgzoom
-        $c create image $x $y -image [set $type$imgzoom] \
-		-tags "node $node"
-    }
+		if { $type == "pseudo" } {
+			$c create image $x $y -image [set $type] -tags "node $node"
+		} else {
+			# create scaled images based on zoom level
+			global $type$imgzoom
+			$c create image $x $y -image [set $type$imgzoom] \
+			-tags "node $node"
+		}
     }
     set coords [getNodeLabelCoords $node]
     set x [expr {[lindex $coords 0] * $zoom}]
@@ -570,6 +569,12 @@ proc chooseIfName { lnode1 lnode2 } {
 	wlan {
 	    return e
 	}
+	docker {
+		return eth
+	}
+	lxc {
+		return eth
+	}
 	default {
 	    return eth
 # end Boeing: below
@@ -655,6 +660,14 @@ proc calcDxDy { lnode } {
 	wlan {
             set x [expr {1.5 / $zoom}]
             set y [expr {2.6 / $zoom}]
+	}
+	docker {
+            set x [expr {1 / $zoom}]
+            set y [expr {1 / $zoom}]
+	}
+	lxc {
+            set x [expr {1 / $zoom}]
+            set y [expr {1 / $zoom}]
 	}
 	default {
 	    set x [expr {1 / $zoom}]
@@ -1535,7 +1548,7 @@ proc raiseAll {c} {
 proc button1 { c x y button } {
     global node_list plot_list curcanvas zoom
     global activetool activetoolp newlink curobj changed def_router_model
-    global router pc host lanswitch rj45 hub
+    global router pc host lanswitch rj45 hub docker lxc
     global oval rectangle text
     global lastX lastY
     global background selectbox
@@ -1607,10 +1620,16 @@ proc button1 { c x y button } {
 			rectangle text} $activetool] < 0 } {
 	    if { $g_view_locked == 1 } { return }
 	    if { $activetoolp == "routers" } {
-		set node [newNode router]
-		setNodeModel $node $activetool
+			if { $activetool == "docker" } {
+				set node [newNode docker]
+			} elseif { $activetool == "lxc" } {
+				set node [newNode lxc]
+			} else {
+				set node [newNode router]
+			}
+			setNodeModel $node $activetool
 	    } else {
-		set node [newNode $activetool]
+			set node [newNode $activetool]
 	    }
 	    setNodeCanvas $node $curcanvas
 	    setNodeCoords $node "[expr {$x / $zoom}] [expr {$y / $zoom}]"
@@ -2460,7 +2479,7 @@ proc popupConfigDialog { c } {
 
     set wi .popup
     if { [winfo exists $wi ] } {
-	return
+        return
     }
     catch {destroy $wi}
     toplevel $wi
@@ -2472,33 +2491,33 @@ proc popupConfigDialog { c } {
     set tk_type [lindex [$c gettags current] 0]
     set target [lindex [$c gettags current] 1]
     if { [lsearch {node nodelabel interface} $tk_type] > -1 } {
-	set object_type node
+		set object_type node
     }
     if { [lsearch {link linklabel} $tk_type] > -1 } {
-	set object_type link
+		set object_type link
     }
     if { [lsearch {oval} $tk_type] > -1 } {
-	set object_type oval
+		set object_type oval
     }
     if { [lsearch {rectangle} $tk_type] > -1 } {
-	set object_type rectangle
+		set object_type rectangle
     }
     if { [lsearch {text} $tk_type] > -1 } {
-	set object_type text
+		set object_type text
     }
     if { "$object_type" == ""} {
-	destroy $wi
-	return
+		destroy $wi
+		return
     }
     if { $object_type == "link" } {
-	set n0 [lindex [linkPeers $target] 0]
-	set n1 [lindex [linkPeers $target] 1]
-	# Boeing: added tunnel check
-	#if { [nodeType $n0] == "rj45" || [nodeType $n1] == "rj45" ||  \
-	#     [nodeType $n0] == "tunnel" || [nodeType $n1] == "tunnel"  } {
-	#    destroy $wi
-	#    return
-	#}
+		set n0 [lindex [linkPeers $target] 0]
+		set n1 [lindex [linkPeers $target] 1]
+		# Boeing: added tunnel check
+		#if { [nodeType $n0] == "rj45" || [nodeType $n1] == "rj45" ||  \
+		#     [nodeType $n0] == "tunnel" || [nodeType $n1] == "tunnel"  } {
+		#    destroy $wi
+		#    return
+		#}
     }
     $c dtag node selected
     $c delete -withtags selectmark
@@ -2547,8 +2566,8 @@ proc popupConfigDialog { c } {
 	    -side right -padx 4 -pady 4
 	# end Boeing
 	pack $wi.ftop -side top
-	if { $type == "router" } {
 
+	if { $type == "router" } {
 	    ttk::frame $wi.model -borderwidth 4
 	    ttk::label $wi.model.label -text "Type:"
 	    set runstate "disabled"
@@ -2570,10 +2589,21 @@ proc popupConfigDialog { c } {
 	    	-side right -padx 0 -pady 0
 	    pack $wi.model -side top
 	}
-
-	    if { $type == "wlan" } {
+	# fra-uas.de
+	if { $type == "docker" || $type == "lxc" } {
+		ttk::frame $wi.model -borderwidth 4
+		ttk::label $wi.model.label -text "Container Image Name:"
+		entry $wi.model.cimage -bg white -width 20 \
+			-validate focus -invcmd "focusAndFlash %W"
+		$wi.model.cimage insert 0 [getNodeContainerImage $target $type]
+		pack $wi.model.cimage $wi.model.label \
+			-side right -padx 0 -pady 0
+		pack $wi.model -side top
+	}
+	# end fra-uas.de
+	if { $type == "wlan" } {
 		wlanConfigDialogHelper $wi $target 0
-	    } elseif { $type == "tunnel" } {
+	} elseif { $type == "tunnel" } {
 		#
 		# tunnel controls
 		#
@@ -2639,7 +2669,7 @@ proc popupConfigDialog { c } {
 			[netconfFetchSection $target "peer-hook"]
 		pack $wi.pinfo.label $wi.pinfo.peer -side left -anchor w
 		pack $wi.pinfo -side top
-	    }
+	}
 
 	# interface list
 	if { [[typemodel $target].layer] == "NETWORK" } {
@@ -3119,6 +3149,9 @@ proc popupConfigApply { wi object_type target phase } {
 	    setNodeModel $target $router_model
 	    set changed 1
 	    if { $router_model == "remote" } { set changed_to_remote 1 };#Boeing
+	}
+	if { $type == "docker" || $type == "lxc" } {
+		setContainerImage $target [$wi.model.cimage get]
 	}
 
 # Boeing - added wlan, remote, tunnel, ktunnel items
@@ -5134,6 +5167,20 @@ proc getNodeImage { node } {
     return [set $imgname]
 }
 
+# helper to get the name of the container image;
+proc getNodeContainerImage { node type } {
+    set containerimg [getContainerImage $node]
+    if { $containerimg == "" } {
+        if { $type == "docker" } {
+            set containerimg "ubuntu:latest"
+        } else {
+            set containerimg "ubuntu"
+        }
+    }
+    global $containerimg
+    return $containerimg
+}
+
 proc hideSelected { } {
     foreach node [selectedNodes] { hideNode $node }
     .c delete -withtags selectmark
@@ -5345,4 +5392,3 @@ proc pasteSelection {} {
     selectNodes $new_nodes
     foreach a $new_annotations { selectNode .c $a }
 }
-

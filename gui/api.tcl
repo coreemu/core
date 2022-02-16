@@ -22,8 +22,21 @@ array set g_execRequests { shell "" observer "" }
 # for a simulator, uncomment this line or cut/paste into debugger:
 #  set XSCALE 4.0; set YSCALE 4.0; set XOFFSET 1800; set YOFFSET 300
 
-array set nodetypes { 	0 def 1 phys 2 tbd 3 tbd 4 lanswitch 5 hub \
-			6 wlan 7 rj45 8 tunnel 9 ktunnel 10 emane }
+array set nodetypes { 
+	0 def
+	1 phys
+	2 tbd
+	3 tbd
+	4 lanswitch
+	5 hub
+	6 wlan
+	7 rj45
+	8 tunnel
+	9 ktunnel
+	10 emane
+	15 docker
+	16 lxc
+}
 
 array set regtypes { wl 1 mob 2 util 3 exec 4 gui 5 emul 6 }
 array set regntypes { 1 wl 2 mob 3 util 4 exec 5 gui 6 emul 7 relay 10 session }
@@ -1779,6 +1792,12 @@ proc sendNodeAddMessage { channel node } {
     # fixup node type for EMANE-enabled WLAN nodes
     set opaque ""
     if { [isEmane $node] } { set type 0xA }
+    
+    # fixup node type DOCKER
+    set ntype [nodeType $node]
+    if { $ntype == "docker" || $ntype == "lxc" } {
+        set opaque [getContainerImage $node]
+    }
 
     # emulation server (node location)
     set emusrv [getNodeLocation $node]
@@ -2706,7 +2725,7 @@ proc sendNodeTypeInfo { sock reset } {
     set typesinuse ""
     foreach node $node_list {
 	set type [nodeType $node]
-	if { $type != "router" } { continue }
+	if { $type != "router" || $type != "docker" || $type != "lxc" } { continue }
 	set model [getNodeModel $node]
 	if { [lsearch $typesinuse $model] < 0 } { lappend typesinuse $model }
     }
@@ -2902,24 +2921,26 @@ proc sendNodeLinkDefinitions { sock } {
 
 proc getNodeTypeAPI { node } {
     set type [nodeType $node]
-    if { $type == "router" } {
-	set model [getNodeModel $node]
-	set type [getNodeTypeMachineType $model]
+    if { $type == "router" || $type == "docker" || $type == "lxc" } {
+		set model [getNodeModel $node]
+		set type [getNodeTypeMachineType $model]
     }
     switch -exact -- "$type" {
-	router  { return 0x0 }
-	netns   { return 0x0 }
-	jail    { return 0x0 }
-	physical { return 0x1 }
-	tbd	{ return 0x3 }
-	lanswitch { return 0x4 }
-	hub	{ return 0x5 }
-	wlan	{ return 0x6 }
-	rj45	{ return 0x7 }
-	tunnel	{ return 0x8 }
-	ktunnel	{ return 0x9 }
-	emane	{ return 0xA }
-	default { return 0x0 }
+		router		{ return 0x0 }
+		netns		{ return 0x0 }
+		jail		{ return 0x0 }
+		physical	{ return 0x1 }
+		tbd			{ return 0x3 }
+		lanswitch	{ return 0x4 }
+		hub			{ return 0x5 }
+		wlan		{ return 0x6 }
+		rj45		{ return 0x7 }
+		tunnel		{ return 0x8 }
+		ktunnel		{ return 0x9 }
+		emane		{ return 0xA }
+		docker		{ return 0xF }
+		lxc			{ return 0x10 }
+		default		{ return 0x0 }
     }
 }
 

@@ -710,6 +710,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
         options.server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
+        if options.model == 'docker' or options.model == 'lxc':
+            options.image = message.get_tlv(NodeTlvs.OPAQUE.value)
+
         services = message.get_tlv(NodeTlvs.SERVICES.value)
         if services:
             options.services = services.split("|")

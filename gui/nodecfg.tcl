@@ -1989,6 +1989,26 @@ proc setCustomImage { node image } {
     return
 }
 
+# fra-uas.de - container image
+proc getContainerImage { node } {
+	global $node
+	return [lindex [lsearch -inline [set $node] "container-image *"] 1]
+}
+
+# fra-uas.de - container image
+proc setContainerImage { node cimage } {
+    global $node
+
+    set i [lsearch [set $node] "container-image *"]
+    if { $i >= 0 } {
+	set $node [lreplace [set $node] $i $i]
+    }
+    if { $cimage != "" } {
+	lappend $node [list container-image $cimage]
+    }
+    return
+}
+
 # if cmd=save save all node positions, otherwise reset them with cmd=reset
 proc resetAllNodeCoords { cmd } {
     global node_list g_saved_node_coords zoom
@@ -2015,4 +2035,3 @@ proc resetAllNodeCoords { cmd } {
     }
 
 }
-
