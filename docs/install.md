@@ -120,6 +120,14 @@ First we will need to clone and navigate to the CORE repo.
 # clone CORE repo
 git clone https://github.com/coreemu/core.git
 cd core
+# install dependencies to run installation task
+./setup.sh
+# run the following or add ~/.local/bin to PATH
+python3 -m pipx ensurepath
+# Ubuntu
+inv install
+# CentOS
+./install.sh -p /usr
 ```
 
 First you can use `setup.sh` as a convenience to install tooling for running invoke tasks:
