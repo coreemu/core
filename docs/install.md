@@ -122,8 +122,8 @@ git clone https://github.com/coreemu/core.git
 cd core
 # install dependencies to run installation task
 ./setup.sh
-# run the following or add ~/.local/bin to PATH
-python3 -m pipx ensurepath
+# run the following or open a new terminal
+source ~/.bashrc
 # Ubuntu
 inv install
 # CentOS
