@@ -1,3 +1,18 @@
+## 2022-02-18 CORE 8.1.0
+
+* Installation
+    * updated dependency versions to account for known vulnerabilities
+* GUI
+    * fixed issue drawing asymmetric link configurations when joining a session
+* daemon
+    * fixed issue getting templates and creating files for config services
+    * added by directional support for network to network links
+    * \#647 - fixed issue when creating RJ45 nodes
+    * \#646 - fixed issue when creating files for Docker nodes
+    * \#645 - improved wlan change updates to account for all updates with no delay
+* services
+    * fixed file generation for OSPFv2 config service
+
 ## 2022-01-12 CORE 8.0.0
 
 *Breaking Changes
