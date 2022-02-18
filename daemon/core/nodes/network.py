@@ -117,9 +117,8 @@ class NftablesQueue:
             net = self.updates.get()
             if net is None:
                 break
-            with self.lock:
-                self.build_cmds(net)
-                self.commit(net)
+            self.build_cmds(net)
+            self.commit(net)
 
     def commit(self, net: "CoreNetwork") -> None:
         """
