@@ -210,7 +210,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
-    if c.run("which zebra", warn=True, hide=hide):
+    if c.run("sudo which zebra", warn=True, hide=hide):
         print("\nquagga already installed, skipping ospf mdr")
         return
     if os_info.like == OsLike.DEBIAN:
