@@ -24,16 +24,6 @@ Verified:
 * Ubuntu - 18.04, 20.04
 * CentOS - 7.8, 8.0
 
-> **NOTE:** Ubuntu 20.04 requires installing legacy ebtables for WLAN functionality
-
-Enabling ebtables legacy:
-```shell
-sudo apt install ebtables
-update-alternatives --set ebtables /usr/sbin/ebtables-legacy
-```
-
-> **NOTE:** CentOS 8 does not provide legacy ebtables support, WLAN will not function properly
-
 > **NOTE:** CentOS 8 does not have the netem kernel mod available by default
 
 CentOS 8 Enabled netem:
@@ -130,6 +120,14 @@ First we will need to clone and navigate to the CORE repo.
 # clone CORE repo
 git clone https://github.com/coreemu/core.git
 cd core
+# install dependencies to run installation task
+./setup.sh
+# run the following or open a new terminal
+source ~/.bashrc
+# Ubuntu
+inv install
+# CentOS
+./install.sh -p /usr
 ```
 
 First you can use `setup.sh` as a convenience to install tooling for running invoke tasks:
@@ -140,7 +138,7 @@ First you can use `setup.sh` as a convenience to install tooling for running inv
 * python3, pip, venv
 * pipx 0.16.4 via pip
 * invoke 1.4.1 via pipx
-* poetry 1.1.7 via pipx
+* poetry 1.1.12 via pipx
 
 Then you can run `inv install <options>`:
 * installs system dependencies for building core

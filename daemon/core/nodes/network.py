@@ -3,9 +3,7 @@ Defines network nodes used within core.
 """
 
 import logging
-import math
 import threading
-import time
 from collections import OrderedDict
 from pathlib import Path
 from queue import Queue
@@ -14,7 +12,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type
 import netaddr
 
 from core import utils
-from core.emulator.data import InterfaceData, LinkData, LinkOptions
+from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import (
     LinkTypes,
     MessageFlags,
@@ -23,7 +21,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
 )
 from core.errors import CoreCommandError, CoreError
-from core.executables import NFTABLES, TC
+from core.executables import NFTABLES
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
@@ -81,49 +79,31 @@ class NftablesQueue:
         self.cmds: List[str] = []
         # list of WLANs requiring update
         self.updates: SetQueue = SetQueue()
-        # timestamps of last WLAN update; this keeps track of WLANs that are
-        # using this queue
-        self.last_update_time: Dict["CoreNetwork", float] = {}
 
-    def start(self, net: "CoreNetwork") -> None:
+    def start(self) -> None:
         """
         Start thread to listen for updates for the provided network.
-        :param net: network to start checking updates
+
         :return: nothing
         """
         with self.lock:
-            self.last_update_time[net] = time.monotonic()
-        if self.running:
-            return
-        self.running = True
-        self.run_thread = threading.Thread(target=self.run, daemon=True)
-        self.run_thread.start()
+            if not self.running:
+                self.running = True
+                self.run_thread = threading.Thread(target=self.run, daemon=True)
+                self.run_thread.start()
 
-    def stop(self, net: "CoreNetwork") -> None:
+    def stop(self) -> None:
         """
         Stop updates for network, when no networks remain, stop update thread.
-        :param net: network to stop watching updates
+
         :return: nothing
         """
         with self.lock:
-            self.last_update_time.pop(net, None)
-            if self.last_update_time:
-                return
-            self.running = False
-            if self.run_thread:
+            if self.running:
+                self.running = False
                 self.updates.put(None)
                 self.run_thread.join()
                 self.run_thread = None
-
-    def last_update(self, net: "CoreNetwork") -> float:
-        """
-        Return the time elapsed since this network was last updated.
-        :param net: network node
-        :return: elapsed time
-        """
-        now = time.monotonic()
-        last_update = self.last_update_time.setdefault(net, now)
-        return now - last_update
 
     def run(self) -> None:
         """
@@ -137,17 +117,13 @@ class NftablesQueue:
             net = self.updates.get()
             if net is None:
                 break
-            if not net.up:
-                self.last_update_time[net] = time.monotonic()
-            elif self.last_update(net) > self.rate:
-                with self.lock:
-                    self.build_cmds(net)
-                    self.commit(net)
-                self.last_update_time[net] = time.monotonic()
+            self.build_cmds(net)
+            self.commit(net)
 
     def commit(self, net: "CoreNetwork") -> None:
         """
         Commit changes to nftables for the provided network.
+
         :param net: network to commit nftables changes
         :return: nothing
         """
@@ -165,6 +141,7 @@ class NftablesQueue:
     def update(self, net: "CoreNetwork") -> None:
         """
         Flag this network has an update, so the nftables chain will be rebuilt.
+
         :param net: wlan network
         :return: nothing
         """
@@ -183,6 +160,7 @@ class NftablesQueue:
     def build_cmds(self, net: "CoreNetwork") -> None:
         """
         Inspect linked nodes for a network, and rebuild the nftables chain commands.
+
         :param net: network to build commands for
         :return: nothing
         """
@@ -195,7 +173,7 @@ class NftablesQueue:
                 self.cmds.append(f"add table bridge {net.brname}")
                 self.cmds.append(
                     f"add chain bridge {net.brname} {self.chain} {{type filter hook "
-                    f"forward priority 0\\; policy {policy}\\;}}"
+                    f"forward priority -1\\; policy {policy}\\;}}"
                 )
             # add default rule to accept all traffic not for this bridge
             self.cmds.append(
@@ -300,7 +278,7 @@ class CoreNetwork(CoreNetworkBase):
             self.net_client.set_mtu(self.brname, self.mtu)
         self.has_nftables_chain = False
         self.up = True
-        nft_queue.start(self)
+        nft_queue.start()
 
     def shutdown(self) -> None:
         """
@@ -310,7 +288,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if not self.up:
             return
-        nft_queue.stop(self)
+        nft_queue.stop()
         try:
             self.net_client.delete_bridge(self.brname)
             if self.has_nftables_chain:
@@ -399,77 +377,6 @@ class CoreNetwork(CoreNetworkBase):
                 return
             self.linked[iface1][iface2] = True
         nft_queue.update(self)
-
-    def linkconfig(
-        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
-    ) -> None:
-        """
-        Configure link parameters by applying tc queuing disciplines on the interface.
-
-        :param iface: interface one
-        :param options: options for configuring link
-        :param iface2: interface two
-        :return: nothing
-        """
-        # determine if any settings have changed
-        changed = any(
-            [
-                iface.setparam("bw", options.bandwidth),
-                iface.setparam("delay", options.delay),
-                iface.setparam("loss", options.loss),
-                iface.setparam("duplicate", options.dup),
-                iface.setparam("jitter", options.jitter),
-                iface.setparam("buffer", options.buffer),
-            ]
-        )
-        if not changed:
-            return
-
-        # delete tc configuration or create and add it
-        devname = iface.localname
-        if all(
-            [
-                options.delay is None or options.delay <= 0,
-                options.jitter is None or options.jitter <= 0,
-                options.loss is None or options.loss <= 0,
-                options.dup is None or options.dup <= 0,
-                options.bandwidth is None or options.bandwidth <= 0,
-                options.buffer is None or options.buffer <= 0,
-            ]
-        ):
-            if not iface.getparam("has_netem"):
-                return
-            if self.up:
-                cmd = f"{TC} qdisc delete dev {devname} root handle 10:"
-                iface.host_cmd(cmd)
-            iface.setparam("has_netem", False)
-        else:
-            netem = ""
-            if options.bandwidth is not None:
-                limit = 1000
-                bw = options.bandwidth / 1000
-                if options.buffer is not None and options.buffer > 0:
-                    limit = options.buffer
-                elif options.delay and options.bandwidth:
-                    delay = options.delay / 1000
-                    limit = max(2, math.ceil((2 * bw * delay) / (8 * iface.mtu)))
-                netem += f" rate {bw}kbit"
-                netem += f" limit {limit}"
-            if options.delay is not None:
-                netem += f" delay {options.delay}us"
-            if options.jitter is not None:
-                if options.delay is None:
-                    netem += f" delay 0us {options.jitter}us 25%"
-                else:
-                    netem += f" {options.jitter}us 25%"
-            if options.loss is not None and options.loss > 0:
-                netem += f" loss {min(options.loss, 100)}%"
-            if options.dup is not None and options.dup > 0:
-                netem += f" duplicate {min(options.dup, 100)}%"
-            if self.up:
-                cmd = f"{TC} qdisc replace dev {devname} root handle 10: netem {netem}"
-                iface.host_cmd(cmd)
-            iface.setparam("has_netem", True)
 
     def linknet(self, net: CoreNetworkBase) -> CoreInterface:
         """
@@ -815,41 +722,12 @@ class PtpNet(CoreNetwork):
         all_links = []
         if len(self.ifaces) != 2:
             return all_links
-
         ifaces = self.get_ifaces()
         iface1 = ifaces[0]
         iface2 = ifaces[1]
-        unidirectional = 0
-        if iface1.getparams() != iface2.getparams():
-            unidirectional = 1
-
-        mac = str(iface1.mac) if iface1.mac else None
-        iface1_data = InterfaceData(
-            id=iface1.node.get_iface_id(iface1), name=iface1.name, mac=mac
-        )
-        ip4 = iface1.get_ip4()
-        if ip4:
-            iface1_data.ip4 = str(ip4.ip)
-            iface1_data.ip4_mask = ip4.prefixlen
-        ip6 = iface1.get_ip6()
-        if ip6:
-            iface1_data.ip6 = str(ip6.ip)
-            iface1_data.ip6_mask = ip6.prefixlen
-
-        mac = str(iface2.mac) if iface2.mac else None
-        iface2_data = InterfaceData(
-            id=iface2.node.get_iface_id(iface2), name=iface2.name, mac=mac
-        )
-        ip4 = iface2.get_ip4()
-        if ip4:
-            iface2_data.ip4 = str(ip4.ip)
-            iface2_data.ip4_mask = ip4.prefixlen
-        ip6 = iface2.get_ip6()
-        if ip6:
-            iface2_data.ip6 = str(ip6.ip)
-            iface2_data.ip6_mask = ip6.prefixlen
-
-        options_data = iface1.get_link_options(unidirectional)
+        unidirectional = 0 if iface1.local_options == iface2.local_options else 1
+        iface1_data = iface1.get_data()
+        iface2_data = iface2.get_data()
         link_data = LinkData(
             message_type=flags,
             type=self.linktype,
@@ -857,25 +735,23 @@ class PtpNet(CoreNetwork):
             node2_id=iface2.node.id,
             iface1=iface1_data,
             iface2=iface2_data,
-            options=options_data,
+            options=iface1.local_options,
         )
+        link_data.options.unidirectional = unidirectional
         all_links.append(link_data)
-
         # build a 2nd link message for the upstream link parameters
         # (swap if1 and if2)
         if unidirectional:
-            iface1_data = InterfaceData(id=iface2.node.get_iface_id(iface2))
-            iface2_data = InterfaceData(id=iface1.node.get_iface_id(iface1))
-            options_data = iface2.get_link_options(unidirectional)
             link_data = LinkData(
                 message_type=MessageFlags.NONE,
                 type=self.linktype,
                 node1_id=iface2.node.id,
                 node2_id=iface1.node.id,
-                iface1=iface1_data,
-                iface2=iface2_data,
-                options=options_data,
+                iface1=InterfaceData(id=iface2_data.id),
+                iface2=InterfaceData(id=iface1_data.id),
+                options=iface2.local_options,
             )
+            link_data.options.unidirectional = unidirectional
             all_links.append(link_data)
         return all_links
 

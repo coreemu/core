@@ -321,7 +321,7 @@ class BasicRangeModel(WirelessModel):
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                self.wlan.linkconfig(iface, options)
+                iface.config(options)
 
     def get_position(self, iface: CoreInterface) -> Tuple[float, float, float]:
         """
@@ -343,14 +343,12 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         x, y, z = iface.node.position.get()
-        self.iface_lock.acquire()
-        self.iface_to_pos[iface] = (x, y, z)
-        if x is None or y is None:
-            self.iface_lock.release()
-            return
-        for iface2 in self.iface_to_pos:
-            self.calclink(iface, iface2)
-        self.iface_lock.release()
+        with self.iface_lock:
+            self.iface_to_pos[iface] = (x, y, z)
+            if x is None or y is None:
+                return
+            for iface2 in self.iface_to_pos:
+                self.calclink(iface, iface2)
 
     position_callback = set_position
 
@@ -388,20 +386,15 @@ class BasicRangeModel(WirelessModel):
         """
         if iface == iface2:
             return
-
         try:
             x, y, z = self.iface_to_pos[iface]
             x2, y2, z2 = self.iface_to_pos[iface2]
-
             if x2 is None or y2 is None:
                 return
-
             d = self.calcdistance((x, y, z), (x2, y2, z2))
-
             # ordering is important, to keep the wlan._linked dict organized
             a = min(iface, iface2)
             b = max(iface, iface2)
-
             with self.wlan.linked_lock:
                 linked = self.wlan.is_linked(a, b)
             if d > self.range:

@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# exit on error
-set -e
-
 # install pre-reqs using yum/apt
 if command -v apt &> /dev/null
 then
@@ -23,4 +20,4 @@ python3 -m pip install --user pipx==0.16.4
 python3 -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke==1.4.1
-pipx install poetry==1.1.7
+pipx install poetry==1.1.12

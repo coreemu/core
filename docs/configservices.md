@@ -168,13 +168,12 @@ class ExampleService(ConfigService):
     ]
 
     def get_text_template(self, name: str) -> str:
-        if name == "example-start.sh":
-            return """
-            # sample script 1
-            # node id(${node.id}) name(${node.name})
-            # config: ${config}
-            echo hello
-            """
+        return """
+        # sample script 1
+        # node id(${node.id}) name(${node.name})
+        # config: ${config}
+        echo hello
+        """
 ```
 
 #### Validation Mode

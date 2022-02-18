@@ -7,14 +7,13 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from core.emulator.data import InterfaceData, LinkOptions
+from core.emulator.data import InterfaceData
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
 from core.executables import MOUNT, TEST, UMOUNT
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import CoreNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -143,17 +142,6 @@ class PhysicalNode(CoreNodeBase):
         if self.up:
             self.net_client.device_up(iface.localname)
 
-    def linkconfig(
-        self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None
-    ) -> None:
-        """
-        Apply tc queing disciplines using linkconfig.
-        """
-        linux_bridge = CoreNetwork(self.session)
-        linux_bridge.up = True
-        linux_bridge.linkconfig(iface, options, iface2)
-        del linux_bridge
-
     def next_iface_id(self) -> int:
         with self.lock:
             while self.iface_id in self.ifaces:
@@ -245,7 +233,7 @@ class Rj45Node(CoreNodeBase):
         """
         super().__init__(session, _id, name, server)
         self.iface: CoreInterface = CoreInterface(
-            session, self, name, name, mtu, server
+            session, name, name, mtu, server, self
         )
         self.iface.transport_type = TransportType.RAW
         self.lock: threading.RLock = threading.RLock()
@@ -450,3 +438,12 @@ class Rj45Node(CoreNodeBase):
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         raise CoreError("rj45 does not support cmds")
+
+    def create_dir(self, dir_path: Path) -> None:
+        raise CoreError("rj45 does not support creating directories")
+
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        raise CoreError("rj45 does not support creating files")
+
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+        raise CoreError("rj45 does not support copying files")

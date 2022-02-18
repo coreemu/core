@@ -2,7 +2,7 @@
 CORE data objects.
 """
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple
 
 import netaddr
 
@@ -175,6 +175,67 @@ class LinkOptions:
     unidirectional: int = None
     key: int = None
     buffer: int = None
+
+    def update(self, options: "LinkOptions") -> bool:
+        """
+        Updates current options with values from other options.
+
+        :param options: options to update with
+        :return: True if any value has changed, False otherwise
+        """
+        changed = False
+        if options.delay is not None and 0 <= options.delay != self.delay:
+            self.delay = options.delay
+            changed = True
+        if options.bandwidth is not None and 0 <= options.bandwidth != self.bandwidth:
+            self.bandwidth = options.bandwidth
+            changed = True
+        if options.loss is not None and 0 <= options.loss != self.loss:
+            self.loss = options.loss
+            changed = True
+        if options.dup is not None and 0 <= options.dup != self.dup:
+            self.dup = options.dup
+            changed = True
+        if options.jitter is not None and 0 <= options.jitter != self.jitter:
+            self.jitter = options.jitter
+            changed = True
+        if options.buffer is not None and 0 <= options.buffer != self.buffer:
+            self.buffer = options.buffer
+            changed = True
+        return changed
+
+    def is_clear(self) -> bool:
+        """
+        Checks if the current option values represent a clear state.
+
+        :return: True if the current values should clear, False otherwise
+        """
+        clear = self.delay is None or self.delay <= 0
+        clear &= self.jitter is None or self.jitter <= 0
+        clear &= self.loss is None or self.loss <= 0
+        clear &= self.dup is None or self.dup <= 0
+        clear &= self.bandwidth is None or self.bandwidth <= 0
+        clear &= self.buffer is None or self.buffer <= 0
+        return clear
+
+    def __eq__(self, other: Any) -> bool:
+        """
+        Custom logic to check if this link options is equivalent to another.
+
+        :param other: other object to check
+        :return: True if they are both link options with the same values,
+            False otherwise
+        """
+        if not isinstance(other, LinkOptions):
+            return False
+        return (
+            self.delay == other.delay
+            and self.jitter == other.jitter
+            and self.loss == other.loss
+            and self.dup == other.dup
+            and self.bandwidth == other.bandwidth
+            and self.buffer == other.buffer
+        )
 
 
 @dataclass

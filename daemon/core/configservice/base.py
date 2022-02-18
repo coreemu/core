@@ -19,6 +19,20 @@ logger = logging.getLogger(__name__)
 TEMPLATES_DIR: str = "templates"
 
 
+def get_template_path(file_path: Path) -> str:
+    """
+    Utility to convert a given file path to a valid template path format.
+
+    :param file_path: file path to convert
+    :return: template path
+    """
+    if file_path.is_absolute():
+        template_path = str(file_path.relative_to("/"))
+    else:
+        template_path = str(file_path)
+    return template_path
+
+
 class ConfigServiceMode(enum.Enum):
     BLOCKING = 0
     NON_BLOCKING = 1
@@ -295,10 +309,7 @@ class ConfigService(abc.ABC):
         templates = {}
         for file in self.files:
             file_path = Path(file)
-            if file_path.is_absolute():
-                template_path = str(file_path.relative_to("/"))
-            else:
-                template_path = str(file_path)
+            template_path = get_template_path(file_path)
             if file in self.custom_templates:
                 template = self.custom_templates[file]
                 template = self.clean_text(template)
@@ -322,11 +333,12 @@ class ConfigService(abc.ABC):
                 "node(%s) service(%s) template(%s)", self.node.name, self.name, file
             )
             file_path = Path(file)
+            template_path = get_template_path(file_path)
             if file in self.custom_templates:
                 text = self.custom_templates[file]
                 rendered = self.render_text(text, data)
-            elif self.templates.has_template(file_path.name):
-                rendered = self.render_template(file_path.name, data)
+            elif self.templates.has_template(template_path):
+                rendered = self.render_template(template_path, data)
             else:
                 text = self.get_text_template(file)
                 rendered = self.render_text(text, data)

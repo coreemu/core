@@ -3,16 +3,18 @@ virtual ethernet classes that implement the interfaces available under Linux.
 """
 
 import logging
+import math
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional
 
 import netaddr
 
 from core import utils
-from core.emulator.data import LinkOptions
+from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError, CoreError
+from core.executables import TC
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
@@ -23,6 +25,50 @@ if TYPE_CHECKING:
     from core.nodes.base import CoreNetworkBase, CoreNode
 
 DEFAULT_MTU: int = 1500
+
+
+def tc_clear_cmd(name: str) -> str:
+    """
+    Create tc command to clear device configuration.
+
+    :param name: name of device to clear
+    :return: tc command
+    """
+    return f"{TC} qdisc delete dev {name} root handle 10:"
+
+
+def tc_cmd(name: str, options: LinkOptions, mtu: int) -> str:
+    """
+    Create tc command to configure a device with given name and options.
+
+    :param name: name of device to configure
+    :param options: options to configure with
+    :param mtu: mtu for configuration
+    :return: tc command
+    """
+    netem = ""
+    if options.bandwidth is not None:
+        limit = 1000
+        bw = options.bandwidth / 1000
+        if options.buffer is not None and options.buffer > 0:
+            limit = options.buffer
+        elif options.delay and options.bandwidth:
+            delay = options.delay / 1000
+            limit = max(2, math.ceil((2 * bw * delay) / (8 * mtu)))
+        netem += f" rate {bw}kbit"
+        netem += f" limit {limit}"
+    if options.delay is not None:
+        netem += f" delay {options.delay}us"
+    if options.jitter is not None:
+        if options.delay is None:
+            netem += f" delay 0us {options.jitter}us 25%"
+        else:
+            netem += f" {options.jitter}us 25%"
+    if options.loss is not None and options.loss > 0:
+        netem += f" loss {min(options.loss, 100)}%"
+    if options.dup is not None and options.dup > 0:
+        netem += f" duplicate {min(options.dup, 100)}%"
+    return f"{TC} qdisc replace dev {name} root handle 10: netem {netem}"
 
 
 class CoreInterface:
@@ -61,7 +107,6 @@ class CoreInterface:
         self.mtu: int = mtu
         self.net: Optional[CoreNetworkBase] = None
         self.othernet: Optional[CoreNetworkBase] = None
-        self._params: Dict[str, float] = {}
         self.ip4s: List[netaddr.IPNetwork] = []
         self.ip6s: List[netaddr.IPNetwork] = []
         self.mac: Optional[netaddr.EUI] = None
@@ -80,6 +125,11 @@ class CoreInterface:
             self.session.use_ovs(), self.host_cmd
         )
         self.control: bool = False
+        # configuration data
+        self.has_local_netem: bool = False
+        self.local_options: LinkOptions = LinkOptions()
+        self.has_netem: bool = False
+        self.options: LinkOptions = LinkOptions()
 
     def host_cmd(
         self,
@@ -219,89 +269,6 @@ class CoreInterface:
             except netaddr.AddrFormatError as e:
                 raise CoreError(f"invalid mac address({mac}): {e}")
 
-    def getparam(self, key: str) -> float:
-        """
-        Retrieve a parameter from the, or None if the parameter does not exist.
-
-        :param key: parameter to get value for
-        :return: parameter value
-        """
-        return self._params.get(key)
-
-    def get_link_options(self, unidirectional: int) -> LinkOptions:
-        """
-        Get currently set params as link options.
-
-        :param unidirectional: unidirectional setting
-        :return: link options
-        """
-        delay = self.getparam("delay")
-        if delay is not None:
-            delay = int(delay)
-        bandwidth = self.getparam("bw")
-        if bandwidth is not None:
-            bandwidth = int(bandwidth)
-        dup = self.getparam("duplicate")
-        if dup is not None:
-            dup = int(dup)
-        jitter = self.getparam("jitter")
-        if jitter is not None:
-            jitter = int(jitter)
-        buffer = self.getparam("buffer")
-        if buffer is not None:
-            buffer = int(buffer)
-        return LinkOptions(
-            delay=delay,
-            bandwidth=bandwidth,
-            dup=dup,
-            jitter=jitter,
-            loss=self.getparam("loss"),
-            buffer=buffer,
-            unidirectional=unidirectional,
-        )
-
-    def getparams(self) -> List[Tuple[str, float]]:
-        """
-        Return (key, value) pairs for parameters.
-        """
-        parameters = []
-        for k in sorted(self._params.keys()):
-            parameters.append((k, self._params[k]))
-        return parameters
-
-    def setparam(self, key: str, value: float) -> bool:
-        """
-        Set a parameter value, returns True if the parameter has changed.
-
-        :param key: parameter name to set
-        :param value: parameter value
-        :return: True if parameter changed, False otherwise
-        """
-        # treat None and 0 as unchanged values
-        logger.debug("setting param: %s - %s", key, value)
-        if value is None or value < 0:
-            return False
-        current_value = self._params.get(key)
-        if current_value is not None and current_value == value:
-            return False
-        self._params[key] = value
-        return True
-
-    def swapparams(self, name: str) -> None:
-        """
-        Swap out parameters dict for name. If name does not exist,
-        intialize it. This is for supporting separate upstream/downstream
-        parameters when two layer-2 nodes are linked together.
-
-        :param name: name of parameter to swap
-        :return: nothing
-        """
-        tmp = self._params
-        if not hasattr(self, name):
-            setattr(self, name, {})
-        self._params = getattr(self, name)
-        setattr(self, name, tmp)
-
     def setposition(self) -> None:
         """
         Dispatch position hook handler when possible.
@@ -335,6 +302,65 @@ class CoreInterface:
         :return: True if virtual interface, False otherwise
         """
         return self.transport_type == TransportType.VIRTUAL
+
+    def config(self, options: LinkOptions, use_local: bool = True) -> None:
+        """
+        Configure interface using tc based on existing state and provided
+        link options.
+
+        :param options: options to configure with
+        :param use_local: True to use localname for device, False for name
+        :return: nothing
+        """
+        # determine name, options, and if anything has changed
+        name = self.localname if use_local else self.name
+        current_options = self.local_options if use_local else self.options
+        changed = current_options.update(options)
+        # nothing more to do when nothing has changed or not up
+        if not changed or not self.up:
+            return
+        # clear current settings
+        if current_options.is_clear():
+            clear_local_netem = use_local and self.has_local_netem
+            clear_netem = not use_local and self.has_netem
+            if clear_local_netem or clear_netem:
+                cmd = tc_clear_cmd(name)
+                self.host_cmd(cmd)
+                if use_local:
+                    self.has_local_netem = False
+                else:
+                    self.has_netem = False
+        # set updated settings
+        else:
+            cmd = tc_cmd(name, current_options, self.mtu)
+            self.host_cmd(cmd)
+            if use_local:
+                self.has_local_netem = True
+            else:
+                self.has_netem = True
+
+    def get_data(self) -> InterfaceData:
+        """
+        Retrieve the data representation of this interface.
+
+        :return: interface data
+        """
+        if self.node:
+            iface_id = self.node.get_iface_id(self)
+        else:
+            iface_id = self.othernet.get_iface_id(self)
+        data = InterfaceData(
+            id=iface_id, name=self.name, mac=str(self.mac) if self.mac else None
+        )
+        ip4 = self.get_ip4()
+        if ip4:
+            data.ip4 = str(ip4.ip)
+            data.ip4_mask = ip4.prefixlen
+        ip6 = self.get_ip6()
+        if ip6:
+            data.ip6 = str(ip6.ip)
+            data.ip6_mask = ip6.prefixlen
+        return data
 
 
 class Veth(CoreInterface):

@@ -288,17 +288,25 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # create links
         links = []
-        asym_links = []
+        edit_links = []
+        known_links = set()
         for link in request.session.links:
-            if link.options.unidirectional:
-                asym_links.append(link)
+            iface1 = link.iface1.id if link.iface1 else None
+            iface2 = link.iface2.id if link.iface2 else None
+            if link.node1_id < link.node2_id:
+                link_id = (link.node1_id, iface1, link.node2_id, iface2)
             else:
+                link_id = (link.node2_id, iface2, link.node1_id, iface1)
+            if link_id in known_links:
+                edit_links.append(link)
+            else:
+                known_links.add(link_id)
                 links.append(link)
         _, exceptions = grpcutils.create_links(session, links)
         if exceptions:
             exceptions = [str(x) for x in exceptions]
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)
-        _, exceptions = grpcutils.edit_links(session, asym_links)
+        _, exceptions = grpcutils.edit_links(session, edit_links)
         if exceptions:
             exceptions = [str(x) for x in exceptions]
             return core_pb2.StartSessionResponse(result=False, exceptions=exceptions)

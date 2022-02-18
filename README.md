@@ -25,7 +25,10 @@ For more detailed installation see [here](https://coreemu.github.io/core/install
 ```shell
 git clone https://github.com/coreemu/core.git
 cd core
+# install dependencies to run installation task
 ./setup.sh
+# run the following or open a new terminal
+source ~/.bashrc
 # Ubuntu
 inv install
 # CentOS

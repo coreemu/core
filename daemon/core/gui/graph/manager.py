@@ -395,6 +395,7 @@ class CanvasManager:
         if token in self.edges and link.options.unidirectional:
             edge = self.edges[token]
             edge.asymmetric_link = link
+            edge.redraw()
         elif token not in self.edges:
             edge = CanvasEdge(self.app, src, dst)
             edge.complete(dst, link)

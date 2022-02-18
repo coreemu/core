@@ -7,7 +7,8 @@ from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import WlanNode
+from core.nodes.network import PtpNet, WlanNode
+from core.nodes.physical import Rj45Node
 
 logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
@@ -53,6 +54,20 @@ def get_router_id(node: CoreNodeBase) -> str:
         if ip4:
             return str(ip4.ip)
     return "0.0.0.0"
+
+
+def rj45_check(iface: CoreInterface) -> bool:
+    """
+    Helper to detect whether interface is connected an external RJ45
+    link.
+    """
+    if iface.net:
+        for peer_iface in iface.net.get_ifaces():
+            if peer_iface == iface:
+                continue
+            if isinstance(peer_iface.node, Rj45Node):
+                return True
+    return False
 
 
 class Zebra(ConfigService):
@@ -105,7 +120,13 @@ class Zebra(ConfigService):
                 ip4s.append(str(ip4))
             for ip6 in iface.ip6s:
                 ip6s.append(str(ip6))
-            ifaces.append((iface, ip4s, ip6s, iface.control))
+            configs = []
+            if not iface.control:
+                for service in services:
+                    config = service.quagga_iface_config(iface)
+                    if config:
+                        configs.append(config.split("\n"))
+            ifaces.append((iface, ip4s, ip6s, configs))
 
         return dict(
             quagga_bin_search=quagga_bin_search,
@@ -156,17 +177,32 @@ class Ospfv2(QuaggaService, ConfigService):
     ipv4_routing: bool = True
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
-        if has_mtu_mismatch(iface):
-            return "ip ospf mtu-ignore"
-        else:
-            return ""
+        has_mtu = has_mtu_mismatch(iface)
+        has_rj45 = rj45_check(iface)
+        is_ptp = isinstance(iface.net, PtpNet)
+        data = dict(has_mtu=has_mtu, is_ptp=is_ptp, has_rj45=has_rj45)
+        text = """
+        % if has_mtu:
+        ip ospf mtu-ignore
+        % endif
+        % if has_rj45:
+        <% return STOP_RENDERING %>
+        % endif
+        % if is_ptp:
+        ip ospf network point-to-point
+        % endif
+        ip ospf hello-interval 2
+        ip ospf dead-interval 6
+        ip ospf retransmit-interval 5
+        """
+        return self.render_text(text, data)
 
     def quagga_config(self) -> str:
         router_id = get_router_id(self.node)
         addresses = []
         for iface in self.node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
-                addresses.append(str(ip4.ip))
+                addresses.append(str(ip4))
         data = dict(router_id=router_id, addresses=addresses)
         text = """
         router ospf
