@@ -114,45 +114,45 @@ the left side of the CORE window. Below are brief descriptions for each toolbar
 item, starting from the top. Most of the tools are grouped into related
 sub-menus, which appear when you click on their group icon.
 
-| Icon | Name | Description |
-|---|---|---|
-| ![](static/pygui/select.png) | Selection Tool | Tool for selecting, moving, configuring nodes. |
-| ![](static/pygui/start.png) | Start Button | Starts Execute mode, instantiates the emulation. |
-| ![](static/pygui/link.png) | Link | Allows network links to be drawn between two nodes by clicking and dragging the mouse. |
+| Icon                         | Name           | Description                                                                            |
+|------------------------------|----------------|----------------------------------------------------------------------------------------|
+| ![](static/pygui/select.png) | Selection Tool | Tool for selecting, moving, configuring nodes.                                         |
+| ![](static/pygui/start.png)  | Start Button   | Starts Execute mode, instantiates the emulation.                                       |
+| ![](static/pygui/link.png)   | Link           | Allows network links to be drawn between two nodes by clicking and dragging the mouse. |
 
 ### CORE Nodes
 
 These nodes will create a new node container and run associated services.
 
-| Icon | Name | Description |
-|---|---|---|
-| ![](static/pygui/router.png) | Router | Runs Quagga OSPFv2 and OSPFv3 routing to forward packets. |
-| ![](static/pygui/host.png) | Host | Emulated server machine having a default route, runs SSH server. |
-| ![](static/pygui/pc.png) | PC | Basic emulated machine having a default route, runs no processes by default. |
-| ![](static/pygui/mdr.png) | MDR | Runs Quagga OSPFv3 MDR routing for MANET-optimized routing. |
-| ![](static/pygui/router.png) | PRouter | Physical router represents a real testbed machine. |
+| Icon                         | Name    | Description                                                                  |
+|------------------------------|---------|------------------------------------------------------------------------------|
+| ![](static/pygui/router.png) | Router  | Runs Quagga OSPFv2 and OSPFv3 routing to forward packets.                    |
+| ![](static/pygui/host.png)   | Host    | Emulated server machine having a default route, runs SSH server.             |
+| ![](static/pygui/pc.png)     | PC      | Basic emulated machine having a default route, runs no processes by default. |
+| ![](static/pygui/mdr.png)    | MDR     | Runs Quagga OSPFv3 MDR routing for MANET-optimized routing.                  |
+| ![](static/pygui/router.png) | PRouter | Physical router represents a real testbed machine.                           |
 
 ### Network Nodes
 
 These nodes are mostly used to create a Linux bridge that serves the
 purpose described below.
 
-| Icon | Name | Description |
-|---|---|---|
-| ![](static/pygui/hub.png) | Hub | Ethernet hub forwards incoming packets to every connected node. |
-| ![](static/pygui/lanswitch.png) | Switch | Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table. |
-| ![](static/pygui/wlan.png) | Wireless LAN | When routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them. |
-| ![](static/pygui/rj45.png) | RJ45 | RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation. |
-| ![](static/pygui/tunnel.png) | Tunnel | Tool allows connecting together more than one CORE emulation using GRE tunnels. |
+| Icon                            | Name         | Description                                                                                                                                                                                                                                        |
+|---------------------------------|--------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ![](static/pygui/hub.png)       | Hub          | Ethernet hub forwards incoming packets to every connected node.                                                                                                                                                                                    |
+| ![](static/pygui/lanswitch.png) | Switch       | Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table.                                                                                                                                    |
+| ![](static/pygui/wlan.png)      | Wireless LAN | When routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them. |
+| ![](static/pygui/rj45.png)      | RJ45         | RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation.                                                      |
+| ![](static/pygui/tunnel.png)    | Tunnel       | Tool allows connecting together more than one CORE emulation using GRE tunnels.                                                                                                                                                                    |
 
 ### Annotation Tools
 
-| Icon | Name | Description |
-|---|---|---|
-| ![](static/pygui/marker.png) | Marker | For drawing marks on the canvas. |
-| ![](static/pygui/oval.png) | Oval | For drawing circles on the canvas that appear in the background. |
+| Icon                            | Name      | Description                                                         |
+|---------------------------------|-----------|---------------------------------------------------------------------|
+| ![](static/pygui/marker.png)    | Marker    | For drawing marks on the canvas.                                    |
+| ![](static/pygui/oval.png)      | Oval      | For drawing circles on the canvas that appear in the background.    |
 | ![](static/pygui/rectangle.png) | Rectangle | For drawing rectangles on the canvas that appear in the background. |
-| ![](static/pygui/text.png) | Text | For placing text captions on the canvas. |
+| ![](static/pygui/text.png)      | Text      | For placing text captions on the canvas.                            |
 
 ### Execution Toolbar
 
@@ -160,12 +160,12 @@ When the Start button is pressed, CORE switches to Execute mode, and the Edit
 toolbar on the left of the CORE window is replaced with the Execution toolbar
 Below are the items on this toolbar, starting from the top.
 
-| Icon | Name | Description |
-|---|---|---|
-| ![](static/pygui/stop.png) | Stop Button | Stops Execute mode, terminates the emulation, returns CORE to edit mode. |
-| ![](static/pygui/select.png) | Selection Tool | In Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node. |
-| ![](static/pygui/marker.png) | Marker | For drawing freehand lines on the canvas, useful during demonstrations; markings are not saved. |
-| ![](static/pygui/run.png) | Run Tool | This tool allows easily running a command on all or a subset of all nodes. A list box allows selecting any of the nodes. A text entry box allows entering any command. The command should return immediately, otherwise the display will block awaiting response. The *ping* command, for example, with no parameters, is not a good idea. The result of each command is displayed in a results box. The first occurrence of the special text "NODE" will be replaced with the node name. The command will not be attempted to run on nodes that are not routers, PCs, or hosts, even if they are selected. |
+| Icon                         | Name           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|------------------------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ![](static/pygui/stop.png)   | Stop Button    | Stops Execute mode, terminates the emulation, returns CORE to edit mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ![](static/pygui/select.png) | Selection Tool | In Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node.                                                                                                                                                                                                                                                                                                                                                                 |
+| ![](static/pygui/marker.png) | Marker         | For drawing freehand lines on the canvas, useful during demonstrations; markings are not saved.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ![](static/pygui/run.png)    | Run Tool       | This tool allows easily running a command on all or a subset of all nodes. A list box allows selecting any of the nodes. A text entry box allows entering any command. The command should return immediately, otherwise the display will block awaiting response. The *ping* command, for example, with no parameters, is not a good idea. The result of each command is displayed in a results box. The first occurrence of the special text "NODE" will be replaced with the node name. The command will not be attempted to run on nodes that are not routers, PCs, or hosts, even if they are selected. |
 
 ## Menu
 
@@ -178,58 +178,58 @@ menu, by clicking the dashed line at the top.
 The File menu contains options for manipulating the **.imn** Configuration
 Files. Generally, these menu items should not be used in Execute mode.
 
-| Option | Description |
-|---|---|
-| New Session | This starts a new session with an empty canvas. |
-| Save | Saves the current topology. If you have not yet specified a file name, the Save As dialog box is invoked. |
-| Save As | Invokes the Save As dialog box for selecting a new **.xml** file for saving the current configuration in the XML file. |
-| Open | Invokes the File Open dialog box for selecting a new XML file to open. |
-| Recently used files | Above the Quit menu command is a list of recently use files, if any have been opened. You can clear this list in the Preferences dialog box. You can specify the number of files to keep in this list from the Preferences dialog. Click on one of the file names listed to open that configuration file. |
+| Option                | Description                                                                                                                                                                                                                                                                                                                                                 |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| New Session           | This starts a new session with an empty canvas.                                                                                                                                                                                                                                                                                                             |
+| Save                  | Saves the current topology. If you have not yet specified a file name, the Save As dialog box is invoked.                                                                                                                                                                                                                                                   |
+| Save As               | Invokes the Save As dialog box for selecting a new **.xml** file for saving the current configuration in the XML file.                                                                                                                                                                                                                                      |
+| Open                  | Invokes the File Open dialog box for selecting a new XML file to open.                                                                                                                                                                                                                                                                                      |
+| Recently used files   | Above the Quit menu command is a list of recently use files, if any have been opened. You can clear this list in the Preferences dialog box. You can specify the number of files to keep in this list from the Preferences dialog. Click on one of the file names listed to open that configuration file.                                                   |
 | Execute Python Script | Invokes a File Open dialog box for selecting a Python script to run and automatically connect to. After a selection is made, a Python Script Options dialog box is invoked to allow for command-line options to be added. The Python script must create a new CORE Session and add this session to the daemon's list of sessions in order for this to work. |
-| Quit | The Quit command should be used to exit the CORE GUI. CORE may prompt for termination if you are currently in Execute mode. Preferences and the recently-used files list are saved. |
+| Quit                  | The Quit command should be used to exit the CORE GUI. CORE may prompt for termination if you are currently in Execute mode. Preferences and the recently-used files list are saved.                                                                                                                                                                         |
 
 ### Edit Menu
 
-| Option | Description |
-|---|---|
-| Preferences | Invokes the Preferences dialog box. |
-| Custom Nodes | Custom node creation dialog box. |
-| Undo | (Disabled) Attempts to undo the last edit in edit mode. |
-| Redo | (Disabled) Attempts to redo an edit that has been undone. |
-| Cut, Copy, Paste, Delete | Used to cut, copy, paste, and delete a selection. When nodes are pasted, their node numbers are automatically incremented, and existing links are preserved with new IP addresses assigned. Services and their customizations are copied to the new node, but care should be taken as node IP addresses have changed with possibly old addresses remaining in any custom service configurations. Annotations may also be copied and pasted.
+| Option                   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Preferences              | Invokes the Preferences dialog box.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Custom Nodes             | Custom node creation dialog box.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| Undo                     | (Disabled) Attempts to undo the last edit in edit mode.                                                                                                                                                                                                                                                                                                                                                                                     |
+| Redo                     | (Disabled) Attempts to redo an edit that has been undone.                                                                                                                                                                                                                                                                                                                                                                                   |
+| Cut, Copy, Paste, Delete | Used to cut, copy, paste, and delete a selection. When nodes are pasted, their node numbers are automatically incremented, and existing links are preserved with new IP addresses assigned. Services and their customizations are copied to the new node, but care should be taken as node IP addresses have changed with possibly old addresses remaining in any custom service configurations. Annotations may also be copied and pasted. |
 
 ### Canvas Menu
 
 The canvas menu provides commands related to the editing canvas.
 
-| Option | Description |
-|---|---|
-| Size/scale | Invokes a Canvas Size and Scale dialog that allows configuring the canvas size, scale, and geographic reference point. The size controls allow changing the width and height of the current canvas, in pixels or meters. The scale allows specifying how many meters are equivalent to 100 pixels. The reference point controls specify the latitude, longitude, and altitude reference point used to convert between geographic and Cartesian coordinate systems. By clicking the *Save as default* option, all new canvases will be created with these properties. The default canvas size can also be changed in the Preferences dialog box.
-| Wallpaper | Used for setting the canvas background image. |
+| Option     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Size/scale | Invokes a Canvas Size and Scale dialog that allows configuring the canvas size, scale, and geographic reference point. The size controls allow changing the width and height of the current canvas, in pixels or meters. The scale allows specifying how many meters are equivalent to 100 pixels. The reference point controls specify the latitude, longitude, and altitude reference point used to convert between geographic and Cartesian coordinate systems. By clicking the *Save as default* option, all new canvases will be created with these properties. The default canvas size can also be changed in the Preferences dialog box. |
+| Wallpaper  | Used for setting the canvas background image.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 ### View Menu
 
 The View menu features items for toggling on and off their display on the canvas.
 
-| Option | Description |
-|---|---|
+| Option          | Description                       |
+|-----------------|-----------------------------------|
 | Interface Names | Display interface names on links. |
-| IPv4 Addresses | Display IPv4 addresses on links. |
-| IPv6 Addresses | Display IPv6 addresses on links. |
-| Node Labels | Display node names. |
-| Link Labels | Display link labels. |
-| Annotations | Display annotations. |
-| Canvas Grid | Display the canvas grid. |
+| IPv4 Addresses  | Display IPv4 addresses on links.  |
+| IPv6 Addresses  | Display IPv6 addresses on links.  |
+| Node Labels     | Display node names.               |
+| Link Labels     | Display link labels.              |
+| Annotations     | Display annotations.              |
+| Canvas Grid     | Display the canvas grid.          |
 
 ### Tools Menu
 
 The tools menu lists different utility functions.
 
-| Option | Description |
-|---|---|
-| Find | Display find dialog used for highlighting a node on the canvas. |
-| Auto Grid | Automatically layout nodes in a grid. |
-| IP addresses | Invokes the IP Addresses dialog box for configuring which IPv4/IPv6 prefixes are used when automatically addressing new interfaces. |
+| Option        | Description                                                                                                                                                                                                                                        |
+|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Find          | Display find dialog used for highlighting a node on the canvas.                                                                                                                                                                                    |
+| Auto Grid     | Automatically layout nodes in a grid.                                                                                                                                                                                                              |
+| IP addresses  | Invokes the IP Addresses dialog box for configuring which IPv4/IPv6 prefixes are used when automatically addressing new interfaces.                                                                                                                |
 | MAC addresses | Invokes the MAC Addresses dialog box for configuring the starting number used as the lowest byte when generating each interface MAC address. This value should be changed when tunneling between CORE emulations to prevent MAC address conflicts. |
 
 ### Widgets Menu
@@ -288,31 +288,31 @@ The Session Menu has entries for starting, stopping, and managing sessions,
 in addition to global options such as node types, comments, hooks, servers,
 and options.
 
-| Option | Description |
-|---|---|
-| Sessions | Invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session. |
-| Servers | Invokes the CORE emulation servers dialog for configuring. |
-| Options | Presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support. |
-| Hooks | Invokes the CORE Session Hooks window where scripts may be configured for a particular session state. The session states are defined in the [table](#session-states) below. The top of the window has a list of configured hooks, and buttons on the bottom left allow adding, editing, and removing hook scripts. The new or edit button will open a hook script editing window.  A hook script is a shell script invoked on the host (not within a virtual node). |
+| Option   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Sessions | Invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session.                                                                                                                                                                    |
+| Servers  | Invokes the CORE emulation servers dialog for configuring.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Options  | Presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support.                                                                                                                                                                                                                                                                              |
+| Hooks    | Invokes the CORE Session Hooks window where scripts may be configured for a particular session state. The session states are defined in the [table](#session-states) below. The top of the window has a list of configured hooks, and buttons on the bottom left allow adding, editing, and removing hook scripts. The new or edit button will open a hook script editing window.  A hook script is a shell script invoked on the host (not within a virtual node). |
 
 #### Session States
 
-| State | Description |
-|---|---|
-| Definition | Used by the GUI to tell the backend to clear any state. |
-| Configuration | When the user presses the *Start* button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service. |
-| Instantiation | After configuration data has been sent, just before the nodes are created. |
-| Runtime | All nodes and networks have been built and are running. (This is the same state at which the previously-named *global experiment script* was run.)
-| Datacollect | The user has pressed the *Stop* button, but before services have been stopped and nodes have been shut down. This is a good time to collect log files and other data from the nodes. |
-| Shutdown | All nodes and networks have been shut down and destroyed. |
+| State         | Description                                                                                                                                                                          |
+|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Definition    | Used by the GUI to tell the backend to clear any state.                                                                                                                              |
+| Configuration | When the user presses the *Start* button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service.            |
+| Instantiation | After configuration data has been sent, just before the nodes are created.                                                                                                           |
+| Runtime       | All nodes and networks have been built and are running. (This is the same state at which the previously-named *global experiment script* was run.)                                   |
+| Datacollect   | The user has pressed the *Stop* button, but before services have been stopped and nodes have been shut down. This is a good time to collect log files and other data from the nodes. |
+| Shutdown      | All nodes and networks have been shut down and destroyed.                                                                                                                            |
 
 ### Help Menu
 
-| Option | Description |
-|---|---|
-| CORE Github (www) | Link to the CORE GitHub page. |
-| CORE Documentation (www) | Lnk to the CORE Documentation page. |
-| About | Invokes the About dialog box for viewing version information. |
+| Option                   | Description                                                   |
+|--------------------------|---------------------------------------------------------------|
+| CORE Github (www)        | Link to the CORE GitHub page.                                 |
+| CORE Documentation (www) | Lnk to the CORE Documentation page.                           |
+| About                    | Invokes the About dialog box for viewing version information. |
 
 ## Connecting with Physical Networks
 
@@ -519,10 +519,10 @@ complexity and CPU usage. The availability of certain plug-ins varies depending
 on platform. See the table below for a brief overview of wireless model types.
 
 
-|Model|Type|Supported Platform(s)|Fidelity|Description|
-|-----|----|---------------------|--------|-----------|
-|Basic|on/off|Linux|Low|Ethernet bridging with nftables|
-|EMANE|Plug-in|Linux|High|TAP device connected to EMANE emulator with pluggable MAC and PHY radio types|
+| Model | Type    | Supported Platform(s) | Fidelity | Description                                                                   |
+|-------|---------|-----------------------|----------|-------------------------------------------------------------------------------|
+| Basic | on/off  | Linux                 | Low      | Ethernet bridging with nftables                                               |
+| EMANE | Plug-in | Linux                 | High     | TAP device connected to EMANE emulator with pluggable MAC and PHY radio types |
 
 To quickly build a wireless network, you can first place several router nodes
 onto the canvas. If you have the
@@ -556,11 +556,11 @@ See the [EMANE](emane.md) chapter for details on using EMANE.
 
 CORE has a few ways to script mobility.
 
-| Option | Description |
-|---|---|
-| ns-2 script | The script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates. |
-| CORE API | An external entity can move nodes by sending CORE API Node messages with updated X,Y coordinates; the **coresendmsg** utility allows a shell script to generate these messages. |
-| EMANE events | See [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude. |
+| Option       | Description                                                                                                                                                                     |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ns-2 script  | The script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates.                                                    |
+| CORE API     | An external entity can move nodes by sending CORE API Node messages with updated X,Y coordinates; the **coresendmsg** utility allows a shell script to generate these messages. |
+| EMANE events | See [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude.                    |
 
 For the first method, you can create a mobility script using a text
 editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/),  and associate the script with one of the wireless

@@ -8,13 +8,13 @@
 The top question about the performance of CORE is often *how many nodes can it
 handle?* The answer depends on several factors:
 
-| Factor | Performance Impact |
-|---|---|
-| Hardware | the number and speed of processors in the computer, the available processor cache, RAM memory, and front-side bus speed may greatly affect overall performance. |
-| Operating system version | distribution of Linux and the specific kernel versions used will affect overall performance. |
-| Active processes | all nodes share the same CPU resources, so if one or more nodes is performing a CPU-intensive task, overall performance will suffer. |
-| Network traffic | the more packets that are sent around the virtual network increases the amount of CPU usage. |
-| GUI usage | widgets that run periodically, mobility scenarios, and other GUI interactions generally consume CPU cycles that may be needed for emulation. |
+| Factor                   | Performance Impact                                                                                                                                              |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Hardware                 | the number and speed of processors in the computer, the available processor cache, RAM memory, and front-side bus speed may greatly affect overall performance. |
+| Operating system version | distribution of Linux and the specific kernel versions used will affect overall performance.                                                                    |
+| Active processes         | all nodes share the same CPU resources, so if one or more nodes is performing a CPU-intensive task, overall performance will suffer.                            |
+| Network traffic          | the more packets that are sent around the virtual network increases the amount of CPU usage.                                                                    |
+| GUI usage                | widgets that run periodically, mobility scenarios, and other GUI interactions generally consume CPU cycles that may be needed for emulation.                    |
 
 
 On a typical single-CPU Xeon 3.0GHz server machine with 2GB RAM running Linux,

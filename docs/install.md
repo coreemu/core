@@ -37,12 +37,12 @@ sudo modprobe sch_netem
 ### Tools Used
 The following tools will be leveraged during installation:
 
-|Tool|Description|
-|---|---|
-|[pip](https://pip.pypa.io/en/stable/)|used to install pipx|
-|[pipx](https://pipxproject.github.io/pipx/)|used to install standalone python tools (invoke, poetry)|
-|[invoke](http://www.pyinvoke.org/)|used to run provided tasks (install, uninstall, reinstall, etc)|
-|[poetry](https://python-poetry.org/)|used to install python virtual environment or building a python wheel|
+| Tool                                        | Description                                                           |
+|---------------------------------------------|-----------------------------------------------------------------------|
+| [pip](https://pip.pypa.io/en/stable/)       | used to install pipx                                                  |
+| [pipx](https://pipxproject.github.io/pipx/) | used to install standalone python tools (invoke, poetry)              |
+| [invoke](http://www.pyinvoke.org/)          | used to run provided tasks (install, uninstall, reinstall, etc)       |
+| [poetry](https://python-poetry.org/)        | used to install python virtual environment or building a python wheel |
 
 ### Files
 The following is a list of files that would be installed after running the automated installation.
@@ -73,19 +73,19 @@ The following is a list of files that would be installed after running the autom
 ### Installed Executables
 After the installation complete it will have installed the following scripts.
 
-| Name | Description |
-|---|---|
-| core-cleanup | tool to help removed lingering core created containers, bridges, directories |
-| core-cli | tool to query, open xml files, and send commands using gRPC |
-| core-daemon | runs the backed core server providing TLV and gRPC APIs |
-| core-gui | runs the legacy tcl/tk based GUI |
-| core-imn-to-xml | tool to help automate converting a .imn file to .xml format |
-| core-manage | tool to add, remove, or check for services, models, and node types |
-| core-pygui | runs the new python/tk based GUI |
-| core-python | provides a convenience for running the core python virtual environment |
-| core-route-monitor | tool to help monitor traffic across nodes and feed that to SDT |
-| core-service-update | tool to update automate modifying a legacy service to match current naming |
-| coresendmsg | tool to send TLV API commands from command line |
+| Name                | Description                                                                  |
+|---------------------|------------------------------------------------------------------------------|
+| core-cleanup        | tool to help removed lingering core created containers, bridges, directories |
+| core-cli            | tool to query, open xml files, and send commands using gRPC                  |
+| core-daemon         | runs the backed core server providing TLV and gRPC APIs                      |
+| core-gui            | runs the legacy tcl/tk based GUI                                             |
+| core-imn-to-xml     | tool to help automate converting a .imn file to .xml format                  |
+| core-manage         | tool to add, remove, or check for services, models, and node types           |
+| core-pygui          | runs the new python/tk based GUI                                             |
+| core-python         | provides a convenience for running the core python virtual environment       |
+| core-route-monitor  | tool to help monitor traffic across nodes and feed that to SDT               |
+| core-service-update | tool to update automate modifying a legacy service to match current naming   |
+| coresendmsg         | tool to send TLV API commands from command line                              |
 
 ## Upgrading from Older Release
 Please make sure to uninstall any previous installations of CORE cleanly

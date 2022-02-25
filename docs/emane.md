@@ -62,13 +62,13 @@ Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
 > **WARNING:** demo files will be found within the new `core-pygui`
 
-|Topic|Model|Description|
-|---|---|---|
-|[XML Files](emane/files.md)|RF Pipe|Overview of generated XML files used to drive EMANE|
-|[GPSD](emane/gpsd.md)|RF Pipe|Overview of running and integrating gpsd with EMANE|
-|[Precomputed](emane/precomputed.md)|RF Pipe|Overview of using the precomputed propagation model|
-|[EEL](emane/eel.md)|RF Pipe|Overview of using the Emulation Event Log (EEL) Generator|
-|[Antenna Profiles](emane/antenna.md)|RF Pipe|Overview of using antenna profiles in EMANE|
+| Topic                                | Model   | Description                                               |
+|--------------------------------------|---------|-----------------------------------------------------------|
+| [XML Files](emane/files.md)          | RF Pipe | Overview of generated XML files used to drive EMANE       |
+| [GPSD](emane/gpsd.md)                | RF Pipe | Overview of running and integrating gpsd with EMANE       |
+| [Precomputed](emane/precomputed.md)  | RF Pipe | Overview of using the precomputed propagation model       |
+| [EEL](emane/eel.md)                  | RF Pipe | Overview of using the Emulation Event Log (EEL) Generator |
+| [Antenna Profiles](emane/antenna.md) | RF Pipe | Overview of using antenna profiles in EMANE               |
 
 ## EMANE Configuration
 
