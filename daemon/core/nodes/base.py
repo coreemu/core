@@ -272,18 +272,6 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def addfile(self, src_path: Path, file_path: Path) -> None:
-        """
-        Add a file.
-
-        :param src_path: source file path
-        :param file_path: file name to add
-        :return: nothing
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
         Runs a command within a node container.
@@ -847,28 +835,9 @@ class CoreNode(CoreNodeBase):
                 self.ifup(iface_id)
                 return self.get_iface(iface_id)
 
-    def addfile(self, src_path: Path, file_path: Path) -> None:
-        """
-        Add a file.
-
-        :param src_path: source file path
-        :param file_path: file name to add
-        :return: nothing
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        logger.info("adding file from %s to %s", src_path, file_path)
-        directory = file_path.parent
-        if self.server is None:
-            self.client.check_cmd(f"mkdir -p {directory}")
-            self.client.check_cmd(f"mv {src_path} {file_path}")
-            self.client.check_cmd("sync")
-        else:
-            self.host_cmd(f"mkdir -p {directory}")
-            self.server.remote_put(src_path, file_path)
-
     def _find_parent_path(self, path: Path) -> Optional[Path]:
         """
-        Check if there is an existing mounted parent directory created for this node.
+        Check if there is a mounted parent directory created for this node.
 
         :param path: existing parent path to use
         :return: exist parent path if exists, None otherwise

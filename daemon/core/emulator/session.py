@@ -694,7 +694,11 @@ class Session:
             self.run_hook(hook)
 
     def add_node_file(
-        self, node_id: int, src_path: Path, file_path: Path, data: str
+        self,
+        node_id: int,
+        src_path: Optional[Path],
+        file_path: Path,
+        data: Optional[str],
     ) -> None:
         """
         Add a file to a node.
@@ -707,7 +711,7 @@ class Session:
         """
         node = self.get_node(node_id, CoreNode)
         if src_path is not None:
-            node.addfile(src_path, file_path)
+            node.copy_file(src_path, file_path)
         elif data is not None:
             node.create_file(file_path, data)
 
