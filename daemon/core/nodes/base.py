@@ -969,7 +969,15 @@ class CoreNetworkBase(NodeBase):
         """
         raise NotImplementedError
 
+    @abc.abstractmethod
     def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
+        """
+        Defines custom logic for creating an interface, if required.
+
+        :param node: node to create interface for
+        :param iface_data: data for creating interface
+        :return: created interface
+        """
         raise NotImplementedError
 
     def get_linked_iface(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
