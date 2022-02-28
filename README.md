@@ -32,7 +32,7 @@ source ~/.bashrc
 # Ubuntu
 inv install
 # CentOS
-./install.sh -p /usr
+inv install -p /usr
 ```
 
 ## Documentation & Support

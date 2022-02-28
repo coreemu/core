@@ -127,7 +127,7 @@ source ~/.bashrc
 # Ubuntu
 inv install
 # CentOS
-./install.sh -p /usr
+inv install -p /usr
 ```
 
 First you can use `setup.sh` as a convenience to install tooling for running invoke tasks:
