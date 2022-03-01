@@ -16,8 +16,7 @@ from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
-from core.executables import MOUNT, TEST, VNODED
-from core.nodes.client import VnodeClient
+from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
 from core.nodes.interface import DEFAULT_MTU, CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
@@ -504,7 +503,6 @@ class CoreNode(CoreNodeBase):
         super().__init__(session, _id, name, server)
         self.directory: Optional[Path] = directory
         self.ctrlchnlname: Path = self.session.directory / self.name
-        self.client: Optional[VnodeClient] = None
         self.pid: Optional[int] = None
         self.lock: RLock = RLock()
         self._mounts: List[Tuple[Path, Path]] = []
@@ -546,7 +544,6 @@ class CoreNode(CoreNodeBase):
             self.makenodedir()
             if self.up:
                 raise ValueError("starting a node that is already up")
-
             # create a new namespace for this node using vnoded
             vnoded = (
                 f"{VNODED} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log "
@@ -557,25 +554,17 @@ class CoreNode(CoreNodeBase):
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
-
             output = self.host_cmd(vnoded, env=env)
             self.pid = int(output)
             logger.debug("node(%s) pid: %s", self.name, self.pid)
-
-            # create vnode client
-            self.client = VnodeClient(self.name, self.ctrlchnlname)
-
             # bring up the loopback interface
             logger.debug("bringing up loopback interface")
             self.node_net_client.device_up("lo")
-
             # set hostname for node
             logger.debug("setting hostname: %s", self.name)
             self.node_net_client.set_hostname(self.name)
-
             # mark node as up
             self.up = True
-
             # create private directories
             for dir_path in PRIVATE_DIRS:
                 self.create_dir(dir_path)
@@ -609,12 +598,23 @@ class CoreNode(CoreNodeBase):
                     logger.exception("error removing node directory")
                 # clear interface data, close client, and mark self and not up
                 self.ifaces.clear()
-                self.client.close()
                 self.up = False
             except OSError:
                 logger.exception("error during shutdown")
             finally:
                 self.rmnodedir()
+
+    def _create_cmd(self, args: str, shell: bool = False) -> str:
+        """
+        Create command used to run commands within the context of a node.
+
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
+        """
+        if shell:
+            args = f'{BASH} -c "{args}"'
+        return f"{VCMD} -c {self.ctrlchnlname} -- {args}"
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
@@ -627,10 +627,10 @@ class CoreNode(CoreNodeBase):
         :return: combined stdout and stderr
         :raises CoreCommandError: when a non-zero exit status occurs
         """
+        args = self._create_cmd(args, shell)
         if self.server is None:
-            return self.client.check_cmd(args, wait=wait, shell=shell)
+            return utils.cmd(args, wait=wait, shell=shell)
         else:
-            args = self.client.create_cmd(args, shell)
             return self.server.remote_cmd(args, wait=wait)
 
     def path_exists(self, path: str) -> bool:
@@ -653,7 +653,7 @@ class CoreNode(CoreNodeBase):
         :param sh: shell to execute command in
         :return: str
         """
-        terminal = self.client.create_cmd(sh)
+        terminal = self._create_cmd(sh)
         if self.server is None:
             return terminal
         else:

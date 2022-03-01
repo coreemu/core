@@ -63,39 +63,6 @@ class TestCore:
         status = ping(node1, node2, ip_prefixes)
         assert not status
 
-    def test_vnode_client(self, request, session: Session, ip_prefixes: IpPrefixes):
-        """
-        Test vnode client methods.
-
-        :param request: pytest request
-        :param session: session for test
-        :param ip_prefixes: generates ip addresses for nodes
-        """
-        # create ptp
-        ptp_node = session.add_node(PtpNet)
-
-        # create nodes
-        node1 = session.add_node(CoreNode)
-        node2 = session.add_node(CoreNode)
-
-        # link nodes to ptp net
-        for node in [node1, node2]:
-            iface_data = ip_prefixes.create_iface(node)
-            session.add_link(node.id, ptp_node.id, iface1_data=iface_data)
-
-        # get node client for testing
-        client = node1.client
-
-        # instantiate session
-        session.instantiate()
-
-        # check we are connected
-        assert client.connected()
-
-        # validate command
-        if not request.config.getoption("mock"):
-            assert client.check_cmd("echo hello") == "hello"
-
     def test_iface(self, session: Session, ip_prefixes: IpPrefixes):
         """
         Test interface methods.
