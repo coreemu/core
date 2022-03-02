@@ -9,6 +9,7 @@ services.
 
 import enum
 import logging
+import pkgutil
 import time
 from pathlib import Path
 from typing import (
@@ -23,6 +24,7 @@ from typing import (
     Union,
 )
 
+from core import services as core_services
 from core import utils
 from core.emulator.data import FileData
 from core.emulator.enumerations import ExceptionLevels, MessageFlags, RegisterTlvs
@@ -233,25 +235,25 @@ class ServiceManager:
         """
         name = service.name
         logger.debug("loading service: class(%s) name(%s)", service.__name__, name)
-
+        # avoid services with no name
+        if name is None:
+            logger.debug("not loading class(%s) with no name", service.__name__)
+            return
         # avoid duplicate services
         if name in cls.services:
-            raise ValueError("duplicate service being added: %s" % name)
-
+            raise ValueError(f"duplicate service being added: {name}")
         # validate dependent executables are present
         for executable in service.executables:
             try:
                 utils.which(executable, required=True)
             except CoreError as e:
                 raise CoreError(f"service({name}): {e}")
-
         # validate service on load succeeds
         try:
             service.on_load()
         except Exception as e:
             logger.exception("error during service(%s) on load", service.name)
             raise ValueError(e)
-
         # make service available
         cls.services[name] = service
 
@@ -287,6 +289,21 @@ class ServiceManager:
                 service_errors.append(service.name)
                 logger.debug("not loading service(%s): %s", service.name, e)
         return service_errors
+
+    @classmethod
+    def load_locals(cls) -> List[str]:
+        errors = []
+        for module_info in pkgutil.walk_packages(
+            core_services.__path__, f"{core_services.__name__}."
+        ):
+            services = utils.load_module(module_info.name, CoreService)
+            for service in services:
+                try:
+                    cls.add(service)
+                except CoreError as e:
+                    errors.append(service.name)
+                    logger.debug("not loading service(%s): %s", service.name, e)
+        return errors
 
 
 class CoreServices:
