@@ -227,6 +227,7 @@ def cmd(
         execute is not found
     """
     logger.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    input_args = args
     if shell is False:
         args = shlex.split(args)
     try:
@@ -238,13 +239,13 @@ def cmd(
             stderr = stderr.decode("utf-8").strip()
             status = p.wait()
             if status != 0:
-                raise CoreCommandError(status, args, stdout, stderr)
+                raise CoreCommandError(status, input_args, stdout, stderr)
             return stdout
         else:
             return ""
     except OSError as e:
         logger.error("cmd error: %s", e.strerror)
-        raise CoreCommandError(1, args, "", e.strerror)
+        raise CoreCommandError(1, input_args, "", e.strerror)
 
 
 def file_munge(pathname: str, header: str, text: str) -> None:

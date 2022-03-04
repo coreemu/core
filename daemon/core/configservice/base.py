@@ -43,6 +43,10 @@ class ConfigServiceBootError(Exception):
     pass
 
 
+class ConfigServiceTemplateError(Exception):
+    pass
+
+
 @dataclass
 class ShadowDir:
     path: str
@@ -316,7 +320,13 @@ class ConfigService(abc.ABC):
             elif self.templates.has_template(template_path):
                 template = self.templates.get_template(template_path).source
             else:
-                template = self.get_text_template(file)
+                try:
+                    template = self.get_text_template(file)
+                except Exception as e:
+                    raise ConfigServiceTemplateError(
+                        f"node({self.node.name}) service({self.name}) file({file}) "
+                        f"failure getting template: {e}"
+                    )
                 template = self.clean_text(template)
             templates[file] = template
         return templates
@@ -340,7 +350,13 @@ class ConfigService(abc.ABC):
             elif self.templates.has_template(template_path):
                 rendered = self.render_template(template_path, data)
             else:
-                text = self.get_text_template(file)
+                try:
+                    text = self.get_text_template(file)
+                except Exception as e:
+                    raise ConfigServiceTemplateError(
+                        f"node({self.node.name}) service({self.name}) file({file}) "
+                        f"failure getting template: {e}"
+                    )
                 rendered = self.render_text(text, data)
             self.node.create_file(file_path, rendered)
 
@@ -429,20 +445,20 @@ class ConfigService(abc.ABC):
                 f"{exceptions.text_error_template().render_unicode()}"
             )
 
-    def render_template(self, basename: str, data: Dict[str, Any] = None) -> str:
+    def render_template(self, template_path: str, data: Dict[str, Any] = None) -> str:
         """
         Renders file based template  providing all associated data to template.
 
-        :param basename:  base name for file to render
+        :param template_path: path of file to render
         :param data: service specific defined data for template
         :return: rendered template
         """
         try:
-            template = self.templates.get_template(basename)
+            template = self.templates.get_template(template_path)
             return self._render(template, data)
         except Exception:
             raise CoreError(
-                f"node({self.node.name}) service({self.name}) "
+                f"node({self.node.name}) service({self.name}) file({template_path})"
                 f"{exceptions.text_error_template().render_template()}"
             )
 
