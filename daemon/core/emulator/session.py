@@ -618,26 +618,6 @@ class Session:
         node.position.set_geo(lon, lat, alt)
         self.sdt.edit_node(node, lon, lat, alt)
 
-    def start_mobility(self, node_ids: List[int] = None) -> None:
-        """
-        Start mobility for the provided node ids.
-
-        :param node_ids: nodes to start mobility for
-        :return: nothing
-        """
-        self.mobility.startup(node_ids)
-
-    def is_active(self) -> bool:
-        """
-        Determine if this session is considered to be active.
-        (Runtime or Data collect states)
-
-        :return: True if active, False otherwise
-        """
-        result = self.state in {EventTypes.RUNTIME_STATE, EventTypes.DATACOLLECT_STATE}
-        logger.info("session(%s) checking if active: %s", self.id, result)
-        return result
-
     def open_xml(self, file_path: Path, start: bool = False) -> None:
         """
         Import a session from the EmulationScript XML format.
@@ -731,23 +711,6 @@ class Session:
         self.services.reset()
         self.mobility.config_reset()
         self.link_colors.clear()
-
-    def start_events(self) -> None:
-        """
-        Start event loop.
-
-        :return: nothing
-        """
-        self.event_loop.run()
-
-    def mobility_event(self, event_data: EventData) -> None:
-        """
-        Handle a mobility event.
-
-        :param event_data: event data to handle
-        :return: nothing
-        """
-        self.mobility.handleevent(event_data)
 
     def set_location(self, lat: float, lon: float, alt: float, scale: float) -> None:
         """
@@ -1025,21 +988,6 @@ class Session:
                     logger.exception("error reading environment file: %s", path)
         return env
 
-    def set_thumbnail(self, thumb_file: Path) -> None:
-        """
-        Set the thumbnail filename. Move files from /tmp to session dir.
-
-        :param thumb_file: tumbnail file to set for session
-        :return: nothing
-        """
-        if not thumb_file.is_file():
-            logger.error("thumbnail file to set does not exist: %s", thumb_file)
-            self.thumbnail = None
-            return
-        dst_path = self.directory / thumb_file.name
-        shutil.copy(thumb_file, dst_path)
-        self.thumbnail = dst_path
-
     def set_user(self, user: str) -> None:
         """
         Set the username for this session. Update the permissions of the
@@ -1048,14 +996,13 @@ class Session:
         :param user: user to give write permissions to for the session directory
         :return: nothing
         """
-        if user:
-            try:
-                uid = pwd.getpwnam(user).pw_uid
-                gid = self.directory.stat().st_gid
-                os.chown(self.directory, uid, gid)
-            except IOError:
-                logger.exception("failed to set permission on %s", self.directory)
         self.user = user
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = self.directory.stat().st_gid
+            os.chown(self.directory, uid, gid)
+        except IOError:
+            logger.exception("failed to set permission on %s", self.directory)
 
     def create_node(
         self, _class: Type[NT], start: bool, *args: Any, **kwargs: Any
