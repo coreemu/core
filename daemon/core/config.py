@@ -113,7 +113,6 @@ class ConfigurableOptions:
     """
 
     name: Optional[str] = None
-    bitmap: Optional[str] = None
     options: List[Configuration] = []
 
     @classmethod

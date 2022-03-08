@@ -1093,7 +1093,6 @@ class ConfigEvent:
             data_types=list(proto.data_types),
             data_values=proto.data_values,
             captions=proto.captions,
-            bitmap=proto.bitmap,
             possible_values=proto.possible_values,
             groups=proto.groups,
             iface_id=proto.iface_id,
