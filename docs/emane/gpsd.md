@@ -13,7 +13,7 @@ may provide more helpful details.
 ## Run Demo
 1. Select `Open...` within the GUI
 1. Load `emane-demo-gpsd.xml`
-1. Click ![Start Button](../static/gui/start.gif)
+1. Click ![Start Button](../static/gui/start.png)
 1. After startup completes, double click n1 to bring up the nodes terminal
 
 ## Example Demo
