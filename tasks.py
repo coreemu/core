@@ -350,7 +350,7 @@ def install(
         install_grpcio(c, hide)
     with p.start("building core"):
         build_core(c, hide, prefix)
-    with p.start("installing vcmd/gui"):
+    with p.start("installing vnoded/vcmd"):
         install_core(c, hide)
     install_type = "core" if local else "core virtual environment"
     with p.start(f"installing {install_type}"):

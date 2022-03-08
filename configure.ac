@@ -30,25 +30,14 @@ AC_SUBST(CORE_CONF_DIR)
 AC_SUBST(CORE_DATA_DIR)
 AC_SUBST(CORE_STATE_DIR)
 
-# CORE GUI configuration files and preferences in CORE_GUI_CONF_DIR
-# scenario files in ~/.core/configs/
-AC_ARG_WITH([guiconfdir],
-	    [AS_HELP_STRING([--with-guiconfdir=dir],
-			    [specify GUI configuration directory])],
-	    [CORE_GUI_CONF_DIR="$with_guiconfdir"],
-	    [CORE_GUI_CONF_DIR="\$\${HOME}/.core"])
-AC_SUBST(CORE_GUI_CONF_DIR)
-AC_ARG_ENABLE([gui],
-	       [AS_HELP_STRING([--enable-gui[=ARG]],
-		[build and install the GUI (default is yes)])],
-		[], [enable_gui=yes])
-AC_SUBST(enable_gui)
+# documentation option
 AC_ARG_ENABLE([docs],
 	       [AS_HELP_STRING([--enable-docs[=ARG]],
 		[build python documentation (default is no)])],
 		[], [enable_docs=no])
 AC_SUBST(enable_docs)
 
+# python option
 AC_ARG_ENABLE([python],
 	       [AS_HELP_STRING([--enable-python[=ARG]],
 		[build and install the python bindings (default is yes)])],
@@ -209,7 +198,6 @@ if [test "x$want_python" = "xyes" && test "x$enable_docs" = "xyes"] ; then
 fi
 
 # Variable substitutions
-AM_CONDITIONAL(WANT_GUI, test x$enable_gui = xyes)
 AM_CONDITIONAL(WANT_DAEMON, test x$enable_daemon = xyes)
 AM_CONDITIONAL(WANT_DOCS, test x$want_docs = xyes)
 AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
@@ -224,9 +212,6 @@ fi
 
 # Output files
 AC_CONFIG_FILES([Makefile
-		gui/version.tcl
-		gui/Makefile
-		gui/icons/Makefile
 		man/Makefile
 		docs/Makefile
 		daemon/Makefile
@@ -248,17 +233,12 @@ Build:
   Prefix:                     ${prefix}
   Exec Prefix:                ${exec_prefix}
 
-GUI:
-  GUI path:                   ${CORE_LIB_DIR}
-  GUI config:                 ${CORE_GUI_CONF_DIR}
-
 Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
   Python:                     ${PYTHON}
 
 Features to build:
-  Build GUI:                  ${enable_gui}
   Build Daemon:               ${enable_daemon}
   Documentation:              ${want_docs}
 
