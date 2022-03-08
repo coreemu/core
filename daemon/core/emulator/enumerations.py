@@ -20,6 +20,17 @@ class MessageFlags(Enum):
     TTY = 0x40
 
 
+class ConfigFlags(Enum):
+    """
+    Configuration flags.
+    """
+
+    NONE = 0x00
+    REQUEST = 0x01
+    UPDATE = 0x02
+    RESET = 0x03
+
+
 class NodeTypes(Enum):
     """
     Node types.

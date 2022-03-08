@@ -74,7 +74,6 @@ After the installation complete it will have installed the following scripts.
 | core-cli            | tool to query, open xml files, and send commands using gRPC                  |
 | core-daemon         | runs the backed core server providing a gRPC API                             |
 | core-gui            | starts GUI                                                                   |
-| core-manage         | tool to add, remove, or check for services, models, and node types           |
 | core-python         | provides a convenience for running the core python virtual environment       |
 | core-route-monitor  | tool to help monitor traffic across nodes and feed that to SDT               |
 | core-service-update | tool to update automate modifying a legacy service to match current naming   |

@@ -432,7 +432,7 @@ firewall is not blocking the GRE traffic.
 The host machine that runs the CORE GUI and/or daemon is not necessarily
 accessible from a node. Running an X11 application on a node, for example,
 requires some channel of communication for the application to connect with
-the X server for graphical display. There are several different ways to
+the X server for graphical display. There are different ways to
 connect from the node to the host and vice versa.
 
 #### Control Network
@@ -448,12 +448,6 @@ the node, and SSH with X11 forwarding can be used from the host to the node.
 # SSH from host to node n5 to run an X11 app
 ssh -X 172.16.0.5 xclock
 ```
-
-Note that the **coresendmsg** utility can be used for a node to send
-messages to the CORE daemon running on the host (if the **listenaddr = 0.0.0.0**
-is set in the **/etc/core/core.conf** file) to interact with the running
-emulation. For example, a node may move itself or other nodes, or change
-its icon based on some node state.
 
 #### Other Methods
 
@@ -552,11 +546,11 @@ See the [EMANE](emane.md) chapter for details on using EMANE.
 
 CORE has a few ways to script mobility.
 
-| Option       | Description                                                                                                                                                                     |
-|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ns-2 script  | The script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates.                                                    |
-| CORE API     | An external entity can move nodes by sending CORE API Node messages with updated X,Y coordinates; the **coresendmsg** utility allows a shell script to generate these messages. |
-| EMANE events | See [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude.                    |
+| Option       | Description                                                                                                                                                  |
+|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ns-2 script  | The script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates.                                 |
+| gRPC API     | An external entity can move nodes by leveraging the gRPC API                                                                                                 |
+| EMANE events | See [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude. |
 
 For the first method, you can create a mobility script using a text
 editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/),  and associate the script with one of the wireless

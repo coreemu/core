@@ -716,8 +716,7 @@ class PtpNet(CoreNetwork):
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
         """
-        Build CORE API TLVs for a point-to-point link. One Link message
-        describes this network.
+        Get peer to peer link.
 
         :param flags: message flags
         :return: list of link data

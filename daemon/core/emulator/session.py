@@ -1007,15 +1007,14 @@ class Session:
             env["SESSION_STATE"] = str(self.state)
         # try reading and merging optional environments from:
         # /etc/core/environment
-        # /home/user/.core/environment
+        # /home/user/.coregui/environment
         # /tmp/pycore.<session id>/environment
         core_env_path = constants.CORE_CONF_DIR / "environment"
         session_env_path = self.directory / "environment"
         if self.user:
             user_home_path = Path(f"~{self.user}").expanduser()
-            user_env1 = user_home_path / ".core" / "environment"
-            user_env2 = user_home_path / ".coregui" / "environment"
-            paths = [core_env_path, user_env1, user_env2, session_env_path]
+            user_env = user_home_path / ".coregui" / "environment"
+            paths = [core_env_path, user_env, session_env_path]
         else:
             paths = [core_env_path, session_env_path]
         for path in paths:
