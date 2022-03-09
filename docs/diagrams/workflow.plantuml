@@ -1,11 +1,11 @@
 @startuml
-skinparam {    
+skinparam {
     RoundCorner 8
     StateBorderColor #Black
     StateBackgroundColor #LightSteelBlue
 }
 
-Definition: Session XML/IMN
+Definition: Session XML
 Definition: GUI Drawing
 Definition: Scripts
 
