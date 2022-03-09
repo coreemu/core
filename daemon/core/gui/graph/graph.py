@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Callable
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
@@ -75,6 +75,13 @@ class CanvasGraph(tk.Canvas):
         self.scale_option: tk.IntVar = tk.IntVar(value=1)
         self.adjust_to_dim: tk.BooleanVar = tk.BooleanVar(value=False)
 
+        # background wallpaper drawing
+        self.draw_method: Callable = self.draw_method_void
+        self.last_scrollx_min: int = 0
+        self.last_scrollx_max: int = 1
+        self.last_scrolly_min: int = 0
+        self.last_scrolly_max: int = 1
+
         # bindings
         self.setup_bindings()
 
@@ -92,7 +99,7 @@ class CanvasGraph(tk.Canvas):
             0,
             0,
             *dimensions,
-            outline="#000000",
+            outline="#ffffff",
             fill="#ffffff",
             width=1,
             tags="rectangle",
@@ -118,7 +125,11 @@ class CanvasGraph(tk.Canvas):
         self.bind("<Button-4>", lambda e: self.zoom(e, ZOOM_IN))
         self.bind("<Button-5>", lambda e: self.zoom(e, ZOOM_OUT))
         self.bind("<ButtonPress-3>", lambda e: self.scan_mark(e.x, e.y))
-        self.bind("<B3-Motion>", lambda e: self.scan_dragto(e.x, e.y, gain=1))
+        self.bind("<B3-Motion>", lambda e: self.scan_dragto_redraw(e.x, e.y, gain=1))
+        self.bind("<Configure>", self.on_resize)
+
+    def on_resize(self,event):
+        self.redraw()
 
     def get_shadow(self, node: CanvasNode) -> ShadowNode:
         shadow_node = self.shadow_core_nodes.get(node.core_node.id)
@@ -146,6 +157,11 @@ class CanvasGraph(tk.Canvas):
         valid_topleft = self.inside_canvas(x1, y1)
         valid_bottomright = self.inside_canvas(x2, y2)
         return valid_topleft and valid_bottomright
+
+    def scan_dragto_redraw(self, *args, **xargs):
+        logger.debug(f'On drag to {args} {xargs}')
+        self.scan_dragto(*args, **xargs)
+        self.redraw()
 
     def draw_grid(self) -> None:
         """
@@ -342,7 +358,11 @@ class CanvasGraph(tk.Canvas):
         logger.debug("offset: %s", self.offset)
         self.app.statusbar.set_zoom(self.ratio)
         if self.wallpaper:
-            self.redraw_wallpaper()
+            # redraw all: wallpaper, nodes and edges
+            self.redraw()
+        else:
+            # redraw only nodes and edges
+            self.redraw_nodes()
 
     def click_press(self, event: tk.Event) -> None:
         """
@@ -531,6 +551,9 @@ class CanvasGraph(tk.Canvas):
         image = self.wallpaper.resize((width, height), Image.ANTIALIAS)
         return image
 
+    def get_wallpaper_ratio_size(self) -> Image.Image:
+        return int(self.wallpaper.width * self.ratio), int(self.wallpaper.height * self.ratio)
+
     def draw_wallpaper(
         self, image: PhotoImage, x: float = None, y: float = None
     ) -> None:
@@ -538,62 +561,289 @@ class CanvasGraph(tk.Canvas):
             x1, y1, x2, y2 = self.bbox(self.rect)
             x = (x1 + x2) / 2
             y = (y1 + y2) / 2
+        old_id = self.wallpaper_id
         self.wallpaper_id = self.create_image((x, y), image=image, tags=tags.WALLPAPER)
+        self.lower(self.wallpaper_id)
+        self.tag_lower(self.rect)
         self.wallpaper_drawn = image
+        self.delete(old_id)
+
+    def translate(self, value, leftMin, leftMax, rightMin, rightMax):
+        # Figure out how 'wide' each range is
+        leftSpan = leftMax - leftMin
+        rightSpan = rightMax - rightMin
+
+        # Convert the left range into a 0-1 range (float)
+        valueScaled = float(value - leftMin) / float(leftSpan)
+
+        # Convert the 0-1 range into a value in the right range.
+        return rightMin + (valueScaled * rightSpan)
+    
+    def handle_scrollbarx(self, pos_min, pos_max):
+        if self.last_scrollx_min != pos_min or self.last_scrollx_max != pos_max or (float(pos_min) == 0.0 and float(pos_max) == 1.0):
+            self.redraw()
+        self.last_scrollx_min = pos_min
+        self.last_scrollx_max = pos_max
+
+    def handle_scrollbary(self, pos_min, pos_max):
+        if self.last_scrolly_min != pos_min or self.last_scrolly_max != pos_max or (float(pos_min) == 0.0 and float(pos_max) == 1.0):
+            self.redraw()
+        self.last_scrolly_min = pos_min
+        self.last_scrolly_max = pos_max
+
+    def xview(self, *args, **xargs):
+        super().xview(*args, **xargs)
+        self.redraw()
+
+    def yview(self, *args, **xargs):
+        super().yview(*args, **xargs)
+        self.redraw()
 
     def wallpaper_upper_left(self) -> None:
-        self.delete(self.wallpaper_id)
-
-        # create new scaled image, cropped if needed
         width, height = self.width_and_height()
-        image = self.get_wallpaper_image()
-        cropx = image.width
-        cropy = image.height
-        if image.width > width:
-            cropx = image.width
-        if image.height > height:
-            cropy = image.height
-        cropped = image.crop((0, 0, cropx, cropy))
-        image = PhotoImage(cropped)
+        w1 = width / self.wallpaper.width
+        h1 = height / self.wallpaper.height
+        if w1 > h1:
+            rel = height / width
+            nw = self.wallpaper.width
+            nh = self.wallpaper.width * rel
+            logger.debug(f'rel w1: {nw} {nh}')
+        else:
+            rel = width / height
+            nh = self.wallpaper.height
+            nw = self.wallpaper.height * rel
+            logger.debug(f'rel h1: {nw} {nh}')
 
-        # draw on canvas
-        x1, y1, _, _ = self.bbox(self.rect)
-        x = (cropx / 2) + x1
-        y = (cropy / 2) + y1
-        self.draw_wallpaper(image, x, y)
+        image = self.wallpaper.crop((0,0,int(nw), int(nh)))
+        logger.debug(f'image: {image.width} {image.height}')
+        logger.debug(f'canvas width_and_height: {self.coords(self.rect)}')
+        logger.debug(f'canvas width_and_height: {width} {height}')
+
+        rw, rh = self.get_wallpaper_ratio_size()
+        logger.debug(f'get_wallpaper_ratio_size: {rw} {rh}')
+
+        visible = (self.canvasx(0),  # get visible area of the canvas
+                      self.canvasy(0),
+                      self.canvasx(self.winfo_width()),
+                      self.canvasy(self.winfo_height()))
+        visible_width = abs(visible[0] - visible[2])
+        visible_height = abs(visible[1] - visible[3])
+        logger.debug(f'visible: {visible}')
+        logger.debug(f'visible size: {visible_width} {visible_height}')
+
+        box_image = self.coords(self.rect)
+        logger.debug(f'box_image: {box_image}')
+        logger.debug(f'ratio {self.ratio}')
+
+        cropx_size = min(visible_width, width) 
+        cropy_size = min(visible_height, height) 
+        logger.debug(f'cropx_size {cropx_size} cropy_size {cropy_size} ratio {cropx_size/cropy_size}')
+
+        box_canvas = visible
+        box_image = box_image
+        x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
+        y1 = max(box_canvas[1] - box_image[1], 0)
+        x2 = min(box_canvas[2], box_image[2]) - box_image[0]
+        y2 = min(box_canvas[3], box_image[3]) - box_image[1]
+
+        logger.debug(f'no crop: x1: {x1}, x2 {x2} | y1: {y1} y2: {y2}')
+
+        final_size_x1 = max(box_canvas[0], box_image[0])
+        final_size_y1 = max(box_canvas[1], box_image[1])
+        final_size_x2 = min(box_canvas[2], box_image[2])
+        final_size_y2 = min(box_canvas[3], box_image[3])
+        logger.debug(f'final size: x1 {final_size_x1}, y1 {final_size_y1}, x2 {final_size_x2}, y2 {final_size_y2}')
+
+        final_size_width = abs(final_size_x1 - final_size_x2)
+        final_size_height = abs(final_size_y1 - final_size_y2)
+        logger.debug(f'final size: width {final_size_width}, height {final_size_height}')
+
+        nx1 = x1 / self.ratio
+        nx2 = x2 / self.ratio
+        ny1 = y1 / self.ratio
+        ny2 = y2 / self.ratio
+        logger.debug(f"cropping: nx1: {nx1}, nx2 {nx2} | ny1: {ny1} ny2: {ny2} | relation: {(nx2-nx1)/(ny2-ny1)}")
+
+        cropped = image.crop((nx1, ny1, nx2, ny2))
+        logger.debug(f"cropped: {cropped.width}, {cropped.height}")
+        
+        resized = cropped.resize((int(x2-x1), int(y2-y1)), Image.ANTIALIAS)
+        logger.debug(f"resized: {resized.width}, {resized.height}")
+        
+        image = PhotoImage(resized)
+        posx = max(visible[0], box_image[0])
+        posy = max(visible[1], box_image[1])
+        self.draw_wallpaper(image, posx+(final_size_width/2), posy+(final_size_height/2))
 
     def wallpaper_center(self) -> None:
         """
         place the image at the center of canvas
         """
-        self.delete(self.wallpaper_id)
-
-        # dimension of the cropped image
+        # dimension of the canvas
         width, height = self.width_and_height()
-        image = self.get_wallpaper_image()
-        cropx = 0
-        if image.width > width:
-            cropx = (image.width - width) / 2
-        cropy = 0
-        if image.height > height:
-            cropy = (image.height - height) / 2
-        x1 = 0 + cropx
-        y1 = 0 + cropy
-        x2 = image.width - cropx
-        y2 = image.height - cropy
-        cropped = image.crop((x1, y1, x2, y2))
-        image = PhotoImage(cropped)
-        self.draw_wallpaper(image)
+
+        centerx = (self.wallpaper.width - (width/self.ratio)) / 2
+        centery = (self.wallpaper.height - (height/self.ratio)) / 2
+        
+        w1 = width / self.wallpaper.width
+        h1 = height / self.wallpaper.height
+        if w1 > h1:
+            rel = height / width
+            nw = self.wallpaper.width
+            nh = self.wallpaper.width * rel
+            logger.debug(f'rel w1: {nw} {nh}')
+        else:
+            rel = width / height
+            nh = self.wallpaper.height
+            nw = self.wallpaper.height * rel
+            logger.debug(f'rel h1: {nw} {nh}')
+
+        image = self.wallpaper
+        logger.debug(f'image: {image.width} {image.height}')
+        logger.debug(f'canvas width_and_height: {self.coords(self.rect)}')
+        logger.debug(f'canvas width_and_height: {width} {height}')
+
+        rw, rh = self.get_wallpaper_ratio_size()
+        logger.debug(f'get_wallpaper_ratio_size: {rw} {rh}')
+
+        visible = (self.canvasx(0),  # get visible area of the canvas
+                      self.canvasy(0),
+                      self.canvasx(self.winfo_width()),
+                      self.canvasy(self.winfo_height()))
+        visible_width = abs(visible[0] - visible[2])
+        visible_height = abs(visible[1] - visible[3])
+        logger.debug(f'visible: {visible}')
+        logger.debug(f'visible size: {visible_width} {visible_height}')
+
+        box_image = self.coords(self.rect)
+        logger.debug(f'box_image: {box_image}')
+        logger.debug(f'ratio {self.ratio}')
+
+        cropx_size = min(visible_width, width) 
+        cropy_size = min(visible_height, height) 
+        logger.debug(f'cropx_size {cropx_size} cropy_size {cropy_size} ratio {cropx_size/cropy_size}')
+
+        box_canvas = visible
+        box_image = box_image
+        x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
+        y1 = max(box_canvas[1] - box_image[1], 0)
+        x2 = min(box_canvas[2], box_image[2]) - box_image[0]
+        y2 = min(box_canvas[3], box_image[3]) - box_image[1]
+        logger.debug(f'no crop: x1: {x1}, x2 {x2} | y1: {y1} y2: {y2}')
+
+        final_size_x1 = max(box_canvas[0], box_image[0])
+        final_size_y1 = max(box_canvas[1], box_image[1])
+        final_size_x2 = min(box_canvas[2], box_image[2])
+        final_size_y2 = min(box_canvas[3], box_image[3])
+        logger.debug(f'final size: x1 {final_size_x1}, y1 {final_size_y1}, x2 {final_size_x2}, y2 {final_size_y2}')
+
+        final_size_width = abs(final_size_x1 - final_size_x2)
+        final_size_height = abs(final_size_y1 - final_size_y2)
+        logger.debug(f'final size: width {final_size_width}, height {final_size_height}')
+
+        nx1 = x1 / self.ratio + centerx
+        nx2 = x2 / self.ratio + centerx
+        ny1 = y1 / self.ratio + centery
+        ny2 = y2 / self.ratio + centery
+        logger.debug(f"cropping: nx1: {nx1}, nx2 {nx2} | ny1: {ny1} ny2: {ny2} | relation: {(nx2-nx1)/(ny2-ny1)}")
+
+        cropped = image.crop((nx1, ny1, nx2, ny2))
+        logger.debug(f"cropped: {cropped.width}, {cropped.height}")
+        
+        resized = cropped.resize((int(x2-x1), int(y2-y1)), Image.ANTIALIAS)
+        logger.debug(f"resized: {resized.width}, {resized.height}")
+        
+        image = PhotoImage(resized)
+        posx = max(visible[0], box_image[0])
+        posy = max(visible[1], box_image[1])
+        self.draw_wallpaper(image, posx+(final_size_width/2), posy+(final_size_height/2))
 
     def wallpaper_scaled(self) -> None:
         """
         scale image based on canvas dimension
         """
-        self.delete(self.wallpaper_id)
-        canvas_w, canvas_h = self.width_and_height()
-        image = self.wallpaper.resize((int(canvas_w), int(canvas_h)), Image.ANTIALIAS)
-        image = PhotoImage(image)
-        self.draw_wallpaper(image)
+        # dimension of the canvas
+        width, height = self.width_and_height()
+
+        w1 = width / self.wallpaper.width
+        h1 = height / self.wallpaper.height
+        if w1 > h1:
+            rel = height / width
+            nw = self.wallpaper.width
+            nh = self.wallpaper.width * rel
+            logger.debug(f'rel w1: {nw} {nh}')
+        else:
+            rel = width / height
+            nh = self.wallpaper.height
+            nw = self.wallpaper.height * rel
+            logger.debug(f'rel h1: {nw} {nh}')
+
+        image = self.wallpaper
+        logger.debug(f'image: {image.width} {image.height}')
+        logger.debug(f'canvas width_and_height: {self.coords(self.rect)}')
+        logger.debug(f'canvas width_and_height: {width} {height}')
+
+        rw, rh = self.get_wallpaper_ratio_size()
+        logger.debug(f'get_wallpaper_ratio_size: {rw} {rh}')
+
+        visible = (self.canvasx(0),  # get visible area of the canvas
+                      self.canvasy(0),
+                      self.canvasx(self.winfo_width()),
+                      self.canvasy(self.winfo_height()))
+        visible_width = abs(visible[0] - visible[2])
+        visible_height = abs(visible[1] - visible[3])
+        logger.debug(f'visible: {visible}')
+        logger.debug(f'visible size: {visible_width} {visible_height}')
+
+        box_image = self.coords(self.rect)
+        logger.debug(f'box_image: {box_image}')
+        logger.debug(f'ratio {self.ratio}')
+
+        cropx_size = min(visible_width, width) 
+        cropy_size = min(visible_height, height) 
+        logger.debug(f'cropx_size {cropx_size} cropy_size {cropy_size} ratio {cropx_size/cropy_size}')
+
+        box_canvas = visible
+        box_image = box_image
+        x1 = max(box_canvas[0] - box_image[0], 0)  # get coordinates (x1,y1,x2,y2) of the image tile
+        y1 = max(box_canvas[1] - box_image[1], 0)
+        x2 = min(box_canvas[2], box_image[2]) - box_image[0]
+        y2 = min(box_canvas[3], box_image[3]) - box_image[1]
+        logger.debug(f'no crop: x1: {x1}, x2 {x2} | y1: {y1} y2: {y2}')
+
+        final_size_x1 = max(box_canvas[0], box_image[0])
+        final_size_y1 = max(box_canvas[1], box_image[1])
+        final_size_x2 = min(box_canvas[2], box_image[2])
+        final_size_y2 = min(box_canvas[3], box_image[3])
+        logger.debug(f'final size: x1 {final_size_x1}, y1 {final_size_y1}, x2 {final_size_x2}, y2 {final_size_y2}')
+
+        final_size_width = abs(final_size_x1 - final_size_x2)
+        final_size_height = abs(final_size_y1 - final_size_y2)
+        logger.debug(f'final size: width {final_size_width}, height {final_size_height}')
+
+        nx1 = x1 / self.ratio
+        nx2 = x2 / self.ratio
+        ny1 = y1 / self.ratio
+        ny2 = y2 / self.ratio
+        logger.debug(f"cropping: nx1: {nx1}, nx2 {nx2} | ny1: {ny1} ny2: {ny2} | relation: {(nx2-nx1)/(ny2-ny1)}")
+
+        ## scaled crop
+        nx1 = self.translate(nx1,0,width/self.ratio,0,self.wallpaper.width)
+        nx2 = self.translate(nx2,0,width/self.ratio,0,self.wallpaper.width)
+        ny1 = self.translate(ny1,0,height/self.ratio,0,self.wallpaper.height)
+        ny2 = self.translate(ny2,0,height/self.ratio,0,self.wallpaper.height)
+        logger.debug(f"translate cropping: nx1: {nx1}, nx2 {nx2} | ny1: {ny1} ny2: {ny2} | relation: {(nx2-nx1)/(ny2-ny1)}")
+
+        cropped = image.crop((nx1, ny1, nx2, ny2))
+        logger.debug(f"cropped: {cropped.width}, {cropped.height}")
+        
+        resized = cropped.resize((int(x2-x1), int(y2-y1)), Image.ANTIALIAS)
+        logger.debug(f"resized: {resized.width}, {resized.height}")
+        
+        image = PhotoImage(resized)
+        posx = max(visible[0], box_image[0])
+        posy = max(visible[1], box_image[1])
+        self.draw_wallpaper(image, posx+(final_size_width/2), posy+(final_size_height/2))
 
     def resize_to_wallpaper(self) -> None:
         self.delete(self.wallpaper_id)
@@ -622,19 +872,38 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
         self.app.manager.show_grid.click_handler()
 
+    def draw_method_void(self):
+        """ 
+        Strategy method for drawing the wallpaper. Used by redraw_wallpaper() 
+        """
+        pass
+
+    def redraw_nodes(self):
+        for canvas_node in self.nodes.values():
+            canvas_node.redraw()
+
+    def redraw(self):
+        self.draw_method()
+        self.redraw_nodes()
+
     def redraw_wallpaper(self) -> None:
         if self.adjust_to_dim.get():
             logger.debug("drawing wallpaper to canvas dimensions")
             self.resize_to_wallpaper()
+            self.draw_method = self.wallpaper_upper_left
+            self.redraw()
         else:
             option = ScaleOption(self.scale_option.get())
             logger.debug("drawing canvas using scaling option: %s", option)
             if option == ScaleOption.UPPER_LEFT:
-                self.wallpaper_upper_left()
+                self.draw_method = self.wallpaper_upper_left
+                self.redraw()
             elif option == ScaleOption.CENTERED:
-                self.wallpaper_center()
+                self.draw_method = self.wallpaper_center
+                self.redraw()
             elif option == ScaleOption.SCALED:
-                self.wallpaper_scaled()
+                self.draw_method = self.wallpaper_scaled
+                self.redraw()
             elif option == ScaleOption.TILED:
                 logger.warning("tiled background not implemented yet")
         self.organize()
