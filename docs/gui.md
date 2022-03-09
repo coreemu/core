@@ -253,11 +253,10 @@ Here are some standard widgets:
   Only half of the line is drawn because each
   router may be in a different adjacency state with respect to the other.
 * **Throughput** - displays the kilobits-per-second throughput above each link,
-  using statistics gathered from the ng_pipe Netgraph node that implements each
-  link. If the throughput exceeds a certain threshold, the link will become
-  highlighted. For wireless nodes which broadcast data to all nodes in range,
-  the throughput rate is displayed next to the node and the node will become
-  circled if the threshold is exceeded.
+  using statistics gathered from each link. If the throughput exceeds a certain
+  threshold, the link will become highlighted. For wireless nodes which broadcast
+  data to all nodes in range, the throughput rate is displayed next to the node and
+  the node will become circled if the threshold is exceeded.
 
 #### Observer Widgets
 

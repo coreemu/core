@@ -83,27 +83,6 @@ if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
-  # Checks for libraries.
-  AC_CHECK_LIB([netgraph], [NgMkSockNode])
-
-  # Checks for header files.
-  AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h stdint.h stdlib.h string.h sys/ioctl.h sys/mount.h sys/socket.h sys/time.h termios.h unistd.h])
-
-  # Checks for typedefs, structures, and compiler characteristics.
-  AC_C_INLINE
-  AC_TYPE_INT32_T
-  AC_TYPE_PID_T
-  AC_TYPE_SIZE_T
-  AC_TYPE_SSIZE_T
-  AC_TYPE_UINT32_T
-  AC_TYPE_UINT8_T
-
-  # Checks for library functions.
-  AC_FUNC_FORK
-  AC_FUNC_MALLOC
-  AC_FUNC_REALLOC
-  AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
-
   AM_PATH_PYTHON(3.6)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
@@ -160,6 +139,25 @@ fi
 
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
   want_linux_netns=yes
+
+  # Checks for header files.
+  AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h stdint.h stdlib.h string.h sys/ioctl.h sys/mount.h sys/socket.h sys/time.h termios.h unistd.h])
+
+  # Checks for typedefs, structures, and compiler characteristics.
+  AC_C_INLINE
+  AC_TYPE_INT32_T
+  AC_TYPE_PID_T
+  AC_TYPE_SIZE_T
+  AC_TYPE_SSIZE_T
+  AC_TYPE_UINT32_T
+  AC_TYPE_UINT8_T
+
+  # Checks for library functions.
+  AC_FUNC_FORK
+  AC_FUNC_MALLOC
+  AC_FUNC_REALLOC
+  AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
+
   PKG_CHECK_MODULES(libev, libev,
     AC_MSG_RESULT([found libev using pkgconfig OK])
     AC_SUBST(libev_CFLAGS)
