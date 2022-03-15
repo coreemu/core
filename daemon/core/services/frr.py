@@ -142,7 +142,7 @@ class FRRZebra(CoreService):
             "frr_bin_search", '"/usr/local/bin /usr/bin /usr/lib/frr"'
         )
         frr_sbin_search = node.session.options.get(
-            "frr_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/frr"'
+            "frr_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr"'
         )
         cfg = """\
 #!/bin/sh
