@@ -367,10 +367,10 @@ def convert_iface(iface: CoreInterface) -> core_pb2.Interface:
     """
     ip4 = iface.get_ip4()
     ip4_mask = ip4.prefixlen if ip4 else None
-    ip4 = str(ip4) if ip4 else None
+    ip4 = str(ip4.ip) if ip4 else None
     ip6 = iface.get_ip6()
     ip6_mask = ip6.prefixlen if ip6 else None
-    ip6 = str(ip6) if ip6 else None
+    ip6 = str(ip6.ip) if ip6 else None
     mac = str(iface.mac) if iface.mac else None
     return core_pb2.Interface(
         id=iface.id,
