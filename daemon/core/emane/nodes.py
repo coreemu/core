@@ -181,9 +181,6 @@ class EmaneNet(CoreNetworkBase):
             return
         self.model.linkconfig(iface, options, iface2)
 
-    def config(self, conf: str) -> None:
-        self.conf = conf
-
     def startup(self) -> None:
         self.up = True
 
