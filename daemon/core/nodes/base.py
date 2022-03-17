@@ -133,6 +133,19 @@ class NodeBase(abc.ABC):
         else:
             return self.server.remote_cmd(args, env, cwd, wait)
 
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command that is in the context of a node, default is to run a standard
+        host command.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        return self.host_cmd(args, wait=wait, shell=shell)
+
     def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
         Set the (x,y,z) position of the object.
@@ -327,19 +340,6 @@ class CoreNodeBase(NodeBase):
         :param dst_path: node host destination
         :param mode: file mode
         :return: nothing
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        """
-        Runs a command within a node container.
-
-        :param args: command to run
-        :param wait: True to wait for status, False otherwise
-        :param shell: True to use shell, False otherwise
-        :return: combined stdout and stderr
-        :raises CoreCommandError: when a non-zero exit status occurs
         """
         raise NotImplementedError
 
@@ -786,7 +786,7 @@ class CoreNode(CoreNodeBase):
                 broadcast = "+"
             self.node_net_client.create_address(iface.name, str(ip), broadcast)
         # configure iface options
-        iface.set_config(self)
+        iface.set_config()
         # set iface up
         self.node_net_client.device_up(iface.name)
 

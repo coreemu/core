@@ -408,12 +408,10 @@ class Session:
             )
         if iface1:
             iface1.options.update(options)
-            node1_input = node1 if isinstance(node1, CoreNode) else None
-            iface1.set_config(node1_input)
+            iface1.set_config()
         if iface2 and not options.unidirectional:
             iface2.options.update(options)
-            node2_input = node2 if isinstance(node2, CoreNode) else None
-            iface2.set_config(node2_input)
+            iface2.set_config()
 
     def next_node_id(self) -> int:
         """

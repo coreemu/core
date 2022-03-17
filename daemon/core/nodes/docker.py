@@ -93,10 +93,9 @@ class DockerNode(CoreNode):
             will run on, default is None for localhost
         :param image: image to start container with
         """
-        if image is None:
-            image = "ubuntu"
-        self.image: str = image
         super().__init__(session, _id, name, directory, server)
+        self.image = image if image is not None else "ubuntu"
+        self.client: Optional[DockerClient] = None
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
@@ -141,7 +140,6 @@ class DockerNode(CoreNode):
         # nothing to do if node is not up
         if not self.up:
             return
-
         with self.lock:
             self.ifaces.clear()
             self.client.stop_container()

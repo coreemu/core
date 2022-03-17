@@ -293,21 +293,21 @@ class CoreInterface:
         """
         return self.transport_type == TransportType.VIRTUAL
 
-    def set_config(self, node: "CoreNode" = None) -> None:
+    def set_config(self) -> None:
         # clear current settings
         if self.options.is_clear():
             if self.has_netem:
                 cmd = tc_clear_cmd(self.name)
-                if node:
-                    node.cmd(cmd)
+                if self.node:
+                    self.node.cmd(cmd)
                 else:
                     self.host_cmd(cmd)
                 self.has_netem = False
         # set updated settings
         else:
             cmd = tc_cmd(self.name, self.options, self.mtu)
-            if node:
-                node.cmd(cmd)
+            if self.node:
+                self.node.cmd(cmd)
             else:
                 self.host_cmd(cmd)
             self.has_netem = True
