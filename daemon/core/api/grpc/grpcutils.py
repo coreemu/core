@@ -1,7 +1,7 @@
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 import grpc
 from grpc import ServicerContext
@@ -20,6 +20,7 @@ from core.config import ConfigurableOptions
 from core.emane.nodes import EmaneNet
 from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.emulator.links import CoreLink
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -110,7 +111,7 @@ def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
 
 def add_link_data(
     link_proto: core_pb2.Link
-) -> Tuple[InterfaceData, InterfaceData, LinkOptions, LinkTypes]:
+) -> Tuple[InterfaceData, InterfaceData, LinkOptions]:
     """
     Convert link proto to link interfaces and options data.
 
@@ -119,7 +120,6 @@ def add_link_data(
     """
     iface1_data = link_iface(link_proto.iface1)
     iface2_data = link_iface(link_proto.iface2)
-    link_type = LinkTypes(link_proto.type)
     options = LinkOptions()
     options_proto = link_proto.options
     if options_proto:
@@ -134,7 +134,7 @@ def add_link_data(
         options.buffer = options_proto.buffer
         options.unidirectional = options_proto.unidirectional
         options.key = options_proto.key
-    return iface1_data, iface2_data, options, link_type
+    return iface1_data, iface2_data, options
 
 
 def create_nodes(
@@ -174,8 +174,8 @@ def create_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        iface1, iface2, options, link_type = add_link_data(link_proto)
-        args = (node1_id, node2_id, iface1, iface2, options, link_type)
+        iface1, iface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1, iface2, options)
         funcs.append((session.add_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -198,8 +198,8 @@ def edit_links(
     for link_proto in link_protos:
         node1_id = link_proto.node1_id
         node2_id = link_proto.node2_id
-        iface1, iface2, options, link_type = add_link_data(link_proto)
-        args = (node1_id, node2_id, iface1.id, iface2.id, options, link_type)
+        iface1, iface2, options = add_link_data(link_proto)
+        args = (node1_id, node2_id, iface1.id, iface2.id, options)
         funcs.append((session.update_link, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
@@ -344,61 +344,78 @@ def get_node_proto(
     )
 
 
-def get_links(node: NodeBase):
+def get_links(session: Session, node: NodeBase) -> List[core_pb2.Link]:
     """
     Retrieve a list of links for grpc to use.
 
+    :param session: session to get links for node
     :param node: node to get links from
     :return: protobuf links
     """
+    link_protos = []
+    for core_link in session.link_manager.node_links(node):
+        link_protos.extend(convert_core_link(core_link))
+    return link_protos
+
+
+def convert_iface(iface: CoreInterface) -> core_pb2.Interface:
+    """
+    Convert interface to protobuf.
+
+    :param iface: interface to convert
+    :return: protobuf interface
+    """
+    ip4 = iface.get_ip4()
+    ip4_mask = ip4.prefixlen if ip4 else None
+    ip4 = str(ip4) if ip4 else None
+    ip6 = iface.get_ip6()
+    ip6_mask = ip6.prefixlen if ip6 else None
+    ip6 = str(ip6) if ip6 else None
+    mac = str(iface.mac) if iface.mac else None
+    return core_pb2.Interface(
+        id=iface.id,
+        name=iface.name,
+        mac=mac,
+        ip4=ip4,
+        ip4_mask=ip4_mask,
+        ip6=ip6,
+        ip6_mask=ip6_mask,
+    )
+
+
+def convert_core_link(core_link: CoreLink) -> List[core_pb2.Link]:
+    """
+    Convert core link to protobuf data.
+
+    :param core_link: core link to convert
+    :return: protobuf link data
+    """
     links = []
-    for link in node.links():
-        link_proto = convert_link(link)
-        links.append(link_proto)
+    node1, iface1 = core_link.node1, core_link.iface1
+    node2, iface2 = core_link.node2, core_link.iface2
+    unidirectional = core_link.is_unidirectional()
+    link = convert_link(node1, iface1, node2, iface2, iface1.options, unidirectional)
+    links.append(link)
+    if unidirectional:
+        link = convert_link(
+            node2, iface2, node1, iface1, iface2.options, unidirectional
+        )
+        links.append(link)
     return links
 
 
-def convert_iface(iface_data: InterfaceData) -> core_pb2.Interface:
-    return core_pb2.Interface(
-        id=iface_data.id,
-        name=iface_data.name,
-        mac=iface_data.mac,
-        ip4=iface_data.ip4,
-        ip4_mask=iface_data.ip4_mask,
-        ip6=iface_data.ip6,
-        ip6_mask=iface_data.ip6_mask,
-    )
-
-
-def convert_link_options(options_data: LinkOptions) -> core_pb2.LinkOptions:
-    return core_pb2.LinkOptions(
-        jitter=options_data.jitter,
-        key=options_data.key,
-        mburst=options_data.mburst,
-        mer=options_data.mer,
-        loss=options_data.loss,
-        bandwidth=options_data.bandwidth,
-        burst=options_data.burst,
-        delay=options_data.delay,
-        dup=options_data.dup,
-        buffer=options_data.buffer,
-        unidirectional=options_data.unidirectional,
-    )
-
-
-def convert_link(link_data: LinkData) -> core_pb2.Link:
+def convert_link_data(link_data: LinkData) -> core_pb2.Link:
     """
     Convert link_data into core protobuf link.
-
     :param link_data: link to convert
     :return: core protobuf Link
     """
     iface1 = None
     if link_data.iface1 is not None:
-        iface1 = convert_iface(link_data.iface1)
+        iface1 = convert_iface_data(link_data.iface1)
     iface2 = None
     if link_data.iface2 is not None:
-        iface2 = convert_iface(link_data.iface2)
+        iface2 = convert_iface_data(link_data.iface2)
     options = convert_link_options(link_data.options)
     return core_pb2.Link(
         type=link_data.type.value,
@@ -410,6 +427,89 @@ def convert_link(link_data: LinkData) -> core_pb2.Link:
         network_id=link_data.network_id,
         label=link_data.label,
         color=link_data.color,
+    )
+
+
+def convert_iface_data(iface_data: InterfaceData) -> core_pb2.Interface:
+    """
+    Convert interface data to protobuf.
+
+    :param iface_data: interface data to convert
+    :return: interface protobuf
+    """
+    return core_pb2.Interface(
+        id=iface_data.id,
+        name=iface_data.name,
+        mac=iface_data.mac,
+        ip4=iface_data.ip4,
+        ip4_mask=iface_data.ip4_mask,
+        ip6=iface_data.ip6,
+        ip6_mask=iface_data.ip6_mask,
+    )
+
+
+def convert_link_options(options: LinkOptions) -> core_pb2.LinkOptions:
+    """
+    Convert link options to protobuf.
+
+    :param options: link options to convert
+    :return: link options protobuf
+    """
+    return core_pb2.LinkOptions(
+        jitter=options.jitter,
+        key=options.key,
+        mburst=options.mburst,
+        mer=options.mer,
+        loss=options.loss,
+        bandwidth=options.bandwidth,
+        burst=options.burst,
+        delay=options.delay,
+        dup=options.dup,
+        buffer=options.buffer,
+        unidirectional=options.unidirectional,
+    )
+
+
+def convert_link(
+    node1: NodeBase,
+    iface1: Optional[CoreInterface],
+    node2: NodeBase,
+    iface2: Optional[CoreInterface],
+    options: LinkOptions,
+    unidirectional: bool,
+) -> core_pb2.Link:
+    """
+    Convert link objects to link protobuf.
+
+    :param node1: first node in link
+    :param iface1: node1 interface
+    :param node2: second node in link
+    :param iface2: node2 interface
+    :param options: link options
+    :param unidirectional: if this link is considered unidirectional
+    :return: protobuf link
+    """
+    if iface1 is not None:
+        iface1 = convert_iface(iface1)
+    if iface2 is not None:
+        iface2 = convert_iface(iface2)
+    is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
+    is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
+    if not (is_node1_wireless or is_node2_wireless):
+        options = convert_link_options(options)
+        options.unidirectional = unidirectional
+    else:
+        options = None
+    return core_pb2.Link(
+        type=LinkTypes.WIRED.value,
+        node1_id=node1.id,
+        node2_id=node2.id,
+        iface1=iface1,
+        iface2=iface2,
+        options=options,
+        network_id=None,
+        label=None,
+        color=None,
     )
 
 
@@ -490,39 +590,13 @@ def get_service_configuration(service: CoreService) -> NodeServiceData:
     )
 
 
-def iface_to_data(iface: CoreInterface) -> InterfaceData:
-    ip4 = iface.get_ip4()
-    ip4_addr = str(ip4.ip) if ip4 else None
-    ip4_mask = ip4.prefixlen if ip4 else None
-    ip6 = iface.get_ip6()
-    ip6_addr = str(ip6.ip) if ip6 else None
-    ip6_mask = ip6.prefixlen if ip6 else None
-    return InterfaceData(
-        id=iface.node_id,
-        name=iface.name,
-        mac=str(iface.mac),
-        ip4=ip4_addr,
-        ip4_mask=ip4_mask,
-        ip6=ip6_addr,
-        ip6_mask=ip6_mask,
-    )
-
-
-def iface_to_proto(node_id: int, iface: CoreInterface) -> core_pb2.Interface:
+def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
 
-    :param node_id: id of node to convert interface for
     :param iface: interface to convert
     :return: interface proto
     """
-    if iface.node and iface.node.id == node_id:
-        _id = iface.node_id
-    else:
-        _id = iface.net_id
-    net_id = iface.net.id if iface.net else None
-    node_id = iface.node.id if iface.node else None
-    net2_id = iface.othernet.id if iface.othernet else None
     ip4_net = iface.get_ip4()
     ip4 = str(ip4_net.ip) if ip4_net else None
     ip4_mask = ip4_net.prefixlen if ip4_net else None
@@ -531,10 +605,7 @@ def iface_to_proto(node_id: int, iface: CoreInterface) -> core_pb2.Interface:
     ip6_mask = ip6_net.prefixlen if ip6_net else None
     mac = str(iface.mac) if iface.mac else None
     return core_pb2.Interface(
-        id=_id,
-        net_id=net_id,
-        net2_id=net2_id,
-        node_id=node_id,
+        id=iface.id,
         name=iface.name,
         mac=mac,
         mtu=iface.mtu,
@@ -574,6 +645,12 @@ def get_nem_id(
 
 
 def get_emane_model_configs_dict(session: Session) -> Dict[int, List[NodeEmaneConfig]]:
+    """
+    Get emane model configuration protobuf data.
+
+    :param session: session to get emane model configuration for
+    :return: dict of emane model protobuf configurations
+    """
     configs = {}
     for _id, model_configs in session.emane.node_configs.items():
         for model_name in model_configs:
@@ -591,6 +668,12 @@ def get_emane_model_configs_dict(session: Session) -> Dict[int, List[NodeEmaneCo
 
 
 def get_hooks(session: Session) -> List[core_pb2.Hook]:
+    """
+    Retrieve hook protobuf data for a session.
+
+    :param session: session to get hooks for
+    :return: list of hook protobufs
+    """
     hooks = []
     for state in session.hooks:
         state_hooks = session.hooks[state]
@@ -601,6 +684,12 @@ def get_hooks(session: Session) -> List[core_pb2.Hook]:
 
 
 def get_default_services(session: Session) -> List[ServiceDefaults]:
+    """
+    Retrieve the default service sets for a given session.
+
+    :param session: session to get default service sets for
+    :return: list of default service sets
+    """
     default_services = []
     for name, services in session.services.default_services.items():
         default_service = ServiceDefaults(node_type=name, services=services)
@@ -611,6 +700,14 @@ def get_default_services(session: Session) -> List[ServiceDefaults]:
 def get_mobility_node(
     session: Session, node_id: int, context: ServicerContext
 ) -> Union[WlanNode, EmaneNet]:
+    """
+    Get mobility node.
+
+    :param session: session to get node from
+    :param node_id: id of node to get
+    :param context: grpc context
+    :return: wlan or emane node
+    """
     try:
         return session.get_node(node_id, WlanNode)
     except CoreError:
@@ -621,17 +718,23 @@ def get_mobility_node(
 
 
 def convert_session(session: Session) -> wrappers.Session:
-    links = []
-    nodes = []
+    """
+    Convert session to its wrapped version.
+
+    :param session: session to convert
+    :return: wrapped session data
+    """
     emane_configs = get_emane_model_configs_dict(session)
+    nodes = []
     for _id in session.nodes:
         node = session.nodes[_id]
         if not isinstance(node, (PtpNet, CtrlNet)):
             node_emane_configs = emane_configs.get(node.id, [])
             node_proto = get_node_proto(session, node, node_emane_configs)
             nodes.append(node_proto)
-        node_links = get_links(node)
-        links.extend(node_links)
+    links = []
+    for core_link in session.link_manager.links():
+        links.extend(convert_core_link(core_link))
     default_services = get_default_services(session)
     x, y, z = session.location.refxyz
     lat, lon, alt = session.location.refgeo
@@ -665,6 +768,15 @@ def convert_session(session: Session) -> wrappers.Session:
 def configure_node(
     session: Session, node: core_pb2.Node, core_node: NodeBase, context: ServicerContext
 ) -> None:
+    """
+    Configure a node using all provided protobuf data.
+
+    :param session: session for node
+    :param node: node protobuf data
+    :param core_node: session node
+    :param context: grpc context
+    :return: nothing
+    """
     for emane_config in node.emane_configs:
         _id = utils.iface_config_id(node.id, emane_config.iface_id)
         config = {k: v.value for k, v in emane_config.config.items()}

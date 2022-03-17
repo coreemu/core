@@ -3,7 +3,7 @@ from queue import Empty, Queue
 from typing import Iterable, Optional
 
 from core.api.grpc import core_pb2
-from core.api.grpc.grpcutils import convert_link
+from core.api.grpc.grpcutils import convert_link_data
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -51,7 +51,7 @@ def handle_link_event(link_data: LinkData) -> core_pb2.Event:
     :param link_data: link data
     :return: link event that has message type and link information
     """
-    link = convert_link(link_data)
+    link = convert_link_data(link_data)
     message_type = link_data.message_type.value
     link_event = core_pb2.LinkEvent(message_type=message_type, link=link)
     return core_pb2.Event(link_event=link_event, source=link_data.source)

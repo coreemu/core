@@ -4,7 +4,8 @@ share the same MAC+PHY model.
 """
 
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+import time
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -15,7 +16,7 @@ from core.emulator.enumerations import (
     NodeTypes,
     RegisterTlvs,
 )
-from core.errors import CoreError
+from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
 
@@ -39,6 +40,114 @@ except ImportError:
         logger.debug("compatible emane python bindings not installed")
 
 
+class TunTap(CoreInterface):
+    """
+    TUN/TAP virtual device in TAP mode
+    """
+
+    def __init__(
+        self,
+        _id: int,
+        name: str,
+        localname: str,
+        use_ovs: bool,
+        node: CoreNode = None,
+        server: "DistributedServer" = None,
+    ) -> None:
+        super().__init__(_id, name, localname, use_ovs, node=node, server=server)
+        self.node: CoreNode = node
+
+    def startup(self) -> None:
+        """
+        Startup logic for a tunnel tap.
+
+        :return: nothing
+        """
+        self.up = True
+
+    def shutdown(self) -> None:
+        """
+        Shutdown functionality for a tunnel tap.
+
+        :return: nothing
+        """
+        if not self.up:
+            return
+        self.up = False
+
+    def waitfor(
+        self, func: Callable[[], int], attempts: int = 10, maxretrydelay: float = 0.25
+    ) -> bool:
+        """
+        Wait for func() to return zero with exponential backoff.
+
+        :param func: function to wait for a result of zero
+        :param attempts: number of attempts to wait for a zero result
+        :param maxretrydelay: maximum retry delay
+        :return: True if wait succeeded, False otherwise
+        """
+        delay = 0.01
+        result = False
+        for i in range(1, attempts + 1):
+            r = func()
+            if r == 0:
+                result = True
+                break
+            msg = f"attempt {i} failed with nonzero exit status {r}"
+            if i < attempts + 1:
+                msg += ", retrying..."
+                logger.info(msg)
+                time.sleep(delay)
+                delay += delay
+                if delay > maxretrydelay:
+                    delay = maxretrydelay
+            else:
+                msg += ", giving up"
+                logger.info(msg)
+        return result
+
+    def nodedevexists(self) -> int:
+        """
+        Checks if device exists.
+
+        :return: 0 if device exists, 1 otherwise
+        """
+        try:
+            self.node.node_net_client.device_show(self.name)
+            return 0
+        except CoreCommandError:
+            return 1
+
+    def waitfordevicenode(self) -> None:
+        """
+        Check for presence of a node device - tap device may not appear right away waits.
+
+        :return: nothing
+        """
+        logger.debug("waiting for device node: %s", self.name)
+        count = 0
+        while True:
+            result = self.waitfor(self.nodedevexists)
+            if result:
+                break
+            should_retry = count < 5
+            is_emane_running = self.node.session.emane.emanerunning(self.node)
+            if all([should_retry, is_emane_running]):
+                count += 1
+            else:
+                raise RuntimeError("node device failed to exist")
+
+    def set_ips(self) -> None:
+        """
+        Set interface ip addresses.
+
+        :return: nothing
+        """
+        self.waitfordevicenode()
+        for ip in self.ips():
+            self.node.node_net_client.create_address(self.name, str(ip))
+
+
 class EmaneNet(CoreNetworkBase):
     """
     EMANE node contains NEM configuration and causes connected nodes
@@ -49,7 +158,6 @@ class EmaneNet(CoreNetworkBase):
     apitype: NodeTypes = NodeTypes.EMANE
     linktype: LinkTypes = LinkTypes.WIRED
     type: str = "wlan"
-    has_custom_iface: bool = True
 
     def __init__(
         self,
@@ -77,10 +185,10 @@ class EmaneNet(CoreNetworkBase):
         self.conf = conf
 
     def startup(self) -> None:
-        pass
+        self.up = True
 
     def shutdown(self) -> None:
-        pass
+        self.up = False
 
     def link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         pass
@@ -88,10 +196,13 @@ class EmaneNet(CoreNetworkBase):
     def unlink(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         pass
 
-    def linknet(self, net: "CoreNetworkBase") -> CoreInterface:
-        raise CoreError("emane networks cannot be linked to other networks")
-
     def updatemodel(self, config: Dict[str, str]) -> None:
+        """
+        Update configuration for the current model.
+
+        :param config: configuration to update model with
+        :return: nothing
+        """
         if not self.model:
             raise CoreError(f"no model set to update for node({self.name})")
         logger.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
@@ -137,17 +248,39 @@ class EmaneNet(CoreNetworkBase):
                 links.append(link)
         return links
 
-    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
-        # TUN/TAP is not ready for addressing yet; the device may
-        #   take some time to appear, and installing it into a
-        #   namespace after it has been bound removes addressing;
-        #   save addresses with the interface now
-        iface_id = node.newtuntap(iface_data.id, iface_data.name)
-        node.attachnet(iface_id, self)
-        iface = node.get_iface(iface_id)
-        iface.set_mac(iface_data.mac)
-        for ip in iface_data.get_ips():
-            iface.add_ip(ip)
+    def create_tuntap(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
+        """
+        Create a tuntap interface for the provided node.
+
+        :param node: node to create tuntap interface for
+        :param iface_data: interface data to create interface with
+        :return: created tuntap interface
+        """
+        with node.lock:
+            if iface_data.id is not None and iface_data.id in node.ifaces:
+                raise CoreError(
+                    f"node({self.id}) interface({iface_data.id}) already exists"
+                )
+            iface_id = (
+                iface_data.id if iface_data.id is not None else node.next_iface_id()
+            )
+            name = iface_data.name if iface_data.name is not None else f"eth{iface_id}"
+            session_id = self.session.short_session_id()
+            localname = f"tap{node.id}.{iface_id}.{session_id}"
+            iface = TunTap(iface_id, name, localname, self.session.use_ovs(), node=node)
+            if iface_data.mac:
+                iface.set_mac(iface_data.mac)
+            for ip in iface_data.get_ips():
+                iface.add_ip(ip)
+            node.ifaces[iface_id] = iface
+            self.attach(iface)
+        if self.up:
+            iface.startup()
         if self.session.state == EventTypes.RUNTIME_STATE:
             self.session.emane.start_iface(self, iface)
         return iface
+
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        raise CoreError(
+            f"emane network({self.name}) do not support adopting interfaces"
+        )

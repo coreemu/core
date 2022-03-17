@@ -121,9 +121,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
     def test_link_add_net_to_node(self, coretlv: CoreHandler):
         node1_id = 1
@@ -145,9 +143,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
     def test_link_add_node_to_node(self, coretlv: CoreHandler):
         node1_id = 1
@@ -173,11 +169,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        all_links = []
-        for node_id in coretlv.session.nodes:
-            node = coretlv.session.nodes[node_id]
-            all_links += node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
     def test_link_update(self, coretlv: CoreHandler):
         node1_id = 1
@@ -197,11 +189,10 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
-        link = all_links[0]
-        assert link.options.bandwidth is None
+        assert len(coretlv.session.link_manager.links()) == 1
+        link = list(coretlv.session.link_manager.links())[0]
+
+        assert link.options().bandwidth is None
 
         bandwidth = 50000
         message = coreapi.CoreLinkMessage.create(
@@ -210,16 +201,13 @@ class TestGui:
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE2_NUMBER, 0),
                 (LinkTlvs.BANDWIDTH, bandwidth),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
-        link = all_links[0]
-        assert link.options.bandwidth == bandwidth
+        assert link.options().bandwidth == bandwidth
 
     def test_link_delete_node_to_node(self, coretlv: CoreHandler):
         node1_id = 1
@@ -242,11 +230,7 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        all_links = []
-        for node_id in coretlv.session.nodes:
-            node = coretlv.session.nodes[node_id]
-            all_links += node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
@@ -259,11 +243,7 @@ class TestGui:
         )
         coretlv.handle_message(message)
 
-        all_links = []
-        for node_id in coretlv.session.nodes:
-            node = coretlv.session.nodes[node_id]
-            all_links += node.links()
-        assert len(all_links) == 0
+        assert len(coretlv.session.link_manager.links()) == 0
 
     def test_link_delete_node_to_net(self, coretlv: CoreHandler):
         node1_id = 1
@@ -283,9 +263,7 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
@@ -293,13 +271,12 @@ class TestGui:
                 (LinkTlvs.N1_NUMBER, node1_id),
                 (LinkTlvs.N2_NUMBER, switch_id),
                 (LinkTlvs.IFACE1_NUMBER, 0),
+                (LinkTlvs.IFACE2_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 0
+        assert len(coretlv.session.link_manager.links()) == 0
 
     def test_link_delete_net_to_node(self, coretlv: CoreHandler):
         node1_id = 1
@@ -319,23 +296,20 @@ class TestGui:
             ],
         )
         coretlv.handle_message(message)
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 1
+        assert len(coretlv.session.link_manager.links()) == 1
 
         message = coreapi.CoreLinkMessage.create(
             MessageFlags.DELETE.value,
             [
                 (LinkTlvs.N1_NUMBER, switch_id),
                 (LinkTlvs.N2_NUMBER, node1_id),
+                (LinkTlvs.IFACE1_NUMBER, 0),
                 (LinkTlvs.IFACE2_NUMBER, 0),
             ],
         )
         coretlv.handle_message(message)
 
-        switch_node = coretlv.session.get_node(switch_id, SwitchNode)
-        all_links = switch_node.links()
-        assert len(all_links) == 0
+        assert len(coretlv.session.link_manager.links()) == 0
 
     def test_session_update(self, coretlv: CoreHandler):
         session_id = coretlv.session.id

@@ -12,12 +12,12 @@ from core import utils
 from core.emane.emanemodel import EmaneModel
 from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.modelmanager import EmaneModelManager
-from core.emane.nodes import EmaneNet
+from core.emane.nodes import EmaneNet, TunTap
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
-from core.nodes.base import CoreNetworkBase, CoreNode, NodeBase
-from core.nodes.interface import CoreInterface, TunTap
+from core.nodes.base import CoreNode, NodeBase
+from core.nodes.interface import CoreInterface
 from core.xml import emanexml
 
 logger = logging.getLogger(__name__)
@@ -224,11 +224,9 @@ class EmaneManager:
         :return: net, node, or interface model configuration
         """
         model_name = emane_net.model.name
-        config = None
         # try to retrieve interface specific configuration
-        if iface.node_id is not None:
-            key = utils.iface_config_id(iface.node.id, iface.node_id)
-            config = self.get_config(key, model_name, default=False)
+        key = utils.iface_config_id(iface.node.id, iface.id)
+        config = self.get_config(key, model_name, default=False)
         # attempt to retrieve node specific config, when iface config is not present
         if not config:
             config = self.get_config(iface.node.id, model_name, default=False)
@@ -272,7 +270,8 @@ class EmaneManager:
         nodes = set()
         for emane_net in self._emane_nets.values():
             for iface in emane_net.get_ifaces():
-                nodes.add(iface.node)
+                if isinstance(iface.node, CoreNode):
+                    nodes.add(iface.node)
         return nodes
 
     def setup(self) -> EmaneState:
@@ -323,7 +322,7 @@ class EmaneManager:
             for emane_net, iface in self.get_ifaces():
                 self.start_iface(emane_net, iface)
 
-    def start_iface(self, emane_net: EmaneNet, iface: CoreInterface) -> None:
+    def start_iface(self, emane_net: EmaneNet, iface: TunTap) -> None:
         nem_id = self.next_nem_id(iface)
         nem_port = self.get_nem_port(iface)
         logger.info(
@@ -338,7 +337,7 @@ class EmaneManager:
         self.start_daemon(iface)
         self.install_iface(iface, config)
 
-    def get_ifaces(self) -> List[Tuple[EmaneNet, CoreInterface]]:
+    def get_ifaces(self) -> List[Tuple[EmaneNet, TunTap]]:
         ifaces = []
         for emane_net in self._emane_nets.values():
             if not emane_net.model:
@@ -352,8 +351,9 @@ class EmaneManager:
                         iface.name,
                     )
                     continue
-                ifaces.append((emane_net, iface))
-        return sorted(ifaces, key=lambda x: (x[1].node.id, x[1].node_id))
+                if isinstance(iface, TunTap):
+                    ifaces.append((emane_net, iface))
+        return sorted(ifaces, key=lambda x: (x[1].node.id, x[1].id))
 
     def setup_control_channels(
         self, nem_id: int, iface: CoreInterface, config: Dict[str, str]
@@ -622,9 +622,9 @@ class EmaneManager:
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.host_cmd(args, cwd=self.session.directory)
 
-    def install_iface(self, iface: CoreInterface, config: Dict[str, str]) -> None:
+    def install_iface(self, iface: TunTap, config: Dict[str, str]) -> None:
         external = config.get("external", "0")
-        if isinstance(iface, TunTap) and external == "0":
+        if external == "0":
             iface.set_ips()
         # at this point we register location handlers for generating
         # EMANE location events
@@ -731,9 +731,6 @@ class EmaneManager:
         node.position.set_geo(lon, lat, alt)
         self.session.broadcast_node(node)
         return True
-
-    def is_emane_net(self, net: Optional[CoreNetworkBase]) -> bool:
-        return isinstance(net, EmaneNet)
 
     def emanerunning(self, node: CoreNode) -> bool:
         """
