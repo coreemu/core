@@ -81,7 +81,7 @@ from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import WlanNode
+from core.nodes.network import CoreNetwork, WlanNode
 from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
@@ -706,10 +706,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         iface1_data = None
         if node1_iface:
-            iface1_data = node1_iface.get_data()
+            if isinstance(node1_iface.node, CoreNetwork):
+                iface1_data = InterfaceData(id=node1_iface.id)
+            else:
+                iface1_data = node1_iface.get_data()
         iface2_data = None
         if node2_iface:
-            iface2_data = node2_iface.get_data()
+            if isinstance(node2_iface.node, CoreNetwork):
+                iface2_data = InterfaceData(id=node2_iface.id)
+            else:
+                iface2_data = node2_iface.get_data()
         source = request.source if request.source else None
         link_data = LinkData(
             message_type=MessageFlags.ADD,

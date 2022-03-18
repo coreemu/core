@@ -275,7 +275,7 @@ class NodeConfigDialog(Dialog):
             ifaces_scroll.listbox.bind("<<ListboxSelect>>", self.iface_select)
 
         # interfaces
-        if self.canvas_node.ifaces:
+        if nutils.is_container(self.node):
             self.draw_ifaces()
 
         self.draw_spacer()

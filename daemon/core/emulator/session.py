@@ -307,12 +307,8 @@ class Session:
         :param options: options to configure interfaces with
         :return: interfaces created for both nodes
         """
-        # create interface
-        if iface1_data and isinstance(node1, CoreNetworkBase):
-            iface1_data.id = None
+        # create interfaces
         iface1 = node1.create_iface(iface1_data, options)
-        if iface2_data and isinstance(node2, CoreNetworkBase):
-            iface2_data.id = None
         iface2 = node2.create_iface(iface2_data, options)
         # join and attach to ptp bridge
         ptp = self.create_node(PtpNet, self.state.should_start())

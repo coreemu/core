@@ -298,7 +298,10 @@ class CanvasNode:
                 other_iface = edge.other_iface(self)
                 label = other_node.core_node.name
                 if other_iface:
-                    label = f"{label}:{other_iface.name}"
+                    iface_label = other_iface.id
+                    if other_iface.name:
+                        iface_label = other_iface.name
+                    label = f"{label}:{iface_label}"
                 func_unlink = functools.partial(self.click_unlink, edge)
                 unlink_menu.add_command(label=label, command=func_unlink)
             themes.style_menu(unlink_menu)

@@ -97,6 +97,10 @@ def is_custom(node: Node) -> bool:
     return is_model(node) and node.model not in NODE_MODELS
 
 
+def is_iface_node(node: Node) -> bool:
+    return is_container(node) or is_bridge(node)
+
+
 def get_custom_services(gui_config: GuiConfig, name: str) -> List[str]:
     for custom_node in gui_config.nodes:
         if custom_node.name == name:
