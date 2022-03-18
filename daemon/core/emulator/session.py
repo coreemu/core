@@ -321,6 +321,9 @@ class Session:
         # track link
         core_link = CoreLink(node1, iface1, node2, iface2, ptp)
         self.link_manager.add(core_link)
+        # setup link for gre tunnels if needed
+        if ptp.up:
+            self.distributed.create_gre_tunnels(core_link)
         return iface1, iface2
 
     def delete_link(

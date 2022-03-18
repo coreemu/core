@@ -776,8 +776,9 @@ class CoreNode(CoreNodeBase):
         iface.flow_id = self.node_net_client.get_ifindex(iface.name)
         logger.debug("interface flow index: %s - %s", iface.name, iface.flow_id)
         # set mac address
-        self.node_net_client.device_mac(iface.name, str(iface.mac))
-        logger.debug("interface mac: %s - %s", iface.name, iface.mac)
+        if iface.mac:
+            self.node_net_client.device_mac(iface.name, str(iface.mac))
+            logger.debug("interface mac: %s - %s", iface.name, iface.mac)
         # set all addresses
         for ip in iface.ips():
             # ipv4 check
@@ -827,10 +828,10 @@ class CoreNetworkBase(NodeBase):
         :param iface: network interface to attach
         :return: nothing
         """
-        i = self.next_iface_id()
-        self.ifaces[i] = iface
+        iface_id = self.next_iface_id()
+        self.ifaces[iface_id] = iface
         iface.net = self
-        iface.net_id = i
+        iface.net_id = iface_id
         with self.linked_lock:
             self.linked[iface] = {}
 
