@@ -7,7 +7,7 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from core.emulator.data import InterfaceData
+from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes, TransportType
 from core.errors import CoreCommandError, CoreError
@@ -229,11 +229,9 @@ class Rj45Node(CoreNodeBase):
         """
         super().__init__(session, _id, name, server)
         self.iface: CoreInterface = CoreInterface(
-            session, name, name, mtu, server, self
+            self.iface_id, name, name, session.use_ovs(), mtu, self, server
         )
         self.iface.transport_type = TransportType.RAW
-        self.lock: threading.RLock = threading.RLock()
-        self.iface_id: Optional[int] = None
         self.old_up: bool = False
         self.old_addrs: List[Tuple[str, Optional[str]]] = []
 
@@ -245,7 +243,7 @@ class Rj45Node(CoreNodeBase):
         :raises CoreCommandError: when there is a command exception
         """
         # interface will also be marked up during net.attach()
-        self.savestate()
+        self.save_state()
         self.net_client.device_up(self.iface.localname)
         self.up = True
 
@@ -266,7 +264,7 @@ class Rj45Node(CoreNodeBase):
         except CoreCommandError:
             pass
         self.up = False
-        self.restorestate()
+        self.restore_state()
 
     def path_exists(self, path: str) -> bool:
         """
@@ -281,33 +279,24 @@ class Rj45Node(CoreNodeBase):
         except CoreCommandError:
             return False
 
-    def new_iface(
-        self, net: CoreNetworkBase, iface_data: InterfaceData
+    def create_iface(
+        self, iface_data: InterfaceData = None, options: LinkOptions = None
     ) -> CoreInterface:
-        """
-        This is called when linking with another node. Since this node
-        represents an interface, we do not create another object here,
-        but attach ourselves to the given network.
-
-        :param net: new network instance
-        :param iface_data: interface data for new interface
-        :return: interface index
-        :raises ValueError: when an interface has already been created, one max
-        """
         with self.lock:
-            iface_id = iface_data.id
-            if iface_id is None:
-                iface_id = 0
-            if self.iface.net is not None:
+            if self.iface.id in self.ifaces:
                 raise CoreError(
-                    f"RJ45({self.name}) nodes support at most 1 network interface"
+                    f"rj45({self.name}) nodes support at most 1 network interface"
                 )
-            self.ifaces[iface_id] = self.iface
-            self.iface_id = iface_id
-            self.iface.attachnet(net)
+            self.ifaces[self.iface.id] = self.iface
             for ip in iface_data.get_ips():
-                self.add_ip(ip)
-            return self.iface
+                self.iface.add_ip(ip)
+        if self.up:
+            for ip in self.iface.ips():
+                self.net_client.create_address(self.iface.name, str(ip))
+        return self.iface
+
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        raise CoreError(f"rj45({self.name}) does not support adopt interface")
 
     def delete_iface(self, iface_id: int) -> None:
         """
@@ -318,16 +307,10 @@ class Rj45Node(CoreNodeBase):
         """
         self.get_iface(iface_id)
         self.ifaces.pop(iface_id)
-        if self.iface.net is None:
-            raise CoreError(
-                f"RJ45({self.name}) is not currently connected to a network"
-            )
-        self.iface.detachnet()
-        self.iface.net = None
         self.shutdown()
 
     def get_iface(self, iface_id: int) -> CoreInterface:
-        if iface_id != self.iface_id or iface_id not in self.ifaces:
+        if iface_id not in self.ifaces:
             raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
         return self.iface
 
@@ -341,42 +324,17 @@ class Rj45Node(CoreNodeBase):
         """
         if iface is not self.iface:
             raise CoreError(f"node({self.name}) does not have interface({iface.name})")
-        return self.iface_id
+        return self.iface.id
 
-    def add_ip(self, ip: str) -> None:
-        """
-        Add an ip address to an interface in the format "10.0.0.1/24".
-
-        :param ip: address to add to interface
-        :return: nothing
-        :raises CoreError: when ip address provided is invalid
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        self.iface.add_ip(ip)
-        if self.up:
-            self.net_client.create_address(self.name, ip)
-
-    def remove_ip(self, ip: str) -> None:
-        """
-        Remove an ip address from an interface in the format "10.0.0.1/24".
-
-        :param ip: ip address to remove from interface
-        :return: nothing
-        :raises CoreError: when ip address provided is invalid
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        self.iface.remove_ip(ip)
-        if self.up:
-            self.net_client.delete_address(self.name, ip)
-
-    def savestate(self) -> None:
+    def save_state(self) -> None:
         """
         Save the addresses and other interface state before using the
-        interface for emulation purposes. TODO: save/restore the PROMISC flag
+        interface for emulation purposes.
 
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
+        # TODO: save/restore the PROMISC flag
         self.old_up = False
         self.old_addrs: List[Tuple[str, Optional[str]]] = []
         localname = self.iface.localname
@@ -397,7 +355,7 @@ class Rj45Node(CoreNodeBase):
                 self.old_addrs.append((items[1], None))
         logger.info("saved rj45 state: addrs(%s) up(%s)", self.old_addrs, self.old_up)
 
-    def restorestate(self) -> None:
+    def restore_state(self) -> None:
         """
         Restore the addresses and other interface state after using it.
 
