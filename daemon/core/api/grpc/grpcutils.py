@@ -355,6 +355,9 @@ def get_links(session: Session, node: NodeBase) -> List[core_pb2.Link]:
     link_protos = []
     for core_link in session.link_manager.node_links(node):
         link_protos.extend(convert_core_link(core_link))
+    if isinstance(node, (WlanNode, EmaneNet)):
+        for link_data in node.links():
+            link_protos.append(convert_link_data(link_data))
     return link_protos
 
 
@@ -729,13 +732,16 @@ def convert_session(session: Session) -> wrappers.Session:
     """
     emane_configs = get_emane_model_configs_dict(session)
     nodes = []
+    links = []
     for _id in session.nodes:
         node = session.nodes[_id]
         if not isinstance(node, (PtpNet, CtrlNet)):
             node_emane_configs = emane_configs.get(node.id, [])
             node_proto = get_node_proto(session, node, node_emane_configs)
             nodes.append(node_proto)
-    links = []
+        if isinstance(node, (WlanNode, EmaneNet)):
+            for link_data in node.links():
+                links.append(convert_link_data(link_data))
     for core_link in session.link_manager.links():
         links.extend(convert_core_link(core_link))
     default_services = get_default_services(session)

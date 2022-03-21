@@ -781,10 +781,10 @@ class WlanNode(CoreNetwork):
         :param flags: message flags
         :return: list of link data
         """
-        links = super().links(flags)
         if self.model:
-            links.extend(self.model.links(flags))
-        return links
+            return self.model.links(flags)
+        else:
+            return []
 
 
 class TunnelNode(GreTapBridge):

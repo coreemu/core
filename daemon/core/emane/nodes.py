@@ -219,7 +219,7 @@ class EmaneNet(CoreNetworkBase):
             self.mobility.update_config(config)
 
     def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        links = super().links(flags)
+        links = []
         emane_manager = self.session.emane
         # gather current emane links
         nem_ids = set()
@@ -240,7 +240,7 @@ class EmaneNet(CoreNetworkBase):
             # ignore incomplete links
             if (nem2, nem1) not in emane_links:
                 continue
-            link = emane_manager.get_nem_link(nem1, nem2)
+            link = emane_manager.get_nem_link(nem1, nem2, flags)
             if link:
                 links.append(link)
         return links
