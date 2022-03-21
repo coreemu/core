@@ -94,11 +94,11 @@ def geo_type(value: str) -> Tuple[float, float, float]:
     return lon, lat, alt
 
 
-def file_type(value: str) -> str:
+def file_type(value: str) -> Path:
     path = Path(value)
     if not path.is_file():
         raise ArgumentTypeError(f"invalid file: {value}")
-    return str(path.absolute())
+    return path
 
 
 def get_current_session(core: CoreGrpcClient, session_id: Optional[int]) -> int:
