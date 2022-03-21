@@ -26,7 +26,7 @@ from core.api.grpc.configservices_pb2 import (
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptResponse
+from core.api.grpc.core_pb2 import ExecuteScriptResponse, LinkedRequest, LinkedResponse
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
@@ -1315,3 +1315,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             nem2 = grpcutils.get_nem_id(session, node2, request.iface2_id, context)
             session.emane.publish_pathloss(nem1, nem2, request.rx1, request.rx2)
         return EmanePathlossesResponse()
+
+    def Linked(
+        self, request: LinkedRequest, context: ServicerContext
+    ) -> LinkedResponse:
+        session = self.get_session(request.session_id, context)
+        session.linked(
+            request.node1_id,
+            request.node2_id,
+            request.iface1_id,
+            request.iface2_id,
+            request.linked,
+        )
+        return LinkedResponse()

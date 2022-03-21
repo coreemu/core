@@ -192,6 +192,45 @@ class Session:
     def use_ovs(self) -> bool:
         return self.options.get_config("ovs") == "1"
 
+    def linked(
+        self, node1_id: int, node2_id: int, iface1_id: int, iface2_id: int, linked: bool
+    ) -> None:
+        """
+        Links or unlinks wired core link interfaces from being connected to the same
+        bridge.
+
+        :param node1_id: first node in link
+        :param node2_id: second node in link
+        :param iface1_id: node1 interface
+        :param iface2_id: node2 interface
+        :param linked: True if interfaces should be connected, False for disconnected
+        :return: nothing
+        """
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
+        logger.info(
+            "link node(%s):interface(%s) node(%s):interface(%s) linked(%s)",
+            node1.name,
+            iface1_id,
+            node2.name,
+            iface2_id,
+            linked,
+        )
+        iface1 = node1.get_iface(iface1_id)
+        iface2 = node2.get_iface(iface2_id)
+        core_link = self.link_manager.get_link(node1, iface1, node2, iface2)
+        if not core_link:
+            raise CoreError(
+                f"there is no link for node({node1.name}):interface({iface1_id}) "
+                f"node({node2.name}):interface({iface2_id})"
+            )
+        if linked:
+            core_link.ptp.attach(iface1)
+            core_link.ptp.attach(iface2)
+        else:
+            core_link.ptp.detach(iface1)
+            core_link.ptp.detach(iface2)
+
     def add_link(
         self,
         node1_id: int,
@@ -223,7 +262,14 @@ class Session:
         node1 = self.get_node(node1_id, NodeBase)
         node2 = self.get_node(node2_id, NodeBase)
         # check for invalid linking
-        if isinstance(node1, WIRELESS_TYPE) and isinstance(node2, WIRELESS_TYPE):
+        if (
+            isinstance(node1, WIRELESS_TYPE)
+            and isinstance(node2, WIRELESS_TYPE)
+            or isinstance(node1, WIRELESS_TYPE)
+            and not isinstance(node2, CoreNodeBase)
+            or not isinstance(node1, CoreNodeBase)
+            and isinstance(node2, WIRELESS_TYPE)
+        ):
             raise CoreError(f"cannot link node({type(node1)}) node({type(node2)})")
         # custom links
         iface1 = None
