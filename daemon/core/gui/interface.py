@@ -241,10 +241,10 @@ class InterfaceManager:
         dst_node = edge.dst.core_node
         self.determine_subnets(edge.src, edge.dst)
         src_iface = None
-        if nutils.is_container(src_node):
+        if nutils.is_iface_node(src_node):
             src_iface = self.create_iface(edge.src, edge.linked_wireless)
         dst_iface = None
-        if nutils.is_container(dst_node):
+        if nutils.is_iface_node(dst_node):
             dst_iface = self.create_iface(edge.dst, edge.linked_wireless)
         link = Link(
             type=LinkType.WIRED,
@@ -258,22 +258,26 @@ class InterfaceManager:
 
     def create_iface(self, canvas_node: CanvasNode, wireless_link: bool) -> Interface:
         node = canvas_node.core_node
-        ip4, ip6 = self.get_ips(node)
-        if wireless_link:
-            ip4_mask = WIRELESS_IP4_MASK
-            ip6_mask = WIRELESS_IP6_MASK
+        if nutils.is_bridge(node):
+            iface_id = canvas_node.next_iface_id()
+            iface = Interface(id=iface_id)
         else:
-            ip4_mask = IP4_MASK
-            ip6_mask = IP6_MASK
-        iface_id = canvas_node.next_iface_id()
-        name = f"eth{iface_id}"
-        iface = Interface(
-            id=iface_id,
-            name=name,
-            ip4=ip4,
-            ip4_mask=ip4_mask,
-            ip6=ip6,
-            ip6_mask=ip6_mask,
-        )
+            ip4, ip6 = self.get_ips(node)
+            if wireless_link:
+                ip4_mask = WIRELESS_IP4_MASK
+                ip6_mask = WIRELESS_IP6_MASK
+            else:
+                ip4_mask = IP4_MASK
+                ip6_mask = IP6_MASK
+            iface_id = canvas_node.next_iface_id()
+            name = f"eth{iface_id}"
+            iface = Interface(
+                id=iface_id,
+                name=name,
+                ip4=ip4,
+                ip4_mask=ip4_mask,
+                ip6=ip6,
+                ip6_mask=ip6_mask,
+            )
         logger.info("create node(%s) interface(%s)", node.name, iface)
         return iface

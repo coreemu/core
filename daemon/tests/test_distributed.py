@@ -29,12 +29,14 @@ class TestDistributed:
 
         # when
         session.distributed.add_server(server_name, host)
+        node1 = session.add_node(HubNode)
         options = NodeOptions(server=server_name)
-        node = session.add_node(HubNode, options=options)
+        node2 = session.add_node(HubNode, options=options)
+        session.add_link(node1.id, node2.id)
         session.instantiate()
 
         # then
-        assert node.server is not None
-        assert node.server.name == server_name
-        assert node.server.host == host
-        assert len(session.distributed.tunnels) > 0
+        assert node2.server is not None
+        assert node2.server.name == server_name
+        assert node2.server.host == host
+        assert len(session.distributed.tunnels) == 1

@@ -22,8 +22,8 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreCommandError, CoreError
 from core.executables import NFTABLES
-from core.nodes.base import CoreNetworkBase, CoreNode
-from core.nodes.interface import CoreInterface, GreTap, Veth
+from core.nodes.base import CoreNetworkBase
+from core.nodes.interface import CoreInterface, GreTap
 from core.nodes.netclient import get_net_client
 
 logger = logging.getLogger(__name__)
@@ -280,6 +280,17 @@ class CoreNetwork(CoreNetworkBase):
         self.up = True
         nft_queue.start()
 
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        """
+        Adopt interface and set it to use this bridge as master.
+
+        :param iface: interface to adpopt
+        :param name: formal name for interface
+        :return: nothing
+        """
+        iface.net_client.set_iface_master(self.brname, iface.name)
+        iface.set_config()
+
     def shutdown(self) -> None:
         """
         Linux bridge shutdown logic.
@@ -309,9 +320,9 @@ class CoreNetwork(CoreNetworkBase):
         :param iface: network interface to attach
         :return: nothing
         """
+        super().attach(iface)
         if self.up:
             iface.net_client.set_iface_master(self.brname, iface.localname)
-        super().attach(iface)
 
     def detach(self, iface: CoreInterface) -> None:
         """
@@ -320,9 +331,9 @@ class CoreNetwork(CoreNetworkBase):
         :param iface: network interface to detach
         :return: nothing
         """
+        super().detach(iface)
         if self.up:
             iface.net_client.delete_iface(self.brname, iface.localname)
-        super().detach(iface)
 
     def is_linked(self, iface1: CoreInterface, iface2: CoreInterface) -> bool:
         """
@@ -377,67 +388,6 @@ class CoreNetwork(CoreNetworkBase):
                 return
             self.linked[iface1][iface2] = True
         nft_queue.update(self)
-
-    def linknet(self, net: CoreNetworkBase) -> CoreInterface:
-        """
-        Link this bridge with another by creating a veth pair and installing
-        each device into each bridge.
-
-        :param net: network to link with
-        :return: created interface
-        """
-        sessionid = self.session.short_session_id()
-        try:
-            _id = f"{self.id:x}"
-        except TypeError:
-            _id = str(self.id)
-        try:
-            net_id = f"{net.id:x}"
-        except TypeError:
-            net_id = str(net.id)
-        localname = f"veth{_id}.{net_id}.{sessionid}"
-        name = f"veth{net_id}.{_id}.{sessionid}"
-        iface = Veth(self.session, name, localname)
-        if self.up:
-            iface.startup()
-        self.attach(iface)
-        if net.up and net.brname:
-            iface.net_client.set_iface_master(net.brname, iface.name)
-        i = net.next_iface_id()
-        net.ifaces[i] = iface
-        with net.linked_lock:
-            net.linked[iface] = {}
-        iface.net = self
-        iface.othernet = net
-        return iface
-
-    def get_linked_iface(self, net: CoreNetworkBase) -> Optional[CoreInterface]:
-        """
-        Return the interface of that links this net with another net
-        (that were linked using linknet()).
-
-        :param net: interface to get link for
-        :return: interface the provided network is linked to
-        """
-        for iface in self.get_ifaces():
-            if iface.othernet == net:
-                return iface
-        return None
-
-    def add_ips(self, ips: List[str]) -> None:
-        """
-        Add ip addresses on the bridge in the format "10.0.0.1/24".
-
-        :param ips: ip address to add
-        :return: nothing
-        """
-        if not self.up:
-            return
-        for ip in ips:
-            self.net_client.create_address(self.brname, ip)
-
-    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
-        raise CoreError(f"{type(self).__name__} does not support, custom interfaces")
 
 
 class GreTapBridge(CoreNetwork):
@@ -686,15 +636,6 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Do not include CtrlNet in link messages describing this session.
-
-        :param flags: message flags
-        :return: list of link data
-        """
-        return []
-
 
 class PtpNet(CoreNetwork):
     """
@@ -713,49 +654,6 @@ class PtpNet(CoreNetwork):
         if len(self.ifaces) >= 2:
             raise CoreError("ptp links support at most 2 network interfaces")
         super().attach(iface)
-
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Get peer to peer link.
-
-        :param flags: message flags
-        :return: list of link data
-        """
-        all_links = []
-        if len(self.ifaces) != 2:
-            return all_links
-        ifaces = self.get_ifaces()
-        iface1 = ifaces[0]
-        iface2 = ifaces[1]
-        unidirectional = 0 if iface1.local_options == iface2.local_options else 1
-        iface1_data = iface1.get_data()
-        iface2_data = iface2.get_data()
-        link_data = LinkData(
-            message_type=flags,
-            type=self.linktype,
-            node1_id=iface1.node.id,
-            node2_id=iface2.node.id,
-            iface1=iface1_data,
-            iface2=iface2_data,
-            options=iface1.local_options,
-        )
-        link_data.options.unidirectional = unidirectional
-        all_links.append(link_data)
-        # build a 2nd link message for the upstream link parameters
-        # (swap if1 and if2)
-        if unidirectional:
-            link_data = LinkData(
-                message_type=MessageFlags.NONE,
-                type=self.linktype,
-                node1_id=iface2.node.id,
-                node2_id=iface1.node.id,
-                iface1=InterfaceData(id=iface2_data.id),
-                iface2=InterfaceData(id=iface1_data.id),
-                options=iface2.local_options,
-            )
-            link_data.options.unidirectional = unidirectional
-            all_links.append(link_data)
-        return all_links
 
 
 class SwitchNode(CoreNetwork):
@@ -883,10 +781,10 @@ class WlanNode(CoreNetwork):
         :param flags: message flags
         :return: list of link data
         """
-        links = super().links(flags)
         if self.model:
-            links.extend(self.model.links(flags))
-        return links
+            return self.model.links(flags)
+        else:
+            return []
 
 
 class TunnelNode(GreTapBridge):
