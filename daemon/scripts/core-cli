@@ -212,9 +212,11 @@ def query_session(core: CoreGrpcClient, args: Namespace) -> None:
         print_json(session)
     else:
         print("Nodes")
-        print("Node ID | Node Name | Node Type")
+        print("ID      | Name    | Type    | XY        | Geo")
         for node in session.nodes.values():
-            print(f"{node.id:<7} | {node.name:<9} | {node.type.name}")
+            xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
+            geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
+            print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
         print("\nLinks")
         for link in session.links:
             n1 = session.nodes[link.node1_id].name
@@ -243,12 +245,10 @@ def query_node(core: CoreGrpcClient, args: Namespace) -> None:
         ifaces = [protobuf_to_json(x.to_proto()) for x in ifaces]
         print_json(dict(node=node, ifaces=ifaces))
     else:
-        print("ID   | Name    | Type    | XY")
+        print("ID      | Name    | Type    | XY        | Geo")
         xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
-        print(f"{node.id:<4} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos}")
-        if node.geo:
-            print("Geo")
-            print(f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}")
+        geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
+        print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
         if ifaces:
             print("Interfaces")
             print("Connected To | ", end="")
