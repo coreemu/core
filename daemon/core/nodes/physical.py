@@ -187,21 +187,17 @@ class PhysicalNode(CoreNodeBase):
         except CoreCommandError:
             logger.exception("unmounting failed for %s", target_path)
 
-    def nodefile(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
-        host_path = self.host_path(file_path)
-        directory = host_path.parent
-        if not directory.is_dir():
-            directory.mkdir(parents=True, mode=0o755)
-        with host_path.open("w") as f:
-            f.write(contents)
-        host_path.chmod(mode)
-        logger.info("created nodefile: '%s'; mode: 0%o", host_path, mode)
-
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         return self.host_cmd(args, wait=wait)
 
-    def addfile(self, src_path: str, file_path: str) -> None:
-        raise CoreError("physical node does not support addfile")
+    def create_dir(self, dir_path: Path) -> None:
+        raise CoreError("physical node does not support creating directories")
+
+    def create_file(self, file_path: Path, contents: str, mode: int = 0o644) -> None:
+        raise CoreError("physical node does not support creating files")
+
+    def copy_file(self, src_path: Path, dst_path: Path, mode: int = None) -> None:
+        raise CoreError("physical node does not support copying files")
 
 
 class Rj45Node(CoreNodeBase):
@@ -429,12 +425,6 @@ class Rj45Node(CoreNodeBase):
 
     def termcmdstring(self, sh: str) -> str:
         raise CoreError("rj45 does not support terminal commands")
-
-    def addfile(self, src_path: str, file_path: str) -> None:
-        raise CoreError("rj45 does not support addfile")
-
-    def nodefile(self, file_path: str, contents: str, mode: int = 0o644) -> None:
-        raise CoreError("rj45 does not support nodefile")
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         raise CoreError("rj45 does not support cmds")

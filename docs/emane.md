@@ -33,7 +33,7 @@ user space socket to the TAP device for sending and receiving data from CORE.
 An EMANE instance sends and receives OTA (Over-The-Air) traffic to and from
 other EMANE instances via a control port (e.g. *ctrl0*, *ctrl1*).  It also
 sends and receives Events to and from the Event Service using the same or a
-different control port. EMANE models are configured through CORE's WLAN
+different control port. EMANE models are configured through the GUI's
 configuration dialog. A corresponding EmaneModel Python class is sub-classed
 for each supported EMANE model, to provide configuration items and their
 mapping to XML files. This way new models can be easily supported. When
@@ -62,13 +62,13 @@ Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
 > **WARNING:** demo files will be found within the new `core-pygui`
 
-|Topic|Model|Description|
-|---|---|---|
-|[XML Files](emane/files.md)|RF Pipe|Overview of generated XML files used to drive EMANE|
-|[GPSD](emane/gpsd.md)|RF Pipe|Overview of running and integrating gpsd with EMANE|
-|[Precomputed](emane/precomputed.md)|RF Pipe|Overview of using the precomputed propagation model|
-|[EEL](emane/eel.md)|RF Pipe|Overview of using the Emulation Event Log (EEL) Generator|
-|[Antenna Profiles](emane/antenna.md)|RF Pipe|Overview of using antenna profiles in EMANE|
+| Topic                                | Model   | Description                                               |
+|--------------------------------------|---------|-----------------------------------------------------------|
+| [XML Files](emane/files.md)          | RF Pipe | Overview of generated XML files used to drive EMANE       |
+| [GPSD](emane/gpsd.md)                | RF Pipe | Overview of running and integrating gpsd with EMANE       |
+| [Precomputed](emane/precomputed.md)  | RF Pipe | Overview of using the precomputed propagation model       |
+| [EEL](emane/eel.md)                  | RF Pipe | Overview of using the Emulation Event Log (EEL) Generator |
+| [Antenna Profiles](emane/antenna.md) | RF Pipe | Overview of using antenna profiles in EMANE               |
 
 ## EMANE Configuration
 
@@ -201,26 +201,20 @@ EMANE. Using the primary control channel prevents your emulation session from
 sending multicast traffic on your local network and interfering with other
 EMANE users.
 
-EMANE is configured through a WLAN node, because it is all about emulating
-wireless radio networks. Once a node is linked to a WLAN cloud configured
-with an EMANE model, the radio interface on that node may also be configured
+EMANE is configured through an EMANE node. Once a node is linked to an EMANE
+cloud, the radio interface on that node may also be configured
 separately (apart from the cloud.)
 
-Double-click on a WLAN node to invoke the WLAN configuration dialog. Click
-the *EMANE* tab; when EMANE has been properly installed, EMANE wireless modules
-should be listed in the *EMANE Models* list. (You may need to restart the
+Right click on an EMANE node and select EMANE Config to open the configuration dialog.
+The EMANE models should be listed here for selection. (You may need to restart the
 CORE daemon if it was running prior to installing the EMANE Python bindings.)
-Click on a model name to enable it.
 
-When an EMANE model is selected in the *EMANE Models* list, clicking on the
-*model options* button causes the GUI to query the CORE daemon for
-configuration items. Each model will have different parameters, refer to the
+When an EMANE model is selected, you can click on the models option button
+causing the GUI to query the CORE daemon for  configuration items.
+Each model will have different parameters, refer to the
 EMANE documentation for an explanation of each item. The defaults values are
-presented in the dialog. Clicking *Apply*  and *Apply* again will store the
+presented in the dialog. Clicking *Apply* and *Apply* again will store the
 EMANE model selections.
-
-The *EMANE options* button allows specifying some global parameters for
-EMANE, some of which are necessary for distributed operation.
 
 The RF-PIPE and IEEE 802.11abg models use a Universal PHY that supports
 geographic location information for determining pathloss between nodes. A
@@ -241,21 +235,12 @@ used to achieve geo-location accuracy in this situation.
 Clicking the green *Start* button launches the emulation and causes TAP devices
 to be created in the virtual nodes that are linked to the EMANE WLAN. These
 devices appear with interface names such as eth0, eth1, etc. The EMANE processes
-should now be running in each namespace. For a four node scenario:
+should now be running in each namespace.
 
-```shell
-ps -aef | grep emane
-root  1063 969 0 11:46 ? 00:00:00 emane -d --logl 3 -r -f /tmp/pycore.59992/emane4.log /tmp/pycore.59992/platform4.xml
-root  1117 959 0 11:46 ? 00:00:00 emane -d --logl 3 -r -f /tmp/pycore.59992/emane2.log /tmp/pycore.59992/platform2.xml
-root  1179 942 0 11:46 ? 00:00:00 emane -d --logl 3 -r -f /tmp/pycore.59992/emane1.log /tmp/pycore.59992/platform1.xml
-root  1239 979 0 11:46 ? 00:00:00 emane -d --logl 3 -r -f /tmp/pycore.59992/emane5.log /tmp/pycore.59992/platform5.xml
-```
-
-The example above shows the EMANE processes started by CORE. To view the
-configuration generated by CORE, look in the */tmp/pycore.nnnnn/* session
-directory for a *platform.xml* file and other XML files. One easy way to view
-this information is by double-clicking one of the virtual nodes, and typing
-*cd ..* in the shell to go up to the session directory.
+To view the  configuration generated by CORE, look in the */tmp/pycore.nnnnn/* session
+directory to find the generated EMANE xml files. One easy way to view
+this information is by double-clicking one of the virtual nodes and listing the files
+in the shell.
 
 ![](static/single-pc-emane.png)
 
@@ -278,55 +263,40 @@ within a node.
 **IMPORTANT: If an auxiliary control network is used, an interface on the host
 has to be assigned to that network.**
 
-Each machine that will act as an emulation server needs to have CORE and EMANE
-installed.
+Each machine that will act as an emulation server needs to have CORE distributed
+and EMANE installed. As well as be setup to work for CORE distributed mode.
 
-The IP addresses of the available servers are configured from the CORE emulation
-servers dialog box (choose *Session* then *Emulation servers...*). This list of
-servers is stored in a *~/.core/servers.conf* file. The dialog shows available
+The IP addresses of the available servers are configured from the CORE
+servers dialog box. The dialog shows available
 servers, some or all of which may be assigned to nodes on the canvas.
 
-Nodes need to be assigned to emulation servers. Select several nodes,
-right-click them, and choose *Assign to* and the name of the desired server.
-When a node is not assigned to any emulation server, it will be emulated
-locally. The local machine that the GUI connects with is considered the
-"master" machine, which in turn connects to the other emulation server
-"slaves". Public key SSH should be configured from the master to the slaves.
+Nodes need to be assigned to servers and can be done so using the node
+configuration dialog. When a node is not assigned to any emulation server,
+it will be emulated locally.
 
-Under the *EMANE* tab of the EMANE WLAN, click on the *EMANE options* button.
-This brings up the emane configuration dialog. The *enable OTA Manager channel*
-should be set to *on*. The *OTA Manager device* and *Event Service device*
-should be set to a control network device. For example, if you have a primary
-and auxiliary control network (i.e. controlnet and controlnet1), and you want
-the OTA traffic to have its dedicated network, set the OTA Manager device to
-*ctrl1* and the Event Service device to *ctrl0*. The EMANE models can be
-configured. Click *Apply* to save these settings.
+Using the EMANE node configuration dialog. You can change the EMANE model
+being used, along with changing any configuration setting from their defaults.
 
 ![](static/distributed-emane-configuration.png)
 
 > **NOTE:** Here is a quick checklist for distributed emulation with EMANE.
 
    1. Follow the steps outlined for normal CORE.
-   2. Under the *EMANE* tab of the EMANE WLAN, click on *EMANE options*.
-   3. Turn on the *OTA Manager channel* and set the *OTA Manager device*.
-      Also set the *Event Service device*.
-   4. Select groups of nodes, right-click them, and assign them to servers
-      using the *Assign to* menu.
-   5. Synchronize your machine's clocks prior to starting the emulation,
+   2. Assign nodes to desired servers
+   3. Synchronize your machine's clocks prior to starting the emulation,
       using *ntp* or *ptp*. Some EMANE models are sensitive to timing.
-   6. Press the *Start* button to launch the distributed emulation.
+   4. Press the *Start* button to launch the distributed emulation.
 
 
 Now when the Start button is used to instantiate the emulation, the local CORE
-Python daemon will connect to other emulation servers that have been assigned
+daemon will connect to other emulation servers that have been assigned
 to nodes. Each server will have its own session directory where the
 *platform.xml* file and other EMANE XML files are generated. The NEM IDs are
-automatically coordinated across servers so there is no overlap. Each server
-also gets its own Platform ID.
+automatically coordinated across servers so there is no overlap.
 
 An Ethernet device is used for disseminating multicast EMANE events, as
 specified in the *configure emane* dialog. EMANE's Event Service can be run
-with mobility or pathloss scripts as described in :ref:`Single_PC_with_EMANE`.
+with mobility or pathloss scripts.
 If CORE is not subscribed to location events, it will generate them as nodes
 are moved on the canvas.
 

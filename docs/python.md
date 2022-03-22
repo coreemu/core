@@ -341,19 +341,11 @@ EMANE Model Configuration:
 ```python
 from core import utils
 
-# emane network specific config
-session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
-    "unicastrate": "3",
-})
-
-# node specific config
-session.emane.set_model_config(node.id, EmaneIeee80211abgModel.name, {
-    "unicastrate": "3",
-})
-
-# node interface specific config
+# standardized way to retrieve an appropriate config id
+# iface id can be omitted, to allow a general configuration for a model, per node
 config_id = utils.iface_config_id(node.id, iface_id)
-session.emane.set_model_config(config_id, EmaneIeee80211abgModel.name, {
+# set emane configuration for the config id
+session.emane.set_config(config_id, EmaneIeee80211abgModel.name, {
     "unicastrate": "3",
 })
 ```

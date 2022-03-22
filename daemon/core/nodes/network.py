@@ -22,7 +22,7 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreCommandError, CoreError
 from core.executables import NFTABLES
-from core.nodes.base import CoreNetworkBase
+from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface, GreTap, Veth
 from core.nodes.netclient import get_net_client
 
@@ -435,6 +435,9 @@ class CoreNetwork(CoreNetworkBase):
             return
         for ip in ips:
             self.net_client.create_address(self.brname, ip)
+
+    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
+        raise CoreError(f"{type(self).__name__} does not support, custom interfaces")
 
 
 class GreTapBridge(CoreNetwork):

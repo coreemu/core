@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Type
 
-import core.services
 from core import utils
 from core.configservice.manager import ConfigServiceManager
 from core.emane.modelmanager import EmaneModelManager
@@ -92,7 +91,7 @@ class CoreEmu:
         :return: nothing
         """
         # load default services
-        self.service_errors = core.services.load()
+        self.service_errors = ServiceManager.load_locals()
         # load custom services
         service_paths = self.config.get("custom_services_dir")
         logger.debug("custom service paths: %s", service_paths)

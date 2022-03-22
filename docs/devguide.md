@@ -9,13 +9,13 @@ The CORE source consists of several different programming languages for
 historical reasons. Current development focuses on the Python modules and
 daemon. Here is a brief description of the source directories.
 
-| Directory | Description |
-|---|---|
-|daemon|Python CORE daemon code that handles receiving API calls and creating containers|
-|docs|Markdown Documentation currently hosted on GitHub|
-|gui|Tcl/Tk GUI|
-|man|Template files for creating man pages for various CORE command line utilities|
-|netns|C program for creating CORE containers|
+| Directory | Description                                                                          |
+|-----------|--------------------------------------------------------------------------------------|
+| daemon    | Python CORE daemon/gui code that handles receiving API calls and creating containers |
+| docs      | Markdown Documentation currently hosted on GitHub                                    |
+| gui       | Tcl/Tk GUI                                                                           |
+| man       | Template files for creating man pages for various CORE command line utilities        |
+| netns     | C program for creating CORE containers                                               |
 
 ## Getting started
 

@@ -637,6 +637,15 @@ class SessionSummary:
             dir=proto.dir,
         )
 
+    def to_proto(self) -> core_pb2.SessionSummary:
+        return core_pb2.SessionSummary(
+            id=self.id,
+            state=self.state.value,
+            nodes=self.nodes,
+            file=self.file,
+            dir=self.dir,
+        )
+
 
 @dataclass
 class Hook:

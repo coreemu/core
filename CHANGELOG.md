@@ -1,3 +1,17 @@
+## 2022-03-21 CORE 8.2.0
+
+* core-gui
+    * improved failed starts to trigger runtime to allow node investigation
+* core-daemon
+    * improved default service loading to use a full import path
+    * updated session instantiation to always set to a runtime state
+* core-cli
+    * \#672 - fixed xml loading
+    * \#578 - restored json flag and added geo output to session overview
+* Documentation
+    * updated emane example and documentation
+    * improved table markdown
+
 ## 2022-02-18 CORE 8.1.0
 
 * Installation

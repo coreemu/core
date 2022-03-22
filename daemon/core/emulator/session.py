@@ -694,7 +694,11 @@ class Session:
             self.run_hook(hook)
 
     def add_node_file(
-        self, node_id: int, src_path: Path, file_path: Path, data: str
+        self,
+        node_id: int,
+        src_path: Optional[Path],
+        file_path: Path,
+        data: Optional[str],
     ) -> None:
         """
         Add a file to a node.
@@ -707,7 +711,7 @@ class Session:
         """
         node = self.get_node(node_id, CoreNode)
         if src_path is not None:
-            node.addfile(src_path, file_path)
+            node.copy_file(src_path, file_path)
         elif data is not None:
             node.create_file(file_path, data)
 
@@ -1173,34 +1177,30 @@ class Session:
 
         :return: list of service boot errors during startup
         """
+        if self.state == EventTypes.RUNTIME_STATE:
+            logger.warning("ignoring instantiate, already in runtime state")
+            return []
         # write current nodes out to session directory file
         self.write_nodes()
-
         # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
         self.add_remove_control_net(0, remove=False)
-
         # initialize distributed tunnels
         self.distributed.start()
-
         # instantiate will be invoked again upon emane configure
         if self.emane.startup() == EmaneState.NOT_READY:
             return []
-
         # boot node services and then start mobility
         exceptions = self.boot_nodes()
         if not exceptions:
             self.mobility.startup()
-
             # notify listeners that instantiation is complete
             event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
             self.broadcast_event(event)
-
-            # assume either all nodes have booted already, or there are some
-            # nodes on slave servers that will be booted and those servers will
-            # send a node status response message
-            self.check_runtime()
+            # startup event loop
+            self.event_loop.run()
+        self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
         return exceptions
 
     def get_node_count(self) -> int:
@@ -1221,28 +1221,6 @@ class Session:
                     continue
                 count += 1
         return count
-
-    def check_runtime(self) -> None:
-        """
-        Check if we have entered the runtime state, that all nodes have been
-        started and the emulation is running. Start the event loop once we
-        have entered runtime (time=0).
-
-        :return: nothing
-        """
-        # this is called from instantiate() after receiving an event message
-        # for the instantiation state
-        logger.debug(
-            "session(%s) checking if not in runtime state, current state: %s",
-            self.id,
-            self.state.name,
-        )
-        if self.state == EventTypes.RUNTIME_STATE:
-            logger.info("valid runtime state found, returning")
-            return
-        # start event loop and set to runtime
-        self.event_loop.run()
-        self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
 
     def data_collect(self) -> None:
         """

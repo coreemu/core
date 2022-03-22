@@ -304,16 +304,13 @@ class Toolbar(ttk.Frame):
         task.start()
 
     def start_callback(self, result: bool, exceptions: List[str]) -> None:
-        if result:
-            self.set_runtime()
-            self.app.core.show_mobility_players()
-        else:
-            enable_buttons(self.design_frame, enabled=True)
-            if exceptions:
-                message = "\n".join(exceptions)
-                self.app.show_exception_data(
-                    "Start Exception", "Session failed to start", message
-                )
+        self.set_runtime()
+        self.app.core.show_mobility_players()
+        if not result and exceptions:
+            message = "\n".join(exceptions)
+            self.app.show_exception_data(
+                "Start Exception", "Session failed to start", message
+            )
 
     def set_runtime(self) -> None:
         enable_buttons(self.runtime_frame, enabled=True)
