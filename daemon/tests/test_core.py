@@ -9,7 +9,6 @@ from typing import List, Type
 import pytest
 
 from core.emulator.data import IpPrefixes, NodeOptions
-from core.emulator.enumerations import MessageFlags
 from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -62,44 +61,6 @@ class TestCore:
         # ping node2 from node1 and assert success
         status = ping(node1, node2, ip_prefixes)
         assert not status
-
-    def test_iface(self, session: Session, ip_prefixes: IpPrefixes):
-        """
-        Test interface methods.
-
-        :param session: session for test
-        :param ip_prefixes: generates ip addresses for nodes
-        """
-
-        # create ptp
-        ptp_node = session.add_node(PtpNet)
-
-        # create nodes
-        node1 = session.add_node(CoreNode)
-        node2 = session.add_node(CoreNode)
-
-        # link nodes to ptp net
-        for node in [node1, node2]:
-            iface = ip_prefixes.create_iface(node)
-            session.add_link(node.id, ptp_node.id, iface1_data=iface)
-
-        # instantiate session
-        session.instantiate()
-
-        # check link data gets generated
-        assert ptp_node.links(MessageFlags.ADD)
-
-        # check common nets exist between linked nodes
-        assert node1.commonnets(node2)
-        assert node2.commonnets(node1)
-
-        # check we can retrieve interface id
-        assert 0 in node1.ifaces
-        assert 0 in node2.ifaces
-
-        # delete interface and test that if no longer exists
-        node1.delete_iface(0)
-        assert 0 not in node1.ifaces
 
     def test_wlan_ping(self, session: Session, ip_prefixes: IpPrefixes):
         """

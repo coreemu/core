@@ -61,6 +61,8 @@ service CoreApi {
     }
     rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
     }
+    rpc Linked (LinkedRequest) returns (LinkedResponse) {
+    }
 
     // mobility rpc
     rpc GetMobilityConfig (mobility.GetMobilityConfigRequest) returns (mobility.GetMobilityConfigResponse) {
@@ -683,4 +685,16 @@ message Geo {
 message Server {
     string name = 1;
     string host = 2;
+}
+
+message LinkedRequest {
+    int32 session_id = 1;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
+    bool linked = 6;
+}
+
+message LinkedResponse {
 }

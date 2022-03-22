@@ -16,7 +16,7 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetNodeConfigServiceRequest,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest
+from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest, LinkedRequest
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     GetEmaneEventChannelRequest,
@@ -1048,6 +1048,36 @@ class CoreGrpcClient:
             exist
         """
         self.stub.EmanePathlosses(streamer.iter())
+
+    def linked(
+        self,
+        session_id: int,
+        node1_id: int,
+        node2_id: int,
+        iface1_id: int,
+        iface2_id: int,
+        linked: bool,
+    ) -> None:
+        """
+        Link or unlink an existing core wired link.
+
+        :param session_id: session containing the link
+        :param node1_id: first node in link
+        :param node2_id: second node in link
+        :param iface1_id: node1 interface
+        :param iface2_id: node2 interface
+        :param linked: True to connect link, False to disconnect
+        :return: nothing
+        """
+        request = LinkedRequest(
+            session_id=session_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1_id=iface1_id,
+            iface2_id=iface2_id,
+            linked=linked,
+        )
+        self.stub.Linked(request)
 
     def connect(self) -> None:
         """

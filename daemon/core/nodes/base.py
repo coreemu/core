@@ -13,11 +13,11 @@ import netaddr
 
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
-from core.emulator.data import InterfaceData, LinkData
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
+from core.emulator.data import InterfaceData, LinkOptions
+from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
-from core.nodes.interface import DEFAULT_MTU, CoreInterface, TunTap, Veth
+from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
@@ -74,6 +74,7 @@ class NodeBase(abc.ABC):
         self.icon: Optional[str] = None
         self.position: Position = Position()
         self.up: bool = False
+        self.lock: RLock = RLock()
         self.net_client: LinuxNetClient = get_net_client(
             self.session.use_ovs(), self.host_cmd
         )
@@ -92,6 +93,18 @@ class NodeBase(abc.ABC):
         """
         Each object implements its own shutdown method.
 
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        """
+        Adopt an interface, placing within network namespacing for containers
+        and setting to bridge masters for network like nodes.
+
+        :param iface: interface to adopt
+        :param name: proper name to use for interface
         :return: nothing
         """
         raise NotImplementedError
@@ -120,6 +133,19 @@ class NodeBase(abc.ABC):
         else:
             return self.server.remote_cmd(args, env, cwd, wait)
 
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command that is in the context of a node, default is to run a standard
+        host command.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        return self.host_cmd(args, wait=wait, shell=shell)
+
     def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
         Set the (x,y,z) position of the object.
@@ -138,6 +164,70 @@ class NodeBase(abc.ABC):
         :return: x,y,z position tuple
         """
         return self.position.get()
+
+    def create_iface(
+        self, iface_data: InterfaceData = None, options: LinkOptions = None
+    ) -> CoreInterface:
+        """
+        Creates an interface and adopts it to a node.
+
+        :param iface_data: data to create interface with
+        :param options: options to create interface with
+        :return: created interface
+        """
+        with self.lock:
+            if iface_data and iface_data.id is not None:
+                if iface_data.id in self.ifaces:
+                    raise CoreError(
+                        f"node({self.id}) interface({iface_data.id}) already exists"
+                    )
+                iface_id = iface_data.id
+            else:
+                iface_id = self.next_iface_id()
+            mtu = DEFAULT_MTU
+            if iface_data and iface_data.mtu is not None:
+                mtu = iface_data.mtu
+            name = f"veth{self.id}.{iface_id}.{self.session.short_session_id()}"
+            localname = f"{name}p"
+            iface = CoreInterface(
+                iface_id,
+                name,
+                localname,
+                self.session.use_ovs(),
+                mtu,
+                node=self,
+                server=self.server,
+            )
+            if iface_data:
+                if iface_data.mac:
+                    iface.set_mac(iface_data.mac)
+                for ip in iface_data.get_ips():
+                    iface.add_ip(ip)
+            if options:
+                iface.options.update(options)
+            self.ifaces[iface_id] = iface
+        if self.up:
+            iface.startup()
+            if iface_data and iface_data.name is not None:
+                name = iface_data.name
+            else:
+                name = iface.name
+            self.adopt_iface(iface, name)
+        return iface
+
+    def delete_iface(self, iface_id: int) -> CoreInterface:
+        """
+        Delete an interface.
+
+        :param iface_id: interface id to delete
+        :return: the removed interface
+        """
+        if iface_id not in self.ifaces:
+            raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
+        iface = self.ifaces.pop(iface_id)
+        logger.info("node(%s) removing interface(%s)", self.name, iface.name)
+        iface.shutdown()
+        return iface
 
     def get_iface(self, iface_id: int) -> CoreInterface:
         """
@@ -191,15 +281,6 @@ class NodeBase(abc.ABC):
         self.iface_id += 1
         return iface_id
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Build link data for this node.
-
-        :param flags: message flags
-        :return: list of link data
-        """
-        return []
-
 
 class CoreNodeBase(NodeBase):
     """
@@ -226,14 +307,6 @@ class CoreNodeBase(NodeBase):
         self.config_services: Dict[str, "ConfigService"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
-
-    @abc.abstractmethod
-    def startup(self) -> None:
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def shutdown(self) -> None:
-        raise NotImplementedError
 
     @abc.abstractmethod
     def create_dir(self, dir_path: Path) -> None:
@@ -271,38 +344,12 @@ class CoreNodeBase(NodeBase):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        """
-        Runs a command within a node container.
-
-        :param args: command to run
-        :param wait: True to wait for status, False otherwise
-        :param shell: True to use shell, False otherwise
-        :return: combined stdout and stderr
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def termcmdstring(self, sh: str) -> str:
         """
         Create a terminal command string.
 
         :param sh: shell to execute command in
         :return: str
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def new_iface(
-        self, net: "CoreNetworkBase", iface_data: InterfaceData
-    ) -> CoreInterface:
-        """
-        Create a new interface.
-
-        :param net: network to associate with
-        :param iface_data: interface data for new interface
-        :return: interface index
         """
         raise NotImplementedError
 
@@ -318,7 +365,7 @@ class CoreNodeBase(NodeBase):
 
     def host_path(self, path: Path, is_dir: bool = False) -> Path:
         """
-        Return the name of a node"s file on the host filesystem.
+        Return the name of a node's file on the host filesystem.
 
         :param path: path to translate to host path
         :param is_dir: True if path is a directory path, False otherwise
@@ -393,54 +440,6 @@ class CoreNodeBase(NodeBase):
         if self.tmpnodedir:
             self.host_cmd(f"rm -rf {self.directory}")
 
-    def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
-        """
-        Add network interface to node and set the network interface index if successful.
-
-        :param iface: network interface to add
-        :param iface_id: interface id
-        :return: nothing
-        """
-        if iface_id in self.ifaces:
-            raise CoreError(f"interface({iface_id}) already exists")
-        self.ifaces[iface_id] = iface
-        iface.node_id = iface_id
-
-    def delete_iface(self, iface_id: int) -> None:
-        """
-        Delete a network interface
-
-        :param iface_id: interface index to delete
-        :return: nothing
-        """
-        if iface_id not in self.ifaces:
-            raise CoreError(f"node({self.name}) interface({iface_id}) does not exist")
-        iface = self.ifaces.pop(iface_id)
-        logger.info("node(%s) removing interface(%s)", self.name, iface.name)
-        iface.detachnet()
-        iface.shutdown()
-
-    def attachnet(self, iface_id: int, net: "CoreNetworkBase") -> None:
-        """
-        Attach a network.
-
-        :param iface_id: interface of index to attach
-        :param net: network to attach
-        :return: nothing
-        """
-        iface = self.get_iface(iface_id)
-        iface.attachnet(net)
-
-    def detachnet(self, iface_id: int) -> None:
-        """
-        Detach network interface.
-
-        :param iface_id: interface id to detach
-        :return: nothing
-        """
-        iface = self.get_iface(iface_id)
-        iface.detachnet()
-
     def setposition(self, x: float = None, y: float = None, z: float = None) -> None:
         """
         Set position.
@@ -454,25 +453,6 @@ class CoreNodeBase(NodeBase):
         if changed:
             for iface in self.get_ifaces():
                 iface.setposition()
-
-    def commonnets(
-        self, node: "CoreNodeBase", want_ctrl: bool = False
-    ) -> List[Tuple["CoreNetworkBase", CoreInterface, CoreInterface]]:
-        """
-        Given another node or net object, return common networks between
-        this node and that object. A list of tuples is returned, with each tuple
-        consisting of (network, interface1, interface2).
-
-        :param node: node to get common network with
-        :param want_ctrl: flag set to determine if control network are wanted
-        :return: tuples of common networks
-        """
-        common = []
-        for iface1 in self.get_ifaces(control=want_ctrl):
-            for iface2 in node.get_ifaces():
-                if iface1.net == iface2.net:
-                    common.append((iface1.net, iface1, iface2))
-        return common
 
 
 class CoreNode(CoreNodeBase):
@@ -504,7 +484,6 @@ class CoreNode(CoreNodeBase):
         self.directory: Optional[Path] = directory
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.pid: Optional[int] = None
-        self.lock: RLock = RLock()
         self._mounts: List[Tuple[Path, Path]] = []
         self.node_net_client: LinuxNetClient = self.create_node_net_client(
             self.session.use_ovs()
@@ -585,6 +564,10 @@ class CoreNode(CoreNodeBase):
                 self._mounts = []
                 # shutdown all interfaces
                 for iface in self.get_ifaces():
+                    try:
+                        self.node_net_client.device_flush(iface.name)
+                    except CoreCommandError:
+                        pass
                     iface.shutdown()
                 # kill node process if present
                 try:
@@ -691,150 +674,6 @@ class CoreNode(CoreNodeBase):
         self.cmd(f"{MOUNT} -n --bind {src_path} {target_path}")
         self._mounts.append((src_path, target_path))
 
-    def next_iface_id(self) -> int:
-        """
-        Retrieve a new interface index.
-
-        :return: new interface index
-        """
-        with self.lock:
-            return super().next_iface_id()
-
-    def newveth(self, iface_id: int = None, ifname: str = None, mtu: int = None) -> int:
-        """
-        Create a new interface.
-
-        :param iface_id: id for the new interface
-        :param ifname: name for the new interface
-        :param mtu: mtu for interface
-        :return: nothing
-        """
-        with self.lock:
-            mtu = mtu if mtu is not None else DEFAULT_MTU
-            iface_id = iface_id if iface_id is not None else self.next_iface_id()
-            ifname = ifname if ifname is not None else f"eth{iface_id}"
-            sessionid = self.session.short_session_id()
-            try:
-                suffix = f"{self.id:x}.{iface_id}.{sessionid}"
-            except TypeError:
-                suffix = f"{self.id}.{iface_id}.{sessionid}"
-            localname = f"veth{suffix}"
-            name = f"{localname}p"
-            veth = Veth(self.session, name, localname, mtu, self.server, self)
-            veth.adopt_node(iface_id, ifname, self.up)
-            return iface_id
-
-    def newtuntap(self, iface_id: int = None, ifname: str = None) -> int:
-        """
-        Create a new tunnel tap.
-
-        :param iface_id: interface id
-        :param ifname: interface name
-        :return: interface index
-        """
-        with self.lock:
-            iface_id = iface_id if iface_id is not None else self.next_iface_id()
-            ifname = ifname if ifname is not None else f"eth{iface_id}"
-            sessionid = self.session.short_session_id()
-            localname = f"tap{self.id}.{iface_id}.{sessionid}"
-            name = ifname
-            tuntap = TunTap(self.session, name, localname, node=self)
-            if self.up:
-                tuntap.startup()
-            try:
-                self.add_iface(tuntap, iface_id)
-            except CoreError as e:
-                tuntap.shutdown()
-                raise e
-            return iface_id
-
-    def set_mac(self, iface_id: int, mac: str) -> None:
-        """
-        Set hardware address for an interface.
-
-        :param iface_id: id of interface to set hardware address for
-        :param mac: mac address to set
-        :return: nothing
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        iface = self.get_iface(iface_id)
-        iface.set_mac(mac)
-        if self.up:
-            self.node_net_client.device_mac(iface.name, str(iface.mac))
-
-    def add_ip(self, iface_id: int, ip: str) -> None:
-        """
-        Add an ip address to an interface in the format "10.0.0.1/24".
-
-        :param iface_id: id of interface to add address to
-        :param ip: address to add to interface
-        :return: nothing
-        :raises CoreError: when ip address provided is invalid
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        iface = self.get_iface(iface_id)
-        iface.add_ip(ip)
-        if self.up:
-            # ipv4 check
-            broadcast = None
-            if netaddr.valid_ipv4(ip):
-                broadcast = "+"
-            self.node_net_client.create_address(iface.name, ip, broadcast)
-
-    def remove_ip(self, iface_id: int, ip: str) -> None:
-        """
-        Remove an ip address from an interface in the format "10.0.0.1/24".
-
-        :param iface_id: id of interface to delete address from
-        :param ip: ip address to remove from interface
-        :return: nothing
-        :raises CoreError: when ip address provided is invalid
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        iface = self.get_iface(iface_id)
-        iface.remove_ip(ip)
-        if self.up:
-            self.node_net_client.delete_address(iface.name, ip)
-
-    def ifup(self, iface_id: int) -> None:
-        """
-        Bring an interface up.
-
-        :param iface_id: index of interface to bring up
-        :return: nothing
-        """
-        if self.up:
-            iface = self.get_iface(iface_id)
-            self.node_net_client.device_up(iface.name)
-
-    def new_iface(
-        self, net: "CoreNetworkBase", iface_data: InterfaceData
-    ) -> CoreInterface:
-        """
-        Create a new network interface.
-
-        :param net: network to associate with
-        :param iface_data: interface data for new interface
-        :return: interface index
-        """
-        with self.lock:
-            if net.has_custom_iface:
-                return net.custom_iface(self, iface_data)
-            else:
-                iface_id = iface_data.id
-                if iface_id is not None and iface_id in self.ifaces:
-                    raise CoreError(
-                        f"node({self.name}) already has interface({iface_id})"
-                    )
-                iface_id = self.newveth(iface_id, iface_data.name, iface_data.mtu)
-                self.attachnet(iface_id, net)
-                if iface_data.mac:
-                    self.set_mac(iface_id, iface_data.mac)
-                for ip in iface_data.get_ips():
-                    self.add_ip(iface_id, ip)
-                self.ifup(iface_id)
-                return self.get_iface(iface_id)
-
     def _find_parent_path(self, path: Path) -> Optional[Path]:
         """
         Check if there is a mounted parent directory created for this node.
@@ -910,6 +749,48 @@ class CoreNode(CoreNodeBase):
         if mode is not None:
             self.host_cmd(f"chmod {mode:o} {host_path}")
 
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        """
+        Adopt interface to the network namespace of the node and setting
+        the proper name provided.
+
+        :param iface: interface to adopt
+        :param name: proper name for interface
+        :return: nothing
+        """
+        # TODO: container, checksums off (container only?)
+        # TODO: container, get flow id (container only?)
+        # validate iface belongs to node and get id
+        iface_id = self.get_iface_id(iface)
+        if iface_id == -1:
+            raise CoreError(f"adopting unknown iface({iface.name})")
+        # add iface to container namespace
+        self.net_client.device_ns(iface.name, str(self.pid))
+        # update iface name to container name
+        name = name if name else f"eth{iface_id}"
+        self.node_net_client.device_name(iface.name, name)
+        iface.name = name
+        # turn checksums off
+        self.node_net_client.checksums_off(iface.name)
+        # retrieve flow id for container
+        iface.flow_id = self.node_net_client.get_ifindex(iface.name)
+        logger.debug("interface flow index: %s - %s", iface.name, iface.flow_id)
+        # set mac address
+        if iface.mac:
+            self.node_net_client.device_mac(iface.name, str(iface.mac))
+            logger.debug("interface mac: %s - %s", iface.name, iface.mac)
+        # set all addresses
+        for ip in iface.ips():
+            # ipv4 check
+            broadcast = None
+            if netaddr.valid_ipv4(ip):
+                broadcast = "+"
+            self.node_net_client.create_address(iface.name, str(ip), broadcast)
+        # configure iface options
+        iface.set_config()
+        # set iface up
+        self.node_net_client.device_up(iface.name)
+
 
 class CoreNetworkBase(NodeBase):
     """
@@ -917,7 +798,6 @@ class CoreNetworkBase(NodeBase):
     """
 
     linktype: LinkTypes = LinkTypes.WIRED
-    has_custom_iface: bool = False
 
     def __init__(
         self,
@@ -941,57 +821,6 @@ class CoreNetworkBase(NodeBase):
         self.linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
         self.linked_lock: threading.Lock = threading.Lock()
 
-    @abc.abstractmethod
-    def startup(self) -> None:
-        """
-        Each object implements its own startup method.
-
-        :return: nothing
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def shutdown(self) -> None:
-        """
-        Each object implements its own shutdown method.
-
-        :return: nothing
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def linknet(self, net: "CoreNetworkBase") -> CoreInterface:
-        """
-        Link network to another.
-
-        :param net: network to link with
-        :return: created interface
-        """
-        raise NotImplementedError
-
-    @abc.abstractmethod
-    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
-        """
-        Defines custom logic for creating an interface, if required.
-
-        :param node: node to create interface for
-        :param iface_data: data for creating interface
-        :return: created interface
-        """
-        raise NotImplementedError
-
-    def get_linked_iface(self, net: "CoreNetworkBase") -> Optional[CoreInterface]:
-        """
-        Return the interface that links this net with another net.
-
-        :param net: interface to get link for
-        :return: interface the provided network is linked to
-        """
-        for iface in self.get_ifaces():
-            if iface.othernet == net:
-                return iface
-        return None
-
     def attach(self, iface: CoreInterface) -> None:
         """
         Attach network interface.
@@ -999,9 +828,10 @@ class CoreNetworkBase(NodeBase):
         :param iface: network interface to attach
         :return: nothing
         """
-        i = self.next_iface_id()
-        self.ifaces[i] = iface
-        iface.net_id = i
+        iface_id = self.next_iface_id()
+        self.ifaces[iface_id] = iface
+        iface.net = self
+        iface.net_id = iface_id
         with self.linked_lock:
             self.linked[iface] = {}
 
@@ -1013,55 +843,10 @@ class CoreNetworkBase(NodeBase):
         :return: nothing
         """
         del self.ifaces[iface.net_id]
+        iface.net = None
         iface.net_id = None
         with self.linked_lock:
             del self.linked[iface]
-
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Build link data objects for this network. Each link object describes a link
-        between this network and a node.
-
-        :param flags: message type
-        :return: list of link data
-        """
-        all_links = []
-        # build a link message from this network node to each node having a
-        # connected interface
-        for iface in self.get_ifaces():
-            unidirectional = 0
-            linked_node = iface.node
-            if linked_node is None:
-                # two layer-2 switches/hubs linked together
-                if not iface.othernet:
-                    continue
-                linked_node = iface.othernet
-                if linked_node.id == self.id:
-                    continue
-                if iface.local_options != iface.options:
-                    unidirectional = 1
-            iface_data = iface.get_data()
-            link_data = LinkData(
-                message_type=flags,
-                type=self.linktype,
-                node1_id=self.id,
-                node2_id=linked_node.id,
-                iface2=iface_data,
-                options=iface.local_options,
-            )
-            link_data.options.unidirectional = unidirectional
-            all_links.append(link_data)
-            if unidirectional:
-                link_data = LinkData(
-                    message_type=MessageFlags.NONE,
-                    type=self.linktype,
-                    node1_id=linked_node.id,
-                    node2_id=self.id,
-                    options=iface.options,
-                )
-                link_data.options.unidirectional = unidirectional
-                all_links.append(link_data)
-        return all_links
 
 
 class Position:

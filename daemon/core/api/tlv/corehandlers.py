@@ -43,7 +43,6 @@ from core.emulator.enumerations import (
     ConfigDataTypes,
     EventTypes,
     ExceptionLevels,
-    LinkTypes,
     MessageFlags,
     NodeTypes,
     RegisterTlvs,
@@ -782,10 +781,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             ip6=message.get_tlv(LinkTlvs.IFACE2_IP6.value),
             ip6_mask=message.get_tlv(LinkTlvs.IFACE2_IP6_MASK.value),
         )
-        link_type = LinkTypes.WIRED
-        link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
-        if link_type_value is not None:
-            link_type = LinkTypes(link_type_value)
         options = LinkOptions()
         options.delay = message.get_tlv(LinkTlvs.DELAY.value)
         options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
@@ -811,20 +806,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
             iface2_data.id = 0
 
         if message.flags & MessageFlags.ADD.value:
-            self.session.add_link(
-                node1_id, node2_id, iface1_data, iface2_data, options, link_type
-            )
+            self.session.add_link(node1_id, node2_id, iface1_data, iface2_data, options)
         elif message.flags & MessageFlags.DELETE.value:
             if isinstance(node1, Rj45Node):
                 iface1_data.id = node1.iface_id
             if isinstance(node2, Rj45Node):
                 iface2_data.id = node2.iface_id
-            self.session.delete_link(
-                node1_id, node2_id, iface1_data.id, iface2_data.id, link_type
-            )
+            self.session.delete_link(node1_id, node2_id, iface1_data.id, iface2_data.id)
         else:
             self.session.update_link(
-                node1_id, node2_id, iface1_data.id, iface2_data.id, options, link_type
+                node1_id, node2_id, iface1_data.id, iface2_data.id, options
             )
         return ()
 
