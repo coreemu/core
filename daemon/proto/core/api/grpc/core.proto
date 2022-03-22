@@ -282,12 +282,11 @@ message ConfigEvent {
     repeated int32 data_types = 5;
     string data_values = 6;
     string captions = 7;
-    string bitmap = 8;
-    string possible_values = 9;
-    string groups = 10;
-    int32 iface_id = 11;
-    int32 network_id = 12;
-    string opaque = 13;
+    string possible_values = 8;
+    string groups = 9;
+    int32 iface_id = 10;
+    int32 network_id = 11;
+    string opaque = 12;
 }
 
 message ExceptionEvent {

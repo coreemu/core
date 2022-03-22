@@ -6,10 +6,6 @@ if WANT_DOCS
   DOCS = docs man
 endif
 
-if WANT_GUI
-  GUI = gui
-endif
-
 if WANT_DAEMON
   DAEMON = daemon
 endif
@@ -19,7 +15,7 @@ if WANT_NETNS
 endif
 
 # keep docs last due to dependencies on binaries
-SUBDIRS = $(GUI) $(DAEMON) $(NETNS) $(DOCS)
+SUBDIRS = $(DAEMON) $(NETNS) $(DOCS)
 
 ACLOCAL_AMFLAGS = -I config
 
@@ -115,7 +111,6 @@ $(info creating file $1 from $1.in)
 	-e 's,[@]CORE_STATE_DIR[@],$(CORE_STATE_DIR),g' \
 	-e 's,[@]CORE_DATA_DIR[@],$(CORE_DATA_DIR),g' \
 	-e 's,[@]CORE_CONF_DIR[@],$(CORE_CONF_DIR),g' \
-	-e 's,[@]CORE_GUI_CONF_DIR[@],$(CORE_GUI_CONF_DIR),g' \
 	< $1.in > $1
 endef
 
@@ -123,7 +118,6 @@ all: change-files
 
 .PHONY: change-files
 change-files:
-	$(call change-files,gui/core-gui-legacy)
 	$(call change-files,daemon/core/constants.py)
 	$(call change-files,netns/setup.py)
 

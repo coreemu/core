@@ -124,19 +124,13 @@ connect_kwargs: {"key_filename": "/home/user/.ssh/core"}
 
 Within the core-gui navigate to menu option:
 
-**Session -> Emulation servers...**
+**Session -> Servers...**
 
 Within the dialog box presented, add or modify an existing server if present
 to use the name, address, and port for the a server you plan to use.
 
 Server configurations are loaded and written to in a configuration file for
 the GUI.
-
-**~/.core/servers.conf**
-```conf
-# name address port
-server2 192.168.0.2 4038
-```
 
 ## Assigning Nodes
 

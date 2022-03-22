@@ -80,7 +80,7 @@ EMANE. An example emane section from the **core.conf** file is shown below:
 emane_platform_port = 8101
 emane_transform_port = 8201
 emane_event_monitor = False
-#emane_models_dir = /home/username/.core/myemane
+#emane_models_dir = /home/<user>/.coregui/custom_emane
 # EMANE log level range [0,4] default: 2
 emane_log_level = 2
 emane_realtime = True
@@ -242,7 +242,7 @@ directory to find the generated EMANE xml files. One easy way to view
 this information is by double-clicking one of the virtual nodes and listing the files
 in the shell.
 
-![](static/single-pc-emane.png)
+![](static/emane-single-pc.png)
 
 ## Distributed EMANE
 
@@ -277,7 +277,7 @@ it will be emulated locally.
 Using the EMANE node configuration dialog. You can change the EMANE model
 being used, along with changing any configuration setting from their defaults.
 
-![](static/distributed-emane-configuration.png)
+![](static/emane-configuration.png)
 
 > **NOTE:** Here is a quick checklist for distributed emulation with EMANE.
 
@@ -304,5 +304,3 @@ Double-clicking on a node during runtime will cause the GUI to attempt to SSH
 to the emulation server for that node and run an interactive shell. The public
 key SSH configuration should be tested with all emulation servers prior to
 starting the emulation.
-
-![](static/distributed-emane-network.png)

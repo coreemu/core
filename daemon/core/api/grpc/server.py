@@ -243,13 +243,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # clear previous state and setup for creation
         session.clear()
+        session.directory.mkdir(exist_ok=True)
         if request.definition:
             state = EventTypes.DEFINITION_STATE
         else:
             state = EventTypes.CONFIGURATION_STATE
-        session.directory.mkdir(exist_ok=True)
         session.set_state(state)
-        session.user = request.session.user
+        if request.session.user:
+            session.set_user(request.session.user)
 
         # session options
         session.options.config_reset()

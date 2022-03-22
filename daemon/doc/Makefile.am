@@ -1,8 +1,4 @@
 # CORE
-# (c)2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz  <jeffrey.m.ahrenholz@boeing.com>
 #
 # Builds html and pdf documentation using Sphinx.
 #

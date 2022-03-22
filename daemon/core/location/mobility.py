@@ -225,7 +225,6 @@ class WirelessModel(ConfigurableOptions):
     """
 
     config_type: RegisterTlvs = RegisterTlvs.WIRELESS
-    bitmap: str = None
     position_callback: Callable[[CoreInterface], None] = None
 
     def __init__(self, session: "Session", _id: int) -> None:

@@ -1,5 +1,0 @@
-#
-# define the version number and release date here
-#
-set CORE_VERSION @PACKAGE_VERSION@
-set CORE_VERSION_DATE @PACKAGE_DATE@

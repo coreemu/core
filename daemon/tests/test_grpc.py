@@ -31,8 +31,6 @@ from core.api.grpc.wrappers import (
     SessionLocation,
     SessionState,
 )
-from core.api.tlv.dataconversion import ConfigShim
-from core.api.tlv.enumerations import ConfigFlags
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, IpPrefixes, NodeData, NodeOptions
@@ -810,30 +808,6 @@ class TestGrpc:
                 event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
             )
             session.broadcast_event(event_data)
-
-            # then
-            queue.get(timeout=5)
-
-    def test_config_events(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        queue = Queue()
-
-        def handle_event(event: Event) -> None:
-            assert event.session_id == session.id
-            assert event.config_event is not None
-            queue.put(event)
-
-        # then
-        with client.context_connect():
-            client.events(session.id, handle_event)
-            time.sleep(0.1)
-            session_config = session.options.get_configs()
-            config_data = ConfigShim.config_data(
-                0, None, ConfigFlags.UPDATE.value, session.options, session_config
-            )
-            session.broadcast_config(config_data)
 
             # then
             queue.get(timeout=5)
