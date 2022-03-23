@@ -195,24 +195,24 @@ class NodeBase(abc.ABC):
                 localname,
                 self.session.use_ovs(),
                 mtu,
-                node=self,
-                server=self.server,
+                self,
+                self.server,
             )
             if iface_data:
                 if iface_data.mac:
                     iface.set_mac(iface_data.mac)
                 for ip in iface_data.get_ips():
                     iface.add_ip(ip)
+                if iface_data.name:
+                    name = iface_data.name
             if options:
                 iface.options.update(options)
             self.ifaces[iface_id] = iface
         if self.up:
             iface.startup()
-            if iface_data and iface_data.name is not None:
-                name = iface_data.name
-            else:
-                name = iface.name
             self.adopt_iface(iface, name)
+        else:
+            iface.name = name
         return iface
 
     def delete_iface(self, iface_id: int) -> CoreInterface:

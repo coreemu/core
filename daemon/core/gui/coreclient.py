@@ -404,9 +404,11 @@ class CoreClient:
         for edge in self.links.values():
             link = edge.link
             if not definition:
-                if link.iface1 and not link.iface1.mac:
+                node1 = self.session.nodes[link.node1_id]
+                node2 = self.session.nodes[link.node2_id]
+                if nutils.is_container(node1) and link.iface1 and not link.iface1.mac:
                     link.iface1.mac = self.ifaces_manager.next_mac()
-                if link.iface2 and not link.iface2.mac:
+                if nutils.is_container(node2) and link.iface2 and not link.iface2.mac:
                     link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
             if edge.asymmetric_link:
