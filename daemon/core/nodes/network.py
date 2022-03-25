@@ -222,7 +222,7 @@ class CoreNetwork(CoreNetworkBase):
         policy: NetworkPolicy = None,
     ) -> None:
         """
-        Creates a LxBrNet instance.
+        Creates a CoreNetwork instance.
 
         :param session: core session instance
         :param _id: object id
