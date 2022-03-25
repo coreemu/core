@@ -23,7 +23,7 @@ RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
 BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
 IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
 MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
-NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
+NODE_MODELS: Set[str] = {"router", "PC", "mdr", "prouter"}
 ROUTER_NODES: Set[str] = {"router", "mdr"}
 ANTENNA_ICON: Optional[PhotoImage] = None
 

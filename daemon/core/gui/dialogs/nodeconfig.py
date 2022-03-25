@@ -230,13 +230,8 @@ class NodeConfigDialog(Dialog):
         if nutils.is_model(self.node):
             label = ttk.Label(frame, text="Type")
             label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            combobox = ttk.Combobox(
-                frame,
-                textvariable=self.type,
-                values=list(nutils.NODE_MODELS),
-                state=combo_state,
-            )
-            combobox.grid(row=row, column=1, sticky=tk.EW)
+            entry = ttk.Entry(frame, textvariable=self.type, state=tk.DISABLED)
+            entry.grid(row=row, column=1, sticky=tk.EW)
             row += 1
 
         # container image field
