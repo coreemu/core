@@ -58,6 +58,7 @@ from core.nodes.network import (
     WlanNode,
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
@@ -274,9 +275,9 @@ class Session:
         # custom links
         iface1 = None
         iface2 = None
-        if isinstance(node1, WlanNode):
+        if isinstance(node1, (WlanNode, WirelessNode)):
             iface2 = self._add_wlan_link(node2, iface2_data, node1)
-        elif isinstance(node2, WlanNode):
+        elif isinstance(node2, (WlanNode, WirelessNode)):
             iface1 = self._add_wlan_link(node1, iface1_data, node2)
         elif isinstance(node1, EmaneNet) and isinstance(node2, CoreNode):
             iface2 = self._add_emane_link(node2, iface2_data, node1)
@@ -1111,6 +1112,10 @@ class Session:
         # boot node services and then start mobility
         exceptions = self.boot_nodes()
         if not exceptions:
+            # complete wireless node
+            for node in self.nodes.values():
+                if isinstance(node, WirelessNode):
+                    node.post_startup()
             self.mobility.startup()
             # notify listeners that instantiation is complete
             event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
