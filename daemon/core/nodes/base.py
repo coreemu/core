@@ -766,8 +766,9 @@ class CoreNode(CoreNodeBase):
             raise CoreError(f"adopting unknown iface({iface.name})")
         # add iface to container namespace
         self.net_client.device_ns(iface.name, str(self.pid))
-        # update iface name to container name
-        name = name if name else f"eth{iface_id}"
+        # use default iface name for container, if a unique name was not provided
+        if iface.name == name:
+            name = f"eth{iface_id}"
         self.node_net_client.device_name(iface.name, name)
         iface.name = name
         # turn checksums off

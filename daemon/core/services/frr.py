@@ -7,13 +7,24 @@ from typing import Optional, Tuple
 import netaddr
 
 from core.emane.nodes import EmaneNet
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 FRR_STATE_DIR: str = "/var/run/frr"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 class FRRZebra(CoreService):
@@ -593,7 +604,7 @@ class FRRBabel(FrrService):
 
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        if iface.net and isinstance(iface.net, (EmaneNet, WlanNode)):
+        if is_wireless(iface.net):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"

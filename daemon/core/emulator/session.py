@@ -81,13 +81,18 @@ NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
+    NodeTypes.WIRELESS: WirelessNode,
 }
 NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
 CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
 CTRL_NET_ID: int = 9001
 LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
 NT: TypeVar = TypeVar("NT", bound=NodeBase)
-WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet]] = (WlanNode, EmaneNet)
+WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet], Type[WirelessNode]] = (
+    WlanNode,
+    EmaneNet,
+    WirelessNode,
+)
 
 
 class Session:
@@ -299,7 +304,10 @@ class Session:
         return iface1, iface2
 
     def _add_wlan_link(
-        self, node: NodeBase, iface_data: InterfaceData, net: WlanNode
+        self,
+        node: NodeBase,
+        iface_data: InterfaceData,
+        net: Union[WlanNode, WirelessNode],
     ) -> CoreInterface:
         """
         Create a wlan link.
@@ -393,10 +401,10 @@ class Session:
         )
         iface1 = None
         iface2 = None
-        if isinstance(node1, WlanNode):
+        if isinstance(node1, (WlanNode, WirelessNode)):
             iface2 = node2.delete_iface(iface2_id)
             node1.detach(iface2)
-        elif isinstance(node2, WlanNode):
+        elif isinstance(node2, (WlanNode, WirelessNode)):
             iface1 = node1.delete_iface(iface1_id)
             node2.detach(iface1)
         elif isinstance(node1, EmaneNet):

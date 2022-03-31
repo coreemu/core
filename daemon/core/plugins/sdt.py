@@ -4,7 +4,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-from typing import IO, TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
 from core.constants import CORE_CONF_DIR, CORE_DATA_DIR
@@ -12,21 +12,14 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import EventTypes, MessageFlags
 from core.errors import CoreError
-from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.base import NodeBase
 from core.nodes.network import WlanNode
+from core.nodes.wireless import WirelessNode
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
-
-
-def get_link_id(node1_id: int, node2_id: int, network_id: int) -> str:
-    link_id = f"{node1_id}-{node2_id}"
-    if network_id is not None:
-        link_id = f"{link_id}-{network_id}"
-    return link_id
-
 
 CORE_LAYER: str = "CORE"
 NODE_LAYER: str = "CORE::Nodes"
@@ -34,6 +27,17 @@ LINK_LAYER: str = "CORE::Links"
 WIRED_LINK_LAYER: str = f"{LINK_LAYER}::wired"
 CORE_LAYERS: List[str] = [CORE_LAYER, LINK_LAYER, NODE_LAYER, WIRED_LINK_LAYER]
 DEFAULT_LINK_COLOR: str = "red"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
+
+
+def get_link_id(node1_id: int, node2_id: int, network_id: int) -> str:
+    link_id = f"{node1_id}-{node2_id}"
+    if network_id is not None:
+        link_id = f"{link_id}-{network_id}"
+    return link_id
 
 
 class Sdt:
@@ -67,7 +71,7 @@ class Sdt:
         :param session: session this manager is tied to
         """
         self.session: "Session" = session
-        self.sock: Optional[IO] = None
+        self.sock: Optional[socket.socket] = None
         self.connected: bool = False
         self.url: str = self.DEFAULT_SDT_URL
         self.address: Optional[Tuple[Optional[str], Optional[int]]] = None
@@ -210,26 +214,23 @@ class Sdt:
 
         :return: nothing
         """
-        nets = []
-        # create layers
         for layer in CORE_LAYERS:
             self.cmd(f"layer {layer}")
-
         with self.session.nodes_lock:
-            for node_id in self.session.nodes:
-                node = self.session.nodes[node_id]
-                if isinstance(node, CoreNetworkBase):
+            nets = []
+            for node in self.session.nodes.values():
+                if isinstance(node, (EmaneNet, WlanNode)):
                     nets.append(node)
                 if not isinstance(node, NodeBase):
                     continue
                 self.add_node(node)
-
+            for link in self.session.link_manager.links():
+                if is_wireless(link.node1) or is_wireless(link.node2):
+                    continue
+                link_data = link.get_data(MessageFlags.ADD)
+                self.handle_link_update(link_data)
             for net in nets:
-                all_links = net.links(flags=MessageFlags.ADD)
-                for link_data in all_links:
-                    is_wireless = isinstance(net, (WlanNode, EmaneNet))
-                    if is_wireless and link_data.node1_id == net.id:
-                        continue
+                for link_data in net.links(MessageFlags.ADD):
                     self.handle_link_update(link_data)
 
     def get_node_position(self, node: NodeBase) -> Optional[str]:
@@ -341,7 +342,7 @@ class Sdt:
         result = False
         try:
             node = self.session.get_node(node_id, NodeBase)
-            result = isinstance(node, (WlanNode, EmaneNet))
+            result = isinstance(node, (WlanNode, EmaneNet, WirelessNode))
         except CoreError:
             pass
         return result

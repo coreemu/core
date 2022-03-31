@@ -100,6 +100,12 @@ service CoreApi {
     rpc WlanLink (wlan.WlanLinkRequest) returns (wlan.WlanLinkResponse) {
     }
 
+    // wireless rpc
+    rpc WirelessLinked (WirelessLinkedRequest) returns (WirelessLinkedResponse) {
+    }
+    rpc WirelessConfig (WirelessConfigRequest) returns (WirelessConfigResponse) {
+    }
+
     // emane rpc
     rpc GetEmaneModelConfig (emane.GetEmaneModelConfigRequest) returns (emane.GetEmaneModelConfigResponse) {
     }
@@ -696,4 +702,27 @@ message LinkedRequest {
 }
 
 message LinkedResponse {
+}
+
+message WirelessLinkedRequest {
+    int32 session_id = 1;
+    int32 wireless_id = 2;
+    int32 node1_id = 3;
+    int32 node2_id = 4;
+    bool linked = 5;
+}
+
+message WirelessLinkedResponse {
+}
+
+message WirelessConfigRequest {
+    int32 session_id = 1;
+    int32 wireless_id = 2;
+    int32 node1_id = 3;
+    int32 node2_id = 4;
+    LinkOptions options1 = 5;
+    LinkOptions options2 = 6;
+}
+
+message WirelessConfigResponse {
 }
