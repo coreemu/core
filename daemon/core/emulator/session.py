@@ -58,6 +58,7 @@ from core.nodes.network import (
     WlanNode,
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
@@ -80,13 +81,18 @@ NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
+    NodeTypes.WIRELESS: WirelessNode,
 }
 NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
 CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
 CTRL_NET_ID: int = 9001
 LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
 NT: TypeVar = TypeVar("NT", bound=NodeBase)
-WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet]] = (WlanNode, EmaneNet)
+WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet], Type[WirelessNode]] = (
+    WlanNode,
+    EmaneNet,
+    WirelessNode,
+)
 
 
 class Session:
@@ -274,9 +280,9 @@ class Session:
         # custom links
         iface1 = None
         iface2 = None
-        if isinstance(node1, WlanNode):
+        if isinstance(node1, (WlanNode, WirelessNode)):
             iface2 = self._add_wlan_link(node2, iface2_data, node1)
-        elif isinstance(node2, WlanNode):
+        elif isinstance(node2, (WlanNode, WirelessNode)):
             iface1 = self._add_wlan_link(node1, iface1_data, node2)
         elif isinstance(node1, EmaneNet) and isinstance(node2, CoreNode):
             iface2 = self._add_emane_link(node2, iface2_data, node1)
@@ -298,7 +304,10 @@ class Session:
         return iface1, iface2
 
     def _add_wlan_link(
-        self, node: NodeBase, iface_data: InterfaceData, net: WlanNode
+        self,
+        node: NodeBase,
+        iface_data: InterfaceData,
+        net: Union[WlanNode, WirelessNode],
     ) -> CoreInterface:
         """
         Create a wlan link.
@@ -392,10 +401,10 @@ class Session:
         )
         iface1 = None
         iface2 = None
-        if isinstance(node1, WlanNode):
+        if isinstance(node1, (WlanNode, WirelessNode)):
             iface2 = node2.delete_iface(iface2_id)
             node1.detach(iface2)
-        elif isinstance(node2, WlanNode):
+        elif isinstance(node2, (WlanNode, WirelessNode)):
             iface1 = node1.delete_iface(iface1_id)
             node2.detach(iface1)
         elif isinstance(node1, EmaneNet):
@@ -1111,6 +1120,10 @@ class Session:
         # boot node services and then start mobility
         exceptions = self.boot_nodes()
         if not exceptions:
+            # complete wireless node
+            for node in self.nodes.values():
+                if isinstance(node, WirelessNode):
+                    node.post_startup()
             self.mobility.startup()
             # notify listeners that instantiation is complete
             event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)

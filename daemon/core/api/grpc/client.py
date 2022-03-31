@@ -16,7 +16,13 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
     GetNodeConfigServiceRequest,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest, LinkedRequest
+from core.api.grpc.core_pb2 import (
+    ExecuteScriptRequest,
+    GetConfigRequest,
+    LinkedRequest,
+    WirelessConfigRequest,
+    WirelessLinkedRequest,
+)
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     GetEmaneEventChannelRequest,
@@ -43,6 +49,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanConfig,
     WlanLinkRequest,
 )
+from core.api.grpc.wrappers import LinkOptions
 from core.emulator.data import IpPrefixes
 from core.errors import CoreError
 
@@ -1078,6 +1085,42 @@ class CoreGrpcClient:
             linked=linked,
         )
         self.stub.Linked(request)
+
+    def wireless_linked(
+        self,
+        session_id: int,
+        wireless_id: int,
+        node1_id: int,
+        node2_id: int,
+        linked: bool,
+    ) -> None:
+        request = WirelessLinkedRequest(
+            session_id=session_id,
+            wireless_id=wireless_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            linked=linked,
+        )
+        self.stub.WirelessLinked(request)
+
+    def wireless_config(
+        self,
+        session_id: int,
+        wireless_id: int,
+        node1_id: int,
+        node2_id: int,
+        options1: LinkOptions,
+        options2: LinkOptions = None,
+    ) -> None:
+        request = WirelessConfigRequest(
+            session_id=session_id,
+            wireless_id=wireless_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            options1=options1.to_proto(),
+            options2=options2.to_proto(),
+        )
+        self.stub.WirelessConfig(request)
 
     def connect(self) -> None:
         """

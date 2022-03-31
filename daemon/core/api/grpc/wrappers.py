@@ -67,6 +67,7 @@ class NodeType(Enum):
     CONTROL_NET = 13
     DOCKER = 15
     LXC = 16
+    WIRELESS = 17
 
 
 class LinkType(Enum):

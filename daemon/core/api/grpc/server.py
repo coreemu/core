@@ -26,7 +26,15 @@ from core.api.grpc.configservices_pb2 import (
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptResponse, LinkedRequest, LinkedResponse
+from core.api.grpc.core_pb2 import (
+    ExecuteScriptResponse,
+    LinkedRequest,
+    LinkedResponse,
+    WirelessConfigRequest,
+    WirelessConfigResponse,
+    WirelessLinkedRequest,
+    WirelessLinkedResponse,
+)
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     EmaneLinkResponse,
@@ -82,6 +90,7 @@ from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
@@ -1329,3 +1338,23 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             request.linked,
         )
         return LinkedResponse()
+
+    def WirelessLinked(
+        self, request: WirelessLinkedRequest, context: ServicerContext
+    ) -> WirelessLinkedResponse:
+        session = self.get_session(request.session_id, context)
+        wireless = self.get_node(session, request.wireless_id, context, WirelessNode)
+        wireless.link_control(request.node1_id, request.node2_id, request.linked)
+        return WirelessLinkedResponse()
+
+    def WirelessConfig(
+        self, request: WirelessConfigRequest, context: ServicerContext
+    ) -> WirelessConfigResponse:
+        session = self.get_session(request.session_id, context)
+        wireless = self.get_node(session, request.wireless_id, context, WirelessNode)
+        options1 = request.options1
+        options2 = options1
+        if request.HasField("options2"):
+            options2 = request.options2
+        wireless.link_config(request.node1_id, request.node2_id, options1, options2)
+        return WirelessConfigResponse()

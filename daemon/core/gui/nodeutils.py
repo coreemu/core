@@ -18,7 +18,11 @@ NETWORK_NODES: List["NodeDraw"] = []
 NODE_ICONS = {}
 CONTAINER_NODES: Set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
 IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
-WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+WIRELESS_NODES: Set[NodeType] = {
+    NodeType.WIRELESS_LAN,
+    NodeType.EMANE,
+    NodeType.WIRELESS,
+}
 RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
 BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
 IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
@@ -46,6 +50,7 @@ def setup() -> None:
         (ImageEnum.HUB, NodeType.HUB, "Hub"),
         (ImageEnum.SWITCH, NodeType.SWITCH, "Switch"),
         (ImageEnum.WLAN, NodeType.WIRELESS_LAN, "WLAN"),
+        (ImageEnum.WIRELESS, NodeType.WIRELESS, "Wireless"),
         (ImageEnum.EMANE, NodeType.EMANE, "EMANE"),
         (ImageEnum.RJ45, NodeType.RJ45, "RJ45"),
         (ImageEnum.TUNNEL, NodeType.TUNNEL, "Tunnel"),

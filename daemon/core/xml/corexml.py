@@ -16,6 +16,7 @@ from core.nodes.docker import DockerNode
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
@@ -542,8 +543,8 @@ class CoreXmlWriter:
             iface2 = self.create_iface_element("iface2", iface2)
             link_element.append(iface2)
         # check for options, don't write for emane/wlan links
-        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
-        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
+        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet, WirelessNode))
+        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet, WirelessNode))
         if not (is_node1_wireless or is_node2_wireless):
             unidirectional = 1 if unidirectional else 0
             options_element = etree.Element("options")

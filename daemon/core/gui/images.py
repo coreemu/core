@@ -53,6 +53,7 @@ class ImageEnum(Enum):
     LINK = "link"
     HUB = "hub"
     WLAN = "wlan"
+    WIRELESS = "wireless"
     EMANE = "emane"
     RJ45 = "rj45"
     TUNNEL = "tunnel"

@@ -5,14 +5,25 @@ from typing import Any, Dict, List
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
-from core.nodes.base import CoreNodeBase
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 
 logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
 QUAGGA_STATE_DIR: str = "/var/run/quagga"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
@@ -265,7 +276,7 @@ class Ospfv3mdr(Ospfv3):
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
         config = super().quagga_iface_config(iface)
-        if isinstance(iface.net, (WlanNode, EmaneNet)):
+        if is_wireless(iface.net):
             config = self.clean_text(
                 f"""
                 {config}
@@ -390,7 +401,7 @@ class Babel(QuaggaService, ConfigService):
         return self.render_text(text, data)
 
     def quagga_iface_config(self, iface: CoreInterface) -> str:
-        if isinstance(iface.net, (WlanNode, EmaneNet)):
+        if is_wireless(iface.net):
             text = """
             babel wireless
             no babel split-horizon
