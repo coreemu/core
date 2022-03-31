@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
+import json
 import sys
 from argparse import (
     ArgumentDefaultsHelpFormatter,
     ArgumentParser,
     ArgumentTypeError,
     Namespace,
-    _SubParsersAction,
 )
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import grpc
 import netaddr
+from google.protobuf.json_format import MessageToDict
 from netaddr import EUI, AddrFormatError, IPNetwork
 
 from core.api.grpc.client import CoreGrpcClient
 from core.api.grpc.wrappers import (
+    ConfigOption,
     Geo,
     Interface,
     Link,
@@ -27,6 +29,15 @@ from core.api.grpc.wrappers import (
 )
 
 NODE_TYPES = [x for x in NodeType if x != NodeType.PEER_TO_PEER]
+
+
+def protobuf_to_json(message: Any) -> Dict[str, Any]:
+    return MessageToDict(message, including_default_value_fields=True, preserving_proto_field_name=True)
+
+
+def print_json(data: Any) -> None:
+    data = json.dumps(data, indent=2)
+    print(data)
 
 
 def coreclient(func):
@@ -94,11 +105,11 @@ def geo_type(value: str) -> Tuple[float, float, float]:
     return lon, lat, alt
 
 
-def file_type(value: str) -> str:
+def file_type(value: str) -> Path:
     path = Path(value)
     if not path.is_file():
         raise ArgumentTypeError(f"invalid file: {value}")
-    return str(path.absolute())
+    return path
 
 
 def get_current_session(core: CoreGrpcClient, session_id: Optional[int]) -> int:
@@ -140,12 +151,15 @@ def print_iface(iface: Interface) -> None:
 def get_wlan_config(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     config = core.get_wlan_config(session_id, args.node)
-    size = 0
-    for option in config.values():
-        size = max(size, len(option.name))
-    print(f"{'Name':<{size}.{size}} | Value")
-    for option in config.values():
-        print(f"{option.name:<{size}.{size}} | {option.value}")
+    if args.json:
+        print_json(ConfigOption.to_dict(config))
+    else:
+        size = 0
+        for option in config.values():
+            size = max(size, len(option.name))
+        print(f"{'Name':<{size}.{size}} | Value")
+        for option in config.values():
+            print(f"{option.name:<{size}.{size}} | {option.value}")
 
 
 @coreclient
@@ -163,80 +177,102 @@ def set_wlan_config(core: CoreGrpcClient, args: Namespace) -> None:
     if args.range:
         config["range"] = str(args.range)
     result = core.set_wlan_config(session_id, args.node, config)
-    print(f"set wlan config: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"set wlan config: {result}")
 
 
 @coreclient
 def open_xml(core: CoreGrpcClient, args: Namespace) -> None:
     result, session_id = core.open_xml(args.file, args.start)
-    print(f"opened xml: {result},{session_id}")
+    if args.json:
+        print_json(dict(result=result, session_id=session_id))
+    else:
+        print(f"opened xml: {result},{session_id}")
 
 
 @coreclient
 def query_sessions(core: CoreGrpcClient, args: Namespace) -> None:
     sessions = core.get_sessions()
-    print("Session ID | Session State | Nodes")
-    for session in sessions:
-        print(f"{session.id:<10} | {session.state.name:<13} | {session.nodes}")
+    if args.json:
+        sessions = [protobuf_to_json(x.to_proto()) for x in sessions]
+        print_json(sessions)
+    else:
+        print("Session ID | Session State | Nodes")
+        for session in sessions:
+            print(f"{session.id:<10} | {session.state.name:<13} | {session.nodes}")
 
 
 @coreclient
 def query_session(core: CoreGrpcClient, args: Namespace) -> None:
     session = core.get_session(args.id)
-    print("Nodes")
-    print("Node ID | Node Name | Node Type")
-    for node in session.nodes.values():
-        print(f"{node.id:<7} | {node.name:<9} | {node.type.name}")
-    print("\nLinks")
-    for link in session.links:
-        n1 = session.nodes[link.node1_id].name
-        n2 = session.nodes[link.node2_id].name
-        print(f"Node   | ", end="")
-        print_iface_header()
-        print(f"{n1:<6} | ", end="")
-        if link.iface1:
-            print_iface(link.iface1)
-        else:
+    if args.json:
+        session = protobuf_to_json(session.to_proto())
+        print_json(session)
+    else:
+        print("Nodes")
+        print("ID      | Name    | Type    | XY        | Geo")
+        for node in session.nodes.values():
+            xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
+            geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
+            print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
+        print("\nLinks")
+        for link in session.links:
+            n1 = session.nodes[link.node1_id].name
+            n2 = session.nodes[link.node2_id].name
+            print(f"Node   | ", end="")
+            print_iface_header()
+            print(f"{n1:<6} | ", end="")
+            if link.iface1:
+                print_iface(link.iface1)
+            else:
+                print()
+            print(f"{n2:<6} | ", end="")
+            if link.iface2:
+                print_iface(link.iface2)
+            else:
+                print()
             print()
-        print(f"{n2:<6} | ", end="")
-        if link.iface2:
-            print_iface(link.iface2)
-        else:
-            print()
-        print()
 
 
 @coreclient
 def query_node(core: CoreGrpcClient, args: Namespace) -> None:
     session = core.get_session(args.id)
     node, ifaces, _ = core.get_node(args.id, args.node)
-    print("ID   | Name    | Type    | XY")
-    xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
-    print(f"{node.id:<4} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos}")
-    if node.geo:
-        print("Geo")
-        print(f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}")
-    if ifaces:
-        print("Interfaces")
-        print("Connected To | ", end="")
-        print_iface_header()
-        for iface in ifaces:
-            if iface.net_id == node.id:
-                if iface.node_id:
-                    name = session.nodes[iface.node_id].name
+    if args.json:
+        node = protobuf_to_json(node.to_proto())
+        ifaces = [protobuf_to_json(x.to_proto()) for x in ifaces]
+        print_json(dict(node=node, ifaces=ifaces))
+    else:
+        print("ID      | Name    | Type    | XY        | Geo")
+        xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
+        geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
+        print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
+        if ifaces:
+            print("Interfaces")
+            print("Connected To | ", end="")
+            print_iface_header()
+            for iface in ifaces:
+                if iface.net_id == node.id:
+                    if iface.node_id:
+                        name = session.nodes[iface.node_id].name
+                    else:
+                        name = session.nodes[iface.net2_id].name
                 else:
-                    name = session.nodes[iface.net2_id].name
-            else:
-                net_node = session.nodes.get(iface.net_id)
-                name = net_node.name if net_node else ""
-            print(f"{name:<12} | ", end="")
-            print_iface(iface)
+                    net_node = session.nodes.get(iface.net_id)
+                    name = net_node.name if net_node else ""
+                print(f"{name:<12} | ", end="")
+                print_iface(iface)
 
 
 @coreclient
 def delete_session(core: CoreGrpcClient, args: Namespace) -> None:
     result = core.delete_session(args.id)
-    print(f"delete session({args.id}): {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"delete session({args.id}): {result}")
 
 
 @coreclient
@@ -263,14 +299,20 @@ def add_node(core: CoreGrpcClient, args: Namespace) -> None:
         geo=geo,
     )
     node_id = core.add_node(session_id, node)
-    print(f"created node: {node_id}")
+    if args.json:
+        print_json(dict(node_id=node_id))
+    else:
+        print(f"created node: {node_id}")
 
 
 @coreclient
 def edit_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     result = core.edit_node(session_id, args.id, args.icon)
-    print(f"edit node: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"edit node: {result}")
 
 
 @coreclient
@@ -285,14 +327,20 @@ def move_node(core: CoreGrpcClient, args: Namespace) -> None:
         lon, lat, alt = args.geo
         geo = Geo(lon=lon, lat=lat, alt=alt)
     result = core.move_node(session_id, args.id, pos, geo)
-    print(f"move node: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"move node: {result}")
 
 
 @coreclient
 def delete_node(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     result = core.delete_node(session_id, args.id)
-    print(f"deleted node: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"deleted node: {result}")
 
 
 @coreclient
@@ -313,8 +361,13 @@ def add_link(core: CoreGrpcClient, args: Namespace) -> None:
         unidirectional=args.uni,
     )
     link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2, options=options)
-    result, _, _ = core.add_link(session_id, link)
-    print(f"add link: {result}")
+    result, iface1, iface2 = core.add_link(session_id, link)
+    if args.json:
+        iface1 = protobuf_to_json(iface1.to_proto())
+        iface2 = protobuf_to_json(iface2.to_proto())
+        print_json(dict(result=result, iface1=iface1, iface2=iface2))
+    else:
+        print(f"add link: {result}")
 
 
 @coreclient
@@ -332,7 +385,10 @@ def edit_link(core: CoreGrpcClient, args: Namespace) -> None:
     iface2 = Interface(args.iface2)
     link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2, options=options)
     result = core.edit_link(session_id, link)
-    print(f"edit link: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"edit link: {result}")
 
 
 @coreclient
@@ -342,10 +398,13 @@ def delete_link(core: CoreGrpcClient, args: Namespace) -> None:
     iface2 = Interface(args.iface2)
     link = Link(args.node1, args.node2, iface1=iface1, iface2=iface2)
     result = core.delete_link(session_id, link)
-    print(f"delete link: {result}")
+    if args.json:
+        print_json(dict(result=result))
+    else:
+        print(f"delete link: {result}")
 
 
-def setup_sessions_parser(parent: _SubParsersAction) -> None:
+def setup_sessions_parser(parent) -> None:
     parser = parent.add_parser("session", help="session interactions")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-i", "--id", type=int, help="session id to use", required=True)
@@ -358,7 +417,7 @@ def setup_sessions_parser(parent: _SubParsersAction) -> None:
     delete_parser.set_defaults(func=delete_session)
 
 
-def setup_node_parser(parent: _SubParsersAction) -> None:
+def setup_node_parser(parent) -> None:
     parser = parent.add_parser("node", help="node interactions")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-s", "--session", type=int, help="session to interact with")
@@ -402,7 +461,7 @@ def setup_node_parser(parent: _SubParsersAction) -> None:
     delete_parser.set_defaults(func=delete_node)
 
 
-def setup_link_parser(parent: _SubParsersAction) -> None:
+def setup_link_parser(parent) -> None:
     parser = parent.add_parser("link", help="link interactions")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-s", "--session", type=int, help="session to interact with")
@@ -455,7 +514,7 @@ def setup_link_parser(parent: _SubParsersAction) -> None:
     delete_parser.set_defaults(func=delete_link)
 
 
-def setup_query_parser(parent: _SubParsersAction) -> None:
+def setup_query_parser(parent) -> None:
     parser = parent.add_parser("query", help="query interactions")
     subparsers = parser.add_subparsers(help="query commands")
     subparsers.required = True
@@ -477,7 +536,7 @@ def setup_query_parser(parent: _SubParsersAction) -> None:
     node_parser.set_defaults(func=query_node)
 
 
-def setup_xml_parser(parent: _SubParsersAction) -> None:
+def setup_xml_parser(parent) -> None:
     parser = parent.add_parser("xml", help="open session xml")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-f", "--file", type=file_type, help="xml file to open", required=True)
@@ -485,7 +544,7 @@ def setup_xml_parser(parent: _SubParsersAction) -> None:
     parser.set_defaults(func=open_xml)
 
 
-def setup_wlan_parser(parent: _SubParsersAction) -> None:
+def setup_wlan_parser(parent) -> None:
     parser = parent.add_parser("wlan", help="wlan specific interactions")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
     parser.add_argument("-s", "--session", type=int, help="session to interact with")
@@ -511,6 +570,9 @@ def setup_wlan_parser(parent: _SubParsersAction) -> None:
 
 def main() -> None:
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "-js", "--json", action="store_true", help="print responses to terminal as json"
+    )
     subparsers = parser.add_subparsers(help="supported commands")
     subparsers.required = True
     subparsers.dest = "command"

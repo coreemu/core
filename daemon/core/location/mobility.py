@@ -225,7 +225,6 @@ class WirelessModel(ConfigurableOptions):
     """
 
     config_type: RegisterTlvs = RegisterTlvs.WIRELESS
-    bitmap: str = None
     position_callback: Callable[[CoreInterface], None] = None
 
     def __init__(self, session: "Session", _id: int) -> None:
@@ -321,7 +320,8 @@ class BasicRangeModel(WirelessModel):
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                iface.config(options)
+                iface.options.update(options)
+                iface.set_config()
 
     def get_position(self, iface: CoreInterface) -> Tuple[float, float, float]:
         """

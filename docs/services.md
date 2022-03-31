@@ -63,13 +63,6 @@ toolbar, or choose *Node types...* from the  *Session* menu. Note that
 any new services selected are not applied to existing nodes if the nodes have
 been customized.
 
-The node types are saved in a **~/.core/nodes.conf** file, not with the
-**.imn** file. Keep this in mind when changing the default services for
-existing node types; it may be better to simply create a new node type. It is
-recommended that you do not change the default built-in node types. The
-**nodes.conf** file can be copied between CORE machines to save your custom
-types.
-
 ## Customizing a Service
 
 A service can be fully customized for a particular node. From the node's
@@ -151,11 +144,11 @@ ideas for a service before adding a new service type.
    defines one or more classes to be imported. You can create multiple Python
    files that will be imported.
 
-2. Put these files in a directory such as /home/username/.core/myservices
-   Note that the last component of this directory name **myservices** should not
-   be named something like **services** which conflicts with an existing module.
+2. Put these files in a directory such as `/home/<user>/.coregui/custom_services`
+   Note that the last component of this directory name **custom_services** should not
+   be named the same as any python module, due to naming conflicts.
 
-3. Add a **custom_services_dir = /home/username/.core/myservices** entry to the
+3. Add a **custom_services_dir = `/home/<user>/.coregui/custom_services`** entry to the
    /etc/core/core.conf file.
 
    **NOTE:**
@@ -165,7 +158,7 @@ ideas for a service before adding a new service type.
    or **services**.
 
 4. Restart the CORE daemon (core-daemon). Any import errors (Python syntax)
-   should be displayed in the /var/log/core-daemon.log log file (or on screen).
+   should be displayed in the daemon output.
 
 5. Start using your custom service on your nodes. You can create a new node
    type that uses your service, or change the default services for an existing

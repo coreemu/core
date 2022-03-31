@@ -7,13 +7,24 @@ import netaddr
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 QUAGGA_STATE_DIR: str = "/var/run/quagga"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 class Zebra(CoreService):
@@ -431,7 +442,7 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generate_quagga_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         cfg = cls.mtu_check(iface)
-        if iface.net is not None and isinstance(iface.net, (WlanNode, EmaneNet)):
+        if is_wireless(iface.net):
             return (
                 cfg
                 + """\

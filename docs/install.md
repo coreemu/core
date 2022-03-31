@@ -51,11 +51,6 @@ The following is a list of files that would be installed after running the autom
 
 * executable files
   * `<prefix>/bin/{core-daemon, core-gui, vcmd, vnoded, etc}`
-* tcl/tk gui files
-  * `<prefix>/lib/core`
-  * `<prefix>/share/core/icons`
-* example imn files
-  * `<prefix>/share/core/examples`
 * python files
   * poetry virtual env
     * `cd <repo>/daemon && poetry env info`
@@ -77,15 +72,11 @@ After the installation complete it will have installed the following scripts.
 |---------------------|------------------------------------------------------------------------------|
 | core-cleanup        | tool to help removed lingering core created containers, bridges, directories |
 | core-cli            | tool to query, open xml files, and send commands using gRPC                  |
-| core-daemon         | runs the backed core server providing TLV and gRPC APIs                      |
-| core-gui            | runs the legacy tcl/tk based GUI                                             |
-| core-imn-to-xml     | tool to help automate converting a .imn file to .xml format                  |
-| core-manage         | tool to add, remove, or check for services, models, and node types           |
-| core-pygui          | runs the new python/tk based GUI                                             |
+| core-daemon         | runs the backed core server providing a gRPC API                             |
+| core-gui            | starts GUI                                                                   |
 | core-python         | provides a convenience for running the core python virtual environment       |
 | core-route-monitor  | tool to help monitor traffic across nodes and feed that to SDT               |
 | core-service-update | tool to update automate modifying a legacy service to match current naming   |
-| coresendmsg         | tool to send TLV API commands from command line                              |
 
 ## Upgrading from Older Release
 Please make sure to uninstall any previous installations of CORE cleanly
@@ -237,7 +228,7 @@ sudo docker exec -it core core-gui
 ```
 
 ## Running User Scripts
-If you create your own python scripts to run CORE directly or using the gRPC/TLV
+If you create your own python scripts to run CORE directly or using the gRPC
 APIs you will need to make sure you are running them within context of the
 installed virtual environment. To help support this CORE provides the `core-python`
 executable. This executable will allow you to enter CORE's python virtual

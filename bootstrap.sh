@@ -1,9 +1,5 @@
 #!/bin/sh
 #
-# (c)2010-2012 the Boeing Company
-#
-# author:	Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 # Bootstrap the autoconf system.
 #
 

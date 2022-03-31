@@ -67,6 +67,7 @@ class NodeType(Enum):
     CONTROL_NET = 13
     DOCKER = 15
     LXC = 16
+    WIRELESS = 17
 
 
 class LinkType(Enum):
@@ -637,6 +638,15 @@ class SessionSummary:
             dir=proto.dir,
         )
 
+    def to_proto(self) -> core_pb2.SessionSummary:
+        return core_pb2.SessionSummary(
+            id=self.id,
+            state=self.state.value,
+            nodes=self.nodes,
+            file=self.file,
+            dir=self.dir,
+        )
+
 
 @dataclass
 class Hook:
@@ -1093,7 +1103,6 @@ class ConfigEvent:
             data_types=list(proto.data_types),
             data_values=proto.data_values,
             captions=proto.captions,
-            bitmap=proto.bitmap,
             possible_values=proto.possible_values,
             groups=proto.groups,
             iface_id=proto.iface_id,

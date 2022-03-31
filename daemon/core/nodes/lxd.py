@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
+from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
@@ -89,10 +90,9 @@ class LxcNode(CoreNode):
             will run on, default is None for localhost
         :param image: image to start container with
         """
-        if image is None:
-            image = "ubuntu"
-        self.image: str = image
         super().__init__(session, _id, name, directory, server)
+        self.image: str = image if image is not None else "ubuntu"
+        self.client: Optional[LxdClient] = None
 
     def alive(self) -> bool:
         """
@@ -125,7 +125,6 @@ class LxcNode(CoreNode):
         # nothing to do if node is not up
         if not self.up:
             return
-
         with self.lock:
             self.ifaces.clear()
             self.client.stop_container()
@@ -212,7 +211,10 @@ class LxcNode(CoreNode):
         if mode is not None:
             self.cmd(f"chmod {mode:o} {dst_path}")
 
-    def add_iface(self, iface: CoreInterface, iface_id: int) -> None:
-        super().add_iface(iface, iface_id)
+    def create_iface(
+        self, iface_data: InterfaceData = None, options: LinkOptions = None
+    ) -> CoreInterface:
+        iface = super().create_iface(iface_data, options)
         # adding small delay to allow time for adding addresses to work correctly
         time.sleep(0.5)
+        return iface

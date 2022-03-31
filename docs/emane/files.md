@@ -12,7 +12,7 @@ may provide more helpful details.
 ## Run Demo
 1. Select `Open...` within the GUI
 1. Load `emane-demo-files.xml`
-1. Click ![Start Button](../static/gui/start.gif)
+1. Click ![Start Button](../static/gui/start.png)
 1. After startup completes, double click n1 to bring up the nodes terminal
 
 ## Example Demo
@@ -21,14 +21,14 @@ case we are running the RF Pipe model.
 
 ### Generated Files
 
-|Name|Description|
-|---|---|
-|\<node name>-platform.xml|configuration file for the emulator instances|
-|\<interface name>-nem.xml|configuration for creating a NEM|
-|\<interface name>-mac.xml|configuration for defining a NEMs MAC layer|
-|\<interface name>-phy.xml|configuration for defining a NEMs PHY layer|
-|\<interface name>-trans-virtual.xml|configuration when a virtual transport is being used|
-|\<interface name>-trans.xml|configuration when a raw transport is being used|
+| Name                                | Description                                          |
+|-------------------------------------|------------------------------------------------------|
+| \<node name>-platform.xml           | configuration file for the emulator instances        |
+| \<interface name>-nem.xml           | configuration for creating a NEM                     |
+| \<interface name>-mac.xml           | configuration for defining a NEMs MAC layer          |
+| \<interface name>-phy.xml           | configuration for defining a NEMs PHY layer          |
+| \<interface name>-trans-virtual.xml | configuration when a virtual transport is being used |
+| \<interface name>-trans.xml         | configuration when a raw transport is being used     |
 
 ### Listing File
 Below are the files within n1 after starting the demo session.

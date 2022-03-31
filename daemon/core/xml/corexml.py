@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, Optional, Type, TypeVar
 
 from lxml import etree
 
@@ -8,13 +8,15 @@ import core.nodes.base
 import core.nodes.physical
 from core import utils
 from core.emane.nodes import EmaneNet
-from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
+from core.emulator.data import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
+from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
@@ -269,8 +271,8 @@ class CoreXmlWriter:
 
     def write_session(self) -> None:
         # generate xml content
-        links = self.write_nodes()
-        self.write_links(links)
+        self.write_nodes()
+        self.write_links()
         self.write_mobility_configs()
         self.write_emane_configs()
         self.write_service_configs()
@@ -449,8 +451,7 @@ class CoreXmlWriter:
         if node_types.getchildren():
             self.scenario.append(node_types)
 
-    def write_nodes(self) -> List[LinkData]:
-        links = []
+    def write_nodes(self) -> None:
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
             # network node
@@ -464,10 +465,6 @@ class CoreXmlWriter:
             elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
 
-            # add known links
-            links.extend(node.links())
-        return links
-
     def write_network(self, node: NodeBase) -> None:
         # ignore p2p and other nodes that are not part of the api
         if not node.apitype:
@@ -476,15 +473,21 @@ class CoreXmlWriter:
         network = NetworkElement(self.session, node)
         self.networks.append(network.element)
 
-    def write_links(self, links: List[LinkData]) -> None:
+    def write_links(self) -> None:
         link_elements = etree.Element("links")
-        # add link data
-        for link_data in links:
-            # skip basic range links
-            if link_data.iface1 is None and link_data.iface2 is None:
-                continue
-            link_element = self.create_link_element(link_data)
+        for core_link in self.session.link_manager.links():
+            node1, iface1 = core_link.node1, core_link.iface1
+            node2, iface2 = core_link.node2, core_link.iface2
+            unidirectional = core_link.is_unidirectional()
+            link_element = self.create_link_element(
+                node1, iface1, node2, iface2, core_link.options(), unidirectional
+            )
             link_elements.append(link_element)
+            if unidirectional:
+                link_element = self.create_link_element(
+                    node2, iface2, node1, iface1, iface2.options, unidirectional
+                )
+                link_elements.append(link_element)
         if link_elements.getchildren():
             self.scenario.append(link_elements)
 
@@ -493,67 +496,71 @@ class CoreXmlWriter:
         self.devices.append(device.element)
 
     def create_iface_element(
-        self, element_name: str, node_id: int, iface_data: InterfaceData
+        self, element_name: str, iface: CoreInterface
     ) -> etree.Element:
         iface_element = etree.Element(element_name)
-        node = self.session.get_node(node_id, NodeBase)
-        if isinstance(node, CoreNodeBase):
-            iface = node.get_iface(iface_data.id)
-            # check if emane interface
-            if isinstance(iface.net, EmaneNet):
-                nem_id = self.session.emane.get_nem_id(iface)
-                add_attribute(iface_element, "nem", nem_id)
-        add_attribute(iface_element, "id", iface_data.id)
-        add_attribute(iface_element, "name", iface_data.name)
-        add_attribute(iface_element, "mac", iface_data.mac)
-        add_attribute(iface_element, "ip4", iface_data.ip4)
-        add_attribute(iface_element, "ip4_mask", iface_data.ip4_mask)
-        add_attribute(iface_element, "ip6", iface_data.ip6)
-        add_attribute(iface_element, "ip6_mask", iface_data.ip6_mask)
+        # check if interface if connected to emane
+        if isinstance(iface.node, CoreNodeBase) and isinstance(iface.net, EmaneNet):
+            nem_id = self.session.emane.get_nem_id(iface)
+            add_attribute(iface_element, "nem", nem_id)
+        ip4 = iface.get_ip4()
+        ip4_mask = None
+        if ip4:
+            ip4_mask = ip4.prefixlen
+            ip4 = str(ip4.ip)
+        ip6 = iface.get_ip6()
+        ip6_mask = None
+        if ip6:
+            ip6_mask = ip6.prefixlen
+            ip6 = str(ip6.ip)
+        add_attribute(iface_element, "id", iface.id)
+        add_attribute(iface_element, "name", iface.name)
+        add_attribute(iface_element, "mac", iface.mac)
+        add_attribute(iface_element, "ip4", ip4)
+        add_attribute(iface_element, "ip4_mask", ip4_mask)
+        add_attribute(iface_element, "ip6", ip6)
+        add_attribute(iface_element, "ip6_mask", ip6_mask)
         return iface_element
 
-    def create_link_element(self, link_data: LinkData) -> etree.Element:
+    def create_link_element(
+        self,
+        node1: NodeBase,
+        iface1: Optional[CoreInterface],
+        node2: NodeBase,
+        iface2: Optional[CoreInterface],
+        options: LinkOptions,
+        unidirectional: bool,
+    ) -> etree.Element:
         link_element = etree.Element("link")
-        add_attribute(link_element, "node1", link_data.node1_id)
-        add_attribute(link_element, "node2", link_data.node2_id)
-
+        add_attribute(link_element, "node1", node1.id)
+        add_attribute(link_element, "node2", node2.id)
         # check for interface one
-        if link_data.iface1 is not None:
-            iface1 = self.create_iface_element(
-                "iface1", link_data.node1_id, link_data.iface1
-            )
+        if iface1 is not None:
+            iface1 = self.create_iface_element("iface1", iface1)
             link_element.append(iface1)
-
         # check for interface two
-        if link_data.iface2 is not None:
-            iface2 = self.create_iface_element(
-                "iface2", link_data.node2_id, link_data.iface2
-            )
+        if iface2 is not None:
+            iface2 = self.create_iface_element("iface2", iface2)
             link_element.append(iface2)
-
         # check for options, don't write for emane/wlan links
-        node1 = self.session.get_node(link_data.node1_id, NodeBase)
-        node2 = self.session.get_node(link_data.node2_id, NodeBase)
-        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet))
-        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet))
-        if not any([is_node1_wireless, is_node2_wireless]):
-            options_data = link_data.options
-            options = etree.Element("options")
-            add_attribute(options, "delay", options_data.delay)
-            add_attribute(options, "bandwidth", options_data.bandwidth)
-            add_attribute(options, "loss", options_data.loss)
-            add_attribute(options, "dup", options_data.dup)
-            add_attribute(options, "jitter", options_data.jitter)
-            add_attribute(options, "mer", options_data.mer)
-            add_attribute(options, "burst", options_data.burst)
-            add_attribute(options, "mburst", options_data.mburst)
-            add_attribute(options, "unidirectional", options_data.unidirectional)
-            add_attribute(options, "network_id", link_data.network_id)
-            add_attribute(options, "key", options_data.key)
-            add_attribute(options, "buffer", options_data.buffer)
-            if options.items():
-                link_element.append(options)
-
+        is_node1_wireless = isinstance(node1, (WlanNode, EmaneNet, WirelessNode))
+        is_node2_wireless = isinstance(node2, (WlanNode, EmaneNet, WirelessNode))
+        if not (is_node1_wireless or is_node2_wireless):
+            unidirectional = 1 if unidirectional else 0
+            options_element = etree.Element("options")
+            add_attribute(options_element, "delay", options.delay)
+            add_attribute(options_element, "bandwidth", options.bandwidth)
+            add_attribute(options_element, "loss", options.loss)
+            add_attribute(options_element, "dup", options.dup)
+            add_attribute(options_element, "jitter", options.jitter)
+            add_attribute(options_element, "mer", options.mer)
+            add_attribute(options_element, "burst", options.burst)
+            add_attribute(options_element, "mburst", options.mburst)
+            add_attribute(options_element, "unidirectional", unidirectional)
+            add_attribute(options_element, "key", options.key)
+            add_attribute(options_element, "buffer", options.buffer)
+            if options_element.items():
+                link_element.append(options_element)
         return link_element
 
 
