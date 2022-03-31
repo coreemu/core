@@ -58,3 +58,6 @@ daemon/setup.py
 
 # python
 __pycache__
+
+# ignore core player files
+*.core

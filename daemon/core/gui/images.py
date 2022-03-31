@@ -96,6 +96,7 @@ TYPE_MAP: Dict[Tuple[NodeType, str], ImageEnum] = {
     (NodeType.HUB, ""): ImageEnum.HUB,
     (NodeType.SWITCH, ""): ImageEnum.SWITCH,
     (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
+    (NodeType.WIRELESS, ""): ImageEnum.WIRELESS,
     (NodeType.EMANE, ""): ImageEnum.EMANE,
     (NodeType.RJ45, ""): ImageEnum.RJ45,
     (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
