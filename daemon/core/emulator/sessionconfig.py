@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, Dict, List
 
 from core.config import (
     ConfigBool,
@@ -44,9 +44,12 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     ]
     config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
-    def __init__(self) -> None:
+    def __init__(self, config: Dict[str, str] = None) -> None:
         super().__init__()
         self.set_configs(self.default_values())
+        if config:
+            for key, value in config.items():
+                self.set_config(key, value)
 
     def get_config(
         self,

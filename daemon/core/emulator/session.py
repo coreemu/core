@@ -147,12 +147,7 @@ class Session:
         self.config_handlers: List[Callable[[ConfigData], None]] = []
 
         # session options/metadata
-        self.options: SessionConfig = SessionConfig()
-        if not config:
-            config = {}
-        for key in config:
-            value = config[key]
-            self.options.set_config(key, value)
+        self.options: SessionConfig = SessionConfig(config)
         self.metadata: Dict[str, str] = {}
 
         # distributed support and logic

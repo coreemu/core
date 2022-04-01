@@ -262,7 +262,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session.set_user(request.session.user)
 
         # session options
-        session.options.config_reset()
         for option in request.session.options.values():
             session.options.set_config(option.name, option.value)
         session.metadata = dict(request.session.metadata)
