@@ -178,6 +178,7 @@ class WirelessNode(CoreNetworkBase):
         name, localname = iface.name, iface.localname
         iface.name, iface.localname = localname, name
         iface.options.update(options2)
+        iface.has_netem = True
         iface.set_config()
         iface.name, iface.localname = name, localname
         if options1 == options2:
