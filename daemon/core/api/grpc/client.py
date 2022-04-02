@@ -1112,6 +1112,8 @@ class CoreGrpcClient:
         options1: LinkOptions,
         options2: LinkOptions = None,
     ) -> None:
+        if options2 is None:
+            options2 = options1
         request = WirelessConfigRequest(
             session_id=session_id,
             wireless_id=wireless_id,

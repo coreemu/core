@@ -1355,5 +1355,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         options2 = options1
         if request.HasField("options2"):
             options2 = request.options2
+        options1 = grpcutils.convert_options_proto(options1)
+        options2 = grpcutils.convert_options_proto(options2)
         wireless.link_config(request.node1_id, request.node2_id, options1, options2)
         return WirelessConfigResponse()

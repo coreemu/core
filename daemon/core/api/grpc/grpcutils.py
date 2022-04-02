@@ -476,6 +476,22 @@ def convert_link_options(options: LinkOptions) -> core_pb2.LinkOptions:
     )
 
 
+def convert_options_proto(options: core_pb2.LinkOptions) -> LinkOptions:
+    return LinkOptions(
+        delay=options.delay,
+        bandwidth=options.bandwidth,
+        loss=options.loss,
+        dup=options.dup,
+        jitter=options.jitter,
+        mer=options.mer,
+        burst=options.burst,
+        mburst=options.mburst,
+        buffer=options.buffer,
+        unidirectional=options.unidirectional,
+        key=options.key,
+    )
+
+
 def convert_link(
     node1: NodeBase,
     iface1: Optional[CoreInterface],
