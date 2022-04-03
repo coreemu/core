@@ -182,10 +182,7 @@ class WirelessNode(CoreNetworkBase):
         iface.set_config()
         iface.name, iface.localname = name, localname
         if options1 == options2:
-            if options1.is_clear():
-                label = ""
-            else:
-                label = f"{options1.loss:.2f}%/{options1.delay}us"
+            label = f"{options1.loss:.2f}%/{options1.delay}us"
         else:
             label = (
                 f"({options1.loss:.2f}%/{options1.delay}us) "
