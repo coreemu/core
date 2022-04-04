@@ -161,7 +161,7 @@ class TestGrpc:
             real_node1, service_name, service_file
         )
         assert service_file.data == service_file_data
-        assert option_value == real_session.options.get_config(option_key)
+        assert option_value == real_session.options.get(option_key)
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(

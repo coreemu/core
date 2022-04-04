@@ -191,7 +191,7 @@ class Session:
         return node_type
 
     def use_ovs(self) -> bool:
-        return self.options.get_config("ovs") == "1"
+        return self.options.get_int("ovs") == 1
 
     def linked(
         self, node1_id: int, node2_id: int, iface1_id: int, iface2_id: int, linked: bool
@@ -255,7 +255,7 @@ class Session:
         """
         options = options if options else LinkOptions()
         # set mtu
-        mtu = self.options.get_config_int("mtu") or DEFAULT_MTU
+        mtu = self.options.get_int("mtu") or DEFAULT_MTU
         if iface1_data:
             iface1_data.mtu = mtu
         if iface2_data:
@@ -489,7 +489,7 @@ class Session:
         """
         # set node start based on current session state, override and check when rj45
         start = self.state.should_start()
-        enable_rj45 = self.options.get_config("enablerj45") == "1"
+        enable_rj45 = self.options.get_int("enablerj45") == 1
         if _class == Rj45Node and not enable_rj45:
             start = False
 
@@ -551,7 +551,7 @@ class Session:
                 node.add_config_service(service_class)
 
         # set network mtu, if configured
-        mtu = self.options.get_config_int("mtu")
+        mtu = self.options.get_int("mtu")
         if isinstance(node, CoreNetworkBase) and mtu > 0:
             node.mtu = mtu
 
@@ -714,7 +714,7 @@ class Session:
             # shutdown sdt
             self.sdt.shutdown()
         # remove this sessions working directory
-        preserve = self.options.get_config("preservedir") == "1"
+        preserve = self.options.get_int("preservedir") == 1
         if not preserve:
             shutil.rmtree(self.directory, ignore_errors=True)
 
@@ -1234,11 +1234,11 @@ class Session:
 
         :return: control net prefix list
         """
-        p = self.options.get_config("controlnet")
-        p0 = self.options.get_config("controlnet0")
-        p1 = self.options.get_config("controlnet1")
-        p2 = self.options.get_config("controlnet2")
-        p3 = self.options.get_config("controlnet3")
+        p = self.options.get("controlnet")
+        p0 = self.options.get("controlnet0")
+        p1 = self.options.get("controlnet1")
+        p2 = self.options.get("controlnet2")
+        p3 = self.options.get("controlnet3")
         if not p0 and p:
             p0 = p
         return [p0, p1, p2, p3]
@@ -1249,12 +1249,12 @@ class Session:
 
         :return: list of control net server interfaces
         """
-        d0 = self.options.get_config("controlnetif0")
+        d0 = self.options.get("controlnetif0")
         if d0:
             logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.options.get_config("controlnetif1")
-        d2 = self.options.get_config("controlnetif2")
-        d3 = self.options.get_config("controlnetif3")
+        d1 = self.options.get("controlnetif1")
+        d2 = self.options.get("controlnetif2")
+        d3 = self.options.get("controlnetif3")
         return [None, d1, d2, d3]
 
     def get_control_net_index(self, dev: str) -> int:
@@ -1331,7 +1331,7 @@ class Session:
         updown_script = None
 
         if net_index == 0:
-            updown_script = self.options.get_config("controlnet_updown_script")
+            updown_script = self.options.get("controlnet_updown_script")
             if not updown_script:
                 logger.debug("controlnet updown script not configured")
 
@@ -1424,7 +1424,7 @@ class Session:
         :param remove: flag to check if it should be removed
         :return: nothing
         """
-        if not self.options.get_config_bool("update_etc_hosts", default=False):
+        if not self.options.get_bool("update_etc_hosts", False):
             return
 
         try:

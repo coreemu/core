@@ -434,7 +434,7 @@ class CoreNodeBase(NodeBase):
 
         :return: nothing
         """
-        preserve = self.session.options.get_config("preservedir") == "1"
+        preserve = self.session.options.get_int("preservedir") == 1
         if preserve:
             return
         if self.tmpnodedir:

@@ -336,16 +336,9 @@ class CoreXmlWriter:
 
     def write_session_options(self) -> None:
         option_elements = etree.Element("session_options")
-        options_config = self.session.options.get_configs()
-        if not options_config:
-            return
-
-        default_options = self.session.options.default_values()
-        for _id in default_options:
-            default_value = default_options[_id]
-            value = options_config.get(_id, default_value)
-            add_configuration(option_elements, _id, value)
-
+        for option in self.session.options.options:
+            value = self.session.options.get(option.id)
+            add_configuration(option_elements, option.id, value)
         if option_elements.getchildren():
             self.scenario.append(option_elements)
 
@@ -625,8 +618,7 @@ class CoreXmlReader:
             value = configuration.get("value")
             xml_config[name] = value
         logger.info("reading session options: %s", xml_config)
-        config = self.session.options.get_configs()
-        config.update(xml_config)
+        self.session.options.update(xml_config)
 
     def read_session_hooks(self) -> None:
         session_hooks = self.scenario.find("session_hooks")

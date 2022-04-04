@@ -138,11 +138,11 @@ class FRRZebra(CoreService):
         """
         Generate a shell script used to boot the FRR daemons.
         """
-        frr_bin_search = node.session.options.get_config(
-            "frr_bin_search", default='"/usr/local/bin /usr/bin /usr/lib/frr"'
+        frr_bin_search = node.session.options.get(
+            "frr_bin_search", '"/usr/local/bin /usr/bin /usr/lib/frr"'
         )
-        frr_sbin_search = node.session.options.get_config(
-            "frr_sbin_search", default='"/usr/local/sbin /usr/sbin /usr/lib/frr"'
+        frr_sbin_search = node.session.options.get(
+            "frr_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/frr"'
         )
         cfg = """\
 #!/bin/sh

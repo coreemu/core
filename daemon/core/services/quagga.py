@@ -135,11 +135,11 @@ class Zebra(CoreService):
         """
         Generate a shell script used to boot the Quagga daemons.
         """
-        quagga_bin_search = node.session.options.get_config(
-            "quagga_bin_search", default='"/usr/local/bin /usr/bin /usr/lib/quagga"'
+        quagga_bin_search = node.session.options.get(
+            "quagga_bin_search", '"/usr/local/bin /usr/bin /usr/lib/quagga"'
         )
-        quagga_sbin_search = node.session.options.get_config(
-            "quagga_sbin_search", default='"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
+        quagga_sbin_search = node.session.options.get(
+            "quagga_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
         )
         return """\
 #!/bin/sh

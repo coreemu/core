@@ -220,6 +220,22 @@ def convert_value(value: Any) -> str:
     return value
 
 
+def convert_session_options(session: Session) -> Dict[str, common_pb2.ConfigOption]:
+    config_options = {}
+    for option in session.options.options:
+        value = session.options.get(option.id)
+        config_option = common_pb2.ConfigOption(
+            label=option.label,
+            name=option.id,
+            value=value,
+            type=option.type.value,
+            select=option.options,
+            group="Options",
+        )
+        config_options[option.id] = config_option
+    return config_options
+
+
 def get_config_options(
     config: Dict[str, str],
     configurable_options: Union[ConfigurableOptions, Type[ConfigurableOptions]],
@@ -768,7 +784,7 @@ def convert_session(session: Session) -> wrappers.Session:
     )
     hooks = get_hooks(session)
     session_file = str(session.file_path) if session.file_path else None
-    options = get_config_options(session.options.get_configs(), session.options)
+    options = convert_session_options(session)
     servers = [
         core_pb2.Server(name=x.name, host=x.host)
         for x in session.distributed.servers.values()

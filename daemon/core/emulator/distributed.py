@@ -125,9 +125,7 @@ class DistributedController:
         self.session: "Session" = session
         self.servers: Dict[str, DistributedServer] = OrderedDict()
         self.tunnels: Dict[int, Tuple[GreTap, GreTap]] = {}
-        self.address: str = self.session.options.get_config(
-            "distributed_address", default=None
-        )
+        self.address: str = self.session.options.get("distributed_address")
 
     def add_server(self, name: str, host: str) -> None:
         """
@@ -188,7 +186,7 @@ class DistributedController:
 
         :return: nothing
         """
-        mtu = self.session.options.get_config_int("mtu")
+        mtu = self.session.options.get_int("mtu")
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
             if not isinstance(node, CtrlNet) or node.serverintf is not None:
@@ -210,7 +208,7 @@ class DistributedController:
             raise CoreError(
                 "attempted to create gre tunnel for core link without a ptp network"
             )
-        mtu = self.session.options.get_config_int("mtu")
+        mtu = self.session.options.get_int("mtu")
         for server in self.servers.values():
             self.create_gre_tunnel(core_link.ptp, server, mtu, True)
 

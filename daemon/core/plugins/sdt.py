@@ -87,7 +87,7 @@ class Sdt:
 
         :return: True if enabled, False otherwise
         """
-        return self.session.options.get_config("enablesdt") == "1"
+        return self.session.options.get_int("enablesdt") == 1
 
     def seturl(self) -> None:
         """
@@ -96,7 +96,7 @@ class Sdt:
 
         :return: nothing
         """
-        url = self.session.options.get_config("stdurl", default=self.DEFAULT_SDT_URL)
+        url = self.session.options.get("stdurl", self.DEFAULT_SDT_URL)
         self.url = urlparse(url)
         self.address = (self.url.hostname, self.url.port)
         self.protocol = self.url.scheme

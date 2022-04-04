@@ -133,10 +133,10 @@ class EmaneManager:
         self._emane_nets: Dict[int, EmaneNet] = {}
         self._emane_node_lock: threading.Lock = threading.Lock()
         # port numbers are allocated from these counters
-        self.platformport: int = self.session.options.get_config_int(
+        self.platformport: int = self.session.options.get_int(
             "emane_platform_port", 8100
         )
-        self.transformport: int = self.session.options.get_config_int(
+        self.transformport: int = self.session.options.get_int(
             "emane_transform_port", 8200
         )
         self.doeventloop: bool = False
@@ -153,7 +153,7 @@ class EmaneManager:
         self.nem_service: Dict[int, EmaneEventService] = {}
 
     def next_nem_id(self, iface: CoreInterface) -> int:
-        nem_id = self.session.options.get_config_int("nem_id_start")
+        nem_id = self.session.options.get_int("nem_id_start")
         while nem_id in self.nems_to_ifaces:
             nem_id += 1
         self.nems_to_ifaces[nem_id] = iface
@@ -484,7 +484,7 @@ class EmaneManager:
             logger.exception("error writing to emane nem file")
 
     def links_enabled(self) -> bool:
-        return self.session.options.get_config_int("link_enabled") == 1
+        return self.session.options.get_int("link_enabled") == 1
 
     def poststartup(self) -> None:
         """
@@ -602,8 +602,8 @@ class EmaneManager:
         """
         node = iface.node
         loglevel = str(DEFAULT_LOG_LEVEL)
-        cfgloglevel = self.session.options.get_config_int("emane_log_level")
-        realtime = self.session.options.get_config_bool("emane_realtime", default=True)
+        cfgloglevel = self.session.options.get_int("emane_log_level", 2)
+        realtime = self.session.options.get_bool("emane_realtime")
         if cfgloglevel:
             logger.info("setting user-defined emane log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
@@ -638,7 +638,7 @@ class EmaneManager:
         """
         # this support must be explicitly turned on; by default, CORE will
         # generate the EMANE events when nodes are moved
-        return self.session.options.get_config_bool("emane_event_monitor")
+        return self.session.options.get_bool("emane_event_monitor", False)
 
     def genlocationevents(self) -> bool:
         """
@@ -646,7 +646,7 @@ class EmaneManager:
         """
         # By default, CORE generates EMANE location events when nodes
         # are moved; this can be explicitly disabled in core.conf
-        tmp = self.session.options.get_config_bool("emane_event_generate")
+        tmp = self.session.options.get_bool("emane_event_generate", True)
         if tmp is None:
             tmp = not self.doeventmonitor()
         return tmp

@@ -1,23 +1,15 @@
-from typing import Any, Dict, List
+from typing import Dict, List, Optional
 
-from core.config import (
-    ConfigBool,
-    ConfigInt,
-    ConfigString,
-    ConfigurableManager,
-    ConfigurableOptions,
-    Configuration,
-)
-from core.emulator.enumerations import RegisterTlvs
+from core.config import ConfigBool, ConfigInt, ConfigString, Configuration
+from core.errors import CoreError
 from core.plugins.sdt import Sdt
 
 
-class SessionConfig(ConfigurableManager, ConfigurableOptions):
+class SessionConfig:
     """
     Provides session configuration.
     """
 
-    name: str = "session"
     options: List[Configuration] = [
         ConfigString(id="controlnet", label="Control Network"),
         ConfigString(id="controlnet0", label="Control Network 0"),
@@ -42,37 +34,54 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         ConfigInt(id="link_timeout", default="4", label="EMANE Link Timeout (sec)"),
         ConfigInt(id="mtu", default="0", label="MTU for All Devices"),
     ]
-    config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
     def __init__(self, config: Dict[str, str] = None) -> None:
-        super().__init__()
-        self.set_configs(self.default_values())
-        if config:
-            for key, value in config.items():
-                self.set_config(key, value)
-
-    def get_config(
-        self,
-        _id: str,
-        node_id: int = ConfigurableManager._default_node,
-        config_type: str = ConfigurableManager._default_type,
-        default: Any = None,
-    ) -> str:
         """
-        Retrieves a specific configuration for a node and configuration type.
+        Create a SessionConfig instance.
 
-        :param _id: specific configuration to retrieve
-        :param node_id: node id to store configuration for
-        :param config_type: configuration type to store configuration for
-        :param default: default value to return when value is not found
-        :return: configuration value
+        :param config: configuration to initialize with
         """
-        value = super().get_config(_id, node_id, config_type, default)
-        if value == "":
-            value = default
-        return value
+        self._config: Dict[str, str] = {x.id: x.default for x in self.options}
+        self._config.update(config or {})
 
-    def get_config_bool(self, name: str, default: Any = None) -> bool:
+    def update(self, config: Dict[str, str]) -> None:
+        """
+        Update current configuration with provided values.
+
+        :param config: configuration to update with
+        :return: nothing
+        """
+        self._config.update(config)
+
+    def set(self, name: str, value: str) -> None:
+        """
+        Set a configuration value.
+
+        :param name: name of configuration to set
+        :param value: value to set
+        :return: nothing
+        """
+        self._config[name] = value
+
+    def get(self, name: str, default: str = None) -> Optional[str]:
+        """
+        Retrieve configuration value.
+
+        :param name: name of configuration to get
+        :param default: value to return as default
+        :return: return found configuration value or default
+        """
+        return self._config.get(name, default)
+
+    def all(self) -> Dict[str, str]:
+        """
+        Retrieve all configuration options.
+
+        :return: configuration value dict
+        """
+        return self._config
+
+    def get_bool(self, name: str, default: bool = None) -> bool:
         """
         Get configuration value as a boolean.
 
@@ -80,12 +89,15 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         :param default: default value if not found
         :return: boolean for configuration value
         """
-        value = self.get_config(name)
+        value = self._config.get(name)
+        if value is None and default is None:
+            raise CoreError(f"missing session options for {name}")
         if value is None:
             return default
-        return value.lower() == "true"
+        else:
+            return value.lower() == "true"
 
-    def get_config_int(self, name: str, default: Any = None) -> int:
+    def get_int(self, name: str, default: int = None) -> int:
         """
         Get configuration value as int.
 
@@ -93,17 +105,10 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         :param default: default value if not found
         :return: int for configuration value
         """
-        value = self.get_config(name, default=default)
-        if value is not None:
-            value = int(value)
-        return value
-
-    def config_reset(self, node_id: int = None) -> None:
-        """
-        Clear prior configuration files and reset to default values.
-
-        :param node_id: node id to store configuration for
-        :return: nothing
-        """
-        super().config_reset(node_id)
-        self.set_configs(self.default_values())
+        value = self._config.get(name)
+        if value is None and default is None:
+            raise CoreError(f"missing session options for {name}")
+        if value is None:
+            return default
+        else:
+            return int(value)

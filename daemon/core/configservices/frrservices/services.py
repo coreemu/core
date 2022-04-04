@@ -85,10 +85,10 @@ class FRRZebra(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         frr_conf = self.files[0]
-        frr_bin_search = self.node.session.options.get_config(
+        frr_bin_search = self.node.session.options.get(
             "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
-        frr_sbin_search = self.node.session.options.get_config(
+        frr_sbin_search = self.node.session.options.get(
             "frr_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/frr"
         ).strip('"')
 
