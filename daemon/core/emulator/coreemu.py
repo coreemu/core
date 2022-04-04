@@ -140,10 +140,8 @@ class CoreEmu:
         :return: nothing
         """
         logger.info("shutting down all sessions")
-        sessions = self.sessions.copy()
-        self.sessions.clear()
-        for _id in sessions:
-            session = sessions[_id]
+        while self.sessions:
+            _, session = self.sessions.popitem()
             session.shutdown()
 
     def create_session(self, _id: int = None, _cls: Type[Session] = Session) -> Session:
