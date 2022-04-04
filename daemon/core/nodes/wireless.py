@@ -173,12 +173,13 @@ class WirelessNode(CoreNetworkBase):
         if not link:
             raise CoreError(f"invalid node links node1({node1_id}) node2({node2_id})")
         iface = link.iface
+        has_netem = iface.has_netem
         iface.options.update(options1)
         iface.set_config()
         name, localname = iface.name, iface.localname
         iface.name, iface.localname = localname, name
         iface.options.update(options2)
-        iface.has_netem = True
+        iface.has_netem = has_netem
         iface.set_config()
         iface.name, iface.localname = name, localname
         if options1 == options2:
@@ -227,9 +228,6 @@ class WirelessNode(CoreNetworkBase):
             point2 = oiface.node.position.get()
             distance = calc_distance(point1, point2) - 250
             distance = max(distance, 0.0)
-            logger.info(
-                "n1(%s) n2(%s) d(%s)", iface.node.name, oiface.node.name, distance
-            )
             loss = min((distance / 500) * 100.0, 100.0)
             node1_id = iface.node.id
             node2_id = oiface.node.id
