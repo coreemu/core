@@ -748,9 +748,9 @@ class CoreGrpcClient:
         :raises grpc.RpcError: when session doesn't exist
         """
         defaults = []
-        for node_type in service_defaults:
-            services = service_defaults[node_type]
-            default = ServiceDefaults(node_type=node_type, services=services)
+        for model in service_defaults:
+            services = service_defaults[model]
+            default = ServiceDefaults(model=model, services=services)
             defaults.append(default)
         request = SetServiceDefaultsRequest(session_id=session_id, defaults=defaults)
         response = self.stub.SetServiceDefaults(request)

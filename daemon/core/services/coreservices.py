@@ -234,26 +234,6 @@ class CoreServices:
         """
         self.custom_services.clear()
 
-    def get_default_services(self, node_type: str) -> List[Type["CoreService"]]:
-        """
-        Get the list of default services that should be enabled for a
-        node for the given node type.
-
-        :param node_type: node type to get default services for
-        :return: default services
-        """
-        logger.debug("getting default services for type: %s", node_type)
-        results = []
-        defaults = self.default_services.get(node_type, [])
-        for name in defaults:
-            logger.debug("checking for service with service manager: %s", name)
-            service = ServiceManager.get(name)
-            if not service:
-                logger.warning("default service %s is unknown", name)
-            else:
-                results.append(service)
-        return results
-
     def get_service(
         self, node_id: int, service_name: str, default_service: bool = False
     ) -> "CoreService":
@@ -293,21 +273,21 @@ class CoreServices:
             node_services[service.name] = service
 
     def add_services(
-        self, node: CoreNode, node_type: str, services: List[str] = None
+        self, node: CoreNode, model: str, services: List[str] = None
     ) -> None:
         """
         Add services to a node.
 
         :param node: node to add services to
-        :param node_type: node type to add services to
+        :param model: node model type to add services for
         :param services: names of services to add to node
         :return: nothing
         """
         if not services:
             logger.info(
-                "using default services for node(%s) type(%s)", node.name, node_type
+                "using default services for node(%s) type(%s)", node.name, model
             )
-            services = self.default_services.get(node_type, [])
+            services = self.default_services.get(model, [])
         logger.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)

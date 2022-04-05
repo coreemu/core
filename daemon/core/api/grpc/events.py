@@ -33,7 +33,7 @@ def handle_node_event(node_data: NodeData) -> core_pb2.Event:
     node_proto = core_pb2.Node(
         id=node.id,
         name=node.name,
-        model=node.type,
+        model=node.model,
         icon=node.icon,
         position=position,
         geo=geo,

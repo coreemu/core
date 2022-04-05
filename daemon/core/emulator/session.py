@@ -536,15 +536,15 @@ class Session:
 
         # add services to needed nodes
         if isinstance(node, (CoreNode, PhysicalNode)):
-            node.type = options.model
+            node.model = options.model
             if options.legacy or options.services:
-                logger.debug("set node type: %s", node.type)
-                self.services.add_services(node, node.type, options.services)
+                logger.debug("set node type: %s", node.model)
+                self.services.add_services(node, node.model, options.services)
 
             # add config services
             config_services = options.config_services
             if not options.legacy and not config_services and not node.services:
-                config_services = self.services.default_services.get(node.type, [])
+                config_services = self.services.default_services.get(node.model, [])
             logger.info("setting node config services: %s", config_services)
             for name in config_services:
                 service_class = self.service_manager.get_service(name)

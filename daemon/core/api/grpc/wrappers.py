@@ -210,12 +210,12 @@ class Service:
 
 @dataclass
 class ServiceDefault:
-    node_type: str
+    model: str
     services: List[str]
 
     @classmethod
     def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
-        return ServiceDefault(node_type=proto.node_type, services=list(proto.services))
+        return ServiceDefault(model=proto.model, services=list(proto.services))
 
 
 @dataclass
@@ -884,9 +884,7 @@ class Session:
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
         nodes: Dict[int, Node] = {x.id: Node.from_proto(x) for x in proto.nodes}
         links = [Link.from_proto(x) for x in proto.links]
-        default_services = {
-            x.node_type: set(x.services) for x in proto.default_services
-        }
+        default_services = {x.model: set(x.services) for x in proto.default_services}
         hooks = {x.file: Hook.from_proto(x) for x in proto.hooks}
         file_path = Path(proto.file) if proto.file else None
         options = ConfigOption.from_dict(proto.options)
@@ -914,9 +912,9 @@ class Session:
         options = {k: v.to_proto() for k, v in self.options.items()}
         servers = [x.to_proto() for x in self.servers]
         default_services = []
-        for node_type, services in self.default_services.items():
+        for model, services in self.default_services.items():
             default_service = services_pb2.ServiceDefaults(
-                node_type=node_type, services=services
+                model=model, services=services
             )
             default_services.append(default_service)
         file = str(self.file) if self.file else None

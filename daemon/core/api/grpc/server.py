@@ -920,7 +920,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.services.default_services.clear()
         for service_defaults in request.defaults:
             session.services.default_services[
-                service_defaults.node_type
+                service_defaults.model
             ] = service_defaults.services
         return SetServiceDefaultsResponse(result=True)
 

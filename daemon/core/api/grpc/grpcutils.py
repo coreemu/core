@@ -286,7 +286,6 @@ def get_node_proto(
         lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
     )
     services = [x.name for x in node.services]
-    model = node.type
     node_dir = None
     config_services = []
     if isinstance(node, CoreNodeBase):
@@ -341,7 +340,7 @@ def get_node_proto(
         id=node.id,
         name=node.name,
         emane=emane_model,
-        model=model,
+        model=node.model,
         type=node_type.value,
         position=position,
         geo=geo,
@@ -729,8 +728,8 @@ def get_default_services(session: Session) -> List[ServiceDefaults]:
     :return: list of default service sets
     """
     default_services = []
-    for name, services in session.services.default_services.items():
-        default_service = ServiceDefaults(node_type=name, services=services)
+    for model, services in session.services.default_services.items():
+        default_service = ServiceDefaults(model=model, services=services)
         default_services.append(default_service)
     return default_services
 

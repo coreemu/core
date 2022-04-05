@@ -62,11 +62,9 @@ class NodeBase(abc.ABC):
         if _id is None:
             _id = session.next_node_id()
         self.id: int = _id
-        if name is None:
-            name = f"o{self.id}"
-        self.name: str = name
+        self.name: str = name or f"o{self.id}"
         self.server: "DistributedServer" = server
-        self.type: Optional[str] = None
+        self.model: Optional[str] = None
         self.services: CoreServices = []
         self.ifaces: Dict[int, CoreInterface] = {}
         self.iface_id: int = 0

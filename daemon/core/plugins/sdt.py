@@ -4,16 +4,18 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
 from urllib.parse import urlparse
 
-from core.constants import CORE_CONF_DIR, CORE_DATA_DIR
+from core.constants import CORE_CONF_DIR
 from core.emane.nodes import EmaneNet
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import EventTypes, MessageFlags
 from core.errors import CoreError
-from core.nodes.base import NodeBase
-from core.nodes.network import WlanNode
+from core.nodes.base import CoreNode, NodeBase
+from core.nodes.network import HubNode, SwitchNode, TunnelNode, WlanNode
+from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
 
 logger = logging.getLogger(__name__)
@@ -21,12 +23,22 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
+LOCAL_ICONS_PATH: Path = Path(__file__).parent.parent / "gui" / "data" / "icons"
 CORE_LAYER: str = "CORE"
 NODE_LAYER: str = "CORE::Nodes"
 LINK_LAYER: str = "CORE::Links"
 WIRED_LINK_LAYER: str = f"{LINK_LAYER}::wired"
 CORE_LAYERS: List[str] = [CORE_LAYER, LINK_LAYER, NODE_LAYER, WIRED_LINK_LAYER]
 DEFAULT_LINK_COLOR: str = "red"
+NODE_TYPES: Dict[Type[NodeBase], str] = {
+    HubNode: "hub",
+    SwitchNode: "lanswitch",
+    TunnelNode: "tunnel",
+    WlanNode: "wlan",
+    EmaneNet: "emane",
+    WirelessNode: "wireless",
+    Rj45Node: "rj45",
+}
 
 
 def is_wireless(node: NodeBase) -> bool:
@@ -52,16 +64,18 @@ class Sdt:
     DEFAULT_ALT: int = 2500
     # TODO: read in user"s nodes.conf here; below are default node types from the GUI
     DEFAULT_SPRITES: Dict[str, str] = [
-        ("router", "router.gif"),
-        ("host", "host.gif"),
-        ("PC", "pc.gif"),
-        ("mdr", "mdr.gif"),
-        ("prouter", "router_green.gif"),
-        ("hub", "hub.gif"),
-        ("lanswitch", "lanswitch.gif"),
-        ("wlan", "wlan.gif"),
-        ("rj45", "rj45.gif"),
-        ("tunnel", "tunnel.gif"),
+        ("router", "router.png"),
+        ("host", "host.png"),
+        ("PC", "pc.png"),
+        ("mdr", "mdr.png"),
+        ("prouter", "prouter.png"),
+        ("hub", "hub.png"),
+        ("lanswitch", "lanswitch.png"),
+        ("wlan", "wlan.png"),
+        ("emane", "emane.png"),
+        ("wireless", "wireless.png"),
+        ("rj45", "rj45.png"),
+        ("tunnel", "tunnel.png"),
     ]
 
     def __init__(self, session: "Session") -> None:
@@ -144,7 +158,7 @@ class Sdt:
 
         :return: initialize command status
         """
-        if not self.cmd(f'path "{CORE_DATA_DIR}/icons/normal"'):
+        if not self.cmd(f'path "{LOCAL_ICONS_PATH.absolute()}"'):
             return False
         # send node type to icon mappings
         for node_type, icon in self.DEFAULT_SPRITES:
@@ -166,7 +180,6 @@ class Sdt:
                 logger.error("error closing socket")
             finally:
                 self.sock = None
-
         self.connected = False
 
     def shutdown(self) -> None:
@@ -194,7 +207,6 @@ class Sdt:
         """
         if self.sock is None:
             return False
-
         try:
             cmd = f"{cmdstr}\n".encode()
             logger.debug("sdt cmd: %s", cmd)
@@ -259,13 +271,14 @@ class Sdt:
         pos = self.get_node_position(node)
         if not pos:
             return
-        node_type = node.type
-        if node_type is None:
-            node_type = type(node).type
+        if isinstance(node, CoreNode):
+            node_type = node.model
+        else:
+            node_type = NODE_TYPES.get(type(node), "PC")
         icon = node.icon
         if icon:
             node_type = node.name
-            icon = icon.replace("$CORE_DATA_DIR", str(CORE_DATA_DIR))
+            icon = icon.replace("$CORE_DATA_DIR", str(LOCAL_ICONS_PATH.absolute()))
             icon = icon.replace("$CORE_CONF_DIR", str(CORE_CONF_DIR))
             self.cmd(f"sprite {node_type} image {icon}")
         self.cmd(

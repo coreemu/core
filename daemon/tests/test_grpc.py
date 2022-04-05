@@ -641,16 +641,16 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node_type = "test"
+        model = "test"
         services = ["SSH"]
 
         # then
         with client.context_connect():
-            result = client.set_service_defaults(session.id, {node_type: services})
+            result = client.set_service_defaults(session.id, {model: services})
 
         # then
         assert result is True
-        assert session.services.default_services[node_type] == services
+        assert session.services.default_services[model] == services
 
     def test_get_node_service(self, grpc_server: CoreGrpcServer):
         # given

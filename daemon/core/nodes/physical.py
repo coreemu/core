@@ -29,7 +29,6 @@ class Rj45Node(CoreNodeBase):
     """
 
     apitype: NodeTypes = NodeTypes.RJ45
-    type: str = "rj45"
 
     def __init__(
         self,

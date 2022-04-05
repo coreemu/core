@@ -663,7 +663,6 @@ class SwitchNode(CoreNetwork):
 
     apitype: NodeTypes = NodeTypes.SWITCH
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "lanswitch"
 
 
 class HubNode(CoreNetwork):
@@ -674,7 +673,6 @@ class HubNode(CoreNetwork):
 
     apitype: NodeTypes = NodeTypes.HUB
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "hub"
 
     def startup(self) -> None:
         """
@@ -694,7 +692,6 @@ class WlanNode(CoreNetwork):
     apitype: NodeTypes = NodeTypes.WIRELESS_LAN
     linktype: LinkTypes = LinkTypes.WIRED
     policy: NetworkPolicy = NetworkPolicy.DROP
-    type: str = "wlan"
 
     def __init__(
         self,
@@ -794,4 +791,3 @@ class TunnelNode(GreTapBridge):
 
     apitype: NodeTypes = NodeTypes.TUNNEL
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "tunnel"

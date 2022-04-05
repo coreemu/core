@@ -211,7 +211,7 @@ class ServiceElement:
 class DeviceElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "device")
-        add_attribute(self.element, "type", node.type)
+        add_attribute(self.element, "type", node.model)
         self.add_class()
         self.add_services()
 
@@ -434,15 +434,14 @@ class CoreXmlWriter:
             self.scenario.append(service_configurations)
 
     def write_default_services(self) -> None:
-        node_types = etree.Element("default_services")
-        for node_type in self.session.services.default_services:
-            services = self.session.services.default_services[node_type]
-            node_type = etree.SubElement(node_types, "node", type=node_type)
+        models = etree.Element("default_services")
+        for model in self.session.services.default_services:
+            services = self.session.services.default_services[model]
+            model = etree.SubElement(models, "node", type=model)
             for service in services:
-                etree.SubElement(node_type, "service", name=service)
-
-        if node_types.getchildren():
-            self.scenario.append(node_types)
+                etree.SubElement(model, "service", name=service)
+        if models.getchildren():
+            self.scenario.append(models)
 
     def write_nodes(self) -> None:
         for node_id in self.session.nodes:
@@ -586,14 +585,12 @@ class CoreXmlReader:
             return
 
         for node in default_services.iterchildren():
-            node_type = node.get("type")
+            model = node.get("type")
             services = []
             for service in node.iterchildren():
                 services.append(service.get("name"))
-            logger.info(
-                "reading default services for nodes(%s): %s", node_type, services
-            )
-            self.session.services.default_services[node_type] = services
+            logger.info("reading default services for nodes(%s): %s", model, services)
+            self.session.services.default_services[model] = services
 
     def read_session_metadata(self) -> None:
         session_metadata = self.scenario.find("session_metadata")

@@ -53,7 +53,7 @@ class TestServices:
         total_service = len(node.services)
 
         # when
-        session.services.add_services(node, node.type, [SERVICE_ONE, SERVICE_TWO])
+        session.services.add_services(node, node.model, [SERVICE_ONE, SERVICE_TWO])
 
         # then
         assert node.services
