@@ -33,11 +33,17 @@ def calc_distance(
     return math.hypot(math.hypot(a, b), c)
 
 
+def get_key(node1_id: int, node2_id: int) -> Tuple[int, int]:
+    return (node1_id, node2_id) if node1_id < node2_id else (node2_id, node1_id)
+
+
 @dataclass
 class WirelessLink:
     bridge1: str
     bridge2: str
     iface: CoreInterface
+    linked: bool
+    label: str = None
 
 
 class WirelessNode(CoreNetworkBase):
@@ -53,7 +59,6 @@ class WirelessNode(CoreNetworkBase):
         super().__init__(session, _id, name, server)
         self.bridges: Dict[int, Tuple[CoreInterface, str]] = {}
         self.links: Dict[Tuple[int, int], WirelessLink] = {}
-        self.labels: Dict[Tuple[int, int], str] = {}
 
     def startup(self) -> None:
         if self.up:
@@ -117,7 +122,7 @@ class WirelessNode(CoreNetworkBase):
                 name2 = f"we{self.id}.{node2.id}.{node1.id}.{session_id}"
                 link_iface = CoreInterface(0, name1, name2, self.session.use_ovs())
                 link_iface.startup()
-                link = WirelessLink(bridge1, bridge2, link_iface)
+                link = WirelessLink(bridge1, bridge2, link_iface, True)
                 self.links[key] = link
                 # assign ifaces to respective bridges
                 self.net_client.set_iface_master(bridge1, link_iface.name)
@@ -148,27 +153,27 @@ class WirelessNode(CoreNetworkBase):
             )
 
     def link_control(self, node1_id: int, node2_id: int, linked: bool) -> None:
-        key = (node1_id, node2_id) if node1_id < node2_id else (node2_id, node1_id)
+        key = get_key(node1_id, node2_id)
         link = self.links.get(key)
         if not link:
             raise CoreError(f"invalid node links node1({node1_id}) node2({node2_id})")
         bridge1, bridge2 = link.bridge1, link.bridge2
         iface = link.iface
-        if linked:
+        if not link.linked and linked:
+            link.linked = True
             self.net_client.set_iface_master(bridge1, iface.name)
             self.net_client.set_iface_master(bridge2, iface.localname)
-            message_type = MessageFlags.ADD
-        else:
+            self.send_link(key[0], key[1], MessageFlags.ADD, link.label)
+        elif link.linked and not linked:
+            link.linked = False
             self.net_client.delete_iface(bridge1, iface.name)
             self.net_client.delete_iface(bridge2, iface.localname)
-            message_type = MessageFlags.DELETE
-        label = self.labels.get(key)
-        self.send_link(key[0], key[1], message_type, label)
+            self.send_link(key[0], key[1], MessageFlags.DELETE, link.label)
 
     def link_config(
         self, node1_id: int, node2_id: int, options1: LinkOptions, options2: LinkOptions
     ) -> None:
-        key = (node1_id, node2_id) if node1_id < node2_id else (node2_id, node1_id)
+        key = get_key(node1_id, node2_id)
         link = self.links.get(key)
         if not link:
             raise CoreError(f"invalid node links node1({node1_id}) node2({node2_id})")
@@ -183,14 +188,13 @@ class WirelessNode(CoreNetworkBase):
         iface.set_config()
         iface.name, iface.localname = name, localname
         if options1 == options2:
-            label = f"{options1.loss:.2f}%/{options1.delay}us"
+            link.label = f"{options1.loss:.2f}%/{options1.delay}us"
         else:
-            label = (
+            link.label = (
                 f"({options1.loss:.2f}%/{options1.delay}us) "
                 f"({options2.loss:.2f}%/{options2.delay}us)"
             )
-        self.labels[key] = label
-        self.send_link(key[0], key[1], MessageFlags.NONE, label)
+        self.send_link(key[0], key[1], MessageFlags.NONE, link.label)
 
     def send_link(
         self,
@@ -224,15 +228,18 @@ class WirelessNode(CoreNetworkBase):
         for oiface, bridge_name in self.bridges.values():
             if iface == oiface:
                 continue
-            point1 = iface.node.position.get()
-            point2 = oiface.node.position.get()
-            distance = calc_distance(point1, point2) - 250
-            distance = max(distance, 0.0)
-            loss = min((distance / 500) * 100.0, 100.0)
-            node1_id = iface.node.id
-            node2_id = oiface.node.id
-            options = LinkOptions(loss=loss, delay=0)
-            self.link_config(node1_id, node2_id, options, options)
+            self.calc_link(iface, oiface)
+
+    def calc_link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
+        point1 = iface1.node.position.get()
+        point2 = iface2.node.position.get()
+        distance = calc_distance(point1, point2) - 250
+        distance = max(distance, 0.0)
+        loss = min((distance / 500) * 100.0, 100.0)
+        node1_id = iface1.node.id
+        node2_id = iface2.node.id
+        options = LinkOptions(loss=loss, delay=0)
+        self.link_config(node1_id, node2_id, options, options)
 
     def adopt_iface(self, iface: CoreInterface, name: str) -> None:
         raise CoreError(f"{type(self)} does not support adopt interface")
