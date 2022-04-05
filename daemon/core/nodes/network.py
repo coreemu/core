@@ -14,7 +14,6 @@ import netaddr
 from core import utils
 from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import (
-    LinkTypes,
     MessageFlags,
     NetworkPolicy,
     NodeTypes,
@@ -690,7 +689,6 @@ class WlanNode(CoreNetwork):
     """
 
     apitype: NodeTypes = NodeTypes.WIRELESS_LAN
-    linktype: LinkTypes = LinkTypes.WIRED
     policy: NetworkPolicy = NetworkPolicy.DROP
 
     def __init__(

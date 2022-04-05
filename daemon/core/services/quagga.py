@@ -6,7 +6,6 @@ from typing import Optional, Tuple
 import netaddr
 
 from core.emane.nodes import EmaneNet
-from core.emulator.enumerations import LinkTypes
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
@@ -553,7 +552,7 @@ class Babel(QuaggaService):
 
     @classmethod
     def generate_quagga_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        if iface.net and iface.net.linktype == LinkTypes.WIRELESS:
+        if is_wireless(iface.net):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"

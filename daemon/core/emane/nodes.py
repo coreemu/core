@@ -9,13 +9,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import (
-    EventTypes,
-    LinkTypes,
-    MessageFlags,
-    NodeTypes,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
@@ -156,7 +150,6 @@ class EmaneNet(CoreNetworkBase):
     """
 
     apitype: NodeTypes = NodeTypes.EMANE
-    linktype: LinkTypes = LinkTypes.WIRED
     type: str = "wlan"
 
     def __init__(

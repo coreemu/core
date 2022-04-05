@@ -14,7 +14,7 @@ import netaddr
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkOptions
-from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
@@ -795,8 +795,6 @@ class CoreNetworkBase(NodeBase):
     """
     Base class for networks
     """
-
-    linktype: LinkTypes = LinkTypes.WIRED
 
     def __init__(
         self,
