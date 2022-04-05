@@ -752,8 +752,6 @@ class Session:
         :param source: source of broadcast, None by default
         :return: nothing
         """
-        if not node.apitype:
-            return
         node_data = NodeData(node=node, message_type=message_type, source=source)
         for handler in self.node_handlers:
             handler(node_data)
@@ -1064,7 +1062,8 @@ class Session:
             with self.nodes_lock:
                 with file_path.open("w") as f:
                     for _id, node in self.nodes.items():
-                        f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
+                        node_type = self.get_node_type(type(node))
+                        f.write(f"{_id} {node.name} {node_type} {type(node)}\n")
         except IOError:
             logger.exception("error writing nodes file")
 

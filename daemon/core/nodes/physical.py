@@ -10,7 +10,7 @@ import netaddr
 
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import NodeTypes, TransportType
+from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, TEST, UMOUNT
 from core.nodes.base import CoreNode, CoreNodeBase
@@ -27,8 +27,6 @@ class Rj45Node(CoreNodeBase):
     RJ45Node is a physical interface on the host linked to the emulated
     network.
     """
-
-    apitype: NodeTypes = NodeTypes.RJ45
 
     def __init__(
         self,

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import EventTypes, MessageFlags, NodeTypes, RegisterTlvs
+from core.emulator.enumerations import EventTypes, MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode
 from core.nodes.interface import CoreInterface
@@ -148,9 +148,6 @@ class EmaneNet(CoreNetworkBase):
     to have TAP interfaces (instead of VEth). These are managed by the
     Emane controller object that exists in a session.
     """
-
-    apitype: NodeTypes = NodeTypes.EMANE
-    type: str = "wlan"
 
     def __init__(
         self,

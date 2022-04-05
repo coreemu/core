@@ -14,7 +14,6 @@ import netaddr
 from core import utils
 from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkOptions
-from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
@@ -38,8 +37,6 @@ class NodeBase(abc.ABC):
     """
     Base class for CORE nodes (nodes and networks)
     """
-
-    apitype: Optional[NodeTypes] = None
 
     def __init__(
         self,
@@ -457,8 +454,6 @@ class CoreNode(CoreNodeBase):
     """
     Provides standard core node logic.
     """
-
-    apitype: NodeTypes = NodeTypes.DEFAULT
 
     def __init__(
         self,

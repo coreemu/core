@@ -13,12 +13,7 @@ import netaddr
 
 from core import utils
 from core.emulator.data import InterfaceData, LinkData
-from core.emulator.enumerations import (
-    MessageFlags,
-    NetworkPolicy,
-    NodeTypes,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import MessageFlags, NetworkPolicy, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.executables import NFTABLES
 from core.nodes.base import CoreNetworkBase
@@ -660,7 +655,6 @@ class SwitchNode(CoreNetwork):
     Provides switch functionality within a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.SWITCH
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
 
 
@@ -670,7 +664,6 @@ class HubNode(CoreNetwork):
     ports by turning off MAC address learning.
     """
 
-    apitype: NodeTypes = NodeTypes.HUB
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
 
     def startup(self) -> None:
@@ -688,7 +681,6 @@ class WlanNode(CoreNetwork):
     Provides wireless lan functionality within a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.WIRELESS_LAN
     policy: NetworkPolicy = NetworkPolicy.DROP
 
     def __init__(
@@ -787,5 +779,4 @@ class TunnelNode(GreTapBridge):
     Provides tunnel functionality in a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.TUNNEL
     policy: NetworkPolicy = NetworkPolicy.ACCEPT

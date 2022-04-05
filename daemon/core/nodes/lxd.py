@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Callable, Dict, Optional
 from core import utils
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.nodes.interface import CoreInterface
@@ -68,8 +67,6 @@ class LxdClient:
 
 
 class LxcNode(CoreNode):
-    apitype = NodeTypes.LXC
-
     def __init__(
         self,
         session: "Session",

@@ -15,7 +15,7 @@ from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
-from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
+from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
 from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
@@ -254,11 +254,8 @@ class NetworkElement(NodeElement):
         self.add_type()
 
     def add_type(self) -> None:
-        if self.node.apitype:
-            node_type = self.node.apitype.name
-        else:
-            node_type = self.node.__class__.__name__
-        add_attribute(self.element, "type", node_type)
+        node_type = self.session.get_node_type(type(self.node))
+        add_attribute(self.element, "type", node_type.name)
 
 
 class CoreXmlWriter:
@@ -444,24 +441,20 @@ class CoreXmlWriter:
             self.scenario.append(models)
 
     def write_nodes(self) -> None:
-        for node_id in self.session.nodes:
-            node = self.session.nodes[node_id]
+        for node in self.session.nodes.values():
             # network node
             is_network_or_rj45 = isinstance(
                 node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node)
             )
             is_controlnet = isinstance(node, CtrlNet)
-            if is_network_or_rj45 and not is_controlnet:
+            is_ptp = isinstance(node, PtpNet)
+            if is_network_or_rj45 and not (is_controlnet or is_ptp):
                 self.write_network(node)
             # device node
             elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
 
     def write_network(self, node: NodeBase) -> None:
-        # ignore p2p and other nodes that are not part of the api
-        if not node.apitype:
-            return
-
         network = NetworkElement(self.session, node)
         self.networks.append(network.element)
 

@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Callable, Dict, Optional
 
 from core import utils
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 from core.nodes.netclient import LinuxNetClient, get_net_client
@@ -71,8 +70,6 @@ class DockerClient:
 
 
 class DockerNode(CoreNode):
-    apitype = NodeTypes.DOCKER
-
     def __init__(
         self,
         session: "Session",

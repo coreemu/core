@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict, Tuple
 
 from core.emulator.data import LinkData, LinkOptions
-from core.emulator.enumerations import LinkTypes, MessageFlags, NodeTypes
+from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.errors import CoreError
 from core.executables import NFTABLES
 from core.nodes.base import CoreNetworkBase
@@ -47,8 +47,6 @@ class WirelessLink:
 
 
 class WirelessNode(CoreNetworkBase):
-    apitype: NodeTypes = NodeTypes.WIRELESS
-
     def __init__(
         self,
         session: "Session",
