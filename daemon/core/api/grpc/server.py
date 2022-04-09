@@ -23,6 +23,8 @@ from core.api.grpc.configservices_pb2 import (
     ConfigService,
     GetConfigServiceDefaultsRequest,
     GetConfigServiceDefaultsResponse,
+    GetConfigServiceRenderedRequest,
+    GetConfigServiceRenderedResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
 )
@@ -1225,6 +1227,27 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             service = self.coreemu.service_manager.get_service(request.name)
             config = {x.id: x.default for x in service.default_configs}
         return GetNodeConfigServiceResponse(config=config)
+
+    def GetConfigServiceRendered(
+        self, request: GetConfigServiceRenderedRequest, context: ServicerContext
+    ) -> GetConfigServiceRenderedResponse:
+        """
+        Retrieves the rendered file data for a given config service on a node.
+
+        :param request: config service render request
+        :param context: grpc context
+        :return: rendered config service files
+        """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
+        self.validate_service(request.name, context)
+        service = node.config_services.get(request.name)
+        if not service:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND, f"unknown node service {request.name}"
+            )
+        rendered = service.get_rendered_templates()
+        return GetConfigServiceRenderedResponse(rendered=rendered)
 
     def GetConfigServiceDefaults(
         self, request: GetConfigServiceDefaultsRequest, context: ServicerContext

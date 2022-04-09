@@ -743,6 +743,9 @@ class CoreClient:
                     configs.append(config)
         return configs
 
+    def get_config_service_rendered(self, node_id: int, name: str) -> Dict[str, str]:
+        return self.client.get_config_service_rendered(self.session.id, node_id, name)
+
     def get_config_service_configs_proto(
         self
     ) -> List[configservices_pb2.ConfigServiceConfig]:

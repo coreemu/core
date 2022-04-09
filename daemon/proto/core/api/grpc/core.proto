@@ -91,6 +91,8 @@ service CoreApi {
     }
     rpc ConfigServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
+    rpc GetConfigServiceRendered (configservices.GetConfigServiceRenderedRequest) returns (configservices.GetConfigServiceRenderedResponse) {
+    }
 
     // wlan rpc
     rpc GetWlanConfig (wlan.GetWlanConfigRequest) returns (wlan.GetWlanConfigResponse) {

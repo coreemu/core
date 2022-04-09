@@ -14,6 +14,7 @@ import grpc
 from core.api.grpc import core_pb2, core_pb2_grpc, emane_pb2, wrappers
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
+    GetConfigServiceRenderedRequest,
     GetNodeConfigServiceRequest,
 )
 from core.api.grpc.core_pb2 import (
@@ -993,6 +994,23 @@ class CoreGrpcClient:
         )
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
+
+    def get_config_service_rendered(
+        self, session_id: int, node_id: int, name: str
+    ) -> Dict[str, str]:
+        """
+        Retrieve the rendered config service files for a node.
+
+        :param session_id: id of session
+        :param node_id: id of node
+        :param name: name of service
+        :return: dict mapping names of files to rendered data
+        """
+        request = GetConfigServiceRenderedRequest(
+            session_id=session_id, node_id=node_id, name=name
+        )
+        response = self.stub.GetConfigServiceRendered(request)
+        return dict(response.rendered)
 
     def get_emane_event_channel(
         self, session_id: int, nem_id: int

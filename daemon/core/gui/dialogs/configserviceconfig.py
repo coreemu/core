@@ -34,10 +34,10 @@ class ConfigServiceConfigDialog(Dialog):
         self.core: "CoreClient" = app.core
         self.node: Node = node
         self.service_name: str = service_name
-        self.radiovar: tk.IntVar = tk.IntVar()
-        self.radiovar.set(2)
+        self.radiovar: tk.IntVar = tk.IntVar(value=2)
         self.directories: List[str] = []
         self.templates: List[str] = []
+        self.rendered: Dict[str, str] = {}
         self.dependencies: List[str] = []
         self.executables: List[str] = []
         self.startup_commands: List[str] = []
@@ -48,10 +48,9 @@ class ConfigServiceConfigDialog(Dialog):
         self.default_shutdown: List[str] = []
         self.validation_mode: Optional[ServiceValidationMode] = None
         self.validation_time: Optional[int] = None
-        self.validation_period: tk.StringVar = tk.StringVar()
+        self.validation_period: tk.DoubleVar = tk.DoubleVar()
         self.modes: List[str] = []
         self.mode_configs: Dict[str, Dict[str, str]] = {}
-
         self.notebook: Optional[ttk.Notebook] = None
         self.templates_combobox: Optional[ttk.Combobox] = None
         self.modes_combobox: Optional[ttk.Combobox] = None
@@ -61,6 +60,7 @@ class ConfigServiceConfigDialog(Dialog):
         self.validation_time_entry: Optional[ttk.Entry] = None
         self.validation_mode_entry: Optional[ttk.Entry] = None
         self.template_text: Optional[CodeText] = None
+        self.rendered_text: Optional[CodeText] = None
         self.validation_period_entry: Optional[ttk.Entry] = None
         self.original_service_files: Dict[str, str] = {}
         self.temp_service_files: Dict[str, str] = {}
@@ -87,7 +87,6 @@ class ConfigServiceConfigDialog(Dialog):
             self.validation_mode = service.validation_mode
             self.validation_time = service.validation_timer
             self.validation_period.set(service.validation_period)
-
             defaults = self.core.client.get_config_service_defaults(self.service_name)
             self.original_service_files = defaults.templates
             self.temp_service_files = dict(self.original_service_files)
@@ -95,6 +94,9 @@ class ConfigServiceConfigDialog(Dialog):
             self.mode_configs = defaults.modes
             self.config = ConfigOption.from_dict(defaults.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
+            self.rendered = self.core.get_config_service_rendered(
+                self.node.id, self.service_name
+            )
             service_config = self.node.config_service_configs.get(self.service_name)
             if service_config:
                 for key, value in service_config.config.items():
@@ -110,7 +112,6 @@ class ConfigServiceConfigDialog(Dialog):
     def draw(self) -> None:
         self.top.columnconfigure(0, weight=1)
         self.top.rowconfigure(0, weight=1)
-
         # draw notebook
         self.notebook = ttk.Notebook(self.top)
         self.notebook.grid(sticky=tk.NSEW, pady=PADY)
@@ -137,33 +138,50 @@ class ConfigServiceConfigDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="Directories")
         label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
-        directories_combobox = ttk.Combobox(
-            frame, values=self.directories, state="readonly"
-        )
+        state = "readonly" if self.directories else tk.DISABLED
+        directories_combobox = ttk.Combobox(frame, values=self.directories, state=state)
         directories_combobox.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
         if self.directories:
             directories_combobox.current(0)
-
-        label = ttk.Label(frame, text="Templates")
+        label = ttk.Label(frame, text="Files")
         label.grid(row=1, column=0, sticky=tk.W, padx=PADX)
+        state = "readonly" if self.templates else tk.DISABLED
         self.templates_combobox = ttk.Combobox(
-            frame, values=self.templates, state="readonly"
+            frame, values=self.templates, state=state
         )
         self.templates_combobox.bind(
             "<<ComboboxSelected>>", self.handle_template_changed
         )
         self.templates_combobox.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
-
-        self.template_text = CodeText(tab)
+        # draw file template tab
+        notebook = ttk.Notebook(tab)
+        # notebook.columnconfigure(0, weight=1)
+        notebook.grid(sticky=tk.NSEW, pady=PADY)
+        template_tab = ttk.Frame(notebook, padding=FRAME_PAD)
+        template_tab.grid(sticky=tk.NSEW)
+        template_tab.rowconfigure(0, weight=1)
+        notebook.add(template_tab, text="Template")
+        self.template_text = CodeText(template_tab)
         self.template_text.grid(sticky=tk.NSEW)
-        tab.rowconfigure(self.template_text.grid_info()["row"], weight=1)
+        self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
+        # draw rendered file tab
+        rendered_tab = ttk.Frame(notebook, padding=FRAME_PAD)
+        rendered_tab.grid(sticky=tk.NSEW)
+        rendered_tab.rowconfigure(0, weight=1)
+        notebook.add(rendered_tab, text="Rendered")
+        self.rendered_text = CodeText(rendered_tab)
+        self.rendered_text.grid(sticky=tk.NSEW)
+        self.rendered_text.text.bind("<FocusOut>", self.update_template_file_data)
         if self.templates:
             self.templates_combobox.current(0)
-            self.template_text.text.delete(1.0, "end")
-            self.template_text.text.insert(
-                "end", self.temp_service_files[self.templates[0]]
-            )
-        self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
+            template_name = self.templates[0]
+            temp_data = self.temp_service_files[template_name]
+            self.template_text.set_text(temp_data)
+            rendered_data = self.rendered[template_name]
+            self.rendered_text.set_text(rendered_data)
+        else:
+            self.template_text.text.configure(state=tk.DISABLED)
+            self.rendered_text.text.configure(state=tk.DISABLED)
 
     def draw_tab_config(self) -> None:
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
@@ -243,7 +261,7 @@ class ConfigServiceConfigDialog(Dialog):
         label = ttk.Label(frame, text="Validation Time")
         label.grid(row=0, column=0, sticky=tk.W, padx=PADX)
         self.validation_time_entry = ttk.Entry(frame)
-        self.validation_time_entry.insert("end", self.validation_time)
+        self.validation_time_entry.insert("end", str(self.validation_time))
         self.validation_time_entry.config(state=tk.DISABLED)
         self.validation_time_entry.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
@@ -323,9 +341,11 @@ class ConfigServiceConfigDialog(Dialog):
         self.destroy()
 
     def handle_template_changed(self, event: tk.Event) -> None:
-        template = self.templates_combobox.get()
-        self.template_text.text.delete(1.0, "end")
-        self.template_text.text.insert("end", self.temp_service_files[template])
+        template_name = self.templates_combobox.get()
+        temp_data = self.temp_service_files[template_name]
+        self.template_text.set_text(temp_data)
+        rendered = self.rendered[template_name]
+        self.rendered_text.set_text(rendered)
 
     def handle_mode_changed(self, event: tk.Event) -> None:
         mode = self.modes_combobox.get()
@@ -333,10 +353,13 @@ class ConfigServiceConfigDialog(Dialog):
         logger.info("mode config: %s", config)
         self.config_frame.set_values(config)
 
-    def update_template_file_data(self, event: tk.Event) -> None:
-        scrolledtext = event.widget
+    def update_template_file_data(self, _event: tk.Event) -> None:
         template = self.templates_combobox.get()
-        self.temp_service_files[template] = scrolledtext.get(1.0, "end")
+        self.temp_service_files[template] = self.rendered_text.get_text()
+        if self.rendered[template] != self.temp_service_files[template]:
+            self.modified_files.add(template)
+            return
+        self.temp_service_files[template] = self.template_text.get_text()
         if self.temp_service_files[template] != self.original_service_files[template]:
             self.modified_files.add(template)
         else:
@@ -351,14 +374,24 @@ class ConfigServiceConfigDialog(Dialog):
         return has_custom_templates or has_custom_config
 
     def click_defaults(self) -> None:
+        # clear all saved state data
+        self.modified_files.clear()
         self.node.config_service_configs.pop(self.service_name, None)
+        self.temp_service_files = dict(self.original_service_files)
+        # reset session definition and retrieve default rendered templates
+        self.core.start_session(definition=True)
+        self.rendered = self.core.get_config_service_rendered(
+            self.node.id, self.service_name
+        )
         logger.info(
             "cleared config service config: %s", self.node.config_service_configs
         )
-        self.temp_service_files = dict(self.original_service_files)
-        filename = self.templates_combobox.get()
-        self.template_text.text.delete(1.0, "end")
-        self.template_text.text.insert("end", self.temp_service_files[filename])
+        # reset current selected file data and config data, if present
+        template_name = self.templates_combobox.get()
+        temp_data = self.temp_service_files[template_name]
+        self.template_text.set_text(temp_data)
+        rendered_data = self.rendered[template_name]
+        self.rendered_text.set_text(rendered_data)
         if self.config_frame:
             logger.info("resetting defaults: %s", self.default_config)
             self.config_frame.set_values(self.default_config)
