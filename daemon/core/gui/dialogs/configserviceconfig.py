@@ -126,6 +126,7 @@ class ConfigServiceConfigDialog(Dialog):
         tab = ttk.Frame(self.notebook, padding=FRAME_PAD)
         tab.grid(sticky=tk.NSEW)
         tab.columnconfigure(0, weight=1)
+        tab.rowconfigure(2, weight=1)
         self.notebook.add(tab, text="Directories/Files")
 
         label = ttk.Label(
@@ -155,23 +156,27 @@ class ConfigServiceConfigDialog(Dialog):
         self.templates_combobox.grid(row=1, column=1, sticky=tk.EW, pady=PADY)
         # draw file template tab
         notebook = ttk.Notebook(tab)
-        # notebook.columnconfigure(0, weight=1)
+        notebook.rowconfigure(0, weight=1)
+        notebook.columnconfigure(0, weight=1)
         notebook.grid(sticky=tk.NSEW, pady=PADY)
-        template_tab = ttk.Frame(notebook, padding=FRAME_PAD)
-        template_tab.grid(sticky=tk.NSEW)
-        template_tab.rowconfigure(0, weight=1)
-        notebook.add(template_tab, text="Template")
-        self.template_text = CodeText(template_tab)
-        self.template_text.grid(sticky=tk.NSEW)
-        self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
         # draw rendered file tab
         rendered_tab = ttk.Frame(notebook, padding=FRAME_PAD)
         rendered_tab.grid(sticky=tk.NSEW)
         rendered_tab.rowconfigure(0, weight=1)
+        rendered_tab.columnconfigure(0, weight=1)
         notebook.add(rendered_tab, text="Rendered")
         self.rendered_text = CodeText(rendered_tab)
         self.rendered_text.grid(sticky=tk.NSEW)
         self.rendered_text.text.bind("<FocusOut>", self.update_template_file_data)
+        # draw template file tab
+        template_tab = ttk.Frame(notebook, padding=FRAME_PAD)
+        template_tab.grid(sticky=tk.NSEW)
+        template_tab.rowconfigure(0, weight=1)
+        template_tab.columnconfigure(0, weight=1)
+        notebook.add(template_tab, text="Template")
+        self.template_text = CodeText(template_tab)
+        self.template_text.grid(sticky=tk.NSEW)
+        self.template_text.text.bind("<FocusOut>", self.update_template_file_data)
         if self.templates:
             self.templates_combobox.current(0)
             template_name = self.templates[0]
