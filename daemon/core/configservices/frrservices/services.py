@@ -6,7 +6,8 @@ from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import WlanNode
+from core.nodes.network import PtpNet, WlanNode
+from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
 
 GROUP: str = "FRR"
@@ -62,6 +63,20 @@ def get_router_id(node: CoreNodeBase) -> str:
         if ip4:
             return str(ip4.ip)
     return "0.0.0.0"
+
+
+def rj45_check(iface: CoreInterface) -> bool:
+    """
+    Helper to detect whether interface is connected an external RJ45
+    link.
+    """
+    if iface.net:
+        for peer_iface in iface.net.get_ifaces():
+            if peer_iface == iface:
+                continue
+            if isinstance(peer_iface.node, Rj45Node):
+                return True
+    return False
 
 
 class FRRZebra(ConfigService):
@@ -169,7 +184,7 @@ class FRROspfv2(FrrService, ConfigService):
         addresses = []
         for iface in self.node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
-                addresses.append(str(ip4.ip))
+                addresses.append(str(ip4))
         data = dict(router_id=router_id, addresses=addresses)
         text = """
         router ospf
@@ -177,15 +192,31 @@ class FRROspfv2(FrrService, ConfigService):
           % for addr in addresses:
           network ${addr} area 0
           % endfor
+          ospf opaque-lsa
         !
         """
         return self.render_text(text, data)
 
     def frr_iface_config(self, iface: CoreInterface) -> str:
-        if has_mtu_mismatch(iface):
-            return "ip ospf mtu-ignore"
-        else:
-            return ""
+        has_mtu = has_mtu_mismatch(iface)
+        has_rj45 = rj45_check(iface)
+        is_ptp = isinstance(iface.net, PtpNet)
+        data = dict(has_mtu=has_mtu, is_ptp=is_ptp, has_rj45=has_rj45)
+        text = """
+        % if has_mtu:
+        ip ospf mtu-ignore
+        % endif
+        % if has_rj45:
+        <% return STOP_RENDERING %>
+        % endif
+        % if is_ptp:
+        ip ospf network point-to-point
+        % endif
+        ip ospf hello-interval 2
+        ip ospf dead-interval 6
+        ip ospf retransmit-interval 5
+        """
+        return self.render_text(text, data)
 
 
 class FRROspfv3(FrrService, ConfigService):

@@ -195,6 +195,10 @@ bootdaemon()
         flags="$flags -6"
     fi
 
+    if [ "$1" = "ospfd" ]; then
+        flags="$flags --apiserver"
+    fi
+
     #force FRR to use CORE generated conf file
     flags="$flags -d -f $FRR_CONF"
     $FRR_SBIN_DIR/$1 $flags
@@ -425,12 +429,25 @@ class FRROspfv2(FrrService):
         for iface in node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
                 cfg += f"  network {ip4} area 0\n"
+        cfg += "  ospf opaque-lsa\n"
         cfg += "!\n"
         return cfg
 
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        return cls.mtu_check(iface)
+        cfg = cls.mtu_check(iface)
+        # external RJ45 connections will use default OSPF timers
+        if cls.rj45check(iface):
+            return cfg
+        cfg += cls.ptp_check(iface)
+        return (
+            cfg
+            + """\
+  ip ospf hello-interval 2
+  ip ospf dead-interval 6
+  ip ospf retransmit-interval 5
+"""
+        )
 
 
 class FRROspfv3(FrrService):
@@ -496,18 +513,6 @@ class FRROspfv3(FrrService):
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         return cls.mtu_check(iface)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-        # return cfg + """\
-
-
-# ipv6 ospf6 hello-interval 2
-#  ipv6 ospf6 dead-interval 6
-#  ipv6 ospf6 retransmit-interval 5
-# """
 
 
 class FRRBgp(FrrService):
