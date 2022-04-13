@@ -226,7 +226,10 @@ class WirelessNode(CoreNetworkBase):
         for oiface, bridge_name in self.bridges.values():
             if iface == oiface:
                 continue
-            self.calc_link(iface, oiface)
+            key = get_key(iface.node.id, oiface.node.id)
+            link = self.links.get(key)
+            if link.linked:
+                self.calc_link(iface, oiface)
 
     def calc_link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         point1 = iface1.node.position.get()
