@@ -370,22 +370,6 @@ class ConfigService(abc.ABC):
                 "node(%s) service(%s) template(%s)", self.node.name, self.name, file
             )
             rendered = self._get_rendered_template(file, data)
-            # file_path = Path(file)
-            # template_path = get_template_path(file_path)
-            # if file in self.custom_templates:
-            #     text = self.custom_templates[file]
-            #     rendered = self.render_text(text, data)
-            # elif self.templates.has_template(template_path):
-            #     rendered = self.render_template(template_path, data)
-            # else:
-            #     try:
-            #         text = self.get_text_template(file)
-            #     except Exception as e:
-            #         raise ConfigServiceTemplateError(
-            #             f"node({self.node.name}) service({self.name}) file({file}) "
-            #             f"failure getting template: {e}"
-            #         )
-            #     rendered = self.render_text(text, data)
             file_path = Path(file)
             self.node.create_file(file_path, rendered)
 
@@ -488,7 +472,7 @@ class ConfigService(abc.ABC):
         except Exception:
             raise CoreError(
                 f"node({self.node.name}) service({self.name}) file({template_path})"
-                f"{exceptions.text_error_template().render_template()}"
+                f"{exceptions.text_error_template().render_unicode()}"
             )
 
     def _define_config(self, configs: List[Configuration]) -> None:
