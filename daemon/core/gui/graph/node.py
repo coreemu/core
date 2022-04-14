@@ -16,6 +16,7 @@ from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
 from core.gui.dialogs.nodeservice import NodeServiceDialog
+from core.gui.dialogs.wirelessconfig import WirelessConfigDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.frames.node import NodeInfoFrame
 from core.gui.graph import tags
@@ -219,6 +220,7 @@ class CanvasNode:
         # clear existing menu
         self.context.delete(0, tk.END)
         is_wlan = self.core_node.type == NodeType.WIRELESS_LAN
+        is_wireless = self.core_node.type == NodeType.WIRELESS
         is_emane = self.core_node.type == NodeType.EMANE
         is_mobility = is_wlan or is_emane
         if self.app.core.is_runtime():
@@ -230,6 +232,10 @@ class CanvasNode:
             if is_wlan:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
+                )
+            if is_wireless:
+                self.context.add_command(
+                    label="Wireless Config", command=self.show_wireless_config
                 )
             if is_mobility and self.core_node.id in self.app.core.mobility_players:
                 self.context.add_command(
@@ -267,6 +273,10 @@ class CanvasNode:
             if is_wlan:
                 self.context.add_command(
                     label="WLAN Config", command=self.show_wlan_config
+                )
+            if is_wireless:
+                self.context.add_command(
+                    label="Wireless Config", command=self.show_wireless_config
                 )
             if is_mobility:
                 self.context.add_command(
@@ -344,6 +354,10 @@ class CanvasNode:
 
     def show_config(self) -> None:
         dialog = NodeConfigDialog(self.app, self)
+        dialog.show()
+
+    def show_wireless_config(self) -> None:
+        dialog = WirelessConfigDialog(self.app, self)
         dialog.show()
 
     def show_wlan_config(self) -> None:

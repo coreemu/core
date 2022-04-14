@@ -20,6 +20,7 @@ from core.api.grpc.configservices_pb2 import (
 from core.api.grpc.core_pb2 import (
     ExecuteScriptRequest,
     GetConfigRequest,
+    GetWirelessConfigRequest,
     LinkedRequest,
     WirelessConfigRequest,
     WirelessLinkedRequest,
@@ -1141,6 +1142,13 @@ class CoreGrpcClient:
             options2=options2.to_proto(),
         )
         self.stub.WirelessConfig(request)
+
+    def get_wireless_config(
+        self, session_id: int, node_id: int
+    ) -> Dict[str, wrappers.ConfigOption]:
+        request = GetWirelessConfigRequest(session_id=session_id, node_id=node_id)
+        response = self.stub.GetWirelessConfig(request)
+        return wrappers.ConfigOption.from_dict(response.config)
 
     def connect(self) -> None:
         """

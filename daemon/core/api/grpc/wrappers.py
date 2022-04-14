@@ -737,6 +737,7 @@ class Node:
         Tuple[str, Optional[int]], Dict[str, ConfigOption]
     ] = field(default_factory=dict, repr=False)
     wlan_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
+    wireless_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     mobility_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     service_configs: Dict[str, NodeServiceData] = field(
         default_factory=dict, repr=False
@@ -789,6 +790,7 @@ class Node:
             service_file_configs=service_file_configs,
             config_service_configs=config_service_configs,
             emane_model_configs=emane_configs,
+            wireless_config=ConfigOption.from_dict(proto.wireless_config),
         )
 
     def to_proto(self) -> core_pb2.Node:
@@ -840,6 +842,7 @@ class Node:
             service_configs=service_configs,
             config_service_configs=config_service_configs,
             emane_configs=emane_configs,
+            wireless_config={k: v.to_proto() for k, v in self.wireless_config.items()},
         )
 
     def set_wlan(self, config: Dict[str, str]) -> None:

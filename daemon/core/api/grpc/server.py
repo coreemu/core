@@ -30,6 +30,8 @@ from core.api.grpc.configservices_pb2 import (
 )
 from core.api.grpc.core_pb2 import (
     ExecuteScriptResponse,
+    GetWirelessConfigRequest,
+    GetWirelessConfigResponse,
     LinkedRequest,
     LinkedResponse,
     WirelessConfigRequest,
@@ -1382,3 +1384,25 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         options2 = grpcutils.convert_options_proto(options2)
         wireless.link_config(request.node1_id, request.node2_id, options1, options2)
         return WirelessConfigResponse()
+
+    def GetWirelessConfig(
+        self, request: GetWirelessConfigRequest, context: ServicerContext
+    ) -> GetWirelessConfigResponse:
+        session = self.get_session(request.session_id, context)
+        try:
+            wireless = session.get_node(request.node_id, WirelessNode)
+            configs = wireless.get_config()
+        except CoreError:
+            configs = {x.id: x for x in WirelessNode.options}
+        config_options = {}
+        for config in configs.values():
+            config_option = common_pb2.ConfigOption(
+                label=config.label,
+                name=config.id,
+                value=config.default,
+                type=config.type.value,
+                select=config.options,
+                group=config.group,
+            )
+            config_options[config.id] = config_option
+        return GetWirelessConfigResponse(config=config_options)

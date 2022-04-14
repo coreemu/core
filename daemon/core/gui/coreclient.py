@@ -779,6 +779,9 @@ class CoreClient:
         )
         return config
 
+    def get_wireless_config(self, node_id: int) -> Dict[str, ConfigOption]:
+        return self.client.get_wireless_config(self.session.id, node_id)
+
     def get_mobility_config(self, node_id: int) -> Dict[str, ConfigOption]:
         config = self.client.get_mobility_config(self.session.id, node_id)
         logger.debug(

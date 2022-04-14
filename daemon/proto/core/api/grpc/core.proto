@@ -107,6 +107,8 @@ service CoreApi {
     }
     rpc WirelessConfig (WirelessConfigRequest) returns (WirelessConfigResponse) {
     }
+    rpc GetWirelessConfig (GetWirelessConfigRequest) returns (GetWirelessConfigResponse) {
+    }
 
     // emane rpc
     rpc GetEmaneModelConfig (emane.GetEmaneModelConfigRequest) returns (emane.GetEmaneModelConfigResponse) {
@@ -624,6 +626,7 @@ message Node {
     map<string, services.NodeServiceConfig> service_configs = 18;
     map<string, configservices.ConfigServiceConfig> config_service_configs= 19;
     repeated emane.NodeEmaneConfig emane_configs = 20;
+    map<string, common.ConfigOption> wireless_config = 21;
 }
 
 message Link {
@@ -727,4 +730,13 @@ message WirelessConfigRequest {
 }
 
 message WirelessConfigResponse {
+}
+
+message GetWirelessConfigRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetWirelessConfigResponse {
+    map<string, common.ConfigOption> config = 1;
 }

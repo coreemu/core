@@ -2,12 +2,13 @@
 Defines a wireless node that allows programmatic link connectivity and
 configuration between pairs of nodes.
 """
-
+import copy
 import logging
 import math
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
+from core.config import ConfigBool, ConfigFloat, Configuration
 from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.errors import CoreError
@@ -20,6 +21,18 @@ if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
 
 logger = logging.getLogger(__name__)
+CONFIG_ENABLED: bool = True
+CONFIG_RANGE: float = 400.0
+CONFIG_LOSS_RANGE: float = 300.0
+CONFIG_LOSS_FACTOR: float = 1.0
+CONFIG_DELAY_RANGE: float = 200.0
+CONFIG_DELAY_FACTOR: float = 1.0
+KEY_ENABLED: str = "movement"
+KEY_RANGE: str = "max-range"
+KEY_LOSS_RANGE: str = "loss-range"
+KEY_LOSS_FACTOR: str = "loss-factor"
+KEY_DELAY_RANGE: str = "delay-range"
+KEY_DELAY_FACTOR: str = "delay-factor"
 
 
 def calc_distance(
@@ -47,6 +60,33 @@ class WirelessLink:
 
 
 class WirelessNode(CoreNetworkBase):
+    options: List[Configuration] = [
+        ConfigBool(
+            id=KEY_ENABLED,
+            default="1" if CONFIG_ENABLED else "0",
+            label="Movement Enabled?",
+        ),
+        ConfigFloat(
+            id=KEY_RANGE, default=str(CONFIG_RANGE), label="Max Range (pixels)"
+        ),
+        ConfigFloat(
+            id=KEY_LOSS_RANGE,
+            default=str(CONFIG_LOSS_RANGE),
+            label="Loss Start Range (pixels)",
+        ),
+        ConfigFloat(
+            id=KEY_LOSS_FACTOR, default=str(CONFIG_LOSS_FACTOR), label="Loss Factor"
+        ),
+        ConfigFloat(
+            id=KEY_DELAY_RANGE,
+            default=str(CONFIG_DELAY_RANGE),
+            label="Delay Start Range (pixels)",
+        ),
+        ConfigFloat(
+            id=KEY_DELAY_FACTOR, default=str(CONFIG_DELAY_FACTOR), label="Delay Factor"
+        ),
+    ]
+
     def __init__(
         self,
         session: "Session",
@@ -57,6 +97,12 @@ class WirelessNode(CoreNetworkBase):
         super().__init__(session, _id, name, server)
         self.bridges: Dict[int, Tuple[CoreInterface, str]] = {}
         self.links: Dict[Tuple[int, int], WirelessLink] = {}
+        self.position_enabled: bool = CONFIG_ENABLED
+        self.max_range: float = CONFIG_RANGE
+        self.loss_range: float = CONFIG_LOSS_RANGE
+        self.loss_factor: float = CONFIG_LOSS_FACTOR
+        self.delay_range: float = CONFIG_DELAY_RANGE
+        self.delay_factor: float = CONFIG_DELAY_FACTOR
 
     def startup(self) -> None:
         if self.up:
@@ -94,8 +140,9 @@ class WirelessNode(CoreNetworkBase):
             )
             # associate node iface with bridge
             iface.net_client.set_iface_master(bridge_name, iface.localname)
-            # assign position callback
-            iface.poshook = self.position_callback
+            # assign position callback, when enabled
+            if self.position_enabled:
+                iface.poshook = self.position_callback
             # save created bridge
             self.bridges[iface.node.id] = (iface, bridge_name)
 
@@ -226,21 +273,47 @@ class WirelessNode(CoreNetworkBase):
         for oiface, bridge_name in self.bridges.values():
             if iface == oiface:
                 continue
-            key = get_key(iface.node.id, oiface.node.id)
-            link = self.links.get(key)
-            if link.linked:
-                self.calc_link(iface, oiface)
+            self.calc_link(iface, oiface)
 
     def calc_link(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
+        key = get_key(iface1.node.id, iface2.node.id)
+        link = self.links.get(key)
         point1 = iface1.node.position.get()
         point2 = iface2.node.position.get()
-        distance = calc_distance(point1, point2) - 250
-        distance = max(distance, 0.0)
-        loss = min((distance / 500) * 100.0, 100.0)
-        node1_id = iface1.node.id
-        node2_id = iface2.node.id
-        options = LinkOptions(loss=loss, delay=0)
-        self.link_config(node1_id, node2_id, options, options)
+        distance = calc_distance(point1, point2)
+        if distance >= self.max_range:
+            if link.linked:
+                self.link_control(iface1.node.id, iface2.node.id, False)
+        else:
+            if not link.linked:
+                self.link_control(iface1.node.id, iface2.node.id, True)
+            loss_distance = max(distance - self.loss_range, 0.0)
+            loss = min(
+                (loss_distance / self.max_range) * 100.0 * self.loss_factor, 100.0
+            )
+            delay_distance = max(distance - self.delay_range, 0.0)
+            delay = (delay_distance / self.max_range) * 100.0 * self.delay_factor
+            options = LinkOptions(loss=loss, delay=int(delay))
+            self.link_config(iface1.node.id, iface2.node.id, options, options)
 
     def adopt_iface(self, iface: CoreInterface, name: str) -> None:
         raise CoreError(f"{type(self)} does not support adopt interface")
+
+    def get_config(self) -> Dict[str, Configuration]:
+        config = {x.id: x for x in copy.copy(self.options)}
+        config[KEY_ENABLED].default = "1" if self.position_enabled else "0"
+        config[KEY_RANGE].default = str(self.max_range)
+        config[KEY_LOSS_RANGE].default = str(self.loss_range)
+        config[KEY_LOSS_FACTOR].default = str(self.loss_factor)
+        config[KEY_DELAY_RANGE].default = str(self.delay_range)
+        config[KEY_DELAY_FACTOR].default = str(self.delay_factor)
+        return config
+
+    def set_config(self, config: Dict[str, str]) -> None:
+        logger.info("wireless config: %s", config)
+        self.position_enabled = config[KEY_ENABLED] == "1"
+        self.max_range = float(config[KEY_RANGE])
+        self.loss_range = float(config[KEY_LOSS_RANGE])
+        self.loss_factor = float(config[KEY_LOSS_FACTOR])
+        self.delay_range = float(config[KEY_DELAY_RANGE])
+        self.delay_factor = float(config[KEY_DELAY_FACTOR])

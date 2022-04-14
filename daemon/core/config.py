@@ -44,6 +44,7 @@ class Configuration:
     label: str = None
     default: str = ""
     options: List[str] = field(default_factory=list)
+    group: str = "Configuration"
 
     def __post_init__(self) -> None:
         self.label = self.label if self.label else self.id
@@ -78,6 +79,7 @@ class ConfigBool(Configuration):
     """
 
     type: ConfigDataTypes = ConfigDataTypes.BOOL
+    value: bool = False
 
 
 @dataclass
@@ -87,6 +89,7 @@ class ConfigFloat(Configuration):
     """
 
     type: ConfigDataTypes = ConfigDataTypes.FLOAT
+    value: float = 0.0
 
 
 @dataclass
@@ -96,6 +99,7 @@ class ConfigInt(Configuration):
     """
 
     type: ConfigDataTypes = ConfigDataTypes.INT32
+    value: int = 0
 
 
 @dataclass
@@ -105,6 +109,7 @@ class ConfigString(Configuration):
     """
 
     type: ConfigDataTypes = ConfigDataTypes.STRING
+    value: str = ""
 
 
 class ConfigurableOptions:

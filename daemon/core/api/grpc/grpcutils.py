@@ -29,6 +29,7 @@ from core.nodes.docker import DockerNode
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CoreNetwork, CtrlNet, PtpNet, WlanNode
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
@@ -827,6 +828,9 @@ def configure_node(
     if node.mobility_config:
         config = {k: v.value for k, v in node.mobility_config.items()}
         session.mobility.set_model_config(node.id, Ns2ScriptedMobility.name, config)
+    if isinstance(core_node, WirelessNode) and node.wireless_config:
+        config = {k: v.value for k, v in node.wireless_config.items()}
+        core_node.set_config(config)
     for service_name, service_config in node.service_configs.items():
         data = service_config.data
         config = ServiceConfig(
