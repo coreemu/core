@@ -7,6 +7,7 @@ from lxml import etree
 import core.nodes.base
 import core.nodes.physical
 from core import utils
+from core.config import Configuration
 from core.emane.nodes import EmaneNet
 from core.emulator.data import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
@@ -251,11 +252,19 @@ class NetworkElement(NodeElement):
                 add_attribute(self.element, "mobility", self.node.mobility.name)
         if isinstance(self.node, GreTapBridge):
             add_attribute(self.element, "grekey", self.node.grekey)
+        if isinstance(self.node, WirelessNode):
+            config = self.node.get_config()
+            self.add_wireless_config(config)
         self.add_type()
 
     def add_type(self) -> None:
         node_type = self.session.get_node_type(type(self.node))
         add_attribute(self.element, "type", node_type.name)
+
+    def add_wireless_config(self, config: Dict[str, Configuration]) -> None:
+        wireless_element = etree.SubElement(self.element, "wireless")
+        for config_item in config.values():
+            add_configuration(wireless_element, config_item.id, config_item.default)
 
 
 class CoreXmlWriter:
@@ -835,24 +844,30 @@ class CoreXmlReader:
         if node_type == NodeTypes.EMANE:
             model = network_element.get("model")
             options.emane = model
-
         position_element = network_element.find("position")
         if position_element is not None:
             x = get_float(position_element, "x")
             y = get_float(position_element, "y")
             if all([x, y]):
                 options.set_position(x, y)
-
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
                 options.set_location(lat, lon, alt)
-
         logger.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        self.session.add_node(_class, node_id, options)
+        node = self.session.add_node(_class, node_id, options)
+        if isinstance(node, WirelessNode):
+            wireless_element = network_element.find("wireless")
+            if wireless_element:
+                config = {}
+                for config_element in wireless_element.iterchildren():
+                    name = config_element.get("name")
+                    value = config_element.get("value")
+                    config[name] = value
+                node.set_config(config)
 
     def read_configservice_configs(self) -> None:
         configservice_configs = self.scenario.find("configservice_configurations")
