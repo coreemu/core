@@ -295,9 +295,6 @@ class Bgp(QuaggaService, ConfigService):
     ipv6_routing: bool = True
 
     def quagga_config(self) -> str:
-        return ""
-
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
         router_id = get_router_id(self.node)
         text = f"""
         ! BGP configuration
@@ -310,6 +307,9 @@ class Bgp(QuaggaService, ConfigService):
         !
         """
         return self.clean_text(text)
+
+    def quagga_iface_config(self, iface: CoreInterface) -> str:
+        return ""
 
 
 class Rip(QuaggaService, ConfigService):
