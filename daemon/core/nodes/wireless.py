@@ -8,7 +8,7 @@ import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from core.config import ConfigBool, ConfigFloat, Configuration
+from core.config import ConfigBool, ConfigFloat, ConfigInt, Configuration
 from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.errors import CoreError
@@ -25,14 +25,16 @@ CONFIG_ENABLED: bool = True
 CONFIG_RANGE: float = 400.0
 CONFIG_LOSS_RANGE: float = 300.0
 CONFIG_LOSS_FACTOR: float = 1.0
-CONFIG_DELAY_RANGE: float = 200.0
-CONFIG_DELAY_FACTOR: float = 1.0
+CONFIG_DELAY: int = 5000
+CONFIG_BANDWIDTH: int = 54_000_000
+CONFIG_JITTER: int = 0
 KEY_ENABLED: str = "movement"
 KEY_RANGE: str = "max-range"
+KEY_BANDWIDTH: str = "bandwidth"
+KEY_DELAY: str = "delay"
+KEY_JITTER: str = "jitter"
 KEY_LOSS_RANGE: str = "loss-range"
 KEY_LOSS_FACTOR: str = "loss-factor"
-KEY_DELAY_RANGE: str = "delay-range"
-KEY_DELAY_FACTOR: str = "delay-factor"
 
 
 def calc_distance(
@@ -62,13 +64,16 @@ class WirelessLink:
 class WirelessNode(CoreNetworkBase):
     options: List[Configuration] = [
         ConfigBool(
-            id=KEY_ENABLED,
-            default="1" if CONFIG_ENABLED else "0",
-            label="Movement Enabled?",
+            id=KEY_ENABLED, default="1" if CONFIG_ENABLED else "0", label="Enabled?"
         ),
         ConfigFloat(
             id=KEY_RANGE, default=str(CONFIG_RANGE), label="Max Range (pixels)"
         ),
+        ConfigInt(
+            id=KEY_BANDWIDTH, default=str(CONFIG_BANDWIDTH), label="Bandwidth (bps)"
+        ),
+        ConfigInt(id=KEY_DELAY, default=str(CONFIG_DELAY), label="Delay (usec)"),
+        ConfigInt(id=KEY_JITTER, default=str(CONFIG_JITTER), label="Jitter (usec)"),
         ConfigFloat(
             id=KEY_LOSS_RANGE,
             default=str(CONFIG_LOSS_RANGE),
@@ -76,14 +81,6 @@ class WirelessNode(CoreNetworkBase):
         ),
         ConfigFloat(
             id=KEY_LOSS_FACTOR, default=str(CONFIG_LOSS_FACTOR), label="Loss Factor"
-        ),
-        ConfigFloat(
-            id=KEY_DELAY_RANGE,
-            default=str(CONFIG_DELAY_RANGE),
-            label="Delay Start Range (pixels)",
-        ),
-        ConfigFloat(
-            id=KEY_DELAY_FACTOR, default=str(CONFIG_DELAY_FACTOR), label="Delay Factor"
         ),
     ]
 
@@ -98,11 +95,12 @@ class WirelessNode(CoreNetworkBase):
         self.bridges: Dict[int, Tuple[CoreInterface, str]] = {}
         self.links: Dict[Tuple[int, int], WirelessLink] = {}
         self.position_enabled: bool = CONFIG_ENABLED
+        self.bandwidth: int = CONFIG_BANDWIDTH
+        self.delay: int = CONFIG_DELAY
+        self.jitter: int = CONFIG_JITTER
         self.max_range: float = CONFIG_RANGE
         self.loss_range: float = CONFIG_LOSS_RANGE
         self.loss_factor: float = CONFIG_LOSS_FACTOR
-        self.delay_range: float = CONFIG_DELAY_RANGE
-        self.delay_factor: float = CONFIG_DELAY_FACTOR
 
     def startup(self) -> None:
         if self.up:
@@ -167,18 +165,20 @@ class WirelessNode(CoreNetworkBase):
                 name2 = f"we{self.id}.{node2.id}.{node1.id}.{session_id}"
                 link_iface = CoreInterface(0, name1, name2, self.session.use_ovs())
                 link_iface.startup()
-                link = WirelessLink(bridge1, bridge2, link_iface, True)
+                link = WirelessLink(bridge1, bridge2, link_iface, False)
                 self.links[key] = link
-                # assign ifaces to respective bridges
-                self.net_client.set_iface_master(bridge1, link_iface.name)
-                self.net_client.set_iface_master(bridge2, link_iface.localname)
                 # track bridge routes
                 node1_routes = routes.setdefault(node1.id, set())
                 node1_routes.add(name1)
                 node2_routes = routes.setdefault(node2.id, set())
                 node2_routes.add(name2)
-                # send link
-                self.send_link(node1.id, node2.id, MessageFlags.ADD)
+                if self.position_enabled:
+                    link.linked = True
+                    # assign ifaces to respective bridges
+                    self.net_client.set_iface_master(bridge1, link_iface.name)
+                    self.net_client.set_iface_master(bridge2, link_iface.localname)
+                    # calculate link data
+                    self.calc_link(iface, oiface)
         for node_id, ifaces in routes.items():
             iface, bridge_name = self.bridges[node_id]
             ifaces = ",".join(ifaces)
@@ -288,12 +288,14 @@ class WirelessNode(CoreNetworkBase):
             if not link.linked:
                 self.link_control(iface1.node.id, iface2.node.id, True)
             loss_distance = max(distance - self.loss_range, 0.0)
-            loss = min(
-                (loss_distance / self.max_range) * 100.0 * self.loss_factor, 100.0
+            max_distance = max(self.max_range - self.loss_range, 0.0)
+            loss = min((loss_distance / max_distance) * 100.0 * self.loss_factor, 100.0)
+            options = LinkOptions(
+                loss=loss,
+                delay=self.delay,
+                bandwidth=self.bandwidth,
+                jitter=self.jitter,
             )
-            delay_distance = max(distance - self.delay_range, 0.0)
-            delay = (delay_distance / self.max_range) * 100.0 * self.delay_factor
-            options = LinkOptions(loss=loss, delay=int(delay))
             self.link_config(iface1.node.id, iface2.node.id, options, options)
 
     def adopt_iface(self, iface: CoreInterface, name: str) -> None:
@@ -305,8 +307,9 @@ class WirelessNode(CoreNetworkBase):
         config[KEY_RANGE].default = str(self.max_range)
         config[KEY_LOSS_RANGE].default = str(self.loss_range)
         config[KEY_LOSS_FACTOR].default = str(self.loss_factor)
-        config[KEY_DELAY_RANGE].default = str(self.delay_range)
-        config[KEY_DELAY_FACTOR].default = str(self.delay_factor)
+        config[KEY_BANDWIDTH].default = str(self.bandwidth)
+        config[KEY_DELAY].default = str(self.delay)
+        config[KEY_JITTER].default = str(self.jitter)
         return config
 
     def set_config(self, config: Dict[str, str]) -> None:
@@ -315,5 +318,6 @@ class WirelessNode(CoreNetworkBase):
         self.max_range = float(config[KEY_RANGE])
         self.loss_range = float(config[KEY_LOSS_RANGE])
         self.loss_factor = float(config[KEY_LOSS_FACTOR])
-        self.delay_range = float(config[KEY_DELAY_RANGE])
-        self.delay_factor = float(config[KEY_DELAY_FACTOR])
+        self.bandwidth = int(config[KEY_BANDWIDTH])
+        self.delay = int(config[KEY_DELAY])
+        self.jitter = int(config[KEY_JITTER])
