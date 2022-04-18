@@ -25,6 +25,7 @@ CONFIG_ENABLED: bool = True
 CONFIG_RANGE: float = 400.0
 CONFIG_LOSS_RANGE: float = 300.0
 CONFIG_LOSS_FACTOR: float = 1.0
+CONFIG_LOSS: float = 0.0
 CONFIG_DELAY: int = 5000
 CONFIG_BANDWIDTH: int = 54_000_000
 CONFIG_JITTER: int = 0
@@ -35,6 +36,7 @@ KEY_DELAY: str = "delay"
 KEY_JITTER: str = "jitter"
 KEY_LOSS_RANGE: str = "loss-range"
 KEY_LOSS_FACTOR: str = "loss-factor"
+KEY_LOSS: str = "loss"
 
 
 def calc_distance(
@@ -82,6 +84,7 @@ class WirelessNode(CoreNetworkBase):
         ConfigFloat(
             id=KEY_LOSS_FACTOR, default=str(CONFIG_LOSS_FACTOR), label="Loss Factor"
         ),
+        ConfigFloat(id=KEY_LOSS, default=str(CONFIG_LOSS), label="Loss Initial"),
     ]
 
     def __init__(
@@ -99,6 +102,7 @@ class WirelessNode(CoreNetworkBase):
         self.delay: int = CONFIG_DELAY
         self.jitter: int = CONFIG_JITTER
         self.max_range: float = CONFIG_RANGE
+        self.loss_initial: float = CONFIG_LOSS
         self.loss_range: float = CONFIG_LOSS_RANGE
         self.loss_factor: float = CONFIG_LOSS_FACTOR
 
@@ -290,6 +294,7 @@ class WirelessNode(CoreNetworkBase):
             loss_distance = max(distance - self.loss_range, 0.0)
             max_distance = max(self.max_range - self.loss_range, 0.0)
             loss = min((loss_distance / max_distance) * 100.0 * self.loss_factor, 100.0)
+            loss = max(self.loss_initial, loss)
             options = LinkOptions(
                 loss=loss,
                 delay=self.delay,
@@ -307,6 +312,7 @@ class WirelessNode(CoreNetworkBase):
         config[KEY_RANGE].default = str(self.max_range)
         config[KEY_LOSS_RANGE].default = str(self.loss_range)
         config[KEY_LOSS_FACTOR].default = str(self.loss_factor)
+        config[KEY_LOSS].default = str(self.loss_initial)
         config[KEY_BANDWIDTH].default = str(self.bandwidth)
         config[KEY_DELAY].default = str(self.delay)
         config[KEY_JITTER].default = str(self.jitter)
@@ -318,6 +324,7 @@ class WirelessNode(CoreNetworkBase):
         self.max_range = float(config[KEY_RANGE])
         self.loss_range = float(config[KEY_LOSS_RANGE])
         self.loss_factor = float(config[KEY_LOSS_FACTOR])
+        self.loss_initial = float(config[KEY_LOSS])
         self.bandwidth = int(config[KEY_BANDWIDTH])
         self.delay = int(config[KEY_DELAY])
         self.jitter = int(config[KEY_JITTER])
