@@ -310,7 +310,18 @@ def get_node_proto(
     # check for wireless config
     wireless_config = None
     if isinstance(node, WirelessNode):
-        wireless_config = node.get_config()
+        configs = node.get_config()
+        wireless_config = {}
+        for config in configs.values():
+            config_option = common_pb2.ConfigOption(
+                label=config.label,
+                name=config.id,
+                value=config.default,
+                type=config.type.value,
+                select=config.options,
+                group=config.group,
+            )
+            wireless_config[config.id] = config_option
     # check for mobility config
     mobility_config = session.mobility.get_configs(
         node.id, config_type=Ns2ScriptedMobility.name
