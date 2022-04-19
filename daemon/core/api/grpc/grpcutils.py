@@ -307,6 +307,10 @@ def get_node_proto(
     )
     if wlan_config:
         wlan_config = get_config_options(wlan_config, BasicRangeModel)
+    # check for wireless config
+    wireless_config = None
+    if isinstance(node, WirelessNode):
+        wireless_config = node.get_config()
     # check for mobility config
     mobility_config = session.mobility.get_configs(
         node.id, config_type=Ns2ScriptedMobility.name
@@ -353,6 +357,7 @@ def get_node_proto(
         channel=channel,
         canvas=node.canvas,
         wlan_config=wlan_config,
+        wireless_config=wireless_config,
         mobility_config=mobility_config,
         service_configs=service_configs,
         config_service_configs=config_service_configs,
