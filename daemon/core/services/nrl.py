@@ -118,12 +118,6 @@ class NrlSmf(NrlService):
         ifaces = node.get_ifaces(control=False)
         if len(ifaces) == 0:
             return ""
-
-        if "arouted" in servicenames:
-            comments += "# arouted service is enabled\n"
-            cmd += " tap %s_tap" % (node.name,)
-            cmd += " unicast %s" % cls.firstipv4prefix(node, 24)
-            cmd += " push lo,%s resequence on" % ifaces[0].name
         if len(ifaces) > 0:
             if "NHDP" in servicenames:
                 comments += "# NHDP service is enabled\n"
@@ -585,47 +579,4 @@ class MgenActor(NrlService):
         if len(ifaces) == 0:
             return ""
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"
-        return cfg
-
-
-class Arouted(NrlService):
-    """
-    Adaptive Routing
-    """
-
-    name: str = "arouted"
-    executables: Tuple[str, ...] = ("arouted",)
-    configs: Tuple[str, ...] = ("startarouted.sh",)
-    startup: Tuple[str, ...] = ("bash startarouted.sh",)
-    shutdown: Tuple[str, ...] = ("pkill arouted",)
-    validate: Tuple[str, ...] = ("pidof arouted",)
-
-    @classmethod
-    def generate_config(cls, node: CoreNode, filename: str) -> str:
-        """
-        Return the Quagga.conf or quaggaboot.sh file contents.
-        """
-        cfg = (
-            """
-#!/bin/sh
-for f in "/tmp/%s_smf"; do
-    count=1
-    until [ -e "$f" ]; do
-        if [ $count -eq 10 ]; then
-            echo "ERROR: nrlmsf pipe not found: $f" >&2
-            exit 1
-        fi
-        sleep 0.1
-        count=$(($count + 1))
-    done
-done
-
-"""
-            % node.name
-        )
-        cfg += "ip route add %s dev lo\n" % cls.firstipv4prefix(node, 24)
-        cfg += "arouted instance %s_smf tap %s_tap" % (node.name, node.name)
-        # seconds to consider a new route valid
-        cfg += " stability 10"
-        cfg += " 2>&1 > /var/log/arouted.log &\n\n"
         return cfg
