@@ -416,6 +416,8 @@ class Edge:
         self.src_label2 = None
         self.dst_label = None
         self.dst_label2 = None
+        if self.dst:
+            self.arc_common_edges()
 
     def hide(self) -> None:
         self.hidden = True
@@ -507,6 +509,7 @@ class CanvasWirelessEdge(Edge):
         if self.src.hidden or self.dst.hidden:
             self.hide()
         self.set_binding()
+        self.arc_common_edges()
 
     def set_binding(self) -> None:
         self.src.canvas.tag_bind(self.id, "<Button-1>", self.show_info)
@@ -758,6 +761,4 @@ class CanvasEdge(Edge):
                 self.src.delete_antenna()
             self.app.core.deleted_canvas_edges([self])
         super().delete()
-        if self.dst:
-            self.arc_common_edges()
         self.manager.edges.pop(self.token, None)
