@@ -54,15 +54,16 @@ from core.api.grpc.wlan_pb2 import (
 from core.api.grpc.wrappers import LinkOptions
 from core.emulator.data import IpPrefixes
 from core.errors import CoreError
+from core.utils import SetQueue
 
 logger = logging.getLogger(__name__)
 
 
 class MoveNodesStreamer:
-    def __init__(self, session_id: int = None, source: str = None) -> None:
-        self.session_id = session_id
-        self.source = source
-        self.queue: Queue = Queue()
+    def __init__(self, session_id: int, source: str = None) -> None:
+        self.session_id: int = session_id
+        self.source: Optional[str] = source
+        self.queue: SetQueue = SetQueue()
 
     def send_position(self, node_id: int, x: float, y: float) -> None:
         position = wrappers.Position(x=x, y=y)

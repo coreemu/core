@@ -4,9 +4,7 @@ Defines network nodes used within core.
 
 import logging
 import threading
-from collections import OrderedDict
 from pathlib import Path
-from queue import Queue
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 import netaddr
@@ -30,22 +28,6 @@ if TYPE_CHECKING:
     WirelessModelType = Type[WirelessModel]
 
 LEARNING_DISABLED: int = 0
-
-
-class SetQueue(Queue):
-    """
-    Set backed queue to avoid duplicate submissions.
-    """
-
-    def _init(self, maxsize):
-        self.queue: OrderedDict = OrderedDict()
-
-    def _put(self, item):
-        self.queue[item] = None
-
-    def _get(self):
-        key, _ = self.queue.popitem(last=False)
-        return key
 
 
 class NftablesQueue:
@@ -72,7 +54,7 @@ class NftablesQueue:
         # list of pending nftables commands
         self.cmds: List[str] = []
         # list of WLANs requiring update
-        self.updates: SetQueue = SetQueue()
+        self.updates: utils.SetQueue = utils.SetQueue()
 
     def start(self) -> None:
         """

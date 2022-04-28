@@ -1213,3 +1213,15 @@ class MoveNodesRequest:
             position=position,
             geo=geo,
         )
+
+    def __members(self) -> Tuple[int, int]:
+        return self.session_id, self.node_id
+
+    def __eq__(self, other: "MoveNodesRequest") -> bool:
+        if type(other) is type(self):
+            return self.__members() == other.__members()
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(self.__members())

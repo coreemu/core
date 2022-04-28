@@ -16,7 +16,9 @@ import shlex
 import shutil
 import sys
 import threading
+from collections import OrderedDict
 from pathlib import Path
+from queue import Queue
 from subprocess import PIPE, STDOUT, Popen
 from typing import (
     TYPE_CHECKING,
@@ -474,3 +476,19 @@ def parse_iface_config_id(config_id: int) -> Tuple[int, Optional[int]]:
         iface_id = config_id % IFACE_CONFIG_FACTOR
         node_id = config_id // IFACE_CONFIG_FACTOR
     return node_id, iface_id
+
+
+class SetQueue(Queue):
+    """
+    Set backed queue to avoid duplicate submissions.
+    """
+
+    def _init(self, maxsize):
+        self.queue: OrderedDict = OrderedDict()
+
+    def _put(self, item):
+        self.queue[item] = None
+
+    def _get(self):
+        key, _ = self.queue.popitem(last=False)
+        return key
