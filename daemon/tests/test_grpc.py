@@ -8,7 +8,7 @@ import grpc
 import pytest
 from mock import patch
 
-from core.api.grpc import core_pb2, wrappers
+from core.api.grpc import wrappers
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer
 from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
@@ -22,6 +22,7 @@ from core.api.grpc.wrappers import (
     Link,
     LinkOptions,
     MobilityAction,
+    MoveNodesRequest,
     Node,
     NodeServiceData,
     NodeType,
@@ -918,7 +919,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         streamer = MoveNodesStreamer(session.id)
-        request = core_pb2.MoveNodesRequest()
+        request = MoveNodesRequest(session.id + 1, 1)
         streamer.send(request)
         streamer.stop()
 
