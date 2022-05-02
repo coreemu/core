@@ -5,8 +5,9 @@ configuration between pairs of nodes.
 import copy
 import logging
 import math
+import secrets
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING, Dict, List, Set, Tuple
 
 from core.config import ConfigBool, ConfigFloat, ConfigInt, Configuration
 from core.emulator.data import LinkData, LinkOptions
@@ -86,6 +87,20 @@ class WirelessNode(CoreNetworkBase):
         ),
         ConfigFloat(id=KEY_LOSS, default=str(CONFIG_LOSS), label="Loss Initial"),
     ]
+    devices: Set[str] = set()
+
+    @classmethod
+    def add_device(cls) -> str:
+        while True:
+            name = f"we{secrets.token_hex(6)}"
+            if name not in cls.devices:
+                cls.devices.add(name)
+                break
+        return name
+
+    @classmethod
+    def delete_device(cls, name: str) -> None:
+        cls.devices.discard(name)
 
     def __init__(
         self,
@@ -164,9 +179,8 @@ class WirelessNode(CoreNetworkBase):
                 if key in self.links:
                     continue
                 # create node to node link
-                session_id = self.session.short_session_id()
-                name1 = f"we{self.id}.{node1.id}.{node2.id}.{session_id}"
-                name2 = f"we{self.id}.{node2.id}.{node1.id}.{session_id}"
+                name1 = self.add_device()
+                name2 = self.add_device()
                 link_iface = CoreInterface(0, name1, name2, self.session.use_ovs())
                 link_iface.startup()
                 link = WirelessLink(bridge1, bridge2, link_iface, False)
