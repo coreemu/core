@@ -1,75 +1,28 @@
 import json
 import logging
+import shlex
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict, Optional
+from typing import TYPE_CHECKING
 
-from core import utils
 from core.emulator.distributed import DistributedServer
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
+from core.executables import BASH
 from core.nodes.base import CoreNode
-from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
-
-class DockerClient:
-    def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name: str = name
-        self.image: str = image
-        self.run: Callable[..., str] = run
-        self.pid: Optional[str] = None
-
-    def create_container(self) -> str:
-        self.run(
-            f"docker run -td --init --net=none --hostname {self.name} "
-            f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
-            f"--privileged {self.image} /bin/bash"
-        )
-        self.pid = self.get_pid()
-        return self.pid
-
-    def get_info(self) -> Dict:
-        args = f"docker inspect {self.name}"
-        output = self.run(args)
-        data = json.loads(output)
-        if not data:
-            raise CoreCommandError(1, args, f"docker({self.name}) not present")
-        return data[0]
-
-    def is_alive(self) -> bool:
-        try:
-            data = self.get_info()
-            return data["State"]["Running"]
-        except CoreCommandError:
-            return False
-
-    def stop_container(self) -> None:
-        self.run(f"docker rm -f {self.name}")
-
-    def check_cmd(self, cmd: str, wait: bool = True, shell: bool = False) -> str:
-        logger.info("docker cmd output: %s", cmd)
-        return utils.cmd(f"docker exec {self.name} {cmd}", wait=wait, shell=shell)
-
-    def create_ns_cmd(self, cmd: str) -> str:
-        return f"nsenter -t {self.pid} -a {cmd}"
-
-    def get_pid(self) -> str:
-        args = f"docker inspect -f '{{{{.State.Pid}}}}' {self.name}"
-        output = self.run(args)
-        self.pid = output
-        logger.debug("node(%s) pid: %s", self.name, self.pid)
-        return output
-
-    def copy_file(self, src_path: Path, dst_path: Path) -> str:
-        args = f"docker cp {src_path} {self.name}:{dst_path}"
-        return self.run(args)
+DOCKER: str = "docker"
 
 
 class DockerNode(CoreNode):
+    """
+    Provides logic for creating a Docker based node.
+    """
+
     def __init__(
         self,
         session: "Session",
@@ -92,17 +45,18 @@ class DockerNode(CoreNode):
         """
         super().__init__(session, _id, name, directory, server)
         self.image = image if image is not None else "ubuntu"
-        self.client: Optional[DockerClient] = None
 
-    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
+    def _create_cmd(self, args: str, shell: bool = False) -> str:
         """
-        Create node network client for running network commands within the nodes
-        container.
+        Create command used to run commands within the context of a node.
 
-        :param use_ovs: True for OVS bridges, False for Linux bridges
-        :return:node network client
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
         """
-        return get_net_client(use_ovs, self.nsenter_cmd)
+        if shell:
+            args = f"{BASH} -c {shlex.quote(args)}"
+        return f"nsenter -t {self.pid} -m -u -i -p -n {args}"
 
     def alive(self) -> bool:
         """
@@ -110,22 +64,33 @@ class DockerNode(CoreNode):
 
         :return: True if node is alive, False otherwise
         """
-        return self.client.is_alive()
+        try:
+            running = self.host_cmd(
+                f"{DOCKER} inspect -f '{{{{.State.Running}}}}' {self.name}"
+            )
+            return json.loads(running)
+        except CoreCommandError:
+            return False
 
     def startup(self) -> None:
         """
-        Start a new namespace node by invoking the vnoded process that
-        allocates a new namespace. Bring up the loopback device and set
-        the hostname.
+        Create a docker container instance for the specified image.
 
         :return: nothing
         """
         with self.lock:
             if self.up:
-                raise ValueError("starting a node that is already up")
+                raise CoreError(f"starting node({self.name}) that is already up")
             self.makenodedir()
-            self.client = DockerClient(self.name, self.image, self.host_cmd)
-            self.pid = self.client.create_container()
+            self.host_cmd(
+                f"{DOCKER} run -td --init --net=none --hostname {self.name} "
+                f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+                f"--privileged {self.image} /bin/bash"
+            )
+            self.pid = self.host_cmd(
+                f"{DOCKER} inspect -f '{{{{.State.Pid}}}}' {self.name}"
+            )
+            logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 
     def shutdown(self) -> None:
@@ -139,16 +104,8 @@ class DockerNode(CoreNode):
             return
         with self.lock:
             self.ifaces.clear()
-            self.client.stop_container()
+            self.host_cmd(f"{DOCKER} rm -f {self.name}")
             self.up = False
-
-    def nsenter_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        if self.server is None:
-            args = self.client.create_ns_cmd(args)
-            return utils.cmd(args, wait=wait, shell=shell)
-        else:
-            args = self.client.create_ns_cmd(args)
-            return self.server.remote_cmd(args, wait=wait)
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
         """
@@ -157,7 +114,7 @@ class DockerNode(CoreNode):
         :param sh: shell to execute command in
         :return: str
         """
-        return f"docker exec -it {self.name} bash"
+        return f"{DOCKER} exec -it {self.name} {sh}"
 
     def create_dir(self, dir_path: Path) -> None:
         """
@@ -167,8 +124,7 @@ class DockerNode(CoreNode):
         :return: nothing
         """
         logger.debug("creating node dir: %s", dir_path)
-        args = f"mkdir -p {dir_path}"
-        self.cmd(args)
+        self.cmd(f"mkdir -p {dir_path}")
 
     def mount(self, src_path: str, target_path: str) -> None:
         """
@@ -201,7 +157,7 @@ class DockerNode(CoreNode):
             self.cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
             self.server.remote_put(temp_path, temp_path)
-        self.client.copy_file(temp_path, file_path)
+        self.host_cmd(f"{DOCKER} cp {temp_path} {self.name}:{file_path}")
         self.cmd(f"chmod {mode:o} {file_path}")
         if self.server is not None:
             self.host_cmd(f"rm -f {temp_path}")
@@ -226,6 +182,6 @@ class DockerNode(CoreNode):
             temp_path = Path(temp.name)
             src_path = temp_path
             self.server.remote_put(src_path, temp_path)
-        self.client.copy_file(src_path, dst_path)
+        self.host_cmd(f"{DOCKER} cp {src_path} {self.name}:{dst_path}")
         if mode is not None:
             self.cmd(f"chmod {mode:o} {dst_path}")
