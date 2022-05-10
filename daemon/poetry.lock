@@ -61,6 +61,14 @@ toml = ">=0.9.4"
 d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 
 [[package]]
+name = "certifi"
+version = "2021.10.8"
+description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
 name = "cffi"
 version = "1.15.0"
 description = "Foreign Function Interface for Python calling C code."
@@ -500,11 +508,14 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pyproj"
-version = "2.6.1.post1"
+version = "3.0.1"
 description = "Python interface to PROJ (cartographic projections and coordinate transformations library)"
 category = "main"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
+
+[package.dependencies]
+certifi = "*"
 
 [[package]]
 name = "pytest"
@@ -604,7 +615,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6"
-content-hash = "8f6ab4134c3bd5219ad80a1c93a055a87cd13b985b84a10a8ff1a7e3ca98a3c8"
+content-hash = "0a739e4b479c0c2111fa22ffb1ed55a99d26583a576a1b548204c29b726e3e33"
 
 [metadata.files]
 appdirs = [
@@ -635,6 +646,10 @@ bcrypt = [
 black = [
     {file = "black-19.3b0-py36-none-any.whl", hash = "sha256:09a9dcb7c46ed496a9850b76e4e825d6049ecd38b611f1224857a79bd985a8cf"},
     {file = "black-19.3b0.tar.gz", hash = "sha256:68950ffd4d9169716bcb8719a56c07a2f4485354fec061cdd5910aa07369731c"},
+]
+certifi = [
+    {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},
+    {file = "certifi-2021.10.8.tar.gz", hash = "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872"},
 ]
 cffi = [
     {file = "cffi-1.15.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:c2502a1a03b6312837279c8c1bd3ebedf6c12c4228ddbad40912d671ccc8a962"},
@@ -1150,29 +1165,31 @@ pyparsing = [
     {file = "pyparsing-3.0.7.tar.gz", hash = "sha256:18ee9022775d270c55187733956460083db60b37d0d0fb357445f3094eed3eea"},
 ]
 pyproj = [
-    {file = "pyproj-2.6.1.post1-cp35-cp35m-macosx_10_6_intel.whl", hash = "sha256:457ad3856014ac26af1d86def6dc8cf69c1fa377b6e2fd6e97912d51cf66bdbe"},
-    {file = "pyproj-2.6.1.post1-cp35-cp35m-manylinux1_i686.whl", hash = "sha256:6f3f36440ea61f5f6da4e6beb365dddcbe159815450001d9fb753545affa45ff"},
-    {file = "pyproj-2.6.1.post1-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:6a212d0e5c7efa33d039f0c8b0a489e2204fcd28b56206567852ad7f5f2a653e"},
-    {file = "pyproj-2.6.1.post1-cp35-cp35m-manylinux2010_x86_64.whl", hash = "sha256:451a3d1c563b672458029ebc04acbb3266cd8b3025268eb871a9176dc3638911"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:e015f900b4b84e908f8035ab16ebf02d67389c1c216c17a2196fc2e515c00762"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:a13e5731b3a360ee7fbd1e9199ec9203fafcece8ebd0b1351f16d0a90cad6828"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:33c1c2968a4f4f87d517c4275a18b557e5c13907cf2609371fadea8463c3ba05"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:3fef83a01c1e86dd9fa99d8214f749837cfafc34d9d6230b4b0a998fa7a68a1a"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-win32.whl", hash = "sha256:a6ac4861979cd05a0f5400fefa41d26c0269a5fb8237618aef7c998907db39e1"},
-    {file = "pyproj-2.6.1.post1-cp36-cp36m-win_amd64.whl", hash = "sha256:cbf6ccf990860b06c5262ff97c4b78e1d07883981635cd53a6aa438a68d92945"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:adacb67a9f71fb54ca1b887a6ab20f32dd536fcdf2acec84a19e25ad768f7965"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:e50d5d20b87758acf8f13f39a3b3eb21d5ef32339d2bc8cdeb8092416e0051df"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:2518d1606e2229b82318e704b40290e02a2a52d77b40cdcb2978973d6fc27b20"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:33a5d1cfbb40a019422eb80709a0e270704390ecde7278fdc0b88f3647c56a39"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-win32.whl", hash = "sha256:daf2998e3f5bcdd579a18faf009f37f53538e9b7d0a252581a610297d31e8536"},
-    {file = "pyproj-2.6.1.post1-cp37-cp37m-win_amd64.whl", hash = "sha256:a8b7c8accdc61dac8e91acab7c1f7b4590d1e102f2ee9b1f1e6399fad225958e"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9f097e8f341a162438918e908be86d105a28194ff6224633b2e9616c5031153f"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:d90a5d1fdd066b0e9b22409b0f5e81933469918fa04c2cf7f9a76ce84cb29dad"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:f5a8015c74ec8f6508aebf493b58ba20ccb4da8168bf05f0c2a37faccb518da9"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:d87836be6b720fb4d9c112136aa47621b6ca09a554e645c1081561eb8e2fa1f4"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-win32.whl", hash = "sha256:bc2f3a15d065e206d63edd2cc4739aa0a35c05338ee276ab1dc72f56f1944bda"},
-    {file = "pyproj-2.6.1.post1-cp38-cp38-win_amd64.whl", hash = "sha256:93cbad7b699e8e80def7de80c350617f35e6a0b82862f8ce3c014657c25fdb3c"},
-    {file = "pyproj-2.6.1.post1.tar.gz", hash = "sha256:4f5b02b4abbd41610397c635b275a8ee4a2b5bc72a75572b98ac6ae7befa471e"},
+    {file = "pyproj-3.0.1-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:f942a976ea3de6a519cf48be30a12f465e44d0ac0c38a0d820ab3acfcc0a48a6"},
+    {file = "pyproj-3.0.1-cp36-cp36m-manylinux2010_i686.whl", hash = "sha256:09db64a8088b23f001e574d92bcc3080bf7de44ddca152d0282a2b50c918a64a"},
+    {file = "pyproj-3.0.1-cp36-cp36m-manylinux2010_x86_64.whl", hash = "sha256:cba99e171d744969e13a865ad28fa9c949c4400b0e9c431a802cdd804f52f632"},
+    {file = "pyproj-3.0.1-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:81c06df20d09d621e52791c19ce3c880695fb430061e59c2472fa5467e890391"},
+    {file = "pyproj-3.0.1-cp36-cp36m-win32.whl", hash = "sha256:3e7e851e6d58c16ac2cd920a1bacb7fbb24758a6fcd7f234d594a88ebae04ec9"},
+    {file = "pyproj-3.0.1-cp36-cp36m-win_amd64.whl", hash = "sha256:aa0a2981b25145523ca17a643c5be077fe13e514fdca9b6d1c412a95d723a5a5"},
+    {file = "pyproj-3.0.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:708d6e01b9ff3d6dc62a5ad2d2ba1264a863eaa657c1a9bf713a10cc35d34553"},
+    {file = "pyproj-3.0.1-cp37-cp37m-manylinux2010_i686.whl", hash = "sha256:36ba436675f9dea4ab3db7d9a32d3ff11c2fbb4d6690a83454d2f3c5c0b54041"},
+    {file = "pyproj-3.0.1-cp37-cp37m-manylinux2010_x86_64.whl", hash = "sha256:489a96da87d8846c34c90da90e637544e4f4f50a13589b5aac54297f5ee1b01d"},
+    {file = "pyproj-3.0.1-cp37-cp37m-manylinux2014_aarch64.whl", hash = "sha256:4a333f3e46fe8b2eb4647a3daa3a2cec52ddc6c107c653b45880526114942ee8"},
+    {file = "pyproj-3.0.1-cp37-cp37m-win32.whl", hash = "sha256:9e2ef75401f17062166d3fe53c555cd62c9577697a2f5ded916b23c54e5db497"},
+    {file = "pyproj-3.0.1-cp37-cp37m-win_amd64.whl", hash = "sha256:7bfaa34e8bb0510d4380310374deecd9e4328b9cf556925cfb45b5a94d5bbdbe"},
+    {file = "pyproj-3.0.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9666d01faf4e758ac68f2c16695c90de49c3170e3760988bf76a34aae11f4e15"},
+    {file = "pyproj-3.0.1-cp38-cp38-manylinux2010_i686.whl", hash = "sha256:c658afc8a6115b58b02aa53d27bf2a67c1b00b55067edb1b7711c6c7391cfaa9"},
+    {file = "pyproj-3.0.1-cp38-cp38-manylinux2010_x86_64.whl", hash = "sha256:fee7517bd389a1db7b8bebb18838d04dedca9eaacda01d353d98f5ee421f263e"},
+    {file = "pyproj-3.0.1-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:86ef2fcd584a3222bf73e2befc24b2badd139b3371f4a1e88649978ef7649540"},
+    {file = "pyproj-3.0.1-cp38-cp38-win32.whl", hash = "sha256:d27d40ec541ef69a5107bfcd85f40170e9e122ceb6315ce508cd44d199983d41"},
+    {file = "pyproj-3.0.1-cp38-cp38-win_amd64.whl", hash = "sha256:bc70b6adcfa713d89bc561673cb57af5fb3a1718cd7d57ec537430cd1007a864"},
+    {file = "pyproj-3.0.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:9b845510255f9580d7e226dd3321a51c468cefb7be24e46415caf67caa4287c4"},
+    {file = "pyproj-3.0.1-cp39-cp39-manylinux2010_i686.whl", hash = "sha256:7ae8e7052f18fde1884574da449010e94fa205ad27aeeaa34a097f49a1ed6a2b"},
+    {file = "pyproj-3.0.1-cp39-cp39-manylinux2010_x86_64.whl", hash = "sha256:a3805e026a5547be205a5e322c08e3069f0a48c63bbd53dbc7a8e3499bc66d58"},
+    {file = "pyproj-3.0.1-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:1be7d54900eb7e2d1e637319080b3a047c70d1fb2f3c12d3400c0fa8a90cf440"},
+    {file = "pyproj-3.0.1-cp39-cp39-win32.whl", hash = "sha256:09bead60769e69b592e8cb3ac51b5215f75e9bb9c213ce575031961deb48d6da"},
+    {file = "pyproj-3.0.1-cp39-cp39-win_amd64.whl", hash = "sha256:a3a8ab19232bf4f4bb2590536538881b7bd0c07df23e0c2a792402ca2476c197"},
+    {file = "pyproj-3.0.1.tar.gz", hash = "sha256:bfbac35490dd17f706700673506eeb8170f8a2a63fb5878171d4e6eef242d141"},
 ]
 pytest = [
     {file = "pytest-5.4.3-py3-none-any.whl", hash = "sha256:5c0db86b698e8f170ba4582a492248919255fcd4c79b1ee64ace34301fb589a1"},
