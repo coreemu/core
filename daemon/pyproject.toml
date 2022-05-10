@@ -19,7 +19,7 @@ exclude = ["core/constants.py.in"]
 python = "^3.6"
 dataclasses = { version = "*", python = "~3.6" }
 fabric = "2.5.0"
-grpcio = "1.27.2"
+grpcio = "1.43.0"
 invoke = "1.4.1"
 lxml = "4.6.5"
 mako = "1.1.3"
@@ -32,7 +32,7 @@ pyyaml = "5.4"
 [tool.poetry.dev-dependencies]
 black = "==19.3b0"
 flake8 = "3.8.2"
-grpcio-tools = "1.27.2"
+grpcio-tools = "1.43.0"
 isort = "4.3.21"
 mock = "4.0.2"
 pre-commit = "2.1.1"
