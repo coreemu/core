@@ -1310,7 +1310,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> WlanLinkResponse:
         session = self.get_session(request.session_id, context)
         wlan = self.get_node(session, request.wlan, context, WlanNode)
-        if not isinstance(wlan.model, BasicRangeModel):
+        if not isinstance(wlan.wireless_model, BasicRangeModel):
             context.abort(
                 grpc.StatusCode.NOT_FOUND,
                 f"wlan node {request.wlan} is not using BasicRangeModel",
@@ -1332,7 +1332,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 wlan.link(node1_iface, node2_iface)
             else:
                 wlan.unlink(node1_iface, node2_iface)
-            wlan.model.sendlinkmsg(node1_iface, node2_iface, unlink=not request.linked)
+            wlan.wireless_model.sendlinkmsg(
+                node1_iface, node2_iface, unlink=not request.linked
+            )
             result = True
         return WlanLinkResponse(result=result)
 

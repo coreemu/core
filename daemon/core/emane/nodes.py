@@ -5,7 +5,7 @@ share the same MAC+PHY model.
 
 import logging
 import time
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type, Union
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -19,10 +19,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
-    from core.location.mobility import WirelessModel, WayPointMobility
-
-    OptionalEmaneModel = Optional[EmaneModel]
-    WirelessModelType = Type[WirelessModel]
+    from core.location.mobility import WayPointMobility
 
 try:
     from emane.events import LocationEvent
@@ -158,7 +155,7 @@ class EmaneNet(CoreNetworkBase):
     ) -> None:
         super().__init__(session, _id, name, server)
         self.conf: str = ""
-        self.model: "OptionalEmaneModel" = None
+        self.wireless_model: Optional["EmaneModel"] = None
         self.mobility: Optional[WayPointMobility] = None
 
     def linkconfig(
@@ -167,9 +164,9 @@ class EmaneNet(CoreNetworkBase):
         """
         The CommEffect model supports link configuration.
         """
-        if not self.model:
+        if not self.wireless_model:
             return
-        self.model.linkconfig(iface, options, iface2)
+        self.wireless_model.linkconfig(iface, options, iface2)
 
     def startup(self) -> None:
         self.up = True
@@ -190,20 +187,24 @@ class EmaneNet(CoreNetworkBase):
         :param config: configuration to update model with
         :return: nothing
         """
-        if not self.model:
+        if not self.wireless_model:
             raise CoreError(f"no model set to update for node({self.name})")
-        logger.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
-        self.model.update_config(config)
+        logger.info(
+            "node(%s) updating model(%s): %s", self.id, self.wireless_model.name, config
+        )
+        self.wireless_model.update_config(config)
 
-    def setmodel(self, model: "WirelessModelType", config: Dict[str, str]) -> None:
+    def setmodel(
+        self,
+        model: Union[Type["EmaneModel"], Type["WayPointMobility"]],
+        config: Dict[str, str],
+    ) -> None:
         """
         set the EmaneModel associated with this node
         """
         if model.config_type == RegisterTlvs.WIRELESS:
-            # EmaneModel really uses values from ConfigurableManager
-            #  when buildnemxml() is called, not during init()
-            self.model = model(session=self.session, _id=self.id)
-            self.model.update_config(config)
+            self.wireless_model = model(session=self.session, _id=self.id)
+            self.wireless_model.update_config(config)
         elif model.config_type == RegisterTlvs.MOBILITY:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)

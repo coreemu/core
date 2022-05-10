@@ -25,8 +25,6 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.location.mobility import WirelessModel, WayPointMobility
 
-    WirelessModelType = Type[WirelessModel]
-
 LEARNING_DISABLED: int = 0
 
 
@@ -685,7 +683,7 @@ class WlanNode(CoreNetwork):
         """
         super().__init__(session, _id, name, server, policy)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
-        self.model: Optional[WirelessModel] = None
+        self.wireless_model: Optional[WirelessModel] = None
         self.mobility: Optional[WayPointMobility] = None
 
     def startup(self) -> None:
@@ -705,27 +703,27 @@ class WlanNode(CoreNetwork):
         :return: nothing
         """
         super().attach(iface)
-        if self.model:
-            iface.poshook = self.model.position_callback
+        if self.wireless_model:
+            iface.poshook = self.wireless_model.position_callback
             iface.setposition()
 
-    def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
+    def setmodel(self, wireless_model: Type["WirelessModel"], config: Dict[str, str]):
         """
         Sets the mobility and wireless model.
 
-        :param model: wireless model to set to
+        :param wireless_model: wireless model to set to
         :param config: configuration for model being set
         :return: nothing
         """
-        logger.debug("node(%s) setting model: %s", self.name, model.name)
-        if model.config_type == RegisterTlvs.WIRELESS:
-            self.model = model(session=self.session, _id=self.id)
+        logger.debug("node(%s) setting model: %s", self.name, wireless_model.name)
+        if wireless_model.config_type == RegisterTlvs.WIRELESS:
+            self.wireless_model = wireless_model(session=self.session, _id=self.id)
             for iface in self.get_ifaces():
-                iface.poshook = self.model.position_callback
+                iface.poshook = self.wireless_model.position_callback
                 iface.setposition()
             self.updatemodel(config)
-        elif model.config_type == RegisterTlvs.MOBILITY:
-            self.mobility = model(session=self.session, _id=self.id)
+        elif wireless_model.config_type == RegisterTlvs.MOBILITY:
+            self.mobility = wireless_model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
     def update_mobility(self, config: Dict[str, str]) -> None:
@@ -734,12 +732,12 @@ class WlanNode(CoreNetwork):
         self.mobility.update_config(config)
 
     def updatemodel(self, config: Dict[str, str]) -> None:
-        if not self.model:
+        if not self.wireless_model:
             raise CoreError(f"no model set to update for node({self.name})")
         logger.debug(
-            "node(%s) updating model(%s): %s", self.id, self.model.name, config
+            "node(%s) updating model(%s): %s", self.id, self.wireless_model.name, config
         )
-        self.model.update_config(config)
+        self.wireless_model.update_config(config)
         for iface in self.get_ifaces():
             iface.setposition()
 
@@ -750,8 +748,8 @@ class WlanNode(CoreNetwork):
         :param flags: message flags
         :return: list of link data
         """
-        if self.model:
-            return self.model.links(flags)
+        if self.wireless_model:
+            return self.wireless_model.links(flags)
         else:
             return []
 

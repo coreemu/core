@@ -162,12 +162,14 @@ def build_platform_xml(
     """
     # create top level platform element
     platform_element = etree.Element("platform")
-    for configuration in emane_net.model.platform_config:
+    for configuration in emane_net.wireless_model.platform_config:
         name = configuration.id
         value = config[configuration.id]
         add_param(platform_element, name, value)
     add_param(
-        platform_element, emane_net.model.platform_controlport, f"0.0.0.0:{nem_port}"
+        platform_element,
+        emane_net.wireless_model.platform_controlport,
+        f"0.0.0.0:{nem_port}",
     )
 
     # build nem xml
@@ -177,7 +179,7 @@ def build_platform_xml(
     )
 
     # create model based xml files
-    emane_net.model.build_xml_files(config, iface)
+    emane_net.wireless_model.build_xml_files(config, iface)
 
     # check if this is an external transport
     if is_external(config):
