@@ -110,6 +110,10 @@ class OsInfo:
         return OsInfo(os_name, os_like, version)
 
 
+def get_env_python() -> str:
+    return os.environ.get("PYTHON", "python3")
+
+
 def get_python(c: Context, warn: bool = False) -> str:
     with c.cd(DAEMON_DIR):
         r = c.run("poetry env info -p", warn=warn, hide=True)
@@ -180,8 +184,9 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
+    python_bin = get_env_python()
     c.run(
-        "python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2",
+        f"{python_bin} -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2",
         hide=hide,
     )
 
@@ -204,6 +209,8 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
+            python_bin = get_env_python()
+            c.run(f"poetry env use {python_bin}", hide=hide)
             c.run(f"poetry install {args}", hide=hide)
             if dev:
                 c.run("poetry run pre-commit install", hide=hide)
