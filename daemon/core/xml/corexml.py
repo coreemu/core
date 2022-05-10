@@ -245,9 +245,14 @@ class DeviceElement(NodeElement):
 class NetworkElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "network")
-        if isinstance(self.node, (WlanNode, EmaneNet)):
-            if self.node.model:
-                add_attribute(self.element, "model", self.node.model.name)
+        if isinstance(self.node, WlanNode):
+            if self.node.wireless_model:
+                add_attribute(self.element, "model", self.node.wireless_model.name)
+            if self.node.mobility:
+                add_attribute(self.element, "mobility", self.node.mobility.name)
+        if isinstance(self.node, EmaneNet):
+            if self.node.wireless_model:
+                add_attribute(self.element, "model", self.node.wireless_model.name)
             if self.node.mobility:
                 add_attribute(self.element, "mobility", self.node.mobility.name)
         if isinstance(self.node, GreTapBridge):

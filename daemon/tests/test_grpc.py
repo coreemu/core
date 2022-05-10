@@ -528,7 +528,7 @@ class TestGrpc:
         assert result is True
         config = session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[range_key] == range_value
-        assert wlan.model.range == int(range_value)
+        assert wlan.wireless_model.range == int(range_value)
 
     def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given

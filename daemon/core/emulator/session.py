@@ -558,7 +558,7 @@ class Session:
         # ensure default emane configuration
         if isinstance(node, EmaneNet) and options.emane:
             model_class = self.emane.get_model(options.emane)
-            node.model = model_class(self, node.id)
+            node.wireless_model = model_class(self, node.id)
             if self.state == EventTypes.RUNTIME_STATE:
                 self.emane.add_node(node)
 
@@ -1328,9 +1328,8 @@ class Session:
 
         # use the updown script for control net 0 only.
         updown_script = None
-
         if net_index == 0:
-            updown_script = self.options.get("controlnet_updown_script")
+            updown_script = self.options.get("controlnet_updown_script") or None
             if not updown_script:
                 logger.debug("controlnet updown script not configured")
 

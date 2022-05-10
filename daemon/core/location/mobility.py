@@ -627,7 +627,7 @@ class WayPointMobility(WirelessModel):
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.net.model.update(moved_ifaces)
+        self.net.wireless_model.update(moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -705,7 +705,7 @@ class WayPointMobility(WirelessModel):
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
             moved_ifaces.append(iface)
-        self.net.model.update(moved_ifaces)
+        self.net.wireless_model.update(moved_ifaces)
 
     def addwaypoint(
         self,

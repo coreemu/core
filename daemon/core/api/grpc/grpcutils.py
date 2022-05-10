@@ -297,7 +297,7 @@ def get_node_proto(
         channel = str(node.ctrlchnlname)
     emane_model = None
     if isinstance(node, EmaneNet):
-        emane_model = node.model.name
+        emane_model = node.wireless_model.name
     image = None
     if isinstance(node, (DockerNode, LxcNode)):
         image = node.image

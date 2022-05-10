@@ -45,8 +45,6 @@ except ImportError:
         EventServiceException = None
         logger.debug("compatible emane python bindings not installed")
 
-DEFAULT_EMANE_PREFIX = "/usr"
-DEFAULT_DEV = "ctrl0"
 DEFAULT_LOG_LEVEL: int = 3
 
 
@@ -223,7 +221,7 @@ class EmaneManager:
         :param iface: interface running emane
         :return: net, node, or interface model configuration
         """
-        model_name = emane_net.model.name
+        model_name = emane_net.wireless_model.name
         # try to retrieve interface specific configuration
         key = utils.iface_config_id(iface.node.id, iface.id)
         config = self.get_config(key, model_name, default=False)
@@ -237,7 +235,7 @@ class EmaneManager:
             config = self.get_config(emane_net.id, model_name, default=False)
         # return default config values, when a config is not present
         if not config:
-            config = emane_net.model.default_values()
+            config = emane_net.wireless_model.default_values()
         return config
 
     def config_reset(self, node_id: int = None) -> None:
@@ -340,7 +338,7 @@ class EmaneManager:
     def get_ifaces(self) -> List[Tuple[EmaneNet, TunTap]]:
         ifaces = []
         for emane_net in self._emane_nets.values():
-            if not emane_net.model:
+            if not emane_net.wireless_model:
                 logger.error("emane net(%s) has no model", emane_net.name)
                 continue
             for iface in emane_net.get_ifaces():
@@ -498,7 +496,7 @@ class EmaneManager:
                     "post startup for emane node: %s - %s", emane_net.id, emane_net.name
                 )
                 for iface in emane_net.get_ifaces():
-                    emane_net.model.post_startup(iface)
+                    emane_net.wireless_model.post_startup(iface)
                     if events_enabled:
                         iface.setposition()
 
@@ -550,9 +548,11 @@ class EmaneManager:
             emane_net = self._emane_nets[node_id]
             logger.debug("checking emane model for node: %s", node_id)
             # skip nodes that already have a model set
-            if emane_net.model:
+            if emane_net.wireless_model:
                 logger.debug(
-                    "node(%s) already has model(%s)", emane_net.id, emane_net.model.name
+                    "node(%s) already has model(%s)",
+                    emane_net.id,
+                    emane_net.wireless_model.name,
                 )
                 continue
             # set model configured for node, due to legacy messaging configuration
