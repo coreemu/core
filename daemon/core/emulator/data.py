@@ -2,7 +2,7 @@
 CORE data objects.
 """
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import netaddr
 
@@ -92,6 +92,8 @@ class NodeOptions:
     image: str = None
     emane: str = None
     legacy: bool = False
+    binds: Dict[str, str] = field(default_factory=dict)
+    volumes: Dict[str, str] = field(default_factory=dict)
 
     def set_position(self, x: float, y: float) -> None:
         """

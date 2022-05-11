@@ -1,9 +1,10 @@
 import json
 import logging
 import shlex
+from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
@@ -16,6 +17,13 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 DOCKER: str = "docker"
+
+
+@dataclass
+class DockerVolume:
+    src: str
+    dst: str
+    path: str = None
 
 
 class DockerNode(CoreNode):
@@ -31,6 +39,8 @@ class DockerNode(CoreNode):
         directory: str = None,
         server: DistributedServer = None,
         image: str = None,
+        binds: Dict[str, str] = None,
+        volumes: Dict[str, str] = None,
     ) -> None:
         """
         Create a DockerNode instance.
@@ -42,9 +52,16 @@ class DockerNode(CoreNode):
         :param server: remote server node
             will run on, default is None for localhost
         :param image: image to start container with
+        :param binds: bind mounts to set for the created container
+        :param volumes: volume mounts to set for the created container
         """
         super().__init__(session, _id, name, directory, server)
-        self.image = image if image is not None else "ubuntu"
+        self.image: str = image if image is not None else "ubuntu"
+        self.binds: Dict[str, str] = binds or {}
+        volumes = volumes or {}
+        self.volumes: Dict[str, DockerVolume] = {
+            k: DockerVolume(k, v) for k, v in volumes.items()
+        }
 
     def _create_cmd(self, args: str, shell: bool = False) -> str:
         """
@@ -82,14 +99,27 @@ class DockerNode(CoreNode):
             if self.up:
                 raise CoreError(f"starting node({self.name}) that is already up")
             self.makenodedir()
+            binds = ""
+            for src, dst in self.binds.items():
+                binds += f"--mount type=bind,source={src},target={dst} "
+            volumes = ""
+            for volume in self.volumes.values():
+                volumes += (
+                    f"--mount type=volume," f"source={volume.src},target={volume.dst} "
+                )
             self.host_cmd(
                 f"{DOCKER} run -td --init --net=none --hostname {self.name} "
                 f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+                f"{binds} {volumes} "
                 f"--privileged {self.image} /bin/bash"
             )
             self.pid = self.host_cmd(
                 f"{DOCKER} inspect -f '{{{{.State.Pid}}}}' {self.name}"
             )
+            for volume in self.volumes.values():
+                volume.path = self.host_cmd(
+                    f"{DOCKER} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
+                )
             logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 
@@ -105,6 +135,8 @@ class DockerNode(CoreNode):
         with self.lock:
             self.ifaces.clear()
             self.host_cmd(f"{DOCKER} rm -f {self.name}")
+            for volume in self.volumes.values():
+                self.host_cmd(f"{DOCKER} volume rm {volume.src}")
             self.up = False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:

@@ -521,6 +521,8 @@ class Session:
         kwargs = dict(_id=_id, name=name, server=server)
         if _class in CONTAINER_NODES:
             kwargs["image"] = options.image
+            kwargs["binds"] = options.binds
+            kwargs["volumes"] = options.volumes
         node = self.create_node(_class, start, **kwargs)
 
         # set node attributes
