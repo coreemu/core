@@ -4,7 +4,7 @@ import shlex
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
@@ -23,6 +23,8 @@ DOCKER: str = "docker"
 class DockerVolume:
     src: str
     dst: str
+    unique: bool = True
+    delete: bool = True
     path: str = None
 
 
@@ -39,8 +41,8 @@ class DockerNode(CoreNode):
         directory: str = None,
         server: DistributedServer = None,
         image: str = None,
-        binds: Dict[str, str] = None,
-        volumes: Dict[str, str] = None,
+        binds: List[Tuple[str, str]] = None,
+        volumes: List[Tuple[str, str, bool, bool]] = None,
     ) -> None:
         """
         Create a DockerNode instance.
@@ -53,15 +55,16 @@ class DockerNode(CoreNode):
             will run on, default is None for localhost
         :param image: image to start container with
         :param binds: bind mounts to set for the created container
-        :param volumes: volume mounts to set for the created container
+        :param volumes: volume mount settings to set for the created container
         """
         super().__init__(session, _id, name, directory, server)
         self.image: str = image if image is not None else "ubuntu"
-        self.binds: Dict[str, str] = binds or {}
-        volumes = volumes or {}
-        self.volumes: Dict[str, DockerVolume] = {
-            k: DockerVolume(k, v) for k, v in volumes.items()
-        }
+        self.binds: List[Tuple[str, str]] = binds or []
+        self.volumes: Dict[str, DockerVolume] = {}
+        volumes = volumes or []
+        for src, dst, unique, delete in volumes:
+            src_name = self._unique_name(src) if unique else src
+            self.volumes[src] = DockerVolume(src_name, dst, unique, delete)
 
     def _create_cmd(self, args: str, shell: bool = False) -> str:
         """
@@ -74,6 +77,15 @@ class DockerNode(CoreNode):
         if shell:
             args = f"{BASH} -c {shlex.quote(args)}"
         return f"nsenter -t {self.pid} -m -u -i -p -n {args}"
+
+    def _unique_name(self, name: str) -> str:
+        """
+        Creates a session/node unique prefixed name for the provided input.
+
+        :param name: name to make unique
+        :return: unique session/node prefixed name
+        """
+        return f"{self.session.id}.{self.id}.{name}"
 
     def alive(self) -> bool:
         """
@@ -100,7 +112,7 @@ class DockerNode(CoreNode):
                 raise CoreError(f"starting node({self.name}) that is already up")
             self.makenodedir()
             binds = ""
-            for src, dst in self.binds.items():
+            for src, dst in self.binds:
                 binds += f"--mount type=bind,source={src},target={dst} "
             volumes = ""
             for volume in self.volumes.values():
@@ -111,15 +123,20 @@ class DockerNode(CoreNode):
                 f"{DOCKER} run -td --init --net=none --hostname {self.name} "
                 f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
                 f"{binds} {volumes} "
-                f"--privileged {self.image} /bin/bash"
+                f"--privileged {self.image} tail -f /dev/null"
             )
             self.pid = self.host_cmd(
                 f"{DOCKER} inspect -f '{{{{.State.Pid}}}}' {self.name}"
             )
+            for src, dst in self.binds:
+                link_path = self.host_path(Path(dst), True)
+                self.host_cmd(f"ln -s {src} {link_path}")
             for volume in self.volumes.values():
                 volume.path = self.host_cmd(
                     f"{DOCKER} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
                 )
+                link_path = self.host_path(Path(volume.dst), True)
+                self.host_cmd(f"ln -s {volume.path} {link_path}")
             logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 
@@ -136,7 +153,8 @@ class DockerNode(CoreNode):
             self.ifaces.clear()
             self.host_cmd(f"{DOCKER} rm -f {self.name}")
             for volume in self.volumes.values():
-                self.host_cmd(f"{DOCKER} volume rm {volume.src}")
+                if volume.delete:
+                    self.host_cmd(f"{DOCKER} volume rm {volume.src}")
             self.up = False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
