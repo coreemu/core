@@ -204,7 +204,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
-            c.run(f"poetry install {args}", hide=hide)
+            c.run(f"poetry install {args}", hide=hide, warn=True)
             if dev:
                 c.run("poetry run pre-commit install", hide=hide)
 
