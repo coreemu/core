@@ -5,13 +5,14 @@ share the same MAC+PHY model.
 
 import logging
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type, Union
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import EventTypes, MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
-from core.nodes.base import CoreNetworkBase, CoreNode
+from core.nodes.base import CoreNetworkBase, CoreNode, NodeOptions
 from core.nodes.interface import CoreInterface
 
 logger = logging.getLogger(__name__)
@@ -139,6 +140,12 @@ class TunTap(CoreInterface):
             self.node.node_net_client.create_address(self.name, str(ip))
 
 
+@dataclass
+class EmaneOptions(NodeOptions):
+    emane_model: str = None
+    """name of emane model to associate an emane network to"""
+
+
 class EmaneNet(CoreNetworkBase):
     """
     EMANE node contains NEM configuration and causes connected nodes
@@ -152,11 +159,20 @@ class EmaneNet(CoreNetworkBase):
         _id: int = None,
         name: str = None,
         server: DistributedServer = None,
+        options: EmaneOptions = None,
     ) -> None:
-        super().__init__(session, _id, name, server)
+        options = options or EmaneOptions()
+        super().__init__(session, _id, name, server, options)
         self.conf: str = ""
-        self.wireless_model: Optional["EmaneModel"] = None
         self.mobility: Optional[WayPointMobility] = None
+        model_class = self.session.emane.get_model(options.emane_model)
+        self.wireless_model: Optional["EmaneModel"] = model_class(self.session, self.id)
+        if self.session.state == EventTypes.RUNTIME_STATE:
+            self.session.emane.add_node(self)
+
+    @classmethod
+    def create_options(cls) -> EmaneOptions:
+        return EmaneOptions()
 
     def linkconfig(
         self, iface: CoreInterface, options: LinkOptions, iface2: CoreInterface = None

@@ -13,7 +13,7 @@ from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import TransportType
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, TEST, UMOUNT
-from core.nodes.base import CoreNode, CoreNodeBase
+from core.nodes.base import CoreNode, CoreNodeBase, CoreNodeOptions, NodeOptions
 from core.nodes.interface import CoreInterface
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,7 @@ class Rj45Node(CoreNodeBase):
         _id: int = None,
         name: str = None,
         server: DistributedServer = None,
+        options: NodeOptions = None,
     ) -> None:
         """
         Create an RJ45Node instance.
@@ -43,8 +44,9 @@ class Rj45Node(CoreNodeBase):
         :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
+        :param options: option to create node with
         """
-        super().__init__(session, _id, name, server)
+        super().__init__(session, _id, name, server, options)
         self.iface: CoreInterface = CoreInterface(
             self.iface_id, name, name, session.use_ovs(), node=self, server=server
         )
@@ -224,12 +226,12 @@ class PhysicalNode(CoreNode):
         session: "Session",
         _id: int = None,
         name: str = None,
-        directory: Path = None,
         server: DistributedServer = None,
+        options: CoreNodeOptions = None,
     ) -> None:
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
-        super().__init__(session, _id, name, directory, server)
+        super().__init__(session, _id, name, server, options)
 
     def startup(self) -> None:
         with self.lock:

@@ -14,7 +14,7 @@ from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.errors import CoreError
 from core.executables import NFTABLES
-from core.nodes.base import CoreNetworkBase
+from core.nodes.base import CoreNetworkBase, NodeOptions
 from core.nodes.interface import CoreInterface
 
 if TYPE_CHECKING:
@@ -108,8 +108,9 @@ class WirelessNode(CoreNetworkBase):
         _id: int,
         name: str,
         server: "DistributedServer" = None,
+        options: NodeOptions = None,
     ):
-        super().__init__(session, _id, name, server)
+        super().__init__(session, _id, name, server, options)
         self.bridges: Dict[int, Tuple[CoreInterface, str]] = {}
         self.links: Dict[Tuple[int, int], WirelessLink] = {}
         self.position_enabled: bool = CONFIG_ENABLED

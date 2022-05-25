@@ -14,7 +14,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -29,7 +29,6 @@ from core.emulator.data import (
     LinkData,
     LinkOptions,
     NodeData,
-    NodeOptions,
 )
 from core.emulator.distributed import DistributedController
 from core.emulator.enumerations import (
@@ -44,7 +43,7 @@ from core.errors import CoreError
 from core.location.event import EventLoop
 from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
-from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase, NodeOptions, Position
 from core.nodes.docker import DockerNode
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.lxd import LxcNode
@@ -476,14 +475,23 @@ class Session:
         return _id
 
     def add_node(
-        self, _class: Type[NT], _id: int = None, options: NodeOptions = None
+        self,
+        _class: Type[NT],
+        _id: int = None,
+        name: str = None,
+        server: str = None,
+        position: Position = None,
+        options: NodeOptions = None,
     ) -> NT:
         """
         Add a node to the session, based on the provided node data.
 
         :param _class: node class to create
         :param _id: id for node, defaults to None for generated id
-        :param options: data to create node with
+        :param name: name to assign to node
+        :param server: distributed server for node, if desired
+        :param position: geo or x/y/z position to set
+        :param options: options to create node with
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
@@ -492,89 +500,31 @@ class Session:
         enable_rj45 = self.options.get_int("enablerj45") == 1
         if _class == Rj45Node and not enable_rj45:
             start = False
-
-        # determine node id
-        if not _id:
-            _id = self.next_node_id()
-
-        # generate name if not provided
-        if not options:
-            options = NodeOptions()
-            options.set_position(0, 0)
-        name = options.name
-        if not name:
-            name = f"{_class.__name__}{_id}"
-
+        # generate options if not provided
+        options = options if options else _class.create_options()
         # verify distributed server
-        server = self.distributed.servers.get(options.server)
-        if options.server is not None and server is None:
-            raise CoreError(f"invalid distributed server: {options.server}")
-
+        dist_server = None
+        if server is not None:
+            dist_server = self.distributed.servers.get(server)
+            if not dist_server:
+                raise CoreError(f"invalid distributed server: {server}")
         # create node
-        logger.info(
-            "creating node(%s) id(%s) name(%s) start(%s)",
-            _class.__name__,
-            _id,
-            name,
-            start,
-        )
-        kwargs = dict(_id=_id, name=name, server=server)
-        if _class in CONTAINER_NODES:
-            kwargs["image"] = options.image
-            kwargs["binds"] = options.binds
-            kwargs["volumes"] = options.volumes
-        node = self.create_node(_class, start, **kwargs)
-
-        # set node attributes
-        node.icon = options.icon
-        node.canvas = options.canvas
-
-        # set node position and broadcast it
-        has_geo = all(i is not None for i in [options.lon, options.lat, options.alt])
-        if has_geo:
-            self.set_node_geo(node, options.lon, options.lat, options.alt)
+        node = self.create_node(_class, start, _id, name, dist_server, options)
+        # set node position
+        position = position or Position()
+        if position.has_geo():
+            self.set_node_geo(node, position.lon, position.lat, position.alt)
         else:
-            self.set_node_pos(node, options.x, options.y)
-
-        # add services to needed nodes
-        if isinstance(node, (CoreNode, PhysicalNode)):
-            node.model = options.model
-            if options.legacy or options.services:
-                logger.debug("set node type: %s", node.model)
-                self.services.add_services(node, node.model, options.services)
-
-            # add config services
-            config_services = options.config_services
-            if not options.legacy and not config_services and not node.services:
-                config_services = self.services.default_services.get(node.model, [])
-            logger.info("setting node config services: %s", config_services)
-            for name in config_services:
-                service_class = self.service_manager.get_service(name)
-                node.add_config_service(service_class)
-
-        # set network mtu, if configured
-        mtu = self.options.get_int("mtu")
-        if isinstance(node, CoreNetworkBase) and mtu > 0:
-            node.mtu = mtu
-
-        # ensure default emane configuration
-        if isinstance(node, EmaneNet) and options.emane:
-            model_class = self.emane.get_model(options.emane)
-            node.wireless_model = model_class(self, node.id)
-            if self.state == EventTypes.RUNTIME_STATE:
-                self.emane.add_node(node)
-
-        # set default wlan config if needed
+            self.set_node_pos(node, position.x, position.y)
+        # setup default wlan
         if isinstance(node, WlanNode):
-            self.mobility.set_model_config(_id, BasicRangeModel.name)
-
-        # boot nodes after runtime CoreNodes and PhysicalNodes
-        is_boot_node = isinstance(node, (CoreNode, PhysicalNode))
-        if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
+            self.mobility.set_model_config(self.id, BasicRangeModel.name)
+        # boot core nodes after runtime
+        is_runtime = self.state == EventTypes.RUNTIME_STATE
+        if is_runtime and isinstance(node, CoreNode):
             self.write_nodes()
             self.add_remove_control_iface(node, remove=False)
             self.boot_node(node)
-
         self.sdt.add_node(node)
         return node
 
@@ -980,24 +930,39 @@ class Session:
             logger.exception("failed to set permission on %s", self.directory)
 
     def create_node(
-        self, _class: Type[NT], start: bool, *args: Any, **kwargs: Any
+        self,
+        _class: Type[NT],
+        start: bool,
+        _id: int = None,
+        name: str = None,
+        server: str = None,
+        options: NodeOptions = None,
     ) -> NT:
         """
         Create an emulation node.
 
         :param _class: node class to create
         :param start: True to start node, False otherwise
-        :param args: list of arguments for the class to create
-        :param kwargs: dictionary of arguments for the class to create
+        :param _id: id for node, defaults to None for generated id
+        :param name: name to assign to node
+        :param server: distributed server for node, if desired
+        :param options: options to create node with
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
         with self.nodes_lock:
-            node = _class(self, *args, **kwargs)
+            node = _class(self, _id=_id, name=name, server=server, options=options)
             if node.id in self.nodes:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
+        logger.info(
+            "created node(%s) id(%s) name(%s) start(%s)",
+            _class.__name__,
+            node.id,
+            node.name,
+            start,
+        )
         if start:
             node.startup()
         return node
@@ -1219,7 +1184,7 @@ class Session:
             funcs = []
             start = time.monotonic()
             for node in self.nodes.values():
-                if isinstance(node, (CoreNode, PhysicalNode)):
+                if isinstance(node, CoreNode):
                     self.add_remove_control_iface(node, remove=False)
                     funcs.append((self.boot_node, (node,), {}))
             results, exceptions = utils.threadpool(funcs)
@@ -1354,21 +1319,18 @@ class Session:
             updown_script,
             server_iface,
         )
-        control_net = self.create_node(
-            CtrlNet,
-            start=False,
-            prefix=prefix,
-            _id=_id,
-            updown_script=updown_script,
-            serverintf=server_iface,
-        )
+        options = CtrlNet.create_options()
+        options.prefix = prefix
+        options.updown_script = updown_script
+        options.serverintf = server_iface
+        control_net = self.create_node(CtrlNet, False, _id, options=options)
         control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
         control_net.startup()
         return control_net
 
     def add_remove_control_iface(
         self,
-        node: Union[CoreNode, PhysicalNode],
+        node: CoreNode,
         net_index: int = 0,
         remove: bool = False,
         conf_required: bool = True,

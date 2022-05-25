@@ -88,7 +88,12 @@ from core.configservice.base import ConfigServiceBootError
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
-from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
+from core.emulator.enumerations import (
+    EventTypes,
+    ExceptionLevels,
+    MessageFlags,
+    NodeTypes,
+)
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -548,9 +553,17 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("add node: %s", request)
         session = self.get_session(request.session_id, context)
-        _type, _id, options = grpcutils.add_node_data(request.node)
+        _type = NodeTypes(request.node.type)
         _class = session.get_node_class(_type)
-        node = session.add_node(_class, _id, options)
+        position, options = grpcutils.add_node_data(_class, request.node)
+        node = session.add_node(
+            _class,
+            request.node.id or None,
+            request.node.name or None,
+            request.node.server or None,
+            position,
+            options,
+        )
         grpcutils.configure_node(session, request.node, node, context)
         source = request.source if request.source else None
         session.broadcast_node(node, MessageFlags.ADD, source)

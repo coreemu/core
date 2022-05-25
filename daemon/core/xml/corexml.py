@@ -8,12 +8,12 @@ import core.nodes.base
 import core.nodes.physical
 from core import utils
 from core.config import Configuration
-from core.emane.nodes import EmaneNet
-from core.emulator.data import InterfaceData, LinkOptions, NodeOptions
+from core.emane.nodes import EmaneNet, EmaneOptions
+from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.errors import CoreXmlError
-from core.nodes.base import CoreNodeBase, NodeBase
-from core.nodes.docker import DockerNode
+from core.nodes.base import CoreNodeBase, CoreNodeOptions, NodeBase, Position
+from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
@@ -802,68 +802,76 @@ class CoreXmlReader:
         clazz = device_element.get("class")
         image = device_element.get("image")
         server = device_element.get("server")
-        options = NodeOptions(
-            name=name, model=model, image=image, icon=icon, server=server
-        )
+        canvas = get_int(device_element, "canvas")
         node_type = NodeTypes.DEFAULT
         if clazz == "docker":
             node_type = NodeTypes.DOCKER
         elif clazz == "lxc":
             node_type = NodeTypes.LXC
         _class = self.session.get_node_class(node_type)
-
-        service_elements = device_element.find("services")
-        if service_elements is not None:
-            options.services = [x.get("name") for x in service_elements.iterchildren()]
-
-        config_service_elements = device_element.find("configservices")
-        if config_service_elements is not None:
-            options.config_services = [
-                x.get("name") for x in config_service_elements.iterchildren()
-            ]
-
+        options = _class.create_options()
+        options.icon = icon
+        options.canvas = canvas
+        # check for special options
+        if isinstance(options, CoreNodeOptions):
+            options.model = model
+            service_elements = device_element.find("services")
+            if service_elements is not None:
+                options.services.extend(
+                    x.get("name") for x in service_elements.iterchildren()
+                )
+            config_service_elements = device_element.find("configservices")
+            if config_service_elements is not None:
+                options.config_services.extend(
+                    x.get("name") for x in config_service_elements.iterchildren()
+                )
+        if isinstance(options, DockerOptions):
+            options.image = image
+        # get position information
         position_element = device_element.find("position")
+        position = None
         if position_element is not None:
+            position = Position()
             x = get_float(position_element, "x")
             y = get_float(position_element, "y")
             if all([x, y]):
-                options.set_position(x, y)
-
+                position.set(x, y)
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                options.set_location(lat, lon, alt)
-
+                position.set_geo(lon, lat, alt)
         logger.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_class, node_id, options)
+        self.session.add_node(_class, node_id, name, server, position, options)
 
     def read_network(self, network_element: etree.Element) -> None:
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
+        server = network_element.get("server")
         node_type = NodeTypes[network_element.get("type")]
         _class = self.session.get_node_class(node_type)
-        icon = network_element.get("icon")
-        server = network_element.get("server")
-        options = NodeOptions(name=name, icon=icon, server=server)
-        if node_type == NodeTypes.EMANE:
-            model = network_element.get("model")
-            options.emane = model
+        options = _class.create_options()
+        options.canvas = get_int(network_element, "canvas")
+        options.icon = network_element.get("icon")
+        if isinstance(options, EmaneOptions):
+            options.emane_model = network_element.get("model")
         position_element = network_element.find("position")
+        position = None
         if position_element is not None:
+            position = Position()
             x = get_float(position_element, "x")
             y = get_float(position_element, "y")
             if all([x, y]):
-                options.set_position(x, y)
+                position.set(x, y)
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                options.set_location(lat, lon, alt)
+                position.set_geo(lon, lat, alt)
         logger.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        node = self.session.add_node(_class, node_id, options)
+        node = self.session.add_node(_class, node_id, name, server, position, options)
         if isinstance(node, WirelessNode):
             wireless_element = network_element.find("wireless")
             if wireless_element:

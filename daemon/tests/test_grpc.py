@@ -34,7 +34,7 @@ from core.api.grpc.wrappers import (
 )
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, IpPrefixes, NodeData, NodeOptions
+from core.emulator.data import EventData, IpPrefixes, NodeData
 from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -350,8 +350,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        options = NodeOptions(model="Host")
-        node = session.add_node(CoreNode, options=options)
+        node = session.add_node(CoreNode)
         session.instantiate()
         expected_output = "hello world"
         expected_status = 0
@@ -369,8 +368,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        options = NodeOptions(model="Host")
-        node = session.add_node(CoreNode, options=options)
+        node = session.add_node(CoreNode)
         session.instantiate()
 
         # then
@@ -444,10 +442,12 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
         iface_data = ip_prefixes.create_iface(node)
         iface, _ = session.add_link(node.id, switch.id, iface_data)
+        session.instantiate()
         options = LinkOptions(bandwidth=30000)
         assert iface.options.bandwidth != options.bandwidth
         link = Link(node.id, switch.id, iface1=Interface(id=iface.id), options=options)
@@ -535,7 +535,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
         emane_network = session.add_node(EmaneNet, options=options)
         session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
         config_key = "bandwidth"
@@ -565,7 +566,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
         emane_network = session.add_node(EmaneNet, options=options)
         session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
 
@@ -685,7 +687,8 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        options = NodeOptions(legacy=True)
+        options = CoreNode.create_options()
+        options.legacy = True
         node = session.add_node(CoreNode, options=options)
         service_name = "DefaultRoute"
 
@@ -932,6 +935,7 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
         wlan = session.add_node(WlanNode)
         node1 = session.add_node(CoreNode)
         node2 = session.add_node(CoreNode)

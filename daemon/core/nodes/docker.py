@@ -1,7 +1,7 @@
 import json
 import logging
 import shlex
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import TYPE_CHECKING, Dict, List, Tuple
@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Dict, List, Tuple
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, CoreNodeOptions
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +17,21 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 DOCKER: str = "docker"
+
+
+@dataclass
+class DockerOptions(CoreNodeOptions):
+    image: str = "ubuntu"
+    """image used when creating container"""
+    binds: List[Tuple[str, str]] = field(default_factory=list)
+    """bind mount source and destinations to setup within container"""
+    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    """
+    volume mount source, destination, unique, delete to setup within container
+
+    unique is True for node unique volume naming
+    delete is True for deleting volume mount during shutdown
+    """
 
 
 @dataclass
@@ -38,11 +53,8 @@ class DockerNode(CoreNode):
         session: "Session",
         _id: int = None,
         name: str = None,
-        directory: str = None,
         server: DistributedServer = None,
-        image: str = None,
-        binds: List[Tuple[str, str]] = None,
-        volumes: List[Tuple[str, str, bool, bool]] = None,
+        options: DockerOptions = None,
     ) -> None:
         """
         Create a DockerNode instance.
@@ -50,21 +62,22 @@ class DockerNode(CoreNode):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
-        :param image: image to start container with
-        :param binds: bind mounts to set for the created container
-        :param volumes: volume mount settings to set for the created container
+        :param options: options for creating node
         """
-        super().__init__(session, _id, name, directory, server)
-        self.image: str = image if image is not None else "ubuntu"
-        self.binds: List[Tuple[str, str]] = binds or []
+        options = options or DockerOptions()
+        super().__init__(session, _id, name, server, options)
+        self.image: str = options.image
+        self.binds: List[Tuple[str, str]] = options.binds
         self.volumes: Dict[str, DockerVolume] = {}
-        volumes = volumes or []
-        for src, dst, unique, delete in volumes:
+        for src, dst, unique, delete in options.volumes:
             src_name = self._unique_name(src) if unique else src
             self.volumes[src] = DockerVolume(src_name, dst, unique, delete)
+
+    @classmethod
+    def create_options(cls) -> DockerOptions:
+        return DockerOptions()
 
     def _create_cmd(self, args: str, shell: bool = False) -> str:
         """

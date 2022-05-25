@@ -603,7 +603,7 @@ class EmaneManager:
         node = iface.node
         loglevel = str(DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.options.get_int("emane_log_level", 2)
-        realtime = self.session.options.get_bool("emane_realtime")
+        realtime = self.session.options.get_bool("emane_realtime", True)
         if cfgloglevel:
             logger.info("setting user-defined emane log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
