@@ -218,9 +218,9 @@ You can leverage the provided Dockerfile, to run and launch CORE within a Docker
 git clone https://github.com/coreemu/core.git
 cd core
 # build image
-sudo docker build -t core .
+sudo docker build -t core.<cenots,ubuntu> -f Dockerfile.<centos,ubuntu>
 # start container
-sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
+sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core.<centos,ubuntu>
 # enable xhost access to the root user
 xhost +local:root
 # launch core-gui
