@@ -382,6 +382,8 @@ class EmaneManager:
                 service = EmaneEventService(
                     self, event_net.brname, eventgroup, int(eventport)
                 )
+                if self.doeventmonitor():
+                    service.start()
                 self.services[event_net.brname] = service
                 self.nem_service[nem_id] = service
             except EventServiceException:
@@ -636,20 +638,13 @@ class EmaneManager:
         """
         Returns boolean whether or not EMANE events will be monitored.
         """
-        # this support must be explicitly turned on; by default, CORE will
-        # generate the EMANE events when nodes are moved
         return self.session.options.get_bool("emane_event_monitor", False)
 
     def genlocationevents(self) -> bool:
         """
         Returns boolean whether or not EMANE events will be generated.
         """
-        # By default, CORE generates EMANE location events when nodes
-        # are moved; this can be explicitly disabled in core.conf
-        tmp = self.session.options.get_bool("emane_event_generate", True)
-        if tmp is None:
-            tmp = not self.doeventmonitor()
-        return tmp
+        return self.session.options.get_bool("emane_event_generate", True)
 
     def handlelocationevent(self, rxnemid: int, eid: int, data: str) -> None:
         """
