@@ -599,28 +599,6 @@ class Session:
             logger.info("immediately running new state hook")
             self.run_hook(hook)
 
-    def add_node_file(
-        self,
-        node_id: int,
-        src_path: Optional[Path],
-        file_path: Path,
-        data: Optional[str],
-    ) -> None:
-        """
-        Add a file to a node.
-
-        :param node_id: node to add file to
-        :param src_path: source file path
-        :param file_path: file path to add
-        :param data: file data
-        :return: nothing
-        """
-        node = self.get_node(node_id, CoreNode)
-        if src_path is not None:
-            node.copy_file(src_path, file_path)
-        elif data is not None:
-            node.create_file(file_path, data)
-
     def clear(self) -> None:
         """
         Clear all CORE session data. (nodes, hooks, etc)
