@@ -37,10 +37,15 @@ class DockerOptions(CoreNodeOptions):
 @dataclass
 class DockerVolume:
     src: str
+    """volume mount name"""
     dst: str
+    """volume mount destination directory"""
     unique: bool = True
+    """True to create a node unique prefixed name for this volume"""
     delete: bool = True
+    """True to delete the volume during shutdown"""
     path: str = None
+    """path to the volume on the host"""
 
 
 class DockerNode(CoreNode):
@@ -60,8 +65,8 @@ class DockerNode(CoreNode):
         Create a DockerNode instance.
 
         :param session: core session instance
-        :param _id: object id
-        :param name: object name
+        :param _id: node id
+        :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
         :param options: options for creating node
@@ -77,6 +82,11 @@ class DockerNode(CoreNode):
 
     @classmethod
     def create_options(cls) -> DockerOptions:
+        """
+        Return default creation options, which can be used during node creation.
+
+        :return: docker options
+        """
         return DockerOptions()
 
     def _create_cmd(self, args: str, shell: bool = False) -> str:
