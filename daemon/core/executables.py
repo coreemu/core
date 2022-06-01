@@ -1,30 +1,31 @@
 from typing import List
 
 BASH: str = "bash"
-VNODED: str = "vnoded"
-VCMD: str = "vcmd"
-SYSCTL: str = "sysctl"
-IP: str = "ip"
 ETHTOOL: str = "ethtool"
-TC: str = "tc"
+IP: str = "ip"
 MOUNT: str = "mount"
-UMOUNT: str = "umount"
-OVS_VSCTL: str = "ovs-vsctl"
-TEST: str = "test"
 NFTABLES: str = "nft"
+OVS_VSCTL: str = "ovs-vsctl"
+SYSCTL: str = "sysctl"
+TC: str = "tc"
+TEST: str = "test"
+UMOUNT: str = "umount"
+VCMD: str = "vcmd"
+VNODED: str = "vnoded"
 
 COMMON_REQUIREMENTS: List[str] = [
     BASH,
-    NFTABLES,
     ETHTOOL,
     IP,
     MOUNT,
+    NFTABLES,
     SYSCTL,
     TC,
-    UMOUNT,
     TEST,
+    UMOUNT,
+    VCMD,
+    VNODED,
 ]
-VCMD_REQUIREMENTS: List[str] = [VNODED, VCMD]
 OVS_REQUIREMENTS: List[str] = [OVS_VSCTL]
 
 
@@ -38,6 +39,4 @@ def get_requirements(use_ovs: bool) -> List[str]:
     requirements = COMMON_REQUIREMENTS
     if use_ovs:
         requirements += OVS_REQUIREMENTS
-    else:
-        requirements += VCMD_REQUIREMENTS
     return requirements
