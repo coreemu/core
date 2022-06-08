@@ -573,23 +573,6 @@ class CoreGrpcClient:
         response = self.stub.GetNodeTerminal(request)
         return response.terminal
 
-    def get_node_links(self, session_id: int, node_id: int) -> List[wrappers.Link]:
-        """
-        Get current links for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :return: list of links
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = core_pb2.GetNodeLinksRequest(session_id=session_id, node_id=node_id)
-        response = self.stub.GetNodeLinks(request)
-        links = []
-        for link_proto in response.links:
-            link = wrappers.Link.from_proto(link_proto)
-            links.append(link)
-        return links
-
     def add_link(
         self, session_id: int, link: wrappers.Link, source: str = None
     ) -> Tuple[bool, wrappers.Interface, wrappers.Interface]:
