@@ -7,7 +7,7 @@ import argparse
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.lxd import LxcNode
 
@@ -42,7 +42,8 @@ def main(args):
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create local node, switch, and remote nodes
-    options = NodeOptions(image="ubuntu:18.04")
+    options = LxcNode.create_options()
+    options.image = "ubuntu:18.04"
     node1 = session.add_node(LxcNode, options=options)
     options.server = server_name
     node2 = session.add_node(LxcNode, options=options)

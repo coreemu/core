@@ -1,6 +1,6 @@
 import pytest
 
-from core.emulator.data import InterfaceData, NodeOptions
+from core.emulator.data import InterfaceData
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
@@ -14,7 +14,8 @@ class TestNodes:
     @pytest.mark.parametrize("model", MODELS)
     def test_node_add(self, session: Session, model: str):
         # given
-        options = NodeOptions(model=model)
+        options = CoreNode.create_options()
+        options.model = model
 
         # when
         node = session.add_node(CoreNode, options=options)

@@ -1,7 +1,7 @@
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.lxd import LxcNode
@@ -16,12 +16,13 @@ if __name__ == "__main__":
 
     try:
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        options = NodeOptions(image="ubuntu")
 
         # create switch
         switch = session.add_node(SwitchNode)
 
         # node one
+        options = LxcNode.create_options()
+        options.image = "ubuntu"
         node1 = session.add_node(LxcNode, options=options)
         interface1_data = prefixes.create_iface(node1)
 

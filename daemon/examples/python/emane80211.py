@@ -2,9 +2,9 @@
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 
 # ip nerator for example
 ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
@@ -21,14 +21,20 @@ session.location.refscale = 150.0
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create emane
-options = NodeOptions(x=200, y=200, emane=EmaneIeee80211abgModel.name)
-emane = session.add_node(EmaneNet, options=options)
+options = EmaneNet.create_options()
+options.emane_model = EmaneIeee80211abgModel.name
+position = Position(x=200, y=200)
+emane = session.add_node(EmaneNet, position=position, options=options)
 
 # create nodes
-options = NodeOptions(model="mdr", x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(model="mdr", x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+options = CoreNode.create_options()
+options.model = "mdr"
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position, options=options)
+options = CoreNode.create_options()
+options.model = "mdr"
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position, options=options)
 
 # configure general emane settings
 config = session.emane.get_configs()

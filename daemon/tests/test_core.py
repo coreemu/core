@@ -8,7 +8,7 @@ from typing import List, Type
 
 import pytest
 
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -75,8 +75,8 @@ class TestCore:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(0, 0)
+        options = CoreNode.create_options()
+        options.model = "mdr"
         node1 = session.add_node(CoreNode, options=options)
         node2 = session.add_node(CoreNode, options=options)
 
@@ -105,8 +105,8 @@ class TestCore:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(0, 0)
+        options = CoreNode.create_options()
+        options.model = "mdr"
         node1 = session.add_node(CoreNode, options=options)
         node2 = session.add_node(CoreNode, options=options)
 

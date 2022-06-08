@@ -28,7 +28,7 @@ from core.api.grpc.wrappers import (
     Position,
 )
 
-NODE_TYPES = [x for x in NodeType if x != NodeType.PEER_TO_PEER]
+NODE_TYPES = [x.name for x in NodeType if x != NodeType.PEER_TO_PEER]
 
 
 def protobuf_to_json(message: Any) -> Dict[str, Any]:

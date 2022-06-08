@@ -9,7 +9,7 @@ import logging
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 
@@ -50,11 +50,13 @@ def main(args):
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create local node, switch, and remote nodes
-    options = NodeOptions(model="mdr")
-    options.set_position(0, 0)
+    options = CoreNode.create_options()
+    options.model = "mdr"
     node1 = session.add_node(CoreNode, options=options)
-    emane_net = session.add_node(EmaneNet)
-    session.emane.set_model(emane_net, EmaneIeee80211abgModel)
+    options = EmaneNet.create_options()
+    options.emane_model = EmaneIeee80211abgModel.name
+    emane_net = session.add_node(EmaneNet, options=options)
+    options = CoreNode.create_options()
     options.server = server_name
     node2 = session.add_node(CoreNode, options=options)
 

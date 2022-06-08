@@ -16,10 +16,10 @@ from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.models.rfpipe import EmaneRfPipeModel
 from core.emane.models.tdma import EmaneTdmaModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.session import Session
 from core.errors import CoreCommandError, CoreError
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
@@ -53,19 +53,22 @@ class TestEmane:
         """
         # create emane node for networking the core nodes
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions()
-        options.set_position(80, 50)
-        options.emane = EmaneIeee80211abgModel.name
-        emane_net1 = session.add_node(EmaneNet, options=options)
-        options.emane = EmaneRfPipeModel.name
-        emane_net2 = session.add_node(EmaneNet, options=options)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
+        position = Position(x=80, y=50)
+        emane_net1 = session.add_node(EmaneNet, position=position, options=options)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneRfPipeModel.name
+        position = Position(x=80, y=50)
+        emane_net2 = session.add_node(EmaneNet, position=position, options=options)
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(150, 150)
-        node1 = session.add_node(CoreNode, options=options)
-        options.set_position(300, 150)
-        node2 = session.add_node(CoreNode, options=options)
+        options = CoreNode.create_options()
+        options.model = "mdr"
+        position = Position(x=150, y=150)
+        node1 = session.add_node(CoreNode, position=position, options=options)
+        position = Position(x=300, y=150)
+        node2 = session.add_node(CoreNode, position=position, options=options)
 
         # create interfaces
         ip_prefix1 = IpPrefixes("10.0.0.0/24")
@@ -100,9 +103,10 @@ class TestEmane:
 
         # create emane node for networking the core nodes
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=model.name)
-        options.set_position(80, 50)
-        emane_network = session.add_node(EmaneNet, options=options)
+        options = EmaneNet.create_options()
+        options.emane_model = model.name
+        position = Position(x=80, y=50)
+        emane_network = session.add_node(EmaneNet, position=position, options=options)
 
         # configure tdma
         if model == EmaneTdmaModel:
@@ -111,11 +115,12 @@ class TestEmane:
             )
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(150, 150)
-        node1 = session.add_node(CoreNode, options=options)
-        options.set_position(300, 150)
-        node2 = session.add_node(CoreNode, options=options)
+        options = CoreNode.create_options()
+        options.model = "mdr"
+        position = Position(x=150, y=150)
+        node1 = session.add_node(CoreNode, position=position, options=options)
+        position = Position(x=300, y=150)
+        node2 = session.add_node(CoreNode, position=position, options=options)
 
         for i, node in enumerate([node1, node2]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -141,9 +146,10 @@ class TestEmane:
         """
         # create emane node for networking the core nodes
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
-        options.set_position(80, 50)
-        emane_network = session.add_node(EmaneNet, options=options)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
+        position = Position(x=80, y=50)
+        emane_network = session.add_node(EmaneNet, position=position, options=options)
         config_key = "txpower"
         config_value = "10"
         session.emane.set_config(
@@ -151,11 +157,12 @@ class TestEmane:
         )
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(150, 150)
-        node1 = session.add_node(CoreNode, options=options)
-        options.set_position(300, 150)
-        node2 = session.add_node(CoreNode, options=options)
+        options = CoreNode.create_options()
+        options.model = "mdr"
+        position = Position(x=150, y=150)
+        node1 = session.add_node(CoreNode, position=position, options=options)
+        position = Position(x=300, y=150)
+        node2 = session.add_node(CoreNode, position=position, options=options)
 
         for i, node in enumerate([node1, node2]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -205,14 +212,17 @@ class TestEmane:
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
     ):
         # create nodes
-        options = NodeOptions(model="mdr", x=50, y=50)
-        node1 = session.add_node(CoreNode, options=options)
+        options = CoreNode.create_options()
+        options.model = "mdr"
+        position = Position(x=50, y=50)
+        node1 = session.add_node(CoreNode, position=position, options=options)
         iface1_data = ip_prefixes.create_iface(node1)
-        node2 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode, position=position, options=options)
         iface2_data = ip_prefixes.create_iface(node2)
 
         # create emane node
-        options = NodeOptions(model=None, emane=EmaneRfPipeModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneRfPipeModel.name
         emane_node = session.add_node(EmaneNet, options=options)
 
         # create links
@@ -255,11 +265,7 @@ class TestEmane:
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(node2.id, CoreNode)
         assert session.get_node(emane_node.id, EmaneNet)
-        links = []
-        for node_id in session.nodes:
-            node = session.nodes[node_id]
-            links += node.links()
-        assert len(links) == 2
+        assert len(session.link_manager.links()) == 2
         config = session.emane.get_config(node1.id, EmaneRfPipeModel.name)
         assert config["datarate"] == datarate
 
@@ -267,14 +273,17 @@ class TestEmane:
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes
     ):
         # create nodes
-        options = NodeOptions(model="mdr", x=50, y=50)
-        node1 = session.add_node(CoreNode, options=options)
+        options = CoreNode.create_options()
+        options.model = "mdr"
+        position = Position(x=50, y=50)
+        node1 = session.add_node(CoreNode, position=position, options=options)
         iface1_data = ip_prefixes.create_iface(node1)
-        node2 = session.add_node(CoreNode, options=options)
+        node2 = session.add_node(CoreNode, position=position, options=options)
         iface2_data = ip_prefixes.create_iface(node2)
 
         # create emane node
-        options = NodeOptions(model=None, emane=EmaneRfPipeModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneRfPipeModel.name
         emane_node = session.add_node(EmaneNet, options=options)
 
         # create links
@@ -318,10 +327,6 @@ class TestEmane:
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(node2.id, CoreNode)
         assert session.get_node(emane_node.id, EmaneNet)
-        links = []
-        for node_id in session.nodes:
-            node = session.nodes[node_id]
-            links += node.links()
-        assert len(links) == 2
+        assert len(session.link_manager.links()) == 2
         config = session.emane.get_config(config_id, EmaneRfPipeModel.name)
         assert config["datarate"] == datarate

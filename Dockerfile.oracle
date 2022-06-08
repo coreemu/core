@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+FROM oraclelinux:8
+LABEL Description="CORE Docker Oracle Linux Image"
+
+# define variables
+ARG PREFIX=/usr
+ARG BRANCH=docker-updates
+
+# define environment
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG en_US.UTF-8
+
+# install core
+RUN yum -y update && \
+    yum install -y git sudo wget tzdata unzip python39 which iproute-tc hostname xterm
+WORKDIR /root
+RUN git clone https://github.com/coreemu/core
+WORKDIR /root/core
+RUN git checkout ${BRANCH}
+RUN PYTHON=python3.9 PYTHON_DEP=python39 ./setup.sh
+RUN . /root/.bashrc && PYTHON=python3.9 PYTHON_DEP=python39 inv install -v -p ${PREFIX}
+# install emane packages and python bindings
+WORKDIR /root
+RUN yum config-manager --set-enabled ol8_codeready_builder && yum install -y protobuf-devel
+RUN wget -q https://adjacentlink.com/downloads/emane/emane-1.3.3-release-1.el8.x86_64.tar.gz && \
+    tar xf emane-1.3.3-release-1.el8.x86_64.tar.gz && \
+    cd emane-1.3.3-release-1/rpms/el8/x86_64 && \
+    yum install -y epel-release && \
+    yum install -y ./openstatistic*.rpm ./emane*.rpm ./python3-emane-1.3.3*.rpm && \
+    cd ../../../.. && \
+    rm emane-1.3.3-release-1.el8.x86_64.tar.gz && \
+    rm -rf emane-1.3.3-release-1
+WORKDIR /root/core
+RUN . /root/.bashrc && PYTHON=python3.9 PATH=/root/protoc/bin:$PATH inv install-emane -v -e v1.3.3
+
+# run daemon
+CMD ["core-daemon"]

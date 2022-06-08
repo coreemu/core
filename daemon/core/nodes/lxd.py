@@ -1,15 +1,16 @@
 import json
 import logging
 import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from core import utils
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, CoreNodeOptions
 from core.nodes.interface import CoreInterface
 
 logger = logging.getLogger(__name__)
@@ -66,15 +67,29 @@ class LxdClient:
         self.run(args)
 
 
+@dataclass
+class LxcOptions(CoreNodeOptions):
+    image: str = "ubuntu"
+    """image used when creating container"""
+    binds: List[Tuple[str, str]] = field(default_factory=list)
+    """bind mount source and destinations to setup within container"""
+    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    """
+    volume mount source, destination, unique, delete to setup within container
+
+    unique is True for node unique volume naming
+    delete is True for deleting volume mount during shutdown
+    """
+
+
 class LxcNode(CoreNode):
     def __init__(
         self,
         session: "Session",
         _id: int = None,
         name: str = None,
-        directory: str = None,
         server: DistributedServer = None,
-        image: str = None,
+        options: LxcOptions = None,
     ) -> None:
         """
         Create a LxcNode instance.
@@ -82,14 +97,18 @@ class LxcNode(CoreNode):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
-        :param image: image to start container with
+        :param options: option to create node with
         """
-        super().__init__(session, _id, name, directory, server)
-        self.image: str = image if image is not None else "ubuntu"
+        options = options or LxcOptions()
+        super().__init__(session, _id, name, server, options)
+        self.image: str = options.image
         self.client: Optional[LxdClient] = None
+
+    @classmethod
+    def create_options(cls) -> LxcOptions:
+        return LxcOptions()
 
     def alive(self) -> bool:
         """

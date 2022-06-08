@@ -1,8 +1,8 @@
 # required imports
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 from core.nodes.network import SwitchNode
 
 # ip nerator for example
@@ -16,14 +16,14 @@ session = coreemu.create_session()
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create switch
-options = NodeOptions(x=200, y=200)
-switch = session.add_node(SwitchNode, options=options)
+position = Position(x=200, y=200)
+switch = session.add_node(SwitchNode, position=position)
 
 # create nodes
-options = NodeOptions(x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position)
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position)
 
 # link nodes to switch
 iface1 = ip_prefixes.create_iface(n1)

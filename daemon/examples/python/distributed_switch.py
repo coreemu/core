@@ -7,7 +7,7 @@ import argparse
 import logging
 
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode
@@ -47,7 +47,7 @@ def main(args):
     # create local node, switch, and remote nodes
     node1 = session.add_node(CoreNode)
     switch = session.add_node(SwitchNode)
-    options = NodeOptions()
+    options = CoreNode.create_options()
     options.server = server_name
     node2 = session.add_node(CoreNode, options=options)
 

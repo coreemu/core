@@ -110,6 +110,14 @@ class OsInfo:
         return OsInfo(os_name, os_like, version)
 
 
+def get_env_python() -> str:
+    return os.environ.get("PYTHON", "python3")
+
+
+def get_env_python_dep() -> str:
+    return os.environ.get("PYTHON_DEP", "python3")
+
+
 def get_python(c: Context, warn: bool = False) -> str:
     with c.cd(DAEMON_DIR):
         r = c.run("poetry env info -p", warn=warn, hide=True)
@@ -149,23 +157,27 @@ def get_os(install_type: Optional[str]) -> OsInfo:
 def check_existing_core(c: Context, hide: bool) -> None:
     if c.run("python -c \"import core\"", warn=True, hide=hide):
         raise SystemError("existing python2 core installation detected, please remove")
-    if c.run("python3 -c \"import core\"", warn=True, hide=hide):
-        raise SystemError("existing python3 core installation detected, please remove")
+    python_bin = get_env_python()
+    if c.run(f"{python_bin} -c \"import core\"", warn=True, hide=hide):
+        raise SystemError(
+            f"existing {python_bin} core installation detected, please remove"
+        )
     if c.run("which core-daemon", warn=True, hide=hide):
         raise SystemError("core scripts found, please remove old installation")
 
 
 def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
+    python_dep = get_env_python_dep()
     if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev nftables "
-            "iproute2 ethtool tk python3-tk bash",
+            f"iproute2 ethtool tk {python_dep}-tk bash",
             hide=hide
         )
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
-            "libev-devel nftables iproute python3-devel python3-tkinter "
+            f"libev-devel nftables iproute {python_dep}-devel {python_dep}-tkinter "
             "tk ethtool make bash",
             hide=hide
         )
@@ -180,8 +192,9 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
+    python_bin = get_env_python()
     c.run(
-        "python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2",
+        f"{python_bin} -m pip install --user grpcio==1.43.0 grpcio-tools==1.43.0",
         hide=hide,
     )
 
@@ -197,13 +210,15 @@ def install_core(c: Context, hide: bool) -> None:
 
 
 def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
+    python_bin = get_env_python()
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)
-            c.run("sudo python3 -m pip install dist/*")
+            c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
+            c.run(f"poetry env use {python_bin}", hide=hide)
             c.run(f"poetry install {args}", hide=hide)
             if dev:
                 c.run("poetry run pre-commit install", hide=hide)
@@ -381,12 +396,13 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os(install_type)
+    python_dep = get_env_python_dep()
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
                 "sudo apt install -y gcc g++ automake libtool libxml2-dev "
                 "libprotobuf-dev libpcap-dev libpcre3-dev uuid-dev pkg-config "
-                "protobuf-compiler git python3-protobuf python3-setuptools",
+                f"protobuf-compiler git {python_dep}-protobuf {python_dep}-setuptools",
                 hide=hide,
             )
         elif os_info.like == OsLike.REDHAT:
@@ -395,7 +411,7 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
             c.run(
                 "sudo yum install -y autoconf automake git libtool libxml2-devel "
                 "libpcap-devel pcre-devel libuuid-devel make gcc-c++ protobuf-compiler "
-                "protobuf-devel python3-setuptools",
+                f"protobuf-devel {python_dep}-setuptools",
                 hide=hide,
             )
     emane_dir = "../emane"
@@ -404,10 +420,11 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
     with p.start("setup emane"):
+        python_bin = get_env_python()
         with c.cd(emane_dir):
             c.run(f"git checkout {emane_version}", hide=hide)
             c.run("./autogen.sh", hide=hide)
-            c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
+            c.run(f"PYTHON={python_bin} ./configure --prefix=/usr", hide=hide)
     with p.start("build emane python bindings"):
         with c.cd(str(emane_python_dir)):
             c.run("make -j$(nproc)", hide=hide)
@@ -449,7 +466,8 @@ def uninstall(
 
     if local:
         with p.start("uninstalling core"):
-            c.run("sudo python3 -m pip uninstall -y core", hide=hide)
+            python_bin = get_env_python()
+            c.run(f"sudo {python_bin} -m pip uninstall -y core", hide=hide)
     else:
         python = get_python(c, warn=True)
         if python:

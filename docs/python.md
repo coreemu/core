@@ -1,7 +1,7 @@
 # Python API
 
 * Table of Contents
-{:toc}
+  {:toc}
 
 ## Overview
 
@@ -21,13 +21,13 @@ When creating nodes of type `core.nodes.base.CoreNode` these are the default mod
 and the services they map to.
 
 * mdr
-  * zebra, OSPFv3MDR, IPForward
+    * zebra, OSPFv3MDR, IPForward
 * PC
-  * DefaultRoute
+    * DefaultRoute
 * router
-  * zebra, OSPFv2, OSPFv3, IPForward
+    * zebra, OSPFv2, OSPFv3, IPForward
 * host
-  * DefaultRoute, SSH
+    * DefaultRoute, SSH
 
 ### Interface Helper
 
@@ -36,8 +36,10 @@ when creating interface data for nodes. Alternatively one can manually create
 a `core.emulator.data.InterfaceData` class instead with appropriate information.
 
 Manually creating interface data:
+
 ```python
 from core.emulator.data import InterfaceData
+
 # id is optional and will set to the next available id
 # name is optional and will default to eth<id>
 # mac is optional and will result in a randomly generated mac
@@ -52,6 +54,7 @@ iface_data = InterfaceData(
 ```
 
 Leveraging the interface prefixes helper class:
+
 ```python
 from core.emulator.data import IpPrefixes
 
@@ -69,6 +72,7 @@ iface_data = ip_prefixes.create_iface(
 Various events that can occur within a session can be listened to.
 
 Event types:
+
 * session - events for changes in session state and mobility start/stop/pause
 * node - events for node movements and icon changes
 * link - events for link configuration changes and wireless link add/delete
@@ -79,6 +83,7 @@ Event types:
 ```python
 def event_listener(event):
     print(event)
+
 
 # add an event listener to event type you want to listen to
 # each handler will receive an object unique to that type
@@ -95,6 +100,7 @@ session.config_handlers.append(event_listener)
 Links can be configured at the time of creation or during runtime.
 
 Currently supported configuration options:
+
 * bandwidth (bps)
 * delay (us)
 * dup (%)
@@ -119,12 +125,13 @@ session.update_link(n1_id, n2_id, iface1_id, iface2_id, options)
 ```
 
 ### Peer to Peer Example
+
 ```python
 # required imports
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 
 # ip nerator for example
 ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
@@ -137,10 +144,10 @@ session = coreemu.create_session()
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create nodes
-options = NodeOptions(x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position)
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position)
 
 # link nodes together
 iface1 = ip_prefixes.create_iface(n1)
@@ -158,12 +165,13 @@ session.shutdown()
 ```
 
 ### Switch/Hub Example
+
 ```python
 # required imports
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 from core.nodes.network import SwitchNode
 
 # ip nerator for example
@@ -177,14 +185,14 @@ session = coreemu.create_session()
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create switch
-options = NodeOptions(x=200, y=200)
-switch = session.add_node(SwitchNode, options=options)
+position = Position(x=200, y=200)
+switch = session.add_node(SwitchNode, position=position)
 
 # create nodes
-options = NodeOptions(x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position)
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position)
 
 # link nodes to switch
 iface1 = ip_prefixes.create_iface(n1)
@@ -203,13 +211,14 @@ session.shutdown()
 ```
 
 ### WLAN Example
+
 ```python
 # required imports
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
 from core.location.mobility import BasicRangeModel
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 from core.nodes.network import WlanNode
 
 # ip nerator for example
@@ -223,14 +232,16 @@ session = coreemu.create_session()
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create wlan
-options = NodeOptions(x=200, y=200)
-wlan = session.add_node(WlanNode, options=options)
+position = Position(x=200, y=200)
+wlan = session.add_node(WlanNode, position=position)
 
 # create nodes
-options = NodeOptions(model="mdr", x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(model="mdr", x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+options = CoreNode.create_options()
+options.model = "mdr"
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position, options=options)
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position, options=options)
 
 # configuring wlan
 session.mobility.set_model_config(wlan.id, BasicRangeModel.name, {
@@ -263,6 +274,7 @@ For EMANE you can import and use one of the existing models and
 use its name for configuration.
 
 Current models:
+
 * core.emane.ieee80211abg.EmaneIeee80211abgModel
 * core.emane.rfpipe.EmaneRfPipeModel
 * core.emane.tdma.EmaneTdmaModel
@@ -281,9 +293,9 @@ will use the defaults. When no configuration is used, the defaults are used.
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.coreemu import CoreEmu
-from core.emulator.data import IpPrefixes, NodeOptions
+from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, Position
 
 # ip nerator for example
 ip_prefixes = IpPrefixes(ip4_prefix="10.0.0.0/24")
@@ -300,25 +312,29 @@ session.location.refscale = 150.0
 session.set_state(EventTypes.CONFIGURATION_STATE)
 
 # create emane
-options = NodeOptions(x=200, y=200, emane=EmaneIeee80211abgModel.name)
-emane = session.add_node(EmaneNet, options=options)
+options = EmaneNet.create_options()
+options.emane_model = EmaneIeee80211abgModel.name
+position = Position(x=200, y=200)
+emane = session.add_node(EmaneNet, position=position, options=options)
 
 # create nodes
-options = NodeOptions(model="mdr", x=100, y=100)
-n1 = session.add_node(CoreNode, options=options)
-options = NodeOptions(model="mdr", x=300, y=100)
-n2 = session.add_node(CoreNode, options=options)
+options = CoreNode.create_options()
+options.model = "mdr"
+position = Position(x=100, y=100)
+n1 = session.add_node(CoreNode, position=position, options=options)
+position = Position(x=300, y=100)
+n2 = session.add_node(CoreNode, position=position, options=options)
 
 # configure general emane settings
 config = session.emane.get_configs()
 config.update({
-  "eventservicettl": "2"
+    "eventservicettl": "2"
 })
 
 # configure emane model settings
 # using a dict mapping currently support values as strings
 session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
-  "unicastrate": "3",
+    "unicastrate": "3",
 })
 
 # link nodes to emane
@@ -338,6 +354,7 @@ session.shutdown()
 ```
 
 EMANE Model Configuration:
+
 ```python
 from core import utils
 
@@ -358,6 +375,7 @@ Configuring the files of a service results in a specific hard coded script being
 generated, instead of the default scripts, that may leverage dynamic generation.
 
 The following features can be configured for a service:
+
 * configs - files that will be generated
 * dirs - directories that will be mounted unique to the node
 * startup - commands to run start a service
@@ -365,6 +383,7 @@ The following features can be configured for a service:
 * shutdown - commands to run to stop a service
 
 Editing service properties:
+
 ```python
 # configure a service, for a node, for a given session
 session.services.set_service(node_id, service_name)
@@ -380,6 +399,7 @@ When editing a service file, it must be the name of `config`
 file that the service will generate.
 
 Editing a service file:
+
 ```python
 # to edit the contents of a generated file you can specify
 # the service, the file name, and its contents
@@ -397,10 +417,12 @@ File versions of the network examples can be found
 [here](https://github.com/coreemu/core/tree/master/daemon/examples/python).
 
 ## Executing Scripts from GUI
+
 To execute a python script from a GUI you need have the following.
 
 The builtin name check here to know it is being executed from the GUI, this can
 be avoided if your script does not use a name check.
+
 ```python
 if __name__ in ["__main__", "__builtin__"]:
     main()

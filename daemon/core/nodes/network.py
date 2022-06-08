@@ -4,6 +4,7 @@ Defines network nodes used within core.
 
 import logging
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
@@ -14,7 +15,7 @@ from core.emulator.data import InterfaceData, LinkData
 from core.emulator.enumerations import MessageFlags, NetworkPolicy, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.executables import NFTABLES
-from core.nodes.base import CoreNetworkBase
+from core.nodes.base import CoreNetworkBase, NodeOptions
 from core.nodes.interface import CoreInterface, GreTap
 from core.nodes.netclient import get_net_client
 
@@ -180,6 +181,12 @@ class NftablesQueue:
 nft_queue: NftablesQueue = NftablesQueue()
 
 
+@dataclass
+class NetworkOptions(NodeOptions):
+    policy: NetworkPolicy = None
+    """allows overriding the network policy, otherwise uses class defined default"""
+
+
 class CoreNetwork(CoreNetworkBase):
     """
     Provides linux bridge network functionality for core nodes.
@@ -193,7 +200,7 @@ class CoreNetwork(CoreNetworkBase):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
-        policy: NetworkPolicy = None,
+        options: NetworkOptions = None,
     ) -> None:
         """
         Creates a CoreNetwork instance.
@@ -203,17 +210,18 @@ class CoreNetwork(CoreNetworkBase):
         :param name: object name
         :param server: remote server node
             will run on, default is None for localhost
-        :param policy: network policy
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server)
-        if name is None:
-            name = str(self.id)
-        if policy is not None:
-            self.policy: NetworkPolicy = policy
-        self.name: Optional[str] = name
+        options = options or NetworkOptions()
+        super().__init__(session, _id, name, server, options)
+        self.policy: NetworkPolicy = options.policy if options.policy else self.policy
         sessionid = self.session.short_session_id()
         self.brname: str = f"b.{self.id}.{sessionid}"
         self.has_nftables_chain: bool = False
+
+    @classmethod
+    def create_options(cls) -> NetworkOptions:
+        return NetworkOptions()
 
     def host_cmd(
         self,
@@ -482,6 +490,20 @@ class GreTapBridge(CoreNetwork):
             self.add_ips(ips)
 
 
+@dataclass
+class CtrlNetOptions(NetworkOptions):
+    prefix: str = None
+    """ip4 network prefix to use for generating an address"""
+    updown_script: str = None
+    """script to execute during startup and shutdown"""
+    serverintf: str = None
+    """used to associate an interface with the control network bridge"""
+    assign_address: bool = True
+    """used to determine if a specific address should be assign using hostid"""
+    hostid: int = None
+    """used with assign address to """
+
+
 class CtrlNet(CoreNetwork):
     """
     Control network functionality.
@@ -500,36 +522,32 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session: "Session",
-        prefix: str,
         _id: int = None,
         name: str = None,
-        hostid: int = None,
         server: "DistributedServer" = None,
-        assign_address: bool = True,
-        updown_script: str = None,
-        serverintf: str = None,
+        options: CtrlNetOptions = None,
     ) -> None:
         """
         Creates a CtrlNet instance.
 
         :param session: core session instance
         :param _id: node id
-        :param name: node namee
-        :param prefix: control network ipv4 prefix
-        :param hostid: host id
+        :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
-        :param assign_address: assigned address
-        :param updown_script: updown script
-        :param serverintf: server interface
-        :return:
+        :param options: node options for creation
         """
-        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(prefix).cidr
-        self.hostid: Optional[int] = hostid
-        self.assign_address: bool = assign_address
-        self.updown_script: Optional[str] = updown_script
-        self.serverintf: Optional[str] = serverintf
-        super().__init__(session, _id, name, server)
+        options = options or CtrlNetOptions()
+        super().__init__(session, _id, name, server, options)
+        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(options.prefix).cidr
+        self.hostid: Optional[int] = options.hostid
+        self.assign_address: bool = options.assign_address
+        self.updown_script: Optional[str] = options.updown_script
+        self.serverintf: Optional[str] = options.serverintf
+
+    @classmethod
+    def create_options(cls) -> CtrlNetOptions:
+        return CtrlNetOptions()
 
     def add_addresses(self, index: int) -> None:
         """
@@ -669,7 +687,7 @@ class WlanNode(CoreNetwork):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
-        policy: NetworkPolicy = None,
+        options: NetworkOptions = None,
     ) -> None:
         """
         Create a WlanNode instance.
@@ -679,9 +697,9 @@ class WlanNode(CoreNetwork):
         :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
-        :param policy: wlan policy
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server, policy)
+        super().__init__(session, _id, name, server, options)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.wireless_model: Optional[WirelessModel] = None
         self.mobility: Optional[WayPointMobility] = None

@@ -5,6 +5,7 @@ import abc
 import logging
 import shutil
 import threading
+from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
@@ -33,6 +34,94 @@ if TYPE_CHECKING:
 PRIVATE_DIRS: List[Path] = [Path("/var/run"), Path("/var/log")]
 
 
+@dataclass
+class Position:
+    """
+    Helper class for Cartesian coordinate position
+    """
+
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    lon: float = None
+    lat: float = None
+    alt: float = None
+
+    def set(self, x: float = None, y: float = None, z: float = None) -> bool:
+        """
+        Returns True if the position has actually changed.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: True if position changed, False otherwise
+        """
+        if self.x == x and self.y == y and self.z == z:
+            return False
+        self.x = x
+        self.y = y
+        self.z = z
+        return True
+
+    def get(self) -> Tuple[float, float, float]:
+        """
+        Retrieve x,y,z position.
+
+        :return: x,y,z position tuple
+        """
+        return self.x, self.y, self.z
+
+    def has_geo(self) -> bool:
+        return all(x is not None for x in [self.lon, self.lat, self.alt])
+
+    def set_geo(self, lon: float, lat: float, alt: float) -> None:
+        """
+        Set geo position lon, lat, alt.
+
+        :param lon: longitude value
+        :param lat: latitude value
+        :param alt: altitude value
+        :return: nothing
+        """
+        self.lon = lon
+        self.lat = lat
+        self.alt = alt
+
+    def get_geo(self) -> Tuple[float, float, float]:
+        """
+        Retrieve current geo position lon, lat, alt.
+
+        :return: lon, lat, alt position tuple
+        """
+        return self.lon, self.lat, self.alt
+
+
+@dataclass
+class NodeOptions:
+    """
+    Base options for configuring a node.
+    """
+
+    canvas: int = None
+    """id of canvas for display within gui"""
+    icon: str = None
+    """custom icon for display, None for default"""
+
+
+@dataclass
+class CoreNodeOptions(NodeOptions):
+    model: str = "PC"
+    """model is used for providing a default set of services"""
+    services: List[str] = field(default_factory=list)
+    """services to start within node"""
+    config_services: List[str] = field(default_factory=list)
+    """config services to start within node"""
+    directory: Path = None
+    """directory to define node, defaults to path under the session directory"""
+    legacy: bool = False
+    """legacy nodes default to standard services"""
+
+
 class NodeBase(abc.ABC):
     """
     Base class for CORE nodes (nodes and networks)
@@ -44,6 +133,7 @@ class NodeBase(abc.ABC):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
+        options: NodeOptions = None,
     ) -> None:
         """
         Creates a NodeBase instance.
@@ -53,26 +143,29 @@ class NodeBase(abc.ABC):
         :param name: object name
         :param server: remote server node
             will run on, default is None for localhost
+        :param options: options to create node with
         """
-
         self.session: "Session" = session
-        if _id is None:
-            _id = session.next_node_id()
-        self.id: int = _id
-        self.name: str = name or f"o{self.id}"
+        self.id: int = _id if _id is not None else self.session.next_node_id()
+        self.name: str = name or f"{self.__class__.__name__}{self.id}"
         self.server: "DistributedServer" = server
         self.model: Optional[str] = None
         self.services: CoreServices = []
         self.ifaces: Dict[int, CoreInterface] = {}
         self.iface_id: int = 0
-        self.canvas: Optional[int] = None
-        self.icon: Optional[str] = None
         self.position: Position = Position()
         self.up: bool = False
         self.lock: RLock = RLock()
         self.net_client: LinuxNetClient = get_net_client(
             self.session.use_ovs(), self.host_cmd
         )
+        options = options if options else NodeOptions()
+        self.canvas: Optional[int] = options.canvas
+        self.icon: Optional[str] = options.icon
+
+    @classmethod
+    def create_options(cls) -> NodeOptions:
+        return NodeOptions()
 
     @abc.abstractmethod
     def startup(self) -> None:
@@ -288,6 +381,7 @@ class CoreNodeBase(NodeBase):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
+        options: NodeOptions = None,
     ) -> None:
         """
         Create a CoreNodeBase instance.
@@ -298,7 +392,7 @@ class CoreNodeBase(NodeBase):
         :param server: remote server node
             will run on, default is None for localhost
         """
-        super().__init__(session, _id, name, server)
+        super().__init__(session, _id, name, server, options)
         self.config_services: Dict[str, "ConfigService"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
@@ -460,8 +554,8 @@ class CoreNode(CoreNodeBase):
         session: "Session",
         _id: int = None,
         name: str = None,
-        directory: Path = None,
         server: "DistributedServer" = None,
+        options: CoreNodeOptions = None,
     ) -> None:
         """
         Create a CoreNode instance.
@@ -469,18 +563,37 @@ class CoreNode(CoreNodeBase):
         :param session: core session instance
         :param _id: object id
         :param name: object name
-        :param directory: node directory
         :param server: remote server node
             will run on, default is None for localhost
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server)
-        self.directory: Optional[Path] = directory
+        options = options or CoreNodeOptions()
+        super().__init__(session, _id, name, server, options)
+        self.directory: Optional[Path] = options.directory
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.pid: Optional[int] = None
         self._mounts: List[Tuple[Path, Path]] = []
         self.node_net_client: LinuxNetClient = self.create_node_net_client(
             self.session.use_ovs()
         )
+        options = options or CoreNodeOptions()
+        self.model: Optional[str] = options.model
+        # setup services
+        if options.legacy or options.services:
+            logger.debug("set node type: %s", self.model)
+            self.session.services.add_services(self, self.model, options.services)
+        # add config services
+        config_services = options.config_services
+        if not options.legacy and not config_services and not options.services:
+            config_services = self.session.services.default_services.get(self.model, [])
+        logger.info("setting node config services: %s", config_services)
+        for name in config_services:
+            service_class = self.session.service_manager.get_service(name)
+            self.add_config_service(service_class)
+
+    @classmethod
+    def create_options(cls) -> CoreNodeOptions:
+        return CoreNodeOptions()
 
     def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
         """
@@ -797,6 +910,7 @@ class CoreNetworkBase(NodeBase):
         _id: int,
         name: str,
         server: "DistributedServer" = None,
+        options: NodeOptions = None,
     ) -> None:
         """
         Create a CoreNetworkBase instance.
@@ -806,9 +920,11 @@ class CoreNetworkBase(NodeBase):
         :param name: object name
         :param server: remote server node
             will run on, default is None for localhost
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server)
-        self.mtu: int = DEFAULT_MTU
+        super().__init__(session, _id, name, server, options)
+        mtu = self.session.options.get_int("mtu")
+        self.mtu: int = mtu if mtu > 0 else DEFAULT_MTU
         self.brname: Optional[str] = None
         self.linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
         self.linked_lock: threading.Lock = threading.Lock()
@@ -839,69 +955,3 @@ class CoreNetworkBase(NodeBase):
         iface.net_id = None
         with self.linked_lock:
             del self.linked[iface]
-
-
-class Position:
-    """
-    Helper class for Cartesian coordinate position
-    """
-
-    def __init__(self, x: float = None, y: float = None, z: float = None) -> None:
-        """
-        Creates a Position instance.
-
-        :param x: x position
-        :param y: y position
-        :param z: z position
-        """
-        self.x: float = x
-        self.y: float = y
-        self.z: float = z
-        self.lon: Optional[float] = None
-        self.lat: Optional[float] = None
-        self.alt: Optional[float] = None
-
-    def set(self, x: float = None, y: float = None, z: float = None) -> bool:
-        """
-        Returns True if the position has actually changed.
-
-        :param x: x position
-        :param y: y position
-        :param z: z position
-        :return: True if position changed, False otherwise
-        """
-        if self.x == x and self.y == y and self.z == z:
-            return False
-        self.x = x
-        self.y = y
-        self.z = z
-        return True
-
-    def get(self) -> Tuple[float, float, float]:
-        """
-        Retrieve x,y,z position.
-
-        :return: x,y,z position tuple
-        """
-        return self.x, self.y, self.z
-
-    def set_geo(self, lon: float, lat: float, alt: float) -> None:
-        """
-        Set geo position lon, lat, alt.
-
-        :param lon: longitude value
-        :param lat: latitude value
-        :param alt: altitude value
-        :return: nothing
-        """
-        self.lon = lon
-        self.lat = lat
-        self.alt = alt
-
-    def get_geo(self) -> Tuple[float, float, float]:
-        """
-        Retrieve current geo position lon, lat, alt.
-
-        :return: lon, lat, alt position tuple
-        """
-        return self.lon, self.lat, self.alt

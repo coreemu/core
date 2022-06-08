@@ -4,7 +4,7 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core.emulator.data import IpPrefixes, LinkOptions, NodeOptions
+from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.errors import CoreError
@@ -116,8 +116,7 @@ class TestXml:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create nodes
-        options = NodeOptions(model="host")
-        node1 = session.add_node(CoreNode, options=options)
+        node1 = session.add_node(CoreNode)
         node2 = session.add_node(CoreNode)
 
         # link nodes to ptp net
@@ -180,8 +179,8 @@ class TestXml:
         session.mobility.set_model(wlan, BasicRangeModel, {"test": "1"})
 
         # create nodes
-        options = NodeOptions(model="mdr")
-        options.set_position(0, 0)
+        options = CoreNode.create_options()
+        options.model = "mdr"
         node1 = session.add_node(CoreNode, options=options)
         node2 = session.add_node(CoreNode, options=options)
 

@@ -17,15 +17,22 @@ from core.api.grpc.services_pb2 import (
     ServiceDefaults,
 )
 from core.config import ConfigurableOptions
-from core.emane.nodes import EmaneNet
-from core.emulator.data import InterfaceData, LinkData, LinkOptions, NodeOptions
+from core.emane.nodes import EmaneNet, EmaneOptions
+from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.emulator.links import CoreLink
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes.base import CoreNode, CoreNodeBase, NodeBase
-from core.nodes.docker import DockerNode
+from core.nodes.base import (
+    CoreNode,
+    CoreNodeBase,
+    CoreNodeOptions,
+    NodeBase,
+    NodeOptions,
+    Position,
+)
+from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode
 from core.nodes.network import CoreNetwork, CtrlNet, PtpNet, WlanNode
@@ -55,34 +62,33 @@ class CpuUsage:
         return (total_diff - idle_diff) / total_diff
 
 
-def add_node_data(node_proto: core_pb2.Node) -> Tuple[NodeTypes, int, NodeOptions]:
+def add_node_data(
+    _class: Type[NodeBase], node_proto: core_pb2.Node
+) -> Tuple[Position, NodeOptions]:
     """
     Convert node protobuf message to data for creating a node.
 
+    :param _class: node class to create options from
     :param node_proto: node proto message
     :return: node type, id, and options
     """
-    _id = node_proto.id
-    _type = NodeTypes(node_proto.type)
-    options = NodeOptions(
-        name=node_proto.name,
-        model=node_proto.model,
-        icon=node_proto.icon,
-        image=node_proto.image,
-        services=node_proto.services,
-        config_services=node_proto.config_services,
-        canvas=node_proto.canvas,
-    )
-    if node_proto.emane:
-        options.emane = node_proto.emane
-    if node_proto.server:
-        options.server = node_proto.server
-    position = node_proto.position
-    options.set_position(position.x, position.y)
+    options = _class.create_options()
+    options.icon = node_proto.icon
+    options.canvas = node_proto.canvas
+    if isinstance(options, CoreNodeOptions):
+        options.model = node_proto.model
+        options.services = node_proto.services
+        options.config_services = node_proto.config_services
+    if isinstance(options, EmaneOptions):
+        options.emane_model = node_proto.emane
+    if isinstance(options, DockerOptions):
+        options.image = node_proto.image
+    position = Position()
+    position.set(node_proto.position.x, node_proto.position.y)
     if node_proto.HasField("geo"):
         geo = node_proto.geo
-        options.set_location(geo.lat, geo.lon, geo.alt)
-    return _type, _id, options
+        position.set_geo(geo.lon, geo.lat, geo.alt)
+    return position, options
 
 
 def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
@@ -150,9 +156,17 @@ def create_nodes(
     """
     funcs = []
     for node_proto in node_protos:
-        _type, _id, options = add_node_data(node_proto)
+        _type = NodeTypes(node_proto.type)
         _class = session.get_node_class(_type)
-        args = (_class, _id, options)
+        position, options = add_node_data(_class, node_proto)
+        args = (
+            _class,
+            node_proto.id or None,
+            node_proto.name or None,
+            node_proto.server or None,
+            position,
+            options,
+        )
         funcs.append((session.add_node, args, {}))
     start = time.monotonic()
     results, exceptions = utils.threadpool(funcs)
