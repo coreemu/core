@@ -1,15 +1,16 @@
 import json
 import logging
+import shlex
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from core import utils
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError
+from core.executables import BASH
 from core.nodes.base import CoreNode, CoreNodeOptions
 from core.nodes.interface import CoreInterface
 
@@ -17,54 +18,6 @@ logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.session import Session
-
-
-class LxdClient:
-    def __init__(self, name: str, image: str, run: Callable[..., str]) -> None:
-        self.name: str = name
-        self.image: str = image
-        self.run: Callable[..., str] = run
-        self.pid: Optional[int] = None
-
-    def create_container(self) -> int:
-        self.run(f"lxc launch {self.image} {self.name}")
-        data = self.get_info()
-        self.pid = data["state"]["pid"]
-        return self.pid
-
-    def get_info(self) -> Dict:
-        args = f"lxc list {self.name} --format json"
-        output = self.run(args)
-        data = json.loads(output)
-        if not data:
-            raise CoreCommandError(1, args, f"LXC({self.name}) not present")
-        return data[0]
-
-    def is_alive(self) -> bool:
-        try:
-            data = self.get_info()
-            return data["state"]["status"] == "Running"
-        except CoreCommandError:
-            return False
-
-    def stop_container(self) -> None:
-        self.run(f"lxc delete --force {self.name}")
-
-    def create_cmd(self, cmd: str) -> str:
-        return f"lxc exec -nT {self.name} -- {cmd}"
-
-    def create_ns_cmd(self, cmd: str) -> str:
-        return f"nsenter -t {self.pid} -m -u -i -p -n {cmd}"
-
-    def check_cmd(self, cmd: str, wait: bool = True, shell: bool = False) -> str:
-        args = self.create_cmd(cmd)
-        return utils.cmd(args, wait=wait, shell=shell)
-
-    def copy_file(self, src_path: Path, dst_path: Path) -> None:
-        if not str(dst_path).startswith("/"):
-            dst_path = Path("/root/") / dst_path
-        args = f"lxc file push {src_path} {self.name}/{dst_path}"
-        self.run(args)
 
 
 @dataclass
@@ -104,11 +57,30 @@ class LxcNode(CoreNode):
         options = options or LxcOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
-        self.client: Optional[LxdClient] = None
 
     @classmethod
     def create_options(cls) -> LxcOptions:
         return LxcOptions()
+
+    def _create_cmd(self, args: str, shell: bool = False) -> str:
+        """
+        Create command used to run commands within the context of a node.
+
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
+        """
+        if shell:
+            args = f"{BASH} -c {shlex.quote(args)}"
+        return f"nsenter -t {self.pid} -m -u -i -p -n {args}"
+
+    def _get_info(self) -> Dict:
+        args = f"lxc list {self.name} --format json"
+        output = self.host_cmd(args)
+        data = json.loads(output)
+        if not data:
+            raise CoreCommandError(1, args, f"LXC({self.name}) not present")
+        return data[0]
 
     def alive(self) -> bool:
         """
@@ -116,7 +88,11 @@ class LxcNode(CoreNode):
 
         :return: True if node is alive, False otherwise
         """
-        return self.client.is_alive()
+        try:
+            data = self._get_info()
+            return data["state"]["status"] == "Running"
+        except CoreCommandError:
+            return False
 
     def startup(self) -> None:
         """
@@ -128,8 +104,9 @@ class LxcNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
-            self.client = LxdClient(self.name, self.image, self.host_cmd)
-            self.pid = self.client.create_container()
+            self.host_cmd(f"lxc launch {self.image} {self.name}")
+            data = self._get_info()
+            self.pid = data["state"]["pid"]
             self.up = True
 
     def shutdown(self) -> None:
@@ -143,7 +120,7 @@ class LxcNode(CoreNode):
             return
         with self.lock:
             self.ifaces.clear()
-            self.client.stop_container()
+            self.host_cmd(f"lxc delete --force {self.name}")
             self.up = False
 
     def termcmdstring(self, sh: str = "/bin/sh") -> str:
@@ -197,7 +174,9 @@ class LxcNode(CoreNode):
             self.cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
             self.server.remote_put(temp_path, temp_path)
-        self.client.copy_file(temp_path, file_path)
+        if not str(file_path).startswith("/"):
+            file_path = Path("/root/") / file_path
+        self.host_cmd(f"lxc file push {temp_path} {self.name}/{file_path}")
         self.cmd(f"chmod {mode:o} {file_path}")
         if self.server is not None:
             self.host_cmd(f"rm -f {temp_path}")
@@ -223,7 +202,9 @@ class LxcNode(CoreNode):
             temp_path = Path(temp.name)
             src_path = temp_path
             self.server.remote_put(src_path, temp_path)
-        self.client.copy_file(src_path, dst_path)
+        if not str(dst_path).startswith("/"):
+            dst_path = Path("/root/") / dst_path
+        self.host_cmd(f"lxc file push {src_path} {self.name}/{dst_path}")
         if mode is not None:
             self.cmd(f"chmod {mode:o} {dst_path}")
 
