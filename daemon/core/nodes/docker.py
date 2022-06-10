@@ -142,8 +142,9 @@ class DockerNode(CoreNode):
                 volumes += (
                     f"--mount type=volume," f"source={volume.src},target={volume.dst} "
                 )
+            hostname = self.name.replace("_", "-")
             self.host_cmd(
-                f"{DOCKER} run -td --init --net=none --hostname {self.name} "
+                f"{DOCKER} run -td --init --net=none --hostname {hostname} "
                 f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
                 f"{binds} {volumes} "
                 f"--privileged {self.image} tail -f /dev/null"
