@@ -3,6 +3,7 @@ Defines the base logic for nodes used within core.
 """
 import abc
 import logging
+import shlex
 import shutil
 import threading
 from dataclasses import dataclass, field
@@ -702,7 +703,7 @@ class CoreNode(CoreNodeBase):
         :return: node command
         """
         if shell:
-            args = f'{BASH} -c "{args}"'
+            args = f"{BASH} -c {shlex.quote(args)}"
         return f"{VCMD} -c {self.ctrlchnlname} -- {args}"
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
