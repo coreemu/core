@@ -62,7 +62,7 @@ class LxcNode(CoreNode):
     def create_options(cls) -> LxcOptions:
         return LxcOptions()
 
-    def _create_cmd(self, args: str, shell: bool = False) -> str:
+    def create_cmd(self, args: str, shell: bool = False) -> str:
         """
         Create command used to run commands within the context of a node.
 
