@@ -188,7 +188,11 @@ class DockerNode(CoreNode):
         :param sh: shell to execute command in
         :return: str
         """
-        return f"{DOCKER} exec -it {self.name} {sh}"
+        terminal = f"{DOCKER} exec -it {self.name} {sh}"
+        if self.server is None:
+            return terminal
+        else:
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def create_dir(self, dir_path: Path) -> None:
         """
