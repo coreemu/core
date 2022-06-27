@@ -17,7 +17,7 @@ WORKDIR /root
 RUN git clone https://github.com/coreemu/core
 WORKDIR /root/core
 RUN git checkout ${BRANCH}
-RUN ./setup.sh
+RUN ./setup.sh && python3 -m pip install --upgrade pip
 RUN . /root/.bashrc && inv install -v -p ${PREFIX}
 # install emane packages and python bindings
 WORKDIR /root

@@ -4,7 +4,7 @@ LABEL Description="CORE Docker Oracle Linux Image"
 
 # define variables
 ARG PREFIX=/usr
-ARG BRANCH=docker-updates
+ARG BRANCH=master
 
 # define environment
 ENV DEBIAN_FRONTEND=noninteractive
