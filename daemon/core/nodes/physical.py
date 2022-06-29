@@ -249,7 +249,7 @@ class PhysicalNode(CoreNode):
                 iface.shutdown()
             self.rmnodedir()
 
-    def _create_cmd(self, args: str, shell: bool = False) -> str:
+    def create_cmd(self, args: str, shell: bool = False) -> str:
         if shell:
             args = f'{BASH} -c "{args}"'
         return args

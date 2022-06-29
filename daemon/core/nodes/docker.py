@@ -89,7 +89,7 @@ class DockerNode(CoreNode):
         """
         return DockerOptions()
 
-    def _create_cmd(self, args: str, shell: bool = False) -> str:
+    def create_cmd(self, args: str, shell: bool = False) -> str:
         """
         Create command used to run commands within the context of a node.
 
@@ -142,8 +142,9 @@ class DockerNode(CoreNode):
                 volumes += (
                     f"--mount type=volume," f"source={volume.src},target={volume.dst} "
                 )
+            hostname = self.name.replace("_", "-")
             self.host_cmd(
-                f"{DOCKER} run -td --init --net=none --hostname {self.name} "
+                f"{DOCKER} run -td --init --net=none --hostname {hostname} "
                 f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
                 f"{binds} {volumes} "
                 f"--privileged {self.image} tail -f /dev/null"
@@ -187,7 +188,11 @@ class DockerNode(CoreNode):
         :param sh: shell to execute command in
         :return: str
         """
-        return f"{DOCKER} exec -it {self.name} {sh}"
+        terminal = f"{DOCKER} exec -it {self.name} {sh}"
+        if self.server is None:
+            return terminal
+        else:
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def create_dir(self, dir_path: Path) -> None:
         """

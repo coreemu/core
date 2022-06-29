@@ -3,6 +3,7 @@ Defines the base logic for nodes used within core.
 """
 import abc
 import logging
+import shlex
 import shutil
 import threading
 from dataclasses import dataclass, field
@@ -693,7 +694,7 @@ class CoreNode(CoreNodeBase):
             finally:
                 self.rmnodedir()
 
-    def _create_cmd(self, args: str, shell: bool = False) -> str:
+    def create_cmd(self, args: str, shell: bool = False) -> str:
         """
         Create command used to run commands within the context of a node.
 
@@ -702,7 +703,7 @@ class CoreNode(CoreNodeBase):
         :return: node command
         """
         if shell:
-            args = f'{BASH} -c "{args}"'
+            args = f"{BASH} -c {shlex.quote(args)}"
         return f"{VCMD} -c {self.ctrlchnlname} -- {args}"
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
@@ -716,7 +717,7 @@ class CoreNode(CoreNodeBase):
         :return: combined stdout and stderr
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        args = self._create_cmd(args, shell)
+        args = self.create_cmd(args, shell)
         if self.server is None:
             return utils.cmd(args, wait=wait, shell=shell)
         else:
@@ -742,7 +743,7 @@ class CoreNode(CoreNodeBase):
         :param sh: shell to execute command in
         :return: str
         """
-        terminal = self._create_cmd(sh)
+        terminal = self.create_cmd(sh)
         if self.server is None:
             return terminal
         else:
