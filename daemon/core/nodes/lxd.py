@@ -62,7 +62,7 @@ class LxcNode(CoreNode):
     def create_options(cls) -> LxcOptions:
         return LxcOptions()
 
-    def _create_cmd(self, args: str, shell: bool = False) -> str:
+    def create_cmd(self, args: str, shell: bool = False) -> str:
         """
         Create command used to run commands within the context of a node.
 
@@ -130,7 +130,11 @@ class LxcNode(CoreNode):
         :param sh: shell to execute command in
         :return: str
         """
-        return f"lxc exec {self.name} -- {sh}"
+        terminal = f"lxc exec {self.name} -- {sh}"
+        if self.server is None:
+            return terminal
+        else:
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def create_dir(self, dir_path: Path) -> None:
         """
