@@ -166,21 +166,27 @@ def check_existing_core(c: Context, hide: bool) -> None:
         raise SystemError("core scripts found, please remove old installation")
 
 
-def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
+def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> None:
     python_dep = get_env_python_dep()
     if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev nftables "
-            f"iproute2 ethtool tk {python_dep}-tk bash",
+            f"iproute2 ethtool tk bash",
             hide=hide
         )
+        if not no_python:
+            c.run(f"sudo apt install -y {python_dep}-tk", hide=hide)
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
-            f"libev-devel nftables iproute {python_dep}-devel {python_dep}-tkinter "
-            "tk ethtool make bash",
-            hide=hide
+            f"libev-devel nftables iproute tk ethtool make bash",
+            hide=hide,
         )
+        if not no_python:
+            c.run(
+                f"sudo yum install -y {python_dep}-devel {python_dep}-tkinter ",
+                hide=hide,
+            )
         # centos 8+ does not support netem by default
         if os_info.name == OsName.CENTOS and os_info.version >= 8:
             c.run("sudo yum install -y kernel-modules-extra", hide=hide)
@@ -336,6 +342,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
         "ospf": "disable ospf installation",
+        "no-python": "avoid installing python system dependencies",
     },
 )
 def install(
@@ -346,6 +353,7 @@ def install(
     prefix=DEFAULT_PREFIX,
     install_type=None,
     ospf=True,
+    no_python=False,
 ):
     """
     install core, poetry, scripts, service, and ospf mdr
@@ -360,7 +368,7 @@ def install(
         with p.start("checking for old installations"):
             check_existing_core(c, hide)
     with p.start("installing system dependencies"):
-        install_system(c, os_info, hide)
+        install_system(c, os_info, hide, no_python)
     with p.start("installing system grpcio-tools"):
         install_grpcio(c, hide)
     with p.start("building core"):
