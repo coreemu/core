@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import enum
 import select
@@ -60,15 +59,15 @@ class SdtClient:
 
 class RouterMonitor:
     def __init__(
-            self,
-            session: int,
-            src: str,
-            dst: str,
-            pkt: str,
-            rate: int,
-            dead: int,
-            sdt_host: str,
-            sdt_port: int,
+        self,
+        session: int,
+        src: str,
+        dst: str,
+        pkt: str,
+        rate: int,
+        dead: int,
+        sdt_host: str,
+        sdt_port: int,
     ) -> None:
         self.queue = Queue()
         self.core = CoreGrpcClient()

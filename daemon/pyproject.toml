@@ -14,6 +14,14 @@ include = [
 ]
 exclude = ["core/constants.py.in"]
 
+[tool.poetry.scripts]
+core-daemon = "core.scripts.daemon:main"
+core-cli = "core.scripts.cli:main"
+core-gui = "core.scripts.gui:main"
+core-player = "core.scripts.player:main"
+core-route-monitor = "core.scripts.routemonitor:main"
+core-service-update = "core.scripts.serviceupdate:main"
+core-cleanup = "core.scripts.cleanup:main"
 
 [tool.poetry.dependencies]
 python = "^3.6"

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 core-daemon: the CORE daemon is a server process that receives CORE API
 messages and instantiates emulated nodes and networks within the kernel. Various
@@ -61,18 +60,35 @@ def get_merged_config(filename):
     defaults = {
         "grpcport": default_grpc_port,
         "grpcaddress": default_address,
-        "logfile": default_log
+        "logfile": default_log,
     }
     parser = argparse.ArgumentParser(
-        description=f"CORE daemon v.{COREDPY_VERSION} instantiates Linux network namespace nodes.")
-    parser.add_argument("-f", "--configfile", dest="configfile",
-                        help=f"read config from specified file; default = {filename}")
-    parser.add_argument("--ovs", action="store_true", help="enable experimental ovs mode, default is false")
-    parser.add_argument("--grpc-port", dest="grpcport",
-                        help=f"grpc port to listen on; default {default_grpc_port}")
-    parser.add_argument("--grpc-address", dest="grpcaddress",
-                        help=f"grpc address to listen on; default {default_address}")
-    parser.add_argument("-l", "--logfile", help=f"core logging configuration; default {default_log}")
+        description=f"CORE daemon v.{COREDPY_VERSION} instantiates Linux network namespace nodes."
+    )
+    parser.add_argument(
+        "-f",
+        "--configfile",
+        dest="configfile",
+        help=f"read config from specified file; default = {filename}",
+    )
+    parser.add_argument(
+        "--ovs",
+        action="store_true",
+        help="enable experimental ovs mode, default is false",
+    )
+    parser.add_argument(
+        "--grpc-port",
+        dest="grpcport",
+        help=f"grpc port to listen on; default {default_grpc_port}",
+    )
+    parser.add_argument(
+        "--grpc-address",
+        dest="grpcaddress",
+        help=f"grpc address to listen on; default {default_address}",
+    )
+    parser.add_argument(
+        "-l", "--logfile", help=f"core logging configuration; default {default_log}"
+    )
     # parse command line options
     args = parser.parse_args()
     # convert ovs to internal format

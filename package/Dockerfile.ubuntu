@@ -1,0 +1,15 @@
+# syntax=docker/dockerfile:1
+FROM ubuntu:20.04
+LABEL Description="CORE Docker Ubuntu Image"
+
+# define environment
+ENV DEBIAN_FRONTEND=noninteractive
+
+# install basic dependencies
+RUN apt-get update && apt-get install -y python3 python3-tk python3-pip python3-venv
+RUN python3 -m pip install --upgrade pip
+
+# install core
+WORKDIR /opt/core
+COPY core_*.deb .
+RUN apt-get install -y ./core_*.deb

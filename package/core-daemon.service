@@ -1,0 +1,12 @@
+[Unit]
+Description=Common Open Research Emulator Service
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/opt/core/service
+ExecStart=$DAEMON
+TasksMax=infinity
+
+[Install]
+WantedBy=multi-user.target
