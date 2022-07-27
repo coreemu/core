@@ -105,6 +105,38 @@ sudo yum remove core
 sudo apt remove core
 ```
 
+## Installing from Packages
+
+Starting with 9.0.0 there are pre-built rpm/deb packages. You can retrieve the
+rpm/deb package from [releases](https://github.com/coreemu/core/releases) page.
+
+> **NOTE:** PYTHON defaults to python3 for installs below
+
+> **NOTE:** the python install requires python3.6+, pip,
+> tk compatibility for python gui, and venv for virtualenvs
+
+```shell
+# install core vcmd/vnoded, system dependencies,
+# and core python into a venv located at /opt/core/venv
+<yum/apt> install -y ./<package>
+
+# disable the venv and install to python directly
+NO_VENV=1 <yum/apt> install -y ./<package>
+
+# change python executable used to install for venv and direct installations
+PYTHON=python3.9 <yum/apt> install -y ./<package>
+
+# disable venv and change python executable
+NO_VENV=1 PYTHON=python3.9 <yum/apt> install -y ./<package>
+
+# skip installing the python portion entirely, as you plan to carry this out yourself
+# core python wheel is located at /opt/core/core-<version>-py3-none-any.whl
+NO_PYTHON=1 <yum/apt> install -y ./<package>
+
+# install python wheel into python of your choosing
+<python> -m pip install /opt/core/core-<version>-py3-none-any.whl
+```
+
 ## Automated Install
 First we will need to clone and navigate to the CORE repo.
 ```shell
@@ -218,7 +250,7 @@ You can leverage the provided Dockerfile, to run and launch CORE within a Docker
 git clone https://github.com/coreemu/core.git
 cd core
 # build image
-sudo docker build -t core.<cenots,ubuntu> -f Dockerfile.<centos,ubuntu>
+sudo docker build -t core.<cenots,ubuntu> -f Dockerfile.<centos,ubuntu> .
 # start container
 sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core.<centos,ubuntu>
 # enable xhost access to the root user

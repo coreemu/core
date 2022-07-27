@@ -12,4 +12,4 @@ RUN python3 -m pip install --upgrade pip
 # install core
 WORKDIR /opt/core
 COPY core_*.rpm .
-RUN NO_VENV=1 yum install -y ./core_*.rpm
+RUN yum install -y ./core_*.rpm
