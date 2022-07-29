@@ -318,6 +318,36 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     help={
         "dev": "install development mode",
         "verbose": "enable verbose",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
+        "no-python": "avoid installing python system dependencies",
+    },
+)
+def build(
+    c,
+    verbose=False,
+    install_type=None,
+    no_python=False,
+):
+    print("setting up to build core packages")
+    c.run("sudo -v", hide=True)
+    p = Progress(verbose)
+    hide = not verbose
+    os_info = get_os(install_type)
+    with p.start("installing system dependencies"):
+        install_system(c, os_info, hide, no_python)
+    with p.start("installing system grpcio-tools"):
+        install_grpcio(c, hide)
+    with p.start("building core"):
+        build_core(c, hide)
+    with p.start(f"building rpm/deb packages"):
+        c.run("make fpm", hide=hide)
+
+
+@task(
+    help={
+        "dev": "install development mode",
+        "verbose": "enable verbose",
         "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "install-type": "used to force an install type, "
