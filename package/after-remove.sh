@@ -5,9 +5,9 @@ fi
 
 PYTHON="${PYTHON:=python3}"
 if [ -v NO_VENV ]; then
-  ${PYTHON} -m pip uninstall core
+  ${PYTHON} -m pip uninstall -y core
 else
   ${PYTHON} -m venv /opt/core/venv
   . /opt/core/venv/bin/activate
-  pip uninstall core
+  pip uninstall -y core
 fi
