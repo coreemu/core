@@ -116,6 +116,10 @@ rpm/deb package from [releases](https://github.com/coreemu/core/releases) page.
 > tk compatibility for python gui, and venv for virtualenvs
 
 ```shell
+# recommended to upgrade to the latest version of pip before installation
+# in python, can help avoid building from source issues
+<python> -m pip install --upgrade pip
+
 # install core vcmd/vnoded, system dependencies,
 # and core python into a venv located at /opt/core/venv
 <yum/apt> install -y ./<package>
