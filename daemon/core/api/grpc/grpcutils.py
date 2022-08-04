@@ -658,10 +658,11 @@ def get_service_configuration(service: CoreService) -> NodeServiceData:
     )
 
 
-def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
+def iface_to_proto(session: Session, iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
 
+    :param session: session interface belongs to
     :param iface: interface to convert
     :return: interface proto
     """
@@ -672,6 +673,11 @@ def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
     ip6 = str(ip6_net.ip) if ip6_net else None
     ip6_mask = ip6_net.prefixlen if ip6_net else None
     mac = str(iface.mac) if iface.mac else None
+    nem_id = None
+    nem_port = None
+    if isinstance(iface.net, EmaneNet):
+        nem_id = session.emane.get_nem_id(iface)
+        nem_port = session.emane.get_nem_port(iface)
     return core_pb2.Interface(
         id=iface.id,
         name=iface.name,
@@ -682,6 +688,8 @@ def iface_to_proto(iface: CoreInterface) -> core_pb2.Interface:
         ip4_mask=ip4_mask,
         ip6=ip6,
         ip6_mask=ip6_mask,
+        nem_id=nem_id,
+        nem_port=nem_port,
     )
 
 

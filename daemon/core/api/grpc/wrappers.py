@@ -481,6 +481,8 @@ class Interface:
     mtu: int = None
     node_id: int = None
     net2_id: int = None
+    nem_id: int = None
+    nem_port: int = None
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Interface) -> "Interface":
@@ -497,6 +499,8 @@ class Interface:
             mtu=proto.mtu,
             node_id=proto.node_id,
             net2_id=proto.net2_id,
+            nem_id=proto.nem_id,
+            nem_port=proto.nem_port,
         )
 
     def to_proto(self) -> core_pb2.Interface:

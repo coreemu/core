@@ -585,7 +585,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         ifaces = []
         for iface_id in node.ifaces:
             iface = node.ifaces[iface_id]
-            iface_proto = grpcutils.iface_to_proto(iface)
+            iface_proto = grpcutils.iface_to_proto(session, iface)
             ifaces.append(iface_proto)
         emane_configs = grpcutils.get_emane_model_configs_dict(session)
         node_emane_configs = emane_configs.get(node.id, [])
@@ -756,9 +756,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         iface1_proto = None
         iface2_proto = None
         if node1_iface:
-            iface1_proto = grpcutils.iface_to_proto(node1_iface)
+            iface1_proto = grpcutils.iface_to_proto(session, node1_iface)
         if node2_iface:
-            iface2_proto = grpcutils.iface_to_proto(node2_iface)
+            iface2_proto = grpcutils.iface_to_proto(session, node2_iface)
         return core_pb2.AddLinkResponse(
             result=True, iface1=iface1_proto, iface2=iface2_proto
         )
