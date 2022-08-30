@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import re
 from io import TextIOWrapper
@@ -6,9 +5,15 @@ from io import TextIOWrapper
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=f"Helps transition older CORE services to work with newer versions")
-    parser.add_argument("-f", "--file", dest="file", type=argparse.FileType("r"),
-                        help=f"service file to update")
+        description="Helps transition older CORE services to work with newer versions"
+    )
+    parser.add_argument(
+        "-f",
+        "--file",
+        dest="file",
+        type=argparse.FileType("r"),
+        help="service file to update",
+    )
     return parser.parse_args()
 
 
@@ -20,17 +25,32 @@ def update_service(service_file: TextIOWrapper) -> None:
         # rename dirs to directories
         line = re.sub(r"^(\s+)dirs", r"\1directories", line)
         # fix import states for service
-        line = re.sub(r"^.+import.+CoreService.+$",
-                      r"from core.services.coreservices import CoreService", line)
+        line = re.sub(
+            r"^.+import.+CoreService.+$",
+            r"from core.services.coreservices import CoreService",
+            line,
+        )
         # fix method signatures
-        line = re.sub(r"def generateconfig\(cls, node, filename, services\)",
-                      r"def generate_config(cls, node, filename)", line)
-        line = re.sub(r"def getvalidate\(cls, node, services\)",
-                      r"def get_validate(cls, node)", line)
-        line = re.sub(r"def getstartup\(cls, node, services\)",
-                      r"def get_startup(cls, node)", line)
-        line = re.sub(r"def getconfigfilenames\(cls, nodenum, services\)",
-                      r"def get_configs(cls, node)", line)
+        line = re.sub(
+            r"def generateconfig\(cls, node, filename, services\)",
+            r"def generate_config(cls, node, filename)",
+            line,
+        )
+        line = re.sub(
+            r"def getvalidate\(cls, node, services\)",
+            r"def get_validate(cls, node)",
+            line,
+        )
+        line = re.sub(
+            r"def getstartup\(cls, node, services\)",
+            r"def get_startup(cls, node)",
+            line,
+        )
+        line = re.sub(
+            r"def getconfigfilenames\(cls, nodenum, services\)",
+            r"def get_configs(cls, node)",
+            line,
+        )
         # remove unwanted lines
         if re.search(r"addservice\(", line):
             continue

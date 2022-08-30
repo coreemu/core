@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import argparse
 import logging
 import sys
@@ -31,7 +29,10 @@ def parse_args() -> argparse.Namespace:
         "-f", "--file", required=True, type=path_type, help="core file to play"
     )
     parser.add_argument(
-        "-s", "--session", type=int, help="session to play to, first found session otherwise"
+        "-s",
+        "--session",
+        type=int,
+        help="session to play to, first found session otherwise",
     )
     return parser.parse_args()
 

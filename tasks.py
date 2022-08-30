@@ -291,25 +291,6 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     hide = not verbose
     python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
-    # install scripts
-    for script in Path("daemon/scripts").iterdir():
-        dest = bin_dir.joinpath(script.name)
-        with open(script, "r") as f:
-            lines = f.readlines()
-        first = lines[0].strip()
-        # modify python scripts to point to virtual environment
-        if not local and first == "#!/usr/bin/env python3":
-            lines[0] = f"#!{python}\n"
-            temp = NamedTemporaryFile("w", delete=False)
-            for line in lines:
-                temp.write(line)
-            temp.close()
-            c.run(f"sudo cp {temp.name} {dest}", hide=hide)
-            c.run(f"sudo chmod 755 {dest}", hide=hide)
-            os.unlink(temp.name)
-        # copy normal links
-        else:
-            c.run(f"sudo cp {script} {dest}", hide=hide)
     # setup core python helper
     if not local:
         core_python = bin_dir.joinpath("core-python")
@@ -325,12 +306,42 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
-    c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
-    c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -n package/etc/core.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -n package/etc/logging.conf {config_dir}", hide=hide)
     # install examples
     examples_dir = f"{prefix}/share/core"
     c.run(f"sudo mkdir -p {examples_dir}", hide=hide)
-    c.run(f"sudo cp -r daemon/examples {examples_dir}", hide=hide)
+    c.run(f"sudo cp -r package/examples {examples_dir}", hide=hide)
+
+
+@task(
+    help={
+        "dev": "install development mode",
+        "verbose": "enable verbose",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
+        "no-python": "avoid installing python system dependencies",
+    },
+)
+def build(
+    c,
+    verbose=False,
+    install_type=None,
+    no_python=False,
+):
+    print("setting up to build core packages")
+    c.run("sudo -v", hide=True)
+    p = Progress(verbose)
+    hide = not verbose
+    os_info = get_os(install_type)
+    with p.start("installing system dependencies"):
+        install_system(c, os_info, hide, no_python)
+    with p.start("installing system grpcio-tools"):
+        install_grpcio(c, hide)
+    with p.start("building core"):
+        build_core(c, hide)
+    with p.start(f"building rpm/deb packages"):
+        c.run("make fpm", hide=hide)
 
 
 @task(
@@ -467,11 +478,9 @@ def uninstall(
     c.run("sudo -v", hide=True)
     with p.start("uninstalling core"):
         c.run("sudo make uninstall", hide=hide)
-
     with p.start("cleaning build directory"):
         c.run("make clean", hide=hide)
         c.run("./bootstrap.sh clean", hide=hide)
-
     if local:
         with p.start("uninstalling core"):
             python_bin = get_env_python()
@@ -485,22 +494,15 @@ def uninstall(
                         c.run("poetry run pre-commit uninstall", hide=hide)
                 with p.start("uninstalling poetry virtual environment"):
                     c.run(f"poetry env remove {python}", hide=hide)
-
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
-    with p.start("uninstalling script files"):
-        for script in Path("daemon/scripts").iterdir():
-            dest = bin_dir.joinpath(script.name)
-            c.run(f"sudo rm -f {dest}", hide=hide)
     with p.start("uninstalling examples"):
         examples_dir = Path(prefix).joinpath("share/core")
         c.run(f"sudo rm -rf {examples_dir}")
-
     # remove core-python symlink
     if not local:
         core_python = bin_dir.joinpath("core-python")
         c.run(f"sudo rm -f {core_python}", hide=hide)
-
     # remove service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"

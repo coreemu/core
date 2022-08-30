@@ -21,10 +21,7 @@ DISTCLEANFILES = Makefile.in
 
 # files to include with distribution tarball
 EXTRA_DIST = core \
-	     data \
 	     doc/conf.py.in \
-	     examples \
-	     scripts \
 	     tests \
 	     setup.cfg \
 	     poetry.lock \

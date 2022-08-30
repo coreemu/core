@@ -1,0 +1,12 @@
+# syntax=docker/dockerfile:1
+FROM centos:7
+LABEL Description="CORE CentOS Image"
+
+# install basic dependencies
+RUN yum update -y && yum install -y python3 python3-pip python3-tkinter
+RUN python3 -m pip install --upgrade pip
+
+# install core
+WORKDIR /opt/core
+COPY core_*.rpm .
+RUN yum install -y ./core_*.rpm

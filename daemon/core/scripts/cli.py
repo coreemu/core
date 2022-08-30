@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 import sys
 from argparse import (
@@ -32,7 +31,9 @@ NODE_TYPES = [x.name for x in NodeType if x != NodeType.PEER_TO_PEER]
 
 
 def protobuf_to_json(message: Any) -> Dict[str, Any]:
-    return MessageToDict(message, including_default_value_fields=True, preserving_proto_field_name=True)
+    return MessageToDict(
+        message, including_default_value_fields=True, preserving_proto_field_name=True
+    )
 
 
 def print_json(data: Any) -> None:
@@ -122,18 +123,15 @@ def get_current_session(core: CoreGrpcClient, session_id: Optional[int]) -> int:
     return sessions[0].id
 
 
-def create_iface(iface_id: int, mac: str, ip4_net: IPNetwork, ip6_net: IPNetwork) -> Interface:
+def create_iface(
+    iface_id: int, mac: str, ip4_net: IPNetwork, ip6_net: IPNetwork
+) -> Interface:
     ip4 = str(ip4_net.ip) if ip4_net else None
     ip4_mask = ip4_net.prefixlen if ip4_net else None
     ip6 = str(ip6_net.ip) if ip6_net else None
     ip6_mask = ip6_net.prefixlen if ip6_net else None
     return Interface(
-        id=iface_id,
-        mac=mac,
-        ip4=ip4,
-        ip4_mask=ip4_mask,
-        ip6=ip6,
-        ip6_mask=ip6_mask,
+        id=iface_id, mac=mac, ip4=ip4, ip4_mask=ip4_mask, ip6=ip6, ip6_mask=ip6_mask
     )
 
 
@@ -216,12 +214,14 @@ def query_session(core: CoreGrpcClient, args: Namespace) -> None:
         for node in session.nodes.values():
             xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
             geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
-            print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
+            print(
+                f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}"
+            )
         print("\nLinks")
         for link in session.links:
             n1 = session.nodes[link.node1_id].name
             n2 = session.nodes[link.node2_id].name
-            print(f"Node   | ", end="")
+            print("Node   | ", end="")
             print_iface_header()
             print(f"{n1:<6} | ", end="")
             if link.iface1:
@@ -248,7 +248,9 @@ def query_node(core: CoreGrpcClient, args: Namespace) -> None:
         print("ID      | Name    | Type    | XY        | Geo")
         xy_pos = f"{int(node.position.x)},{int(node.position.y)}"
         geo_pos = f"{node.geo.lon:.7f},{node.geo.lat:.7f},{node.geo.alt:f}"
-        print(f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}")
+        print(
+            f"{node.id:<7} | {node.name[:7]:<7} | {node.type.name[:7]:<7} | {xy_pos:<9} | {geo_pos}"
+        )
         if ifaces:
             print("Interfaces")
             print("Connected To | ", end="")
@@ -348,10 +350,14 @@ def add_link(core: CoreGrpcClient, args: Namespace) -> None:
     session_id = get_current_session(core, args.session)
     iface1 = None
     if args.iface1_id is not None:
-        iface1 = create_iface(args.iface1_id, args.iface1_mac, args.iface1_ip4, args.iface1_ip6)
+        iface1 = create_iface(
+            args.iface1_id, args.iface1_mac, args.iface1_ip4, args.iface1_ip6
+        )
     iface2 = None
     if args.iface2_id is not None:
-        iface2 = create_iface(args.iface2_id, args.iface2_mac, args.iface2_ip4, args.iface2_ip6)
+        iface2 = create_iface(
+            args.iface2_id, args.iface2_mac, args.iface2_ip4, args.iface2_ip6
+        )
     options = LinkOptions(
         bandwidth=args.bandwidth,
         loss=args.loss,
@@ -432,13 +438,17 @@ def setup_node_parser(parent) -> None:
     add_parser.add_argument(
         "-t", "--type", choices=NODE_TYPES, default="DEFAULT", help="type of node"
     )
-    add_parser.add_argument("-m", "--model", help="used to determine services, optional")
+    add_parser.add_argument(
+        "-m", "--model", help="used to determine services, optional"
+    )
     group = add_parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-p", "--pos", type=position_type, help="x,y position")
     group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
     add_parser.add_argument("-ic", "--icon", help="icon to use, optional")
     add_parser.add_argument("-im", "--image", help="container image, optional")
-    add_parser.add_argument("-e", "--emane", help="emane model, only required for emane nodes")
+    add_parser.add_argument(
+        "-e", "--emane", help="emane model, only required for emane nodes"
+    )
     add_parser.set_defaults(func=add_node)
 
     edit_parser = subparsers.add_parser("edit", help="edit a node")
@@ -449,7 +459,9 @@ def setup_node_parser(parent) -> None:
 
     move_parser = subparsers.add_parser("move", help="move a node")
     move_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    move_parser.add_argument("-i", "--id", type=int, help="id to use, optional", required=True)
+    move_parser.add_argument(
+        "-i", "--id", type=int, help="id to use, optional", required=True
+    )
     group = move_parser.add_mutually_exclusive_group(required=True)
     group.add_argument("-p", "--pos", type=position_type, help="x,y position")
     group.add_argument("-g", "--geo", type=geo_type, help="lon,lat,alt position")
@@ -474,19 +486,33 @@ def setup_link_parser(parent) -> None:
     add_parser.add_argument("-n1", "--node1", type=int, help="node1 id", required=True)
     add_parser.add_argument("-n2", "--node2", type=int, help="node2 id", required=True)
     add_parser.add_argument("-i1-i", "--iface1-id", type=int, help="node1 interface id")
-    add_parser.add_argument("-i1-m", "--iface1-mac", type=mac_type, help="node1 interface mac")
-    add_parser.add_argument("-i1-4", "--iface1-ip4", type=ip4_type, help="node1 interface ip4")
-    add_parser.add_argument("-i1-6", "--iface1-ip6", type=ip6_type, help="node1 interface ip6")
+    add_parser.add_argument(
+        "-i1-m", "--iface1-mac", type=mac_type, help="node1 interface mac"
+    )
+    add_parser.add_argument(
+        "-i1-4", "--iface1-ip4", type=ip4_type, help="node1 interface ip4"
+    )
+    add_parser.add_argument(
+        "-i1-6", "--iface1-ip6", type=ip6_type, help="node1 interface ip6"
+    )
     add_parser.add_argument("-i2-i", "--iface2-id", type=int, help="node2 interface id")
-    add_parser.add_argument("-i2-m", "--iface2-mac", type=mac_type, help="node2 interface mac")
-    add_parser.add_argument("-i2-4", "--iface2-ip4", type=ip4_type, help="node2 interface ip4")
-    add_parser.add_argument("-i2-6", "--iface2-ip6", type=ip6_type, help="node2 interface ip6")
+    add_parser.add_argument(
+        "-i2-m", "--iface2-mac", type=mac_type, help="node2 interface mac"
+    )
+    add_parser.add_argument(
+        "-i2-4", "--iface2-ip4", type=ip4_type, help="node2 interface ip4"
+    )
+    add_parser.add_argument(
+        "-i2-6", "--iface2-ip6", type=ip6_type, help="node2 interface ip6"
+    )
     add_parser.add_argument("-b", "--bandwidth", type=int, help="bandwidth (bps)")
     add_parser.add_argument("-l", "--loss", type=float, help="loss (%%)")
     add_parser.add_argument("-j", "--jitter", type=int, help="jitter (us)")
     add_parser.add_argument("-de", "--delay", type=int, help="delay (us)")
     add_parser.add_argument("-du", "--duplicate", type=int, help="duplicate (%%)")
-    add_parser.add_argument("-u", "--uni", action="store_true", help="is link unidirectional?")
+    add_parser.add_argument(
+        "-u", "--uni", action="store_true", help="is link unidirectional?"
+    )
     add_parser.set_defaults(func=add_link)
 
     edit_parser = subparsers.add_parser("edit", help="edit a link")
@@ -507,8 +533,12 @@ def setup_link_parser(parent) -> None:
 
     delete_parser = subparsers.add_parser("delete", help="delete a link")
     delete_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    delete_parser.add_argument("-n1", "--node1", type=int, help="node1 id", required=True)
-    delete_parser.add_argument("-n2", "--node2", type=int, help="node1 id", required=True)
+    delete_parser.add_argument(
+        "-n1", "--node1", type=int, help="node1 id", required=True
+    )
+    delete_parser.add_argument(
+        "-n2", "--node2", type=int, help="node1 id", required=True
+    )
     delete_parser.add_argument("-i1", "--iface1", type=int, help="node1 interface id")
     delete_parser.add_argument("-i2", "--iface2", type=int, help="node2 interface id")
     delete_parser.set_defaults(func=delete_link)
@@ -526,20 +556,28 @@ def setup_query_parser(parent) -> None:
 
     session_parser = subparsers.add_parser("session", help="query session")
     session_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    session_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
+    session_parser.add_argument(
+        "-i", "--id", type=int, help="session to query", required=True
+    )
     session_parser.set_defaults(func=query_session)
 
     node_parser = subparsers.add_parser("node", help="query node")
     node_parser.formatter_class = ArgumentDefaultsHelpFormatter
-    node_parser.add_argument("-i", "--id", type=int, help="session to query", required=True)
-    node_parser.add_argument("-n", "--node", type=int, help="node to query", required=True)
+    node_parser.add_argument(
+        "-i", "--id", type=int, help="session to query", required=True
+    )
+    node_parser.add_argument(
+        "-n", "--node", type=int, help="node to query", required=True
+    )
     node_parser.set_defaults(func=query_node)
 
 
 def setup_xml_parser(parent) -> None:
     parser = parent.add_parser("xml", help="open session xml")
     parser.formatter_class = ArgumentDefaultsHelpFormatter
-    parser.add_argument("-f", "--file", type=file_type, help="xml file to open", required=True)
+    parser.add_argument(
+        "-f", "--file", type=file_type, help="xml file to open", required=True
+    )
     parser.add_argument("-s", "--start", action="store_true", help="start the session?")
     parser.set_defaults(func=open_xml)
 
