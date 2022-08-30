@@ -281,15 +281,17 @@ python3 <script>
 ```
 
 ## Installing EMANE
-> **NOTE:** installng emane for the virtual environment is known to work for 1.21+
+> **NOTE:** installing EMANE for the virtual environment is known to work for 1.21+
 
 The recommended way to install EMANE is using prebuilt packages, otherwise
 you can follow their instructions for installing from source. Installation
 information can be found [here](https://github.com/adjacentlink/emane/wiki/Install).
 
 There is an invoke task to help install the EMANE bindings into the CORE virtual
-environment, when needed.
+environment, when needed. An example for running the task is below and the version
+provided should match the version of the packages installed.
 ```shell
 cd <CORE_REPO>
-inv install-emane
+# example version tag v1.3.3
+inv install-emane -e <emane version tag>
 ```
