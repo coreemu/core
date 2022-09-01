@@ -522,7 +522,6 @@ class Session:
         # boot core nodes after runtime
         is_runtime = self.state == EventTypes.RUNTIME_STATE
         if is_runtime and isinstance(node, CoreNode):
-            self.write_nodes()
             self.add_remove_control_iface(node, remove=False)
             self.boot_node(node)
         self.sdt.add_node(node)
@@ -997,21 +996,6 @@ class Session:
         for node_id in nodes_ids:
             self.sdt.delete_node(node_id)
 
-    def write_nodes(self) -> None:
-        """
-        Write nodes to a 'nodes' file in the session dir.
-        The 'nodes' file lists: number, name, api-type, class-type
-        """
-        file_path = self.directory / "nodes"
-        try:
-            with self.nodes_lock:
-                with file_path.open("w") as f:
-                    for _id, node in self.nodes.items():
-                        node_type = self.get_node_type(type(node))
-                        f.write(f"{_id} {node.name} {node_type} {type(node)}\n")
-        except IOError:
-            logger.exception("error writing nodes file")
-
     def exception(
         self, level: ExceptionLevels, source: str, text: str, node_id: int = None
     ) -> None:
@@ -1045,8 +1029,6 @@ class Session:
         if self.state == EventTypes.RUNTIME_STATE:
             logger.warning("ignoring instantiate, already in runtime state")
             return []
-        # write current nodes out to session directory file
-        self.write_nodes()
         # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios

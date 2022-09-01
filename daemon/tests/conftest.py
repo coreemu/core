@@ -60,7 +60,6 @@ def patcher(request):
         )
         patch_manager.patch_obj(CoreNode, "create_file")
         patch_manager.patch_obj(Session, "write_state")
-        patch_manager.patch_obj(Session, "write_nodes")
     yield patch_manager
     patch_manager.shutdown()
 
