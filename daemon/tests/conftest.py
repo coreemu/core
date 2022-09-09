@@ -59,7 +59,6 @@ def patcher(request):
             LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
         )
         patch_manager.patch_obj(CoreNode, "create_file")
-        patch_manager.patch_obj(Session, "write_state")
     yield patch_manager
     patch_manager.shutdown()
 

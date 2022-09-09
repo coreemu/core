@@ -728,26 +728,11 @@ class Session:
         self.state = state
         self.state_time = time.monotonic()
         logger.info("changing session(%s) to state %s", self.id, state.name)
-        self.write_state(state)
         self.run_hooks(state)
         self.run_state_hooks(state)
         if send_event:
             event_data = EventData(event_type=state, time=str(time.monotonic()))
             self.broadcast_event(event_data)
-
-    def write_state(self, state: EventTypes) -> None:
-        """
-        Write the state to a state file in the session dir.
-
-        :param state: state to write to file
-        :return: nothing
-        """
-        state_file = self.directory / "state"
-        try:
-            with state_file.open("w") as f:
-                f.write(f"{state.value} {state.name}\n")
-        except IOError:
-            logger.exception("error writing state file: %s", state.name)
 
     def run_hooks(self, state: EventTypes) -> None:
         """
