@@ -776,7 +776,7 @@ class Node:
             id=proto.id,
             name=proto.name,
             type=NodeType(proto.type),
-            model=proto.model,
+            model=proto.model or None,
             position=Position.from_proto(proto.position),
             services=set(proto.services),
             config_services=set(proto.config_services),

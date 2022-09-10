@@ -123,7 +123,7 @@ def _get_custom_file(config: GuiConfig, name: str) -> Optional[str]:
 def get_icon(node: Node, app: "Application") -> PhotoImage:
     scale = app.app_scale
     image = None
-    # node icon was overriden with a specific value
+    # node icon was overridden with a specific value
     if node.icon:
         try:
             image = images.from_file(node.icon, width=images.NODE_SIZE, scale=scale)
