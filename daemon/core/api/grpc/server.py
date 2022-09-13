@@ -391,11 +391,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: core_pb2.GetSessionsRequest, context: ServicerContext
     ) -> core_pb2.GetSessionsResponse:
         """
-        Delete the session
+        Get all currently known session overviews.
 
-        :param request: get-session request
+        :param request: get sessions request
         :param context: context object
-        :return: a delete-session response
+        :return: a get sessions response
         """
         logger.debug("get sessions: %s", request)
         sessions = []
