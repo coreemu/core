@@ -4,7 +4,7 @@ PYTHON="${PYTHON:=python3}"
 PYTHON_DEP="${PYTHON_DEP:=python3}"
 
 # install pre-reqs using yum/apt
-if [ -z "${NO_PYTHON}" ]; then
+if [ -z "${NO_SYSTEM}" ]; then
   if command -v apt &> /dev/null
   then
     echo "setup to install CORE using apt"
