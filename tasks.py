@@ -23,6 +23,10 @@ DEBIAN_LIKE = {
     "ubuntu",
     "debian",
 }
+SUDOP: str = "sudo -E env PATH=$PATH"
+VENV_PATH: str = "/opt/core/venv"
+VENV_PYTHON: str = f"{VENV_PATH}/bin/python"
+ACTIVATE_VENV: str = f". {VENV_PATH}/bin/activate"
 
 
 class Progress:
@@ -118,16 +122,6 @@ def get_env_python_dep() -> str:
     return os.environ.get("PYTHON_DEP", "python3")
 
 
-def get_python(c: Context, warn: bool = False) -> str:
-    with c.cd(DAEMON_DIR):
-        r = c.run("poetry env info -p", warn=warn, hide=True)
-        if r.ok:
-            venv = r.stdout.strip()
-            return os.path.join(venv, "bin", "python")
-        else:
-            return ""
-
-
 def get_pytest(c: Context) -> str:
     with c.cd(DAEMON_DIR):
         venv = c.run("poetry env info -p", hide=True).stdout.strip()
@@ -220,14 +214,15 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)
-            c.run(f"sudo {python_bin} -m pip install dist/*")
+        c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
-            c.run(f"poetry env use {python_bin}", hide=hide)
-            c.run(f"poetry install {args}", hide=hide)
+            c.run("sudo mkdir -p /opt/core", hide=hide)
+            c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
+            c.run(f"{ACTIVATE_VENV} && {SUDOP} poetry install {args}", hide=hide)
             if dev:
-                c.run("poetry run pre-commit install", hide=hide)
+                c.run(f"{ACTIVATE_VENV} && poetry run pre-commit install", hide=hide)
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
@@ -289,7 +284,6 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     install core files (scripts, examples, and configuration)
     """
     hide = not verbose
-    python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
     # setup core python helper
     if not local:
@@ -297,7 +291,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         temp = NamedTemporaryFile("w", delete=False)
         temp.writelines([
             "#!/bin/bash\n",
-            f'exec "{python}" "$@"\n',
+            f'exec "{VENV_PYTHON}" "$@"\n',
         ])
         temp.close()
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
@@ -369,8 +363,11 @@ def install(
     """
     install core, poetry, scripts, service, and ospf mdr
     """
-    print(f"installing core locally: {local}")
-    print(f"installing core with prefix: {prefix}")
+    python_bin = get_env_python()
+    venv_path = None if local else VENV_PATH
+    print(
+        f"installing core using python({python_bin}) venv({venv_path}) prefix({prefix})"
+    )
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
     hide = not verbose
@@ -386,8 +383,7 @@ def install(
         build_core(c, hide, prefix)
     with p.start("installing vnoded/vcmd"):
         install_core(c, hide)
-    install_type = "core" if local else "core virtual environment"
-    with p.start(f"installing {install_type}"):
+    with p.start(f"installing core"):
         install_poetry(c, dev, local, hide)
     with p.start("installing scripts, examples, and configuration"):
         install_core_files(c, local, hide, prefix)
@@ -472,7 +468,12 @@ def uninstall(
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
-    print(f"uninstalling core with prefix: {prefix}")
+    python_bin = get_env_python()
+    venv_path = None if local else VENV_PATH
+    print(
+        f"uninstalling core using python({python_bin}) "
+        f"venv({venv_path}) prefix({prefix})"
+    )
     hide = not verbose
     p = Progress(verbose)
     c.run("sudo -v", hide=True)
@@ -481,19 +482,16 @@ def uninstall(
     with p.start("cleaning build directory"):
         c.run("make clean", hide=hide)
         c.run("./bootstrap.sh clean", hide=hide)
-    if local:
-        with p.start("uninstalling core"):
+    with p.start(f"uninstalling core"):
+        if local:
             python_bin = get_env_python()
             c.run(f"sudo {python_bin} -m pip uninstall -y core", hide=hide)
-    else:
-        python = get_python(c, warn=True)
-        if python:
-            with c.cd(DAEMON_DIR):
-                if dev:
-                    with p.start("uninstalling pre-commit"):
-                        c.run("poetry run pre-commit uninstall", hide=hide)
-                with p.start("uninstalling poetry virtual environment"):
-                    c.run(f"poetry env remove {python}", hide=hide)
+        else:
+            if Path(VENV_PYTHON).is_file():
+                with c.cd(DAEMON_DIR):
+                    if dev:
+                        c.run(f"{ACTIVATE_VENV} && poetry run pre-commit uninstall", hide=hide)
+                    c.run(f"sudo {VENV_PYTHON} -m pip uninstall -y core", hide=hide)
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
     with p.start("uninstalling examples"):
