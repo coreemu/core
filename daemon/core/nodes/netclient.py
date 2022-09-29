@@ -176,7 +176,14 @@ class LinuxNetClient:
         if netaddr.valid_ipv6(address.split("/")[0]):
             # IPv6 addresses are removed by default on interface down.
             # Make sure that the IPv6 address we add is not removed
-            self.run(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
+
+            # sysctl needs the bridge name to be escaped by replacing dots
+            # with forward slash.
+            bridge_name = device.replace(".", "/")
+            try:
+                self.run(f"{SYSCTL} -w net.ipv6.conf.{bridge_name}.keep_addr_on_down=1")
+            except Exception:
+                pass
 
     def delete_address(self, device: str, address: str) -> None:
         """
