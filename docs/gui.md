@@ -495,23 +495,35 @@ The wireless LAN (WLAN) is covered in the next section.
 
 ### Wireless Networks
 
-The wireless LAN node allows you to build wireless networks where moving nodes
-around affects the connectivity between them. Connection between a pair of nodes is stronger
-when the nodes are closer while connection is weaker when the nodes are further away.
-The wireless LAN, or WLAN, node appears as a small cloud. The WLAN offers
-several levels of wireless emulation fidelity, depending on your modeling needs.
+Wireless networks allow moving nodes around to impact the connectivity between them. Connections between a
+pair of nodes is stronger when the nodes are closer while connection is weaker when the nodes are further away.
+CORE offers several levels of wireless emulation fidelity, depending on modeling needs and available
+hardware.
 
-The WLAN tool can be extended with plug-ins for different levels of wireless
-fidelity. The basic on/off range is the default setting available on all
-platforms. Other plug-ins offer higher fidelity at the expense of greater
-complexity and CPU usage. The availability of certain plug-ins varies depending
-on platform. See the table below for a brief overview of wireless model types.
+* WLAN Node
+  * uses set bandwidth, delay, and loss
+  * links are enabled or disabled based on a set range
+  * uses the least CPU when moving, but nothing extra when not moving
+* Wireless Node
+  * uses set bandwidth, delay, and initial loss
+  * loss dynamically changes based on distance between nodes, which can be configured with range parameters
+  * links are enabled or disabled based on a set range
+  * uses more CPU to calculate loss for every movement, but nothing extra when not moving
+* EMANE Node
+  * uses a physical layer model to account for signal propagation, antenna profile effects and interference
+    sources in order to provide a realistic environment for wireless experimentation
+  * uses the most CPU for every packet, as complex calculations are used for fidelity
+  * See [Wiki](https://github.com/adjacentlink/emane/wiki) for details on general EMANE usage
+  * See [CORE EMANE](emane.md) for details on using EMANE in CORE
 
 
-| Model | Type    | Supported Platform(s) | Fidelity | Description                                                                   |
-|-------|---------|-----------------------|----------|-------------------------------------------------------------------------------|
-| Basic | on/off  | Linux                 | Low      | Ethernet bridging with nftables                                               |
-| EMANE | Plug-in | Linux                 | High     | TAP device connected to EMANE emulator with pluggable MAC and PHY radio types |
+| Model    | Type   | Supported Platform(s) | Fidelity | Description                                                                   |
+|----------|--------|-----------------------|----------|-------------------------------------------------------------------------------|
+| WLAN     | On/Off | Linux                 | Low      | Ethernet bridging with nftables                                               |
+| Wireless | On/Off | Linux                 | Medium   | Ethernet bridging with nftables                                               |
+| EMANE    | RF     | Linux                 | High     | TAP device connected to EMANE emulator with pluggable MAC and PHY radio types |
+
+#### Example WLAN Network Setup
 
 To quickly build a wireless network, you can first place several router nodes
 onto the canvas. If you have the
@@ -537,9 +549,6 @@ each other, a green line is drawn between them and they are linked.  Two
 wireless nodes that are farther than the range pixels apart are not linked.
 During Execute mode, users may move wireless nodes around by clicking and
 dragging them, and wireless links will be dynamically made or broken.
-
-The **EMANE Nodes** leverage available EMANE models to use for wireless networking.
-See the [EMANE](emane.md) chapter for details on using EMANE.
 
 ### Mobility Scripting
 
