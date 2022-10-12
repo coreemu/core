@@ -1,8 +1,5 @@
-import atexit
 import logging
 import os
-import signal
-import sys
 from pathlib import Path
 from typing import Dict, List, Type
 
@@ -16,25 +13,6 @@ from core.services.coreservices import ServiceManager
 logger = logging.getLogger(__name__)
 
 DEFAULT_EMANE_PREFIX: str = "/usr"
-
-
-def signal_handler(signal_number: int, _) -> None:
-    """
-    Handle signals and force an exit with cleanup.
-
-    :param signal_number: signal number
-    :param _: ignored
-    :return: nothing
-    """
-    logger.info("caught signal: %s", signal_number)
-    sys.exit(signal_number)
-
-
-signal.signal(signal.SIGHUP, signal_handler)
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
-signal.signal(signal.SIGUSR1, signal_handler)
-signal.signal(signal.SIGUSR2, signal_handler)
 
 
 class CoreEmu:
@@ -69,9 +47,6 @@ class CoreEmu:
 
         # check executables exist on path
         self._validate_env()
-
-        # catch exit event
-        atexit.register(self.shutdown)
 
     def _validate_env(self) -> None:
         """

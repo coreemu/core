@@ -1,7 +1,8 @@
-import atexit
 import logging
 import os
 import re
+import signal
+import sys
 import tempfile
 import time
 from concurrent import futures
@@ -120,11 +121,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self.coreemu: CoreEmu = coreemu
         self.running: bool = True
         self.server: Optional[grpc.Server] = None
-        atexit.register(self._exit_handler)
+        # catch signals
+        signal.signal(signal.SIGHUP, self._signal_handler)
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        signal.signal(signal.SIGUSR1, self._signal_handler)
+        signal.signal(signal.SIGUSR2, self._signal_handler)
 
-    def _exit_handler(self) -> None:
-        logger.debug("catching exit, stop running")
+    def _signal_handler(self, signal_number: int, _) -> None:
+        logger.info("caught signal: %s", signal_number)
+        self.coreemu.shutdown()
         self.running = False
+        if self.server:
+            self.server.stop(None)
+        sys.exit(signal_number)
 
     def _is_running(self, context) -> bool:
         return self.running and context.is_active()
