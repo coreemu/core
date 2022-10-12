@@ -581,6 +581,24 @@ def convert_link(
     )
 
 
+def parse_proc_net_dev(lines: List[str]) -> Dict[str, Any]:
+    """
+    Parse lines of output from /proc/net/dev.
+
+    :param lines: lines of /proc/net/dev
+    :return: parsed device to tx/rx values
+    """
+    stats = {}
+    for line in lines[2:]:
+        line = line.strip()
+        if not line:
+            continue
+        line = line.split()
+        line[0] = line[0].strip(":")
+        stats[line[0]] = {"rx": float(line[1]), "tx": float(line[9])}
+    return stats
+
+
 def get_net_stats() -> Dict[str, Dict]:
     """
     Retrieve status about the current interfaces in the system
@@ -588,18 +606,8 @@ def get_net_stats() -> Dict[str, Dict]:
     :return: send and receive status of the interfaces in the system
     """
     with open("/proc/net/dev", "r") as f:
-        data = f.readlines()[2:]
-
-    stats = {}
-    for line in data:
-        line = line.strip()
-        if not line:
-            continue
-        line = line.split()
-        line[0] = line[0].strip(":")
-        stats[line[0]] = {"rx": float(line[1]), "tx": float(line[9])}
-
-    return stats
+        lines = f.readlines()[2:]
+    return parse_proc_net_dev(lines)
 
 
 def session_location(session: Session, location: core_pb2.SessionLocation) -> None:

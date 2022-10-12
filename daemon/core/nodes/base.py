@@ -276,8 +276,9 @@ class NodeBase(abc.ABC):
             mtu = DEFAULT_MTU
             if iface_data and iface_data.mtu is not None:
                 mtu = iface_data.mtu
-            name = f"veth{self.id}.{iface_id}.{self.session.short_session_id()}"
-            localname = f"{name}p"
+            unique_name = f"{self.id}.{iface_id}.{self.session.short_session_id()}"
+            name = f"veth{unique_name}"
+            localname = f"beth{unique_name}"
             iface = CoreInterface(
                 iface_id,
                 name,

@@ -104,7 +104,7 @@ from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
-_INTERFACE_REGEX: Pattern = re.compile(r"veth(?P<node>[0-9a-fA-F]+)")
+_INTERFACE_REGEX: Pattern = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
 _MAX_WORKERS = 1000
 
 
@@ -482,7 +482,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             now = time.monotonic()
             stats = get_net_stats()
-
             # calculate average
             if last_check is not None:
                 interval = now - last_check
@@ -499,7 +498,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         (current_rxtx["tx"] - previous_rxtx["tx"]) * 8.0 / interval
                     )
                     throughput = rx_kbps + tx_kbps
-                    if key.startswith("veth"):
+                    if key.startswith("beth"):
                         key = key.split(".")
                         node_id = _INTERFACE_REGEX.search(key[0]).group("node")
                         node_id = int(node_id, base=16)
@@ -525,7 +524,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                             bridge_throughput.throughput = throughput
                         except ValueError:
                             pass
-
                 yield throughputs_event
 
             last_check = now

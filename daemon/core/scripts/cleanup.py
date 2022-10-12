@@ -68,6 +68,7 @@ def cleanup_interfaces() -> None:
         name = values[0]
         if (
             name.startswith("veth")
+            or name.startswith("beth")
             or name.startswith("gt.")
             or name.startswith("b.")
             or name.startswith("ctrl")

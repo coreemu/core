@@ -667,12 +667,10 @@ class CoreClient:
         self.links[edge.token] = edge
         src_node = edge.src.core_node
         dst_node = edge.dst.core_node
-        if nutils.is_container(src_node):
-            src_iface_id = edge.link.iface1.id
-            self.iface_to_edge[(src_node.id, src_iface_id)] = edge
-        if nutils.is_container(dst_node):
-            dst_iface_id = edge.link.iface2.id
-            self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
+        src_iface_id = edge.link.iface1.id
+        self.iface_to_edge[(src_node.id, src_iface_id)] = edge
+        dst_iface_id = edge.link.iface2.id
+        self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
     def get_wlan_configs(self) -> List[Tuple[int, Dict[str, str]]]:
         configs = []
