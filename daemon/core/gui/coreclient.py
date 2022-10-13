@@ -70,6 +70,9 @@ class CoreClient:
         self.session: Optional[Session] = None
         self.user = getpass.getuser()
 
+        # menu options
+        self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
+
         # global service settings
         self.services: Dict[str, Set[str]] = {}
         self.config_services_groups: Dict[str, Set[str]] = {}
@@ -242,9 +245,10 @@ class CoreClient:
             logger.warning("unknown node event: %s", event)
 
     def enable_throughputs(self) -> None:
-        self.handling_throughputs = self.client.throughputs(
-            self.session.id, self.handle_throughputs
-        )
+        if not self.handling_throughputs:
+            self.handling_throughputs = self.client.throughputs(
+                self.session.id, self.handle_throughputs
+            )
 
     def cancel_throughputs(self) -> None:
         if self.handling_throughputs:
@@ -431,13 +435,15 @@ class CoreClient:
                 definition,
                 result,
             )
+            if self.show_throughputs.get():
+                self.enable_throughputs()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Start Session Error", e)
         return result, exceptions
 
     def stop_session(self, session_id: int = None) -> bool:
-        if not session_id:
-            session_id = self.session.id
+        session_id = session_id or self.session.id
+        self.cancel_throughputs()
         result = False
         try:
             result = self.client.stop_session(session_id)

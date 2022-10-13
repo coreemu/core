@@ -235,7 +235,11 @@ class Menubar(tk.Menu):
         menu.add_command(
             label="Configure Throughput", command=self.click_config_throughput
         )
-        menu.add_checkbutton(label="Enable Throughput?", command=self.click_throughput)
+        menu.add_checkbutton(
+            label="Enable Throughput?",
+            command=self.click_throughput,
+            variable=self.core.show_throughputs,
+        )
         widget_menu.add_cascade(label="Throughput", menu=menu)
 
     def draw_widgets_menu(self) -> None:
@@ -393,7 +397,7 @@ class Menubar(tk.Menu):
         dialog.show()
 
     def click_throughput(self) -> None:
-        if not self.core.handling_throughputs:
+        if self.core.show_throughputs.get():
             self.core.enable_throughputs()
         else:
             self.core.cancel_throughputs()
