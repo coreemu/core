@@ -24,18 +24,17 @@ core-service-update = "core.scripts.serviceupdate:main"
 core-cleanup = "core.scripts.cleanup:main"
 
 [tool.poetry.dependencies]
-python = "^3.6"
-dataclasses = { version = "*", python = "~3.6" }
-fabric = "2.5.0"
-grpcio = "1.43.0"
+python = "^3.9"
+fabric = "2.7.1"
+grpcio = "1.46.3"
 invoke = "1.4.1"
-lxml = "4.6.5"
-mako = "1.1.3"
+lxml = "4.9.1"
 netaddr = "0.7.19"
-pillow = "8.3.2"
-protobuf = "3.19.4"
-pyproj = "3.0.1"
+protobuf = "3.19.5"
+pyproj = "3.3.1"
 pyyaml = "5.4"
+Pillow = "9.2.0"
+Mako = "1.2.3"
 
 [tool.poetry.dev-dependencies]
 black = "==19.3b0"

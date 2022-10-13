@@ -83,7 +83,7 @@ if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
-  AM_PATH_PYTHON(3.6)
+  AM_PATH_PYTHON(3.9)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)

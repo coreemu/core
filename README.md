@@ -13,7 +13,7 @@ topologies of lightweight virtual machines, and Python modules for
 scripting network emulation.
 
 ## Quick Start
-Requires Python 3.6+. More detailed instructions and install options can be found
+Requires Python 3.9+. More detailed instructions and install options can be found
 [here](https://coreemu.github.io/core/install.html).
 
 ### Package Install

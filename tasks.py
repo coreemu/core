@@ -150,7 +150,7 @@ def get_os(install_type: Optional[str]) -> OsInfo:
 
 def check_existing_core(c: Context, hide: bool) -> None:
     if c.run("python -c \"import core\"", warn=True, hide=hide):
-        raise SystemError("existing python2 core installation detected, please remove")
+        raise SystemError("existing python core installation detected, please remove")
     python_bin = get_env_python()
     if c.run(f"{python_bin} -c \"import core\"", warn=True, hide=hide):
         raise SystemError(
@@ -194,7 +194,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
 def install_grpcio(c: Context, hide: bool) -> None:
     python_bin = get_env_python()
     c.run(
-        f"{python_bin} -m pip install --user grpcio==1.43.0 grpcio-tools==1.43.0",
+        f"{python_bin} -m pip install --user grpcio==1.46.3 grpcio-tools==1.46.3",
         hide=hide,
     )
 

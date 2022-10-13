@@ -94,7 +94,7 @@ The built packages will require and install system level dependencies, as well a
 a post install script to install the provided CORE python wheel. A similar uninstall script
 is ran when uninstalling and would require the same options as given, during the install.
 
-> **NOTE:** PYTHON defaults to python3 for installs below, CORE requires python3.6+, pip,
+> **NOTE:** PYTHON defaults to python3 for installs below, CORE requires python3.9+, pip,
 > tk compatibility for python gui, and venv for virtual environments
 
 Examples for install:
@@ -223,7 +223,7 @@ When done see [Post Install](#post-install).
 For unsupported OSs you could attempt to do the following to translate
 an installation to your use case.
 
-* make sure you have python3.6+ with venv support
+* make sure you have python3.9+ with venv support
 * make sure you have python3 invoke available to leverage `<repo>/tasks.py`
 
 ```shell
