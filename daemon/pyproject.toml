@@ -44,6 +44,8 @@ grpcio-tools = "1.43.0"
 isort = "4.3.21"
 mock = "4.0.2"
 pre-commit = "2.1.1"
+
+[tool.poetry.group.dev.dependencies]
 pytest = "6.2.5"
 
 [tool.isort]
