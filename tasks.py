@@ -194,7 +194,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
 def install_grpcio(c: Context, hide: bool) -> None:
     python_bin = get_env_python()
     c.run(
-        f"{python_bin} -m pip install --user grpcio==1.46.3 grpcio-tools==1.46.3",
+        f"{python_bin} -m pip install --user grpcio==1.49.1 grpcio-tools==1.49.1",
         hide=hide,
     )
 

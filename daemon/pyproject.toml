@@ -26,7 +26,7 @@ core-cleanup = "core.scripts.cleanup:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fabric = "2.7.1"
-grpcio = "1.46.3"
+grpcio = "1.49.1"
 invoke = "1.4.1"
 lxml = "4.9.1"
 netaddr = "0.7.19"
