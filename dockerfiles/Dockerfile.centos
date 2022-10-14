@@ -10,17 +10,32 @@ ARG BRANCH=master
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG en_US.UTF-8
 
-# install core
+# install basic dependencies
 RUN yum -y update && \
-    yum install -y git sudo wget tzdata unzip python3
-WORKDIR /root
+    yum install -y git sudo wget tzdata unzip
+
+# install python3.9
+WORKDIR /opt
+RUN wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz
+RUN tar xf Python-3.9.15.tgz
+RUN yum install -y make && yum-builddep -y python3
+RUN cd Python-3.9.15 && \
+  ./configure --enable-optimizations --with-ensurepip=install && \
+  make -j$(nproc) altinstall
+RUN python3.9 -m pip install --upgrade pip
+
+# install core
+WORKDIR /opt
 RUN git clone https://github.com/coreemu/core
-WORKDIR /root/core
+WORKDIR /opt/core
 RUN git checkout ${BRANCH}
-RUN ./setup.sh && python3 -m pip install --upgrade pip
-RUN . /root/.bashrc && inv install -v -p ${PREFIX}
-# install emane packages and python bindings
-WORKDIR /root
+RUN PYTHON=/usr/local/bin/python3.9 ./setup.sh
+RUN . /root/.bashrc && PYTHON=/usr/local/bin/python3.9 inv install -v -p ${PREFIX} --no-python
+ENV PATH "$PATH:/opt/core/venv/bin"
+
+# install emane
+RUN yum install -y libpcap-devel libpcre3-devel libxml2-devel protobuf-devel unzip uuid-devel
+WORKDIR /opt
 RUN wget -q https://adjacentlink.com/downloads/emane/emane-1.3.3-release-1.el7.x86_64.tar.gz && \
     tar xf emane-1.3.3-release-1.el7.x86_64.tar.gz && \
     cd emane-1.3.3-release-1/rpms/el7/x86_64 && \
@@ -32,8 +47,15 @@ RUN wget -q https://adjacentlink.com/downloads/emane/emane-1.3.3-release-1.el7.x
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.7.1/protoc-3.7.1-linux-x86_64.zip && \
     mkdir protoc && \
     unzip protoc-3.7.1-linux-x86_64.zip -d protoc
-WORKDIR /root/core
-RUN . /root/.bashrc && PATH=/root/protoc/bin:$PATH inv install-emane -v -e v1.3.3
+RUN git clone https://github.com/adjacentlink/emane.git
+RUN PATH=/opt/protoc/bin:$PATH && \
+  cd emane && \
+  git checkout v1.3.3 && \
+  ./autogen.sh && \
+  PYTHON=/opt/core/venv/bin/python ./configure --prefix=/usr && \
+  cd src/python && \
+  make && \
+  /opt/core/venv/bin/python -m pip install .
 
 # run daemon
 CMD ["core-daemon"]
