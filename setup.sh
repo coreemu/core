@@ -25,4 +25,4 @@ ${PYTHON} -m pip install --user pipx==0.16.4
 ${PYTHON} -m pipx ensurepath
 export PATH=$PATH:~/.local/bin
 pipx install invoke==1.4.1
-pipx install poetry==1.1.12
+pipx install poetry==1.2.1
