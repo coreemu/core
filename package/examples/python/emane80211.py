@@ -36,14 +36,15 @@ options.model = "mdr"
 position = Position(x=300, y=100)
 n2 = session.add_node(CoreNode, position=position, options=options)
 
-# configure general emane settings
-config = session.emane.get_configs()
-config.update({"eventservicettl": "2"})
-
-# configure emane model settings
-# using a dict mapping currently support values as strings
-session.emane.set_model_config(
-    emane.id, EmaneIeee80211abgModel.name, {"unicastrate": "3"}
+# configure emane settings
+# configuration values are currently supported as strings
+session.emane.set_config(
+    emane.id,
+    EmaneIeee80211abgModel.name,
+    {
+        "unicastrate": "3",
+        "eventservicettl": "2"
+    },
 )
 
 # link nodes to emane
