@@ -1,4 +1,4 @@
-from core.api.grpc import client
+from core.api.grpc import client, wrappers
 from core.api.grpc.wrappers import NodeType, Position
 
 # interface helper
@@ -20,10 +20,12 @@ position = Position(x=300, y=100)
 node2 = session.add_node(3, position=position)
 
 # create links
-iface1 = iface_helper.create_iface(node1.id, 0)
-session.add_link(node1=node1, node2=switch, iface1=iface1)
-iface1 = iface_helper.create_iface(node2.id, 0)
-session.add_link(node1=node2, node2=switch, iface1=iface1)
+node1_iface1 = iface_helper.create_iface(node1.id, 0)
+switch_iface1 = wrappers.Interface(0)
+session.add_link(node1=node1, node2=switch, iface1=node1_iface1, iface2=switch_iface1)
+node2_iface1 = iface_helper.create_iface(node2.id, 0)
+switch_iface2 = wrappers.Interface(1)
+session.add_link(node1=node2, node2=switch, iface1=node2_iface1, iface2=switch_iface2)
 
 # start session
 core.start_session(session)
