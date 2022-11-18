@@ -1,3 +1,46 @@
+## 2022-11-18 CORE 9.0.0
+
+* Breaking Changes
+    * removed session nodes file
+    * removed session state file
+    * emane now runs in one process per nem with unique control ports
+    * grpc client has been refactored and updated
+    * removed tcl/legacy gui, imn file support and the tlv api
+    * link configuration is now different, but consistent, for wired links
+* Installation
+    * added packaging for single file distribution
+    * python3.9 is now the minimum required version
+    * updated Dockerfile examples
+    * updated various python dependencies
+    * virtual environment is now installed to /opt/core/venv
+* Documentation
+    * updated emane invoke task examples
+    * revamped install documentation
+    * added wireless node notes
+* core-gui
+    * updated config services to display rendered templated and allow editing
+    * fixed node icon issue when updating preferences
+    * \#89 - throughput widget now works for hubs/switches
+    * \#691 - fixed custom nodes to properly use config services
+* gRPC API
+    * add linked call to support linking and unlinking interfaces without destroying them
+    * fixed issue during start session clearing out session options
+    * added call to get rendered config service files
+    * removed get_node_links from links from client
+    * nem id and nem port have been added to GetNode and AddLink calls
+* core-daemon
+    * wired links always create two veth pairs joined by a bridge
+    * node interfaces are now configured within the container to apply to outgoing traffic
+    * session.add_node now uses NodeOptions, allowing for node specific options
+    * fixed issue with xml reading node canvas values
+    * removed Session.add_node_file
+    * fixed get requirements logic
+    * fixed docker/lxd node support terminal commands on remote servers
+    * improved docker node command execution time using nsenter
+    * new wireless node type added to support dynamic loss based on distance
+    * \#513 - add and deleting distributed links during runtime is now supported
+    * \#703 - fixed issue not starting emane event listening service
+
 ## 2022-03-21 CORE 8.2.0
 
 * core-gui
