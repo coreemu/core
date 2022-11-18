@@ -4,12 +4,24 @@ from typing import Any, Dict, List
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
-from core.nodes.base import CoreNodeBase
+from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.network import WlanNode
+from core.nodes.network import PtpNet, WlanNode
+from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 
 GROUP: str = "FRR"
 FRR_STATE_DIR: str = "/var/run/frr"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
@@ -53,6 +65,20 @@ def get_router_id(node: CoreNodeBase) -> str:
     return "0.0.0.0"
 
 
+def rj45_check(iface: CoreInterface) -> bool:
+    """
+    Helper to detect whether interface is connected an external RJ45
+    link.
+    """
+    if iface.net:
+        for peer_iface in iface.net.get_ifaces():
+            if peer_iface == iface:
+                continue
+            if isinstance(peer_iface.node, Rj45Node):
+                return True
+    return False
+
+
 class FRRZebra(ConfigService):
     name: str = "FRRzebra"
     group: str = GROUP
@@ -74,10 +100,10 @@ class FRRZebra(ConfigService):
 
     def data(self) -> Dict[str, Any]:
         frr_conf = self.files[0]
-        frr_bin_search = self.node.session.options.get_config(
+        frr_bin_search = self.node.session.options.get(
             "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
-        frr_sbin_search = self.node.session.options.get_config(
+        frr_sbin_search = self.node.session.options.get(
             "frr_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/frr"
         ).strip('"')
 
@@ -158,7 +184,7 @@ class FRROspfv2(FrrService, ConfigService):
         addresses = []
         for iface in self.node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
-                addresses.append(str(ip4.ip))
+                addresses.append(str(ip4))
         data = dict(router_id=router_id, addresses=addresses)
         text = """
         router ospf
@@ -166,15 +192,31 @@ class FRROspfv2(FrrService, ConfigService):
           % for addr in addresses:
           network ${addr} area 0
           % endfor
+          ospf opaque-lsa
         !
         """
         return self.render_text(text, data)
 
     def frr_iface_config(self, iface: CoreInterface) -> str:
-        if has_mtu_mismatch(iface):
-            return "ip ospf mtu-ignore"
-        else:
-            return ""
+        has_mtu = has_mtu_mismatch(iface)
+        has_rj45 = rj45_check(iface)
+        is_ptp = isinstance(iface.net, PtpNet)
+        data = dict(has_mtu=has_mtu, is_ptp=is_ptp, has_rj45=has_rj45)
+        text = """
+        % if has_mtu:
+        ip ospf mtu-ignore
+        % endif
+        % if has_rj45:
+        <% return STOP_RENDERING %>
+        % endif
+        % if is_ptp:
+        ip ospf network point-to-point
+        % endif
+        ip ospf hello-interval 2
+        ip ospf dead-interval 6
+        ip ospf retransmit-interval 5
+        """
+        return self.render_text(text, data)
 
 
 class FRROspfv3(FrrService, ConfigService):
@@ -324,7 +366,7 @@ class FRRBabel(FrrService, ConfigService):
         return self.render_text(text, data)
 
     def frr_iface_config(self, iface: CoreInterface) -> str:
-        if isinstance(iface.net, (WlanNode, EmaneNet)):
+        if is_wireless(iface.net):
             text = """
             babel wireless
             no babel split-horizon

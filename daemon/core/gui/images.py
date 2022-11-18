@@ -53,6 +53,7 @@ class ImageEnum(Enum):
     LINK = "link"
     HUB = "hub"
     WLAN = "wlan"
+    WIRELESS = "wireless"
     EMANE = "emane"
     RJ45 = "rj45"
     TUNNEL = "tunnel"
@@ -92,14 +93,15 @@ TYPE_MAP: Dict[Tuple[NodeType, str], ImageEnum] = {
     (NodeType.DEFAULT, "host"): ImageEnum.HOST,
     (NodeType.DEFAULT, "mdr"): ImageEnum.MDR,
     (NodeType.DEFAULT, "prouter"): ImageEnum.PROUTER,
-    (NodeType.HUB, ""): ImageEnum.HUB,
-    (NodeType.SWITCH, ""): ImageEnum.SWITCH,
-    (NodeType.WIRELESS_LAN, ""): ImageEnum.WLAN,
-    (NodeType.EMANE, ""): ImageEnum.EMANE,
-    (NodeType.RJ45, ""): ImageEnum.RJ45,
-    (NodeType.TUNNEL, ""): ImageEnum.TUNNEL,
-    (NodeType.DOCKER, ""): ImageEnum.DOCKER,
-    (NodeType.LXC, ""): ImageEnum.LXC,
+    (NodeType.HUB, None): ImageEnum.HUB,
+    (NodeType.SWITCH, None): ImageEnum.SWITCH,
+    (NodeType.WIRELESS_LAN, None): ImageEnum.WLAN,
+    (NodeType.WIRELESS, None): ImageEnum.WIRELESS,
+    (NodeType.EMANE, None): ImageEnum.EMANE,
+    (NodeType.RJ45, None): ImageEnum.RJ45,
+    (NodeType.TUNNEL, None): ImageEnum.TUNNEL,
+    (NodeType.DOCKER, None): ImageEnum.DOCKER,
+    (NodeType.LXC, None): ImageEnum.LXC,
 }
 
 

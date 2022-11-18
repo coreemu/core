@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 8.2.0)
+AC_INIT(core, 9.0.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -30,25 +30,14 @@ AC_SUBST(CORE_CONF_DIR)
 AC_SUBST(CORE_DATA_DIR)
 AC_SUBST(CORE_STATE_DIR)
 
-# CORE GUI configuration files and preferences in CORE_GUI_CONF_DIR
-# scenario files in ~/.core/configs/
-AC_ARG_WITH([guiconfdir],
-	    [AS_HELP_STRING([--with-guiconfdir=dir],
-			    [specify GUI configuration directory])],
-	    [CORE_GUI_CONF_DIR="$with_guiconfdir"],
-	    [CORE_GUI_CONF_DIR="\$\${HOME}/.core"])
-AC_SUBST(CORE_GUI_CONF_DIR)
-AC_ARG_ENABLE([gui],
-	       [AS_HELP_STRING([--enable-gui[=ARG]],
-		[build and install the GUI (default is yes)])],
-		[], [enable_gui=yes])
-AC_SUBST(enable_gui)
+# documentation option
 AC_ARG_ENABLE([docs],
 	       [AS_HELP_STRING([--enable-docs[=ARG]],
 		[build python documentation (default is no)])],
 		[], [enable_docs=no])
 AC_SUBST(enable_docs)
 
+# python option
 AC_ARG_ENABLE([python],
 	       [AS_HELP_STRING([--enable-python[=ARG]],
 		[build and install the python bindings (default is yes)])],
@@ -94,28 +83,7 @@ if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
-  # Checks for libraries.
-  AC_CHECK_LIB([netgraph], [NgMkSockNode])
-
-  # Checks for header files.
-  AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h stdint.h stdlib.h string.h sys/ioctl.h sys/mount.h sys/socket.h sys/time.h termios.h unistd.h])
-
-  # Checks for typedefs, structures, and compiler characteristics.
-  AC_C_INLINE
-  AC_TYPE_INT32_T
-  AC_TYPE_PID_T
-  AC_TYPE_SIZE_T
-  AC_TYPE_SSIZE_T
-  AC_TYPE_UINT32_T
-  AC_TYPE_UINT8_T
-
-  # Checks for library functions.
-  AC_FUNC_FORK
-  AC_FUNC_MALLOC
-  AC_FUNC_REALLOC
-  AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
-
-  AM_PATH_PYTHON(3.6)
+  AM_PATH_PYTHON(3.9)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
@@ -171,6 +139,25 @@ fi
 
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
   want_linux_netns=yes
+
+  # Checks for header files.
+  AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h stdint.h stdlib.h string.h sys/ioctl.h sys/mount.h sys/socket.h sys/time.h termios.h unistd.h])
+
+  # Checks for typedefs, structures, and compiler characteristics.
+  AC_C_INLINE
+  AC_TYPE_INT32_T
+  AC_TYPE_PID_T
+  AC_TYPE_SIZE_T
+  AC_TYPE_SSIZE_T
+  AC_TYPE_UINT32_T
+  AC_TYPE_UINT8_T
+
+  # Checks for library functions.
+  AC_FUNC_FORK
+  AC_FUNC_MALLOC
+  AC_FUNC_REALLOC
+  AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
+
   PKG_CHECK_MODULES(libev, libev,
     AC_MSG_RESULT([found libev using pkgconfig OK])
     AC_SUBST(libev_CFLAGS)
@@ -209,7 +196,6 @@ if [test "x$want_python" = "xyes" && test "x$enable_docs" = "xyes"] ; then
 fi
 
 # Variable substitutions
-AM_CONDITIONAL(WANT_GUI, test x$enable_gui = xyes)
 AM_CONDITIONAL(WANT_DAEMON, test x$enable_daemon = xyes)
 AM_CONDITIONAL(WANT_DOCS, test x$want_docs = xyes)
 AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
@@ -224,9 +210,6 @@ fi
 
 # Output files
 AC_CONFIG_FILES([Makefile
-		gui/version.tcl
-		gui/Makefile
-		gui/icons/Makefile
 		man/Makefile
 		docs/Makefile
 		daemon/Makefile
@@ -248,17 +231,12 @@ Build:
   Prefix:                     ${prefix}
   Exec Prefix:                ${exec_prefix}
 
-GUI:
-  GUI path:                   ${CORE_LIB_DIR}
-  GUI config:                 ${CORE_GUI_CONF_DIR}
-
 Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
   Python:                     ${PYTHON}
 
 Features to build:
-  Build GUI:                  ${enable_gui}
   Build Daemon:               ${enable_daemon}
   Documentation:              ${want_docs}
 

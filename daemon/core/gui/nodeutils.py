@@ -18,12 +18,16 @@ NETWORK_NODES: List["NodeDraw"] = []
 NODE_ICONS = {}
 CONTAINER_NODES: Set[NodeType] = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
 IMAGE_NODES: Set[NodeType] = {NodeType.DOCKER, NodeType.LXC}
-WIRELESS_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+WIRELESS_NODES: Set[NodeType] = {
+    NodeType.WIRELESS_LAN,
+    NodeType.EMANE,
+    NodeType.WIRELESS,
+}
 RJ45_NODES: Set[NodeType] = {NodeType.RJ45}
 BRIDGE_NODES: Set[NodeType] = {NodeType.HUB, NodeType.SWITCH}
 IGNORE_NODES: Set[NodeType] = {NodeType.CONTROL_NET}
 MOBILITY_NODES: Set[NodeType] = {NodeType.WIRELESS_LAN, NodeType.EMANE}
-NODE_MODELS: Set[str] = {"router", "host", "PC", "mdr", "prouter"}
+NODE_MODELS: Set[str] = {"router", "PC", "mdr", "prouter"}
 ROUTER_NODES: Set[str] = {"router", "mdr"}
 ANTENNA_ICON: Optional[PhotoImage] = None
 
@@ -46,6 +50,7 @@ def setup() -> None:
         (ImageEnum.HUB, NodeType.HUB, "Hub"),
         (ImageEnum.SWITCH, NodeType.SWITCH, "Switch"),
         (ImageEnum.WLAN, NodeType.WIRELESS_LAN, "WLAN"),
+        (ImageEnum.WIRELESS, NodeType.WIRELESS, "Wireless"),
         (ImageEnum.EMANE, NodeType.EMANE, "EMANE"),
         (ImageEnum.RJ45, NodeType.RJ45, "RJ45"),
         (ImageEnum.TUNNEL, NodeType.TUNNEL, "Tunnel"),
@@ -97,6 +102,10 @@ def is_custom(node: Node) -> bool:
     return is_model(node) and node.model not in NODE_MODELS
 
 
+def is_iface_node(node: Node) -> bool:
+    return is_container(node) or is_bridge(node)
+
+
 def get_custom_services(gui_config: GuiConfig, name: str) -> List[str]:
     for custom_node in gui_config.nodes:
         if custom_node.name == name:
@@ -114,7 +123,7 @@ def _get_custom_file(config: GuiConfig, name: str) -> Optional[str]:
 def get_icon(node: Node, app: "Application") -> PhotoImage:
     scale = app.app_scale
     image = None
-    # node icon was overriden with a specific value
+    # node icon was overridden with a specific value
     if node.icon:
         try:
             image = images.from_file(node.icon, width=images.NODE_SIZE, scale=scale)

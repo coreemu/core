@@ -225,7 +225,6 @@ class WirelessModel(ConfigurableOptions):
     """
 
     config_type: RegisterTlvs = RegisterTlvs.WIRELESS
-    bitmap: str = None
     position_callback: Callable[[CoreInterface], None] = None
 
     def __init__(self, session: "Session", _id: int) -> None:
@@ -321,7 +320,8 @@ class BasicRangeModel(WirelessModel):
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                iface.config(options)
+                iface.options.update(options)
+                iface.set_config()
 
     def get_position(self, iface: CoreInterface) -> Tuple[float, float, float]:
         """
@@ -627,7 +627,7 @@ class WayPointMobility(WirelessModel):
                 moved_ifaces.append(iface)
 
         # calculate all ranges after moving nodes; this saves calculations
-        self.net.model.update(moved_ifaces)
+        self.net.wireless_model.update(moved_ifaces)
 
         # TODO: check session state
         self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
@@ -705,7 +705,7 @@ class WayPointMobility(WirelessModel):
             x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
             moved_ifaces.append(iface)
-        self.net.model.update(moved_ifaces)
+        self.net.wireless_model.update(moved_ifaces)
 
     def addwaypoint(
         self,

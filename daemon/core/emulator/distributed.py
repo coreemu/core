@@ -15,6 +15,7 @@ from fabric import Connection
 from invoke import UnexpectedExit
 
 from core import utils
+from core.emulator.links import CoreLink
 from core.errors import CoreCommandError, CoreError
 from core.executables import get_requirements
 from core.nodes.interface import GreTap
@@ -124,9 +125,7 @@ class DistributedController:
         self.session: "Session" = session
         self.servers: Dict[str, DistributedServer] = OrderedDict()
         self.tunnels: Dict[int, Tuple[GreTap, GreTap]] = {}
-        self.address: str = self.session.options.get_config(
-            "distributed_address", default=None
-        )
+        self.address: str = self.session.options.get("distributed_address")
 
     def add_server(self, name: str, host: str) -> None:
         """
@@ -183,20 +182,35 @@ class DistributedController:
 
     def start(self) -> None:
         """
-        Start distributed network tunnels.
+        Start distributed network tunnels for control networks.
 
         :return: nothing
         """
-        mtu = self.session.options.get_config_int("mtu")
+        mtu = self.session.options.get_int("mtu")
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
-            if not isinstance(node, CoreNetwork):
-                continue
-            if isinstance(node, CtrlNet) and node.serverintf is not None:
+            if not isinstance(node, CtrlNet) or node.serverintf is not None:
                 continue
             for name in self.servers:
                 server = self.servers[name]
                 self.create_gre_tunnel(node, server, mtu, True)
+
+    def create_gre_tunnels(self, core_link: CoreLink) -> None:
+        """
+        Creates gre tunnels for a core link with a ptp network connection.
+
+        :param core_link: core link to create gre tunnel for
+        :return: nothing
+        """
+        if not self.servers:
+            return
+        if not core_link.ptp:
+            raise CoreError(
+                "attempted to create gre tunnel for core link without a ptp network"
+            )
+        mtu = self.session.options.get_int("mtu")
+        for server in self.servers.values():
+            self.create_gre_tunnel(core_link.ptp, server, mtu, True)
 
     def create_gre_tunnel(
         self, node: CoreNetwork, server: DistributedServer, mtu: int, start: bool

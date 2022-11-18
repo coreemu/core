@@ -4,26 +4,19 @@ Defines network nodes used within core.
 
 import logging
 import threading
-from collections import OrderedDict
+from dataclasses import dataclass
 from pathlib import Path
-from queue import Queue
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 import netaddr
 
 from core import utils
 from core.emulator.data import InterfaceData, LinkData
-from core.emulator.enumerations import (
-    LinkTypes,
-    MessageFlags,
-    NetworkPolicy,
-    NodeTypes,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import MessageFlags, NetworkPolicy, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.executables import NFTABLES
-from core.nodes.base import CoreNetworkBase, CoreNode
-from core.nodes.interface import CoreInterface, GreTap, Veth
+from core.nodes.base import CoreNetworkBase, NodeOptions
+from core.nodes.interface import CoreInterface, GreTap
 from core.nodes.netclient import get_net_client
 
 logger = logging.getLogger(__name__)
@@ -33,25 +26,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.location.mobility import WirelessModel, WayPointMobility
 
-    WirelessModelType = Type[WirelessModel]
-
 LEARNING_DISABLED: int = 0
-
-
-class SetQueue(Queue):
-    """
-    Set backed queue to avoid duplicate submissions.
-    """
-
-    def _init(self, maxsize):
-        self.queue: OrderedDict = OrderedDict()
-
-    def _put(self, item):
-        self.queue[item] = None
-
-    def _get(self):
-        key, _ = self.queue.popitem(last=False)
-        return key
 
 
 class NftablesQueue:
@@ -78,7 +53,7 @@ class NftablesQueue:
         # list of pending nftables commands
         self.cmds: List[str] = []
         # list of WLANs requiring update
-        self.updates: SetQueue = SetQueue()
+        self.updates: utils.SetQueue = utils.SetQueue()
 
     def start(self) -> None:
         """
@@ -206,6 +181,12 @@ class NftablesQueue:
 nft_queue: NftablesQueue = NftablesQueue()
 
 
+@dataclass
+class NetworkOptions(NodeOptions):
+    policy: NetworkPolicy = None
+    """allows overriding the network policy, otherwise uses class defined default"""
+
+
 class CoreNetwork(CoreNetworkBase):
     """
     Provides linux bridge network functionality for core nodes.
@@ -219,27 +200,28 @@ class CoreNetwork(CoreNetworkBase):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
-        policy: NetworkPolicy = None,
+        options: NetworkOptions = None,
     ) -> None:
         """
-        Creates a LxBrNet instance.
+        Creates a CoreNetwork instance.
 
         :param session: core session instance
         :param _id: object id
         :param name: object name
         :param server: remote server node
             will run on, default is None for localhost
-        :param policy: network policy
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server)
-        if name is None:
-            name = str(self.id)
-        if policy is not None:
-            self.policy: NetworkPolicy = policy
-        self.name: Optional[str] = name
+        options = options or NetworkOptions()
+        super().__init__(session, _id, name, server, options)
+        self.policy: NetworkPolicy = options.policy if options.policy else self.policy
         sessionid = self.session.short_session_id()
         self.brname: str = f"b.{self.id}.{sessionid}"
         self.has_nftables_chain: bool = False
+
+    @classmethod
+    def create_options(cls) -> NetworkOptions:
+        return NetworkOptions()
 
     def host_cmd(
         self,
@@ -280,6 +262,17 @@ class CoreNetwork(CoreNetworkBase):
         self.up = True
         nft_queue.start()
 
+    def adopt_iface(self, iface: CoreInterface, name: str) -> None:
+        """
+        Adopt interface and set it to use this bridge as master.
+
+        :param iface: interface to adpopt
+        :param name: formal name for interface
+        :return: nothing
+        """
+        iface.net_client.set_iface_master(self.brname, iface.name)
+        iface.set_config()
+
     def shutdown(self) -> None:
         """
         Linux bridge shutdown logic.
@@ -309,9 +302,9 @@ class CoreNetwork(CoreNetworkBase):
         :param iface: network interface to attach
         :return: nothing
         """
+        super().attach(iface)
         if self.up:
             iface.net_client.set_iface_master(self.brname, iface.localname)
-        super().attach(iface)
 
     def detach(self, iface: CoreInterface) -> None:
         """
@@ -320,9 +313,9 @@ class CoreNetwork(CoreNetworkBase):
         :param iface: network interface to detach
         :return: nothing
         """
+        super().detach(iface)
         if self.up:
             iface.net_client.delete_iface(self.brname, iface.localname)
-        super().detach(iface)
 
     def is_linked(self, iface1: CoreInterface, iface2: CoreInterface) -> bool:
         """
@@ -377,67 +370,6 @@ class CoreNetwork(CoreNetworkBase):
                 return
             self.linked[iface1][iface2] = True
         nft_queue.update(self)
-
-    def linknet(self, net: CoreNetworkBase) -> CoreInterface:
-        """
-        Link this bridge with another by creating a veth pair and installing
-        each device into each bridge.
-
-        :param net: network to link with
-        :return: created interface
-        """
-        sessionid = self.session.short_session_id()
-        try:
-            _id = f"{self.id:x}"
-        except TypeError:
-            _id = str(self.id)
-        try:
-            net_id = f"{net.id:x}"
-        except TypeError:
-            net_id = str(net.id)
-        localname = f"veth{_id}.{net_id}.{sessionid}"
-        name = f"veth{net_id}.{_id}.{sessionid}"
-        iface = Veth(self.session, name, localname)
-        if self.up:
-            iface.startup()
-        self.attach(iface)
-        if net.up and net.brname:
-            iface.net_client.set_iface_master(net.brname, iface.name)
-        i = net.next_iface_id()
-        net.ifaces[i] = iface
-        with net.linked_lock:
-            net.linked[iface] = {}
-        iface.net = self
-        iface.othernet = net
-        return iface
-
-    def get_linked_iface(self, net: CoreNetworkBase) -> Optional[CoreInterface]:
-        """
-        Return the interface of that links this net with another net
-        (that were linked using linknet()).
-
-        :param net: interface to get link for
-        :return: interface the provided network is linked to
-        """
-        for iface in self.get_ifaces():
-            if iface.othernet == net:
-                return iface
-        return None
-
-    def add_ips(self, ips: List[str]) -> None:
-        """
-        Add ip addresses on the bridge in the format "10.0.0.1/24".
-
-        :param ips: ip address to add
-        :return: nothing
-        """
-        if not self.up:
-            return
-        for ip in ips:
-            self.net_client.create_address(self.brname, ip)
-
-    def custom_iface(self, node: CoreNode, iface_data: InterfaceData) -> CoreInterface:
-        raise CoreError(f"{type(self).__name__} does not support, custom interfaces")
 
 
 class GreTapBridge(CoreNetwork):
@@ -558,6 +490,20 @@ class GreTapBridge(CoreNetwork):
             self.add_ips(ips)
 
 
+@dataclass
+class CtrlNetOptions(NetworkOptions):
+    prefix: str = None
+    """ip4 network prefix to use for generating an address"""
+    updown_script: str = None
+    """script to execute during startup and shutdown"""
+    serverintf: str = None
+    """used to associate an interface with the control network bridge"""
+    assign_address: bool = True
+    """used to determine if a specific address should be assign using hostid"""
+    hostid: int = None
+    """used with assign address to """
+
+
 class CtrlNet(CoreNetwork):
     """
     Control network functionality.
@@ -576,36 +522,32 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session: "Session",
-        prefix: str,
         _id: int = None,
         name: str = None,
-        hostid: int = None,
         server: "DistributedServer" = None,
-        assign_address: bool = True,
-        updown_script: str = None,
-        serverintf: str = None,
+        options: CtrlNetOptions = None,
     ) -> None:
         """
         Creates a CtrlNet instance.
 
         :param session: core session instance
         :param _id: node id
-        :param name: node namee
-        :param prefix: control network ipv4 prefix
-        :param hostid: host id
+        :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
-        :param assign_address: assigned address
-        :param updown_script: updown script
-        :param serverintf: server interface
-        :return:
+        :param options: node options for creation
         """
-        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(prefix).cidr
-        self.hostid: Optional[int] = hostid
-        self.assign_address: bool = assign_address
-        self.updown_script: Optional[str] = updown_script
-        self.serverintf: Optional[str] = serverintf
-        super().__init__(session, _id, name, server)
+        options = options or CtrlNetOptions()
+        super().__init__(session, _id, name, server, options)
+        self.prefix: netaddr.IPNetwork = netaddr.IPNetwork(options.prefix).cidr
+        self.hostid: Optional[int] = options.hostid
+        self.assign_address: bool = options.assign_address
+        self.updown_script: Optional[str] = options.updown_script
+        self.serverintf: Optional[str] = options.serverintf
+
+    @classmethod
+    def create_options(cls) -> CtrlNetOptions:
+        return CtrlNetOptions()
 
     def add_addresses(self, index: int) -> None:
         """
@@ -686,15 +628,6 @@ class CtrlNet(CoreNetwork):
 
         super().shutdown()
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Do not include CtrlNet in link messages describing this session.
-
-        :param flags: message flags
-        :return: list of link data
-        """
-        return []
-
 
 class PtpNet(CoreNetwork):
     """
@@ -714,59 +647,13 @@ class PtpNet(CoreNetwork):
             raise CoreError("ptp links support at most 2 network interfaces")
         super().attach(iface)
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
-        """
-        Build CORE API TLVs for a point-to-point link. One Link message
-        describes this network.
-
-        :param flags: message flags
-        :return: list of link data
-        """
-        all_links = []
-        if len(self.ifaces) != 2:
-            return all_links
-        ifaces = self.get_ifaces()
-        iface1 = ifaces[0]
-        iface2 = ifaces[1]
-        unidirectional = 0 if iface1.local_options == iface2.local_options else 1
-        iface1_data = iface1.get_data()
-        iface2_data = iface2.get_data()
-        link_data = LinkData(
-            message_type=flags,
-            type=self.linktype,
-            node1_id=iface1.node.id,
-            node2_id=iface2.node.id,
-            iface1=iface1_data,
-            iface2=iface2_data,
-            options=iface1.local_options,
-        )
-        link_data.options.unidirectional = unidirectional
-        all_links.append(link_data)
-        # build a 2nd link message for the upstream link parameters
-        # (swap if1 and if2)
-        if unidirectional:
-            link_data = LinkData(
-                message_type=MessageFlags.NONE,
-                type=self.linktype,
-                node1_id=iface2.node.id,
-                node2_id=iface1.node.id,
-                iface1=InterfaceData(id=iface2_data.id),
-                iface2=InterfaceData(id=iface1_data.id),
-                options=iface2.local_options,
-            )
-            link_data.options.unidirectional = unidirectional
-            all_links.append(link_data)
-        return all_links
-
 
 class SwitchNode(CoreNetwork):
     """
     Provides switch functionality within a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.SWITCH
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "lanswitch"
 
 
 class HubNode(CoreNetwork):
@@ -775,9 +662,7 @@ class HubNode(CoreNetwork):
     ports by turning off MAC address learning.
     """
 
-    apitype: NodeTypes = NodeTypes.HUB
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "hub"
 
     def startup(self) -> None:
         """
@@ -794,10 +679,7 @@ class WlanNode(CoreNetwork):
     Provides wireless lan functionality within a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.WIRELESS_LAN
-    linktype: LinkTypes = LinkTypes.WIRED
     policy: NetworkPolicy = NetworkPolicy.DROP
-    type: str = "wlan"
 
     def __init__(
         self,
@@ -805,7 +687,7 @@ class WlanNode(CoreNetwork):
         _id: int = None,
         name: str = None,
         server: "DistributedServer" = None,
-        policy: NetworkPolicy = None,
+        options: NetworkOptions = None,
     ) -> None:
         """
         Create a WlanNode instance.
@@ -815,11 +697,11 @@ class WlanNode(CoreNetwork):
         :param name: node name
         :param server: remote server node
             will run on, default is None for localhost
-        :param policy: wlan policy
+        :param options: options to create node with
         """
-        super().__init__(session, _id, name, server, policy)
+        super().__init__(session, _id, name, server, options)
         # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
-        self.model: Optional[WirelessModel] = None
+        self.wireless_model: Optional[WirelessModel] = None
         self.mobility: Optional[WayPointMobility] = None
 
     def startup(self) -> None:
@@ -839,27 +721,27 @@ class WlanNode(CoreNetwork):
         :return: nothing
         """
         super().attach(iface)
-        if self.model:
-            iface.poshook = self.model.position_callback
+        if self.wireless_model:
+            iface.poshook = self.wireless_model.position_callback
             iface.setposition()
 
-    def setmodel(self, model: "WirelessModelType", config: Dict[str, str]):
+    def setmodel(self, wireless_model: Type["WirelessModel"], config: Dict[str, str]):
         """
         Sets the mobility and wireless model.
 
-        :param model: wireless model to set to
+        :param wireless_model: wireless model to set to
         :param config: configuration for model being set
         :return: nothing
         """
-        logger.debug("node(%s) setting model: %s", self.name, model.name)
-        if model.config_type == RegisterTlvs.WIRELESS:
-            self.model = model(session=self.session, _id=self.id)
+        logger.debug("node(%s) setting model: %s", self.name, wireless_model.name)
+        if wireless_model.config_type == RegisterTlvs.WIRELESS:
+            self.wireless_model = wireless_model(session=self.session, _id=self.id)
             for iface in self.get_ifaces():
-                iface.poshook = self.model.position_callback
+                iface.poshook = self.wireless_model.position_callback
                 iface.setposition()
             self.updatemodel(config)
-        elif model.config_type == RegisterTlvs.MOBILITY:
-            self.mobility = model(session=self.session, _id=self.id)
+        elif wireless_model.config_type == RegisterTlvs.MOBILITY:
+            self.mobility = wireless_model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
     def update_mobility(self, config: Dict[str, str]) -> None:
@@ -868,12 +750,12 @@ class WlanNode(CoreNetwork):
         self.mobility.update_config(config)
 
     def updatemodel(self, config: Dict[str, str]) -> None:
-        if not self.model:
+        if not self.wireless_model:
             raise CoreError(f"no model set to update for node({self.name})")
         logger.debug(
-            "node(%s) updating model(%s): %s", self.id, self.model.name, config
+            "node(%s) updating model(%s): %s", self.id, self.wireless_model.name, config
         )
-        self.model.update_config(config)
+        self.wireless_model.update_config(config)
         for iface in self.get_ifaces():
             iface.setposition()
 
@@ -884,10 +766,10 @@ class WlanNode(CoreNetwork):
         :param flags: message flags
         :return: list of link data
         """
-        links = super().links(flags)
-        if self.model:
-            links.extend(self.model.links(flags))
-        return links
+        if self.wireless_model:
+            return self.wireless_model.links(flags)
+        else:
+            return []
 
 
 class TunnelNode(GreTapBridge):
@@ -895,6 +777,4 @@ class TunnelNode(GreTapBridge):
     Provides tunnel functionality in a core node.
     """
 
-    apitype: NodeTypes = NodeTypes.TUNNEL
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
-    type: str = "tunnel"

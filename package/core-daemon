@@ -1,0 +1,112 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          core-daemon
+# Required-Start:    $network $remote_fs
+# Required-Stop:     $network $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start the core-daemon CORE daemon at boot time
+# Description:       Starts and stops the core-daemon CORE daemon used to
+#                    provide network emulation services for the CORE GUI
+#                    or scripts.
+### END INIT INFO
+#
+# chkconfig: 35 90 03
+# description: Starts and stops the CORE daemon \
+#	       used to provide network emulation services.
+#
+# config:  /etc/core/
+
+. /opt/core/service
+NAME=`basename $0`
+PIDFILE="/var/$NAME.pid"
+LOG="/var/log/$NAME.log"
+CMD="$DAEMON"
+
+get_pid() {
+	cat "$PIDFILE"
+}
+
+is_alive() {
+	[ -f "$PIDFILE" ] && ps -p `get_pid` > /dev/null 2>&1
+}
+
+corestart() {
+	if is_alive; then
+		echo "$NAME already started"
+	else
+		echo "starting $NAME"
+		$CMD 2>&1 >> "$LOG" &
+	fi
+
+	echo $! > "$PIDFILE"
+	if ! is_alive; then
+		echo "unable to start $NAME, see $LOG"
+		exit 1
+	fi
+}
+
+corestop() {
+	if is_alive; then
+		echo -n "stopping $NAME.."
+		kill `get_pid`
+		for i in 1 2 3 4 5; do
+			sleep 1
+			if ! is_alive; then
+				break
+			fi
+			echo -n "."
+		done
+		echo
+
+		if is_alive; then
+			echo "not stopped; may still be shutting down"
+			exit 1
+		else
+			echo "stopped"
+			if [ -f "$PIDFILE" ]; then
+				rm -f "$PIDFILE"
+			fi
+		fi
+	else
+		echo "$NAME not running"
+	fi
+}
+
+corerestart() {
+	corestop
+	corestart
+}
+
+corestatus() {
+	if is_alive; then
+		echo "$NAME is running"
+	else
+		echo "$NAME is stopped"
+		exit 1
+	fi
+}
+
+
+case "$1" in
+  start)
+  	corestart
+	;;
+  stop)
+  	corestop
+	;;
+  restart)
+  	corerestart
+	;;
+  force-reload)
+        corerestart
+        ;;
+  status)
+  	corestatus
+	;;
+  *)
+	echo "Usage: $0 {start|stop|restart|status}"
+	exit 1
+esac
+
+exit $?

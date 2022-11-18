@@ -28,6 +28,7 @@ class LinuxNetClient:
         :param name: name for hostname
         :return: nothing
         """
+        name = name.replace("_", "-")
         self.run(f"hostname {name}")
 
     def create_route(self, route: str, device: str) -> None:

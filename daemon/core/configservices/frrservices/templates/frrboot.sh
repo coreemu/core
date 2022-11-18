@@ -48,6 +48,10 @@ bootdaemon()
         flags="$flags -6"
     fi
 
+    if [ "$1" = "ospfd" ]; then
+        flags="$flags --apiserver"
+    fi
+
     #force FRR to use CORE generated conf file
     flags="$flags -d -f $FRR_CONF"
     $FRR_SBIN_DIR/$1 $flags

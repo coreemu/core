@@ -1,8 +1,4 @@
 # CORE
-# (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz  <jeffrey.m.ahrenholz@boeing.com>
 #
 # Makefile for building netns components.
 #
@@ -25,10 +21,7 @@ DISTCLEANFILES = Makefile.in
 
 # files to include with distribution tarball
 EXTRA_DIST = core \
-	     data \
 	     doc/conf.py.in \
-	     examples \
-	     scripts \
 	     tests \
 	     setup.cfg \
 	     poetry.lock \

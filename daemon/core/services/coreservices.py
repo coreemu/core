@@ -109,114 +109,6 @@ class ServiceDependencies:
         return self.boot_paths
 
 
-class ServiceShim:
-    keys: List[str] = [
-        "dirs",
-        "files",
-        "startidx",
-        "cmdup",
-        "cmddown",
-        "cmdval",
-        "meta",
-        "starttime",
-    ]
-
-    @classmethod
-    def tovaluelist(cls, node: CoreNode, service: "CoreService") -> str:
-        """
-        Convert service properties into a string list of key=value pairs,
-        separated by "|".
-
-        :param node: node to get value list for
-        :param service: service to get value list for
-        :return: value list string
-        """
-        start_time = 0
-        start_index = 0
-        valmap = [
-            service.dirs,
-            service.configs,
-            start_index,
-            service.startup,
-            service.shutdown,
-            service.validate,
-            service.meta,
-            start_time,
-        ]
-        if not service.custom:
-            valmap[1] = service.get_configs(node)
-            valmap[3] = service.get_startup(node)
-        vals = ["%s=%s" % (x, y) for x, y in zip(cls.keys, valmap)]
-        return "|".join(vals)
-
-    @classmethod
-    def fromvaluelist(cls, service: "CoreService", values: List[str]) -> None:
-        """
-        Convert list of values into properties for this instantiated
-        (customized) service.
-
-        :param service: service to get value list for
-        :param values: value list to set properties from
-        :return: nothing
-        """
-        # TODO: support empty value? e.g. override default meta with ''
-        for key in cls.keys:
-            try:
-                cls.setvalue(service, key, values[cls.keys.index(key)])
-            except IndexError:
-                # old config does not need to have new keys
-                logger.exception("error indexing into key")
-
-    @classmethod
-    def setvalue(cls, service: "CoreService", key: str, value: str) -> None:
-        """
-        Set values for this service.
-
-        :param service: service to get value list for
-        :param key: key to set value for
-        :param value: value of key to set
-        :return: nothing
-        """
-        if key not in cls.keys:
-            raise ValueError("key `%s` not in `%s`" % (key, cls.keys))
-        # this handles data conversion to int, string, and tuples
-        if value:
-            if key == "startidx":
-                value = int(value)
-            elif key == "starttime":
-                value = float(value)
-            elif key == "meta":
-                value = str(value)
-            else:
-                value = utils.make_tuple_fromstr(value, str)
-
-        if key == "dirs":
-            service.dirs = value
-        elif key == "files":
-            service.configs = value
-        elif key == "cmdup":
-            service.startup = value
-        elif key == "cmddown":
-            service.shutdown = value
-        elif key == "cmdval":
-            service.validate = value
-        elif key == "meta":
-            service.meta = value
-
-    @classmethod
-    def servicesfromopaque(cls, opaque: str) -> List[str]:
-        """
-        Build a list of services from an opaque data string.
-
-        :param opaque: opaque data string
-        :return: services
-        """
-        servicesstring = opaque.split(":")
-        if servicesstring[0] != "service":
-            return []
-        return servicesstring[1].split(",")
-
-
 class ServiceManager:
     """
     Manages services available for CORE nodes to use.
@@ -342,26 +234,6 @@ class CoreServices:
         """
         self.custom_services.clear()
 
-    def get_default_services(self, node_type: str) -> List[Type["CoreService"]]:
-        """
-        Get the list of default services that should be enabled for a
-        node for the given node type.
-
-        :param node_type: node type to get default services for
-        :return: default services
-        """
-        logger.debug("getting default services for type: %s", node_type)
-        results = []
-        defaults = self.default_services.get(node_type, [])
-        for name in defaults:
-            logger.debug("checking for service with service manager: %s", name)
-            service = ServiceManager.get(name)
-            if not service:
-                logger.warning("default service %s is unknown", name)
-            else:
-                results.append(service)
-        return results
-
     def get_service(
         self, node_id: int, service_name: str, default_service: bool = False
     ) -> "CoreService":
@@ -401,21 +273,21 @@ class CoreServices:
             node_services[service.name] = service
 
     def add_services(
-        self, node: CoreNode, node_type: str, services: List[str] = None
+        self, node: CoreNode, model: str, services: List[str] = None
     ) -> None:
         """
         Add services to a node.
 
         :param node: node to add services to
-        :param node_type: node type to add services to
+        :param model: node model type to add services for
         :param services: names of services to add to node
         :return: nothing
         """
         if not services:
             logger.info(
-                "using default services for node(%s) type(%s)", node.name, node_type
+                "using default services for node(%s) type(%s)", node.name, model
             )
-            services = self.default_services.get(node_type, [])
+            services = self.default_services.get(model, [])
         logger.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)

@@ -14,7 +14,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -29,22 +29,21 @@ from core.emulator.data import (
     LinkData,
     LinkOptions,
     NodeData,
-    NodeOptions,
 )
 from core.emulator.distributed import DistributedController
 from core.emulator.enumerations import (
     EventTypes,
     ExceptionLevels,
-    LinkTypes,
     MessageFlags,
     NodeTypes,
 )
+from core.emulator.links import CoreLink, LinkManager
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.location.event import EventLoop
 from core.location.geo import GeoLocation
 from core.location.mobility import BasicRangeModel, MobilityManager
-from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase, NodeBase
+from core.nodes.base import CoreNode, CoreNodeBase, NodeBase, NodeOptions, Position
 from core.nodes.docker import DockerNode
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.lxd import LxcNode
@@ -58,6 +57,7 @@ from core.nodes.network import (
     WlanNode,
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
@@ -80,12 +80,18 @@ NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
+    NodeTypes.WIRELESS: WirelessNode,
 }
 NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
 CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
 CTRL_NET_ID: int = 9001
 LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
 NT: TypeVar = TypeVar("NT", bound=NodeBase)
+WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet], Type[WirelessNode]] = (
+    WlanNode,
+    EmaneNet,
+    WirelessNode,
+)
 
 
 class Session:
@@ -119,7 +125,8 @@ class Session:
 
         # dict of nodes: all nodes and nets
         self.nodes: Dict[int, NodeBase] = {}
-        self.nodes_lock = threading.Lock()
+        self.nodes_lock: threading.Lock = threading.Lock()
+        self.link_manager: LinkManager = LinkManager()
 
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
@@ -139,12 +146,7 @@ class Session:
         self.config_handlers: List[Callable[[ConfigData], None]] = []
 
         # session options/metadata
-        self.options: SessionConfig = SessionConfig()
-        if not config:
-            config = {}
-        for key in config:
-            value = config[key]
-            self.options.set_config(key, value)
+        self.options: SessionConfig = SessionConfig(config)
         self.metadata: Dict[str, str] = {}
 
         # distributed support and logic
@@ -187,42 +189,47 @@ class Session:
             raise CoreError(f"invalid node class: {_class}")
         return node_type
 
-    def _link_wireless(
-        self, node1: CoreNodeBase, node2: CoreNodeBase, connect: bool
+    def use_ovs(self) -> bool:
+        return self.options.get_int("ovs") == 1
+
+    def linked(
+        self, node1_id: int, node2_id: int, iface1_id: int, iface2_id: int, linked: bool
     ) -> None:
         """
-        Objects to deal with when connecting/disconnecting wireless links.
+        Links or unlinks wired core link interfaces from being connected to the same
+        bridge.
 
-        :param node1: node one for wireless link
-        :param node2: node two for wireless link
-        :param connect: link interfaces if True, unlink otherwise
+        :param node1_id: first node in link
+        :param node2_id: second node in link
+        :param iface1_id: node1 interface
+        :param iface2_id: node2 interface
+        :param linked: True if interfaces should be connected, False for disconnected
         :return: nothing
-        :raises core.CoreError: when objects to link is less than 2, or no common
-            networks are found
         """
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
         logger.info(
-            "handling wireless linking node1(%s) node2(%s): %s",
+            "link node(%s):interface(%s) node(%s):interface(%s) linked(%s)",
             node1.name,
+            iface1_id,
             node2.name,
-            connect,
+            iface2_id,
+            linked,
         )
-        common_networks = node1.commonnets(node1)
-        if not common_networks:
-            raise CoreError("no common network found for wireless link/unlink")
-        for common_network, iface1, iface2 in common_networks:
-            if not isinstance(common_network, (WlanNode, EmaneNet)):
-                logger.info(
-                    "skipping common network that is not wireless/emane: %s",
-                    common_network,
-                )
-                continue
-            if connect:
-                common_network.link(iface1, iface2)
-            else:
-                common_network.unlink(iface1, iface2)
-
-    def use_ovs(self) -> bool:
-        return self.options.get_config("ovs") == "1"
+        iface1 = node1.get_iface(iface1_id)
+        iface2 = node2.get_iface(iface2_id)
+        core_link = self.link_manager.get_link(node1, iface1, node2, iface2)
+        if not core_link:
+            raise CoreError(
+                f"there is no link for node({node1.name}):interface({iface1_id}) "
+                f"node({node2.name}):interface({iface2_id})"
+            )
+        if linked:
+            core_link.ptp.attach(iface1)
+            core_link.ptp.attach(iface2)
+        else:
+            core_link.ptp.detach(iface1)
+            core_link.ptp.detach(iface2)
 
     def add_link(
         self,
@@ -231,8 +238,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
-        link_type: LinkTypes = LinkTypes.WIRED,
-    ) -> Tuple[CoreInterface, CoreInterface]:
+    ) -> Tuple[Optional[CoreInterface], Optional[CoreInterface]]:
         """
         Add a link between nodes.
 
@@ -244,89 +250,129 @@ class Session:
             data, defaults to none
         :param options: data for creating link,
             defaults to no options
-        :param link_type: type of link to add
         :return: tuple of created core interfaces, depending on link
         """
-        if not options:
-            options = LinkOptions()
-        node1 = self.get_node(node1_id, NodeBase)
-        node2 = self.get_node(node2_id, NodeBase)
-        iface1 = None
-        iface2 = None
+        options = options if options else LinkOptions()
         # set mtu
-        mtu = self.options.get_config_int("mtu") or DEFAULT_MTU
+        mtu = self.options.get_int("mtu") or DEFAULT_MTU
         if iface1_data:
             iface1_data.mtu = mtu
         if iface2_data:
             iface2_data.mtu = mtu
-        # wireless link
-        if link_type == LinkTypes.WIRELESS:
-            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                self._link_wireless(node1, node2, connect=True)
-            else:
-                raise CoreError(
-                    f"cannot wireless link node1({type(node1)}) node2({type(node2)})"
-                )
-        # wired link
+        node1 = self.get_node(node1_id, NodeBase)
+        node2 = self.get_node(node2_id, NodeBase)
+        # check for invalid linking
+        if (
+            isinstance(node1, WIRELESS_TYPE)
+            and isinstance(node2, WIRELESS_TYPE)
+            or isinstance(node1, WIRELESS_TYPE)
+            and not isinstance(node2, CoreNodeBase)
+            or not isinstance(node1, CoreNodeBase)
+            and isinstance(node2, WIRELESS_TYPE)
+        ):
+            raise CoreError(f"cannot link node({type(node1)}) node({type(node2)})")
+        # custom links
+        iface1 = None
+        iface2 = None
+        if isinstance(node1, (WlanNode, WirelessNode)):
+            iface2 = self._add_wlan_link(node2, iface2_data, node1)
+        elif isinstance(node2, (WlanNode, WirelessNode)):
+            iface1 = self._add_wlan_link(node1, iface1_data, node2)
+        elif isinstance(node1, EmaneNet) and isinstance(node2, CoreNode):
+            iface2 = self._add_emane_link(node2, iface2_data, node1)
+        elif isinstance(node2, EmaneNet) and isinstance(node1, CoreNode):
+            iface1 = self._add_emane_link(node1, iface1_data, node2)
         else:
-            # peer to peer link
-            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                logger.info("linking ptp: %s - %s", node1.name, node2.name)
-                start = self.state.should_start()
-                ptp = self.create_node(PtpNet, start)
-                iface1 = node1.new_iface(ptp, iface1_data)
-                iface2 = node2.new_iface(ptp, iface2_data)
-                iface1.config(options)
-                if not options.unidirectional:
-                    iface2.config(options)
-            # link node to net
-            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
-                logger.info("linking node to net: %s - %s", node1.name, node2.name)
-                iface1 = node1.new_iface(node2, iface1_data)
-                if not isinstance(node2, (EmaneNet, WlanNode)):
-                    iface1.config(options)
-            # link net to node
-            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
-                logger.info("linking net to node: %s - %s", node1.name, node2.name)
-                iface2 = node2.new_iface(node1, iface2_data)
-                wireless_net = isinstance(node1, (EmaneNet, WlanNode))
-                if not options.unidirectional and not wireless_net:
-                    iface2.config(options)
-            # network to network
-            elif isinstance(node1, CoreNetworkBase) and isinstance(
-                node2, CoreNetworkBase
-            ):
-                logger.info(
-                    "linking network to network: %s - %s", node1.name, node2.name
-                )
-                iface1 = node1.linknet(node2)
-                use_local = iface1.net == node1
-                iface1.config(options, use_local=use_local)
-                if not options.unidirectional:
-                    iface1.config(options, use_local=not use_local)
-            else:
-                raise CoreError(
-                    f"cannot link node1({type(node1)}) node2({type(node2)})"
-                )
-
-            # configure tunnel nodes
-            key = options.key
-            if isinstance(node1, TunnelNode):
-                logger.info("setting tunnel key for: %s", node1.name)
-                node1.setkey(key, iface1_data)
-            if isinstance(node2, TunnelNode):
-                logger.info("setting tunnel key for: %s", node2.name)
-                node2.setkey(key, iface2_data)
+            iface1, iface2 = self._add_wired_link(
+                node1, node2, iface1_data, iface2_data, options
+            )
+        # configure tunnel nodes
+        key = options.key
+        if isinstance(node1, TunnelNode):
+            logger.info("setting tunnel key for: %s", node1.name)
+            node1.setkey(key, iface1_data)
+        if isinstance(node2, TunnelNode):
+            logger.info("setting tunnel key for: %s", node2.name)
+            node2.setkey(key, iface2_data)
         self.sdt.add_link(node1_id, node2_id)
         return iface1, iface2
 
-    def delete_link(
+    def _add_wlan_link(
         self,
-        node1_id: int,
-        node2_id: int,
-        iface1_id: int = None,
-        iface2_id: int = None,
-        link_type: LinkTypes = LinkTypes.WIRED,
+        node: NodeBase,
+        iface_data: InterfaceData,
+        net: Union[WlanNode, WirelessNode],
+    ) -> CoreInterface:
+        """
+        Create a wlan link.
+
+        :param node: node to link to wlan network
+        :param iface_data: data to create interface with
+        :param net: wlan network to link to
+        :return: interface created for node
+        """
+        # create interface
+        iface = node.create_iface(iface_data)
+        # attach to wlan
+        net.attach(iface)
+        # track link
+        core_link = CoreLink(node, iface, net, None)
+        self.link_manager.add(core_link)
+        return iface
+
+    def _add_emane_link(
+        self, node: CoreNode, iface_data: InterfaceData, net: EmaneNet
+    ) -> CoreInterface:
+        """
+        Create am emane link.
+
+        :param node: node to link to emane network
+        :param iface_data: data to create interface with
+        :param net: emane network to link to
+        :return: interface created for node
+        """
+        # create iface tuntap
+        iface = net.create_tuntap(node, iface_data)
+        # track link
+        core_link = CoreLink(node, iface, net, None)
+        self.link_manager.add(core_link)
+        return iface
+
+    def _add_wired_link(
+        self,
+        node1: NodeBase,
+        node2: NodeBase,
+        iface1_data: InterfaceData = None,
+        iface2_data: InterfaceData = None,
+        options: LinkOptions = None,
+    ) -> Tuple[CoreInterface, CoreInterface]:
+        """
+        Create a wired link between two nodes.
+
+        :param node1: first node to be linked
+        :param node2: second node to be linked
+        :param iface1_data: data to create interface for node1
+        :param iface2_data: data to create interface for node2
+        :param options: options to configure interfaces with
+        :return: interfaces created for both nodes
+        """
+        # create interfaces
+        iface1 = node1.create_iface(iface1_data, options)
+        iface2 = node2.create_iface(iface2_data, options)
+        # join and attach to ptp bridge
+        ptp = self.create_node(PtpNet, self.state.should_start())
+        ptp.attach(iface1)
+        ptp.attach(iface2)
+        # track link
+        core_link = CoreLink(node1, iface1, node2, iface2, ptp)
+        self.link_manager.add(core_link)
+        # setup link for gre tunnels if needed
+        if ptp.up:
+            self.distributed.create_gre_tunnels(core_link)
+        return iface1, iface2
+
+    def delete_link(
+        self, node1_id: int, node2_id: int, iface1_id: int = None, iface2_id: int = None
     ) -> None:
         """
         Delete a link between nodes.
@@ -335,63 +381,38 @@ class Session:
         :param node2_id: node two id
         :param iface1_id: interface id for node one
         :param iface2_id: interface id for node two
-        :param link_type: link type to delete
         :return: nothing
         :raises core.CoreError: when no common network is found for link being deleted
         """
         node1 = self.get_node(node1_id, NodeBase)
         node2 = self.get_node(node2_id, NodeBase)
         logger.info(
-            "deleting link(%s) node(%s):interface(%s) node(%s):interface(%s)",
-            link_type.name,
+            "deleting link node(%s):interface(%s) node(%s):interface(%s)",
             node1.name,
             iface1_id,
             node2.name,
             iface2_id,
         )
-
-        # wireless link
-        if link_type == LinkTypes.WIRELESS:
-            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                self._link_wireless(node1, node2, connect=False)
-            else:
-                raise CoreError(
-                    "cannot delete wireless link "
-                    f"node1({type(node1)}) node2({type(node2)})"
-                )
-        # wired link
+        iface1 = None
+        iface2 = None
+        if isinstance(node1, (WlanNode, WirelessNode)):
+            iface2 = node2.delete_iface(iface2_id)
+            node1.detach(iface2)
+        elif isinstance(node2, (WlanNode, WirelessNode)):
+            iface1 = node1.delete_iface(iface1_id)
+            node2.detach(iface1)
+        elif isinstance(node1, EmaneNet):
+            iface2 = node2.delete_iface(iface2_id)
+            node1.detach(iface2)
+        elif isinstance(node2, EmaneNet):
+            iface1 = node1.delete_iface(iface1_id)
+            node2.detach(iface1)
         else:
-            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                iface1 = node1.get_iface(iface1_id)
-                iface2 = node2.get_iface(iface2_id)
-                if iface1.net != iface2.net:
-                    raise CoreError(
-                        f"node1({node1.name}) node2({node2.name}) "
-                        "not connected to same net"
-                    )
-                ptp = iface1.net
-                node1.delete_iface(iface1_id)
-                node2.delete_iface(iface2_id)
-                self.delete_node(ptp.id)
-            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
-                node1.delete_iface(iface1_id)
-            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
-                node2.delete_iface(iface2_id)
-            elif isinstance(node1, CoreNetworkBase) and isinstance(
-                node2, CoreNetworkBase
-            ):
-                iface1 = node1.get_linked_iface(node2)
-                if iface1:
-                    node1.detach(iface1)
-                    iface1.shutdown()
-                iface2 = node2.get_linked_iface(node1)
-                if iface2:
-                    node2.detach(iface2)
-                    iface2.shutdown()
-                if not iface1 and not iface2:
-                    raise CoreError(
-                        f"node1({node1.name}) and node2({node2.name}) are not connected"
-                    )
+            iface1 = node1.delete_iface(iface1_id)
+            iface2 = node2.delete_iface(iface2_id)
+        core_link = self.link_manager.delete(node1, iface1, node2, iface2)
+        if core_link.ptp:
+            self.delete_node(core_link.ptp.id)
         self.sdt.delete_link(node1_id, node2_id)
 
     def update_link(
@@ -401,7 +422,6 @@ class Session:
         iface1_id: int = None,
         iface2_id: int = None,
         options: LinkOptions = None,
-        link_type: LinkTypes = LinkTypes.WIRED,
     ) -> None:
         """
         Update link information between nodes.
@@ -411,7 +431,6 @@ class Session:
         :param iface1_id: interface id for node one
         :param iface2_id: interface id for node two
         :param options: data to update link with
-        :param link_type: type of link to update
         :return: nothing
         :raises core.CoreError: when updating a wireless type link, when there is a
             unknown link between networks
@@ -421,72 +440,26 @@ class Session:
         node1 = self.get_node(node1_id, NodeBase)
         node2 = self.get_node(node2_id, NodeBase)
         logger.info(
-            "update link(%s) node(%s):interface(%s) node(%s):interface(%s)",
-            link_type.name,
+            "update link node(%s):interface(%s) node(%s):interface(%s)",
             node1.name,
             iface1_id,
             node2.name,
             iface2_id,
         )
-
-        # wireless link
-        if link_type == LinkTypes.WIRELESS:
-            raise CoreError("cannot update wireless link")
-        else:
-            if isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNodeBase):
-                iface1 = node1.ifaces.get(iface1_id)
-                if not iface1:
-                    raise CoreError(
-                        f"node({node1.name}) missing interface({iface1_id})"
-                    )
-                iface2 = node2.ifaces.get(iface2_id)
-                if not iface2:
-                    raise CoreError(
-                        f"node({node2.name}) missing interface({iface2_id})"
-                    )
-                if iface1.net != iface2.net:
-                    raise CoreError(
-                        f"node1({node1.name}) node2({node2.name}) "
-                        "not connected to same net"
-                    )
-                iface1.config(options)
-                if not options.unidirectional:
-                    iface2.config(options)
-            elif isinstance(node1, CoreNodeBase) and isinstance(node2, CoreNetworkBase):
-                iface = node1.get_iface(iface1_id)
-                if iface.net != node2:
-                    raise CoreError(
-                        f"node1({node1.name}) iface1({iface1_id})"
-                        f" is not linked to node1({node2.name})"
-                    )
-                iface.config(options)
-            elif isinstance(node2, CoreNodeBase) and isinstance(node1, CoreNetworkBase):
-                iface = node2.get_iface(iface2_id)
-                if iface.net != node1:
-                    raise CoreError(
-                        f"node2({node2.name}) iface2({iface2_id})"
-                        f" is not linked to node1({node1.name})"
-                    )
-                iface.config(options)
-            elif isinstance(node1, CoreNetworkBase) and isinstance(
-                node2, CoreNetworkBase
-            ):
-                iface = node1.get_linked_iface(node2)
-                if not iface:
-                    iface = node2.get_linked_iface(node1)
-                if iface:
-                    use_local = iface.net == node1
-                    iface.config(options, use_local=use_local)
-                    if not options.unidirectional:
-                        iface.config(options, use_local=not use_local)
-                else:
-                    raise CoreError(
-                        f"node1({node1.name}) and node2({node2.name}) are not linked"
-                    )
-            else:
-                raise CoreError(
-                    f"cannot update link node1({type(node1)}) node2({type(node2)})"
-                )
+        iface1 = node1.get_iface(iface1_id) if iface1_id is not None else None
+        iface2 = node2.get_iface(iface2_id) if iface2_id is not None else None
+        core_link = self.link_manager.get_link(node1, iface1, node2, iface2)
+        if not core_link:
+            raise CoreError(
+                f"there is no link for node({node1.name}):interface({iface1_id}) "
+                f"node({node2.name}):interface({iface2_id})"
+            )
+        if iface1:
+            iface1.options.update(options)
+            iface1.set_config()
+        if iface2 and not options.unidirectional:
+            iface2.options.update(options)
+            iface2.set_config()
 
     def next_node_id(self) -> int:
         """
@@ -502,103 +475,55 @@ class Session:
         return _id
 
     def add_node(
-        self, _class: Type[NT], _id: int = None, options: NodeOptions = None
+        self,
+        _class: Type[NT],
+        _id: int = None,
+        name: str = None,
+        server: str = None,
+        position: Position = None,
+        options: NodeOptions = None,
     ) -> NT:
         """
         Add a node to the session, based on the provided node data.
 
         :param _class: node class to create
         :param _id: id for node, defaults to None for generated id
-        :param options: data to create node with
+        :param name: name to assign to node
+        :param server: distributed server for node, if desired
+        :param position: geo or x/y/z position to set
+        :param options: options to create node with
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
         # set node start based on current session state, override and check when rj45
         start = self.state.should_start()
-        enable_rj45 = self.options.get_config("enablerj45") == "1"
+        enable_rj45 = self.options.get_int("enablerj45") == 1
         if _class == Rj45Node and not enable_rj45:
             start = False
-
-        # determine node id
-        if not _id:
-            _id = self.next_node_id()
-
-        # generate name if not provided
-        if not options:
-            options = NodeOptions()
-            options.set_position(0, 0)
-        name = options.name
-        if not name:
-            name = f"{_class.__name__}{_id}"
-
+        # generate options if not provided
+        options = options if options else _class.create_options()
         # verify distributed server
-        server = self.distributed.servers.get(options.server)
-        if options.server is not None and server is None:
-            raise CoreError(f"invalid distributed server: {options.server}")
-
+        dist_server = None
+        if server is not None:
+            dist_server = self.distributed.servers.get(server)
+            if not dist_server:
+                raise CoreError(f"invalid distributed server: {server}")
         # create node
-        logger.info(
-            "creating node(%s) id(%s) name(%s) start(%s)",
-            _class.__name__,
-            _id,
-            name,
-            start,
-        )
-        kwargs = dict(_id=_id, name=name, server=server)
-        if _class in CONTAINER_NODES:
-            kwargs["image"] = options.image
-        node = self.create_node(_class, start, **kwargs)
-
-        # set node attributes
-        node.icon = options.icon
-        node.canvas = options.canvas
-
-        # set node position and broadcast it
-        has_geo = all(i is not None for i in [options.lon, options.lat, options.alt])
-        if has_geo:
-            self.set_node_geo(node, options.lon, options.lat, options.alt)
+        node = self.create_node(_class, start, _id, name, dist_server, options)
+        # set node position
+        position = position or Position()
+        if position.has_geo():
+            self.set_node_geo(node, position.lon, position.lat, position.alt)
         else:
-            self.set_node_pos(node, options.x, options.y)
-
-        # add services to needed nodes
-        if isinstance(node, (CoreNode, PhysicalNode)):
-            node.type = options.model
-            if options.legacy or options.services:
-                logger.debug("set node type: %s", node.type)
-                self.services.add_services(node, node.type, options.services)
-
-            # add config services
-            config_services = options.config_services
-            if not options.legacy and not config_services and not node.services:
-                config_services = self.services.default_services.get(node.type, [])
-            logger.info("setting node config services: %s", config_services)
-            for name in config_services:
-                service_class = self.service_manager.get_service(name)
-                node.add_config_service(service_class)
-
-        # set network mtu, if configured
-        mtu = self.options.get_config_int("mtu")
-        if isinstance(node, CoreNetworkBase) and mtu > 0:
-            node.mtu = mtu
-
-        # ensure default emane configuration
-        if isinstance(node, EmaneNet) and options.emane:
-            model_class = self.emane.get_model(options.emane)
-            node.model = model_class(self, node.id)
-            if self.state == EventTypes.RUNTIME_STATE:
-                self.emane.add_node(node)
-
-        # set default wlan config if needed
+            self.set_node_pos(node, position.x, position.y)
+        # setup default wlan
         if isinstance(node, WlanNode):
-            self.mobility.set_model_config(_id, BasicRangeModel.name)
-
-        # boot nodes after runtime CoreNodes and PhysicalNodes
-        is_boot_node = isinstance(node, (CoreNode, PhysicalNode))
-        if self.state == EventTypes.RUNTIME_STATE and is_boot_node:
-            self.write_nodes()
+            self.mobility.set_model_config(self.id, BasicRangeModel.name)
+        # boot core nodes after runtime
+        is_runtime = self.state == EventTypes.RUNTIME_STATE
+        if is_runtime and isinstance(node, CoreNode):
             self.add_remove_control_iface(node, remove=False)
             self.boot_node(node)
-
         self.sdt.add_node(node)
         return node
 
@@ -617,26 +542,6 @@ class Session:
         node.setposition(x, y, None)
         node.position.set_geo(lon, lat, alt)
         self.sdt.edit_node(node, lon, lat, alt)
-
-    def start_mobility(self, node_ids: List[int] = None) -> None:
-        """
-        Start mobility for the provided node ids.
-
-        :param node_ids: nodes to start mobility for
-        :return: nothing
-        """
-        self.mobility.startup(node_ids)
-
-    def is_active(self) -> bool:
-        """
-        Determine if this session is considered to be active.
-        (Runtime or Data collect states)
-
-        :return: True if active, False otherwise
-        """
-        result = self.state in {EventTypes.RUNTIME_STATE, EventTypes.DATACOLLECT_STATE}
-        logger.info("session(%s) checking if active: %s", self.id, result)
-        return result
 
     def open_xml(self, file_path: Path, start: bool = False) -> None:
         """
@@ -693,28 +598,6 @@ class Session:
             logger.info("immediately running new state hook")
             self.run_hook(hook)
 
-    def add_node_file(
-        self,
-        node_id: int,
-        src_path: Optional[Path],
-        file_path: Path,
-        data: Optional[str],
-    ) -> None:
-        """
-        Add a file to a node.
-
-        :param node_id: node to add file to
-        :param src_path: source file path
-        :param file_path: file path to add
-        :param data: file data
-        :return: nothing
-        """
-        node = self.get_node(node_id, CoreNode)
-        if src_path is not None:
-            node.copy_file(src_path, file_path)
-        elif data is not None:
-            node.create_file(file_path, data)
-
     def clear(self) -> None:
         """
         Clear all CORE session data. (nodes, hooks, etc)
@@ -723,6 +606,7 @@ class Session:
         """
         self.emane.shutdown()
         self.delete_nodes()
+        self.link_manager.reset()
         self.distributed.shutdown()
         self.hooks.clear()
         self.emane.reset()
@@ -731,23 +615,6 @@ class Session:
         self.services.reset()
         self.mobility.config_reset()
         self.link_colors.clear()
-
-    def start_events(self) -> None:
-        """
-        Start event loop.
-
-        :return: nothing
-        """
-        self.event_loop.run()
-
-    def mobility_event(self, event_data: EventData) -> None:
-        """
-        Handle a mobility event.
-
-        :param event_data: event data to handle
-        :return: nothing
-        """
-        self.mobility.handleevent(event_data)
 
     def set_location(self, lat: float, lon: float, alt: float, scale: float) -> None:
         """
@@ -776,7 +643,7 @@ class Session:
             # shutdown sdt
             self.sdt.shutdown()
         # remove this sessions working directory
-        preserve = self.options.get_config("preservedir") == "1"
+        preserve = self.options.get_int("preservedir") == 1
         if not preserve:
             shutil.rmtree(self.directory, ignore_errors=True)
 
@@ -814,8 +681,6 @@ class Session:
         :param source: source of broadcast, None by default
         :return: nothing
         """
-        if not node.apitype:
-            return
         node_data = NodeData(node=node, message_type=message_type, source=source)
         for handler in self.node_handlers:
             handler(node_data)
@@ -863,26 +728,11 @@ class Session:
         self.state = state
         self.state_time = time.monotonic()
         logger.info("changing session(%s) to state %s", self.id, state.name)
-        self.write_state(state)
         self.run_hooks(state)
         self.run_state_hooks(state)
         if send_event:
             event_data = EventData(event_type=state, time=str(time.monotonic()))
             self.broadcast_event(event_data)
-
-    def write_state(self, state: EventTypes) -> None:
-        """
-        Write the state to a state file in the session dir.
-
-        :param state: state to write to file
-        :return: nothing
-        """
-        state_file = self.directory / "state"
-        try:
-            with state_file.open("w") as f:
-                f.write(f"{state.value} {state.name}\n")
-        except IOError:
-            logger.exception("error writing state file: %s", state.name)
 
     def run_hooks(self, state: EventTypes) -> None:
         """
@@ -1007,15 +857,14 @@ class Session:
             env["SESSION_STATE"] = str(self.state)
         # try reading and merging optional environments from:
         # /etc/core/environment
-        # /home/user/.core/environment
+        # /home/user/.coregui/environment
         # /tmp/pycore.<session id>/environment
         core_env_path = constants.CORE_CONF_DIR / "environment"
         session_env_path = self.directory / "environment"
         if self.user:
             user_home_path = Path(f"~{self.user}").expanduser()
-            user_env1 = user_home_path / ".core" / "environment"
-            user_env2 = user_home_path / ".coregui" / "environment"
-            paths = [core_env_path, user_env1, user_env2, session_env_path]
+            user_env = user_home_path / ".coregui" / "environment"
+            paths = [core_env_path, user_env, session_env_path]
         else:
             paths = [core_env_path, session_env_path]
         for path in paths:
@@ -1026,21 +875,6 @@ class Session:
                     logger.exception("error reading environment file: %s", path)
         return env
 
-    def set_thumbnail(self, thumb_file: Path) -> None:
-        """
-        Set the thumbnail filename. Move files from /tmp to session dir.
-
-        :param thumb_file: tumbnail file to set for session
-        :return: nothing
-        """
-        if not thumb_file.is_file():
-            logger.error("thumbnail file to set does not exist: %s", thumb_file)
-            self.thumbnail = None
-            return
-        dst_path = self.directory / thumb_file.name
-        shutil.copy(thumb_file, dst_path)
-        self.thumbnail = dst_path
-
     def set_user(self, user: str) -> None:
         """
         Set the username for this session. Update the permissions of the
@@ -1049,34 +883,48 @@ class Session:
         :param user: user to give write permissions to for the session directory
         :return: nothing
         """
-        if user:
-            try:
-                uid = pwd.getpwnam(user).pw_uid
-                gid = self.directory.stat().st_gid
-                os.chown(self.directory, uid, gid)
-            except IOError:
-                logger.exception("failed to set permission on %s", self.directory)
         self.user = user
+        try:
+            uid = pwd.getpwnam(user).pw_uid
+            gid = self.directory.stat().st_gid
+            os.chown(self.directory, uid, gid)
+        except IOError:
+            logger.exception("failed to set permission on %s", self.directory)
 
     def create_node(
-        self, _class: Type[NT], start: bool, *args: Any, **kwargs: Any
+        self,
+        _class: Type[NT],
+        start: bool,
+        _id: int = None,
+        name: str = None,
+        server: str = None,
+        options: NodeOptions = None,
     ) -> NT:
         """
         Create an emulation node.
 
         :param _class: node class to create
         :param start: True to start node, False otherwise
-        :param args: list of arguments for the class to create
-        :param kwargs: dictionary of arguments for the class to create
+        :param _id: id for node, defaults to None for generated id
+        :param name: name to assign to node
+        :param server: distributed server for node, if desired
+        :param options: options to create node with
         :return: the created node instance
         :raises core.CoreError: when id of the node to create already exists
         """
         with self.nodes_lock:
-            node = _class(self, *args, **kwargs)
+            node = _class(self, _id=_id, name=name, server=server, options=options)
             if node.id in self.nodes:
                 node.shutdown()
                 raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
+        logger.info(
+            "created node(%s) id(%s) name(%s) start(%s)",
+            _class.__name__,
+            node.id,
+            node.name,
+            start,
+        )
         if start:
             node.startup()
         return node
@@ -1133,20 +981,6 @@ class Session:
         for node_id in nodes_ids:
             self.sdt.delete_node(node_id)
 
-    def write_nodes(self) -> None:
-        """
-        Write nodes to a 'nodes' file in the session dir.
-        The 'nodes' file lists: number, name, api-type, class-type
-        """
-        file_path = self.directory / "nodes"
-        try:
-            with self.nodes_lock:
-                with file_path.open("w") as f:
-                    for _id, node in self.nodes.items():
-                        f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
-        except IOError:
-            logger.exception("error writing nodes file")
-
     def exception(
         self, level: ExceptionLevels, source: str, text: str, node_id: int = None
     ) -> None:
@@ -1180,8 +1014,6 @@ class Session:
         if self.state == EventTypes.RUNTIME_STATE:
             logger.warning("ignoring instantiate, already in runtime state")
             return []
-        # write current nodes out to session directory file
-        self.write_nodes()
         # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
@@ -1194,6 +1026,10 @@ class Session:
         # boot node services and then start mobility
         exceptions = self.boot_nodes()
         if not exceptions:
+            # complete wireless node
+            for node in self.nodes.values():
+                if isinstance(node, WirelessNode):
+                    node.post_startup()
             self.mobility.startup()
             # notify listeners that instantiation is complete
             event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
@@ -1293,7 +1129,7 @@ class Session:
             funcs = []
             start = time.monotonic()
             for node in self.nodes.values():
-                if isinstance(node, (CoreNode, PhysicalNode)):
+                if isinstance(node, CoreNode):
                     self.add_remove_control_iface(node, remove=False)
                     funcs.append((self.boot_node, (node,), {}))
             results, exceptions = utils.threadpool(funcs)
@@ -1309,11 +1145,11 @@ class Session:
 
         :return: control net prefix list
         """
-        p = self.options.get_config("controlnet")
-        p0 = self.options.get_config("controlnet0")
-        p1 = self.options.get_config("controlnet1")
-        p2 = self.options.get_config("controlnet2")
-        p3 = self.options.get_config("controlnet3")
+        p = self.options.get("controlnet")
+        p0 = self.options.get("controlnet0")
+        p1 = self.options.get("controlnet1")
+        p2 = self.options.get("controlnet2")
+        p3 = self.options.get("controlnet3")
         if not p0 and p:
             p0 = p
         return [p0, p1, p2, p3]
@@ -1324,12 +1160,12 @@ class Session:
 
         :return: list of control net server interfaces
         """
-        d0 = self.options.get_config("controlnetif0")
+        d0 = self.options.get("controlnetif0")
         if d0:
             logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.options.get_config("controlnetif1")
-        d2 = self.options.get_config("controlnetif2")
-        d3 = self.options.get_config("controlnetif3")
+        d1 = self.options.get("controlnetif1")
+        d2 = self.options.get("controlnetif2")
+        d3 = self.options.get("controlnetif3")
         return [None, d1, d2, d3]
 
     def get_control_net_index(self, dev: str) -> int:
@@ -1404,9 +1240,8 @@ class Session:
 
         # use the updown script for control net 0 only.
         updown_script = None
-
         if net_index == 0:
-            updown_script = self.options.get_config("controlnet_updown_script")
+            updown_script = self.options.get("controlnet_updown_script") or None
             if not updown_script:
                 logger.debug("controlnet updown script not configured")
 
@@ -1429,21 +1264,18 @@ class Session:
             updown_script,
             server_iface,
         )
-        control_net = self.create_node(
-            CtrlNet,
-            start=False,
-            prefix=prefix,
-            _id=_id,
-            updown_script=updown_script,
-            serverintf=server_iface,
-        )
+        options = CtrlNet.create_options()
+        options.prefix = prefix
+        options.updown_script = updown_script
+        options.serverintf = server_iface
+        control_net = self.create_node(CtrlNet, False, _id, options=options)
         control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
         control_net.startup()
         return control_net
 
     def add_remove_control_iface(
         self,
-        node: Union[CoreNode, PhysicalNode],
+        node: CoreNode,
         net_index: int = 0,
         remove: bool = False,
         conf_required: bool = True,
@@ -1480,7 +1312,8 @@ class Session:
                 ip4_mask=ip4_mask,
                 mtu=DEFAULT_MTU,
             )
-            iface = node.new_iface(control_net, iface_data)
+            iface = node.create_iface(iface_data)
+            control_net.attach(iface)
             iface.control = True
         except ValueError:
             msg = f"Control interface not added to node {node.id}. "
@@ -1498,7 +1331,7 @@ class Session:
         :param remove: flag to check if it should be removed
         :return: nothing
         """
-        if not self.options.get_config_bool("update_etc_hosts", default=False):
+        if not self.options.get_bool("update_etc_hosts", False):
             return
 
         try:

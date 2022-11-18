@@ -66,7 +66,6 @@ class NrlSmf(ConfigService):
     modes: Dict[str, Dict[str, str]] = {}
 
     def data(self) -> Dict[str, Any]:
-        has_arouted = "arouted" in self.node.config_services
         has_nhdp = "NHDP" in self.node.config_services
         has_olsr = "OLSR" in self.node.config_services
         ifnames = []
@@ -78,11 +77,7 @@ class NrlSmf(ConfigService):
                 ip4_prefix = f"{ip4.ip}/{24}"
                 break
         return dict(
-            has_arouted=has_arouted,
-            has_nhdp=has_nhdp,
-            has_olsr=has_olsr,
-            ifnames=ifnames,
-            ip4_prefix=ip4_prefix,
+            has_nhdp=has_nhdp, has_olsr=has_olsr, ifnames=ifnames, ip4_prefix=ip4_prefix
         )
 
 
@@ -167,27 +162,3 @@ class MgenActor(ConfigService):
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: List[Configuration] = []
     modes: Dict[str, Dict[str, str]] = {}
-
-
-class Arouted(ConfigService):
-    name: str = "arouted"
-    group: str = GROUP
-    directories: List[str] = []
-    files: List[str] = ["startarouted.sh"]
-    executables: List[str] = ["arouted"]
-    dependencies: List[str] = []
-    startup: List[str] = ["bash startarouted.sh"]
-    validate: List[str] = ["pidof arouted"]
-    shutdown: List[str] = ["pkill arouted"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
-    default_configs: List[Configuration] = []
-    modes: Dict[str, Dict[str, str]] = {}
-
-    def data(self) -> Dict[str, Any]:
-        ip4_prefix = None
-        for iface in self.node.get_ifaces(control=False):
-            ip4 = iface.get_ip4()
-            if ip4:
-                ip4_prefix = f"{ip4.ip}/{24}"
-                break
-        return dict(ip4_prefix=ip4_prefix)

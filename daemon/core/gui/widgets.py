@@ -257,6 +257,13 @@ class CodeText(ttk.Frame):
         yscrollbar.grid(row=0, column=1, sticky=tk.NS)
         self.text.configure(yscrollcommand=yscrollbar.set)
 
+    def get_text(self) -> str:
+        return self.text.get(1.0, tk.END)
+
+    def set_text(self, text: str) -> None:
+        self.text.delete(1.0, tk.END)
+        self.text.insert(tk.END, text.rstrip())
+
 
 class Spinbox(ttk.Entry):
     def __init__(self, master: tk.BaseWidget = None, **kwargs: Any) -> None:

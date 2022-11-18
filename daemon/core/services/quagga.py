@@ -6,14 +6,24 @@ from typing import Optional, Tuple
 import netaddr
 
 from core.emane.nodes import EmaneNet
-from core.emulator.enumerations import LinkTypes
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 QUAGGA_STATE_DIR: str = "/var/run/quagga"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 class Zebra(CoreService):
@@ -124,11 +134,11 @@ class Zebra(CoreService):
         """
         Generate a shell script used to boot the Quagga daemons.
         """
-        quagga_bin_search = node.session.options.get_config(
-            "quagga_bin_search", default='"/usr/local/bin /usr/bin /usr/lib/quagga"'
+        quagga_bin_search = node.session.options.get(
+            "quagga_bin_search", '"/usr/local/bin /usr/bin /usr/lib/quagga"'
         )
-        quagga_sbin_search = node.session.options.get_config(
-            "quagga_sbin_search", default='"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
+        quagga_sbin_search = node.session.options.get(
+            "quagga_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/quagga"'
         )
         return """\
 #!/bin/sh
@@ -431,7 +441,7 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generate_quagga_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         cfg = cls.mtu_check(iface)
-        if iface.net is not None and isinstance(iface.net, (WlanNode, EmaneNet)):
+        if is_wireless(iface.net):
             return (
                 cfg
                 + """\
@@ -542,7 +552,7 @@ class Babel(QuaggaService):
 
     @classmethod
     def generate_quagga_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        if iface.net and iface.net.linktype == LinkTypes.WIRELESS:
+        if is_wireless(iface.net):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"

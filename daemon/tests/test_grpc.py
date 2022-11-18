@@ -8,7 +8,7 @@ import grpc
 import pytest
 from mock import patch
 
-from core.api.grpc import core_pb2, wrappers
+from core.api.grpc import wrappers
 from core.api.grpc.client import CoreGrpcClient, InterfaceHelper, MoveNodesStreamer
 from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
@@ -22,6 +22,7 @@ from core.api.grpc.wrappers import (
     Link,
     LinkOptions,
     MobilityAction,
+    MoveNodesRequest,
     Node,
     NodeServiceData,
     NodeType,
@@ -31,12 +32,10 @@ from core.api.grpc.wrappers import (
     SessionLocation,
     SessionState,
 )
-from core.api.tlv.dataconversion import ConfigShim
-from core.api.tlv.enumerations import ConfigFlags
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, IpPrefixes, NodeData, NodeOptions
-from core.emulator.enumerations import EventTypes, ExceptionLevels
+from core.emulator.data import EventData, IpPrefixes, NodeData
+from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode
@@ -163,7 +162,7 @@ class TestGrpc:
             real_node1, service_name, service_file
         )
         assert service_file.data == service_file_data
-        assert option_value == real_session.options.get_config(option_key)
+        assert option_value == real_session.options.get(option_key)
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(
@@ -351,8 +350,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        options = NodeOptions(model="Host")
-        node = session.add_node(CoreNode, options=options)
+        node = session.add_node(CoreNode)
         session.instantiate()
         expected_output = "hello world"
         expected_status = 0
@@ -370,8 +368,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        options = NodeOptions(model="Host")
-        node = session.add_node(CoreNode, options=options)
+        node = session.add_node(CoreNode)
         session.instantiate()
 
         # then
@@ -415,7 +412,7 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        assert len(switch.links()) == 0
+        assert len(session.link_manager.links()) == 0
         iface = InterfaceHelper("10.0.0.0/24").create_iface(node.id, 0)
         link = Link(node.id, switch.id, iface1=iface)
 
@@ -425,7 +422,7 @@ class TestGrpc:
 
         # then
         assert result is True
-        assert len(switch.links()) == 1
+        assert len(session.link_manager.links()) == 1
         assert iface1.id == iface.id
         assert iface1.ip4 == iface.ip4
 
@@ -445,13 +442,14 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
         switch = session.add_node(SwitchNode)
         node = session.add_node(CoreNode)
-        iface = ip_prefixes.create_iface(node)
-        session.add_link(node.id, switch.id, iface)
+        iface_data = ip_prefixes.create_iface(node)
+        iface, _ = session.add_link(node.id, switch.id, iface_data)
+        session.instantiate()
         options = LinkOptions(bandwidth=30000)
-        link = switch.links()[0]
-        assert options.bandwidth != link.options.bandwidth
+        assert iface.options.bandwidth != options.bandwidth
         link = Link(node.id, switch.id, iface1=Interface(id=iface.id), options=options)
 
         # then
@@ -460,8 +458,7 @@ class TestGrpc:
 
         # then
         assert result is True
-        link = switch.links()[0]
-        assert options.bandwidth == link.options.bandwidth
+        assert options.bandwidth == iface.options.bandwidth
 
     def test_delete_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
         # given
@@ -472,13 +469,7 @@ class TestGrpc:
         node2 = session.add_node(CoreNode)
         iface2 = ip_prefixes.create_iface(node2)
         session.add_link(node1.id, node2.id, iface1, iface2)
-        link_node = None
-        for node_id in session.nodes:
-            node = session.nodes[node_id]
-            if node.id not in {node1.id, node2.id}:
-                link_node = node
-                break
-        assert len(link_node.links()) == 1
+        assert len(session.link_manager.links()) == 1
         link = Link(
             node1.id,
             node2.id,
@@ -492,7 +483,7 @@ class TestGrpc:
 
         # then
         assert result is True
-        assert len(link_node.links()) == 0
+        assert len(session.link_manager.links()) == 0
 
     def test_get_wlan_config(self, grpc_server: CoreGrpcServer):
         # given
@@ -537,14 +528,15 @@ class TestGrpc:
         assert result is True
         config = session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[range_key] == range_value
-        assert wlan.model.range == int(range_value)
+        assert wlan.wireless_model.range == int(range_value)
 
     def test_set_emane_model_config(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
         emane_network = session.add_node(EmaneNet, options=options)
         session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
         config_key = "bandwidth"
@@ -574,7 +566,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_location(47.57917, -122.13232, 2.00000, 1.0)
-        options = NodeOptions(emane=EmaneIeee80211abgModel.name)
+        options = EmaneNet.create_options()
+        options.emane_model = EmaneIeee80211abgModel.name
         emane_network = session.add_node(EmaneNet, options=options)
         session.emane.node_models[emane_network.id] = EmaneIeee80211abgModel.name
 
@@ -651,16 +644,16 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        node_type = "test"
+        model = "test"
         services = ["SSH"]
 
         # then
         with client.context_connect():
-            result = client.set_service_defaults(session.id, {node_type: services})
+            result = client.set_service_defaults(session.id, {model: services})
 
         # then
         assert result is True
-        assert session.services.default_services[node_type] == services
+        assert session.services.default_services[model] == services
 
     def test_get_node_service(self, grpc_server: CoreGrpcServer):
         # given
@@ -694,7 +687,8 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        options = NodeOptions(legacy=True)
+        options = CoreNode.create_options()
+        options.legacy = True
         node = session.add_node(CoreNode, options=options)
         service_name = "DefaultRoute"
 
@@ -757,9 +751,11 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         wlan = session.add_node(WlanNode)
         node = session.add_node(CoreNode)
-        iface = ip_prefixes.create_iface(node)
-        session.add_link(node.id, wlan.id, iface)
-        link_data = wlan.links()[0]
+        iface_data = ip_prefixes.create_iface(node)
+        session.add_link(node.id, wlan.id, iface_data)
+        core_link = list(session.link_manager.links())[0]
+        link_data = core_link.get_data(MessageFlags.ADD)
+
         queue = Queue()
 
         def handle_event(event: Event) -> None:
@@ -816,30 +812,6 @@ class TestGrpc:
                 event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
             )
             session.broadcast_event(event_data)
-
-            # then
-            queue.get(timeout=5)
-
-    def test_config_events(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        queue = Queue()
-
-        def handle_event(event: Event) -> None:
-            assert event.session_id == session.id
-            assert event.config_event is not None
-            queue.put(event)
-
-        # then
-        with client.context_connect():
-            client.events(session.id, handle_event)
-            time.sleep(0.1)
-            session_config = session.options.get_configs()
-            config_data = ConfigShim.config_data(
-                0, None, ConfigFlags.UPDATE.value, session.options, session_config
-            )
-            session.broadcast_config(config_data)
 
             # then
             queue.get(timeout=5)
@@ -950,7 +922,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         streamer = MoveNodesStreamer(session.id)
-        request = core_pb2.MoveNodesRequest()
+        request = MoveNodesRequest(session.id + 1, 1)
         streamer.send(request)
         streamer.stop()
 
@@ -958,3 +930,27 @@ class TestGrpc:
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
                 client.move_nodes(streamer)
+
+    def test_wlan_link(self, grpc_server: CoreGrpcServer, ip_prefixes: IpPrefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        wlan = session.add_node(WlanNode)
+        node1 = session.add_node(CoreNode)
+        node2 = session.add_node(CoreNode)
+        iface1_data = ip_prefixes.create_iface(node1)
+        iface2_data = ip_prefixes.create_iface(node2)
+        session.add_link(node1.id, wlan.id, iface1_data)
+        session.add_link(node2.id, wlan.id, iface2_data)
+        session.instantiate()
+        assert len(session.link_manager.links()) == 2
+
+        # when
+        with client.context_connect():
+            result1 = client.wlan_link(session.id, wlan.id, node1.id, node2.id, True)
+            result2 = client.wlan_link(session.id, wlan.id, node1.id, node2.id, False)
+
+        # then
+        assert result1 is True
+        assert result2 is True

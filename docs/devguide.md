@@ -5,7 +5,7 @@
 
 ## Repository Overview
 
-The CORE source consists of several different programming languages for
+The CORE source consists of several programming languages for
 historical reasons. Current development focuses on the Python modules and
 daemon. Here is a brief description of the source directories.
 
@@ -13,7 +13,6 @@ daemon. Here is a brief description of the source directories.
 |-----------|--------------------------------------------------------------------------------------|
 | daemon    | Python CORE daemon/gui code that handles receiving API calls and creating containers |
 | docs      | Markdown Documentation currently hosted on GitHub                                    |
-| gui       | Tcl/Tk GUI                                                                           |
 | man       | Template files for creating man pages for various CORE command line utilities        |
 | netns     | C program for creating CORE containers                                               |
 
@@ -58,7 +57,7 @@ sudo core-daemon
 # run python gui
 core-pygui
 
-# run tcl gui
+# run gui
 core-gui
 
 # run mocked unit tests

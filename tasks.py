@@ -14,7 +14,7 @@ from invoke import task, Context
 
 DAEMON_DIR: str = "daemon"
 DEFAULT_PREFIX: str = "/usr/local"
-OSPFMDR_CHECKOUT: str = "f21688cdcac30fb10b1ebac0063eb24e4583e9b4"
+OSPFMDR_CHECKOUT: str = "63f07596268873aeff86f252cbc27901369ad50a"
 REDHAT_LIKE = {
     "redhat",
     "fedora",
@@ -23,6 +23,10 @@ DEBIAN_LIKE = {
     "ubuntu",
     "debian",
 }
+SUDOP: str = "sudo -E env PATH=$PATH"
+VENV_PATH: str = "/opt/core/venv"
+VENV_PYTHON: str = f"{VENV_PATH}/bin/python"
+ACTIVATE_VENV: str = f". {VENV_PATH}/bin/activate"
 
 
 class Progress:
@@ -110,14 +114,12 @@ class OsInfo:
         return OsInfo(os_name, os_like, version)
 
 
-def get_python(c: Context, warn: bool = False) -> str:
-    with c.cd(DAEMON_DIR):
-        r = c.run("poetry env info -p", warn=warn, hide=True)
-        if r.ok:
-            venv = r.stdout.strip()
-            return os.path.join(venv, "bin", "python")
-        else:
-            return ""
+def get_env_python() -> str:
+    return os.environ.get("PYTHON", "python3")
+
+
+def get_env_python_dep() -> str:
+    return os.environ.get("PYTHON_DEP", "python3")
 
 
 def get_pytest(c: Context) -> str:
@@ -148,27 +150,37 @@ def get_os(install_type: Optional[str]) -> OsInfo:
 
 def check_existing_core(c: Context, hide: bool) -> None:
     if c.run("python -c \"import core\"", warn=True, hide=hide):
-        raise SystemError("existing python2 core installation detected, please remove")
-    if c.run("python3 -c \"import core\"", warn=True, hide=hide):
-        raise SystemError("existing python3 core installation detected, please remove")
+        raise SystemError("existing python core installation detected, please remove")
+    python_bin = get_env_python()
+    if c.run(f"{python_bin} -c \"import core\"", warn=True, hide=hide):
+        raise SystemError(
+            f"existing {python_bin} core installation detected, please remove"
+        )
     if c.run("which core-daemon", warn=True, hide=hide):
         raise SystemError("core scripts found, please remove old installation")
 
 
-def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
+def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> None:
+    python_dep = get_env_python_dep()
     if os_info.like == OsLike.DEBIAN:
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev nftables "
-            "iproute2 ethtool tk python3-tk bash",
+            f"iproute2 ethtool tk bash",
             hide=hide
         )
+        if not no_python:
+            c.run(f"sudo apt install -y {python_dep}-tk", hide=hide)
     elif os_info.like == OsLike.REDHAT:
         c.run(
             "sudo yum install -y automake pkgconf-pkg-config gcc gcc-c++ "
-            "libev-devel nftables iproute python3-devel python3-tkinter "
-            "tk ethtool make bash",
-            hide=hide
+            f"libev-devel nftables iproute tk ethtool make bash",
+            hide=hide,
         )
+        if not no_python:
+            c.run(
+                f"sudo yum install -y {python_dep}-devel {python_dep}-tkinter ",
+                hide=hide,
+            )
         # centos 8+ does not support netem by default
         if os_info.name == OsName.CENTOS and os_info.version >= 8:
             c.run("sudo yum install -y kernel-modules-extra", hide=hide)
@@ -180,8 +192,9 @@ def install_system(c: Context, os_info: OsInfo, hide: bool) -> None:
 
 
 def install_grpcio(c: Context, hide: bool) -> None:
+    python_bin = get_env_python()
     c.run(
-        "python3 -m pip install --user grpcio==1.27.2 grpcio-tools==1.27.2",
+        f"{python_bin} -m pip install --user grpcio==1.49.1 grpcio-tools==1.49.1",
         hide=hide,
     )
 
@@ -197,16 +210,19 @@ def install_core(c: Context, hide: bool) -> None:
 
 
 def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
+    python_bin = get_env_python()
     if local:
         with c.cd(DAEMON_DIR):
             c.run("poetry build -f wheel", hide=hide)
-            c.run("sudo python3 -m pip install dist/*")
+        c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
         args = "" if dev else "--no-dev"
         with c.cd(DAEMON_DIR):
-            c.run(f"poetry install {args}", hide=hide)
+            c.run("sudo mkdir -p /opt/core", hide=hide)
+            c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
+            c.run(f"{ACTIVATE_VENV} && {SUDOP} poetry install {args}", hide=hide)
             if dev:
-                c.run("poetry run pre-commit install", hide=hide)
+                c.run(f"{ACTIVATE_VENV} && poetry run pre-commit install", hide=hide)
 
 
 def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
@@ -268,34 +284,14 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     install core files (scripts, examples, and configuration)
     """
     hide = not verbose
-    python = get_python(c)
     bin_dir = Path(prefix).joinpath("bin")
-    # install scripts
-    for script in Path("daemon/scripts").iterdir():
-        dest = bin_dir.joinpath(script.name)
-        with open(script, "r") as f:
-            lines = f.readlines()
-        first = lines[0].strip()
-        # modify python scripts to point to virtual environment
-        if not local and first == "#!/usr/bin/env python3":
-            lines[0] = f"#!{python}\n"
-            temp = NamedTemporaryFile("w", delete=False)
-            for line in lines:
-                temp.write(line)
-            temp.close()
-            c.run(f"sudo cp {temp.name} {dest}", hide=hide)
-            c.run(f"sudo chmod 755 {dest}", hide=hide)
-            os.unlink(temp.name)
-        # copy normal links
-        else:
-            c.run(f"sudo cp {script} {dest}", hide=hide)
     # setup core python helper
     if not local:
         core_python = bin_dir.joinpath("core-python")
         temp = NamedTemporaryFile("w", delete=False)
         temp.writelines([
             "#!/bin/bash\n",
-            f'exec "{python}" "$@"\n',
+            f'exec "{VENV_PYTHON}" "$@"\n',
         ])
         temp.close()
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
@@ -304,12 +300,42 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     # install core configuration file
     config_dir = "/etc/core"
     c.run(f"sudo mkdir -p {config_dir}", hide=hide)
-    c.run(f"sudo cp -n daemon/data/core.conf {config_dir}", hide=hide)
-    c.run(f"sudo cp -n daemon/data/logging.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -n package/etc/core.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -n package/etc/logging.conf {config_dir}", hide=hide)
     # install examples
     examples_dir = f"{prefix}/share/core"
     c.run(f"sudo mkdir -p {examples_dir}", hide=hide)
-    c.run(f"sudo cp -r daemon/examples {examples_dir}", hide=hide)
+    c.run(f"sudo cp -r package/examples {examples_dir}", hide=hide)
+
+
+@task(
+    help={
+        "dev": "install development mode",
+        "verbose": "enable verbose",
+        "install-type": "used to force an install type, "
+                        "can be one of the following (redhat, debian)",
+        "no-python": "avoid installing python system dependencies",
+    },
+)
+def build(
+    c,
+    verbose=False,
+    install_type=None,
+    no_python=False,
+):
+    print("setting up to build core packages")
+    c.run("sudo -v", hide=True)
+    p = Progress(verbose)
+    hide = not verbose
+    os_info = get_os(install_type)
+    with p.start("installing system dependencies"):
+        install_system(c, os_info, hide, no_python)
+    with p.start("installing system grpcio-tools"):
+        install_grpcio(c, hide)
+    with p.start("building core"):
+        build_core(c, hide)
+    with p.start(f"building rpm/deb packages"):
+        c.run("make fpm", hide=hide)
 
 
 @task(
@@ -321,6 +347,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
         "ospf": "disable ospf installation",
+        "no-python": "avoid installing python system dependencies",
     },
 )
 def install(
@@ -331,12 +358,16 @@ def install(
     prefix=DEFAULT_PREFIX,
     install_type=None,
     ospf=True,
+    no_python=False,
 ):
     """
     install core, poetry, scripts, service, and ospf mdr
     """
-    print(f"installing core locally: {local}")
-    print(f"installing core with prefix: {prefix}")
+    python_bin = get_env_python()
+    venv_path = None if local else VENV_PATH
+    print(
+        f"installing core using python({python_bin}) venv({venv_path}) prefix({prefix})"
+    )
     c.run("sudo -v", hide=True)
     p = Progress(verbose)
     hide = not verbose
@@ -345,15 +376,14 @@ def install(
         with p.start("checking for old installations"):
             check_existing_core(c, hide)
     with p.start("installing system dependencies"):
-        install_system(c, os_info, hide)
+        install_system(c, os_info, hide, no_python)
     with p.start("installing system grpcio-tools"):
         install_grpcio(c, hide)
     with p.start("building core"):
         build_core(c, hide, prefix)
-    with p.start("installing vcmd/gui"):
+    with p.start("installing vnoded/vcmd"):
         install_core(c, hide)
-    install_type = "core" if local else "core virtual environment"
-    with p.start(f"installing {install_type}"):
+    with p.start(f"installing core"):
         install_poetry(c, dev, local, hide)
     with p.start("installing scripts, examples, and configuration"):
         install_core_files(c, local, hide, prefix)
@@ -381,12 +411,13 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
     p = Progress(verbose)
     hide = not verbose
     os_info = get_os(install_type)
+    python_dep = get_env_python_dep()
     with p.start("installing system dependencies"):
         if os_info.like == OsLike.DEBIAN:
             c.run(
                 "sudo apt install -y gcc g++ automake libtool libxml2-dev "
                 "libprotobuf-dev libpcap-dev libpcre3-dev uuid-dev pkg-config "
-                "protobuf-compiler git python3-protobuf python3-setuptools",
+                f"protobuf-compiler git {python_dep}-protobuf {python_dep}-setuptools",
                 hide=hide,
             )
         elif os_info.like == OsLike.REDHAT:
@@ -395,7 +426,7 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
             c.run(
                 "sudo yum install -y autoconf automake git libtool libxml2-devel "
                 "libpcap-devel pcre-devel libuuid-devel make gcc-c++ protobuf-compiler "
-                "protobuf-devel python3-setuptools",
+                f"protobuf-devel {python_dep}-setuptools",
                 hide=hide,
             )
     emane_dir = "../emane"
@@ -404,10 +435,11 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
     with p.start("cloning emane"):
         c.run(f"git clone {emane_url} {emane_dir}", hide=hide)
     with p.start("setup emane"):
+        python_bin = get_env_python()
         with c.cd(emane_dir):
             c.run(f"git checkout {emane_version}", hide=hide)
             c.run("./autogen.sh", hide=hide)
-            c.run("PYTHON=python3 ./configure --prefix=/usr", hide=hide)
+            c.run(f"PYTHON={python_bin} ./configure --prefix=/usr", hide=hide)
     with p.start("build emane python bindings"):
         with c.cd(str(emane_python_dir)):
             c.run("make -j$(nproc)", hide=hide)
@@ -436,45 +468,39 @@ def uninstall(
     """
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
-    print(f"uninstalling core with prefix: {prefix}")
+    python_bin = get_env_python()
+    venv_path = None if local else VENV_PATH
+    print(
+        f"uninstalling core using python({python_bin}) "
+        f"venv({venv_path}) prefix({prefix})"
+    )
     hide = not verbose
     p = Progress(verbose)
     c.run("sudo -v", hide=True)
     with p.start("uninstalling core"):
         c.run("sudo make uninstall", hide=hide)
-
     with p.start("cleaning build directory"):
         c.run("make clean", hide=hide)
         c.run("./bootstrap.sh clean", hide=hide)
-
-    if local:
-        with p.start("uninstalling core"):
-            c.run("sudo python3 -m pip uninstall -y core", hide=hide)
-    else:
-        python = get_python(c, warn=True)
-        if python:
-            with c.cd(DAEMON_DIR):
-                if dev:
-                    with p.start("uninstalling pre-commit"):
-                        c.run("poetry run pre-commit uninstall", hide=hide)
-                with p.start("uninstalling poetry virtual environment"):
-                    c.run(f"poetry env remove {python}", hide=hide)
-
+    with p.start(f"uninstalling core"):
+        if local:
+            python_bin = get_env_python()
+            c.run(f"sudo {python_bin} -m pip uninstall -y core", hide=hide)
+        else:
+            if Path(VENV_PYTHON).is_file():
+                with c.cd(DAEMON_DIR):
+                    if dev:
+                        c.run(f"{ACTIVATE_VENV} && poetry run pre-commit uninstall", hide=hide)
+                    c.run(f"sudo {VENV_PYTHON} -m pip uninstall -y core", hide=hide)
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
-    with p.start("uninstalling script files"):
-        for script in Path("daemon/scripts").iterdir():
-            dest = bin_dir.joinpath(script.name)
-            c.run(f"sudo rm -f {dest}", hide=hide)
     with p.start("uninstalling examples"):
         examples_dir = Path(prefix).joinpath("share/core")
         c.run(f"sudo rm -rf {examples_dir}")
-
     # remove core-python symlink
     if not local:
         core_python = bin_dir.joinpath("core-python")
         c.run(f"sudo rm -f {core_python}", hide=hide)
-
     # remove service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"

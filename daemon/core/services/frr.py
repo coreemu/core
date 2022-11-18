@@ -7,13 +7,24 @@ from typing import Optional, Tuple
 import netaddr
 
 from core.emane.nodes import EmaneNet
-from core.nodes.base import CoreNode
+from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
+from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
 FRR_STATE_DIR: str = "/var/run/frr"
+
+
+def is_wireless(node: NodeBase) -> bool:
+    """
+    Check if the node is a wireless type node.
+
+    :param node: node to check type for
+    :return: True if wireless type, False otherwise
+    """
+    return isinstance(node, (WlanNode, EmaneNet, WirelessNode))
 
 
 class FRRZebra(CoreService):
@@ -127,11 +138,11 @@ class FRRZebra(CoreService):
         """
         Generate a shell script used to boot the FRR daemons.
         """
-        frr_bin_search = node.session.options.get_config(
-            "frr_bin_search", default='"/usr/local/bin /usr/bin /usr/lib/frr"'
+        frr_bin_search = node.session.options.get(
+            "frr_bin_search", '"/usr/local/bin /usr/bin /usr/lib/frr"'
         )
-        frr_sbin_search = node.session.options.get_config(
-            "frr_sbin_search", default='"/usr/local/sbin /usr/sbin /usr/lib/frr"'
+        frr_sbin_search = node.session.options.get(
+            "frr_sbin_search", '"/usr/local/sbin /usr/sbin /usr/lib/frr"'
         )
         cfg = """\
 #!/bin/sh
@@ -182,6 +193,10 @@ bootdaemon()
     if [ "$1" = "pimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $FRR_CONF; then
         flags="$flags -6"
+    fi
+
+    if [ "$1" = "ospfd" ]; then
+        flags="$flags --apiserver"
     fi
 
     #force FRR to use CORE generated conf file
@@ -414,12 +429,25 @@ class FRROspfv2(FrrService):
         for iface in node.get_ifaces(control=False):
             for ip4 in iface.ip4s:
                 cfg += f"  network {ip4} area 0\n"
+        cfg += "  ospf opaque-lsa\n"
         cfg += "!\n"
         return cfg
 
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        return cls.mtu_check(iface)
+        cfg = cls.mtu_check(iface)
+        # external RJ45 connections will use default OSPF timers
+        if cls.rj45check(iface):
+            return cfg
+        cfg += cls.ptp_check(iface)
+        return (
+            cfg
+            + """\
+  ip ospf hello-interval 2
+  ip ospf dead-interval 6
+  ip ospf retransmit-interval 5
+"""
+        )
 
 
 class FRROspfv3(FrrService):
@@ -485,18 +513,6 @@ class FRROspfv3(FrrService):
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
         return cls.mtu_check(iface)
-        # cfg = cls.mtucheck(ifc)
-        # external RJ45 connections will use default OSPF timers
-        # if cls.rj45check(ifc):
-        #    return cfg
-        # cfg += cls.ptpcheck(ifc)
-        # return cfg + """\
-
-
-# ipv6 ospf6 hello-interval 2
-#  ipv6 ospf6 dead-interval 6
-#  ipv6 ospf6 retransmit-interval 5
-# """
 
 
 class FRRBgp(FrrService):
@@ -593,7 +609,7 @@ class FRRBabel(FrrService):
 
     @classmethod
     def generate_frr_iface_config(cls, node: CoreNode, iface: CoreInterface) -> str:
-        if iface.net and isinstance(iface.net, (EmaneNet, WlanNode)):
+        if is_wireless(iface.net):
             return "  babel wireless\n  no babel split-horizon\n"
         else:
             return "  babel wired\n  babel split-horizon\n"

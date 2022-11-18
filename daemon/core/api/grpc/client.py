@@ -14,9 +14,17 @@ import grpc
 from core.api.grpc import core_pb2, core_pb2_grpc, emane_pb2, wrappers
 from core.api.grpc.configservices_pb2 import (
     GetConfigServiceDefaultsRequest,
+    GetConfigServiceRenderedRequest,
     GetNodeConfigServiceRequest,
 )
-from core.api.grpc.core_pb2 import ExecuteScriptRequest, GetConfigRequest
+from core.api.grpc.core_pb2 import (
+    ExecuteScriptRequest,
+    GetConfigRequest,
+    GetWirelessConfigRequest,
+    LinkedRequest,
+    WirelessConfigRequest,
+    WirelessLinkedRequest,
+)
 from core.api.grpc.emane_pb2 import (
     EmaneLinkRequest,
     GetEmaneEventChannelRequest,
@@ -43,17 +51,19 @@ from core.api.grpc.wlan_pb2 import (
     WlanConfig,
     WlanLinkRequest,
 )
+from core.api.grpc.wrappers import LinkOptions
 from core.emulator.data import IpPrefixes
 from core.errors import CoreError
+from core.utils import SetQueue
 
 logger = logging.getLogger(__name__)
 
 
 class MoveNodesStreamer:
-    def __init__(self, session_id: int = None, source: str = None) -> None:
-        self.session_id = session_id
-        self.source = source
-        self.queue: Queue = Queue()
+    def __init__(self, session_id: int, source: str = None) -> None:
+        self.session_id: int = session_id
+        self.source: Optional[str] = source
+        self.queue: SetQueue = SetQueue()
 
     def send_position(self, node_id: int, x: float, y: float) -> None:
         position = wrappers.Position(x=x, y=y)
@@ -563,23 +573,6 @@ class CoreGrpcClient:
         response = self.stub.GetNodeTerminal(request)
         return response.terminal
 
-    def get_node_links(self, session_id: int, node_id: int) -> List[wrappers.Link]:
-        """
-        Get current links for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :return: list of links
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = core_pb2.GetNodeLinksRequest(session_id=session_id, node_id=node_id)
-        response = self.stub.GetNodeLinks(request)
-        links = []
-        for link_proto in response.links:
-            link = wrappers.Link.from_proto(link_proto)
-            links.append(link)
-        return links
-
     def add_link(
         self, session_id: int, link: wrappers.Link, source: str = None
     ) -> Tuple[bool, wrappers.Interface, wrappers.Interface]:
@@ -741,9 +734,9 @@ class CoreGrpcClient:
         :raises grpc.RpcError: when session doesn't exist
         """
         defaults = []
-        for node_type in service_defaults:
-            services = service_defaults[node_type]
-            default = ServiceDefaults(node_type=node_type, services=services)
+        for model in service_defaults:
+            services = service_defaults[model]
+            default = ServiceDefaults(model=model, services=services)
             defaults.append(default)
         request = SetServiceDefaultsRequest(session_id=session_id, defaults=defaults)
         response = self.stub.SetServiceDefaults(request)
@@ -987,6 +980,23 @@ class CoreGrpcClient:
         response = self.stub.GetNodeConfigService(request)
         return dict(response.config)
 
+    def get_config_service_rendered(
+        self, session_id: int, node_id: int, name: str
+    ) -> Dict[str, str]:
+        """
+        Retrieve the rendered config service files for a node.
+
+        :param session_id: id of session
+        :param node_id: id of node
+        :param name: name of service
+        :return: dict mapping names of files to rendered data
+        """
+        request = GetConfigServiceRenderedRequest(
+            session_id=session_id, node_id=node_id, name=name
+        )
+        response = self.stub.GetConfigServiceRendered(request)
+        return dict(response.rendered)
+
     def get_emane_event_channel(
         self, session_id: int, nem_id: int
     ) -> wrappers.EmaneEventChannel:
@@ -1048,6 +1058,81 @@ class CoreGrpcClient:
             exist
         """
         self.stub.EmanePathlosses(streamer.iter())
+
+    def linked(
+        self,
+        session_id: int,
+        node1_id: int,
+        node2_id: int,
+        iface1_id: int,
+        iface2_id: int,
+        linked: bool,
+    ) -> None:
+        """
+        Link or unlink an existing core wired link.
+
+        :param session_id: session containing the link
+        :param node1_id: first node in link
+        :param node2_id: second node in link
+        :param iface1_id: node1 interface
+        :param iface2_id: node2 interface
+        :param linked: True to connect link, False to disconnect
+        :return: nothing
+        """
+        request = LinkedRequest(
+            session_id=session_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            iface1_id=iface1_id,
+            iface2_id=iface2_id,
+            linked=linked,
+        )
+        self.stub.Linked(request)
+
+    def wireless_linked(
+        self,
+        session_id: int,
+        wireless_id: int,
+        node1_id: int,
+        node2_id: int,
+        linked: bool,
+    ) -> None:
+        request = WirelessLinkedRequest(
+            session_id=session_id,
+            wireless_id=wireless_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            linked=linked,
+        )
+        self.stub.WirelessLinked(request)
+
+    def wireless_config(
+        self,
+        session_id: int,
+        wireless_id: int,
+        node1_id: int,
+        node2_id: int,
+        options1: LinkOptions,
+        options2: LinkOptions = None,
+    ) -> None:
+        if options2 is None:
+            options2 = options1
+        request = WirelessConfigRequest(
+            session_id=session_id,
+            wireless_id=wireless_id,
+            node1_id=node1_id,
+            node2_id=node2_id,
+            options1=options1.to_proto(),
+            options2=options2.to_proto(),
+        )
+        self.stub.WirelessConfig(request)
+
+    def get_wireless_config(
+        self, session_id: int, node_id: int
+    ) -> Dict[str, wrappers.ConfigOption]:
+        request = GetWirelessConfigRequest(session_id=session_id, node_id=node_id)
+        response = self.stub.GetWirelessConfig(request)
+        return wrappers.ConfigOption.from_dict(response.config)
 
     def connect(self) -> None:
         """

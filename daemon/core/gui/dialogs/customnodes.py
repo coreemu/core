@@ -23,7 +23,7 @@ class ServicesSelectDialog(Dialog):
     def __init__(
         self, master: tk.BaseWidget, app: "Application", current_services: Set[str]
     ) -> None:
-        super().__init__(app, "Node Services", master=master)
+        super().__init__(app, "Node Config Services", master=master)
         self.groups: Optional[ListboxScroll] = None
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
@@ -45,7 +45,7 @@ class ServicesSelectDialog(Dialog):
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
         self.groups.grid(sticky=tk.NSEW)
-        for group in sorted(self.app.core.services):
+        for group in sorted(self.app.core.config_services_groups):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
@@ -86,7 +86,7 @@ class ServicesSelectDialog(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for name in sorted(self.app.core.services[group]):
+            for name in sorted(self.app.core.config_services_groups[group]):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
@@ -147,7 +147,7 @@ class CustomNodesDialog(Dialog):
             frame, text="Icon", compound=tk.LEFT, command=self.click_icon
         )
         self.image_button.grid(sticky=tk.EW, pady=PADY)
-        button = ttk.Button(frame, text="Services", command=self.click_services)
+        button = ttk.Button(frame, text="Config Services", command=self.click_services)
         button.grid(sticky=tk.EW)
 
     def draw_node_buttons(self) -> None:

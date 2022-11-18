@@ -1,5 +1,5 @@
 @startuml
-skinparam {    
+skinparam {
     RoundCorner 8
     ComponentStyle uml2
     ComponentBorderColor #Black
@@ -9,7 +9,6 @@ skinparam {
 
 package User {
     component "core-gui" as gui #DeepSkyBlue
-    component "coresendmsg" #DeepSkyBlue
     component "python scripts" as scripts #DeepSkyBlue
     component vcmd #DeepSkyBlue
 }
@@ -19,11 +18,11 @@ package Server {
 package Python {
     component core #LightSteelBlue
 }
-package "Linux System" {    
+package "Linux System" {
     component nodes #SpringGreen [
         nodes
         (linux namespaces)
-    ]    
+    ]
     component links #SpringGreen [
         links
         (bridging and traffic manipulation)
@@ -31,15 +30,11 @@ package "Linux System" {
 }
 
 package API {
-    interface TLV as tlv
     interface gRPC as grpc
 }
 
-gui <..> tlv
-coresendmsg <..> tlv
-scripts <..> tlv
+gui <..> grpc
 scripts <..> grpc
-tlv -- daemon
 grpc -- daemon
 scripts -- core
 daemon - core

@@ -67,6 +67,7 @@ class NodeType(Enum):
     CONTROL_NET = 13
     DOCKER = 15
     LXC = 16
+    WIRELESS = 17
 
 
 class LinkType(Enum):
@@ -209,12 +210,12 @@ class Service:
 
 @dataclass
 class ServiceDefault:
-    node_type: str
+    model: str
     services: List[str]
 
     @classmethod
     def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
-        return ServiceDefault(node_type=proto.node_type, services=list(proto.services))
+        return ServiceDefault(model=proto.model, services=list(proto.services))
 
 
 @dataclass
@@ -480,6 +481,8 @@ class Interface:
     mtu: int = None
     node_id: int = None
     net2_id: int = None
+    nem_id: int = None
+    nem_port: int = None
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Interface) -> "Interface":
@@ -496,6 +499,8 @@ class Interface:
             mtu=proto.mtu,
             node_id=proto.node_id,
             net2_id=proto.net2_id,
+            nem_id=proto.nem_id,
+            nem_port=proto.nem_port,
         )
 
     def to_proto(self) -> core_pb2.Interface:
@@ -736,6 +741,7 @@ class Node:
         Tuple[str, Optional[int]], Dict[str, ConfigOption]
     ] = field(default_factory=dict, repr=False)
     wlan_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
+    wireless_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     mobility_config: Dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     service_configs: Dict[str, NodeServiceData] = field(
         default_factory=dict, repr=False
@@ -770,7 +776,7 @@ class Node:
             id=proto.id,
             name=proto.name,
             type=NodeType(proto.type),
-            model=proto.model,
+            model=proto.model or None,
             position=Position.from_proto(proto.position),
             services=set(proto.services),
             config_services=set(proto.config_services),
@@ -788,6 +794,7 @@ class Node:
             service_file_configs=service_file_configs,
             config_service_configs=config_service_configs,
             emane_model_configs=emane_configs,
+            wireless_config=ConfigOption.from_dict(proto.wireless_config),
         )
 
     def to_proto(self) -> core_pb2.Node:
@@ -839,6 +846,7 @@ class Node:
             service_configs=service_configs,
             config_service_configs=config_service_configs,
             emane_configs=emane_configs,
+            wireless_config={k: v.to_proto() for k, v in self.wireless_config.items()},
         )
 
     def set_wlan(self, config: Dict[str, str]) -> None:
@@ -883,9 +891,7 @@ class Session:
     def from_proto(cls, proto: core_pb2.Session) -> "Session":
         nodes: Dict[int, Node] = {x.id: Node.from_proto(x) for x in proto.nodes}
         links = [Link.from_proto(x) for x in proto.links]
-        default_services = {
-            x.node_type: set(x.services) for x in proto.default_services
-        }
+        default_services = {x.model: set(x.services) for x in proto.default_services}
         hooks = {x.file: Hook.from_proto(x) for x in proto.hooks}
         file_path = Path(proto.file) if proto.file else None
         options = ConfigOption.from_dict(proto.options)
@@ -913,9 +919,9 @@ class Session:
         options = {k: v.to_proto() for k, v in self.options.items()}
         servers = [x.to_proto() for x in self.servers]
         default_services = []
-        for node_type, services in self.default_services.items():
+        for model, services in self.default_services.items():
             default_service = services_pb2.ServiceDefaults(
-                node_type=node_type, services=services
+                model=model, services=services
             )
             default_services.append(default_service)
         file = str(self.file) if self.file else None
@@ -1102,7 +1108,6 @@ class ConfigEvent:
             data_types=list(proto.data_types),
             data_values=proto.data_values,
             captions=proto.captions,
-            bitmap=proto.bitmap,
             possible_values=proto.possible_values,
             groups=proto.groups,
             iface_id=proto.iface_id,
@@ -1194,13 +1199,13 @@ class EmanePathlossesRequest:
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class MoveNodesRequest:
     session_id: int
     node_id: int
-    source: str = None
-    position: Position = None
-    geo: Geo = None
+    source: str = field(compare=False, default=None)
+    position: Position = field(compare=False, default=None)
+    geo: Geo = field(compare=False, default=None)
 
     def to_proto(self) -> core_pb2.MoveNodesRequest:
         position = self.position.to_proto() if self.position else None

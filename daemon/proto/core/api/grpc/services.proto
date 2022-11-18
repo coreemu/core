@@ -37,7 +37,7 @@ message ServiceAction {
 }
 
 message ServiceDefaults {
-    string node_type = 1;
+    string model = 1;
     repeated string services = 2;
 }
 

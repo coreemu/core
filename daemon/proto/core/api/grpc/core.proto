@@ -61,6 +61,8 @@ service CoreApi {
     }
     rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
     }
+    rpc Linked (LinkedRequest) returns (LinkedResponse) {
+    }
 
     // mobility rpc
     rpc GetMobilityConfig (mobility.GetMobilityConfigRequest) returns (mobility.GetMobilityConfigResponse) {
@@ -89,6 +91,8 @@ service CoreApi {
     }
     rpc ConfigServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
+    rpc GetConfigServiceRendered (configservices.GetConfigServiceRenderedRequest) returns (configservices.GetConfigServiceRenderedResponse) {
+    }
 
     // wlan rpc
     rpc GetWlanConfig (wlan.GetWlanConfigRequest) returns (wlan.GetWlanConfigResponse) {
@@ -96,6 +100,14 @@ service CoreApi {
     rpc SetWlanConfig (wlan.SetWlanConfigRequest) returns (wlan.SetWlanConfigResponse) {
     }
     rpc WlanLink (wlan.WlanLinkRequest) returns (wlan.WlanLinkResponse) {
+    }
+
+    // wireless rpc
+    rpc WirelessLinked (WirelessLinkedRequest) returns (WirelessLinkedResponse) {
+    }
+    rpc WirelessConfig (WirelessConfigRequest) returns (WirelessConfigResponse) {
+    }
+    rpc GetWirelessConfig (GetWirelessConfigRequest) returns (GetWirelessConfigResponse) {
     }
 
     // emane rpc
@@ -280,12 +292,11 @@ message ConfigEvent {
     repeated int32 data_types = 5;
     string data_values = 6;
     string captions = 7;
-    string bitmap = 8;
-    string possible_values = 9;
-    string groups = 10;
-    int32 iface_id = 11;
-    int32 network_id = 12;
-    string opaque = 13;
+    string possible_values = 8;
+    string groups = 9;
+    int32 iface_id = 10;
+    int32 network_id = 11;
+    string opaque = 12;
 }
 
 message ExceptionEvent {
@@ -615,6 +626,7 @@ message Node {
     map<string, services.NodeServiceConfig> service_configs = 18;
     map<string, configservices.ConfigServiceConfig> config_service_configs= 19;
     repeated emane.NodeEmaneConfig emane_configs = 20;
+    map<string, common.ConfigOption> wireless_config = 21;
 }
 
 message Link {
@@ -656,6 +668,8 @@ message Interface {
     int32 mtu = 10;
     int32 node_id = 11;
     int32 net2_id = 12;
+    int32 nem_id = 13;
+    int32 nem_port = 14;
 }
 
 message SessionLocation {
@@ -683,4 +697,48 @@ message Geo {
 message Server {
     string name = 1;
     string host = 2;
+}
+
+message LinkedRequest {
+    int32 session_id = 1;
+    int32 node1_id = 2;
+    int32 node2_id = 3;
+    int32 iface1_id = 4;
+    int32 iface2_id = 5;
+    bool linked = 6;
+}
+
+message LinkedResponse {
+}
+
+message WirelessLinkedRequest {
+    int32 session_id = 1;
+    int32 wireless_id = 2;
+    int32 node1_id = 3;
+    int32 node2_id = 4;
+    bool linked = 5;
+}
+
+message WirelessLinkedResponse {
+}
+
+message WirelessConfigRequest {
+    int32 session_id = 1;
+    int32 wireless_id = 2;
+    int32 node1_id = 3;
+    int32 node2_id = 4;
+    LinkOptions options1 = 5;
+    LinkOptions options2 = 6;
+}
+
+message WirelessConfigResponse {
+}
+
+message GetWirelessConfigRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetWirelessConfigResponse {
+    map<string, common.ConfigOption> config = 1;
 }

@@ -1,8 +1,4 @@
 # CORE
-# (c)2010-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz  <jeffrey.m.ahrenholz@boeing.com>
 #
 # Makefile for building netns.
 #

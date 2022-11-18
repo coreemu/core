@@ -1,6 +1,6 @@
 import pytest
 
-from core.emulator.data import InterfaceData, NodeOptions
+from core.emulator.data import InterfaceData
 from core.emulator.session import Session
 from core.errors import CoreError
 from core.nodes.base import CoreNode
@@ -14,7 +14,8 @@ class TestNodes:
     @pytest.mark.parametrize("model", MODELS)
     def test_node_add(self, session: Session, model: str):
         # given
-        options = NodeOptions(model=model)
+        options = CoreNode.create_options()
+        options.model = model
 
         # when
         node = session.add_node(CoreNode, options=options)
@@ -60,6 +61,40 @@ class TestNodes:
         with pytest.raises(CoreError):
             session.get_node(node.id, CoreNode)
 
+    def test_node_add_iface(self, session: Session):
+        # given
+        node = session.add_node(CoreNode)
+
+        # when
+        iface = node.create_iface()
+
+        # then
+        assert iface.id in node.ifaces
+
+    def test_node_get_iface(self, session: Session):
+        # given
+        node = session.add_node(CoreNode)
+        iface = node.create_iface()
+        assert iface.id in node.ifaces
+
+        # when
+        iface2 = node.get_iface(iface.id)
+
+        # then
+        assert iface == iface2
+
+    def test_node_delete_iface(self, session: Session):
+        # given
+        node = session.add_node(CoreNode)
+        iface = node.create_iface()
+        assert iface.id in node.ifaces
+
+        # when
+        node.delete_iface(iface.id)
+
+        # then
+        assert iface.id not in node.ifaces
+
     @pytest.mark.parametrize(
         "mac,expected",
         [
@@ -70,12 +105,11 @@ class TestNodes:
     def test_node_set_mac(self, session: Session, mac: str, expected: str):
         # given
         node = session.add_node(CoreNode)
-        switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
-        iface = node.new_iface(switch, iface_data)
+        iface = node.create_iface(iface_data)
 
         # when
-        node.set_mac(iface.node_id, mac)
+        iface.set_mac(mac)
 
         # then
         assert str(iface.mac) == expected
@@ -86,13 +120,12 @@ class TestNodes:
     def test_node_set_mac_exception(self, session: Session, mac: str):
         # given
         node = session.add_node(CoreNode)
-        switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
-        iface = node.new_iface(switch, iface_data)
+        iface = node.create_iface(iface_data)
 
         # when
         with pytest.raises(CoreError):
-            node.set_mac(iface.node_id, mac)
+            iface.set_mac(mac)
 
     @pytest.mark.parametrize(
         "ip,expected,is_ip6",
@@ -106,12 +139,11 @@ class TestNodes:
     def test_node_add_ip(self, session: Session, ip: str, expected: str, is_ip6: bool):
         # given
         node = session.add_node(CoreNode)
-        switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
-        iface = node.new_iface(switch, iface_data)
+        iface = node.create_iface(iface_data)
 
         # when
-        node.add_ip(iface.node_id, ip)
+        iface.add_ip(ip)
 
         # then
         if is_ip6:
@@ -122,14 +154,13 @@ class TestNodes:
     def test_node_add_ip_exception(self, session):
         # given
         node = session.add_node(CoreNode)
-        switch = session.add_node(SwitchNode)
         iface_data = InterfaceData()
-        iface = node.new_iface(switch, iface_data)
+        iface = node.create_iface(iface_data)
         ip = "256.168.0.1/24"
 
         # when
         with pytest.raises(CoreError):
-            node.add_ip(iface.node_id, ip)
+            iface.add_ip(ip)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):

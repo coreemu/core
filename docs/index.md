@@ -23,8 +23,7 @@ networking scenarios, security studies, and increasing the size of physical test
 | [Installation](install.md)           | How to install CORE and its requirements                          |
 | [Architecture](architecture.md)      | Overview of the architecture                                      |
 | [Node Types](nodetypes.md)           | Overview of node types supported within CORE                      |
-| [Python GUI](pygui.md)               | How to use the default python based GUI                           |
-| [Legacy GUI (deprecated)](gui.md)    | How to use the deprecated Tcl based GUI                           |
+| [GUI](gui.md)                        | How to use the GUI                                                |
 | [Python API](python.md)              | Covers how to control core directly using python                  |
 | [gRPC API](grpc.md)                  | Covers how control core using gRPC                                |
 | [Distributed](distributed.md)        | Details for running CORE across multiple servers                  |
@@ -34,17 +33,3 @@ networking scenarios, security studies, and increasing the size of physical test
 | [EMANE](emane.md)                    | Overview of EMANE integration and integrating custom EMANE models |
 | [Performance](performance.md)        | Notes on performance when using CORE                              |
 | [Developers Guide](devguide.md)      | Overview on how to contribute to CORE                             |
-
-## Credits
-
-The CORE project was derived from the open source IMUNES project from the University of Zagreb in 2004. In 2006,
-changes for CORE were released back to that project, some items of which were adopted. Marko Zec <zec@fer.hr> is the
-primary developer from the University of Zagreb responsible for the IMUNES (GUI) and VirtNet (kernel) projects. Ana
-Kukec and Miljenko Mikuc are known contributors.
-
-Jeff Ahrenholz has been the primary Boeing developer of CORE, and has written this manual. Tom Goff designed the
-Python framework and has made significant contributions. Claudiu Danilov, Rod Santiago, Kevin Larson, Gary Pei,
-Phil Spagnolo, and Ian Chakeres have contributed code to CORE. Dan Mackley helped develop the CORE API, originally to
-interface with a simulator. Jae Kim and Tom Henderson have supervised the project and provided direction.
-
-Copyright (c) 2005-2020, the Boeing Company.

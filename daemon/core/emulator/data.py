@@ -92,6 +92,10 @@ class NodeOptions:
     image: str = None
     emane: str = None
     legacy: bool = False
+    # src, dst
+    binds: List[Tuple[str, str]] = field(default_factory=list)
+    # src, dst, unique, delete
+    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
 
     def set_position(self, x: float, y: float) -> None:
         """

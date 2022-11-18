@@ -44,9 +44,7 @@ class Ucarp(CoreService):
         """
         Returns configuration file text.
         """
-        ucarp_bin = node.session.options.get_config(
-            "ucarp_bin", default="/usr/sbin/ucarp"
-        )
+        ucarp_bin = node.session.options.get("ucarp_bin", "/usr/sbin/ucarp")
         return """\
 #!/bin/sh
 # Location of UCARP executable

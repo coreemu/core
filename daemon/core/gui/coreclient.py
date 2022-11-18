@@ -70,6 +70,9 @@ class CoreClient:
         self.session: Optional[Session] = None
         self.user = getpass.getuser()
 
+        # menu options
+        self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
+
         # global service settings
         self.services: Dict[str, Set[str]] = {}
         self.config_services_groups: Dict[str, Set[str]] = {}
@@ -242,9 +245,10 @@ class CoreClient:
             logger.warning("unknown node event: %s", event)
 
     def enable_throughputs(self) -> None:
-        self.handling_throughputs = self.client.throughputs(
-            self.session.id, self.handle_throughputs
-        )
+        if not self.handling_throughputs:
+            self.handling_throughputs = self.client.throughputs(
+                self.session.id, self.handle_throughputs
+            )
 
     def cancel_throughputs(self) -> None:
         if self.handling_throughputs:
@@ -404,9 +408,11 @@ class CoreClient:
         for edge in self.links.values():
             link = edge.link
             if not definition:
-                if link.iface1 and not link.iface1.mac:
+                node1 = self.session.nodes[link.node1_id]
+                node2 = self.session.nodes[link.node2_id]
+                if nutils.is_container(node1) and link.iface1 and not link.iface1.mac:
                     link.iface1.mac = self.ifaces_manager.next_mac()
-                if link.iface2 and not link.iface2.mac:
+                if nutils.is_container(node2) and link.iface2 and not link.iface2.mac:
                     link.iface2.mac = self.ifaces_manager.next_mac()
             links.append(link)
             if edge.asymmetric_link:
@@ -429,13 +435,15 @@ class CoreClient:
                 definition,
                 result,
             )
+            if self.show_throughputs.get():
+                self.enable_throughputs()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Start Session Error", e)
         return result, exceptions
 
     def stop_session(self, session_id: int = None) -> bool:
-        if not session_id:
-            session_id = self.session.id
+        session_id = session_id or self.session.id
+        self.cancel_throughputs()
         result = False
         try:
             result = self.client.stop_session(session_id)
@@ -665,10 +673,10 @@ class CoreClient:
         self.links[edge.token] = edge
         src_node = edge.src.core_node
         dst_node = edge.dst.core_node
-        if nutils.is_container(src_node):
+        if edge.link.iface1:
             src_iface_id = edge.link.iface1.id
             self.iface_to_edge[(src_node.id, src_iface_id)] = edge
-        if nutils.is_container(dst_node):
+        if edge.link.iface2:
             dst_iface_id = edge.link.iface2.id
             self.iface_to_edge[(dst_node.id, dst_iface_id)] = edge
 
@@ -741,6 +749,9 @@ class CoreClient:
                     configs.append(config)
         return configs
 
+    def get_config_service_rendered(self, node_id: int, name: str) -> Dict[str, str]:
+        return self.client.get_config_service_rendered(self.session.id, node_id, name)
+
     def get_config_service_configs_proto(
         self
     ) -> List[configservices_pb2.ConfigServiceConfig]:
@@ -773,6 +784,9 @@ class CoreClient:
             config,
         )
         return config
+
+    def get_wireless_config(self, node_id: int) -> Dict[str, ConfigOption]:
+        return self.client.get_wireless_config(self.session.id, node_id)
 
     def get_mobility_config(self, node_id: int) -> Dict[str, ConfigOption]:
         config = self.client.get_mobility_config(self.session.id, node_id)
