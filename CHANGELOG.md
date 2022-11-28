@@ -1,3 +1,8 @@
+## 2022-11-28 CORE 9.0.1
+
+* Installation
+    * updated protobuf and grpcio-tools versions in pyproject.toml to account for bad version mix
+
 ## 2022-11-18 CORE 9.0.0
 
 * Breaking Changes
