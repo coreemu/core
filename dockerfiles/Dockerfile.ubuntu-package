@@ -28,7 +28,7 @@ RUN cd ospf-mdr && \
   make install
 
 # install emane
-RUN apt-get install -y libpcap-dev libpcre3-dev libprotobuf-dev libxml2-dev protobuf-compiler uuid-dev
+RUN apt-get install -y libpcap-dev libpcre3-dev libprotobuf-dev libxml2-dev protobuf-compiler unzip uuid-dev
 WORKDIR /opt
 RUN git clone https://github.com/adjacentlink/emane.git
 RUN cd emane && \
@@ -36,4 +36,11 @@ RUN cd emane && \
   ./configure --prefix=/usr && \
   make -j$(nproc)  && \
   make install
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip && \
+    mkdir protoc && \
+    unzip protoc-3.19.6-linux-x86_64.zip -d protoc
+RUN PATH=/opt/protoc/bin:$PATH && \
+  cd emane/src/python && \
+  make clean && \
+  make
 RUN /opt/core/venv/bin/python -m pip install emane/src/python
