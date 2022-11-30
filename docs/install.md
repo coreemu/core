@@ -265,10 +265,19 @@ information can be found [here](https://github.com/adjacentlink/emane/wiki/Insta
 There is an invoke task to help install the EMANE bindings into the CORE virtual
 environment, when needed. An example for running the task is below and the version
 provided should match the version of the packages installed.
+
+You will also need to make sure, you are providing the correct python binary where CORE
+is being used.
+
+Also, these EMANE bindings need to be built using `protoc` 3.19+. So make sure
+that is available and being picked up on PATH properly.
 ```shell
 cd <CORE_REPO>
 # example version tag v1.3.3
-inv install-emane -e <emane version tag>
+# overriding python used to leverage the default virtualenv install
+PYTHON=/opt/core/venv/bin/python inv install-emane -e <version tag>
+# local install that uses whatever python3 refers to
+inv install-emane -e <version tag>
 ```
 
 ## Post Install
