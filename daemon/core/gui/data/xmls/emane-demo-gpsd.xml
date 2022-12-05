@@ -1,66 +1,55 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<scenario name="/home/developer/.core/configs/emane-demo-gpsd.xml">
+<scenario name="/tmp/tmp081pn3j9">
   <networks>
-    <network id="3" name="wlan3" model="emane_rfpipe" type="EMANE">
-      <position x="282" y="317" lat="47.57628519861569" lon="-122.12852212634816" alt="2.0"/>
+    <network id="3" name="wlan3" icon="" canvas="0" model="emane_rfpipe" type="EMANE">
+      <position x="282.0" y="317.0" lat="47.5762849109534" lon="-122.12852434509814" alt="2.0"/>
     </network>
   </networks>
   <devices>
-    <device id="1" name="n1" type="mdr" class="" image="">
-      <position x="153" y="173" lat="47.57759416527324" lon="-122.13026036642295" alt="2.0"/>
+    <device id="1" name="n1" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="153.0" y="173.0" lat="47.57759387761812" lon="-122.13026258517293" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="2" name="n2" type="mdr" class="" image="">
-      <position x="393" y="171" lat="47.57761234513531" lon="-122.12702643140011" alt="2.0"/>
+    <device id="2" name="n2" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="393.0" y="171.0" lat="47.57761205748029" lon="-122.1270286501501" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
   </devices>
   <links>
-    <link node1="3" node2="1">
-      <iface2 nem="1" id="0" name="eth0" mac="02:02:00:00:00:01" ip4="10.0.0.1" ip4_mask="32" ip6="2001::1" ip6_mask="128"/>
+    <link node1="1" node2="3">
+      <iface1 nem="1" id="0" name="eth0" mac="02:02:00:00:00:01" ip4="10.0.0.1" ip4_mask="32" ip6="2001::1" ip6_mask="128"/>
     </link>
-    <link node1="3" node2="2">
-      <iface2 nem="2" id="0" name="eth0" mac="02:02:00:00:00:02" ip4="10.0.0.2" ip4_mask="32" ip6="2001::2" ip6_mask="128"/>
+    <link node1="2" node2="3">
+      <iface1 nem="2" id="0" name="eth0" mac="02:02:00:00:00:02" ip4="10.0.0.2" ip4_mask="32" ip6="2001::2" ip6_mask="128"/>
     </link>
   </links>
-  <emane_global_configuration>
-    <emulator>
-      <configuration name="antennaprofilemanifesturi" value=""/>
-      <configuration name="controlportendpoint" value="0.0.0.0:47000"/>
-      <configuration name="eventservicedevice" value="ctrl0"/>
-      <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
-      <configuration name="eventservicettl" value="1"/>
-      <configuration name="otamanagerchannelenable" value="1"/>
-      <configuration name="otamanagerdevice" value="ctrl0"/>
-      <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
-      <configuration name="otamanagerloopback" value="0"/>
-      <configuration name="otamanagermtu" value="0"/>
-      <configuration name="otamanagerpartcheckthreshold" value="2"/>
-      <configuration name="otamanagerparttimeoutthreshold" value="5"/>
-      <configuration name="otamanagerttl" value="1"/>
-      <configuration name="stats.event.maxeventcountrows" value="0"/>
-      <configuration name="stats.ota.maxeventcountrows" value="0"/>
-      <configuration name="stats.ota.maxpacketcountrows" value="0"/>
-    </emulator>
-    <core>
-      <configuration name="platform_id_start" value="1"/>
-      <configuration name="nem_id_start" value="1"/>
-      <configuration name="link_enabled" value="1"/>
-      <configuration name="loss_threshold" value="30"/>
-      <configuration name="link_interval" value="1"/>
-      <configuration name="link_timeout" value="4"/>
-    </core>
-  </emane_global_configuration>
   <emane_configurations>
     <emane_configuration node="3" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
       <mac>
         <configuration name="datarate" value="1000000"/>
         <configuration name="delay" value="0.000000"/>
@@ -75,6 +64,17 @@
       </mac>
       <phy>
         <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
         <configuration name="fading.model" value="none"/>
         <configuration name="fading.nakagami.distance0" value="100.000000"/>
         <configuration name="fading.nakagami.distance1" value="250.000000"/>
@@ -91,7 +91,10 @@
         <configuration name="noisemaxsegmentduration" value="1000000"/>
         <configuration name="noisemaxsegmentoffset" value="300000"/>
         <configuration name="noisemode" value="none"/>
+        <configuration name="processingpoolsize" value="0"/>
         <configuration name="propagationmodel" value="2ray"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
         <configuration name="subid" value="1"/>
         <configuration name="systemnoisefigure" value="4.000000"/>
         <configuration name="timesyncthreshold" value="10000"/>
@@ -104,7 +107,7 @@
       </external>
     </emane_configuration>
   </emane_configurations>
-  <session_origin lat="47.5791667" lon="-122.132322" alt="2.0" scale="150.0"/>
+  <session_origin lat="47.579166412353516" lon="-122.13232421875" alt="2.0" scale="150.0"/>
   <session_options>
     <configuration name="controlnet" value="172.16.0.0/24"/>
     <configuration name="controlnet0" value=""/>
@@ -117,10 +120,19 @@
     <configuration name="enablesdt" value="0"/>
     <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
     <configuration name="ovs" value="0"/>
+    <configuration name="platform_id_start" value="1"/>
+    <configuration name="nem_id_start" value="1"/>
+    <configuration name="link_enabled" value="1"/>
+    <configuration name="loss_threshold" value="30"/>
+    <configuration name="link_interval" value="1"/>
+    <configuration name="link_timeout" value="4"/>
+    <configuration name="mtu" value="0"/>
   </session_options>
   <session_metadata>
-    <configuration name="canvas c1" value="{name {Canvas1}}"/>
-    <configuration name="global_options" value="interface_names=no ip_addresses=yes ipv6_addresses=yes node_labels=yes link_labels=yes show_api=no background_images=no annotations=yes grid=yes traffic_start=0"/>
+    <configuration name="shapes" value="[]"/>
+    <configuration name="edges" value="[]"/>
+    <configuration name="hidden" value="[]"/>
+    <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: null, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 750]}]}"/>
   </session_metadata>
   <default_services>
     <node type="mdr">
