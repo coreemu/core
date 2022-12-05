@@ -95,10 +95,9 @@
         <service name="DefaultRoute"/>
       </services>
     </device>
-    <device id="14" name="n14" icon="" canvas="0" type="host" class="" image="">
+    <device id="14" name="n14" icon="" canvas="0" type="PC" class="" image="">
       <position x="348.0" y="228.0" lat="47.57709392893491" lon="-122.12763501296686" alt="2.0"/>
       <services>
-        <service name="SSH"/>
         <service name="DefaultRoute"/>
       </services>
     </device>
@@ -259,10 +258,6 @@
       <service name="OSPFv2"/>
       <service name="OSPFv3"/>
       <service name="IPForward"/>
-    </node>
-    <node type="host">
-      <service name="DefaultRoute"/>
-      <service name="SSH"/>
     </node>
   </default_services>
 </scenario>

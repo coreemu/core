@@ -518,7 +518,7 @@ class Session:
             self.set_node_pos(node, position.x, position.y)
         # setup default wlan
         if isinstance(node, WlanNode):
-            self.mobility.set_model_config(self.id, BasicRangeModel.name)
+            self.mobility.set_model_config(node.id, BasicRangeModel.name)
         # boot core nodes after runtime
         is_runtime = self.state == EventTypes.RUNTIME_STATE
         if is_runtime and isinstance(node, CoreNode):
