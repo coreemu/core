@@ -13,6 +13,7 @@ from core.emulator.data import (
     NodeData,
 )
 from core.emulator.session import Session
+from core.nodes.base import CoreNodeBase
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,9 @@ def handle_node_event(node_data: NodeData) -> core_pb2.Event:
     lon, lat, alt = node.position.get_geo()
     geo = core_pb2.Geo(lon=lon, lat=lat, alt=alt)
     services = [x.name for x in node.services]
+    config_services = []
+    if isinstance(node, CoreNodeBase):
+        config_services = [x for x in node.config_services]
     node_proto = core_pb2.Node(
         id=node.id,
         name=node.name,
@@ -38,6 +42,7 @@ def handle_node_event(node_data: NodeData) -> core_pb2.Event:
         position=position,
         geo=geo,
         services=services,
+        config_services=config_services,
     )
     message_type = node_data.message_type.value
     node_event = core_pb2.NodeEvent(message_type=message_type, node=node_proto)
