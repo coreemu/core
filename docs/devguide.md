@@ -54,9 +54,6 @@ conveniently run tests, etc.
 # run core-daemon
 sudo core-daemon
 
-# run python gui
-core-pygui
-
 # run gui
 core-gui
 

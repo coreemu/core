@@ -62,7 +62,7 @@ The GUI will create a directory in your home directory on first run called
 ## Modes of Operation
 
 The CORE GUI has two primary modes of operation, **Edit** and **Execute**
-modes. Running the GUI, by typing **core-pygui** with no options, starts in
+modes. Running the GUI, by typing **core-gui** with no options, starts in
 Edit mode. Nodes are drawn on a blank canvas using the toolbar on the left
 and configured from right-click menus or by double-clicking them. The GUI
 does not need to be run as root.
