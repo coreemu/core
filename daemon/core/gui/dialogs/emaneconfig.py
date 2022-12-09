@@ -38,6 +38,8 @@ class EmaneModelDialog(Dialog):
         try:
             config = self.node.emane_model_configs.get((self.model, self.iface_id))
             if not config:
+                config = self.node.emane_model_configs.get((self.model, None))
+            if not config:
                 config = self.app.core.get_emane_model_config(
                     self.node.id, self.model, self.iface_id
                 )
