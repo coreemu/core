@@ -310,7 +310,6 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
 
 @task(
     help={
-        "dev": "install development mode",
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",
