@@ -435,6 +435,6 @@ The example below has a fallback to a new CoreEmu object, in the case you would
 like to run the script standalone, outside of the core-daemon.
 
 ```python
-coreemu = globals().get("coreemu", CoreEmu())
+coreemu = globals().get("coreemu") or CoreEmu()
 session = coreemu.create_session()
 ```
