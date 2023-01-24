@@ -1113,7 +1113,12 @@ class Session:
         :param node: node to boot
         :return: nothing
         """
-        logger.info("booting node(%s): %s", node.name, [x.name for x in node.services])
+        logger.info(
+            "booting node(%s): config services(%s) services(%s)",
+            node.name,
+            ", ".join(node.config_services.keys()),
+            ", ".join(x.name for x in node.services),
+        )
         self.services.boot_services(node)
         node.start_config_services()
 
