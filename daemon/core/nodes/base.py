@@ -892,7 +892,7 @@ class CoreNode(CoreNodeBase):
         for ip in iface.ips():
             # ipv4 check
             broadcast = None
-            if netaddr.valid_ipv4(ip):
+            if netaddr.valid_ipv4(str(ip.ip)):
                 broadcast = "+"
             self.node_net_client.create_address(iface.name, str(ip), broadcast)
         # configure iface options
