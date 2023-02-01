@@ -5,6 +5,7 @@ from typing import Callable
 
 import netaddr
 
+from core import utils
 from core.executables import ETHTOOL, IP, OVS_VSCTL, SYSCTL, TC
 
 
@@ -177,6 +178,7 @@ class LinuxNetClient:
         if netaddr.valid_ipv6(address.split("/")[0]):
             # IPv6 addresses are removed by default on interface down.
             # Make sure that the IPv6 address we add is not removed
+            device = utils.sysctl_devname(device)
             self.run(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
 
     def delete_address(self, device: str, address: str) -> None:
