@@ -647,6 +647,15 @@ class PtpNet(CoreNetwork):
             raise CoreError("ptp links support at most 2 network interfaces")
         super().attach(iface)
 
+    def startup(self) -> None:
+        """
+        Startup for a p2p node, that disables mac learning after normal startup.
+
+        :return: nothing
+        """
+        super().startup()
+        self.net_client.set_mac_learning(self.brname, LEARNING_DISABLED)
+
 
 class SwitchNode(CoreNetwork):
     """
