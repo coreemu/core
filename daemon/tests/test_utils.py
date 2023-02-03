@@ -9,7 +9,7 @@ class TestUtils:
         no_args = "()"
         one_arg = "('one',)"
         two_args = "('one', 'two')"
-        unicode_args = u"('one', 'two', 'three')"
+        unicode_args = "('one', 'two', 'three')"
 
         # when
         no_args = utils.make_tuple_fromstr(no_args, str)

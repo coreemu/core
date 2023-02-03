@@ -160,12 +160,12 @@ def throughput_listener(
     stream: Any, handler: Callable[[wrappers.ThroughputsEvent], None]
 ) -> None:
     """
-        Listen for throughput events and provide them to the handler.
+    Listen for throughput events and provide them to the handler.
 
-        :param stream: grpc stream that will provide events
-        :param handler: function that handles an event
-        :return: nothing
-        """
+    :param stream: grpc stream that will provide events
+    :param handler: function that handles an event
+    :return: nothing
+    """
     try:
         for event_proto in stream:
             event = wrappers.ThroughputsEvent.from_proto(event_proto)

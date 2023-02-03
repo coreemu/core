@@ -117,7 +117,7 @@ def link_iface(iface_proto: core_pb2.Interface) -> InterfaceData:
 
 
 def add_link_data(
-    link_proto: core_pb2.Link
+    link_proto: core_pb2.Link,
 ) -> Tuple[InterfaceData, InterfaceData, LinkOptions]:
     """
     Convert link proto to link interfaces and options data.
