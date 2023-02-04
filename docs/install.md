@@ -283,6 +283,25 @@ inv install-emane -e <version tag>
 ## Post Install
 After installation completes you are now ready to run CORE.
 
+### Resolving Docker Issues
+If you have Docker installed, by default it will change the iptables
+forwarding chain to drop packets, which will cause issues for CORE traffic.
+
+You can temporarily resolve the issue with the following command:
+```shell
+sudo iptables --policy FORWARD ACCEPT
+```
+Alternatively, you can configure Docker to avoid doing this, but will likely
+break normal Docker networking usage. Using the setting below will require
+a restart.
+
+Place the file contents below in **/etc/docker/docker.json**
+```json
+{
+	"iptables": false
+}
+```
+
 ### Resolving Path Issues
 One problem running CORE you may run into, using the virtual environment or locally
 can be issues related to your path.
