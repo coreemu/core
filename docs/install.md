@@ -271,7 +271,23 @@ is being used.
 
 Also, these EMANE bindings need to be built using `protoc` 3.19+. So make sure
 that is available and being picked up on PATH properly.
+
+Examples for building and installing EMANE python bindings for use in CORE:
 ```shell
+# if your system does not have protoc 3.19+
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
+mkdir protoc
+unzip protoc-3.19.6-linux-x86_64.zip -d protoc
+git clone https://github.com/adjacentlink/emane.git
+cd emane
+git checkout v1.3.3
+./autogen.sh
+PYTHON=/opt/core/venv/bin/python ./configure --prefix=/usr
+cd src/python
+PATH=/opt/protoc/bin:$PATH make
+/opt/core/venv/bin/python -m pip install .
+
+# when your system has protoc 3.19+
 cd <CORE_REPO>
 # example version tag v1.3.3
 # overriding python used to leverage the default virtualenv install
