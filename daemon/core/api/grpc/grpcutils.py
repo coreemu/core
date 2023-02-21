@@ -34,7 +34,7 @@ from core.nodes.base import (
 )
 from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
-from core.nodes.lxd import LxcNode
+from core.nodes.lxd import LxcNode, LxcOptions
 from core.nodes.network import CoreNetwork, CtrlNet, PtpNet, WlanNode
 from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
@@ -81,7 +81,7 @@ def add_node_data(
         options.config_services = node_proto.config_services
     if isinstance(options, EmaneOptions):
         options.emane_model = node_proto.emane
-    if isinstance(options, DockerOptions):
+    if isinstance(options, (DockerOptions, LxcOptions)):
         options.image = node_proto.image
     position = Position()
     position.set(node_proto.position.x, node_proto.position.y)
