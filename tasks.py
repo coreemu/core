@@ -216,7 +216,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
             c.run("poetry build -f wheel", hide=hide)
         c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
-        args = "" if dev else "--no-dev"
+        args = "" if dev else "--only main"
         with c.cd(DAEMON_DIR):
             c.run("sudo mkdir -p /opt/core", hide=hide)
             c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
