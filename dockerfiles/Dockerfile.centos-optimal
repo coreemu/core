@@ -1,0 +1,76 @@
+# syntax=docker/dockerfile:1
+FROM centos:7
+LABEL Description="CORE Docker CentOS Image"
+
+ARG PREFIX=/usr
+ARG BRANCH=master
+ENV LANG en_US.UTF-8
+ARG PROTOC_VERSION=3.19.6
+ARG VENV_PATH=/opt/core/venv
+ENV PATH="$PATH:${VENV_PATH}/bin"
+WORKDIR /opt
+
+# install system dependencies
+RUN yum -y update && \
+    yum install -y \
+    git \
+    sudo \
+    wget \
+    tzdata \
+    unzip \
+    libpcap-devel \
+    libpcre3-devel \
+    libxml2-devel \
+    protobuf-devel \
+    unzip \
+    uuid-devel \
+    tcpdump \
+    make && \
+    yum-builddep -y python3 && \
+    yum autoremove -y
+
+# install python3.9
+RUN wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz && \
+    tar xf Python-3.9.15.tgz && \
+    cd Python-3.9.15 && \
+    ./configure --enable-optimizations --with-ensurepip=install && \
+    make -j$(nproc) altinstall && \
+    python3.9 -m pip install --upgrade pip && \
+    cd /opt && \
+    rm -rf Python-3.9.15
+
+# install core
+RUN git clone https://github.com/coreemu/core && \
+    cd core && \
+    git checkout ${BRANCH} && \
+    PYTHON=/usr/local/bin/python3.9 ./setup.sh && \
+    . /root/.bashrc && PYTHON=/usr/local/bin/python3.9 inv install -v -p ${PREFIX} --no-python
+
+# install emane
+RUN wget -q https://adjacentlink.com/downloads/emane/emane-1.3.3-release-1.el7.x86_64.tar.gz && \
+    tar xf emane-1.3.3-release-1.el7.x86_64.tar.gz && \
+    cd emane-1.3.3-release-1/rpms/el7/x86_64 && \
+    yum install -y epel-release && \
+    yum install -y ./openstatistic*.rpm ./emane*.rpm ./python3-emane_*.rpm && \
+    cd ../../../.. && \
+    rm emane-1.3.3-release-1.el7.x86_64.tar.gz && \
+    rm -rf emane-1.3.3-release-1
+
+# install emane python bindings
+RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+    mkdir protoc && \
+    unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \
+    git clone https://github.com/adjacentlink/emane.git && \
+    cd emane && \
+    git checkout v1.3.3 && \
+    ./autogen.sh && \
+    PYTHON=${VENV_PATH}/bin/python ./configure --prefix=/usr && \
+    cd src/python && \
+    PATH=/opt/protoc/bin:$PATH make && \
+    ${VENV_PATH}/bin/python -m pip install . && \
+    cd /opt && \
+    rm -rf protoc && \
+    rm -rf emane && \
+    rm -f protoc-${PROTOC_VERSION}-linux-x86_64.zip
+
+WORKDIR /root
