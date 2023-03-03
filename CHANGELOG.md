@@ -1,3 +1,23 @@
+## 2023-03-02 CORE 9.0.2
+
+* Installation
+    * updated python dependencies, including invoke to resolve python 3.10+ issues
+    * improved example dockerfiles to use less space for built images
+* Documentation
+    * updated emane install instructions
+    * added Docker related issues to install instructions
+* core-daemon
+    * fixed issue using invalid device name in sysctl commands
+    * updated PTP nodes to properly disable mac learning for their linux bridge
+    * fixed issue for LXC nodes to properly use a configured image name and write it to XML
+    * \#742 - fixed issue with bad wlan node id being used
+    * \#744 - fixed issue not properly setting broadcast address
+
+## core-gui
+* fixed sample1.xml to remove SSH service
+* fixed emane demo examples
+* fixed issue displaying emane configs generally configured for a node
+
 ## 2022-11-28 CORE 9.0.1
 
 * Installation
