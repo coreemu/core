@@ -71,7 +71,7 @@ sudo cp pki/dh.pem $KEYDIR/dh1024.pem
 
 Add VPNServer service to nodes desired for running an OpenVPN server.
 
-Modify [sampleVPNServer](../../daemon/examples/services/sampleVPNServer) for the following
+Modify [sampleVPNServer](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNServer) for the following
 * Edit keydir key/cert directory
 * Edit keyname to use generated server name above
 * Edit vpnserver to match an address that the server node will have
@@ -80,7 +80,7 @@ Modify [sampleVPNServer](../../daemon/examples/services/sampleVPNServer) for the
 
 Add VPNClient service to nodes desired for acting as an OpenVPN client.
 
-Modify [sampleVPNClient](../../daemon/examples/services/sampleVPNClient) for the following
+Modify [sampleVPNClient](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNClient) for the following
 * Edit keydir key/cert directory
 * Edit keyname to use generated client name above
 * Edit vpnserver to match the address a server was configured to use

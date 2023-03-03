@@ -1,131 +1,77 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<scenario name="/home/developer/.core/configs/emane-demo-antenna.xml">
+<scenario name="/tmp/tmpd4t2sxy2">
   <networks>
-    <network id="5" name="wlan5" model="emane_rfpipe" type="EMANE">
-      <position x="388" y="555" lat="47.57412169587584" lon="-122.12709380504643" alt="2.0"/>
+    <network id="5" name="wlan5" icon="" canvas="0" model="emane_rfpipe" type="EMANE">
+      <position x="388.0" y="555.0" lat="47.574121408201655" lon="-122.12709602379641" alt="2.0"/>
     </network>
   </networks>
   <devices>
-    <device id="1" name="n1" type="mdr" class="" image="">
-      <position x="258" y="147" lat="47.577830502987744" lon="-122.12884551985047" alt="2.0"/>
+    <device id="1" name="n1" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="258.0" y="147.0" lat="47.57783021533393" lon="-122.12884773860046" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="2" name="n2" type="mdr" class="" image="">
-      <position x="526" y="147" lat="47.577830502987744" lon="-122.12523429240828" alt="2.0"/>
+    <device id="2" name="n2" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="526.0" y="147.0" lat="47.57783021533393" lon="-122.12523651115826" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="3" name="n3" type="mdr" class="" image="">
-      <position x="241" y="387" lat="47.57564888355958" lon="-122.12907459024791" alt="2.0"/>
+    <device id="3" name="n3" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="241.0" y="387.0" lat="47.575648595893774" lon="-122.1290768089979" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="4" name="n4" type="mdr" class="" image="">
-      <position x="529" y="385" lat="47.57566706409707" lon="-122.1251938682205" alt="2.0"/>
+    <device id="4" name="n4" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="529.0" y="385.0" lat="47.57566677643136" lon="-122.12519608697049" alt="2.0"/>
       <services>
         <service name="zebra"/>
-        <service name="OSPFv3MDR"/>
         <service name="IPForward"/>
+        <service name="OSPFv3MDR"/>
       </services>
     </device>
   </devices>
   <links>
-    <link node1="5" node2="1">
-      <iface2 nem="1" id="0" name="eth0" mac="02:02:00:00:00:01" ip4="10.0.0.1" ip4_mask="32" ip6="2001::1" ip6_mask="128"/>
+    <link node1="1" node2="5">
+      <iface1 nem="1" id="0" name="eth0" mac="02:02:00:00:00:01" ip4="10.0.0.1" ip4_mask="32" ip6="2001::1" ip6_mask="128"/>
     </link>
-    <link node1="5" node2="2">
-      <iface2 nem="2" id="0" name="eth0" mac="02:02:00:00:00:02" ip4="10.0.0.2" ip4_mask="32" ip6="2001::2" ip6_mask="128"/>
+    <link node1="2" node2="5">
+      <iface1 nem="2" id="0" name="eth0" mac="02:02:00:00:00:02" ip4="10.0.0.2" ip4_mask="32" ip6="2001::2" ip6_mask="128"/>
     </link>
-    <link node1="5" node2="3">
-      <iface2 nem="3" id="0" name="eth0" mac="02:02:00:00:00:03" ip4="10.0.0.3" ip4_mask="32" ip6="2001::3" ip6_mask="128"/>
+    <link node1="3" node2="5">
+      <iface1 nem="3" id="0" name="eth0" mac="02:02:00:00:00:03" ip4="10.0.0.3" ip4_mask="32" ip6="2001::3" ip6_mask="128"/>
     </link>
-    <link node1="5" node2="4">
-      <iface2 nem="4" id="0" name="eth0" mac="02:02:00:00:00:04" ip4="10.0.0.4" ip4_mask="32" ip6="2001::4" ip6_mask="128"/>
+    <link node1="4" node2="5">
+      <iface1 nem="4" id="0" name="eth0" mac="02:02:00:00:00:04" ip4="10.0.0.4" ip4_mask="32" ip6="2001::4" ip6_mask="128"/>
     </link>
   </links>
-  <emane_global_configuration>
-    <emulator>
-      <configuration name="antennaprofilemanifesturi" value="/tmp/emane/antennaprofile.xml"/>
-      <configuration name="controlportendpoint" value="0.0.0.0:47000"/>
-      <configuration name="eventservicedevice" value="ctrl0"/>
-      <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
-      <configuration name="eventservicettl" value="1"/>
-      <configuration name="otamanagerchannelenable" value="1"/>
-      <configuration name="otamanagerdevice" value="ctrl0"/>
-      <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
-      <configuration name="otamanagerloopback" value="0"/>
-      <configuration name="otamanagermtu" value="0"/>
-      <configuration name="otamanagerpartcheckthreshold" value="2"/>
-      <configuration name="otamanagerparttimeoutthreshold" value="5"/>
-      <configuration name="otamanagerttl" value="1"/>
-      <configuration name="stats.event.maxeventcountrows" value="0"/>
-      <configuration name="stats.ota.maxeventcountrows" value="0"/>
-      <configuration name="stats.ota.maxpacketcountrows" value="0"/>
-    </emulator>
-    <core>
-      <configuration name="platform_id_start" value="1"/>
-      <configuration name="nem_id_start" value="1"/>
-      <configuration name="link_enabled" value="1"/>
-      <configuration name="loss_threshold" value="30"/>
-      <configuration name="link_interval" value="1"/>
-      <configuration name="link_timeout" value="4"/>
-    </core>
-  </emane_global_configuration>
   <emane_configurations>
-    <emane_configuration node="5" model="emane_rfpipe">
-      <mac>
-        <configuration name="datarate" value="1000000"/>
-        <configuration name="delay" value="0.000000"/>
-        <configuration name="enablepromiscuousmode" value="0"/>
-        <configuration name="flowcontrolenable" value="0"/>
-        <configuration name="flowcontroltokens" value="10"/>
-        <configuration name="jitter" value="0.000000"/>
-        <configuration name="neighbormetricdeletetime" value="60.000000"/>
-        <configuration name="pcrcurveuri" value="/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"/>
-        <configuration name="radiometricenable" value="0"/>
-        <configuration name="radiometricreportinterval" value="1.000000"/>
-      </mac>
-      <phy>
-        <configuration name="bandwidth" value="1000000"/>
-        <configuration name="fading.model" value="none"/>
-        <configuration name="fading.nakagami.distance0" value="100.000000"/>
-        <configuration name="fading.nakagami.distance1" value="250.000000"/>
-        <configuration name="fading.nakagami.m0" value="0.750000"/>
-        <configuration name="fading.nakagami.m1" value="1.000000"/>
-        <configuration name="fading.nakagami.m2" value="200.000000"/>
-        <configuration name="fixedantennagain" value="0.000000"/>
-        <configuration name="fixedantennagainenable" value="1"/>
-        <configuration name="frequency" value="2347000000"/>
-        <configuration name="frequencyofinterest" value="2347000000"/>
-        <configuration name="noisebinsize" value="20"/>
-        <configuration name="noisemaxclampenable" value="0"/>
-        <configuration name="noisemaxmessagepropagation" value="200000"/>
-        <configuration name="noisemaxsegmentduration" value="1000000"/>
-        <configuration name="noisemaxsegmentoffset" value="300000"/>
-        <configuration name="noisemode" value="none"/>
-        <configuration name="propagationmodel" value="2ray"/>
-        <configuration name="subid" value="1"/>
-        <configuration name="systemnoisefigure" value="4.000000"/>
-        <configuration name="timesyncthreshold" value="10000"/>
-        <configuration name="txpower" value="0.000000"/>
-      </phy>
-      <external>
-        <configuration name="external" value="0"/>
-        <configuration name="platformendpoint" value="127.0.0.1:40001"/>
-        <configuration name="transportendpoint" value="127.0.0.1:50002"/>
-      </external>
-    </emane_configuration>
     <emane_configuration node="1" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
       <mac>
         <configuration name="datarate" value="1000000"/>
         <configuration name="delay" value="0.000000"/>
@@ -140,6 +86,17 @@
       </mac>
       <phy>
         <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
         <configuration name="fading.model" value="none"/>
         <configuration name="fading.nakagami.distance0" value="100.000000"/>
         <configuration name="fading.nakagami.distance1" value="250.000000"/>
@@ -156,7 +113,10 @@
         <configuration name="noisemaxsegmentduration" value="1000000"/>
         <configuration name="noisemaxsegmentoffset" value="300000"/>
         <configuration name="noisemode" value="outofband"/>
+        <configuration name="processingpoolsize" value="0"/>
         <configuration name="propagationmodel" value="precomputed"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
         <configuration name="subid" value="1"/>
         <configuration name="systemnoisefigure" value="4.000000"/>
         <configuration name="timesyncthreshold" value="10000"/>
@@ -169,6 +129,23 @@
       </external>
     </emane_configuration>
     <emane_configuration node="2" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
       <mac>
         <configuration name="datarate" value="1000000"/>
         <configuration name="delay" value="0.000000"/>
@@ -183,6 +160,17 @@
       </mac>
       <phy>
         <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
         <configuration name="fading.model" value="none"/>
         <configuration name="fading.nakagami.distance0" value="100.000000"/>
         <configuration name="fading.nakagami.distance1" value="250.000000"/>
@@ -199,7 +187,10 @@
         <configuration name="noisemaxsegmentduration" value="1000000"/>
         <configuration name="noisemaxsegmentoffset" value="300000"/>
         <configuration name="noisemode" value="outofband"/>
+        <configuration name="processingpoolsize" value="0"/>
         <configuration name="propagationmodel" value="precomputed"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
         <configuration name="subid" value="1"/>
         <configuration name="systemnoisefigure" value="4.000000"/>
         <configuration name="timesyncthreshold" value="10000"/>
@@ -212,6 +203,23 @@
       </external>
     </emane_configuration>
     <emane_configuration node="3" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
       <mac>
         <configuration name="datarate" value="1000000"/>
         <configuration name="delay" value="0.000000"/>
@@ -226,6 +234,17 @@
       </mac>
       <phy>
         <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
         <configuration name="fading.model" value="none"/>
         <configuration name="fading.nakagami.distance0" value="100.000000"/>
         <configuration name="fading.nakagami.distance1" value="250.000000"/>
@@ -242,7 +261,10 @@
         <configuration name="noisemaxsegmentduration" value="1000000"/>
         <configuration name="noisemaxsegmentoffset" value="300000"/>
         <configuration name="noisemode" value="outofband"/>
+        <configuration name="processingpoolsize" value="0"/>
         <configuration name="propagationmodel" value="precomputed"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
         <configuration name="subid" value="1"/>
         <configuration name="systemnoisefigure" value="4.000000"/>
         <configuration name="timesyncthreshold" value="10000"/>
@@ -255,6 +277,23 @@
       </external>
     </emane_configuration>
     <emane_configuration node="4" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
       <mac>
         <configuration name="datarate" value="1000000"/>
         <configuration name="delay" value="0.000000"/>
@@ -269,6 +308,17 @@
       </mac>
       <phy>
         <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
         <configuration name="fading.model" value="none"/>
         <configuration name="fading.nakagami.distance0" value="100.000000"/>
         <configuration name="fading.nakagami.distance1" value="250.000000"/>
@@ -285,7 +335,84 @@
         <configuration name="noisemaxsegmentduration" value="1000000"/>
         <configuration name="noisemaxsegmentoffset" value="300000"/>
         <configuration name="noisemode" value="outofband"/>
+        <configuration name="processingpoolsize" value="0"/>
         <configuration name="propagationmodel" value="precomputed"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
+        <configuration name="subid" value="1"/>
+        <configuration name="systemnoisefigure" value="4.000000"/>
+        <configuration name="timesyncthreshold" value="10000"/>
+        <configuration name="txpower" value="0.000000"/>
+      </phy>
+      <external>
+        <configuration name="external" value="0"/>
+        <configuration name="platformendpoint" value="127.0.0.1:40001"/>
+        <configuration name="transportendpoint" value="127.0.0.1:50002"/>
+      </external>
+    </emane_configuration>
+    <emane_configuration node="5" model="emane_rfpipe">
+      <platform>
+        <configuration name="antennaprofilemanifesturi" value=""/>
+        <configuration name="eventservicedevice" value="ctrl0"/>
+        <configuration name="eventservicegroup" value="224.1.2.8:45703"/>
+        <configuration name="eventservicettl" value="1"/>
+        <configuration name="otamanagerchannelenable" value="1"/>
+        <configuration name="otamanagerdevice" value="ctrl0"/>
+        <configuration name="otamanagergroup" value="224.1.2.8:45702"/>
+        <configuration name="otamanagerloopback" value="0"/>
+        <configuration name="otamanagermtu" value="0"/>
+        <configuration name="otamanagerpartcheckthreshold" value="2"/>
+        <configuration name="otamanagerparttimeoutthreshold" value="5"/>
+        <configuration name="otamanagerttl" value="1"/>
+        <configuration name="stats.event.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxeventcountrows" value="0"/>
+        <configuration name="stats.ota.maxpacketcountrows" value="0"/>
+      </platform>
+      <mac>
+        <configuration name="datarate" value="1000000"/>
+        <configuration name="delay" value="0.000000"/>
+        <configuration name="enablepromiscuousmode" value="0"/>
+        <configuration name="flowcontrolenable" value="0"/>
+        <configuration name="flowcontroltokens" value="10"/>
+        <configuration name="jitter" value="0.000000"/>
+        <configuration name="neighbormetricdeletetime" value="60.000000"/>
+        <configuration name="pcrcurveuri" value="/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"/>
+        <configuration name="radiometricenable" value="0"/>
+        <configuration name="radiometricreportinterval" value="1.000000"/>
+      </mac>
+      <phy>
+        <configuration name="bandwidth" value="1000000"/>
+        <configuration name="compatibilitymode" value="1"/>
+        <configuration name="dopplershiftenable" value="1"/>
+        <configuration name="excludesamesubidfromfilterenable" value="1"/>
+        <configuration name="fading.lognormal.dlthresh" value="0.250000"/>
+        <configuration name="fading.lognormal.dmu" value="5.000000"/>
+        <configuration name="fading.lognormal.dsigma" value="1.000000"/>
+        <configuration name="fading.lognormal.duthresh" value="0.750000"/>
+        <configuration name="fading.lognormal.lmean" value="0.005000"/>
+        <configuration name="fading.lognormal.lstddev" value="0.001000"/>
+        <configuration name="fading.lognormal.maxpathloss" value="100.000000"/>
+        <configuration name="fading.lognormal.minpathloss" value="0.000000"/>
+        <configuration name="fading.model" value="none"/>
+        <configuration name="fading.nakagami.distance0" value="100.000000"/>
+        <configuration name="fading.nakagami.distance1" value="250.000000"/>
+        <configuration name="fading.nakagami.m0" value="0.750000"/>
+        <configuration name="fading.nakagami.m1" value="1.000000"/>
+        <configuration name="fading.nakagami.m2" value="200.000000"/>
+        <configuration name="fixedantennagain" value="0.000000"/>
+        <configuration name="fixedantennagainenable" value="1"/>
+        <configuration name="frequency" value="2347000000"/>
+        <configuration name="frequencyofinterest" value="2347000000"/>
+        <configuration name="noisebinsize" value="20"/>
+        <configuration name="noisemaxclampenable" value="0"/>
+        <configuration name="noisemaxmessagepropagation" value="200000"/>
+        <configuration name="noisemaxsegmentduration" value="1000000"/>
+        <configuration name="noisemaxsegmentoffset" value="300000"/>
+        <configuration name="noisemode" value="none"/>
+        <configuration name="processingpoolsize" value="0"/>
+        <configuration name="propagationmodel" value="2ray"/>
+        <configuration name="rxsensitivitypromiscuousmodeenable" value="0"/>
+        <configuration name="stats.receivepowertableenable" value="1"/>
         <configuration name="subid" value="1"/>
         <configuration name="systemnoisefigure" value="4.000000"/>
         <configuration name="timesyncthreshold" value="10000"/>
@@ -298,7 +425,7 @@
       </external>
     </emane_configuration>
   </emane_configurations>
-  <session_origin lat="47.5791667" lon="-122.132322" alt="2.0" scale="150.0"/>
+  <session_origin lat="47.579166412353516" lon="-122.13232421875" alt="2.0" scale="150.0"/>
   <session_options>
     <configuration name="controlnet" value="172.16.0.0/24"/>
     <configuration name="controlnet0" value=""/>
@@ -311,10 +438,19 @@
     <configuration name="enablesdt" value="0"/>
     <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
     <configuration name="ovs" value="0"/>
+    <configuration name="platform_id_start" value="1"/>
+    <configuration name="nem_id_start" value="1"/>
+    <configuration name="link_enabled" value="1"/>
+    <configuration name="loss_threshold" value="30"/>
+    <configuration name="link_interval" value="1"/>
+    <configuration name="link_timeout" value="4"/>
+    <configuration name="mtu" value="0"/>
   </session_options>
   <session_metadata>
-    <configuration name="canvas c1" value="{name {Canvas1}}"/>
-    <configuration name="global_options" value="interface_names=no ip_addresses=yes ipv6_addresses=yes node_labels=yes link_labels=yes show_api=no background_images=no annotations=yes grid=yes traffic_start=0"/>
+    <configuration name="shapes" value="[]"/>
+    <configuration name="edges" value="[]"/>
+    <configuration name="hidden" value="[]"/>
+    <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: null, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 750]}]}"/>
   </session_metadata>
   <default_services>
     <node type="mdr">

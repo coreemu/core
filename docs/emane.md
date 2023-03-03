@@ -60,7 +60,7 @@ You can find more detailed tutorials and examples at the
 
 Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
-> **WARNING:** demo files will be found within the new `core-pygui`
+> **WARNING:** demo files will be found within the new `core-gui`
 
 | Topic                                | Model   | Description                                               |
 |--------------------------------------|---------|-----------------------------------------------------------|

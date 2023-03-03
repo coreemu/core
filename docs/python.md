@@ -414,7 +414,7 @@ session.services.set_service_file(
 ## File Examples
 
 File versions of the network examples can be found
-[here](https://github.com/coreemu/core/tree/master/daemon/examples/python).
+[here](https://github.com/coreemu/core/tree/master/package/examples/python).
 
 ## Executing Scripts from GUI
 
@@ -435,6 +435,6 @@ The example below has a fallback to a new CoreEmu object, in the case you would
 like to run the script standalone, outside of the core-daemon.
 
 ```python
-coreemu = globals().get("coreemu", CoreEmu())
+coreemu = globals().get("coreemu") or CoreEmu()
 session = coreemu.create_session()
 ```

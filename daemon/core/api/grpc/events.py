@@ -2,7 +2,7 @@ import logging
 from queue import Empty, Queue
 from typing import Iterable, Optional
 
-from core.api.grpc import core_pb2
+from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data
 from core.emulator.data import (
     ConfigData,
@@ -17,28 +17,18 @@ from core.emulator.session import Session
 logger = logging.getLogger(__name__)
 
 
-def handle_node_event(node_data: NodeData) -> core_pb2.Event:
+def handle_node_event(session: Session, node_data: NodeData) -> core_pb2.Event:
     """
     Handle node event when there is a node event
 
+    :param session: session node is from
     :param node_data: node data
     :return: node event that contains node id, name, model, position, and services
     """
     node = node_data.node
-    x, y, _ = node.position.get()
-    position = core_pb2.Position(x=x, y=y)
-    lon, lat, alt = node.position.get_geo()
-    geo = core_pb2.Geo(lon=lon, lat=lat, alt=alt)
-    services = [x.name for x in node.services]
-    node_proto = core_pb2.Node(
-        id=node.id,
-        name=node.name,
-        model=node.model,
-        icon=node.icon,
-        position=position,
-        geo=geo,
-        services=services,
-    )
+    emane_configs = grpcutils.get_emane_model_configs_dict(session)
+    node_emane_configs = emane_configs.get(node.id, [])
+    node_proto = grpcutils.get_node_proto(session, node, node_emane_configs)
     message_type = node_data.message_type.value
     node_event = core_pb2.NodeEvent(message_type=message_type, node=node_proto)
     return core_pb2.Event(node_event=node_event, source=node_data.source)
@@ -189,7 +179,7 @@ class EventStreamer:
         try:
             data = self.queue.get(timeout=1)
             if isinstance(data, NodeData):
-                event = handle_node_event(data)
+                event = handle_node_event(self.session, data)
             elif isinstance(data, LinkData):
                 event = handle_link_event(data)
             elif isinstance(data, EventData):

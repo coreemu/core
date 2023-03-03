@@ -518,7 +518,7 @@ class Session:
             self.set_node_pos(node, position.x, position.y)
         # setup default wlan
         if isinstance(node, WlanNode):
-            self.mobility.set_model_config(self.id, BasicRangeModel.name)
+            self.mobility.set_model_config(node.id, BasicRangeModel.name)
         # boot core nodes after runtime
         is_runtime = self.state == EventTypes.RUNTIME_STATE
         if is_runtime and isinstance(node, CoreNode):
@@ -1113,7 +1113,12 @@ class Session:
         :param node: node to boot
         :return: nothing
         """
-        logger.info("booting node(%s): %s", node.name, [x.name for x in node.services])
+        logger.info(
+            "booting node(%s): config services(%s) services(%s)",
+            node.name,
+            ", ".join(node.config_services.keys()),
+            ", ".join(x.name for x in node.services),
+        )
         self.services.boot_services(node)
         node.start_config_services()
 

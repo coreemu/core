@@ -265,14 +265,58 @@ information can be found [here](https://github.com/adjacentlink/emane/wiki/Insta
 There is an invoke task to help install the EMANE bindings into the CORE virtual
 environment, when needed. An example for running the task is below and the version
 provided should match the version of the packages installed.
+
+You will also need to make sure, you are providing the correct python binary where CORE
+is being used.
+
+Also, these EMANE bindings need to be built using `protoc` 3.19+. So make sure
+that is available and being picked up on PATH properly.
+
+Examples for building and installing EMANE python bindings for use in CORE:
 ```shell
+# if your system does not have protoc 3.19+
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
+mkdir protoc
+unzip protoc-3.19.6-linux-x86_64.zip -d protoc
+git clone https://github.com/adjacentlink/emane.git
+cd emane
+git checkout v1.3.3
+./autogen.sh
+PYTHON=/opt/core/venv/bin/python ./configure --prefix=/usr
+cd src/python
+PATH=/opt/protoc/bin:$PATH make
+/opt/core/venv/bin/python -m pip install .
+
+# when your system has protoc 3.19+
 cd <CORE_REPO>
 # example version tag v1.3.3
-inv install-emane -e <emane version tag>
+# overriding python used to leverage the default virtualenv install
+PYTHON=/opt/core/venv/bin/python inv install-emane -e <version tag>
+# local install that uses whatever python3 refers to
+inv install-emane -e <version tag>
 ```
 
 ## Post Install
 After installation completes you are now ready to run CORE.
+
+### Resolving Docker Issues
+If you have Docker installed, by default it will change the iptables
+forwarding chain to drop packets, which will cause issues for CORE traffic.
+
+You can temporarily resolve the issue with the following command:
+```shell
+sudo iptables --policy FORWARD ACCEPT
+```
+Alternatively, you can configure Docker to avoid doing this, but will likely
+break normal Docker networking usage. Using the setting below will require
+a restart.
+
+Place the file contents below in **/etc/docker/docker.json**
+```json
+{
+	"iptables": false
+}
+```
 
 ### Resolving Path Issues
 One problem running CORE you may run into, using the virtual environment or locally

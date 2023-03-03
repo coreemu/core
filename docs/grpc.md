@@ -391,7 +391,7 @@ file_configs[file_name] = "echo hello world"
 ## File Examples
 
 File versions of the network examples can be found
-[here](https://github.com/coreemu/core/tree/master/daemon/examples/grpc).
+[here](https://github.com/coreemu/core/tree/master/package/examples/grpc).
 These examples will create a session using the gRPC API when the core-daemon is running.
 
 You can then switch to and attach to these sessions using either of the CORE GUIs.

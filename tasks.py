@@ -216,7 +216,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
             c.run("poetry build -f wheel", hide=hide)
         c.run(f"sudo {python_bin} -m pip install dist/*")
     else:
-        args = "" if dev else "--no-dev"
+        args = "" if dev else "--only main"
         with c.cd(DAEMON_DIR):
             c.run("sudo mkdir -p /opt/core", hide=hide)
             c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
@@ -310,7 +310,6 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
 
 @task(
     help={
-        "dev": "install development mode",
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
                         "can be one of the following (redhat, debian)",

@@ -15,7 +15,7 @@ from core.errors import CoreXmlError
 from core.nodes.base import CoreNodeBase, CoreNodeOptions, NodeBase, Position
 from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
-from core.nodes.lxd import LxcNode
+from core.nodes.lxd import LxcNode, LxcOptions
 from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
 from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
@@ -825,7 +825,7 @@ class CoreXmlReader:
                 options.config_services.extend(
                     x.get("name") for x in config_service_elements.iterchildren()
                 )
-        if isinstance(options, DockerOptions):
+        if isinstance(options, (DockerOptions, LxcOptions)):
             options.image = image
         # get position information
         position_element = device_element.find("position")
