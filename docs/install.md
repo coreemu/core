@@ -85,6 +85,15 @@ sudo yum remove core
 sudo apt remove core
 ```
 
+## Installation Examples
+
+The below links will take you to sections providing complete examples for installing
+CORE and related utilities on fresh installations. Otherwise, a breakdown for installing
+different components and the options available are detailed below.
+
+* [Ubuntu 22.04](install_ubuntu.md)
+* [CentOS 7](install_centos.md)
+
 ## Package Based Install
 
 Starting with 9.0.0 there are pre-built rpm/deb packages. You can retrieve the
