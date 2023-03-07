@@ -43,7 +43,7 @@ RUN wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz && \
 RUN git clone https://github.com/coreemu/core && \
     cd core && \
     git checkout ${BRANCH} && \
-    PYTHON=/usr/local/bin/python3.9 ./setup.sh && \
+    NO_SYSTEM=1 PYTHON=/usr/local/bin/python3.9 ./setup.sh && \
     . /root/.bashrc && PYTHON=/usr/local/bin/python3.9 inv install -v -p ${PREFIX} --no-python
 
 # install emane
