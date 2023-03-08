@@ -1,7 +1,4 @@
-# CORE Config Services
-
-* Table of Contents
-{:toc}
+# Config Services
 
 ## Overview
 
@@ -15,6 +12,7 @@ CORE services are a convenience for creating reusable dynamic scripts
 to run on nodes, for carrying out specific task(s).
 
 This boilds down to the following functions:
+
 * generating files the service will use, either directly for commands or for configuration
 * command(s) for starting a service
 * command(s) for validating a service
@@ -121,6 +119,7 @@ from typing import Dict, List
 from core.config import ConfigString, ConfigBool, Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode, ShadowDir
 
+
 # class that subclasses ConfigService
 class ExampleService(ConfigService):
     # unique name for your service within CORE
@@ -129,7 +128,7 @@ class ExampleService(ConfigService):
     group: str = "ExampleGroup"
     # directories that the service should shadow mount, hiding the system directory
     directories: List[str] = [
-       "/usr/local/core",
+        "/usr/local/core",
     ]
     # files that this service should generate, defaults to nodes home directory
     # or can provide an absolute path to a mounted directory

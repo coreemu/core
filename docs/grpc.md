@@ -1,7 +1,6 @@
 # gRPC API
 
-* Table of Contents
-{:toc}
+## Overview
 
 [gRPC](https://grpc.io/) is a client/server API for interfacing with CORE
 and used by the python GUI for driving all functionality. It is dependent
@@ -9,7 +8,7 @@ on having a running `core-daemon` instance to be leveraged.
 
 A python client can be created from the raw generated grpc files included
 with CORE or one can leverage a provided gRPC client that helps encapsulate
-some of the functionality to try and help make things easier.
+some functionality to try and help make things easier.
 
 ## Python Client
 
@@ -41,13 +40,13 @@ When creating nodes of type `NodeType.DEFAULT` these are the default models
 and the services they map to.
 
 * mdr
-  * zebra, OSPFv3MDR, IPForward
+    * zebra, OSPFv3MDR, IPForward
 * PC
-  * DefaultRoute
+    * DefaultRoute
 * router
-  * zebra, OSPFv2, OSPFv3, IPForward
+    * zebra, OSPFv2, OSPFv3, IPForward
 * host
-  * DefaultRoute, SSH
+    * DefaultRoute, SSH
 
 ### Interface Helper
 
@@ -56,8 +55,10 @@ when creating interface data for nodes. Alternatively one can manually create
 a `core.api.grpc.wrappers.Interface` class instead with appropriate information.
 
 Manually creating gRPC client interface:
+
 ```python
 from core.api.grpc.wrappers import Interface
+
 # id is optional and will set to the next available id
 # name is optional and will default to eth<id>
 # mac is optional and will result in a randomly generated mac
@@ -72,6 +73,7 @@ iface = Interface(
 ```
 
 Leveraging the interface helper class:
+
 ```python
 from core.api.grpc import client
 
@@ -90,6 +92,7 @@ iface_data = iface_helper.create_iface(
 Various events that can occur within a session can be listened to.
 
 Event types:
+
 * session - events for changes in session state and mobility start/stop/pause
 * node - events for node movements and icon changes
 * link - events for link configuration changes and wireless link add/delete
@@ -101,8 +104,10 @@ Event types:
 from core.api.grpc import client
 from core.api.grpc.wrappers import EventType
 
+
 def event_listener(event):
     print(event)
+
 
 # create grpc client and connect
 core = client.CoreGrpcClient()
@@ -123,6 +128,7 @@ core.events(session.id, event_listener, [EventType.NODE])
 Links can be configured at the time of creation or during runtime.
 
 Currently supported configuration options:
+
 * bandwidth (bps)
 * delay (us)
 * duplicate (%)
@@ -167,6 +173,7 @@ core.edit_link(session.id, link)
 ```
 
 ### Peer to Peer Example
+
 ```python
 # required imports
 from core.api.grpc import client
@@ -198,6 +205,7 @@ core.start_session(session)
 ```
 
 ### Switch/Hub Example
+
 ```python
 # required imports
 from core.api.grpc import client
@@ -232,6 +240,7 @@ core.start_session(session)
 ```
 
 ### WLAN Example
+
 ```python
 # required imports
 from core.api.grpc import client
@@ -283,6 +292,7 @@ For EMANE you can import and use one of the existing models and
 use its name for configuration.
 
 Current models:
+
 * core.emane.ieee80211abg.EmaneIeee80211abgModel
 * core.emane.rfpipe.EmaneRfPipeModel
 * core.emane.tdma.EmaneTdmaModel
@@ -315,7 +325,7 @@ session = core.create_session()
 # create nodes
 position = Position(x=200, y=200)
 emane = session.add_node(
-  1, _type=NodeType.EMANE, position=position, emane=EmaneIeee80211abgModel.name
+    1, _type=NodeType.EMANE, position=position, emane=EmaneIeee80211abgModel.name
 )
 position = Position(x=100, y=100)
 node1 = session.add_node(2, model="mdr", position=position)
@@ -330,8 +340,8 @@ session.add_link(node1=node2, node2=emane, iface1=iface1)
 
 # setting emane specific emane model configuration
 emane.set_emane_model(EmaneIeee80211abgModel.name, {
-  "eventservicettl": "2",
-  "unicastrate": "3",
+    "eventservicettl": "2",
+    "unicastrate": "3",
 })
 
 # start session
@@ -339,6 +349,7 @@ core.start_session(session)
 ```
 
 EMANE Model Configuration:
+
 ```python
 # emane network specific config, set on an emane node
 # this setting applies to all nodes connected
@@ -359,6 +370,7 @@ Configuring the files of a service results in a specific hard coded script being
 generated, instead of the default scripts, that may leverage dynamic generation.
 
 The following features can be configured for a service:
+
 * files - files that will be generated
 * directories - directories that will be mounted unique to the node
 * startup - commands to run start a service
@@ -366,6 +378,7 @@ The following features can be configured for a service:
 * shutdown - commands to run to stop a service
 
 Editing service properties:
+
 ```python
 # configure a service, for a node, for a given session
 node.service_configs[service_name] = NodeServiceData(
@@ -381,6 +394,7 @@ When editing a service file, it must be the name of `config`
 file that the service will generate.
 
 Editing a service file:
+
 ```python
 # to edit the contents of a generated file you can specify
 # the service, the file name, and its contents

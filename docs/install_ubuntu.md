@@ -1,7 +1,9 @@
 # Install Ubuntu
 
+## Overview
+
 Below is a detailed path for installing CORE and related tooling on a fresh
-Ubuntu 22.04 install. Both of the examples below will install CORE into its
+Ubuntu 22.04 installation. Both of the examples below will install CORE into its
 own virtual environment located at **/opt/core/venv**. Both examples below
 also assume using **~/Documents** as the working directory.
 
@@ -94,6 +96,7 @@ The CORE virtual environment and related scripts will not be found on your PATH,
 so some adjustments needs to be made.
 
 To add support for your user to run scripts from the virtual environment:
+
 ```shell
 # can add to ~/.bashrc
 export PATH=$PATH:/opt/core/venv/bin
@@ -101,6 +104,7 @@ export PATH=$PATH:/opt/core/venv/bin
 
 This will not solve the path issue when running as sudo, so you can do either
 of the following to compensate.
+
 ```shell
 # run command passing in the right PATH to pickup from the user running the command
 sudo env PATH=$PATH core-daemon

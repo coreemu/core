@@ -1,8 +1,4 @@
-
 # CORE GUI
-
-* Table of Contents
-{:toc}
 
 ![](static/core-gui.png)
 
@@ -12,7 +8,7 @@ The GUI is used to draw nodes and network devices on a canvas, linking them
 together to create an emulated network session.
 
 After pressing the start button, CORE will proceed through these phases,
-staying in the **runtime** phase.  After the session is stopped, CORE will
+staying in the **runtime** phase. After the session is stopped, CORE will
 proceed to the **data collection** phase before tearing down the emulated
 state.
 
@@ -22,7 +18,7 @@ when these session states are reached.
 
 ## Prerequisites
 
-Beyond installing CORE, you must have the CORE daemon running.  This is done
+Beyond installing CORE, you must have the CORE daemon running. This is done
 on the command line with either systemd or sysv.
 
 ```shell
@@ -40,24 +36,24 @@ The GUI will create a directory in your home directory on first run called
 ~/.coregui. This directory will help layout various files that the GUI may use.
 
 * .coregui/
-  * backgrounds/
-    * place backgrounds used for display in the GUI
-  * custom_emane/
-    * place to keep custom emane models to use with the core-daemon
-  * custom_services/
-    * place to keep custom services to use with the core-daemon
-  * icons/
-    * icons the GUI uses along with customs icons desired
-  * mobility/
-    * place to keep custom mobility files
-  * scripts/
-    * place to keep core related scripts
-  * xmls/
-    * place to keep saved session xml files
-  * gui.log
-    * log file when running the gui, look here when issues occur for exceptions etc
-  * config.yaml
-    * configuration file used to save/load various gui related settings (custom nodes, layouts, addresses, etc)
+    * backgrounds/
+        * place backgrounds used for display in the GUI
+    * custom_emane/
+        * place to keep custom emane models to use with the core-daemon
+    * custom_services/
+        * place to keep custom services to use with the core-daemon
+    * icons/
+        * icons the GUI uses along with customs icons desired
+    * mobility/
+        * place to keep custom mobility files
+    * scripts/
+        * place to keep core related scripts
+    * xmls/
+        * place to keep saved session xml files
+    * gui.log
+        * log file when running the gui, look here when issues occur for exceptions etc
+    * config.yaml
+        * configuration file used to save/load various gui related settings (custom nodes, layouts, addresses, etc)
 
 ## Modes of Operation
 
@@ -342,8 +338,8 @@ be selected by double-clicking its name in the list, or an interface name may
 be entered into the text box.
 
 > **NOTE:** When you press the Start button to instantiate your topology, the
-   interface assigned to the RJ45 will be connected to the CORE topology. The
-   interface can no longer be used by the system.
+> interface assigned to the RJ45 will be connected to the CORE topology. The
+> interface can no longer be used by the system.
 
 Multiple RJ45 nodes can be used within CORE and assigned to the same physical
 interface if 802.1x VLANs are used. This allows for more RJ45 nodes than
@@ -378,10 +374,10 @@ address of the tunnel peer. This is the IP address of the other CORE machine or
 physical machine, not an IP address of another virtual node.
 
 > **NOTE:** Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices. The *gretap* device
-   has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
-   bridge's MTU
-   becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
-   large packets if other bridge ports have a higher MTU such as 1,500 bytes.
+> has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
+> bridge's MTU
+> becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
+> large packets if other bridge ports have a higher MTU such as 1,500 bytes.
 
 The GRE key is used to identify flows with GRE tunneling. This allows multiple
 GRE tunnels to exist between that same pair of tunnel peers. A unique number
@@ -392,7 +388,7 @@ used.
 Here are example commands for building the other end of a tunnel on a Linux
 machine. In this example, a router in CORE has the virtual address
 **10.0.0.1/24** and the CORE host machine has the (real) address
-**198.51.100.34/24**.  The Linux box
+**198.51.100.34/24**. The Linux box
 that will connect with the CORE machine is reachable over the (real) network
 at **198.51.100.76/24**.
 The emulated router is linked with the Tunnel Node. In the
@@ -501,21 +497,20 @@ CORE offers several levels of wireless emulation fidelity, depending on modeling
 hardware.
 
 * WLAN Node
-  * uses set bandwidth, delay, and loss
-  * links are enabled or disabled based on a set range
-  * uses the least CPU when moving, but nothing extra when not moving
+    * uses set bandwidth, delay, and loss
+    * links are enabled or disabled based on a set range
+    * uses the least CPU when moving, but nothing extra when not moving
 * Wireless Node
-  * uses set bandwidth, delay, and initial loss
-  * loss dynamically changes based on distance between nodes, which can be configured with range parameters
-  * links are enabled or disabled based on a set range
-  * uses more CPU to calculate loss for every movement, but nothing extra when not moving
+    * uses set bandwidth, delay, and initial loss
+    * loss dynamically changes based on distance between nodes, which can be configured with range parameters
+    * links are enabled or disabled based on a set range
+    * uses more CPU to calculate loss for every movement, but nothing extra when not moving
 * EMANE Node
-  * uses a physical layer model to account for signal propagation, antenna profile effects and interference
-    sources in order to provide a realistic environment for wireless experimentation
-  * uses the most CPU for every packet, as complex calculations are used for fidelity
-  * See [Wiki](https://github.com/adjacentlink/emane/wiki) for details on general EMANE usage
-  * See [CORE EMANE](emane.md) for details on using EMANE in CORE
-
+    * uses a physical layer model to account for signal propagation, antenna profile effects and interference
+      sources in order to provide a realistic environment for wireless experimentation
+    * uses the most CPU for every packet, as complex calculations are used for fidelity
+    * See [Wiki](https://github.com/adjacentlink/emane/wiki) for details on general EMANE usage
+    * See [CORE EMANE](emane.md) for details on using EMANE in CORE
 
 | Model    | Type   | Supported Platform(s) | Fidelity | Description                                                                   |
 |----------|--------|-----------------------|----------|-------------------------------------------------------------------------------|
@@ -545,7 +540,7 @@ The default configuration of the WLAN is set to use the basic range model. Havin
 selected causes **core-daemon** to calculate the distance between nodes based
 on screen pixels. A numeric range in screen pixels is set for the wireless
 network using the **Range** slider. When two wireless nodes are within range of
-each other, a green line is drawn between them and they are linked.  Two
+each other, a green line is drawn between them and they are linked. Two
 wireless nodes that are farther than the range pixels apart are not linked.
 During Execute mode, users may move wireless nodes around by clicking and
 dragging them, and wireless links will be dynamically made or broken.
@@ -561,7 +556,8 @@ CORE has a few ways to script mobility.
 | EMANE events | See [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude. |
 
 For the first method, you can create a mobility script using a text
-editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/),  and associate the script with one of the wireless
+editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/), and associate
+the script with one of the wireless
 using the WLAN configuration dialog box. Click the *ns-2 mobility script...*
 button, and set the *mobility script file* field in the resulting *ns2script*
 configuration dialog.

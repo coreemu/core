@@ -1,9 +1,6 @@
-# CORE Services
+# Services (Deprecated)
 
-* Table of Contents
-{:toc}
-
-## Services
+## Overview
 
 CORE uses the concept of services to specify what processes or scripts run on a
 node when it is started. Layer-3 nodes such as routers and PCs are defined by
@@ -16,8 +13,8 @@ configuration files, startup index, starting commands, validation commands,
 shutdown commands, and meta-data associated with a node.
 
 > **NOTE:** **Network namespace nodes do not undergo the normal Linux boot process**
-   using the **init**, **upstart**, or **systemd** frameworks. These
-   lightweight nodes use configured CORE *services*.
+> using the **init**, **upstart**, or **systemd** frameworks. These
+> lightweight nodes use configured CORE *services*.
 
 ## Available Services
 
@@ -72,10 +69,10 @@ The dialog has three tabs for configuring the different aspects of the service:
 files, directories, and startup/shutdown.
 
 > **NOTE:** A **yellow** customize icon next to a service indicates that service
-   requires customization (e.g. the *Firewall* service).
-   A **green** customize icon indicates that a custom configuration exists.
-   Click the *Defaults* button when customizing a service to remove any
-   customizations.
+> requires customization (e.g. the *Firewall* service).
+> A **green** customize icon indicates that a custom configuration exists.
+> Click the *Defaults* button when customizing a service to remove any
+> customizations.
 
 The Files tab is used to display or edit the configuration files or scripts that
 are used for this service. Files can be selected from a drop-down list, and
@@ -91,9 +88,9 @@ the Zebra service, because Quagga running on each node needs to write separate
 PID files to that directory.
 
 > **NOTE:** The **/var/log** and **/var/run** directories are
-   mounted uniquely per-node by default.
-   Per-node mount targets can be found in **/tmp/pycore.nnnnn/nN.conf/**
-   (where *nnnnn* is the session number and *N* is the node number.)
+> mounted uniquely per-node by default.
+> Per-node mount targets can be found in **/tmp/pycore.nnnnn/nN.conf/**
+(where *nnnnn* is the session number and *N* is the node number.)
 
 The Startup/shutdown tab lists commands that are used to start and stop this
 service. The startup index allows configuring when this service starts relative
@@ -121,7 +118,7 @@ produces a non-zero return value, an exception is generated, which will cause
 an error to be displayed in the Check Emulation Light.
 
 > **NOTE:** To start, stop, and restart services during run-time, right-click a
-   node and use the *Services...* menu.
+> node and use the *Services...* menu.
 
 ## New Services
 

@@ -1,10 +1,9 @@
 # Installation
-* Table of Contents
-{:toc}
 
 > **WARNING:** if Docker is installed, the default iptable rules will block CORE traffic
 
 ## Overview
+
 CORE currently supports and provides the following install options, with the package
 option being preferred.
 
@@ -13,6 +12,7 @@ option being preferred.
 * [Dockerfile based install](#dockerfile-based-install)
 
 ### Requirements
+
 Any computer capable of running Linux should be able to run CORE. Since the physical machine will be hosting numerous
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
@@ -21,31 +21,35 @@ containers, as a general rule you should select a machine having as much RAM and
 * nftables compatible kernel and nft command line tool
 
 ### Supported Linux Distributions
+
 Plan is to support recent Ubuntu and CentOS LTS releases.
 
 Verified:
+
 * Ubuntu - 18.04, 20.04, 22.04
 * CentOS - 7.8
 
 ### Files
+
 The following is a list of files that would be installed after installation.
 
 * executables
-  * `<prefix>/bin/{vcmd, vnode}`
-  * can be adjusted using script based install , package will be /usr
+    * `<prefix>/bin/{vcmd, vnode}`
+    * can be adjusted using script based install , package will be /usr
 * python files
-  * virtual environment `/opt/core/venv`
-  * local install will be local to the python version used
-    * `python3 -c "import core; print(core.__file__)"`
-  * scripts {core-daemon, core-cleanup, etc}
-    * virtualenv `/opt/core/venv/bin`
-    * local `/usr/local/bin`
+    * virtual environment `/opt/core/venv`
+    * local install will be local to the python version used
+        * `python3 -c "import core; print(core.__file__)"`
+    * scripts {core-daemon, core-cleanup, etc}
+        * virtualenv `/opt/core/venv/bin`
+        * local `/usr/local/bin`
 * configuration files
-  * `/etc/core/{core.conf, logging.conf}`
+    * `/etc/core/{core.conf, logging.conf}`
 * ospf mdr repository files when using script based install
-  * `<repo>/../ospf-mdr`
+    * `<repo>/../ospf-mdr`
 
 ### Installed Scripts
+
 The following python scripts are provided.
 
 | Name                | Description                                                                  |
@@ -59,17 +63,20 @@ The following python scripts are provided.
 | core-service-update | tool to update automate modifying a legacy service to match current naming   |
 
 ### Upgrading from Older Release
+
 Please make sure to uninstall any previous installations of CORE cleanly
 before proceeding to install.
 
 Clearing out a current install from 7.0.0+, making sure to provide options
 used for install (`-l` or `-p`).
+
 ```shell
 cd <CORE_REPO>
 inv uninstall <options>
 ```
 
 Previous install was built from source for CORE release older than 7.0.0:
+
 ```shell
 cd <CORE_REPO>
 sudo make uninstall
@@ -78,6 +85,7 @@ make clean
 ```
 
 Installed from previously built packages:
+
 ```shell
 # centos
 sudo yum remove core
@@ -107,6 +115,7 @@ is ran when uninstalling and would require the same options as given, during the
 > tk compatibility for python gui, and venv for virtual environments
 
 Examples for install:
+
 ```shell
 # recommended to upgrade to the latest version of pip before installation
 # in python, can help avoid building from source issues
@@ -128,6 +137,7 @@ sudo <python> -m pip install /opt/core/core-<version>-py3-none-any.whl
 ```
 
 Example for removal, requires using the same options as install:
+
 ```shell
 # remove a standard install
 sudo <yum/apt> remove core
@@ -142,6 +152,7 @@ sudo NO_PYTHON=1 <yum/apt> remove core
 ```
 
 ### Installing OSPF MDR
+
 You will need to manually install OSPF MDR for routing nodes, since this is not
 provided by the package.
 
@@ -159,6 +170,7 @@ sudo make install
 When done see [Post Install](#post-install).
 
 ## Script Based Install
+
 The script based installation will install system level dependencies, python library and
 dependencies, as well as dependencies for building CORE.
 
@@ -166,6 +178,7 @@ The script based install also automatically builds and installs OSPF MDR, used b
 on routing nodes. This can optionally be skipped.
 
 Installaion will carry out the following steps:
+
 * installs system dependencies for building core
 * builds vcmd/vnoded and python grpc files
 * installs core into poetry managed virtual environment or locally, if flag is passed
@@ -188,6 +201,7 @@ The following tools will be leveraged during installation:
 | [poetry](https://python-poetry.org/)        | used to install python virtual environment or building a python wheel |
 
 First we will need to clone and navigate to the CORE repo.
+
 ```shell
 # clone CORE repo
 git clone https://github.com/coreemu/core.git
@@ -229,6 +243,7 @@ Options:
 When done see [Post Install](#post-install).
 
 ### Unsupported Linux Distribution
+
 For unsupported OSs you could attempt to do the following to translate
 an installation to your use case.
 
@@ -243,6 +258,7 @@ inv install --dry -v -p <prefix> -i <install type>
 ```
 
 ## Dockerfile Based Install
+
 You can leverage one of the provided Dockerfiles, to run and launch CORE within a Docker container.
 
 Since CORE nodes will leverage software available within the system for a given use case,
@@ -253,7 +269,7 @@ make sure to update and build the Dockerfile with desired software.
 git clone https://github.com/coreemu/core.git
 cd core
 # build image
-sudo docker build -t core -f Dockerfile.<centos,ubuntu,oracle> .
+sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu,oracle> .
 # start container
 sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
 # enable xhost access to the root user
@@ -265,6 +281,7 @@ sudo docker exec -it core core-gui
 When done see [Post Install](#post-install).
 
 ## Installing EMANE
+
 > **NOTE:** installing EMANE for the virtual environment is known to work for 1.21+
 
 The recommended way to install EMANE is using prebuilt packages, otherwise
@@ -282,6 +299,7 @@ Also, these EMANE bindings need to be built using `protoc` 3.19+. So make sure
 that is available and being picked up on PATH properly.
 
 Examples for building and installing EMANE python bindings for use in CORE:
+
 ```shell
 # if your system does not have protoc 3.19+
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
@@ -306,32 +324,39 @@ inv install-emane -e <version tag>
 ```
 
 ## Post Install
+
 After installation completes you are now ready to run CORE.
 
 ### Resolving Docker Issues
+
 If you have Docker installed, by default it will change the iptables
 forwarding chain to drop packets, which will cause issues for CORE traffic.
 
 You can temporarily resolve the issue with the following command:
+
 ```shell
 sudo iptables --policy FORWARD ACCEPT
 ```
+
 Alternatively, you can configure Docker to avoid doing this, but will likely
 break normal Docker networking usage. Using the setting below will require
 a restart.
 
 Place the file contents below in **/etc/docker/docker.json**
+
 ```json
 {
-	"iptables": false
+  "iptables": false
 }
 ```
 
 ### Resolving Path Issues
+
 One problem running CORE you may run into, using the virtual environment or locally
 can be issues related to your path.
 
 To add support for your user to run scripts from the virtual environment:
+
 ```shell
 # can add to ~/.bashrc
 export PATH=$PATH:/opt/core/venv/bin
@@ -339,6 +364,7 @@ export PATH=$PATH:/opt/core/venv/bin
 
 This will not solve the path issue when running as sudo, so you can do either
 of the following to compensate.
+
 ```shell
 # run command passing in the right PATH to pickup from the user running the command
 sudo env PATH=$PATH core-daemon
@@ -350,6 +376,7 @@ sudop core-daemon
 ```
 
 ### Running CORE
+
 The following assumes I have resolved PATH issues and setup the `sudop` alias.
 
 ```shell
@@ -360,6 +387,7 @@ core-gui
 ```
 
 ### Enabling Service
+
 After installation, the core service is not enabled by default. If you desire to use the
 service, run the following commands.
 

@@ -1,0 +1,56 @@
+site_name: CORE Documentation
+use_directory_urls: false
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to Light Mode
+      primary: teal
+      accent: teal
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to Dark Mode
+      primary: teal
+      accent: teal
+  features:
+    - navigation.path
+    - navigation.instant
+    - navigation.footer
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path: docs
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+nav:
+  - Home: index.md
+  - Overview:
+      - Architecture: architecture.md
+      - Performance: performance.md
+  - Installation:
+      - Overview: install.md
+      - Ubuntu: install_ubuntu.md
+      - CentOS: install_centos.md
+  - Detailed Topics:
+      - GUI: gui.md
+      - API:
+          - Python: python.md
+          - gRPC: grpc.md
+      - Services:
+          - Config Services: configservices.md
+          - Services (Deprecated): services.md
+      - EMANE: emane.md
+      - Node Types:
+          - Overview: nodetypes.md
+          - Docker: docker.md
+          - LXC: lxc.md
+      - Distributed: distributed.md
+      - Control Network: ctrlnet.md
+  - Developers Guide: devguide.md
