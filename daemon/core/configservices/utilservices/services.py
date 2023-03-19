@@ -213,7 +213,7 @@ class PcapService(ConfigService):
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
-        return dict()
+        return dict(ifnames=ifnames)
 
 
 class RadvdService(ConfigService):
