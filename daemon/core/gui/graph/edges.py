@@ -5,7 +5,7 @@ import tkinter as tk
 from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 from core.api.grpc.wrappers import Interface, Link
-from core.gui import themes
+from core.gui import nodeutils, themes
 from core.gui.dialogs.linkconfig import LinkConfigurationDialog
 from core.gui.frames.link import EdgeInfoFrame, WirelessEdgeInfoFrame
 from core.gui.graph import tags
@@ -638,10 +638,10 @@ class CanvasEdge(Edge):
         self.check_wireless()
         if link is None:
             link = self.app.core.ifaces_manager.create_link(self)
-        if link.iface1:
+        if link.iface1 and not nodeutils.is_rj45(self.src.core_node):
             iface1 = link.iface1
             self.src.ifaces[iface1.id] = iface1
-        if link.iface2:
+        if link.iface2 and not nodeutils.is_rj45(self.dst.core_node):
             iface2 = link.iface2
             self.dst.ifaces[iface2.id] = iface2
         self.token = create_edge_token(link)
