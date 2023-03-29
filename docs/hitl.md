@@ -34,9 +34,11 @@ and the other node you wish to be connected to. The RJ45 node will display "UNAS
 Double-click the RJ45 node to assign a physical interface. A list of available
 interfaces will be shown, and one may be selected, then selecting **Apply**.
 
-> **NOTE:** When you press the Start button to instantiate your topology, the
-> interface assigned to the RJ45 will be connected to the CORE topology. The
-> interface can no longer be used by the system.
+!!! note
+
+    When you press the Start button to instantiate your topology, the
+    interface assigned to the RJ45 will be connected to the CORE topology. The
+    interface can no longer be used by the system.
 
 ### Multiple RJ45s with One Interface (VLAN)
 
@@ -71,11 +73,13 @@ the node will display "UNASSIGNED". This text should be replaced with the IP
 address of the tunnel peer. This is the IP address of the other CORE machine or
 physical machine, not an IP address of another virtual node.
 
-> **NOTE:** Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices. The *gretap* device
-> has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
-> bridge's MTU
-> becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
-> large packets if other bridge ports have a higher MTU such as 1,500 bytes.
+!!! note
+
+    Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices.
+    The *gretap* device has an interface MTU of 1,458 bytes; when joined to a Linux
+    bridge, the bridge's MTU becomes 1,458 bytes. The Linux bridge will not perform
+    fragmentation for large packets if other bridge ports have a higher MTU such
+    as 1,500 bytes.
 
 The GRE key is used to identify flows with GRE tunneling. This allows multiple
 GRE tunnels to exist between that same pair of tunnel peers. A unique number

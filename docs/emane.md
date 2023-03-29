@@ -57,7 +57,9 @@ You can find more detailed tutorials and examples at the
 
 Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
-> **WARNING:** demo files will be found within the new `core-gui`
+!!! info
+
+    Demo files will be found within the `core-gui` **~/.coregui/xmls** directory
 
 | Topic                                | Model   | Description                                               |
 |--------------------------------------|---------|-----------------------------------------------------------|
@@ -89,8 +91,10 @@ If you have an EMANE event generator (e.g. mobility or pathloss scripts) and
 want to have CORE subscribe to EMANE location events, set the following line
 in the **core.conf** configuration file.
 
-> **NOTE:** Do not set this option to True if you want to manually drag nodes around
-> on the canvas to update their location in EMANE.
+!!! note
+
+    Do not set this option to True if you want to manually drag nodes around
+    on the canvas to update their location in EMANE.
 
 ```shell
 emane_event_monitor = True
@@ -278,7 +282,9 @@ being used, along with changing any configuration setting from their defaults.
 
 ![](static/emane-configuration.png)
 
-> **NOTE:** Here is a quick checklist for distributed emulation with EMANE.
+!!! note
+
+    Here is a quick checklist for distributed emulation with EMANE.
 
 1. Follow the steps outlined for normal CORE.
 2. Assign nodes to desired servers

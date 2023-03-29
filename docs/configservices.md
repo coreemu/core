@@ -79,30 +79,28 @@ introduced to automate tasks.
 
 ### Creating New Services
 
+!!! note
+
+    The directory base name used in **custom_services_dir** below should
+    be unique and should not correspond to any existing Python module name.
+    For example, don't use the name **subprocess** or **services**.
+
 1. Modify the example service shown below
    to do what you want. It could generate config/script files, mount per-node
    directories, start processes/scripts, etc. Your file can define one or more
    classes to be imported. You can create multiple Python files that will be imported.
 
-2. Put these files in a directory such as ~/.coregui/custom_services
-   Note that the last component of this directory name **myservices** should not
-   be named something like **services** which conflicts with an existing module.
+2. Put these files in a directory such as **~/.coregui/custom_services**.
 
 3. Add a **custom_config_services_dir = ~/.coregui/custom_services** entry to the
    /etc/core/core.conf file.
-
-   **NOTE:**
-   The directory name used in **custom_services_dir** should be unique and
-   should not correspond to
-   any existing Python module name. For example, don't use the name **subprocess**
-   or **services**.
 
 4. Restart the CORE daemon (core-daemon). Any import errors (Python syntax)
    should be displayed in the terminal (or service log, like journalctl).
 
 5. Start using your custom service on your nodes. You can create a new node
    type that uses your service, or change the default services for an existing
-   node type, or change individual nodes. .
+   node type, or change individual nodes.
 
 ### Example Custom Service
 

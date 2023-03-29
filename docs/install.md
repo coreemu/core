@@ -1,10 +1,12 @@
 # Installation
 
-> **WARNING:** if Docker is installed, the default iptable rules will block CORE traffic
+!!! warning
+
+    If Docker is installed, the default iptable rules will block CORE traffic
 
 ## Overview
 
-CORE currently supports and provides the following install options, with the package
+CORE currently supports and provides the following installation options, with the package
 option being preferred.
 
 * [Package based install (rpm/deb)](#package-based-install)
@@ -111,8 +113,10 @@ The built packages will require and install system level dependencies, as well a
 a post install script to install the provided CORE python wheel. A similar uninstall script
 is ran when uninstalling and would require the same options as given, during the install.
 
-> **NOTE:** PYTHON defaults to python3 for installs below, CORE requires python3.9+, pip,
-> tk compatibility for python gui, and venv for virtual environments
+!!! note
+
+    PYTHON defaults to python3 for installs below, CORE requires python3.9+, pip,
+    tk compatibility for python gui, and venv for virtual environments
 
 Examples for install:
 
@@ -185,11 +189,15 @@ Installaion will carry out the following steps:
 * installs systemd service pointing to appropriate python location based on install type
 * clone/build/install working version of [OPSF MDR](https://github.com/USNavalResearchLaboratory/ospf-mdr)
 
-> **NOTE:** installing locally comes with its own risks, it can result it potential
-> dependency conflicts with system package manager installed python dependencies
+!!! note
 
-> **NOTE:** provide a prefix that will be found on path when running as sudo,
-> if the default prefix /usr/local will not be valid
+    Installing locally comes with its own risks, it can result it potential
+    dependency conflicts with system package manager installed python dependencies
+
+!!! note
+
+    Provide a prefix that will be found on path when running as sudo,
+    if the default prefix /usr/local will not be valid
 
 The following tools will be leveraged during installation:
 
@@ -282,7 +290,9 @@ When done see [Post Install](#post-install).
 
 ## Installing EMANE
 
-> **NOTE:** installing EMANE for the virtual environment is known to work for 1.21+
+!!! note
+
+    Installing EMANE for the virtual environment is known to work for 1.21+
 
 The recommended way to install EMANE is using prebuilt packages, otherwise
 you can follow their instructions for installing from source. Installation

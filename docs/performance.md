@@ -28,8 +28,10 @@ the number of times the system as a whole needed to deal with a packet. As
 more network hops are added, this increases the number of context switches
 and decreases the throughput seen on the full length of the network path.
 
-> **NOTE:** The right question to be asking is *"how much traffic?"*, not
-*"how many nodes?"*.
+!!! note
+
+    The right question to be asking is *"how much traffic?"*, not
+    *"how many nodes?"*.
 
 For a more detailed study of performance in CORE, refer to the following
 publications:
