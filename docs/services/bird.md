@@ -1,8 +1,5 @@
 # BIRD Internet Routing Daemon
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
 The [BIRD Internet Routing Daemon](https://bird.network.cz/) is a routing
@@ -30,6 +27,7 @@ sudo apt-get install bird
 
 You can download BIRD source code from its
 [official repository.](https://gitlab.labs.nic.cz/labs/bird/)
+
 ```shell
 ./configure
 make
@@ -37,6 +35,7 @@ su
 make install
 vi /etc/bird/bird.conf
 ```
+
 The installation will place the bird directory inside */etc* where you will
 also find its config file.
 
