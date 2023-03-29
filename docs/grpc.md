@@ -1,4 +1,4 @@
-# gRPC API
+* Table of Contents
 
 ## Overview
 
@@ -18,7 +18,7 @@ to help provide some conveniences when using the API.
 
 ### Client HTTP Proxy
 
-Since gRPC is HTTP2 based, proxy configurations can cause issues. By default
+Since gRPC is HTTP2 based, proxy configurations can cause issues. By default,
 the client disables proxy support to avoid issues when a proxy is present.
 You can enable and properly account for this issue when needed.
 
