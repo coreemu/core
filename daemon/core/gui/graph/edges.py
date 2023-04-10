@@ -751,9 +751,9 @@ class CanvasEdge(Edge):
         self.src.edges.discard(self)
         if self.dst:
             self.dst.edges.discard(self)
-            if self.link.iface1:
+            if self.link.iface1 and not nodeutils.is_rj45(self.src.core_node):
                 del self.src.ifaces[self.link.iface1.id]
-            if self.link.iface2:
+            if self.link.iface2 and not nodeutils.is_rj45(self.dst.core_node):
                 del self.dst.ifaces[self.link.iface2.id]
             if self.src.is_wireless():
                 self.dst.delete_antenna()
