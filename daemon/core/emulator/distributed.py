@@ -187,8 +187,7 @@ class DistributedController:
         :return: nothing
         """
         mtu = self.session.options.get_int("mtu")
-        for node_id in self.session.nodes:
-            node = self.session.nodes[node_id]
+        for node in self.session.nodes.values():
             if not isinstance(node, CtrlNet) or node.serverintf is not None:
                 continue
             for name in self.servers:
