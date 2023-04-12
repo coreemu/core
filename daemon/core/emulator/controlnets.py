@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from core import utils
 from core.emulator.data import InterfaceData
@@ -32,7 +32,7 @@ class ControlNetManager:
 
     def _get_server_ifaces(
         self,
-    ) -> Tuple[None, Optional[str], Optional[str], Optional[str]]:
+    ) -> tuple[None, Optional[str], Optional[str], Optional[str]]:
         """
         Retrieve control net server interfaces.
 
@@ -48,7 +48,7 @@ class ControlNetManager:
 
     def _get_prefixes(
         self,
-    ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
+    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """
         Retrieve control net prefixes.
 

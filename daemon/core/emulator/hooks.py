@@ -1,7 +1,7 @@
 import logging
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List
 
 from core.emulator.enumerations import EventTypes
 from core.errors import CoreError
@@ -18,8 +18,8 @@ class HookManager:
         """
         Create a HookManager instance.
         """
-        self.script_hooks: Dict[EventTypes, Dict[str, str]] = {}
-        self.callback_hooks: Dict[EventTypes, List[Callable[[], None]]] = {}
+        self.script_hooks: dict[EventTypes, dict[str, str]] = {}
+        self.callback_hooks: dict[EventTypes, list[Callable[[], None]]] = {}
 
     def reset(self) -> None:
         """
@@ -43,9 +43,7 @@ class HookManager:
         state_hooks = self.script_hooks.setdefault(state, {})
         if file_name in state_hooks:
             raise CoreError(
-                "adding duplicate state(%s) hook script(%s)",
-                state.name,
-                file_name,
+                f"adding duplicate state({state.name}) hook script({file_name})",
             )
         state_hooks[file_name] = data
 
@@ -60,9 +58,8 @@ class HookManager:
         state_hooks = self.script_hooks.get(state, {})
         if file_name not in state_hooks:
             raise CoreError(
-                "deleting state(%s) hook script(%s) that does not exist",
-                state.name,
-                file_name,
+                f"deleting state({state.name}) hook script({file_name}) "
+                "that does not exist",
             )
         del state_hooks[file_name]
 
@@ -80,9 +77,7 @@ class HookManager:
         if hook in hooks:
             name = getattr(callable, "__name__", repr(hook))
             raise CoreError(
-                "adding duplicate state(%s) hook callback(%s)",
-                state.name,
-                name,
+                f"adding duplicate state({state.name}) hook callback({name})",
             )
         hooks.append(hook)
 
@@ -100,14 +95,13 @@ class HookManager:
         if hook not in hooks:
             name = getattr(callable, "__name__", repr(hook))
             raise CoreError(
-                "deleting state(%s) hook callback(%s) that does not exist",
-                state.name,
-                name,
+                f"deleting state({state.name}) hook callback({name}) "
+                "that does not exist",
             )
         hooks.remove(hook)
 
     def run_hooks(
-        self, state: EventTypes, directory: Path, env: Dict[str, str]
+        self, state: EventTypes, directory: Path, env: dict[str, str]
     ) -> None:
         """
         Run all hooks for the current state.
@@ -137,10 +131,8 @@ class HookManager:
                         )
                 except (IOError, subprocess.CalledProcessError) as e:
                     raise CoreError(
-                        "failure running state(%s) hook script(%s): %s",
-                        state.name,
-                        file_name,
-                        e,
+                        f"failure running state({state.name}) "
+                        f"hook script({file_name}): {e}",
                     )
         for hook in self.callback_hooks.get(state, []):
             try:
@@ -148,8 +140,6 @@ class HookManager:
             except Exception as e:
                 name = getattr(callable, "__name__", repr(hook))
                 raise CoreError(
-                    "failure running state(%s) hook callback(%s): %s",
-                    state.name,
-                    name,
-                    e,
+                    f"failure running state({state.name}) "
+                    f"hook callback({name}): {e}",
                 )

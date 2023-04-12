@@ -51,6 +51,11 @@ class BroadcastManager:
         :return: nothing
         """
         handlers = self.handlers.setdefault(data_type, set())
+        if handler in handlers:
+            raise CoreError(
+                f"cannot add data({data_type}) handler({repr(handler)}), "
+                f"already exists"
+            )
         handlers.add(handler)
 
     def remove_handler(self, data_type: type[T], handler: Callable[[T], None]) -> None:
@@ -65,6 +70,6 @@ class BroadcastManager:
         if handler not in handlers:
             raise CoreError(
                 f"cannot remove data({data_type}) handler({repr(handler)}), "
-                f"does not exist "
+                f"does not exist"
             )
         handlers.remove(handler)
