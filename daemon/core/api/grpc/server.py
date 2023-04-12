@@ -1104,7 +1104,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_id = request.wlan_config.node_id
         config = request.wlan_config.config
         session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
-        if session.state == EventTypes.RUNTIME_STATE:
+        if session.is_running():
             node = self.get_node(session, node_id, context, WlanNode)
             node.updatemodel(config)
         return SetWlanConfigResponse(result=True)

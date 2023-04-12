@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type, Union
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
-from core.emulator.enumerations import EventTypes, MessageFlags, RegisterTlvs
+from core.emulator.enumerations import MessageFlags, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNetworkBase, CoreNode, NodeOptions
 from core.nodes.interface import CoreInterface
@@ -167,7 +167,7 @@ class EmaneNet(CoreNetworkBase):
         self.mobility: Optional[WayPointMobility] = None
         model_class = self.session.emane.get_model(options.emane_model)
         self.wireless_model: Optional["EmaneModel"] = model_class(self.session, self.id)
-        if self.session.state == EventTypes.RUNTIME_STATE:
+        if self.session.is_running():
             self.session.emane.add_node(self)
 
     @classmethod
@@ -280,7 +280,7 @@ class EmaneNet(CoreNetworkBase):
             self.attach(iface)
         if self.up:
             iface.startup()
-        if self.session.state == EventTypes.RUNTIME_STATE:
+        if self.session.is_running():
             self.session.emane.start_iface(self, iface)
         return iface
 

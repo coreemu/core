@@ -520,8 +520,7 @@ class Session:
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
         # boot core nodes after runtime
-        is_runtime = self.state == EventTypes.RUNTIME_STATE
-        if is_runtime and isinstance(node, CoreNode):
+        if self.is_running() and isinstance(node, CoreNode):
             self.add_remove_control_iface(node, remove=False)
             self.boot_node(node)
         self.sdt.add_node(node)
@@ -1011,7 +1010,7 @@ class Session:
 
         :return: list of service boot errors during startup
         """
-        if self.state == EventTypes.RUNTIME_STATE:
+        if self.is_running():
             logger.warning("ignoring instantiate, already in runtime state")
             return []
         # create control net interfaces and network tunnels
@@ -1365,7 +1364,7 @@ class Session:
         Return the current time we have been in the runtime state, or zero
         if not in runtime.
         """
-        if self.state == EventTypes.RUNTIME_STATE:
+        if self.is_running():
             return time.monotonic() - self.state_time
         else:
             return 0.0
@@ -1442,3 +1441,11 @@ class Session:
             color = LINK_COLORS[index]
             self.link_colors[network_id] = color
         return color
+
+    def is_running(self) -> bool:
+        """
+        Convenience for checking if this session is in the runtime state.
+
+        :return: True if in the runtime state, False otherwise
+        """
+        return self.state == EventTypes.RUNTIME_STATE
