@@ -242,7 +242,7 @@ make sure to update and build the Dockerfile with desired software.
 ```shell
 # clone core
 git clone https://github.com/coreemu/core.git
-cd core
+cd core/dockerfiles
 # build image
 sudo docker build -t core -f Dockerfile.<centos,ubuntu,oracle> .
 # start container
