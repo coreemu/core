@@ -5,7 +5,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 import logging
 import socket
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type
+from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
 from core.constants import CORE_CONF_DIR
@@ -28,9 +28,9 @@ CORE_LAYER: str = "CORE"
 NODE_LAYER: str = "CORE::Nodes"
 LINK_LAYER: str = "CORE::Links"
 WIRED_LINK_LAYER: str = f"{LINK_LAYER}::wired"
-CORE_LAYERS: List[str] = [CORE_LAYER, LINK_LAYER, NODE_LAYER, WIRED_LINK_LAYER]
+CORE_LAYERS: list[str] = [CORE_LAYER, LINK_LAYER, NODE_LAYER, WIRED_LINK_LAYER]
 DEFAULT_LINK_COLOR: str = "red"
-NODE_TYPES: Dict[Type[NodeBase], str] = {
+NODE_TYPES: dict[type[NodeBase], str] = {
     HubNode: "hub",
     SwitchNode: "lanswitch",
     TunnelNode: "tunnel",
@@ -63,7 +63,7 @@ class Sdt:
     # default altitude (in meters) for flyto view
     DEFAULT_ALT: int = 2500
     # TODO: read in user"s nodes.conf here; below are default node types from the GUI
-    DEFAULT_SPRITES: Dict[str, str] = [
+    DEFAULT_SPRITES: dict[str, str] = [
         ("router", "router.png"),
         ("host", "host.png"),
         ("PC", "pc.png"),
@@ -88,9 +88,9 @@ class Sdt:
         self.sock: Optional[socket.socket] = None
         self.connected: bool = False
         self.url: str = self.DEFAULT_SDT_URL
-        self.address: Optional[Tuple[Optional[str], Optional[int]]] = None
+        self.address: Optional[tuple[Optional[str], Optional[int]]] = None
         self.protocol: Optional[str] = None
-        self.network_layers: Set[str] = set()
+        self.network_layers: set[str] = set()
         self.session.node_handlers.append(self.handle_node_update)
         self.session.link_handlers.append(self.handle_link_update)
 
@@ -138,7 +138,7 @@ class Sdt:
                 else:
                     # Default to tcp
                     self.sock = socket.create_connection(self.address, 5)
-            except IOError:
+            except OSError:
                 logger.exception("SDT socket connect error")
                 return False
 
@@ -176,7 +176,7 @@ class Sdt:
         if self.sock:
             try:
                 self.sock.close()
-            except IOError:
+            except OSError:
                 logger.error("error closing socket")
             finally:
                 self.sock = None
@@ -212,7 +212,7 @@ class Sdt:
             logger.debug("sdt cmd: %s", cmd)
             self.sock.sendall(cmd)
             return True
-        except IOError:
+        except OSError:
             logger.exception("SDT connection error")
             self.sock = None
             self.connected = False

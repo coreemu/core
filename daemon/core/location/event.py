@@ -6,7 +6,7 @@ import heapq
 import threading
 import time
 from functools import total_ordering
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Optional
 
 
 class Timer(threading.Thread):
@@ -19,8 +19,8 @@ class Timer(threading.Thread):
         self,
         interval: float,
         func: Callable[..., None],
-        args: Tuple[Any] = None,
-        kwargs: Dict[Any, Any] = None,
+        args: tuple[Any] = None,
+        kwargs: dict[Any, Any] = None,
     ) -> None:
         """
         Create a Timer instance.
@@ -38,11 +38,11 @@ class Timer(threading.Thread):
         # validate arguments were provided
         if args is None:
             args = ()
-        self.args: Tuple[Any] = args
+        self.args: tuple[Any] = args
         # validate keyword arguments were provided
         if kwargs is None:
             kwargs = {}
-        self.kwargs: Dict[Any, Any] = kwargs
+        self.kwargs: dict[Any, Any] = kwargs
 
     def cancel(self) -> bool:
         """
@@ -96,8 +96,8 @@ class Event:
         self.eventnum: int = eventnum
         self.time: float = event_time
         self.func: Callable[..., None] = func
-        self.args: Tuple[Any] = args
-        self.kwds: Dict[Any, Any] = kwds
+        self.args: tuple[Any] = args
+        self.kwds: dict[Any, Any] = kwds
         self.canceled: bool = False
 
     def __lt__(self, other: "Event") -> bool:
@@ -135,7 +135,7 @@ class EventLoop:
         Creates a EventLoop instance.
         """
         self.lock: threading.RLock = threading.RLock()
-        self.queue: List[Event] = []
+        self.queue: list[Event] = []
         self.eventnum: int = 0
         self.timer: Optional[Timer] = None
         self.running: bool = False
