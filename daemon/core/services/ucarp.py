@@ -1,7 +1,6 @@
 """
 ucarp.py: defines high-availability IP address controlled by ucarp
 """
-from typing import Tuple
 
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
@@ -12,16 +11,16 @@ UCARP_ETC = "/usr/local/etc/ucarp"
 class Ucarp(CoreService):
     name: str = "ucarp"
     group: str = "Utility"
-    dirs: Tuple[str, ...] = (UCARP_ETC,)
-    configs: Tuple[str, ...] = (
+    dirs: tuple[str, ...] = (UCARP_ETC,)
+    configs: tuple[str, ...] = (
         UCARP_ETC + "/default.sh",
         UCARP_ETC + "/default-up.sh",
         UCARP_ETC + "/default-down.sh",
         "ucarpboot.sh",
     )
-    startup: Tuple[str, ...] = ("bash ucarpboot.sh",)
-    shutdown: Tuple[str, ...] = ("killall ucarp",)
-    validate: Tuple[str, ...] = ("pidof ucarp",)
+    startup: tuple[str, ...] = ("bash ucarpboot.sh",)
+    shutdown: tuple[str, ...] = ("killall ucarp",)
+    validate: tuple[str, ...] = ("pidof ucarp",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -45,13 +44,13 @@ class Ucarp(CoreService):
         Returns configuration file text.
         """
         ucarp_bin = node.session.options.get("ucarp_bin", "/usr/sbin/ucarp")
-        return """\
+        return f"""\
 #!/bin/sh
 # Location of UCARP executable
-UCARP_EXEC=%s
+UCARP_EXEC={ucarp_bin}
 
 # Location of the UCARP config directory
-UCARP_CFGDIR=%s
+UCARP_CFGDIR={UCARP_ETC}
 
 # Logging Facility
 FACILITY=daemon
@@ -92,40 +91,34 @@ OPTIONS="-z -n -M"
 
 # Send extra parameter to down and up scripts
 #XPARAM="-x <enter param here>"
-XPARAM="-x ${VIRTUAL_NET}"
+XPARAM="-x ${{VIRTUAL_NET}}"
 
 # The start and stop scripts
-START_SCRIPT=${UCARP_CFGDIR}/default-up.sh
-STOP_SCRIPT=${UCARP_CFGDIR}/default-down.sh
+START_SCRIPT=${{UCARP_CFGDIR}}/default-up.sh
+STOP_SCRIPT=${{UCARP_CFGDIR}}/default-down.sh
 
 # These line should not need to be touched
 UCARP_OPTS="$OPTIONS -b $UCARP_BASE -k $SKEW -i $INTERFACE -v $INSTANCE_ID -p $PASSWORD -u $START_SCRIPT -d $STOP_SCRIPT -a $VIRTUAL_ADDRESS -s $SOURCE_ADDRESS -f $FACILITY $XPARAM"
 
-${UCARP_EXEC} -B ${UCARP_OPTS}
-""" % (
-            ucarp_bin,
-            UCARP_ETC,
-        )
+${{UCARP_EXEC}} -B ${{UCARP_OPTS}}
+"""
 
     @classmethod
     def generate_ucarp_boot(cls, node: CoreNode) -> str:
         """
         Generate a shell script used to boot the Ucarp daemons.
         """
-        return (
-            """\
+        return f"""\
 #!/bin/sh
 # Location of the UCARP config directory
-UCARP_CFGDIR=%s
+UCARP_CFGDIR={UCARP_ETC}
 
-chmod a+x ${UCARP_CFGDIR}/*.sh
+chmod a+x ${{UCARP_CFGDIR}}/*.sh
 
 # Start the default ucarp daemon configuration
-${UCARP_CFGDIR}/default.sh
+${{UCARP_CFGDIR}}/default.sh
 
 """
-            % UCARP_ETC
-        )
 
     @classmethod
     def generate_vip_up(cls, node: CoreNode) -> str:

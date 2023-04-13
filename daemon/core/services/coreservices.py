@@ -11,18 +11,9 @@ import enum
 import logging
 import pkgutil
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Optional, Union
 
 from core import services as core_services
 from core import utils
@@ -41,7 +32,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emulator.session import Session
 
-    CoreServiceType = Union["CoreService", Type["CoreService"]]
+    CoreServiceType = Union["CoreService", type["CoreService"]]
 
 
 class ServiceMode(enum.Enum):
@@ -57,25 +48,25 @@ class ServiceDependencies:
     provided.
     """
 
-    def __init__(self, services: List["CoreServiceType"]) -> None:
-        self.visited: Set[str] = set()
-        self.services: Dict[str, "CoreServiceType"] = {}
-        self.paths: Dict[str, List["CoreServiceType"]] = {}
-        self.boot_paths: List[List["CoreServiceType"]] = []
-        roots = set([x.name for x in services])
+    def __init__(self, services: list["CoreServiceType"]) -> None:
+        self.visited: set[str] = set()
+        self.services: dict[str, "CoreServiceType"] = {}
+        self.paths: dict[str, list["CoreServiceType"]] = {}
+        self.boot_paths: list[list["CoreServiceType"]] = []
+        roots = {x.name for x in services}
         for service in services:
             self.services[service.name] = service
             roots -= set(service.dependencies)
-        self.roots: List["CoreServiceType"] = [x for x in services if x.name in roots]
+        self.roots: list["CoreServiceType"] = [x for x in services if x.name in roots]
         if services and not self.roots:
             raise ValueError("circular dependency is present")
 
     def _search(
         self,
         service: "CoreServiceType",
-        visiting: Set[str] = None,
-        path: List[str] = None,
-    ) -> List["CoreServiceType"]:
+        visiting: set[str] = None,
+        path: list[str] = None,
+    ) -> list["CoreServiceType"]:
         if service.name in self.visited:
             return self.paths[service.name]
         self.visited.add(service.name)
@@ -103,7 +94,7 @@ class ServiceDependencies:
         self.paths[service.name] = path
         return path
 
-    def boot_order(self) -> List[List["CoreServiceType"]]:
+    def boot_order(self) -> list[list["CoreServiceType"]]:
         for service in self.roots:
             self._search(service)
         return self.boot_paths
@@ -114,10 +105,10 @@ class ServiceManager:
     Manages services available for CORE nodes to use.
     """
 
-    services: Dict[str, Type["CoreService"]] = {}
+    services: dict[str, type["CoreService"]] = {}
 
     @classmethod
-    def add(cls, service: Type["CoreService"]) -> None:
+    def add(cls, service: type["CoreService"]) -> None:
         """
         Add a service to manager.
 
@@ -150,7 +141,7 @@ class ServiceManager:
         cls.services[name] = service
 
     @classmethod
-    def get(cls, name: str) -> Type["CoreService"]:
+    def get(cls, name: str) -> type["CoreService"]:
         """
         Retrieve a service from the manager.
 
@@ -163,7 +154,7 @@ class ServiceManager:
         return service
 
     @classmethod
-    def add_services(cls, path: Path) -> List[str]:
+    def add_services(cls, path: Path) -> list[str]:
         """
         Method for retrieving all CoreServices from a given path.
 
@@ -183,7 +174,7 @@ class ServiceManager:
         return service_errors
 
     @classmethod
-    def load_locals(cls) -> List[str]:
+    def load_locals(cls) -> list[str]:
         errors = []
         for module_info in pkgutil.walk_packages(
             core_services.__path__, f"{core_services.__name__}."
@@ -218,7 +209,7 @@ class CoreServices:
         """
         self.session: "Session" = session
         # dict of default services tuples, key is node type
-        self.default_services: Dict[str, List[str]] = {
+        self.default_services: dict[str, list[str]] = {
             "mdr": ["zebra", "OSPFv3MDR", "IPForward"],
             "PC": ["DefaultRoute"],
             "prouter": [],
@@ -226,7 +217,7 @@ class CoreServices:
             "host": ["DefaultRoute", "SSH"],
         }
         # dict of node ids to dict of custom services by name
-        self.custom_services: Dict[int, Dict[str, "CoreService"]] = {}
+        self.custom_services: dict[int, dict[str, "CoreService"]] = {}
 
     def reset(self) -> None:
         """
@@ -273,7 +264,7 @@ class CoreServices:
             node_services[service.name] = service
 
     def add_services(
-        self, node: CoreNode, model: str, services: List[str] = None
+        self, node: CoreNode, model: str, services: list[str] = None
     ) -> None:
         """
         Add services to a node.
@@ -298,7 +289,7 @@ class CoreServices:
                 continue
             node.services.append(service)
 
-    def all_configs(self) -> List[Tuple[int, "CoreService"]]:
+    def all_configs(self) -> list[tuple[int, "CoreService"]]:
         """
         Return (node_id, service) tuples for all stored configs. Used when reconnecting
         to a session or opening XML.
@@ -313,7 +304,7 @@ class CoreServices:
                 configs.append((node_id, service))
         return configs
 
-    def all_files(self, service: "CoreService") -> List[Tuple[str, str]]:
+    def all_files(self, service: "CoreService") -> list[tuple[str, str]]:
         """
         Return all customized files stored with a service.
         Used when reconnecting to a session or opening XML.
@@ -349,7 +340,7 @@ class CoreServices:
         if exceptions:
             raise CoreServiceBootError(*exceptions)
 
-    def _boot_service_path(self, node: CoreNode, boot_path: List["CoreServiceType"]):
+    def _boot_service_path(self, node: CoreNode, boot_path: list["CoreServiceType"]):
         logger.info(
             "booting node(%s) services: %s",
             node.name,
@@ -400,7 +391,7 @@ class CoreServices:
         status = self.startup_service(node, service, wait)
         if status:
             raise CoreServiceBootError(
-                "node(%s) service(%s) error during startup" % (node.name, service.name)
+                f"node({node.name}) service({service.name}) error during startup"
             )
 
         # blocking mode is finished
@@ -425,7 +416,7 @@ class CoreServices:
 
             if status:
                 raise CoreServiceBootError(
-                    "node(%s) service(%s) failed validation" % (node.name, service.name)
+                    f"node({node.name}) service({service.name}) failed validation"
                 )
 
     def copy_service_file(self, node: CoreNode, file_path: Path, cfg: str) -> bool:
@@ -540,11 +531,11 @@ class CoreServices:
         # get the file data
         data = service.config_data.get(filename)
         if data is None:
-            data = "%s" % service.generate_config(node, filename)
+            data = service.generate_config(node, filename)
         else:
-            data = "%s" % data
+            data = data
 
-        filetypestr = "service:%s" % service.name
+        filetypestr = f"service:{service.name}"
         return FileData(
             message_type=MessageFlags.ADD,
             node=node.id,
@@ -636,7 +627,7 @@ class CoreServices:
                 try:
                     if self.copy_service_file(node, file_path, cfg):
                         continue
-                except IOError:
+                except OSError:
                     logger.exception("error copying service file: %s", file_name)
                     continue
             else:
@@ -674,31 +665,31 @@ class CoreService:
     name: Optional[str] = None
 
     # executables that must exist for service to run
-    executables: Tuple[str, ...] = ()
+    executables: tuple[str, ...] = ()
 
     # sets service requirements that must be started prior to this service starting
-    dependencies: Tuple[str, ...] = ()
+    dependencies: tuple[str, ...] = ()
 
     # group string allows grouping services together
     group: Optional[str] = None
 
     # private, per-node directories required by this service
-    dirs: Tuple[str, ...] = ()
+    dirs: tuple[str, ...] = ()
 
     # config files written by this service
-    configs: Tuple[str, ...] = ()
+    configs: tuple[str, ...] = ()
 
     # config file data
-    config_data: Dict[str, str] = {}
+    config_data: dict[str, str] = {}
 
     # list of startup commands
-    startup: Tuple[str, ...] = ()
+    startup: tuple[str, ...] = ()
 
     # list of shutdown commands
-    shutdown: Tuple[str, ...] = ()
+    shutdown: tuple[str, ...] = ()
 
     # list of validate commands
-    validate: Tuple[str, ...] = ()
+    validate: tuple[str, ...] = ()
 
     # validation mode, used to determine startup success
     validation_mode: ServiceMode = ServiceMode.NON_BLOCKING
@@ -723,7 +714,7 @@ class CoreService:
         configuration is used to override their default parameters.
         """
         self.custom: bool = True
-        self.config_data: Dict[str, str] = self.__class__.config_data.copy()
+        self.config_data: dict[str, str] = self.__class__.config_data.copy()
 
     @classmethod
     def on_load(cls) -> None:
@@ -742,7 +733,7 @@ class CoreService:
         return cls.configs
 
     @classmethod
-    def generate_config(cls, node: CoreNode, filename: str) -> None:
+    def generate_config(cls, node: CoreNode, filename: str) -> str:
         """
         Generate configuration file given a node object. The filename is
         provided to allow for multiple config files.
@@ -751,7 +742,7 @@ class CoreService:
 
         :param node: node to generate config for
         :param filename: file name to generate config for
-        :return: nothing
+        :return: generated config
         """
         raise NotImplementedError
 

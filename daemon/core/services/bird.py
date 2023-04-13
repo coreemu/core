@@ -1,7 +1,7 @@
 """
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
-from typing import Optional, Tuple
+from typing import Optional
 
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
@@ -14,12 +14,12 @@ class Bird(CoreService):
 
     name: str = "bird"
     group: str = "BIRD"
-    executables: Tuple[str, ...] = ("bird",)
-    dirs: Tuple[str, ...] = ("/etc/bird",)
-    configs: Tuple[str, ...] = ("/etc/bird/bird.conf",)
-    startup: Tuple[str, ...] = ("bird -c %s" % (configs[0]),)
-    shutdown: Tuple[str, ...] = ("killall bird",)
-    validate: Tuple[str, ...] = ("pidof bird",)
+    executables: tuple[str, ...] = ("bird",)
+    dirs: tuple[str, ...] = ("/etc/bird",)
+    configs: tuple[str, ...] = ("/etc/bird/bird.conf",)
+    startup: tuple[str, ...] = (f"bird -c {configs[0]}",)
+    shutdown: tuple[str, ...] = ("killall bird",)
+    validate: tuple[str, ...] = ("pidof bird",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -48,33 +48,30 @@ class Bird(CoreService):
         Returns configuration file text. Other services that depend on bird
         will have hooks that are invoked here.
         """
-        cfg = """\
+        cfg = f"""\
 /* Main configuration file for BIRD. This is ony a template,
  * you will *need* to customize it according to your needs
  * Beware that only double quotes \'"\' are valid. No singles. */
 
 
-log "/var/log/%s.log" all;
+log "/var/log/{cls.name}.log" all;
 #debug protocols all;
 #debug commands 2;
 
-router id  %s;       # Mandatory for IPv6, may be automatic for IPv4
+router id  {cls.router_id(node)};       # Mandatory for IPv6, may be automatic for IPv4
 
-protocol kernel {
+protocol kernel {{
     persist;                # Don\'t remove routes on BIRD shutdown
     scan time 200;          # Scan kernel routing table every 200 seconds
     export all;
     import all;
-}
+}}
 
-protocol device {
+protocol device {{
     scan time 10;           # Scan interfaces every 10 seconds
-}
+}}
 
-""" % (
-            cls.name,
-            cls.router_id(node),
-        )
+"""
 
         # generate protocol specific configurations
         for s in node.services:
@@ -94,8 +91,8 @@ class BirdService(CoreService):
 
     name: Optional[str] = None
     group: str = "BIRD"
-    executables: Tuple[str, ...] = ("bird",)
-    dependencies: Tuple[str, ...] = ("bird",)
+    executables: tuple[str, ...] = ("bird",)
+    dependencies: tuple[str, ...] = ("bird",)
     meta: str = "The config file for this service can be found in the bird service."
 
     @classmethod
@@ -111,7 +108,7 @@ class BirdService(CoreService):
         """
         cfg = ""
         for iface in node.get_ifaces(control=False):
-            cfg += '        interface "%s";\n' % iface.name
+            cfg += f'        interface "{iface.name}";\n'
         return cfg
 
 

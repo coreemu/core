@@ -4,7 +4,6 @@ firewall)
 """
 
 import logging
-from typing import Tuple
 
 from core import constants
 from core.nodes.base import CoreNode
@@ -17,10 +16,10 @@ logger = logging.getLogger(__name__)
 class VPNClient(CoreService):
     name: str = "VPNClient"
     group: str = "Security"
-    configs: Tuple[str, ...] = ("vpnclient.sh",)
-    startup: Tuple[str, ...] = ("bash vpnclient.sh",)
-    shutdown: Tuple[str, ...] = ("killall openvpn",)
-    validate: Tuple[str, ...] = ("pidof openvpn",)
+    configs: tuple[str, ...] = ("vpnclient.sh",)
+    startup: tuple[str, ...] = ("bash vpnclient.sh",)
+    shutdown: tuple[str, ...] = ("killall openvpn",)
+    validate: tuple[str, ...] = ("pidof openvpn",)
     custom_needed: bool = True
 
     @classmethod
@@ -32,9 +31,9 @@ class VPNClient(CoreService):
         cfg += "# custom VPN Client configuration for service (security.py)\n"
         fname = f"{constants.CORE_DATA_DIR}/examples/services/sampleVPNClient"
         try:
-            with open(fname, "r") as f:
+            with open(fname) as f:
                 cfg += f.read()
-        except IOError:
+        except OSError:
             logger.exception(
                 "error opening VPN client configuration template (%s)", fname
             )
@@ -44,10 +43,10 @@ class VPNClient(CoreService):
 class VPNServer(CoreService):
     name: str = "VPNServer"
     group: str = "Security"
-    configs: Tuple[str, ...] = ("vpnserver.sh",)
-    startup: Tuple[str, ...] = ("bash vpnserver.sh",)
-    shutdown: Tuple[str, ...] = ("killall openvpn",)
-    validate: Tuple[str, ...] = ("pidof openvpn",)
+    configs: tuple[str, ...] = ("vpnserver.sh",)
+    startup: tuple[str, ...] = ("bash vpnserver.sh",)
+    shutdown: tuple[str, ...] = ("killall openvpn",)
+    validate: tuple[str, ...] = ("pidof openvpn",)
     custom_needed: bool = True
 
     @classmethod
@@ -60,9 +59,9 @@ class VPNServer(CoreService):
         cfg += "# custom VPN Server Configuration for service (security.py)\n"
         fname = f"{constants.CORE_DATA_DIR}/examples/services/sampleVPNServer"
         try:
-            with open(fname, "r") as f:
+            with open(fname) as f:
                 cfg += f.read()
-        except IOError:
+        except OSError:
             logger.exception(
                 "Error opening VPN server configuration template (%s)", fname
             )
@@ -72,9 +71,9 @@ class VPNServer(CoreService):
 class IPsec(CoreService):
     name: str = "IPsec"
     group: str = "Security"
-    configs: Tuple[str, ...] = ("ipsec.sh",)
-    startup: Tuple[str, ...] = ("bash ipsec.sh",)
-    shutdown: Tuple[str, ...] = ("killall racoon",)
+    configs: tuple[str, ...] = ("ipsec.sh",)
+    startup: tuple[str, ...] = ("bash ipsec.sh",)
+    shutdown: tuple[str, ...] = ("killall racoon",)
     custom_needed: bool = True
 
     @classmethod
@@ -88,9 +87,9 @@ class IPsec(CoreService):
         cfg += "(security.py)\n"
         fname = f"{constants.CORE_DATA_DIR}/examples/services/sampleIPsec"
         try:
-            with open(fname, "r") as f:
+            with open(fname) as f:
                 cfg += f.read()
-        except IOError:
+        except OSError:
             logger.exception("Error opening IPsec configuration template (%s)", fname)
         return cfg
 
@@ -98,8 +97,8 @@ class IPsec(CoreService):
 class Firewall(CoreService):
     name: str = "Firewall"
     group: str = "Security"
-    configs: Tuple[str, ...] = ("firewall.sh",)
-    startup: Tuple[str, ...] = ("bash firewall.sh",)
+    configs: tuple[str, ...] = ("firewall.sh",)
+    startup: tuple[str, ...] = ("bash firewall.sh",)
     custom_needed: bool = True
 
     @classmethod
@@ -111,9 +110,9 @@ class Firewall(CoreService):
         cfg += "# custom node firewall rules for service (security.py)\n"
         fname = f"{constants.CORE_DATA_DIR}/examples/services/sampleFirewall"
         try:
-            with open(fname, "r") as f:
+            with open(fname) as f:
                 cfg += f.read()
-        except IOError:
+        except OSError:
             logger.exception(
                 "Error opening Firewall configuration template (%s)", fname
             )
@@ -127,9 +126,9 @@ class Nat(CoreService):
 
     name: str = "NAT"
     group: str = "Security"
-    executables: Tuple[str, ...] = ("iptables",)
-    configs: Tuple[str, ...] = ("nat.sh",)
-    startup: Tuple[str, ...] = ("bash nat.sh",)
+    executables: tuple[str, ...] = ("iptables",)
+    configs: tuple[str, ...] = ("nat.sh",)
+    startup: tuple[str, ...] = ("bash nat.sh",)
     custom_needed: bool = False
 
     @classmethod
