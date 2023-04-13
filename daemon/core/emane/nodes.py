@@ -6,7 +6,7 @@ share the same MAC+PHY model.
 import logging
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -196,7 +196,7 @@ class EmaneNet(CoreNetworkBase):
     def unlink(self, iface1: CoreInterface, iface2: CoreInterface) -> None:
         pass
 
-    def updatemodel(self, config: Dict[str, str]) -> None:
+    def updatemodel(self, config: dict[str, str]) -> None:
         """
         Update configuration for the current model.
 
@@ -212,8 +212,8 @@ class EmaneNet(CoreNetworkBase):
 
     def setmodel(
         self,
-        model: Union[Type["EmaneModel"], Type["WayPointMobility"]],
-        config: Dict[str, str],
+        model: Union[type["EmaneModel"], type["WayPointMobility"]],
+        config: dict[str, str],
     ) -> None:
         """
         set the EmaneModel associated with this node
@@ -225,7 +225,7 @@ class EmaneNet(CoreNetworkBase):
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> list[LinkData]:
         links = []
         emane_manager = self.session.emane
         # gather current emane links

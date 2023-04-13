@@ -4,7 +4,6 @@ tdma.py: EMANE TDMA model bindings for CORE
 
 import logging
 from pathlib import Path
-from typing import Set
 
 from core import constants, utils
 from core.config import ConfigString
@@ -28,7 +27,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     default_schedule: Path = (
         constants.CORE_DATA_DIR / "examples" / "tdma" / "schedule.xml"
     )
-    config_ignore: Set[str] = {schedule_name}
+    config_ignore: set[str] = {schedule_name}
 
     @classmethod
     def load(cls, emane_prefix: Path) -> None:

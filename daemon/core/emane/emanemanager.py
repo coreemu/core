@@ -6,7 +6,7 @@ import logging
 import os
 import threading
 from enum import Enum
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from core import utils
 from core.emane.emanemodel import EmaneModel
@@ -126,9 +126,9 @@ class EmaneManager:
         """
         super().__init__()
         self.session: "Session" = session
-        self.nems_to_ifaces: Dict[int, CoreInterface] = {}
-        self.ifaces_to_nems: Dict[CoreInterface, int] = {}
-        self._emane_nets: Dict[int, EmaneNet] = {}
+        self.nems_to_ifaces: dict[int, CoreInterface] = {}
+        self.ifaces_to_nems: dict[CoreInterface, int] = {}
+        self._emane_nets: dict[int, EmaneNet] = {}
         self._emane_node_lock: threading.Lock = threading.Lock()
         # port numbers are allocated from these counters
         self.platformport: int = self.session.options.get_int(
@@ -141,14 +141,14 @@ class EmaneManager:
         self.eventmonthread: Optional[threading.Thread] = None
 
         # model for global EMANE configuration options
-        self.node_configs: Dict[int, Dict[str, Dict[str, str]]] = {}
-        self.node_models: Dict[int, str] = {}
+        self.node_configs: dict[int, dict[str, dict[str, str]]] = {}
+        self.node_models: dict[int, str] = {}
 
         # link  monitor
         self.link_monitor: EmaneLinkMonitor = EmaneLinkMonitor(self)
         # emane event monitoring
-        self.services: Dict[str, EmaneEventService] = {}
-        self.nem_service: Dict[int, EmaneEventService] = {}
+        self.services: dict[str, EmaneEventService] = {}
+        self.nem_service: dict[int, EmaneEventService] = {}
 
     def next_nem_id(self, iface: CoreInterface) -> int:
         nem_id = self.session.options.get_int("nem_id_start")
@@ -161,7 +161,7 @@ class EmaneManager:
 
     def get_config(
         self, key: int, model: str, default: bool = True
-    ) -> Optional[Dict[str, str]]:
+    ) -> Optional[dict[str, str]]:
         """
         Get the current or default configuration for an emane model.
 
@@ -181,7 +181,7 @@ class EmaneManager:
             config = model_class.default_values()
         return config
 
-    def set_config(self, key: int, model: str, config: Dict[str, str] = None) -> None:
+    def set_config(self, key: int, model: str, config: dict[str, str] = None) -> None:
         """
         Sets and update the provided configuration against the default model
         or currently set emane model configuration.
@@ -199,7 +199,7 @@ class EmaneManager:
         model_configs = self.node_configs.setdefault(key, {})
         model_configs[model] = model_config
 
-    def get_model(self, model_name: str) -> Type[EmaneModel]:
+    def get_model(self, model_name: str) -> type[EmaneModel]:
         """
         Convenience method for getting globally loaded emane models.
 
@@ -211,7 +211,7 @@ class EmaneManager:
 
     def get_iface_config(
         self, emane_net: EmaneNet, iface: CoreInterface
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Retrieve configuration for a given interface, first checking for interface
         specific config, node specific config, network specific config, and finally
@@ -260,7 +260,7 @@ class EmaneManager:
                 )
             self._emane_nets[emane_net.id] = emane_net
 
-    def getnodes(self) -> Set[CoreNode]:
+    def getnodes(self) -> set[CoreNode]:
         """
         Return a set of CoreNodes that are linked to an EMANE network,
         e.g. containers having one or more radio interfaces.
@@ -335,7 +335,7 @@ class EmaneManager:
         self.start_daemon(iface)
         self.install_iface(iface, config)
 
-    def get_ifaces(self) -> List[Tuple[EmaneNet, TunTap]]:
+    def get_ifaces(self) -> list[tuple[EmaneNet, TunTap]]:
         ifaces = []
         for emane_net in self._emane_nets.values():
             if not emane_net.wireless_model:
@@ -354,7 +354,7 @@ class EmaneManager:
         return sorted(ifaces, key=lambda x: (x[1].node.id, x[1].id))
 
     def setup_control_channels(
-        self, nem_id: int, iface: CoreInterface, config: Dict[str, str]
+        self, nem_id: int, iface: CoreInterface, config: dict[str, str]
     ) -> None:
         node = iface.node
         # setup ota device
@@ -419,7 +419,7 @@ class EmaneManager:
 
     def get_nem_position(
         self, iface: CoreInterface
-    ) -> Optional[Tuple[int, float, float, int]]:
+    ) -> Optional[tuple[int, float, float, int]]:
         """
         Retrieves nem position for a given interface.
 
@@ -453,7 +453,7 @@ class EmaneManager:
             event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
             self.publish_event(nemid, event, send_all=True)
 
-    def set_nem_positions(self, moved_ifaces: List[CoreInterface]) -> None:
+    def set_nem_positions(self, moved_ifaces: list[CoreInterface]) -> None:
         """
         Several NEMs have moved, from e.g. a WaypointMobilityModel
         calculation. Generate an EMANE Location Event having several
@@ -480,7 +480,7 @@ class EmaneManager:
         try:
             with path.open("a") as f:
                 f.write(f"{iface.node.name} {iface.name} {nem_id}\n")
-        except IOError:
+        except OSError:
             logger.exception("error writing to emane nem file")
 
     def links_enabled(self) -> bool:
@@ -624,7 +624,7 @@ class EmaneManager:
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.host_cmd(args, cwd=self.session.directory)
 
-    def install_iface(self, iface: TunTap, config: Dict[str, str]) -> None:
+    def install_iface(self, iface: TunTap, config: dict[str, str]) -> None:
         external = config.get("external", "0")
         if external == "0":
             iface.set_ips()

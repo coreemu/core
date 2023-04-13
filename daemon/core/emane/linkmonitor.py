@@ -2,7 +2,7 @@ import logging
 import sched
 import threading
 import time
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from lxml import etree
 
@@ -34,10 +34,10 @@ NEM_SELF: int = 65535
 
 
 class LossTable:
-    def __init__(self, losses: Dict[float, float]) -> None:
-        self.losses: Dict[float, float] = losses
-        self.sinrs: List[float] = sorted(self.losses.keys())
-        self.loss_lookup: Dict[int, float] = {}
+    def __init__(self, losses: dict[float, float]) -> None:
+        self.losses: dict[float, float] = losses
+        self.sinrs: list[float] = sorted(self.losses.keys())
+        self.loss_lookup: dict[int, float] = {}
         for index, value in enumerate(self.sinrs):
             self.loss_lookup[index] = self.losses[value]
         self.mac_id: Optional[str] = None
@@ -84,7 +84,7 @@ class EmaneClient:
         self.client: shell.ControlPortClient = shell.ControlPortClient(
             self.address, port
         )
-        self.nems: Dict[int, LossTable] = {}
+        self.nems: dict[int, LossTable] = {}
         self.setup()
 
     def setup(self) -> None:
@@ -110,7 +110,7 @@ class EmaneClient:
             self.nems[nem_id] = loss_table
 
     def check_links(
-        self, links: Dict[Tuple[int, int], EmaneLink], loss_threshold: int
+        self, links: dict[tuple[int, int], EmaneLink], loss_threshold: int
     ) -> None:
         for from_nem, loss_table in self.nems.items():
             tables = self.client.getStatisticTable(loss_table.mac_id, (SINR_TABLE,))
@@ -138,11 +138,11 @@ class EmaneClient:
                         link = EmaneLink(from_nem, to_nem, sinr)
                         links[link_key] = link
 
-    def handle_tdma(self, config: Dict[str, Tuple]):
+    def handle_tdma(self, config: dict[str, tuple]):
         pcr = config["pcrcurveuri"][0][0]
         logger.debug("tdma pcr: %s", pcr)
 
-    def handle_80211(self, config: Dict[str, Tuple]) -> LossTable:
+    def handle_80211(self, config: dict[str, tuple]) -> LossTable:
         unicastrate = config["unicastrate"][0][0]
         pcr = config["pcrcurveuri"][0][0]
         logger.debug("80211 pcr: %s", pcr)
@@ -159,7 +159,7 @@ class EmaneClient:
                     losses[sinr] = por
         return LossTable(losses)
 
-    def handle_rfpipe(self, config: Dict[str, Tuple]) -> LossTable:
+    def handle_rfpipe(self, config: dict[str, tuple]) -> LossTable:
         pcr = config["pcrcurveuri"][0][0]
         logger.debug("rfpipe pcr: %s", pcr)
         tree = etree.parse(pcr)
@@ -179,9 +179,9 @@ class EmaneClient:
 class EmaneLinkMonitor:
     def __init__(self, emane_manager: "EmaneManager") -> None:
         self.emane_manager: "EmaneManager" = emane_manager
-        self.clients: List[EmaneClient] = []
-        self.links: Dict[Tuple[int, int], EmaneLink] = {}
-        self.complete_links: Set[Tuple[int, int]] = set()
+        self.clients: list[EmaneClient] = []
+        self.links: dict[tuple[int, int], EmaneLink] = {}
+        self.complete_links: set[tuple[int, int]] = set()
         self.loss_threshold: Optional[int] = None
         self.link_interval: Optional[int] = None
         self.link_timeout: Optional[int] = None
@@ -210,7 +210,7 @@ class EmaneLinkMonitor:
             if client.nems:
                 self.clients.append(client)
 
-    def get_addresses(self) -> List[Tuple[str, int]]:
+    def get_addresses(self) -> list[tuple[str, int]]:
         addresses = []
         nodes = self.emane_manager.getnodes()
         for node in nodes:
@@ -273,25 +273,25 @@ class EmaneLinkMonitor:
         if self.running:
             self.scheduler.enter(self.link_interval, 0, self.check_links)
 
-    def get_complete_id(self, link_id: Tuple[int, int]) -> Tuple[int, int]:
+    def get_complete_id(self, link_id: tuple[int, int]) -> tuple[int, int]:
         value1, value2 = link_id
         if value1 < value2:
             return value1, value2
         else:
             return value2, value1
 
-    def is_complete_link(self, link_id: Tuple[int, int]) -> bool:
+    def is_complete_link(self, link_id: tuple[int, int]) -> bool:
         reverse_id = link_id[1], link_id[0]
         return link_id in self.links and reverse_id in self.links
 
-    def get_link_label(self, link_id: Tuple[int, int]) -> str:
+    def get_link_label(self, link_id: tuple[int, int]) -> str:
         source_id = tuple(sorted(link_id))
         source_link = self.links[source_id]
         dest_id = link_id[::-1]
         dest_link = self.links[dest_id]
         return f"{source_link.sinr:.1f} / {dest_link.sinr:.1f}"
 
-    def send_link(self, message_type: MessageFlags, link_id: Tuple[int, int]) -> None:
+    def send_link(self, message_type: MessageFlags, link_id: tuple[int, int]) -> None:
         nem1, nem2 = link_id
         link = self.emane_manager.get_nem_link(nem1, nem2, message_type)
         if link:
