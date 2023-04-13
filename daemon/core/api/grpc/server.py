@@ -5,9 +5,11 @@ import signal
 import sys
 import tempfile
 import time
+from collections.abc import Iterable
 from concurrent import futures
 from pathlib import Path
-from typing import Iterable, Optional, Pattern, Type
+from re import Pattern
+from typing import Optional
 
 import grpc
 from grpc import ServicerContext
@@ -105,7 +107,7 @@ from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
-_INTERFACE_REGEX: Pattern = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
+_INTERFACE_REGEX: Pattern[str] = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
 _MAX_WORKERS = 1000
 
 
@@ -171,7 +173,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return session
 
     def get_node(
-        self, session: Session, node_id: int, context: ServicerContext, _class: Type[NT]
+        self, session: Session, node_id: int, context: ServicerContext, _class: type[NT]
     ) -> NT:
         """
         Retrieve node given session and node id
@@ -210,7 +212,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def validate_service(
         self, name: str, context: ServicerContext
-    ) -> Type[ConfigService]:
+    ) -> type[ConfigService]:
         """
         Validates a configuration service is a valid known service.
 
