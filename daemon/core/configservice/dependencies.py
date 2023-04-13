@@ -54,8 +54,8 @@ class ConfigServiceDependencies:
 
         if self.started != set(self.node_services):
             raise ValueError(
-                "failure to start all services: %s != %s"
-                % (self.started, self.node_services.keys())
+                f"failure to start all services: {self.started} != "
+                f"{self.node_services.keys()}"
             )
 
         return paths
@@ -96,14 +96,14 @@ class ConfigServiceDependencies:
         for service_name in current_service.dependencies:
             if service_name not in self.node_services:
                 raise ValueError(
-                    "required dependency was not included in node services: %s"
-                    % service_name
+                    "required dependency was not included in node "
+                    f"services: {service_name}"
                 )
 
             if service_name in self.visiting:
                 raise ValueError(
-                    "cyclic dependency at service(%s): %s"
-                    % (current_service.name, service_name)
+                    f"cyclic dependency at service({current_service.name}): "
+                    f"{service_name}"
                 )
 
             if service_name not in self.visited:

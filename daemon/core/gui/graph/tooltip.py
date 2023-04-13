@@ -29,7 +29,7 @@ class CanvasTooltip:
         *,
         pad: tuple[int, int, int, int] = (5, 3, 5, 3),
         waittime: int = 400,
-        wraplength: int = 600
+        wraplength: int = 600,
     ) -> None:
         # in miliseconds, originally 500
         self.waittime: int = waittime
@@ -64,7 +64,7 @@ class CanvasTooltip:
             label: ttk.Label,
             *,
             tip_delta: tuple[int, int] = (10, 5),
-            pad: tuple[int, int, int, int] = (5, 3, 5, 3)
+            pad: tuple[int, int, int, int] = (5, 3, 5, 3),
         ):
             c = canvas
             s_width, s_height = c.winfo_screenwidth(), c.winfo_screenheight()
@@ -112,7 +112,7 @@ class CanvasTooltip:
         )
         label.grid(padx=(pad[0], pad[2]), pady=(pad[1], pad[3]), sticky=tk.NSEW)
         x, y = tip_pos_calculator(canvas, label, pad=pad)
-        self.tw.wm_geometry("+%d+%d" % (x, y))
+        self.tw.wm_geometry(f"+{x:d}+{y:d}")
 
     def hide(self) -> None:
         if self.tw:
