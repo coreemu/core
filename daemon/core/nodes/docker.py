@@ -4,7 +4,7 @@ import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING
 
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
@@ -23,9 +23,9 @@ DOCKER: str = "docker"
 class DockerOptions(CoreNodeOptions):
     image: str = "ubuntu"
     """image used when creating container"""
-    binds: List[Tuple[str, str]] = field(default_factory=list)
+    binds: list[tuple[str, str]] = field(default_factory=list)
     """bind mount source and destinations to setup within container"""
-    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    volumes: list[tuple[str, str, bool, bool]] = field(default_factory=list)
     """
     volume mount source, destination, unique, delete to setup within container
 
@@ -74,8 +74,8 @@ class DockerNode(CoreNode):
         options = options or DockerOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
-        self.binds: List[Tuple[str, str]] = options.binds
-        self.volumes: Dict[str, DockerVolume] = {}
+        self.binds: list[tuple[str, str]] = options.binds
+        self.volumes: dict[str, DockerVolume] = {}
         for src, dst, unique, delete in options.volumes:
             src_name = self._unique_name(src) if unique else src
             self.volumes[src] = DockerVolume(src_name, dst, unique, delete)

@@ -5,7 +5,7 @@ virtual ethernet classes that implement the interfaces available under Linux.
 import logging
 import math
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import netaddr
 
@@ -114,8 +114,8 @@ class CoreInterface:
         self.up: bool = False
         self.mtu: int = mtu
         self.net: Optional[CoreNetworkBase] = None
-        self.ip4s: List[netaddr.IPNetwork] = []
-        self.ip6s: List[netaddr.IPNetwork] = []
+        self.ip4s: list[netaddr.IPNetwork] = []
+        self.ip6s: list[netaddr.IPNetwork] = []
         self.mac: Optional[netaddr.EUI] = None
         # placeholder position hook
         self.poshook: Callable[[CoreInterface], None] = lambda x: None
@@ -133,7 +133,7 @@ class CoreInterface:
     def host_cmd(
         self,
         args: str,
-        env: Dict[str, str] = None,
+        env: dict[str, str] = None,
         cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
@@ -235,7 +235,7 @@ class CoreInterface:
         """
         return next(iter(self.ip6s), None)
 
-    def ips(self) -> List[netaddr.IPNetwork]:
+    def ips(self) -> list[netaddr.IPNetwork]:
         """
         Retrieve a list of all ip4 and ip6 addresses combined.
 

@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING
 
 from core.emulator.data import InterfaceData, LinkOptions
 from core.emulator.distributed import DistributedServer
@@ -24,9 +24,9 @@ if TYPE_CHECKING:
 class LxcOptions(CoreNodeOptions):
     image: str = "ubuntu"
     """image used when creating container"""
-    binds: List[Tuple[str, str]] = field(default_factory=list)
+    binds: list[tuple[str, str]] = field(default_factory=list)
     """bind mount source and destinations to setup within container"""
-    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    volumes: list[tuple[str, str, bool, bool]] = field(default_factory=list)
     """
     volume mount source, destination, unique, delete to setup within container
 
@@ -74,7 +74,7 @@ class LxcNode(CoreNode):
             args = f"{BASH} -c {shlex.quote(args)}"
         return f"nsenter -t {self.pid} -m -u -i -p -n {args}"
 
-    def _get_info(self) -> Dict:
+    def _get_info(self) -> dict:
         args = f"lxc list {self.name} --format json"
         output = self.host_cmd(args)
         data = json.loads(output)
