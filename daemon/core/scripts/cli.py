@@ -8,7 +8,7 @@ from argparse import (
 )
 from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Optional
 
 import grpc
 import netaddr
@@ -30,7 +30,7 @@ from core.api.grpc.wrappers import (
 NODE_TYPES = [x.name for x in NodeType if x != NodeType.PEER_TO_PEER]
 
 
-def protobuf_to_json(message: Any) -> Dict[str, Any]:
+def protobuf_to_json(message: Any) -> dict[str, Any]:
     return MessageToDict(
         message, including_default_value_fields=True, preserving_proto_field_name=True
     )
@@ -82,7 +82,7 @@ def ip6_type(value: str) -> IPNetwork:
         raise ArgumentTypeError(f"invalid ip6 address: {value}")
 
 
-def position_type(value: str) -> Tuple[float, float]:
+def position_type(value: str) -> tuple[float, float]:
     error = "invalid position, must be in the format: float,float"
     try:
         values = [float(x) for x in value.split(",")]
@@ -94,7 +94,7 @@ def position_type(value: str) -> Tuple[float, float]:
     return x, y
 
 
-def geo_type(value: str) -> Tuple[float, float, float]:
+def geo_type(value: str) -> tuple[float, float, float]:
     error = "invalid geo, must be in the format: float,float,float"
     try:
         values = [float(x) for x in value.split(",")]

@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, Optional, TypeVar
 
 from lxml import etree
 
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from core.emane.emanemodel import EmaneModel
     from core.emulator.session import Session
 
-    EmaneModelType = Type[EmaneModel]
+    EmaneModelType = type[EmaneModel]
 T = TypeVar("T")
 
 
@@ -86,7 +86,7 @@ def create_iface_data(iface_element: etree.Element) -> InterfaceData:
 def create_emane_model_config(
     node_id: int,
     model: "EmaneModelType",
-    config: Dict[str, str],
+    config: dict[str, str],
     iface_id: Optional[int],
 ) -> etree.Element:
     emane_element = etree.Element("emane_configuration")
@@ -148,8 +148,8 @@ class NodeElement:
 
 
 class ServiceElement:
-    def __init__(self, service: Type[CoreService]) -> None:
-        self.service: Type[CoreService] = service
+    def __init__(self, service: type[CoreService]) -> None:
+        self.service: type[CoreService] = service
         self.element: etree.Element = etree.Element("service")
         add_attribute(self.element, "name", service.name)
         self.add_directories()
@@ -266,7 +266,7 @@ class NetworkElement(NodeElement):
         node_type = self.session.get_node_type(type(self.node))
         add_attribute(self.element, "type", node_type.name)
 
-    def add_wireless_config(self, config: Dict[str, Configuration]) -> None:
+    def add_wireless_config(self, config: dict[str, Configuration]) -> None:
         wireless_element = etree.SubElement(self.element, "wireless")
         for config_item in config.values():
             add_configuration(wireless_element, config_item.id, config_item.default)

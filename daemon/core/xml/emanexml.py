@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from lxml import etree
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 _MAC_PREFIX = "02:02"
 
 
-def is_external(config: Dict[str, str]) -> bool:
+def is_external(config: dict[str, str]) -> bool:
     """
     Checks if the configuration is for an external transport.
 
@@ -32,7 +32,7 @@ def is_external(config: Dict[str, str]) -> bool:
     return config.get("external") == "1"
 
 
-def _value_to_params(value: str) -> Optional[Tuple[str]]:
+def _value_to_params(value: str) -> Optional[tuple[str]]:
     """
     Helper to convert a parameter to a parameter tuple.
 
@@ -113,9 +113,9 @@ def add_param(xml_element: etree.Element, name: str, value: str) -> None:
 
 def add_configurations(
     xml_element: etree.Element,
-    configurations: List[Configuration],
-    config: Dict[str, str],
-    config_ignore: Set,
+    configurations: list[Configuration],
+    config: dict[str, str],
+    config_ignore: set[str],
 ) -> None:
     """
     Add emane model configurations to xml element.
@@ -148,7 +148,7 @@ def build_platform_xml(
     nem_port: int,
     emane_net: EmaneNet,
     iface: CoreInterface,
-    config: Dict[str, str],
+    config: dict[str, str],
 ) -> None:
     """
     Create platform xml for a nem/interface.
@@ -209,7 +209,7 @@ def build_platform_xml(
     create_node_file(iface.node, platform_element, doc_name, file_name)
 
 
-def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
+def create_transport_xml(iface: CoreInterface, config: dict[str, str]) -> None:
     """
     Build transport xml file for node and transport type.
 
@@ -240,7 +240,7 @@ def create_transport_xml(iface: CoreInterface, config: Dict[str, str]) -> None:
 
 
 def create_phy_xml(
-    emane_model: "EmaneModel", iface: CoreInterface, config: Dict[str, str]
+    emane_model: "EmaneModel", iface: CoreInterface, config: dict[str, str]
 ) -> None:
     """
     Create the phy xml document.
@@ -261,7 +261,7 @@ def create_phy_xml(
 
 
 def create_mac_xml(
-    emane_model: "EmaneModel", iface: CoreInterface, config: Dict[str, str]
+    emane_model: "EmaneModel", iface: CoreInterface, config: dict[str, str]
 ) -> None:
     """
     Create the mac xml document.
@@ -284,7 +284,7 @@ def create_mac_xml(
 
 
 def create_nem_xml(
-    emane_model: "EmaneModel", iface: CoreInterface, config: Dict[str, str]
+    emane_model: "EmaneModel", iface: CoreInterface, config: dict[str, str]
 ) -> None:
     """
     Create the nem xml document.

@@ -9,7 +9,6 @@ from argparse import ArgumentDefaultsHelpFormatter
 from functools import cmp_to_key
 from queue import Queue
 from threading import Thread
-from typing import Dict, Tuple
 
 import grpc
 
@@ -31,7 +30,7 @@ class RouteEnum(enum.Enum):
 
 
 class SdtClient:
-    def __init__(self, address: Tuple[str, int]) -> None:
+    def __init__(self, address: tuple[str, int]) -> None:
         self.sock = socket.create_connection(address)
         self.links = []
         self.send(f'layer "{ROUTE_LAYER}"')
@@ -85,7 +84,7 @@ class RouterMonitor:
         self.sdt = SdtClient((sdt_host, sdt_port))
         self.nodes = self.get_nodes()
 
-    def get_nodes(self) -> Dict[int, str]:
+    def get_nodes(self) -> dict[int, str]:
         with self.core.context_connect():
             if self.session is None:
                 self.session = self.get_session()
@@ -146,7 +145,7 @@ class RouterMonitor:
                 self.manage_routes()
                 self.route_time = time.monotonic()
 
-    def route_sort(self, x: Tuple[str, int], y: Tuple[str, int]) -> int:
+    def route_sort(self, x: tuple[str, int], y: tuple[str, int]) -> int:
         x_node = x[0]
         y_node = y[0]
         if x_node == self.src_id:
