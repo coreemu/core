@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Optional
 
 from core.config import ConfigBool, ConfigInt, ConfigString, Configuration
 from core.errors import CoreError
@@ -10,7 +10,7 @@ class SessionConfig:
     Provides session configuration.
     """
 
-    options: List[Configuration] = [
+    options: list[Configuration] = [
         ConfigString(id="controlnet", label="Control Network"),
         ConfigString(id="controlnet0", label="Control Network 0"),
         ConfigString(id="controlnet1", label="Control Network 1"),
@@ -35,16 +35,16 @@ class SessionConfig:
         ConfigInt(id="mtu", default="0", label="MTU for All Devices"),
     ]
 
-    def __init__(self, config: Dict[str, str] = None) -> None:
+    def __init__(self, config: dict[str, str] = None) -> None:
         """
         Create a SessionConfig instance.
 
         :param config: configuration to initialize with
         """
-        self._config: Dict[str, str] = {x.id: x.default for x in self.options}
+        self._config: dict[str, str] = {x.id: x.default for x in self.options}
         self._config.update(config or {})
 
-    def update(self, config: Dict[str, str]) -> None:
+    def update(self, config: dict[str, str]) -> None:
         """
         Update current configuration with provided values.
 
@@ -73,7 +73,7 @@ class SessionConfig:
         """
         return self._config.get(name, default)
 
-    def all(self) -> Dict[str, str]:
+    def all(self) -> dict[str, str]:
         """
         Retrieve all configuration options.
 

@@ -14,7 +14,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union
 
 from core import constants, utils
 from core.configservice.manager import ConfigServiceManager
@@ -66,7 +66,7 @@ from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 logger = logging.getLogger(__name__)
 
 # maps for converting from API call node type values to classes and vice versa
-NODES: Dict[NodeTypes, Type[NodeBase]] = {
+NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.DEFAULT: CoreNode,
     NodeTypes.PHYSICAL: PhysicalNode,
     NodeTypes.SWITCH: SwitchNode,
@@ -82,12 +82,12 @@ NODES: Dict[NodeTypes, Type[NodeBase]] = {
     NodeTypes.LXC: LxcNode,
     NodeTypes.WIRELESS: WirelessNode,
 }
-NODES_TYPE: Dict[Type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
-CONTAINER_NODES: Set[Type[NodeBase]] = {DockerNode, LxcNode}
+NODES_TYPE: dict[type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
+CONTAINER_NODES: set[type[NodeBase]] = {DockerNode, LxcNode}
 CTRL_NET_ID: int = 9001
-LINK_COLORS: List[str] = ["green", "blue", "orange", "purple", "turquoise"]
+LINK_COLORS: list[str] = ["green", "blue", "orange", "purple", "turquoise"]
 NT: TypeVar = TypeVar("NT", bound=NodeBase)
-WIRELESS_TYPE: Tuple[Type[WlanNode], Type[EmaneNet], Type[WirelessNode]] = (
+WIRELESS_TYPE: tuple[type[WlanNode], type[EmaneNet], type[WirelessNode]] = (
     WlanNode,
     EmaneNet,
     WirelessNode,
@@ -100,7 +100,7 @@ class Session:
     """
 
     def __init__(
-        self, _id: int, config: Dict[str, str] = None, mkdir: bool = True
+        self, _id: int, config: dict[str, str] = None, mkdir: bool = True
     ) -> None:
         """
         Create a Session instance.
@@ -121,33 +121,33 @@ class Session:
         self.thumbnail: Optional[Path] = None
         self.user: Optional[str] = None
         self.event_loop: EventLoop = EventLoop()
-        self.link_colors: Dict[int, str] = {}
+        self.link_colors: dict[int, str] = {}
 
         # dict of nodes: all nodes and nets
-        self.nodes: Dict[int, NodeBase] = {}
+        self.nodes: dict[int, NodeBase] = {}
         self.nodes_lock: threading.Lock = threading.Lock()
         self.link_manager: LinkManager = LinkManager()
 
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
         self.state_time: float = time.monotonic()
-        self.hooks: Dict[EventTypes, List[Tuple[str, str]]] = {}
-        self.state_hooks: Dict[EventTypes, List[Callable[[EventTypes], None]]] = {}
+        self.hooks: dict[EventTypes, list[tuple[str, str]]] = {}
+        self.state_hooks: dict[EventTypes, list[Callable[[EventTypes], None]]] = {}
         self.add_state_hook(
             state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
         )
 
         # handlers for broadcasting information
-        self.event_handlers: List[Callable[[EventData], None]] = []
-        self.exception_handlers: List[Callable[[ExceptionData], None]] = []
-        self.node_handlers: List[Callable[[NodeData], None]] = []
-        self.link_handlers: List[Callable[[LinkData], None]] = []
-        self.file_handlers: List[Callable[[FileData], None]] = []
-        self.config_handlers: List[Callable[[ConfigData], None]] = []
+        self.event_handlers: list[Callable[[EventData], None]] = []
+        self.exception_handlers: list[Callable[[ExceptionData], None]] = []
+        self.node_handlers: list[Callable[[NodeData], None]] = []
+        self.link_handlers: list[Callable[[LinkData], None]] = []
+        self.file_handlers: list[Callable[[FileData], None]] = []
+        self.config_handlers: list[Callable[[ConfigData], None]] = []
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
-        self.metadata: Dict[str, str] = {}
+        self.metadata: dict[str, str] = {}
 
         # distributed support and logic
         self.distributed: DistributedController = DistributedController(self)
@@ -163,7 +163,7 @@ class Session:
         self.service_manager: Optional[ConfigServiceManager] = None
 
     @classmethod
-    def get_node_class(cls, _type: NodeTypes) -> Type[NodeBase]:
+    def get_node_class(cls, _type: NodeTypes) -> type[NodeBase]:
         """
         Retrieve the class for a given node type.
 
@@ -176,7 +176,7 @@ class Session:
         return node_class
 
     @classmethod
-    def get_node_type(cls, _class: Type[NodeBase]) -> NodeTypes:
+    def get_node_type(cls, _class: type[NodeBase]) -> NodeTypes:
         """
         Retrieve node type for a given node class.
 
@@ -238,7 +238,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
-    ) -> Tuple[Optional[CoreInterface], Optional[CoreInterface]]:
+    ) -> tuple[Optional[CoreInterface], Optional[CoreInterface]]:
         """
         Add a link between nodes.
 
@@ -345,7 +345,7 @@ class Session:
         iface1_data: InterfaceData = None,
         iface2_data: InterfaceData = None,
         options: LinkOptions = None,
-    ) -> Tuple[CoreInterface, CoreInterface]:
+    ) -> tuple[CoreInterface, CoreInterface]:
         """
         Create a wired link between two nodes.
 
@@ -476,7 +476,7 @@ class Session:
 
     def add_node(
         self,
-        _class: Type[NT],
+        _class: type[NT],
         _id: int = None,
         name: str = None,
         server: str = None,
@@ -745,7 +745,7 @@ class Session:
         for hook in hooks:
             self.run_hook(hook)
 
-    def run_hook(self, hook: Tuple[str, str]) -> None:
+    def run_hook(self, hook: tuple[str, str]) -> None:
         """
         Run a hook.
 
@@ -769,7 +769,7 @@ class Session:
                     cwd=self.directory,
                     env=self.get_environment(),
                 )
-        except (IOError, subprocess.CalledProcessError):
+        except (OSError, subprocess.CalledProcessError):
             logger.exception("error running hook: %s", file_path)
 
     def run_state_hooks(self, state: EventTypes) -> None:
@@ -835,7 +835,7 @@ class Session:
         xml_file_path = self.directory / "session-deployed.xml"
         xml_writer.write(xml_file_path)
 
-    def get_environment(self, state: bool = True) -> Dict[str, str]:
+    def get_environment(self, state: bool = True) -> dict[str, str]:
         """
         Get an environment suitable for a subprocess.Popen call.
         This is the current process environment with some session-specific
@@ -870,7 +870,7 @@ class Session:
             if path.is_file():
                 try:
                     utils.load_config(path, env)
-                except IOError:
+                except OSError:
                     logger.exception("error reading environment file: %s", path)
         return env
 
@@ -887,12 +887,12 @@ class Session:
             uid = pwd.getpwnam(user).pw_uid
             gid = self.directory.stat().st_gid
             os.chown(self.directory, uid, gid)
-        except IOError:
+        except OSError:
             logger.exception("failed to set permission on %s", self.directory)
 
     def create_node(
         self,
-        _class: Type[NT],
+        _class: type[NT],
         start: bool,
         _id: int = None,
         name: str = None,
@@ -928,7 +928,7 @@ class Session:
             node.startup()
         return node
 
-    def get_node(self, _id: int, _class: Type[NT]) -> NT:
+    def get_node(self, _id: int, _class: type[NT]) -> NT:
         """
         Get a session node.
 
@@ -1002,7 +1002,7 @@ class Session:
         )
         self.broadcast_exception(exception_data)
 
-    def instantiate(self) -> List[Exception]:
+    def instantiate(self) -> list[Exception]:
         """
         We have entered the instantiation state, invoke startup methods
         of various managers and boot the nodes. Validate nodes and check
@@ -1121,7 +1121,7 @@ class Session:
         self.services.boot_services(node)
         node.start_config_services()
 
-    def boot_nodes(self) -> List[Exception]:
+    def boot_nodes(self) -> list[Exception]:
         """
         Invoke the boot() procedure for all nodes and send back node
         messages to the GUI for node messages that had the status
@@ -1143,7 +1143,7 @@ class Session:
             self.update_control_iface_hosts()
         return exceptions
 
-    def get_control_net_prefixes(self) -> List[str]:
+    def get_control_net_prefixes(self) -> list[str]:
         """
         Retrieve control net prefixes.
 
@@ -1158,7 +1158,7 @@ class Session:
             p0 = p
         return [p0, p1, p2, p3]
 
-    def get_control_net_server_ifaces(self) -> List[str]:
+    def get_control_net_server_ifaces(self) -> list[str]:
         """
         Retrieve control net server interfaces.
 

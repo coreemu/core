@@ -8,7 +8,7 @@ import threading
 from collections import OrderedDict
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, Dict, Tuple
+from typing import TYPE_CHECKING, Callable
 
 import netaddr
 from fabric import Connection
@@ -48,7 +48,7 @@ class DistributedServer:
         self.lock: threading.Lock = threading.Lock()
 
     def remote_cmd(
-        self, cmd: str, env: Dict[str, str] = None, cwd: str = None, wait: bool = True
+        self, cmd: str, env: dict[str, str] = None, cwd: str = None, wait: bool = True
     ) -> str:
         """
         Run command remotely using server connection.
@@ -123,8 +123,8 @@ class DistributedController:
         :param session: session
         """
         self.session: "Session" = session
-        self.servers: Dict[str, DistributedServer] = OrderedDict()
-        self.tunnels: Dict[int, Tuple[GreTap, GreTap]] = {}
+        self.servers: dict[str, DistributedServer] = OrderedDict()
+        self.tunnels: dict[int, tuple[GreTap, GreTap]] = {}
         self.address: str = self.session.options.get("distributed_address")
 
     def add_server(self, name: str, host: str) -> None:
@@ -213,7 +213,7 @@ class DistributedController:
 
     def create_gre_tunnel(
         self, node: CoreNetwork, server: DistributedServer, mtu: int, start: bool
-    ) -> Tuple[GreTap, GreTap]:
+    ) -> tuple[GreTap, GreTap]:
         """
         Create gre tunnel using a pair of gre taps between the local and remote server.
 

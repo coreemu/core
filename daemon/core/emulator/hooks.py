@@ -129,7 +129,7 @@ class HookManager:
                             cwd=directory,
                             env=env,
                         )
-                except (IOError, subprocess.CalledProcessError) as e:
+                except (OSError, subprocess.CalledProcessError) as e:
                     raise CoreError(
                         f"failure running state({state.name}) "
                         f"hook script({file_name}): {e}",
