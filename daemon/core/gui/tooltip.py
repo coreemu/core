@@ -5,7 +5,7 @@ from typing import Optional
 from core.gui.themes import Styles
 
 
-class Tooltip(object):
+class Tooltip:
     """
     Create tool tip for a given widget
     """

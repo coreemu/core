@@ -3,7 +3,7 @@ mobility configuration
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -26,7 +26,7 @@ class MobilityConfigDialog(Dialog):
             config = self.node.mobility_config
             if not config:
                 config = self.app.core.get_mobility_config(self.node.id)
-            self.config: Dict[str, ConfigOption] = config
+            self.config: dict[str, ConfigOption] = config
             self.draw()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get Mobility Config Error", e)

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Optional, Tuple
+from typing import Optional
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
@@ -12,7 +12,7 @@ ANTENNA_SIZE: int = 32
 BUTTON_SIZE: int = 16
 ERROR_SIZE: int = 24
 DIALOG_SIZE: int = 16
-IMAGES: Dict[str, str] = {}
+IMAGES: dict[str, str] = {}
 
 
 def load_all() -> None:
@@ -87,7 +87,7 @@ class ImageEnum(Enum):
     SHADOW = "shadow"
 
 
-TYPE_MAP: Dict[Tuple[NodeType, str], ImageEnum] = {
+TYPE_MAP: dict[tuple[NodeType, str], ImageEnum] = {
     (NodeType.DEFAULT, "router"): ImageEnum.ROUTER,
     (NodeType.DEFAULT, "PC"): ImageEnum.PC,
     (NodeType.DEFAULT, "host"): ImageEnum.HOST,

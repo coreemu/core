@@ -2,7 +2,7 @@ import functools
 import logging
 import tkinter as tk
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -62,17 +62,17 @@ class CanvasNode:
             state=self.app.manager.show_node_labels.state(),
         )
         self.tooltip: CanvasTooltip = CanvasTooltip(self.canvas)
-        self.edges: Set[CanvasEdge] = set()
-        self.ifaces: Dict[int, Interface] = {}
-        self.wireless_edges: Set[CanvasWirelessEdge] = set()
-        self.antennas: List[int] = []
-        self.antenna_images: Dict[int, PhotoImage] = {}
+        self.edges: set[CanvasEdge] = set()
+        self.ifaces: dict[int, Interface] = {}
+        self.wireless_edges: set[CanvasWirelessEdge] = set()
+        self.antennas: list[int] = []
+        self.antenna_images: dict[int, PhotoImage] = {}
         self.hidden: bool = False
         self.setup_bindings()
         self.context: tk.Menu = tk.Menu(self.canvas)
         themes.style_menu(self.context)
 
-    def position(self) -> Tuple[int, int]:
+    def position(self) -> tuple[int, int]:
         return self.canvas.coords(self.id)
 
     def next_iface_id(self) -> int:
@@ -543,7 +543,7 @@ class ShadowNode:
         self.canvas.shadow_nodes[self.id] = self
         self.canvas.shadow_core_nodes[self.node.core_node.id] = self
 
-    def position(self) -> Tuple[int, int]:
+    def position(self) -> tuple[int, int]:
         return self.canvas.coords(self.id)
 
     def should_delete(self) -> bool:

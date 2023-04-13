@@ -4,7 +4,7 @@ emane configuration
 import tkinter as tk
 import webbrowser
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -43,7 +43,7 @@ class EmaneModelDialog(Dialog):
                 config = self.app.core.get_emane_model_config(
                     self.node.id, self.model, self.iface_id
                 )
-            self.config: Dict[str, ConfigOption] = config
+            self.config: dict[str, ConfigOption] = config
             self.draw()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Get EMANE Config Error", e)
@@ -82,7 +82,7 @@ class EmaneConfigDialog(Dialog):
         self.node: Node = node
         self.radiovar: tk.IntVar = tk.IntVar()
         self.radiovar.set(1)
-        self.emane_models: List[str] = [
+        self.emane_models: list[str] = [
             x.split("_")[1] for x in self.app.core.emane_models
         ]
         model = self.node.emane.split("_")[1]

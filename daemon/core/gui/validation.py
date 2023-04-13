@@ -3,8 +3,9 @@ input validation
 """
 import re
 import tkinter as tk
+from re import Pattern
 from tkinter import ttk
-from typing import Any, Optional, Pattern
+from typing import Any, Optional
 
 SMALLEST_SCALE: float = 0.5
 LARGEST_SCALE: float = 5.0

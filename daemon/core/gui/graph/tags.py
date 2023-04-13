@@ -1,5 +1,3 @@
-from typing import List
-
 ANNOTATION: str = "annotation"
 GRIDLINE: str = "gridline"
 SHAPE: str = "shape"
@@ -15,7 +13,7 @@ WALLPAPER: str = "wallpaper"
 SELECTION: str = "selectednodes"
 MARKER: str = "marker"
 HIDDEN: str = "hidden"
-ORGANIZE_TAGS: List[str] = [
+ORGANIZE_TAGS: list[str] = [
     WALLPAPER,
     GRIDLINE,
     SHAPE,
@@ -29,7 +27,7 @@ ORGANIZE_TAGS: List[str] = [
     SELECTION,
     MARKER,
 ]
-RESET_TAGS: List[str] = [
+RESET_TAGS: list[str] = [
     EDGE,
     NODE,
     NODE_LABEL,

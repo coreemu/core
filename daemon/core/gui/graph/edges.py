@@ -2,7 +2,7 @@ import functools
 import logging
 import math
 import tkinter as tk
-from typing import TYPE_CHECKING, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from core.api.grpc.wrappers import Interface, Link
 from core.gui import nodeutils, themes
@@ -54,7 +54,7 @@ def create_edge_token(link: Link) -> str:
 
 def node_label_positions(
     src_x: int, src_y: int, dst_x: int, dst_y: int
-) -> Tuple[Tuple[float, float], Tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float]]:
     v_x, v_y = dst_x - src_x, dst_y - src_y
     v_len = math.sqrt(v_x**2 + v_y**2)
     if v_len == 0:
@@ -128,8 +128,8 @@ class Edge:
         return self.width * self.app.app_scale
 
     def _get_arcpoint(
-        self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]
-    ) -> Tuple[float, float]:
+        self, src_pos: tuple[float, float], dst_pos: tuple[float, float]
+    ) -> tuple[float, float]:
         src_x, src_y = src_pos
         dst_x, dst_y = dst_pos
         mp_x = (src_x + dst_x) / 2
@@ -317,7 +317,7 @@ class Edge:
             if self.dst_label2:
                 self.dst.canvas.itemconfig(self.dst_label2, text=text)
 
-    def drawing(self, pos: Tuple[float, float]) -> None:
+    def drawing(self, pos: tuple[float, float]) -> None:
         src_x, src_y, _, _, _, _ = self.src.canvas.coords(self.id)
         src_pos = src_x, src_y
         self.moved(src_pos, pos)
@@ -368,7 +368,7 @@ class Edge:
         dst_pos = dst_x, dst_y
         self.moved(self.src.position(), dst_pos)
 
-    def moved(self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]) -> None:
+    def moved(self, src_pos: tuple[float, float], dst_pos: tuple[float, float]) -> None:
         arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.src.canvas.coords(self.id, *src_pos, *arc_pos, *dst_pos)
         if self.middle_label:
@@ -381,7 +381,7 @@ class Edge:
             self.src.canvas.coords(self.dst_label, *dst_pos)
 
     def moved2(
-        self, src_pos: Tuple[float, float], dst_pos: Tuple[float, float]
+        self, src_pos: tuple[float, float], dst_pos: tuple[float, float]
     ) -> None:
         arc_pos = self._get_arcpoint(src_pos, dst_pos)
         self.dst.canvas.coords(self.id2, *src_pos, *arc_pos, *dst_pos)
@@ -568,7 +568,7 @@ class CanvasEdge(Edge):
             label += f"{iface.ip6}/{iface.ip6_mask}"
         return label
 
-    def create_node_labels(self) -> Tuple[str, str]:
+    def create_node_labels(self) -> tuple[str, str]:
         label1 = None
         if self.link.iface1:
             label1 = self.iface_label(self.link.iface1)

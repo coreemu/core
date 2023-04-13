@@ -2,7 +2,7 @@ import logging
 import threading
 import time
 import tkinter as tk
-from typing import TYPE_CHECKING, Any, Callable, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class ProgressTask:
         title: str,
         task: Callable,
         callback: Callable = None,
-        args: Tuple[Any] = None,
+        args: tuple[Any] = None,
     ):
         self.app: "Application" = app
         self.title: str = title
@@ -25,7 +25,7 @@ class ProgressTask:
         self.callback: Callable = callback
         if args is None:
             args = ()
-        self.args: Tuple[Any] = args
+        self.args: tuple[Any] = args
         self.time: Optional[float] = None
 
     def start(self) -> None:

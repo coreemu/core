@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 
@@ -17,8 +17,8 @@ class IpConfigDialog(Dialog):
         super().__init__(app, "IP Configuration")
         self.ip4: str = self.app.guiconfig.ips.ip4
         self.ip6: str = self.app.guiconfig.ips.ip6
-        self.ip4s: List[str] = self.app.guiconfig.ips.ip4s
-        self.ip6s: List[str] = self.app.guiconfig.ips.ip6s
+        self.ip4s: list[str] = self.app.guiconfig.ips.ip4s
+        self.ip6s: list[str] = self.app.guiconfig.ips.ip6s
         self.ip4_entry: Optional[ttk.Entry] = None
         self.ip4_listbox: Optional[ListboxScroll] = None
         self.ip6_entry: Optional[ttk.Entry] = None

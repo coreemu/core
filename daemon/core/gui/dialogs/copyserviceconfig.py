@@ -4,7 +4,7 @@ copy service config dialog
 
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
@@ -29,7 +29,7 @@ class CopyServiceConfigDialog(Dialog):
         self.service: str = service
         self.file_name: str = file_name
         self.listbox: Optional[tk.Listbox] = None
-        self.nodes: Dict[str, int] = {}
+        self.nodes: dict[str, int] = {}
         self.draw()
 
     def draw(self) -> None:

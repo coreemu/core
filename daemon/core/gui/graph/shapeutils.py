@@ -1,5 +1,4 @@
 import enum
-from typing import Set
 
 
 class ShapeType(enum.Enum):
@@ -9,7 +8,7 @@ class ShapeType(enum.Enum):
     TEXT = "text"
 
 
-SHAPES: Set[ShapeType] = {ShapeType.OVAL, ShapeType.RECTANGLE}
+SHAPES: set[ShapeType] = {ShapeType.OVAL, ShapeType.RECTANGLE}
 
 
 def is_draw_shape(shape_type: ShapeType) -> bool:

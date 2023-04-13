@@ -3,7 +3,7 @@ custom color picker
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
@@ -66,7 +66,9 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.red_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0), width=5
+            frame,
+            background="#{:02x}{:02x}{:02x}".format(self.red.get(), 0, 0),
+            width=5,
         )
         self.red_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -89,7 +91,9 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.green_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, self.green.get(), 0), width=5
+            frame,
+            background="#{:02x}{:02x}{:02x}".format(0, self.green.get(), 0),
+            width=5,
         )
         self.green_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -112,7 +116,9 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.blue_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, 0, self.blue.get()), width=5
+            frame,
+            background="#{:02x}{:02x}{:02x}".format(0, 0, self.blue.get()),
+            width=5,
         )
         self.blue_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -157,7 +163,7 @@ class ColorPickerDialog(Dialog):
         red = self.red_entry.get()
         blue = self.blue_entry.get()
         green = self.green_entry.get()
-        return "#%02x%02x%02x" % (int(red), int(green), int(blue))
+        return "#{:02x}{:02x}{:02x}".format(int(red), int(green), int(blue))
 
     def current_focus(self, focus: str) -> None:
         self.focus = focus
@@ -169,7 +175,7 @@ class ColorPickerDialog(Dialog):
             green = self.green_entry.get()
             self.set_scale(red, green, blue)
             if red and blue and green:
-                hex_code = "#%02x%02x%02x" % (int(red), int(green), int(blue))
+                hex_code = "#{:02x}{:02x}{:02x}".format(int(red), int(green), int(blue))
                 self.hex.set(hex_code)
                 self.display.config(background=hex_code)
                 self.set_label(red, green, blue)
@@ -200,11 +206,17 @@ class ColorPickerDialog(Dialog):
         self.blue.set(blue)
 
     def set_label(self, red: str, green: str, blue: str) -> None:
-        self.red_label.configure(background="#%02x%02x%02x" % (int(red), 0, 0))
-        self.green_label.configure(background="#%02x%02x%02x" % (0, int(green), 0))
-        self.blue_label.configure(background="#%02x%02x%02x" % (0, 0, int(blue)))
+        self.red_label.configure(
+            background="#{:02x}{:02x}{:02x}".format(int(red), 0, 0)
+        )
+        self.green_label.configure(
+            background="#{:02x}{:02x}{:02x}".format(0, int(green), 0)
+        )
+        self.blue_label.configure(
+            background="#{:02x}{:02x}{:02x}".format(0, 0, int(blue))
+        )
 
-    def get_rgb(self, hex_code: str) -> Tuple[int, int, int]:
+    def get_rgb(self, hex_code: str) -> tuple[int, int, int]:
         """
         convert a valid hex code to RGB values
         """
