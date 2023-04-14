@@ -4,7 +4,7 @@ import tkinter as tk
 from collections.abc import ValuesView
 from copy import deepcopy
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
 from core.gui import nodeutils as nutils
@@ -35,7 +35,7 @@ class ShowVar(BooleanVar):
         self.manager: "CanvasManager" = manager
         self.tag: str = tag
 
-    def state(self) -> str:
+    def state(self) -> Literal["normal", "hidden"]:
         return tk.NORMAL if self.get() else tk.HIDDEN
 
     def click_handler(self) -> None:
