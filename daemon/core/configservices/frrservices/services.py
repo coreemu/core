@@ -104,7 +104,8 @@ class FRRZebra(ConfigService):
             "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
         frr_sbin_search = self.node.session.options.get(
-            "frr_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr"
+            "frr_sbin_search",
+            default="/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr",
         ).strip('"')
 
         services = []
