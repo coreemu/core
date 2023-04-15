@@ -1082,6 +1082,7 @@ class Session:
                 if isinstance(node, CoreNodeBase) and node.up:
                     args = (node,)
                     funcs.append((self.services.stop_services, args, {}))
+                    funcs.append((node.stop_config_services, (), {}))
             utils.threadpool(funcs)
 
         # shutdown emane

@@ -506,6 +506,15 @@ class CoreNodeBase(NodeBase):
             for service in startup_path:
                 service.start()
 
+    def stop_config_services(self) -> None:
+        """
+        Stop all configuration services.
+
+        :return: nothing
+        """
+        for service in self.config_services.values():
+            service.stop()
+
     def makenodedir(self) -> None:
         """
         Create the node directory.
