@@ -15,7 +15,6 @@ sudo apt install docker.io
 
 ### RHEL Systems
 
-
 ## Configuration
 
 Custom configuration required to avoid iptable rules being added and removing
@@ -26,8 +25,8 @@ Place the file below in **/etc/docker/docker.json**
 
 ```json
 {
-	"bridge": "none",
-	"iptables": false
+  "bridge": "none",
+  "iptables": false
 }
 ```
 
@@ -53,6 +52,7 @@ Images used by Docker nodes in CORE need to have networking tools installed for
 CORE to automate setup and configuration of the network within the container.
 
 Example Dockerfile:
+
 ```
 FROM ubuntu:latest
 RUN apt-get update
@@ -60,6 +60,7 @@ RUN apt-get install -y iproute2 ethtool
 ```
 
 Build image:
+
 ```shell
 sudo docker build -t <name> .
 ```

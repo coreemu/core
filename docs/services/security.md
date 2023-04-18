@@ -1,15 +1,15 @@
 # Security Services
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
-The security services offer a wide variety of protocols capable of satisfying the most use cases available. Security services such as IP security protocols, for providing security at the IP layer, as well as the suite of protocols designed to provide that security, through authentication and encryption of IP network packets. Virtual Private Networks (VPNs) and Firewalls are also available for use to the user.
+The security services offer a wide variety of protocols capable of satisfying the most use cases available. Security
+services such as IP security protocols, for providing security at the IP layer, as well as the suite of protocols
+designed to provide that security, through authentication and encryption of IP network packets. Virtual Private
+Networks (VPNs) and Firewalls are also available for use to the user.
 
 ## Installation
 
-Libraries needed for some of the security services.
+Libraries needed for some security services.
 
 ```shell
 sudo apt-get install ipsec-tools racoon
@@ -71,7 +71,9 @@ sudo cp pki/dh.pem $KEYDIR/dh1024.pem
 
 Add VPNServer service to nodes desired for running an OpenVPN server.
 
-Modify [sampleVPNServer](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNServer) for the following
+Modify [sampleVPNServer](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNServer) for the
+following
+
 * Edit keydir key/cert directory
 * Edit keyname to use generated server name above
 * Edit vpnserver to match an address that the server node will have
@@ -80,7 +82,9 @@ Modify [sampleVPNServer](https://github.com/coreemu/core/blob/master/package/exa
 
 Add VPNClient service to nodes desired for acting as an OpenVPN client.
 
-Modify [sampleVPNClient](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNClient) for the following
+Modify [sampleVPNClient](https://github.com/coreemu/core/blob/master/package/examples/services/sampleVPNClient) for the
+following
+
 * Edit keydir key/cert directory
 * Edit keyname to use generated client name above
 * Edit vpnserver to match the address a server was configured to use

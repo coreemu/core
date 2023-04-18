@@ -1,13 +1,10 @@
 # CORE Control Network
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
 The CORE control network allows the virtual nodes to communicate with their
 host environment. There are two types: the primary control network and
-auxiliary control networks.  The primary control network is used mainly for
+auxiliary control networks. The primary control network is used mainly for
 communicating with the virtual nodes from host machines and for master-slave
 communications in a multi-server distributed environment. Auxiliary control
 networks have been introduced to for routing namespace hosted emulation
@@ -30,15 +27,19 @@ new sessions will use by default. To simultaneously run multiple sessions with
 control networks, the session option should be used instead of the *core.conf*
 default.
 
-> **NOTE:** If you have a large scenario with more than 253 nodes, use a control
-network prefix that allows more than the suggested */24*, such as */23* or
-greater.
+!!! note
 
-> **NOTE:** Running a session with a control network can fail if a previous
-session has set up a control network and the its bridge is still up. Close
-the previous session first or wait for it to complete. If unable to, the
-*core-daemon* may need to be restarted and the lingering bridge(s) removed
-manually.
+    If you have a large scenario with more than 253 nodes, use a control
+    network prefix that allows more than the suggested */24*, such as */23* or
+    greater.
+
+!!! note
+
+    Running a session with a control network can fail if a previous
+    session has set up a control network and the its bridge is still up. Close
+    the previous session first or wait for it to complete. If unable to, the
+    **core-daemon** may need to be restarted and the lingering bridge(s) removed
+    manually.
 
 ```shell
 # Restart the CORE Daemon
@@ -52,11 +53,13 @@ for cb in $ctrlbridges; do
 done
 ```
 
-> **NOTE:** If adjustments to the primary control network configuration made in
-*/etc/core/core.conf* do not seem to take affect, check if there is anything
-set in the *Session Menu*, the *Options...* dialog. They may need to be
-cleared. These per session settings override the defaults in
-*/etc/core/core.conf*.
+!!! note
+
+    If adjustments to the primary control network configuration made in
+    **/etc/core/core.conf** do not seem to take affect, check if there is anything
+    set in the *Session Menu*, the *Options...* dialog. They may need to be
+    cleared. These per session settings override the defaults in
+    **/etc/core/core.conf**.
 
 ## Control Network in Distributed Sessions
 
@@ -102,9 +105,9 @@ argument being the keyword *"shutdown"*.
 Starting with EMANE 0.9.2, CORE will run EMANE instances within namespaces.
 Since it is advisable to separate the OTA traffic from other traffic, we will
 need more than single channel leading out from the namespace. Up to three
-auxiliary control networks may be defined.  Multiple control networks are set
-up in */etc/core/core.conf* file.  Lines *controlnet1*, *controlnet2* and
-*controlnet3* define the auxiliary  networks.
+auxiliary control networks may be defined. Multiple control networks are set
+up in */etc/core/core.conf* file. Lines *controlnet1*, *controlnet2* and
+*controlnet3* define the auxiliary networks.
 
 For example, having the following */etc/core/core.conf*:
 
@@ -114,18 +117,20 @@ controlnet1 = core1:172.18.1.0/24 core2:172.18.2.0/24 core3:172.18.3.0/24
 controlnet2 = core1:172.19.1.0/24 core2:172.19.2.0/24 core3:172.19.3.0/24
 ```
 
-This will activate the primary and two auxiliary control networks and  add
+This will activate the primary and two auxiliary control networks and add
 interfaces *ctrl0*, *ctrl1*, *ctrl2* to each node. One use case would be to
 assign *ctrl1* to the OTA manager device and *ctrl2* to the Event Service
 device in the EMANE Options dialog box and leave *ctrl0* for CORE control
 traffic.
 
-> **NOTE:** *controlnet0* may be used in place of *controlnet* to configure
->the primary control network.
+!!! note
+
+    *controlnet0* may be used in place of *controlnet* to configure
+    the primary control network.
 
 Unlike the primary control network, the auxiliary control networks will not
-employ  tunneling since their primary purpose is for efficiently transporting
-multicast EMANE OTA and  event traffic. Note that there is no per-session
+employ tunneling since their primary purpose is for efficiently transporting
+multicast EMANE OTA and event traffic. Note that there is no per-session
 configuration for auxiliary control networks.
 
 To extend the auxiliary control networks across a distributed test
@@ -139,9 +144,11 @@ controlnetif2 = eth2
 controlnetif3 = eth3
 ```
 
-> **NOTE:** There is no need to assign an interface to the primary control
->network because tunnels are formed between the master and the slaves using IP
->addresses that are provided in *servers.conf*.
+!!! note
+
+    There is no need to assign an interface to the primary control
+    network because tunnels are formed between the master and the slaves using IP
+    addresses that are provided in *servers.conf*.
 
 Shown below is a representative diagram of the configuration above.
 

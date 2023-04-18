@@ -1,8 +1,5 @@
 # Python API
 
-* Table of Contents
-  {:toc}
-
 ## Overview
 
 Writing your own Python scripts offers a rich programming environment with

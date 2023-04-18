@@ -1,8 +1,5 @@
 # CORE Performance
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
 The top question about the performance of CORE is often *how many nodes can it
@@ -15,7 +12,6 @@ handle?* The answer depends on several factors:
 | Active processes         | all nodes share the same CPU resources, so if one or more nodes is performing a CPU-intensive task, overall performance will suffer.                            |
 | Network traffic          | the more packets that are sent around the virtual network increases the amount of CPU usage.                                                                    |
 | GUI usage                | widgets that run periodically, mobility scenarios, and other GUI interactions generally consume CPU cycles that may be needed for emulation.                    |
-
 
 On a typical single-CPU Xeon 3.0GHz server machine with 2GB RAM running Linux,
 we have found it reasonable to run 30-75 nodes running OSPFv2 and OSPFv3
@@ -32,15 +28,17 @@ the number of times the system as a whole needed to deal with a packet. As
 more network hops are added, this increases the number of context switches
 and decreases the throughput seen on the full length of the network path.
 
-> **NOTE:** The right question to be asking is *"how much traffic?"*, not
-*"how many nodes?"*.
+!!! note
+
+    The right question to be asking is *"how much traffic?"*, not
+    *"how many nodes?"*.
 
 For a more detailed study of performance in CORE, refer to the following
 publications:
 
 * J\. Ahrenholz, T. Goff, and B. Adamson, Integration of the CORE and EMANE
-    Network Emulators, Proceedings of the IEEE Military Communications Conference 2011, November 2011.
+  Network Emulators, Proceedings of the IEEE Military Communications Conference 2011, November 2011.
 * Ahrenholz, J., Comparison of CORE Network Emulation Platforms, Proceedings
-    of the IEEE Military Communications Conference 2010, pp. 864-869, November 2010.
+  of the IEEE Military Communications Conference 2010, pp. 864-869, November 2010.
 * J\. Ahrenholz, C. Danilov, T. Henderson, and J.H. Kim, CORE: A real-time
-    network emulator, Proceedings of IEEE MILCOM Conference, 2008.
+  network emulator, Proceedings of IEEE MILCOM Conference, 2008.

@@ -1,9 +1,6 @@
 # CORE Developer's Guide
 
-* Table of Contents
-{:toc}
-
-## Repository Overview
+## Overview
 
 The CORE source consists of several programming languages for
 historical reasons. Current development focuses on the Python modules and
@@ -65,7 +62,7 @@ inv test-mock
 ## Linux Network Namespace Commands
 
 Linux network namespace containers are often managed using the *Linux Container Tools* or *lxc-tools* package.
-The lxc-tools website is available here http://lxc.sourceforge.net/ for more information.  CORE does not use these
+The lxc-tools website is available here http://lxc.sourceforge.net/ for more information. CORE does not use these
 management utilities, but includes its own set of tools for instantiating and configuring network namespace containers.
 This section describes these tools.
 
@@ -100,7 +97,7 @@ vcmd -c /tmp/pycore.50160/n1 -- /sbin/ip -4 ro
 
 A script named *core-cleanup* is provided to clean up any running CORE emulations. It will attempt to kill any
 remaining vnoded processes, kill any EMANE processes, remove the :file:`/tmp/pycore.*` session directories, and remove
-any bridges or *nftables* rules.  With a *-d* option, it will also kill any running CORE daemon.
+any bridges or *nftables* rules. With a *-d* option, it will also kill any running CORE daemon.
 
 ### netns command
 
