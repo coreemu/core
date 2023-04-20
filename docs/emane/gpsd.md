@@ -7,7 +7,7 @@ Introduction to integrating gpsd in CORE with EMANE.
 [EMANE Demo 0](https://github.com/adjacentlink/emane-tutorial/wiki/Demonstration-0)
 may provide more helpful details.
 
-!!!! warning
+!!! warning
 
     Requires installation of [gpsd](https://gpsd.gitlab.io/gpsd/index.html)
 

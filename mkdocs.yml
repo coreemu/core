@@ -47,11 +47,28 @@ nav:
       - Services:
           - Config Services: configservices.md
           - Services (Deprecated): services.md
+          - Provided:
+              - Bird: services/bird.md
+              - EMANE: services/emane.md
+              - FRR: services/frr.md
+              - NRL: services/nrl.md
+              - Quagga: services/quagga.md
+              - SDN: services/sdn.md
+              - Security: services/security.md
+              - Utility: services/utility.md
+              - XORP: services/xorp.md
       - API:
           - Python: python.md
           - gRPC: grpc.md
       - Distributed: distributed.md
       - Control Network: ctrlnet.md
       - Hardware In The Loop: hitl.md
-      - EMANE: emane.md
+      - EMANE:
+          - Overview: emane.md
+          - Examples:
+              - Antenna: emane/antenna.md
+              - EEL: emane/eel.md
+              - Files: emane/files.md
+              - GPSD: emane/gpsd.md
+              - Precomputed: emane/precomputed.md
   - Developers Guide: devguide.md
