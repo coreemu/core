@@ -1,10 +1,12 @@
 # Tutorial 1 - Wired Network
 
+## Overview
+
 This tutorial will cover some use cases when using a wired 2 node
 scenario in CORE.
 
 <p align="center">
-  <img src="images/tutorial1/scenario.png" width="75%">
+  <img src="/static/tutorial1/scenario.png" width="75%">
 </p>
 
 ## Files
@@ -44,11 +46,11 @@ between nodes in CORE.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="images/tutorial-common/running-open.png" width="75%">
+     <img src="/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="images/tutorial1/scenario.png" width="75%">
+     <img src="/static/tutorial1/scenario.png" width="75%">
    </p>
 * Open a terminal on **n1** by double clicking it in the GUI
 * Run the following in **n1** terminal
@@ -82,11 +84,11 @@ traffic being sent/received among many other uses.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="images/tutorial-common/running-open.png" width="75%">
+     <img src="/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="images/tutorial1/scenario.png" width="75%">
+     <img src="/static/tutorial1/scenario.png" width="75%">
    </p>
 * Open a terminal on **n1** by double clicking it in the GUI
 * Open a terminal on **n2** by double clicking it in the GUI
@@ -121,20 +123,20 @@ beneficial for understanding how software will behave in adverse conditions.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="images/tutorial-common/running-open.png" width="75%">
+     <img src="/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="images/tutorial1/scenario.png" width="75%">
+     <img src="/static/tutorial1/scenario.png" width="75%">
    </p>
 * Right click the link between **n1** and **n2**
 * Select **Configure**
   <p align="center">
-    <img src="images/tutorial1/link-config.png" width="75%">
+    <img src="/static/tutorial1/link-config.png" width="75%">
   </p>
 * Update the loss to **25**
   <p align="center">
-    <img src="images/tutorial1/link-config-dialog.png" width="50%">
+    <img src="/static/tutorial1/link-config-dialog.png" width="50%">
   </p>
 * Open a terminal on **n1** by double clicking it in the GUI
 * Run the following in **n1** terminal
@@ -164,11 +166,11 @@ within the nodes of our scenario.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="images/tutorial-common/running-open.png" width="75%">
+     <img src="/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="images/tutorial1/scenario.png" width="75%">
+     <img src="/static/tutorial1/scenario.png" width="75%">
    </p>
 * Open a terminal on **n1** by double clicking it in the GUI
 * Run the following in **n1** terminal
@@ -214,11 +216,11 @@ using `tail -f` to observe the output of running software.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario_service.xml**
    <p align="center">
-     <img src="images/tutorial-common/running-open.png" width="75%">
+     <img src="/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="images/tutorial1/scenario.png" width="75%">
+     <img src="/static/tutorial1/scenario.png" width="75%">
    </p>
 * Open a terminal on **n1** by double clicking it in the GUI
 * Run the following in **n1** terminal
@@ -247,4 +249,4 @@ using `tail -f` to observe the output of running software.
     [10.0.0.21:44362] hello world
     ```
 
---8<-- "common/grpc.md"
+--8<-- "tutorials/common/grpc.md"

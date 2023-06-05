@@ -38,6 +38,9 @@ nav:
       - Overview: install.md
       - Ubuntu: install_ubuntu.md
       - CentOS: install_centos.md
+  - Tutorials:
+      - Setup: tutorials/setup.md
+      - Tutorial 1: tutorials/tutorial1.md
   - Detailed Topics:
       - GUI: gui.md
       - Node Types:
