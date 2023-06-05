@@ -4,7 +4,10 @@ from core.api.grpc.wrappers import Position
 
 def main():
     # interface helper
-    iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+    iface_helper = client.InterfaceHelper(
+        ip4_prefix="10.0.0.0/24",
+        ip6_prefix="2001::/64",
+    )
 
     # create grpc client and connect
     core = client.CoreGrpcClient()

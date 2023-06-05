@@ -1,11 +1,14 @@
 from core.api.grpc import client
-from core.api.grpc.wrappers import Position, Interface, NodeType
+from core.api.grpc.wrappers import Position, NodeType
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 
 
 def main():
     # interface helper
-    iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+    iface_helper = client.InterfaceHelper(
+        ip4_prefix="10.0.0.0/24",
+        ip6_prefix="2001::/64",
+    )
 
     # create grpc client and connect
     core = client.CoreGrpcClient()
@@ -34,14 +37,12 @@ def main():
     node2_iface.ip4_mask = 32
     node2_iface.ip6 = "2001::1"
     node2_iface.ip6_mask = 128
-    # emane_iface1 = Interface(id=0)
     session.add_link(node1=node2, node2=emane_net, iface1=node2_iface)
     node3_iface = iface_helper.create_iface(node_id=node3.id, iface_id=0)
     node3_iface.ip4 = "10.0.0.2"
     node3_iface.ip4_mask = 32
     node3_iface.ip6 = "2001::2"
     node3_iface.ip6_mask = 128
-    # emane_iface2 = Interface(id=1)
     session.add_link(node1=node3, node2=emane_net, iface1=node3_iface)
 
     # start session
