@@ -41,6 +41,7 @@ nav:
   - Tutorials:
       - Setup: tutorials/setup.md
       - Tutorial 1: tutorials/tutorial1.md
+      - Tutorial 4: tutorials/tutorial4.md
   - Detailed Topics:
       - GUI: gui.md
       - Node Types:
