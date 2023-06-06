@@ -39,9 +39,11 @@ nav:
       - Ubuntu: install_ubuntu.md
       - CentOS: install_centos.md
   - Tutorials:
+      - Overview: tutorials/overview.md
       - Setup: tutorials/setup.md
       - Tutorial 1: tutorials/tutorial1.md
       - Tutorial 4: tutorials/tutorial4.md
+      - Tutorial 6: tutorials/tutorial6.md
       - Tutorial 7: tutorials/tutorial7.md
   - Detailed Topics:
       - GUI: gui.md
