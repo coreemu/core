@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<scenario name="/tmp/tmp8mbqm1qx">
+  <networks>
+    <network id="2" name="unassigned" icon="" canvas="1" type="RJ45">
+      <position x="235.0" y="255.0" lat="47.5768484978344" lon="-122.12915765737347" alt="2.0"/>
+    </network>
+  </networks>
+  <devices>
+    <device id="1" name="n1" icon="" canvas="1" type="PC" class="" image="">
+      <position x="395.0" y="189.0" lat="47.57744843849355" lon="-122.12700170069158" alt="2.0"/>
+      <configservices>
+        <service name="DefaultRoute"/>
+      </configservices>
+    </device>
+  </devices>
+  <links>
+    <link node1="2" node2="1">
+      <iface1 id="0" name="unassigned"/>
+      <iface2 id="0" name="eth0" ip4="10.0.0.20" ip4_mask="24" ip6="2001::14" ip6_mask="64"/>
+      <options unidirectional="1"/>
+    </link>
+    <link node1="1" node2="2">
+      <iface1 id="0" name="eth0" ip4="10.0.0.20" ip4_mask="24" ip6="2001::14" ip6_mask="64"/>
+      <iface2 id="0" name="unassigned"/>
+      <options delay="0" bandwidth="0" loss="0.0" dup="0" jitter="0" unidirectional="1" buffer="0"/>
+    </link>
+  </links>
+  <configservice_configurations>
+    <service name="DefaultRoute" node="1"/>
+  </configservice_configurations>
+  <session_origin lat="47.579166412353516" lon="-122.13232421875" alt="2.0" scale="150.0"/>
+  <session_options>
+    <configuration name="controlnet" value=""/>
+    <configuration name="controlnet0" value=""/>
+    <configuration name="controlnet1" value=""/>
+    <configuration name="controlnet2" value=""/>
+    <configuration name="controlnet3" value=""/>
+    <configuration name="controlnet_updown_script" value=""/>
+    <configuration name="enablerj45" value="1"/>
+    <configuration name="preservedir" value="0"/>
+    <configuration name="enablesdt" value="0"/>
+    <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
+    <configuration name="ovs" value="0"/>
+    <configuration name="platform_id_start" value="1"/>
+    <configuration name="nem_id_start" value="1"/>
+    <configuration name="link_enabled" value="1"/>
+    <configuration name="loss_threshold" value="30"/>
+    <configuration name="link_interval" value="1"/>
+    <configuration name="link_timeout" value="4"/>
+    <configuration name="mtu" value="0"/>
+  </session_options>
+  <session_metadata>
+    <configuration name="shapes" value="[]"/>
+    <configuration name="edges" value="[]"/>
+    <configuration name="hidden" value="[]"/>
+    <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: null, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 750]}]}"/>
+  </session_metadata>
+  <default_services>
+    <node type="mdr">
+      <service name="zebra"/>
+      <service name="OSPFv3MDR"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="PC">
+      <service name="DefaultRoute"/>
+    </node>
+    <node type="prouter"/>
+    <node type="router">
+      <service name="zebra"/>
+      <service name="OSPFv2"/>
+      <service name="OSPFv3"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="host">
+      <service name="DefaultRoute"/>
+      <service name="SSH"/>
+    </node>
+  </default_services>
+</scenario>

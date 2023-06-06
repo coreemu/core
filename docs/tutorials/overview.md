@@ -21,7 +21,7 @@ These are the items you should become familiar with for running all the tutorial
     * Covers mobility interactions when using a simple 3 node wireless network
 * [Tutorial 4 - Tests](tutorial4.md)
     * Covers automating scenarios as tests to validate software
-* [Tutorial 5 - Access Windows](tutorial5.md)
+* [Tutorial 5 - RJ45 Node](tutorial5.md)
     * Covers using the RJ45 node to connect a Windows OS
 * [Tutorial 6 - Improve Visuals](tutorial6.md)
     * Covers changing the look of a scenario within the CORE GUI
