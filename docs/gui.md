@@ -383,6 +383,22 @@ wireless nodes that are farther than the range pixels apart are not linked.
 During Execute mode, users may move wireless nodes around by clicking and
 dragging them, and wireless links will be dynamically made or broken.
 
+### Running Commands within Nodes
+
+You can double click a node to bring up a terminal for running shell commands. Within
+the terminal you can run anything you like and those commands will be run in context of the node.
+For standard CORE nodes, the only thing to keep in mind is that you are using the host file
+system and anything you change or do can impact the greater system. By default, your terminal
+will open within the nodes home directory for the running session, but it is temporary and
+will be removed when the session is stopped.
+
+You can also launch GUI based applications from within standard CORE nodes, but you need to
+enable xhost  access to root.
+
+```shell
+xhost +local:root
+```
+
 ### Mobility Scripting
 
 CORE has a few ways to script mobility.
