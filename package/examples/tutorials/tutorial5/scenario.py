@@ -5,12 +5,15 @@ from core.api.grpc.wrappers import NodeType, Position
 
 
 def main():
-    if (len(sys.argv) != 2):
+    if len(sys.argv) != 2:
         print("usage core-python scenario.py <interface-name>")
         exit()
 
     # interface helper
-    iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+    iface_helper = client.InterfaceHelper(
+        ip4_prefix="10.0.0.0/24",
+        ip6_prefix="2001::/64",
+    )
 
     # create grpc client and connect
     core = client.CoreGrpcClient()

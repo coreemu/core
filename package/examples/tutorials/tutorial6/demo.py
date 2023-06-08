@@ -19,14 +19,14 @@ def find_next_position(arr, start_row):
                 print(f"search_y={y}")
                 val = arr[x][y]
                 if (val == 0) or (val == 100):
-                    return x,y
+                    return x, y
             else:
                 search_x = cols - (x - min_cols + 1)
                 print(f"search_x={search_x}")
                 print(f"search_y={y}")
                 val = arr[search_x][y]
                 if val == 0:
-                    return search_x,y
+                    return search_x, y
 
 
 def move(current_x, current_y, to_x, to_y):
@@ -49,7 +49,7 @@ def move(current_x, current_y, to_x, to_y):
 
 def main():
     n = len(sys.argv)
-    if (n < 3):
+    if n < 3:
         print("Usage: core-python demo.py <node num> <total search nodes>")
         exit()
 
@@ -63,10 +63,10 @@ def main():
     # get session
     sessions = core.get_sessions()
     rows_per_zone = (499 - 25) / num_search_nodes
-    node_number =  int(sys.argv[1])
+    node_number = int(sys.argv[1])
     y_start = (node_number - 1) * int(rows_per_zone)
     current_x = 25
-    current_y =  y_start
+    current_y = y_start
 
     # max x and y
     rows, cols = (470, 900)
@@ -78,20 +78,21 @@ def main():
     arr[200][165] = 100
     print(arr, "after")
 
+    position = None
     while True:
         val = arr[current_x][current_y]
         # if position has target, stop
         if val == 100:
             print(f"found target, position={position}")
         else:
-            #update one element for this starting position
+            # update one element for this starting position
             arr[current_x][current_y] = 1
             # move
             to_x, to_y = find_next_position(arr, y_start)
             print(f"next x={to_x}, next y={to_y}")
             x, y = move(current_x, current_y, to_x, to_y)
             # command the move
-            position = Position(x , y)
+            position = Position(x, y)
             print(f"move to position {position}")
             core.move_node(sessions[0].id, node_number, position=position)
             current_x = x

@@ -44,7 +44,8 @@ This section covers using the saved **scenario.xml** file to get and up and runn
    ```shell
    ip route add 192.168.0.0/24 via 10.0.0.20
    ```
-* On the Windows host using Windows command prompt with administrator privilege, add a route that uses the interface connected to the associated interface assigned to the RJ45 node
+* On the Windows host using Windows command prompt with administrator privilege, add a route that uses the interface
+  connected to the associated interface assigned to the RJ45 node
     ```shell
     # if enp0s3 is ssigned 192.168.0.6/24
     route add 10.0.0.0 mask 255.255.255.0 192.168.0.6
@@ -119,7 +120,8 @@ This section covers leveraging the gRPC script to get up and running.
    ```shell
    ip route add 192.168.0.0/24 via 10.0.0.20
    ```
-* On the Windows host using Windows command prompt with administrator privilege, add a route that uses the interface connected to the associated interface assigned to the RJ45 node
+* On the Windows host using Windows command prompt with administrator privilege, add a route that uses the interface
+  connected to the associated interface assigned to the RJ45 node
     ```shell
     # if enp0s3 is ssigned 192.168.0.6/24
     route add 10.0.0.0 mask 255.255.255.0 192.168.0.6

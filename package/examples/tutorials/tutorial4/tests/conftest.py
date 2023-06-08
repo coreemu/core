@@ -1,4 +1,5 @@
 import pytest
+
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import IpPrefixes
 from core.emulator.enumerations import EventTypes

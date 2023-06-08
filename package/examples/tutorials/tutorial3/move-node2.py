@@ -14,7 +14,7 @@ def main():
 
     print("sessions=", sessions)
     for i in range(300):
-        position = Position(x= 100, y = 100 + i)
+        position = Position(x=100, y=100 + i)
         core.move_node(sessions[0].id, 2, position=position)
         time.sleep(1)
     print("press enter to quit")
@@ -23,10 +23,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-

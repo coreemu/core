@@ -20,12 +20,17 @@ class ChatClient:
     def run(self):
         server = socket.create_connection((self.address, self.port))
         sockname = server.getsockname()
-        print(f"connected to server({self.address}:{self.port}) as client({sockname[0]}:{sockname[1]})")
+        print(
+            f"connected to server({self.address}:{self.port}) as "
+            f"client({sockname[0]}:{sockname[1]})"
+        )
         sockets = [server]
         prompt()
         try:
             while True:
-                read_sockets, write_socket, error_socket = select.select(sockets, [], [], 10)
+                read_sockets, write_socket, error_socket = select.select(
+                    sockets, [], [], 10
+                )
                 for sock in read_sockets:
                     if sock == server:
                         message = server.recv(READ_SIZE)
@@ -50,7 +55,8 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("-a", "--address", help="address to listen on", required=True)
-    parser.add_argument("-p", "--port", type=int, help="port to listen on", default=DEFAULT_PORT)
+    parser.add_argument("-p", "--port", type=int, help="port to listen on",
+                        default=DEFAULT_PORT)
     args = parser.parse_args()
     client = ChatClient(args.address, args.port)
     client.run()

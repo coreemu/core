@@ -1,4 +1,5 @@
 import pytest
+
 from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.session import Session
 from core.errors import CoreCommandError

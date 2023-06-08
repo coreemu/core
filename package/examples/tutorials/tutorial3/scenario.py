@@ -6,7 +6,10 @@ from core.api.grpc.wrappers import NodeType, Position
 
 def main():
     # interface helper
-    iface_helper = client.InterfaceHelper(ip4_prefix="10.0.0.0/24", ip6_prefix="2001::/64")
+    iface_helper = client.InterfaceHelper(
+        ip4_prefix="10.0.0.0/24",
+        ip6_prefix="2001::/64",
+    )
 
     # create grpc client and connect
     core = client.CoreGrpcClient()
@@ -17,7 +20,12 @@ def main():
 
     # create nodes
     position = Position(x=200, y=200)
-    wlan = session.add_node(3, name="wlan3", _type=NodeType.WIRELESS_LAN, position=position)
+    wlan = session.add_node(
+        3,
+        name="wlan3",
+        _type=NodeType.WIRELESS_LAN,
+        position=position,
+    )
     position = Position(x=100, y=100)
     node1 = session.add_node(1, name="n1", model="mdr", position=position)
     position = Position(x=300, y=100)

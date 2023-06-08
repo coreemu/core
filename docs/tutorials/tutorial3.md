@@ -11,13 +11,13 @@ Below is the list of files used for this tutorial.
 
 * movements1.txt - a NS2 mobility input file
 * scenario.xml - 3 node CORE xml scenario file  (wireless)
-* scenario.py -  3 node CORE gRPC python script (wireless)
+* scenario.py - 3 node CORE gRPC python script (wireless)
 * printout.py - event listener
 
 ## Running with XML file using NS2 Movement
 
 This section will cover running this sample tutorial using the XML scenario
- file, leveraging an NS2 file for mobility.
+file, leveraging an NS2 file for mobility.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
@@ -67,7 +67,8 @@ This section will cover running this sample tutorial using the XML scenario
 * You can now click play to start the session
 * Select the play button on the Mobility Player to start mobility
 * Observe movement of the nodes
-* Note that OSPF routing protocol is included in the scenario to build routing table so that routes to other nodes are known and when the routes are discovered, ping will work
+* Note that OSPF routing protocol is included in the scenario to build routing table so that routes to other nodes are
+  known and when the routes are discovered, ping will work
 
 <p align="center">
   <img src="/static/tutorial3/motion_from_ns2_file.png" width="80%" >
