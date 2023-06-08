@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc.wrappers import Hook, SessionState
@@ -91,6 +91,13 @@ class HookDialog(Dialog):
             self.hook.file = file_name
             self.hook.data = data
         else:
+            if file_name in self.app.core.session.hooks:
+                messagebox.showerror(
+                    "Hook Error",
+                    f"Hook {file_name} already exists!",
+                    parent=self.master,
+                )
+                return
             self.hook = Hook(state=state, file=file_name, data=data)
         self.destroy()
 
