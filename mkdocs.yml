@@ -41,11 +41,13 @@ nav:
   - Tutorials:
       - Overview: tutorials/overview.md
       - Setup: tutorials/setup.md
-      - Tutorial 1: tutorials/tutorial1.md
-      - Tutorial 4: tutorials/tutorial4.md
-      - Tutorial 5: tutorials/tutorial5.md
-      - Tutorial 6: tutorials/tutorial6.md
-      - Tutorial 7: tutorials/tutorial7.md
+      - Tutorial 1 - Wired Network: tutorials/tutorial1.md
+      - Tutorial 2 - Wireless Network: tutorials/tutorial2.md
+      - Tutorial 3 - Basic Mobility: tutorials/tutorial3.md
+      - Tutorial 4 - Tests: tutorials/tutorial4.md
+      - Tutorial 5 - RJ45 Node: tutorials/tutorial5.md
+      - Tutorial 6 - Improve Visuals: tutorials/tutorial6.md
+      - Tutorial 7 - EMANE: tutorials/tutorial7.md
   - Detailed Topics:
       - GUI: gui.md
       - Node Types:

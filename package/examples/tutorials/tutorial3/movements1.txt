@@ -1,0 +1,33 @@
+$node_(1) set X_ 208.1
+$node_(1) set Y_ 211.05
+$node_(1) set Z_ 0
+$ns_ at 0.0 "$node_(1) setdest 208.1 211.05 0.00"
+$node_(2) set X_ 393.1
+$node_(2) set Y_ 223.05
+$node_(2) set Z_ 0
+$ns_ at 0.0 "$node_(2) setdest 393.1 223.05 0.00"
+$node_(4) set X_ 499.1
+$node_(4) set Y_ 186.05
+$node_(4) set Z_ 0
+$ns_ at 0.0 "$node_(4) setdest 499.1 186.05 0.00"
+$ns_ at 1.0 "$node_(1) setdest 190.1 225.05 0.00"
+$ns_ at 1.0 "$node_(2) setdest 393.1 225.05 0.00"
+$ns_ at 1.0 "$node_(4) setdest 515.1 186.05 0.00"
+$ns_ at 2.0 "$node_(1) setdest 175.1 250.05 0.00"
+$ns_ at 2.0 "$node_(2) setdest 393.1 250.05 0.00"
+$ns_ at 2.0 "$node_(4) setdest 530.1 186.05 0.00"
+$ns_ at 3.0 "$node_(1) setdest 160.1 275.05 0.00"
+$ns_ at 3.0 "$node_(2) setdest 393.1 275.05 0.00"
+$ns_ at 3.0 "$node_(4) setdest 530.1 186.05 0.00"
+$ns_ at 4.0 "$node_(1) setdest 160.1 300.05 0.00"
+$ns_ at 4.0 "$node_(2) setdest 393.1 300.05 0.00"
+$ns_ at 4.0 "$node_(4) setdest 550.1 186.05 0.00"
+$ns_ at 5.0 "$node_(1) setdest 160.1 275.05 0.00"
+$ns_ at 5.0 "$node_(2) setdest 393.1 275.05 0.00"
+$ns_ at 5.0 "$node_(4) setdest 530.1 186.05 0.00"
+$ns_ at 6.0 "$node_(1) setdest 175.1 250.05 0.00"
+$ns_ at 6.0 "$node_(2) setdest 393.1 250.05 0.00"
+$ns_ at 6.0 "$node_(4) setdest 515.1 186.05 0.00"
+$ns_ at 7.0 "$node_(1) setdest 190.1 225.05 0.00"
+$ns_ at 7.0 "$node_(2) setdest 393.1 225.05 0.00"
+$ns_ at 7.0 "$node_(4) setdest 499.1 186.05 0.00"
