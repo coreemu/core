@@ -105,7 +105,7 @@ class DistributedServer:
         """
         with self.lock:
             temp = NamedTemporaryFile(delete=False)
-            temp.write(data.encode("utf-8"))
+            temp.write(data.encode())
             temp.close()
             self.conn.put(temp.name, str(dst_path))
             os.unlink(temp.name)

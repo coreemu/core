@@ -170,7 +170,7 @@ class LxcNode(CoreNode):
         """
         logger.debug("node(%s) create file(%s) mode(%o)", self.name, file_path, mode)
         temp = NamedTemporaryFile(delete=False)
-        temp.write(contents.encode("utf-8"))
+        temp.write(contents.encode())
         temp.close()
         temp_path = Path(temp.name)
         directory = file_path.parent

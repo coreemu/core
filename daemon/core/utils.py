@@ -87,7 +87,7 @@ def hashkey(value: Union[str, int]) -> int:
     """
     if isinstance(value, int):
         value = str(value)
-    value = value.encode("utf-8")
+    value = value.encode()
     return int(hashlib.sha256(value).hexdigest(), 16)
 
 
@@ -224,9 +224,9 @@ def cmd(
         p = Popen(args, stdout=output, stderr=output, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
-            stdout = stdout.decode("utf-8").strip()
-            stderr = stderr.decode("utf-8").strip()
-            status = p.wait()
+            stdout = stdout.decode().strip()
+            stderr = stderr.decode().strip()
+            status = p.returncode
             if status != 0:
                 raise CoreCommandError(status, input_args, stdout, stderr)
             return stdout

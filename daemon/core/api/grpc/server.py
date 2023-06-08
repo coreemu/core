@@ -1179,7 +1179,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logger.debug("open xml: %s", request)
         session = self.coreemu.create_session()
         temp = tempfile.NamedTemporaryFile(delete=False)
-        temp.write(request.data.encode("utf-8"))
+        temp.write(request.data.encode())
         temp.close()
         temp_path = Path(temp.name)
         file_path = Path(request.file)
