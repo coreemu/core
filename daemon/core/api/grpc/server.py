@@ -1285,8 +1285,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param context: grpc context
         :return: get config service defaults response
         """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         service_class = self.validate_service(request.name, context)
-        service = service_class(None)
+        service = service_class(node)
         templates = service.get_templates()
         config = {}
         for configuration in service.default_configs:

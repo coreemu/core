@@ -17,6 +17,7 @@ from core.api.grpc import client, configservices_pb2, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
+    ConfigServiceDefaults,
     EmaneModelConfig,
     Event,
     ExceptionEvent,
@@ -752,6 +753,11 @@ class CoreClient:
 
     def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
         return self.client.get_config_service_rendered(self.session.id, node_id, name)
+
+    def get_config_service_defaults(
+        self, node_id: int, name: str
+    ) -> ConfigServiceDefaults:
+        return self.client.get_config_service_defaults(self.session.id, node_id, name)
 
     def get_config_service_configs_proto(
         self,

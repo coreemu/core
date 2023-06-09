@@ -87,7 +87,9 @@ class ConfigServiceConfigDialog(Dialog):
             self.validation_mode = service.validation_mode
             self.validation_time = service.validation_timer
             self.validation_period.set(service.validation_period)
-            defaults = self.core.client.get_config_service_defaults(self.service_name)
+            defaults = self.core.get_config_service_defaults(
+                self.node.id, self.service_name
+            )
             self.original_service_files = defaults.templates
             self.temp_service_files = dict(self.original_service_files)
             self.modes = sorted(defaults.modes)

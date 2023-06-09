@@ -952,14 +952,22 @@ class CoreGrpcClient:
         response = self.stub.GetInterfaces(request)
         return list(response.ifaces)
 
-    def get_config_service_defaults(self, name: str) -> wrappers.ConfigServiceDefaults:
+    def get_config_service_defaults(
+        self, session_id: int, node_id: int, name: str
+    ) -> wrappers.ConfigServiceDefaults:
         """
         Retrieves config service default values.
 
+        :param session_id: session id to get node from
+        :param node_id: node id to get service data from
         :param name: name of service to get defaults for
         :return: config service defaults
         """
-        request = GetConfigServiceDefaultsRequest(name=name)
+        request = GetConfigServiceDefaultsRequest(
+            name=name,
+            session_id=session_id,
+            node_id=node_id,
+        )
         response = self.stub.GetConfigServiceDefaults(request)
         return wrappers.ConfigServiceDefaults.from_proto(response)
 
