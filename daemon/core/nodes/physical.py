@@ -171,7 +171,10 @@ class Rj45Node(CoreNodeBase):
                 if "UP" in flags:
                     self.old_up = True
             elif items[0] == "inet":
-                self.old_addrs.append((items[1], items[3]))
+                broadcast = None
+                if items[2] == "brd":
+                    broadcast = items[3]
+                self.old_addrs.append((items[1], broadcast))
             elif items[0] == "inet6":
                 if items[1][:4] == "fe80":
                     continue
