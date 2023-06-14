@@ -24,7 +24,7 @@ def main():
         _type=NodeType.EMANE,
         name="emane1",
         position=position,
-        emane=EmaneIeee80211abgModel.name
+        emane=EmaneIeee80211abgModel.name,
     )
     position = Position(x=250, y=250)
     node2 = session.add_node(_id=2, model="mdr", name="n2", position=position)

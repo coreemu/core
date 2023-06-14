@@ -141,7 +141,7 @@ def get_os(install_type: Optional[str]) -> OsInfo:
                 if not line:
                     continue
                 key, value = line.split("=")
-                d[key] = value.strip("\"")
+                d[key] = value.strip('"')
         name_value = d["ID"]
         like_value = d.get("ID_LIKE", "")
         version_value = d["VERSION_ID"]
@@ -149,10 +149,10 @@ def get_os(install_type: Optional[str]) -> OsInfo:
 
 
 def check_existing_core(c: Context, hide: bool) -> None:
-    if c.run("python -c \"import core\"", warn=True, hide=hide):
+    if c.run('python -c "import core"', warn=True, hide=hide):
         raise SystemError("existing python core installation detected, please remove")
     python_bin = get_env_python()
-    if c.run(f"{python_bin} -c \"import core\"", warn=True, hide=hide):
+    if c.run(f'{python_bin} -c "import core"', warn=True, hide=hide):
         raise SystemError(
             f"existing {python_bin} core installation detected, please remove"
         )
@@ -166,7 +166,7 @@ def install_system(c: Context, os_info: OsInfo, hide: bool, no_python: bool) -> 
         c.run(
             "sudo apt install -y automake pkg-config gcc libev-dev nftables "
             f"iproute2 ethtool tk bash",
-            hide=hide
+            hide=hide,
         )
         if not no_python:
             c.run(f"sudo apt install -y {python_dep}-tk", hide=hide)
@@ -243,7 +243,7 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
             "./configure --disable-doc --enable-user=root --enable-group=root "
             "--with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh "
             "--localstatedir=/var/run/quagga",
-            hide=hide
+            hide=hide,
         )
         c.run("make -j$(nproc)", hide=hide)
         c.run("sudo make install", hide=hide)
@@ -258,7 +258,8 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
     systemd_dir = Path("/lib/systemd/system/")
     service_file = systemd_dir.joinpath("core-daemon.service")
     if systemd_dir.exists():
-        service_data = inspect.cleandoc(f"""
+        service_data = inspect.cleandoc(
+            f"""
             [Unit]
             Description=Common Open Research Emulator Service
             After=network.target
@@ -270,7 +271,8 @@ def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
 
             [Install]
             WantedBy=multi-user.target
-            """)
+            """
+        )
         temp = NamedTemporaryFile("w", delete=False)
         temp.write(service_data)
         temp.close()
@@ -289,10 +291,12 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     if not local:
         core_python = bin_dir.joinpath("core-python")
         temp = NamedTemporaryFile("w", delete=False)
-        temp.writelines([
-            "#!/bin/bash\n",
-            f'exec "{VENV_PYTHON}" "$@"\n',
-        ])
+        temp.writelines(
+            [
+                "#!/bin/bash\n",
+                f'exec "{VENV_PYTHON}" "$@"\n',
+            ]
+        )
         temp.close()
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
@@ -312,7 +316,7 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     help={
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
-                        "can be one of the following (redhat, debian)",
+        "can be one of the following (redhat, debian)",
         "no-python": "avoid installing python system dependencies",
     },
 )
@@ -344,7 +348,7 @@ def build(
         "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "install-type": "used to force an install type, "
-                        "can be one of the following (redhat, debian)",
+        "can be one of the following (redhat, debian)",
         "ospf": "disable ospf installation",
         "no-python": "avoid installing python system dependencies",
     },
@@ -399,7 +403,7 @@ def install(
         "emane-version": "version of emane install",
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
-                        "can be one of the following (redhat, debian)",
+        "can be one of the following (redhat, debian)",
     },
 )
 def install_emane(c, emane_version, verbose=False, install_type=None):
@@ -444,9 +448,7 @@ def install_emane(c, emane_version, verbose=False, install_type=None):
             c.run("make -j$(nproc)", hide=hide)
     with p.start("installing emane python bindings for core virtual environment"):
         with c.cd(DAEMON_DIR):
-            c.run(
-                f"poetry run pip install {emane_python_dir.absolute()}", hide=hide
-            )
+            c.run(f"poetry run pip install {emane_python_dir.absolute()}", hide=hide)
 
 
 @task(
@@ -489,7 +491,10 @@ def uninstall(
             if Path(VENV_PYTHON).is_file():
                 with c.cd(DAEMON_DIR):
                     if dev:
-                        c.run(f"{ACTIVATE_VENV} && poetry run pre-commit uninstall", hide=hide)
+                        c.run(
+                            f"{ACTIVATE_VENV} && poetry run pre-commit uninstall",
+                            hide=hide,
+                        )
                     c.run(f"sudo {VENV_PYTHON} -m pip uninstall -y core", hide=hide)
     # remove installed files
     bin_dir = Path(prefix).joinpath("bin")
@@ -518,7 +523,7 @@ def uninstall(
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "branch": "branch to install latest code from, default is current branch",
         "install-type": "used to force an install type, "
-                        "can be one of the following (redhat, debian)",
+        "can be one of the following (redhat, debian)",
     },
 )
 def reinstall(
@@ -528,7 +533,7 @@ def reinstall(
     local=False,
     prefix=DEFAULT_PREFIX,
     branch=None,
-    install_type=None
+    install_type=None,
 ):
     """
     run the uninstall task, get latest from specified branch, and run install task

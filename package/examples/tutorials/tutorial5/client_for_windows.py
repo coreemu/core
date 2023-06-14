@@ -55,8 +55,9 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("-a", "--address", help="address to listen on", required=True)
-    parser.add_argument("-p", "--port", type=int, help="port to listen on",
-                        default=DEFAULT_PORT)
+    parser.add_argument(
+        "-p", "--port", type=int, help="port to listen on", default=DEFAULT_PORT
+    )
     args = parser.parse_args()
     client = ChatClient(args.address, args.port)
     client.run()

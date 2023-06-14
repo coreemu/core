@@ -36,8 +36,9 @@ class ChatServer:
                             self.sockets.append(client_sock)
                             name = f"{addr[0]}:{addr[1]}"
                             print(f"[server] {name} joining")
-                            self.broadcast({server, client_sock},
-                                           f"[server] {name} entered room\n")
+                            self.broadcast(
+                                {server, client_sock}, f"[server] {name} entered room\n"
+                            )
                         else:
                             peer = sock.getpeername()
                             name = f"{peer[0]}:{peer[1]}"
@@ -48,14 +49,16 @@ class ChatServer:
                                     self.broadcast({server, sock}, f"[{name}] {data}\n")
                                 else:
                                     print(f"[server] {name} leaving")
-                                    self.broadcast({server, sock},
-                                                   f"[server] {name} leaving\n")
+                                    self.broadcast(
+                                        {server, sock}, f"[server] {name} leaving\n"
+                                    )
                                     sock.close()
                                     self.sockets.remove(sock)
                             except socket.error:
                                 print(f"[server] {name} leaving")
-                                self.broadcast({server, sock},
-                                               f"[server] {name} leaving\n")
+                                self.broadcast(
+                                    {server, sock}, f"[server] {name} leaving\n"
+                                )
                                 sock.close()
                                 self.sockets.remove(sock)
             except KeyboardInterrupt:

@@ -97,7 +97,7 @@ def main():
             core.move_node(sessions[0].id, node_number, position=position)
             current_x = x
             current_y = y
-        time.sleep(.25)
+        time.sleep(0.25)
 
 
 if __name__ == "__main__":

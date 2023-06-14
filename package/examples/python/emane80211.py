@@ -41,10 +41,7 @@ n2 = session.add_node(CoreNode, position=position, options=options)
 session.emane.set_config(
     emane.id,
     EmaneIeee80211abgModel.name,
-    {
-        "unicastrate": "3",
-        "eventservicettl": "2"
-    },
+    {"unicastrate": "3", "eventservicettl": "2"},
 )
 
 # link nodes to emane
