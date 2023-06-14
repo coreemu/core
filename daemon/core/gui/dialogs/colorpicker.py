@@ -96,9 +96,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.red_label = ttk.Label(
-            frame,
-            background=get_rgb(self.red.get(), 0, 0),
-            width=5,
+            frame, background=get_rgb(self.red.get(), 0, 0), width=5
         )
         self.red_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -121,9 +119,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.green_label = ttk.Label(
-            frame,
-            background=get_rgb(0, self.green.get(), 0),
-            width=5,
+            frame, background=get_rgb(0, self.green.get(), 0), width=5
         )
         self.green_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -146,9 +142,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.blue_label = ttk.Label(
-            frame,
-            background=get_rgb(0, 0, self.blue.get()),
-            width=5,
+            frame, background=get_rgb(0, 0, self.blue.get()), width=5
         )
         self.blue_label.grid(row=0, column=3, sticky=tk.EW)
 

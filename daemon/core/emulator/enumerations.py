@@ -50,6 +50,7 @@ class NodeTypes(Enum):
     DOCKER = 15
     LXC = 16
     WIRELESS = 17
+    PODMAN = 18
 
 
 class LinkTypes(Enum):

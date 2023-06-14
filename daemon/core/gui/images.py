@@ -78,6 +78,7 @@ class ImageEnum(Enum):
     EDITDELETE = "edit-delete"
     ANTENNA = "antenna"
     DOCKER = "docker"
+    PODMAN = "podman"
     LXC = "lxc"
     ALERT = "alert"
     DELETE = "delete"
@@ -101,6 +102,7 @@ TYPE_MAP: dict[tuple[NodeType, str], ImageEnum] = {
     (NodeType.RJ45, None): ImageEnum.RJ45,
     (NodeType.TUNNEL, None): ImageEnum.TUNNEL,
     (NodeType.DOCKER, None): ImageEnum.DOCKER,
+    (NodeType.PODMAN, None): ImageEnum.PODMAN,
     (NodeType.LXC, None): ImageEnum.LXC,
 }
 

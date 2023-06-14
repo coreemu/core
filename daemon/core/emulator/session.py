@@ -57,6 +57,7 @@ from core.nodes.network import (
     WlanNode,
 )
 from core.nodes.physical import PhysicalNode, Rj45Node
+from core.nodes.podman import PodmanNode
 from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
@@ -81,9 +82,9 @@ NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.LXC: LxcNode,
     NodeTypes.WIRELESS: WirelessNode,
+    NodeTypes.PODMAN: PodmanNode,
 }
 NODES_TYPE: dict[type[NodeBase], NodeTypes] = {NODES[x]: x for x in NODES}
-CONTAINER_NODES: set[type[NodeBase]] = {DockerNode, LxcNode}
 CTRL_NET_ID: int = 9001
 LINK_COLORS: list[str] = ["green", "blue", "orange", "purple", "turquoise"]
 NT: TypeVar = TypeVar("NT", bound=NodeBase)

@@ -12,15 +12,7 @@ from core.emulator.data import (
 from core.errors import CoreError
 
 T = TypeVar(
-    "T",
-    bound=Union[
-        EventData,
-        ExceptionData,
-        NodeData,
-        LinkData,
-        FileData,
-        ConfigData,
-    ],
+    "T", bound=Union[EventData, ExceptionData, NodeData, LinkData, FileData, ConfigData]
 )
 
 

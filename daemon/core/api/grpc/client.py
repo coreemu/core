@@ -964,9 +964,7 @@ class CoreGrpcClient:
         :return: config service defaults
         """
         request = GetConfigServiceDefaultsRequest(
-            name=name,
-            session_id=session_id,
-            node_id=node_id,
+            name=name, session_id=session_id, node_id=node_id
         )
         response = self.stub.GetConfigServiceDefaults(request)
         return wrappers.ConfigServiceDefaults.from_proto(response)

@@ -43,7 +43,7 @@ class HookManager:
         state_hooks = self.script_hooks.setdefault(state, {})
         if file_name in state_hooks:
             raise CoreError(
-                f"adding duplicate state({state.name}) hook script({file_name})",
+                f"adding duplicate state({state.name}) hook script({file_name})"
             )
         state_hooks[file_name] = data
 
@@ -59,7 +59,7 @@ class HookManager:
         if file_name not in state_hooks:
             raise CoreError(
                 f"deleting state({state.name}) hook script({file_name}) "
-                "that does not exist",
+                "that does not exist"
             )
         del state_hooks[file_name]
 
@@ -77,7 +77,7 @@ class HookManager:
         if hook in hooks:
             name = getattr(callable, "__name__", repr(hook))
             raise CoreError(
-                f"adding duplicate state({state.name}) hook callback({name})",
+                f"adding duplicate state({state.name}) hook callback({name})"
             )
         hooks.append(hook)
 
@@ -96,7 +96,7 @@ class HookManager:
             name = getattr(callable, "__name__", repr(hook))
             raise CoreError(
                 f"deleting state({state.name}) hook callback({name}) "
-                "that does not exist",
+                "that does not exist"
             )
         hooks.remove(hook)
 
@@ -132,7 +132,7 @@ class HookManager:
                 except (OSError, subprocess.CalledProcessError) as e:
                     raise CoreError(
                         f"failure running state({state.name}) "
-                        f"hook script({file_name}): {e}",
+                        f"hook script({file_name}): {e}"
                     )
         for hook in self.callback_hooks.get(state, []):
             try:
@@ -141,5 +141,5 @@ class HookManager:
                 name = getattr(callable, "__name__", repr(hook))
                 raise CoreError(
                     f"failure running state({state.name}) "
-                    f"hook callback({name}): {e}",
+                    f"hook callback({name}): {e}"
                 )

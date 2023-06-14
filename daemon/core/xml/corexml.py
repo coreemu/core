@@ -17,6 +17,7 @@ from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
 from core.nodes.lxd import LxcNode, LxcOptions
 from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
+from core.nodes.podman import PodmanNode, PodmanOptions
 from core.nodes.wireless import WirelessNode
 from core.services.coreservices import CoreService
 
@@ -224,6 +225,9 @@ class DeviceElement(NodeElement):
             image = self.node.image
         elif isinstance(self.node, LxcNode):
             clazz = "lxc"
+            image = self.node.image
+        elif isinstance(self.node, PodmanNode):
+            clazz = "podman"
             image = self.node.image
         add_attribute(self.element, "class", clazz)
         add_attribute(self.element, "image", image)
@@ -808,6 +812,8 @@ class CoreXmlReader:
             node_type = NodeTypes.DOCKER
         elif clazz == "lxc":
             node_type = NodeTypes.LXC
+        elif clazz == "podman":
+            node_type = NodeTypes.PODMAN
         _class = self.session.get_node_class(node_type)
         options = _class.create_options()
         options.icon = icon
@@ -825,7 +831,7 @@ class CoreXmlReader:
                 options.config_services.extend(
                     x.get("name") for x in config_service_elements.iterchildren()
                 )
-        if isinstance(options, (DockerOptions, LxcOptions)):
+        if isinstance(options, (DockerOptions, LxcOptions, PodmanOptions)):
             options.image = image
         # get position information
         position_element = device_element.find("position")
