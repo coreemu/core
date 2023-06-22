@@ -306,7 +306,7 @@ and options.
 | Option                   | Description                                                   |
 |--------------------------|---------------------------------------------------------------|
 | CORE Github (www)        | Link to the CORE GitHub page.                                 |
-| CORE Documentation (www) | Lnk to the CORE Documentation page.                           |
+| CORE Documentation (www) | Link to the CORE Documentation page.                          |
 | About                    | Invokes the About dialog box for viewing version information. |
 
 ## Connecting with Physical Networks
