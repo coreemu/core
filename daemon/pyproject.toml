@@ -26,7 +26,7 @@ core-cleanup = "core.scripts.cleanup:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fabric = "2.7.1"
-grpcio = "1.49.1"
+grpcio = "1.54.2"
 invoke = "1.7.3"
 lxml = "4.9.1"
 netaddr = "0.7.19"
@@ -38,7 +38,7 @@ Mako = "1.2.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "6.2.5"
-grpcio-tools = "1.49.1"
+grpcio-tools = "1.54.2"
 black = "22.12.0"
 flake8 = "3.8.2"
 isort = "4.3.21"
