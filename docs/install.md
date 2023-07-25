@@ -277,7 +277,7 @@ make sure to update and build the Dockerfile with desired software.
 git clone https://github.com/coreemu/core.git
 cd core
 # build image
-sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu,oracle> .
+sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu> .
 # start container
 sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
 # enable xhost access to the root user
