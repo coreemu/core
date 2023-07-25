@@ -11,6 +11,7 @@ WORKDIR /opt
 # install basic dependencies
 RUN yum -y update && \
     yum install -y \
+    xterm \
     git \
     sudo \
     wget \
@@ -30,7 +31,8 @@ RUN yum -y update && \
     pkg-config \
     make && \
     yum-builddep -y python3 && \
-    yum autoremove -y
+    yum autoremove -y && \
+    yum install -y hostname
 
 # install python3.9
 RUN wget https://www.python.org/ftp/python/3.9.15/Python-3.9.15.tgz && \
