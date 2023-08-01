@@ -30,7 +30,7 @@ XML scenario file, leveraging an NS2 mobility file.
 * Navigate to and select this tutorials **scenario.xml** file
 * You can now click play to start the session
    <p align="center">
-     <img src="/static/tutorial2/wireless.png" width="75%">
+     <img src="/core/static/tutorial2/wireless.png" width="75%">
    </p>
 * Note that OSPF routing protocol is included in the scenario to provide routes to other nodes, as they are discovered
 * Double click node **n4** to open a terminal and ping node **n2**
@@ -49,7 +49,7 @@ XML scenario file, leveraging an NS2 mobility file.
 
 * Right click on the **wlan1** node and select **WLAN Config**, then set delay to 500000
    <p align="center">
-     <img src="/static/tutorial2/wireless-config-delay.png" width="90%">
+     <img src="/core/static/tutorial2/wireless-config-delay.png" width="90%">
    </p>
 * Using the open terminal for node **n4**, ping **n2** again, expect about 2 seconds delay
    ```shell
@@ -69,7 +69,7 @@ XML scenario file, leveraging an NS2 mobility file.
 
 * Right click on the **wlan1** node and select **WLAN Config**, set delay back to 5000 and loss to 10
    <p align="center">
-     <img src="/static/tutorial2/wireless-configuration.png" width="90%">
+     <img src="/core/static/tutorial2/wireless-configuration.png" width="90%">
    </p>
 * Using the open terminal for node **n4**, ping **n2** again, expect to notice considerable loss
     ```shell
@@ -111,7 +111,7 @@ gRPC python script and providing mobility over the gRPC interface.
 * You will now have joined the already running scenario
 
 <p align="center">
-  <img src="/static/tutorial2/wireless.png" width="90%">
+  <img src="/core/static/tutorial2/wireless.png" width="90%">
 </p>
 
 ## Running Software
