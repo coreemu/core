@@ -1,6 +1,6 @@
 import os
 import socket
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 import netaddr
 from lxml import etree
@@ -78,7 +78,7 @@ def get_address_type(address: str) -> str:
     return address_type
 
 
-def get_ipv4_addresses(hostname: str) -> List[Tuple[str, str]]:
+def get_ipv4_addresses(hostname: str) -> list[tuple[str, str]]:
     if hostname == "localhost":
         addresses = []
         args = f"{IP} -o -f inet address show"

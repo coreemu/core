@@ -2,7 +2,7 @@
 CORE data objects.
 """
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 import netaddr
 
@@ -24,7 +24,7 @@ class ConfigData:
     node: int = None
     object: str = None
     type: int = None
-    data_types: Tuple[int] = None
+    data_types: tuple[int] = None
     data_values: str = None
     captions: str = None
     bitmap: str = None
@@ -81,8 +81,8 @@ class NodeOptions:
     model: Optional[str] = "PC"
     canvas: int = None
     icon: str = None
-    services: List[str] = field(default_factory=list)
-    config_services: List[str] = field(default_factory=list)
+    services: list[str] = field(default_factory=list)
+    config_services: list[str] = field(default_factory=list)
     x: float = None
     y: float = None
     lat: float = None
@@ -93,9 +93,9 @@ class NodeOptions:
     emane: str = None
     legacy: bool = False
     # src, dst
-    binds: List[Tuple[str, str]] = field(default_factory=list)
+    binds: list[tuple[str, str]] = field(default_factory=list)
     # src, dst, unique, delete
-    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    volumes: list[tuple[str, str, bool, bool]] = field(default_factory=list)
 
     def set_position(self, x: float, y: float) -> None:
         """
@@ -148,7 +148,7 @@ class InterfaceData:
     ip6_mask: int = None
     mtu: int = None
 
-    def get_ips(self) -> List[str]:
+    def get_ips(self) -> list[str]:
         """
         Returns a list of ip4 and ip6 addresses when present.
 

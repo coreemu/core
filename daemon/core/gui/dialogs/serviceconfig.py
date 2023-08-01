@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 from PIL.ImageTk import PhotoImage
@@ -35,21 +35,21 @@ class ServiceConfigDialog(Dialog):
         self.service_name: str = service_name
         self.radiovar: tk.IntVar = tk.IntVar(value=2)
         self.metadata: str = ""
-        self.filenames: List[str] = []
-        self.dependencies: List[str] = []
-        self.executables: List[str] = []
-        self.startup_commands: List[str] = []
-        self.validation_commands: List[str] = []
-        self.shutdown_commands: List[str] = []
-        self.default_startup: List[str] = []
-        self.default_validate: List[str] = []
-        self.default_shutdown: List[str] = []
+        self.filenames: list[str] = []
+        self.dependencies: list[str] = []
+        self.executables: list[str] = []
+        self.startup_commands: list[str] = []
+        self.validation_commands: list[str] = []
+        self.shutdown_commands: list[str] = []
+        self.default_startup: list[str] = []
+        self.default_validate: list[str] = []
+        self.default_shutdown: list[str] = []
         self.validation_mode: Optional[ServiceValidationMode] = None
         self.validation_time: Optional[int] = None
         self.validation_period: Optional[float] = None
         self.directory_entry: Optional[ttk.Entry] = None
-        self.default_directories: List[str] = []
-        self.temp_directories: List[str] = []
+        self.default_directories: list[str] = []
+        self.temp_directories: list[str] = []
         self.documentnew_img: PhotoImage = self.app.get_enum_icon(
             ImageEnum.DOCUMENTNEW, width=ICON_SIZE
         )
@@ -67,10 +67,10 @@ class ServiceConfigDialog(Dialog):
         self.validation_mode_entry: Optional[ttk.Entry] = None
         self.service_file_data: Optional[CodeText] = None
         self.validation_period_entry: Optional[ttk.Entry] = None
-        self.original_service_files: Dict[str, str] = {}
+        self.original_service_files: dict[str, str] = {}
         self.default_config: Optional[NodeServiceData] = None
-        self.temp_service_files: Dict[str, str] = {}
-        self.modified_files: Set[str] = set()
+        self.temp_service_files: dict[str, str] = {}
+        self.modified_files: set[str] = set()
         self.has_error: bool = False
         self.load()
         if not self.has_error:
@@ -558,13 +558,13 @@ class ServiceConfigDialog(Dialog):
 
     @classmethod
     def append_commands(
-        cls, commands: List[str], listbox: tk.Listbox, to_add: List[str]
+        cls, commands: list[str], listbox: tk.Listbox, to_add: list[str]
     ) -> None:
         for cmd in to_add:
             commands.append(cmd)
             listbox.insert(tk.END, cmd)
 
-    def get_commands(self) -> Tuple[List[str], List[str], List[str]]:
+    def get_commands(self) -> tuple[list[str], list[str], list[str]]:
         startup = self.startup_commands_listbox.get(0, "end")
         shutdown = self.shutdown_commands_listbox.get(0, "end")
         validate = self.validate_commands_listbox.get(0, "end")

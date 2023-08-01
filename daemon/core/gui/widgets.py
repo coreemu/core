@@ -3,7 +3,7 @@ import tkinter as tk
 from functools import partial
 from pathlib import Path
 from tkinter import filedialog, font, ttk
-from typing import TYPE_CHECKING, Any, Callable, Dict, Set, Type
+from typing import TYPE_CHECKING, Any, Callable
 
 from core.api.grpc.wrappers import ConfigOption, ConfigOptionType
 from core.gui import appconfig, themes, validation
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-INT_TYPES: Set[ConfigOptionType] = {
+INT_TYPES: set[ConfigOptionType] = {
     ConfigOptionType.UINT8,
     ConfigOptionType.UINT16,
     ConfigOptionType.UINT32,
@@ -40,7 +40,7 @@ class FrameScroll(ttk.Frame):
         self,
         master: tk.Widget,
         app: "Application",
-        _cls: Type[ttk.Frame] = ttk.Frame,
+        _cls: type[ttk.Frame] = ttk.Frame,
         **kw: Any
     ) -> None:
         super().__init__(master, **kw)
@@ -86,14 +86,14 @@ class ConfigFrame(ttk.Notebook):
         self,
         master: tk.Widget,
         app: "Application",
-        config: Dict[str, ConfigOption],
+        config: dict[str, ConfigOption],
         enabled: bool = True,
         **kw: Any
     ) -> None:
         super().__init__(master, **kw)
         self.app: "Application" = app
-        self.config: Dict[str, ConfigOption] = config
-        self.values: Dict[str, tk.StringVar] = {}
+        self.config: dict[str, ConfigOption] = config
+        self.values: dict[str, tk.StringVar] = {}
         self.enabled: bool = enabled
 
     def draw_config(self) -> None:
@@ -166,7 +166,7 @@ class ConfigFrame(ttk.Notebook):
                     logger.error("unhandled config option type: %s", option.type)
                 self.values[option.name] = value
 
-    def parse_config(self) -> Dict[str, str]:
+    def parse_config(self) -> dict[str, str]:
         for key in self.config:
             option = self.config[key]
             value = self.values[key]
@@ -180,7 +180,7 @@ class ConfigFrame(ttk.Notebook):
                 option.value = config_value
         return {x: self.config[x].value for x in self.config}
 
-    def set_values(self, config: Dict[str, str]) -> None:
+    def set_values(self, config: dict[str, str]) -> None:
         for name, data in config.items():
             option = self.config[name]
             value = self.values[name]

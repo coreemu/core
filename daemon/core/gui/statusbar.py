@@ -3,7 +3,7 @@ status bar
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc.wrappers import ExceptionEvent, ExceptionLevel
 from core.gui.dialogs.alerts import AlertsDialog
@@ -24,7 +24,7 @@ class StatusBar(ttk.Frame):
         self.alerts_button: Optional[ttk.Button] = None
         self.alert_style = Styles.no_alert
         self.running: bool = False
-        self.core_alarms: List[ExceptionEvent] = []
+        self.core_alarms: list[ExceptionEvent] = []
         self.draw()
 
     def draw(self) -> None:

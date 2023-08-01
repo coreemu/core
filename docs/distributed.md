@@ -1,8 +1,5 @@
 # CORE - Distributed Emulation
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
 A large emulation scenario can be deployed on multiple emulation servers and
@@ -61,6 +58,7 @@ First the distributed servers must be configured to allow passwordless root
 login over SSH.
 
 On distributed server:
+
 ```shelll
 # install openssh-server
 sudo apt install openssh-server
@@ -81,6 +79,7 @@ sudo systemctl restart sshd
 ```
 
 On master server:
+
 ```shell
 # install package if needed
 sudo apt install openssh-client
@@ -99,6 +98,7 @@ connect_kwargs: {"key_filename": "/home/user/.ssh/core"}
 ```
 
 On distributed server:
+
 ```shell
 # open sshd config
 vi /etc/ssh/sshd_config
@@ -116,8 +116,9 @@ Make sure the value used below is the absolute path to the file
 generated above **~/.ssh/core**"
 
 Add/update the fabric configuration file **/etc/fabric.yml**:
+
 ```yaml
-connect_kwargs: {"key_filename": "/home/user/.ssh/core"}
+connect_kwargs: { "key_filename": "/home/user/.ssh/core" }
 ```
 
 ## Add Emulation Servers in GUI
@@ -169,8 +170,10 @@ only if an EMANE model is used for the WLAN. The basic range model does
 not work across multiple servers due to the Linux bridging and nftables
 rules that are used.
 
-**NOTE: The basic range wireless model does not support distributed emulation,
-but EMANE does.**
+!!! note
+
+    The basic range wireless model does not support distributed emulation,
+    but EMANE does.
 
 When nodes are linked across servers **core-daemons** will automatically
 create necessary tunnels between the nodes when executed. Care should be taken
@@ -181,10 +184,10 @@ These tunnels are created using GRE tunneling, similar to the Tunnel Tool.
 ## Distributed Checklist
 
 1. Install CORE on master server
-1. Install distributed CORE package on all servers needed
-1. Installed and configure public-key SSH access on all servers (if you want to use
-double-click shells or Widgets.) for both the GUI user (for terminals) and root for running CORE commands
-1. Update CORE configuration as needed
-1. Choose the servers that participate in distributed emulation.
-1. Assign nodes to desired servers, empty for master server.
-1. Press the **Start** button to launch the distributed emulation.
+2. Install distributed CORE package on all servers needed
+3. Installed and configure public-key SSH access on all servers (if you want to use
+   double-click shells or Widgets.) for both the GUI user (for terminals) and root for running CORE commands
+4. Update CORE configuration as needed
+5. Choose the servers that participate in distributed emulation.
+6. Assign nodes to desired servers, empty for master server.
+7. Press the **Start** button to launch the distributed emulation.

@@ -5,7 +5,7 @@ import logging
 import sched
 from pathlib import Path
 from threading import Thread
-from typing import IO, Callable, Dict, Optional
+from typing import IO, Callable, Optional
 
 import grpc
 
@@ -230,7 +230,7 @@ class CorePlayer:
         self.node_streamer: Optional[MoveNodesStreamer] = None
         self.node_streamer_thread: Optional[Thread] = None
         self.scheduler: sched.scheduler = sched.scheduler()
-        self.handlers: Dict[PlayerEvents, Callable] = {
+        self.handlers: dict[PlayerEvents, Callable] = {
             PlayerEvents.XY: self.handle_xy,
             PlayerEvents.GEO: self.handle_geo,
             PlayerEvents.CMD: self.handle_cmd,

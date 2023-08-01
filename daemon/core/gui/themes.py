@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import font, ttk
-from typing import Dict, Tuple
 
 THEME_DARK: str = "black"
-PADX: Tuple[int, int] = (0, 5)
-PADY: Tuple[int, int] = (0, 5)
+PADX: tuple[int, int] = (0, 5)
+PADY: tuple[int, int] = (0, 5)
 FRAME_PAD: int = 5
 DIALOG_PAD: int = 5
 
@@ -201,7 +200,7 @@ def theme_change(event: tk.Event) -> None:
     _alert_style(style, Styles.red_alert, "red")
 
 
-def scale_fonts(fonts_size: Dict[str, int], scale: float) -> None:
+def scale_fonts(fonts_size: dict[str, int], scale: float) -> None:
     for name in font.names():
         f = font.nametofont(name)
         if name in fonts_size:

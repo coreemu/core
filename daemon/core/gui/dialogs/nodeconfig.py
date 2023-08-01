@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from functools import partial
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 from PIL.ImageTk import PhotoImage
@@ -190,7 +190,7 @@ class NodeConfigDialog(Dialog):
         if self.node.server:
             server = self.node.server
         self.server: tk.StringVar = tk.StringVar(value=server)
-        self.ifaces: Dict[int, InterfaceData] = {}
+        self.ifaces: dict[int, InterfaceData] = {}
         self.draw()
 
     def draw(self) -> None:

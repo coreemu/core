@@ -4,7 +4,7 @@ Service configuration dialog
 import logging
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -35,22 +35,22 @@ class ConfigServiceConfigDialog(Dialog):
         self.node: Node = node
         self.service_name: str = service_name
         self.radiovar: tk.IntVar = tk.IntVar(value=2)
-        self.directories: List[str] = []
-        self.templates: List[str] = []
-        self.rendered: Dict[str, str] = {}
-        self.dependencies: List[str] = []
-        self.executables: List[str] = []
-        self.startup_commands: List[str] = []
-        self.validation_commands: List[str] = []
-        self.shutdown_commands: List[str] = []
-        self.default_startup: List[str] = []
-        self.default_validate: List[str] = []
-        self.default_shutdown: List[str] = []
+        self.directories: list[str] = []
+        self.templates: list[str] = []
+        self.rendered: dict[str, str] = {}
+        self.dependencies: list[str] = []
+        self.executables: list[str] = []
+        self.startup_commands: list[str] = []
+        self.validation_commands: list[str] = []
+        self.shutdown_commands: list[str] = []
+        self.default_startup: list[str] = []
+        self.default_validate: list[str] = []
+        self.default_shutdown: list[str] = []
         self.validation_mode: Optional[ServiceValidationMode] = None
         self.validation_time: Optional[int] = None
         self.validation_period: tk.DoubleVar = tk.DoubleVar()
-        self.modes: List[str] = []
-        self.mode_configs: Dict[str, Dict[str, str]] = {}
+        self.modes: list[str] = []
+        self.mode_configs: dict[str, dict[str, str]] = {}
         self.notebook: Optional[ttk.Notebook] = None
         self.templates_combobox: Optional[ttk.Combobox] = None
         self.modes_combobox: Optional[ttk.Combobox] = None
@@ -62,12 +62,12 @@ class ConfigServiceConfigDialog(Dialog):
         self.template_text: Optional[CodeText] = None
         self.rendered_text: Optional[CodeText] = None
         self.validation_period_entry: Optional[ttk.Entry] = None
-        self.original_service_files: Dict[str, str] = {}
-        self.temp_service_files: Dict[str, str] = {}
-        self.modified_files: Set[str] = set()
+        self.original_service_files: dict[str, str] = {}
+        self.temp_service_files: dict[str, str] = {}
+        self.modified_files: set[str] = set()
         self.config_frame: Optional[ConfigFrame] = None
-        self.default_config: Dict[str, str] = {}
-        self.config: Dict[str, ConfigOption] = {}
+        self.default_config: dict[str, str] = {}
+        self.config: dict[str, ConfigOption] = {}
         self.has_error: bool = False
         self.load()
         if not self.has_error:
@@ -87,7 +87,9 @@ class ConfigServiceConfigDialog(Dialog):
             self.validation_mode = service.validation_mode
             self.validation_time = service.validation_timer
             self.validation_period.set(service.validation_period)
-            defaults = self.core.client.get_config_service_defaults(self.service_name)
+            defaults = self.core.get_config_service_defaults(
+                self.node.id, self.service_name
+            )
             self.original_service_files = defaults.templates
             self.temp_service_files = dict(self.original_service_files)
             self.modes = sorted(defaults.modes)
@@ -405,7 +407,7 @@ class ConfigServiceConfigDialog(Dialog):
         pass
 
     def append_commands(
-        self, commands: List[str], listbox: tk.Listbox, to_add: List[str]
+        self, commands: list[str], listbox: tk.Listbox, to_add: list[str]
     ) -> None:
         for cmd in to_add:
             commands.append(cmd)

@@ -6,7 +6,7 @@ import logging
 import threading
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 
@@ -51,7 +51,7 @@ class NftablesQueue:
         # this lock protects cmds and updates lists
         self.lock: threading.Lock = threading.Lock()
         # list of pending nftables commands
-        self.cmds: List[str] = []
+        self.cmds: list[str] = []
         # list of WLANs requiring update
         self.updates: utils.SetQueue = utils.SetQueue()
 
@@ -226,7 +226,7 @@ class CoreNetwork(CoreNetworkBase):
     def host_cmd(
         self,
         args: str,
-        env: Dict[str, str] = None,
+        env: dict[str, str] = None,
         cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
@@ -448,7 +448,7 @@ class GreTapBridge(CoreNetwork):
             self.gretap = None
         super().shutdown()
 
-    def add_ips(self, ips: List[str]) -> None:
+    def add_ips(self, ips: list[str]) -> None:
         """
         Set the remote tunnel endpoint. This is a one-time method for
         creating the GreTap device, which requires the remoteip at startup.
@@ -512,7 +512,7 @@ class CtrlNet(CoreNetwork):
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
     # base control interface index
     CTRLIF_IDX_BASE: int = 99
-    DEFAULT_PREFIX_LIST: List[str] = [
+    DEFAULT_PREFIX_LIST: list[str] = [
         "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
         "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
         "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
@@ -734,7 +734,7 @@ class WlanNode(CoreNetwork):
             iface.poshook = self.wireless_model.position_callback
             iface.setposition()
 
-    def setmodel(self, wireless_model: Type["WirelessModel"], config: Dict[str, str]):
+    def setmodel(self, wireless_model: type["WirelessModel"], config: dict[str, str]):
         """
         Sets the mobility and wireless model.
 
@@ -753,12 +753,12 @@ class WlanNode(CoreNetwork):
             self.mobility = wireless_model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
-    def update_mobility(self, config: Dict[str, str]) -> None:
+    def update_mobility(self, config: dict[str, str]) -> None:
         if not self.mobility:
             raise CoreError(f"no mobility set to update for node({self.name})")
         self.mobility.update_config(config)
 
-    def updatemodel(self, config: Dict[str, str]) -> None:
+    def updatemodel(self, config: dict[str, str]) -> None:
         if not self.wireless_model:
             raise CoreError(f"no model set to update for node({self.name})")
         logger.debug(
@@ -768,7 +768,7 @@ class WlanNode(CoreNetwork):
         for iface in self.get_ifaces():
             iface.setposition()
 
-    def links(self, flags: MessageFlags = MessageFlags.NONE) -> List[LinkData]:
+    def links(self, flags: MessageFlags = MessageFlags.NONE) -> list[LinkData]:
         """
         Retrieve all link data.
 

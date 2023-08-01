@@ -1,8 +1,5 @@
 # EMANE Services
 
-* Table of Contents
-{:toc}
-
 ## Overview
 
 EMANE related services for CORE.

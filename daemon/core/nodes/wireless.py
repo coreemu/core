@@ -7,7 +7,7 @@ import logging
 import math
 import secrets
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, List, Set, Tuple
+from typing import TYPE_CHECKING
 
 from core.config import ConfigBool, ConfigFloat, ConfigInt, Configuration
 from core.emulator.data import LinkData, LinkOptions
@@ -41,7 +41,7 @@ KEY_LOSS: str = "loss"
 
 
 def calc_distance(
-    point1: Tuple[float, float, float], point2: Tuple[float, float, float]
+    point1: tuple[float, float, float], point2: tuple[float, float, float]
 ) -> float:
     a = point1[0] - point2[0]
     b = point1[1] - point2[1]
@@ -51,7 +51,7 @@ def calc_distance(
     return math.hypot(math.hypot(a, b), c)
 
 
-def get_key(node1_id: int, node2_id: int) -> Tuple[int, int]:
+def get_key(node1_id: int, node2_id: int) -> tuple[int, int]:
     return (node1_id, node2_id) if node1_id < node2_id else (node2_id, node1_id)
 
 
@@ -65,7 +65,7 @@ class WirelessLink:
 
 
 class WirelessNode(CoreNetworkBase):
-    options: List[Configuration] = [
+    options: list[Configuration] = [
         ConfigBool(
             id=KEY_ENABLED, default="1" if CONFIG_ENABLED else "0", label="Enabled?"
         ),
@@ -87,7 +87,7 @@ class WirelessNode(CoreNetworkBase):
         ),
         ConfigFloat(id=KEY_LOSS, default=str(CONFIG_LOSS), label="Loss Initial"),
     ]
-    devices: Set[str] = set()
+    devices: set[str] = set()
 
     @classmethod
     def add_device(cls) -> str:
@@ -111,8 +111,8 @@ class WirelessNode(CoreNetworkBase):
         options: NodeOptions = None,
     ):
         super().__init__(session, _id, name, server, options)
-        self.bridges: Dict[int, Tuple[CoreInterface, str]] = {}
-        self.links: Dict[Tuple[int, int], WirelessLink] = {}
+        self.bridges: dict[int, tuple[CoreInterface, str]] = {}
+        self.links: dict[tuple[int, int], WirelessLink] = {}
         self.position_enabled: bool = CONFIG_ENABLED
         self.bandwidth: int = CONFIG_BANDWIDTH
         self.delay: int = CONFIG_DELAY
@@ -321,7 +321,7 @@ class WirelessNode(CoreNetworkBase):
     def adopt_iface(self, iface: CoreInterface, name: str) -> None:
         raise CoreError(f"{type(self)} does not support adopt interface")
 
-    def get_config(self) -> Dict[str, Configuration]:
+    def get_config(self) -> dict[str, Configuration]:
         config = {x.id: x for x in copy.copy(self.options)}
         config[KEY_ENABLED].default = "1" if self.position_enabled else "0"
         config[KEY_RANGE].default = str(self.max_range)
@@ -333,7 +333,7 @@ class WirelessNode(CoreNetworkBase):
         config[KEY_JITTER].default = str(self.jitter)
         return config
 
-    def set_config(self, config: Dict[str, str]) -> None:
+    def set_config(self, config: dict[str, str]) -> None:
         logger.info("wireless config: %s", config)
         self.position_enabled = config[KEY_ENABLED] == "1"
         self.max_range = float(config[KEY_RANGE])

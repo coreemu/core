@@ -1,0 +1,84 @@
+site_name: CORE Documentation
+use_directory_urls: false
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to Light Mode
+      primary: teal
+      accent: teal
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to Dark Mode
+      primary: teal
+      accent: teal
+  features:
+    - navigation.path
+    - navigation.instant
+    - navigation.footer
+    - content.code.copy
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path: docs
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+nav:
+  - Home: index.md
+  - Overview:
+      - Architecture: architecture.md
+      - Performance: performance.md
+  - Installation:
+      - Overview: install.md
+      - Ubuntu: install_ubuntu.md
+      - CentOS: install_centos.md
+  - Tutorials:
+      - Overview: tutorials/overview.md
+      - Setup: tutorials/setup.md
+      - Tutorial 1 - Wired Network: tutorials/tutorial1.md
+      - Tutorial 2 - Wireless Network: tutorials/tutorial2.md
+      - Tutorial 3 - Basic Mobility: tutorials/tutorial3.md
+      - Tutorial 4 - Tests: tutorials/tutorial4.md
+      - Tutorial 5 - RJ45 Node: tutorials/tutorial5.md
+      - Tutorial 6 - Improve Visuals: tutorials/tutorial6.md
+      - Tutorial 7 - EMANE: tutorials/tutorial7.md
+  - Detailed Topics:
+      - GUI: gui.md
+      - Node Types:
+          - Overview: nodetypes.md
+          - Docker: docker.md
+          - LXC: lxc.md
+      - Services:
+          - Config Services: configservices.md
+          - Services (Deprecated): services.md
+          - Provided:
+              - Bird: services/bird.md
+              - EMANE: services/emane.md
+              - FRR: services/frr.md
+              - NRL: services/nrl.md
+              - Quagga: services/quagga.md
+              - SDN: services/sdn.md
+              - Security: services/security.md
+              - Utility: services/utility.md
+              - XORP: services/xorp.md
+      - API:
+          - Python: python.md
+          - gRPC: grpc.md
+      - Distributed: distributed.md
+      - Control Network: ctrlnet.md
+      - Hardware In The Loop: hitl.md
+      - EMANE:
+          - Overview: emane.md
+          - Examples:
+              - Antenna: emane/antenna.md
+              - EEL: emane/eel.md
+              - Files: emane/files.md
+              - GPSD: emane/gpsd.md
+              - Precomputed: emane/precomputed.md
+  - Developers Guide: devguide.md

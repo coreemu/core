@@ -1,7 +1,6 @@
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Type
 
 from core import utils
 from core.configservice.manager import ConfigServiceManager
@@ -20,7 +19,7 @@ class CoreEmu:
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """
 
-    def __init__(self, config: Dict[str, str] = None) -> None:
+    def __init__(self, config: dict[str, str] = None) -> None:
         """
         Create a CoreEmu object.
 
@@ -31,13 +30,13 @@ class CoreEmu:
 
         # configuration
         config = config if config else {}
-        self.config: Dict[str, str] = config
+        self.config: dict[str, str] = config
 
         # session management
-        self.sessions: Dict[int, Session] = {}
+        self.sessions: dict[int, Session] = {}
 
         # load services
-        self.service_errors: List[str] = []
+        self.service_errors: list[str] = []
         self.service_manager: ConfigServiceManager = ConfigServiceManager()
         self._load_services()
 
@@ -119,7 +118,7 @@ class CoreEmu:
             _, session = self.sessions.popitem()
             session.shutdown()
 
-    def create_session(self, _id: int = None, _cls: Type[Session] = Session) -> Session:
+    def create_session(self, _id: int = None, _cls: type[Session] = Session) -> Session:
         """
         Create a new CORE session.
 

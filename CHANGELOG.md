@@ -1,3 +1,26 @@
+## 2023-08-01 CORE 9.0.3
+
+* Installation
+    * updated various dependencies
+* Documentation
+    * improved GUI docs to include node interaction and note xhost usage
+    * \#780  - fixed gRPC examples
+    * \#787 - complete documentation revamp to leverage mkdocs material
+    * \#790 - fixed custom emane model example
+* core-daemon
+    * update type hinting to avoid deprecated imports
+    * updated commands ran within docker based nodes to have proper environment variables
+    * fixed issue improperly setting session options over gRPC
+    * \#668 - add fedora sbin path to frr service
+    * \#774 - fixed pcap configservice
+    * \#805 - fixed radvd configservice template error
+* core-gui
+    * update type hinting to avoid deprecated imports
+    * fixed issue allowing duplicate named hook scripts
+    * fixed issue joining sessions with RJ45 nodes
+* utility scripts
+    * fixed issue in core-cleanup for removing devices
+
 ## 2023-03-02 CORE 9.0.2
 
 * Installation
@@ -12,11 +35,10 @@
     * fixed issue for LXC nodes to properly use a configured image name and write it to XML
     * \#742 - fixed issue with bad wlan node id being used
     * \#744 - fixed issue not properly setting broadcast address
-
-## core-gui
-* fixed sample1.xml to remove SSH service
-* fixed emane demo examples
-* fixed issue displaying emane configs generally configured for a node
+* core-gui
+    * fixed sample1.xml to remove SSH service
+    * fixed emane demo examples
+    * fixed issue displaying emane configs generally configured for a node
 
 ## 2022-11-28 CORE 9.0.1
 

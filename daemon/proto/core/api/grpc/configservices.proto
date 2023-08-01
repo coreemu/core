@@ -41,6 +41,8 @@ message ConfigMode {
 
 message GetConfigServiceDefaultsRequest {
     string name = 1;
+    int32 session_id = 2;
+    int32 node_id = 3;
 }
 
 message GetConfigServiceDefaultsResponse {

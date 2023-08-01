@@ -3,7 +3,7 @@ core node services
 """
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc.wrappers import Node
 from core.gui.dialogs.dialog import Dialog
@@ -24,7 +24,7 @@ class NodeServiceDialog(Dialog):
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
         services = set(node.services)
-        self.current_services: Set[str] = services
+        self.current_services: set[str] = services
         self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 

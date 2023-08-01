@@ -64,6 +64,7 @@ class ExampleModel(emanemodel.EmaneModel):
         :param emane_prefix: configured emane prefix path
         :return: nothing
         """
+        cls._load_platform_config(emane_prefix)
         manifest_path = "share/emane/manifest"
         # load mac configuration
         mac_xml_path = emane_prefix / manifest_path / cls.mac_xml

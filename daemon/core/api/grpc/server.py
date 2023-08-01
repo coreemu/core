@@ -5,9 +5,11 @@ import signal
 import sys
 import tempfile
 import time
+from collections.abc import Iterable
 from concurrent import futures
 from pathlib import Path
-from typing import Iterable, Optional, Pattern, Type
+from re import Pattern
+from typing import Optional
 
 import grpc
 from grpc import ServicerContext
@@ -105,7 +107,7 @@ from core.services.coreservices import ServiceManager
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
-_INTERFACE_REGEX: Pattern = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
+_INTERFACE_REGEX: Pattern[str] = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
 _MAX_WORKERS = 1000
 
 
@@ -171,7 +173,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return session
 
     def get_node(
-        self, session: Session, node_id: int, context: ServicerContext, _class: Type[NT]
+        self, session: Session, node_id: int, context: ServicerContext, _class: type[NT]
     ) -> NT:
         """
         Retrieve node given session and node id
@@ -210,7 +212,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def validate_service(
         self, name: str, context: ServicerContext
-    ) -> Type[ConfigService]:
+    ) -> type[ConfigService]:
         """
         Validates a configuration service is a valid known service.
 
@@ -282,7 +284,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         # session options
         for option in request.session.options.values():
-            session.options.set(option.name, option.value)
+            if option.value:
+                session.options.set(option.name, option.value)
         session.metadata = dict(request.session.metadata)
 
         # add servers
@@ -1103,7 +1106,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_id = request.wlan_config.node_id
         config = request.wlan_config.config
         session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
-        if session.state == EventTypes.RUNTIME_STATE:
+        if session.is_running():
             node = self.get_node(session, node_id, context, WlanNode)
             node.updatemodel(config)
         return SetWlanConfigResponse(result=True)
@@ -1176,7 +1179,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logger.debug("open xml: %s", request)
         session = self.coreemu.create_session()
         temp = tempfile.NamedTemporaryFile(delete=False)
-        temp.write(request.data.encode("utf-8"))
+        temp.write(request.data.encode())
         temp.close()
         temp_path = Path(temp.name)
         file_path = Path(request.file)
@@ -1282,8 +1285,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :param context: grpc context
         :return: get config service defaults response
         """
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context, CoreNode)
         service_class = self.validate_service(request.name, context)
-        service = service_class(None)
+        service = service_class(node)
         templates = service.get_templates()
         config = {}
         for configuration in service.default_configs:

@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Dict, List
 
 from core.config import Configuration
 from core.emulator.enumerations import ConfigDataTypes
@@ -33,7 +32,7 @@ def _type_value(config_type: str) -> ConfigDataTypes:
     return ConfigDataTypes[config_type]
 
 
-def _get_possible(config_type: str, config_regex: str) -> List[str]:
+def _get_possible(config_type: str, config_regex: str) -> list[str]:
     """
     Retrieve possible config value options based on emane regexes.
 
@@ -51,7 +50,7 @@ def _get_possible(config_type: str, config_regex: str) -> List[str]:
     return []
 
 
-def _get_default(config_type_name: str, config_value: List[str]) -> str:
+def _get_default(config_type_name: str, config_value: list[str]) -> str:
     """
     Convert default configuration values to one used by core.
 
@@ -74,7 +73,7 @@ def _get_default(config_type_name: str, config_value: List[str]) -> str:
     return config_default
 
 
-def parse(manifest_path: Path, defaults: Dict[str, str]) -> List[Configuration]:
+def parse(manifest_path: Path, defaults: dict[str, str]) -> list[Configuration]:
     """
     Parses a valid emane manifest file and converts the provided configuration values
     into ones used by core.

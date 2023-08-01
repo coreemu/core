@@ -61,7 +61,7 @@ def cleanup_sessions() -> None:
 
 def cleanup_interfaces() -> None:
     print("cleaning up devices")
-    output = subprocess.check_output("ip -o -br link show", shell=True)
+    output = subprocess.check_output("ip -br link show", shell=True)
     lines = output.decode().strip().split("\n")
     for line in lines:
         values = line.split()
@@ -73,6 +73,7 @@ def cleanup_interfaces() -> None:
             or name.startswith("b.")
             or name.startswith("ctrl")
         ):
+            name = name.split("@")[0]
             result = subprocess.call(f"ip link delete {name}", shell=True)
             if result:
                 print(f"failed to remove {name}")

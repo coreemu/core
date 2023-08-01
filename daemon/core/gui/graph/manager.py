@@ -1,9 +1,10 @@
 import json
 import logging
 import tkinter as tk
+from collections.abc import ValuesView
 from copy import deepcopy
 from tkinter import BooleanVar, messagebox, ttk
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, ValuesView
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from core.api.grpc.wrappers import Link, LinkType, Node, Session, ThroughputsEvent
 from core.gui import nodeutils as nutils
@@ -34,7 +35,7 @@ class ShowVar(BooleanVar):
         self.manager: "CanvasManager" = manager
         self.tag: str = tag
 
-    def state(self) -> str:
+    def state(self) -> Literal["normal", "hidden"]:
         return tk.NORMAL if self.get() else tk.HIDDEN
 
     def click_handler(self) -> None:
@@ -78,14 +79,14 @@ class CanvasManager:
         self.mode: GraphMode = GraphMode.SELECT
         self.annotation_type: Optional[ShapeType] = None
         self.node_draw: Optional[NodeDraw] = None
-        self.canvases: Dict[int, CanvasGraph] = {}
+        self.canvases: dict[int, CanvasGraph] = {}
 
         # global edge management
-        self.edges: Dict[str, CanvasEdge] = {}
-        self.wireless_edges: Dict[str, CanvasWirelessEdge] = {}
+        self.edges: dict[str, CanvasEdge] = {}
+        self.wireless_edges: dict[str, CanvasWirelessEdge] = {}
 
         # global canvas settings
-        self.default_dimensions: Tuple[int, int] = (
+        self.default_dimensions: tuple[int, int] = (
             self.app.guiconfig.preferences.width,
             self.app.guiconfig.preferences.height,
         )
@@ -111,8 +112,8 @@ class CanvasManager:
 
         # widget
         self.notebook: Optional[ttk.Notebook] = None
-        self.canvas_ids: Dict[str, int] = {}
-        self.unique_ids: Dict[int, str] = {}
+        self.canvas_ids: dict[str, int] = {}
+        self.unique_ids: dict[int, str] = {}
         self.draw()
 
         self.setup_bindings()
@@ -273,17 +274,17 @@ class CanvasManager:
         if not self.canvases:
             self.add_canvas()
 
-    def redraw_canvas(self, dimensions: Tuple[int, int]) -> None:
+    def redraw_canvas(self, dimensions: tuple[int, int]) -> None:
         canvas = self.current()
         canvas.redraw_canvas(dimensions)
         if canvas.wallpaper:
             canvas.redraw_wallpaper()
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         canvases = [x.get_metadata() for x in self.all()]
         return dict(gridlines=self.show_grid.get(), canvases=canvases)
 
-    def parse_metadata_canvas(self, metadata: Dict[str, Any]) -> None:
+    def parse_metadata_canvas(self, metadata: dict[str, Any]) -> None:
         # canvas setting
         canvas_config = metadata.get("canvas")
         logger.debug("canvas metadata: %s", canvas_config)
@@ -303,7 +304,7 @@ class CanvasManager:
             canvas = self.get(canvas_id)
             canvas.parse_metadata(canvas_config)
 
-    def parse_metadata_shapes(self, metadata: Dict[str, Any]) -> None:
+    def parse_metadata_shapes(self, metadata: dict[str, Any]) -> None:
         # load saved shapes
         shapes_config = metadata.get("shapes")
         if not shapes_config:
@@ -313,7 +314,7 @@ class CanvasManager:
             logger.debug("loading shape: %s", shape_config)
             Shape.from_metadata(self.app, shape_config)
 
-    def parse_metadata_edges(self, metadata: Dict[str, Any]) -> None:
+    def parse_metadata_edges(self, metadata: dict[str, Any]) -> None:
         # load edges config
         edges_config = metadata.get("edges")
         if not edges_config:
@@ -330,7 +331,7 @@ class CanvasManager:
             else:
                 logger.warning("invalid edge token to configure: %s", edge_token)
 
-    def parse_metadata_hidden(self, metadata: Dict[str, Any]) -> None:
+    def parse_metadata_hidden(self, metadata: dict[str, Any]) -> None:
         # read hidden nodes
         hidden_config = metadata.get("hidden")
         if not hidden_config:

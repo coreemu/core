@@ -5,7 +5,7 @@ from typing import Optional
 from core.gui.themes import Styles
 
 
-class Tooltip(object):
+class Tooltip:
     """
     Create tool tip for a given widget
     """
@@ -42,7 +42,7 @@ class Tooltip(object):
         y += self.widget.winfo_rooty() + 32
         self.tw = tk.Toplevel(self.widget)
         self.tw.wm_overrideredirect(True)
-        self.tw.wm_geometry("+%d+%d" % (x, y))
+        self.tw.wm_geometry(f"+{x:d}+{y:d}")
         self.tw.rowconfigure(0, weight=1)
         self.tw.columnconfigure(0, weight=1)
         frame = ttk.Frame(self.tw, style=Styles.tooltip_frame, padding=3)

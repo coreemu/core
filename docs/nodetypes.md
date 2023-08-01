@@ -1,7 +1,4 @@
-# CORE Node Types
-
-* Table of Contents
-{:toc}
+# Node Types
 
 ## Overview
 

@@ -4,7 +4,7 @@ core node services
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc.wrappers import Node
 from core.gui.dialogs.configserviceconfig import ConfigServiceConfigDialog
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class NodeConfigServiceDialog(Dialog):
     def __init__(
-        self, app: "Application", node: Node, services: Set[str] = None
+        self, app: "Application", node: Node, services: set[str] = None
     ) -> None:
         title = f"{node.name} Config Services"
         super().__init__(app, title)
@@ -30,7 +30,7 @@ class NodeConfigServiceDialog(Dialog):
         self.current: Optional[ListboxScroll] = None
         if services is None:
             services = set(node.config_services)
-        self.current_services: Set[str] = services
+        self.current_services: set[str] = services
         self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
 

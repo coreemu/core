@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Iterable
 from queue import Empty, Queue
-from typing import Iterable, Optional
+from typing import Optional
 
 from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data

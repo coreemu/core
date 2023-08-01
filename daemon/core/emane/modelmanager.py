@@ -1,7 +1,6 @@
 import logging
 import pkgutil
 from pathlib import Path
-from typing import Dict, List, Type
 
 from core import utils
 from core.emane import models as emane_models
@@ -12,10 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class EmaneModelManager:
-    models: Dict[str, Type[EmaneModel]] = {}
+    models: dict[str, type[EmaneModel]] = {}
 
     @classmethod
-    def load_locals(cls, emane_prefix: Path) -> List[str]:
+    def load_locals(cls, emane_prefix: Path) -> list[str]:
         """
         Load local core emane models and make them available.
 
@@ -38,7 +37,7 @@ class EmaneModelManager:
         return errors
 
     @classmethod
-    def load(cls, path: Path, emane_prefix: Path) -> List[str]:
+    def load(cls, path: Path, emane_prefix: Path) -> list[str]:
         """
         Search and load custom emane models and make them available.
 
@@ -63,7 +62,7 @@ class EmaneModelManager:
         return errors
 
     @classmethod
-    def get(cls, name: str) -> Type[EmaneModel]:
+    def get(cls, name: str) -> type[EmaneModel]:
         model = cls.models.get(name)
         if model is None:
             raise CoreError(f"emame model does not exist {name}")

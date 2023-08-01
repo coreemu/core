@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -27,13 +27,13 @@ class WlanConfigDialog(Dialog):
         self.config_frame: Optional[ConfigFrame] = None
         self.range_entry: Optional[ttk.Entry] = None
         self.has_error: bool = False
-        self.ranges: Dict[int, int] = {}
+        self.ranges: dict[int, int] = {}
         self.positive_int: int = self.app.master.register(self.validate_and_update)
         try:
             config = self.node.wlan_config
             if not config:
                 config = self.app.core.get_wlan_config(self.node.id)
-            self.config: Dict[str, ConfigOption] = config
+            self.config: dict[str, ConfigOption] = config
             self.init_draw_range()
             self.draw()
         except grpc.RpcError as e:

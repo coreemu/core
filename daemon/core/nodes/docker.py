@@ -4,8 +4,9 @@ import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import TYPE_CHECKING
 
+from core import utils
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH
@@ -23,9 +24,9 @@ DOCKER: str = "docker"
 class DockerOptions(CoreNodeOptions):
     image: str = "ubuntu"
     """image used when creating container"""
-    binds: List[Tuple[str, str]] = field(default_factory=list)
+    binds: list[tuple[str, str]] = field(default_factory=list)
     """bind mount source and destinations to setup within container"""
-    volumes: List[Tuple[str, str, bool, bool]] = field(default_factory=list)
+    volumes: list[tuple[str, str, bool, bool]] = field(default_factory=list)
     """
     volume mount source, destination, unique, delete to setup within container
 
@@ -74,8 +75,9 @@ class DockerNode(CoreNode):
         options = options or DockerOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
-        self.binds: List[Tuple[str, str]] = options.binds
-        self.volumes: Dict[str, DockerVolume] = {}
+        self.binds: list[tuple[str, str]] = options.binds
+        self.volumes: dict[str, DockerVolume] = {}
+        self.env: dict[str, str] = {}
         for src, dst, unique, delete in options.volumes:
             src_name = self._unique_name(src) if unique else src
             self.volumes[src] = DockerVolume(src_name, dst, unique, delete)
@@ -99,7 +101,24 @@ class DockerNode(CoreNode):
         """
         if shell:
             args = f"{BASH} -c {shlex.quote(args)}"
-        return f"nsenter -t {self.pid} -m -u -i -p -n {args}"
+        return f"nsenter -t {self.pid} -m -u -i -p -n -- {args}"
+
+    def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command that is used to configure and setup the network within a
+        node.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        args = self.create_cmd(args, shell)
+        if self.server is None:
+            return utils.cmd(args, wait=wait, shell=shell, env=self.env)
+        else:
+            return self.server.remote_cmd(args, wait=wait, env=self.env)
 
     def _unique_name(self, name: str) -> str:
         """
@@ -133,7 +152,9 @@ class DockerNode(CoreNode):
         with self.lock:
             if self.up:
                 raise CoreError(f"starting node({self.name}) that is already up")
+            # create node directory
             self.makenodedir()
+            # setup commands for creating bind/volume mounts
             binds = ""
             for src, dst in self.binds:
                 binds += f"--mount type=bind,source={src},target={dst} "
@@ -142,16 +163,26 @@ class DockerNode(CoreNode):
                 volumes += (
                     f"--mount type=volume," f"source={volume.src},target={volume.dst} "
                 )
+            # normalize hostname
             hostname = self.name.replace("_", "-")
+            # create container and retrieve the created containers PID
             self.host_cmd(
                 f"{DOCKER} run -td --init --net=none --hostname {hostname} "
                 f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
                 f"{binds} {volumes} "
                 f"--privileged {self.image} tail -f /dev/null"
             )
+            # retrieve pid and process environment for use in nsenter commands
             self.pid = self.host_cmd(
                 f"{DOCKER} inspect -f '{{{{.State.Pid}}}}' {self.name}"
             )
+            output = self.host_cmd(f"cat /proc/{self.pid}/environ")
+            for line in output.split("\x00"):
+                if not line:
+                    continue
+                key, value = line.split("=")
+                self.env[key] = value
+            # setup symlinks for bind and volume mounts within
             for src, dst in self.binds:
                 link_path = self.host_path(Path(dst), True)
                 self.host_cmd(f"ln -s {src} {link_path}")
@@ -227,7 +258,7 @@ class DockerNode(CoreNode):
         """
         logger.debug("node(%s) create file(%s) mode(%o)", self.name, file_path, mode)
         temp = NamedTemporaryFile(delete=False)
-        temp.write(contents.encode("utf-8"))
+        temp.write(contents.encode())
         temp.close()
         temp_path = Path(temp.name)
         directory = file_path.parent

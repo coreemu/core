@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
@@ -9,14 +7,14 @@ from core.xml import emanexml
 class EmaneTransportService(CoreService):
     name: str = "transportd"
     group: str = "EMANE"
-    executables: Tuple[str, ...] = ("emanetransportd", "emanegentransportxml")
-    dependencies: Tuple[str, ...] = ()
-    dirs: Tuple[str, ...] = ()
-    configs: Tuple[str, ...] = ("emanetransport.sh",)
-    startup: Tuple[str, ...] = (f"bash {configs[0]}",)
-    validate: Tuple[str, ...] = (f"pidof {executables[0]}",)
+    executables: tuple[str, ...] = ("emanetransportd", "emanegentransportxml")
+    dependencies: tuple[str, ...] = ()
+    dirs: tuple[str, ...] = ()
+    configs: tuple[str, ...] = ("emanetransport.sh",)
+    startup: tuple[str, ...] = (f"bash {configs[0]}",)
+    validate: tuple[str, ...] = (f"pidof {executables[0]}",)
     validation_timer: float = 0.5
-    shutdown: Tuple[str, ...] = (f"killall {executables[0]}",)
+    shutdown: tuple[str, ...] = (f"killall {executables[0]}",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:

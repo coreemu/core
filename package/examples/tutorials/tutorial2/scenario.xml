@@ -1,0 +1,98 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<scenario name="/tmp/tmp3n8ocfk5">
+  <networks>
+    <network id="1" name="wlan1" icon="" canvas="0" model="basic_range" mobility="ns2script" type="WIRELESS_LAN">
+      <position x="200.0" y="200.0" lat="47.57735226369077" lon="-122.1296216435031" alt="2.0"/>
+    </network>
+  </networks>
+  <devices>
+    <device id="2" name="n2" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="100.0" y="100.0" lat="47.57826125326112" lon="-122.13096911642927" alt="2.0"/>
+      <configservices>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </configservices>
+    </device>
+    <device id="3" name="n3" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="300.0" y="100.0" lat="47.57826125326112" lon="-122.12827417057692" alt="2.0"/>
+      <configservices>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </configservices>
+    </device>
+    <device id="4" name="n4" icon="" canvas="0" type="mdr" class="" image="">
+      <position x="500.0" y="100.0" lat="47.57826125326112" lon="-122.12557922472458" alt="2.0"/>
+      <configservices>
+        <service name="zebra"/>
+        <service name="OSPFv3MDR"/>
+        <service name="IPForward"/>
+      </configservices>
+    </device>
+  </devices>
+  <links>
+    <link node1="2" node2="1">
+      <iface1 id="0" name="eth0" mac="00:16:3e:05:0a:60" ip4="10.0.0.2" ip4_mask="24" ip6="2001::2" ip6_mask="64"/>
+    </link>
+    <link node1="3" node2="1">
+      <iface1 id="0" name="eth0" mac="00:16:3e:51:26:3c" ip4="10.0.0.3" ip4_mask="24" ip6="2001::3" ip6_mask="64"/>
+    </link>
+    <link node1="4" node2="1">
+      <iface1 id="0" name="eth0" mac="00:16:3e:77:c9:d3" ip4="10.0.0.4" ip4_mask="24" ip6="2001::4" ip6_mask="64"/>
+    </link>
+  </links>
+  <configservice_configurations>
+    <service name="zebra" node="2"/>
+    <service name="OSPFv3MDR" node="2"/>
+    <service name="IPForward" node="2"/>
+    <service name="zebra" node="3"/>
+    <service name="OSPFv3MDR" node="3"/>
+    <service name="IPForward" node="3"/>
+    <service name="zebra" node="4"/>
+    <service name="OSPFv3MDR" node="4"/>
+    <service name="IPForward" node="4"/>
+  </configservice_configurations>
+  <session_origin lat="47.57917022705078" lon="-122.13231658935547" alt="2.0" scale="150.0"/>
+  <session_options>
+    <configuration name="controlnet" value=""/>
+    <configuration name="controlnet0" value=""/>
+    <configuration name="controlnet1" value=""/>
+    <configuration name="controlnet2" value=""/>
+    <configuration name="controlnet3" value=""/>
+    <configuration name="controlnet_updown_script" value=""/>
+    <configuration name="enablerj45" value="1"/>
+    <configuration name="preservedir" value="0"/>
+    <configuration name="enablesdt" value="0"/>
+    <configuration name="sdturl" value="tcp://127.0.0.1:50000/"/>
+    <configuration name="ovs" value="0"/>
+    <configuration name="platform_id_start" value="1"/>
+    <configuration name="nem_id_start" value="1"/>
+    <configuration name="link_enabled" value="1"/>
+    <configuration name="loss_threshold" value="30"/>
+    <configuration name="link_interval" value="1"/>
+    <configuration name="link_timeout" value="4"/>
+    <configuration name="mtu" value="0"/>
+  </session_options>
+  <default_services>
+    <node type="mdr">
+      <service name="zebra"/>
+      <service name="OSPFv3MDR"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="PC">
+      <service name="DefaultRoute"/>
+    </node>
+    <node type="prouter"/>
+    <node type="router">
+      <service name="zebra"/>
+      <service name="OSPFv2"/>
+      <service name="OSPFv3"/>
+      <service name="IPForward"/>
+    </node>
+    <node type="host">
+      <service name="DefaultRoute"/>
+      <service name="SSH"/>
+    </node>
+  </default_services>
+</scenario>

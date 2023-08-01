@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -30,7 +30,7 @@ class SessionsDialog(Dialog):
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.draw()
 
-    def get_sessions(self) -> List[SessionSummary]:
+    def get_sessions(self) -> list[SessionSummary]:
         try:
             sessions = self.app.core.client.get_sessions()
             logger.info("sessions: %s", sessions)

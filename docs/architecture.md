@@ -1,25 +1,22 @@
 # CORE Architecture
 
-* Table of Contents
-{:toc}
-
 ## Main Components
 
 * core-daemon
-  * Manages emulated sessions of nodes and links for a given network
-  * Nodes are created using Linux namespaces
-  * Links are created using Linux bridges and virtual ethernet peers
-  * Packets sent over links are manipulated using traffic control
-  * Provides gRPC API
+    * Manages emulated sessions of nodes and links for a given network
+    * Nodes are created using Linux namespaces
+    * Links are created using Linux bridges and virtual ethernet peers
+    * Packets sent over links are manipulated using traffic control
+    * Provides gRPC API
 * core-gui
-  * GUI and daemon communicate over gRPC API
-  * Drag and drop creation for nodes and links
-  * Can launch terminals for emulated nodes in running sessions
-  * Can save/open scenario files to recreate previous sessions
+    * GUI and daemon communicate over gRPC API
+    * Drag and drop creation for nodes and links
+    * Can launch terminals for emulated nodes in running sessions
+    * Can save/open scenario files to recreate previous sessions
 * vnoded
-  * Command line utility for creating CORE node namespaces
+    * Command line utility for creating CORE node namespaces
 * vcmd
-  * Command line utility for sending shell commands to nodes
+    * Command line utility for sending shell commands to nodes
 
 ![](static/architecture.png)
 
@@ -57,5 +54,5 @@ rules.
 CORE has been released by Boeing to the open source community under the BSD
 license. If you find CORE useful for your work, please contribute back to the
 project. Contributions can be as simple as reporting a bug, dropping a line of
-encouragement, or can also  include submitting patches or maintaining aspects
+encouragement, or can also include submitting patches or maintaining aspects
 of the tool.

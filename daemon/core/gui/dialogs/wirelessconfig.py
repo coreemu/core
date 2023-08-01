@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 import grpc
 
@@ -19,12 +19,12 @@ class WirelessConfigDialog(Dialog):
         super().__init__(app, f"Wireless Configuration - {canvas_node.core_node.name}")
         self.node: Node = canvas_node.core_node
         self.config_frame: Optional[ConfigFrame] = None
-        self.config: Dict[str, ConfigOption] = {}
+        self.config: dict[str, ConfigOption] = {}
         try:
             config = self.node.wireless_config
             if not config:
                 config = self.app.core.get_wireless_config(self.node.id)
-            self.config: Dict[str, ConfigOption] = config
+            self.config: dict[str, ConfigOption] = config
             self.draw()
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Wireless Config Error", e)

@@ -3,7 +3,6 @@ sdn.py defines services to start Open vSwitch and the Ryu SDN Controller.
 """
 
 import re
-from typing import Tuple
 
 from core.nodes.base import CoreNode
 from core.services.coreservices import CoreService
@@ -24,15 +23,15 @@ class SdnService(CoreService):
 class OvsService(SdnService):
     name: str = "OvsService"
     group: str = "SDN"
-    executables: Tuple[str, ...] = ("ovs-ofctl", "ovs-vsctl")
-    dirs: Tuple[str, ...] = (
+    executables: tuple[str, ...] = ("ovs-ofctl", "ovs-vsctl")
+    dirs: tuple[str, ...] = (
         "/etc/openvswitch",
         "/var/run/openvswitch",
         "/var/log/openvswitch",
     )
-    configs: Tuple[str, ...] = ("OvsService.sh",)
-    startup: Tuple[str, ...] = ("bash OvsService.sh",)
-    shutdown: Tuple[str, ...] = ("killall ovs-vswitchd", "killall ovsdb-server")
+    configs: tuple[str, ...] = ("OvsService.sh",)
+    startup: tuple[str, ...] = ("bash OvsService.sh",)
+    shutdown: tuple[str, ...] = ("killall ovs-vswitchd", "killall ovsdb-server")
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -59,39 +58,41 @@ class OvsService(SdnService):
 
             # create virtual interfaces
             cfg += "## Create a veth pair to send the data to\n"
-            cfg += "ip link add rtr%s type veth peer name sw%s\n" % (ifnum, ifnum)
+            cfg += f"ip link add rtr{ifnum} type veth peer name sw{ifnum}\n"
 
             # remove ip address of eths because quagga/zebra will assign same IPs to rtr interfaces
             # or assign them manually to rtr interfaces if zebra is not running
             for ip4 in iface.ip4s:
-                cfg += "ip addr del %s dev %s\n" % (ip4.ip, iface.name)
+                cfg += f"ip addr del {ip4.ip} dev {iface.name}\n"
                 if has_zebra == 0:
-                    cfg += "ip addr add %s dev rtr%s\n" % (ip4.ip, ifnum)
+                    cfg += f"ip addr add {ip4.ip} dev rtr{ifnum}\n"
             for ip6 in iface.ip6s:
-                cfg += "ip -6 addr del %s dev %s\n" % (ip6.ip, iface.name)
+                cfg += f"ip -6 addr del {ip6.ip} dev {iface.name}\n"
                 if has_zebra == 0:
-                    cfg += "ip -6 addr add %s dev rtr%s\n" % (ip6.ip, ifnum)
+                    cfg += f"ip -6 addr add {ip6.ip} dev rtr{ifnum}\n"
 
             # add interfaces to bridge
-            # Make port numbers explicit so they're easier to follow in reading the script
+            # Make port numbers explicit so they're easier to follow in
+            # reading the script
             cfg += "## Add the CORE interface to the switch\n"
             cfg += (
-                "ovs-vsctl add-port ovsbr0 eth%s -- set Interface eth%s ofport_request=%d\n"
-                % (ifnum, ifnum, portnum)
+                f"ovs-vsctl add-port ovsbr0 eth{ifnum} -- "
+                f"set Interface eth{ifnum} ofport_request={portnum:d}\n"
             )
             cfg += "## And then add its sibling veth interface\n"
             cfg += (
-                "ovs-vsctl add-port ovsbr0 sw%s -- set Interface sw%s ofport_request=%d\n"
-                % (ifnum, ifnum, portnum + 1)
+                f"ovs-vsctl add-port ovsbr0 sw{ifnum} -- "
+                f"set Interface sw{ifnum} ofport_request={portnum + 1:d}\n"
             )
             cfg += "## start them up so we can send/receive data\n"
-            cfg += "ovs-ofctl mod-port ovsbr0 eth%s up\n" % ifnum
-            cfg += "ovs-ofctl mod-port ovsbr0 sw%s up\n" % ifnum
+            cfg += f"ovs-ofctl mod-port ovsbr0 eth{ifnum} up\n"
+            cfg += f"ovs-ofctl mod-port ovsbr0 sw{ifnum} up\n"
             cfg += "## Bring up the lower part of the veth pair\n"
-            cfg += "ip link set dev rtr%s up\n" % ifnum
+            cfg += f"ip link set dev rtr{ifnum} up\n"
             portnum += 2
 
-        # Add rule for default controller if there is one local (even if the controller is not local, it finds it)
+        # Add rule for default controller if there is one local
+        # (even if the controller is not local, it finds it)
         cfg += "\n## We assume there will be an SDN controller on the other end of this, \n"
         cfg += "## but it will still function if there's not\n"
         cfg += "ovs-vsctl set-controller ovsbr0 tcp:127.0.0.1:6633\n"
@@ -102,14 +103,8 @@ class OvsService(SdnService):
         portnum = 1
         for iface in node.get_ifaces(control=False):
             cfg += "## Take the data from the CORE interface and put it on the veth and vice versa\n"
-            cfg += (
-                "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"
-                % (portnum, portnum + 1)
-            )
-            cfg += (
-                "ovs-ofctl add-flow ovsbr0 priority=1000,in_port=%d,action=output:%d\n"
-                % (portnum + 1, portnum)
-            )
+            cfg += f"ovs-ofctl add-flow ovsbr0 priority=1000,in_port={portnum:d},action=output:{portnum + 1:d}\n"
+            cfg += f"ovs-ofctl add-flow ovsbr0 priority=1000,in_port={portnum + 1:d},action=output:{portnum:d}\n"
             portnum += 2
         return cfg
 
@@ -117,10 +112,10 @@ class OvsService(SdnService):
 class RyuService(SdnService):
     name: str = "ryuService"
     group: str = "SDN"
-    executables: Tuple[str, ...] = ("ryu-manager",)
-    configs: Tuple[str, ...] = ("ryuService.sh",)
-    startup: Tuple[str, ...] = ("bash ryuService.sh",)
-    shutdown: Tuple[str, ...] = ("killall ryu-manager",)
+    executables: tuple[str, ...] = ("ryu-manager",)
+    configs: tuple[str, ...] = ("ryuService.sh",)
+    startup: tuple[str, ...] = ("bash ryuService.sh",)
+    shutdown: tuple[str, ...] = ("killall ryu-manager",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:

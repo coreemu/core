@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from copy import deepcopy
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from PIL import Image
 from PIL.ImageTk import PhotoImage
@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 
 ZOOM_IN: float = 1.1
 ZOOM_OUT: float = 0.9
-MOVE_NODE_MODES: Set[GraphMode] = {GraphMode.NODE, GraphMode.SELECT}
-MOVE_SHAPE_MODES: Set[GraphMode] = {GraphMode.ANNOTATION, GraphMode.SELECT}
+MOVE_NODE_MODES: set[GraphMode] = {GraphMode.NODE, GraphMode.SELECT}
+MOVE_SHAPE_MODES: set[GraphMode] = {GraphMode.ANNOTATION, GraphMode.SELECT}
 BACKGROUND_COLOR: str = "#cccccc"
 
 
@@ -40,32 +40,32 @@ class CanvasGraph(tk.Canvas):
         manager: "CanvasManager",
         core: "CoreClient",
         _id: int,
-        dimensions: Tuple[int, int],
+        dimensions: tuple[int, int],
     ) -> None:
         super().__init__(master, highlightthickness=0, background=BACKGROUND_COLOR)
         self.id: int = _id
         self.app: "Application" = app
         self.manager: "CanvasManager" = manager
         self.core: "CoreClient" = core
-        self.selection: Dict[int, int] = {}
+        self.selection: dict[int, int] = {}
         self.select_box: Optional[Shape] = None
         self.selected: Optional[int] = None
-        self.nodes: Dict[int, CanvasNode] = {}
-        self.shadow_nodes: Dict[int, ShadowNode] = {}
-        self.shapes: Dict[int, Shape] = {}
-        self.shadow_core_nodes: Dict[int, ShadowNode] = {}
+        self.nodes: dict[int, CanvasNode] = {}
+        self.shadow_nodes: dict[int, ShadowNode] = {}
+        self.shapes: dict[int, Shape] = {}
+        self.shadow_core_nodes: dict[int, ShadowNode] = {}
 
         # map wireless/EMANE node to the set of MDRs connected to that node
-        self.wireless_network: Dict[int, Set[int]] = {}
+        self.wireless_network: dict[int, set[int]] = {}
 
         self.drawing_edge: Optional[CanvasEdge] = None
         self.rect: Optional[int] = None
         self.shape_drawing: bool = False
-        self.current_dimensions: Tuple[int, int] = dimensions
+        self.current_dimensions: tuple[int, int] = dimensions
         self.ratio: float = 1.0
-        self.offset: Tuple[int, int] = (0, 0)
-        self.cursor: Tuple[int, int] = (0, 0)
-        self.to_copy: List[CanvasNode] = []
+        self.offset: tuple[int, int] = (0, 0)
+        self.cursor: tuple[int, int] = (0, 0)
+        self.to_copy: list[CanvasNode] = []
 
         # background related
         self.wallpaper_id: Optional[int] = None
@@ -82,7 +82,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_canvas()
         self.draw_grid()
 
-    def draw_canvas(self, dimensions: Tuple[int, int] = None) -> None:
+    def draw_canvas(self, dimensions: tuple[int, int] = None) -> None:
         if self.rect is not None:
             self.delete(self.rect)
         if not dimensions:
@@ -126,23 +126,23 @@ class CanvasGraph(tk.Canvas):
             shadow_node = ShadowNode(self.app, self, node)
         return shadow_node
 
-    def get_actual_coords(self, x: float, y: float) -> Tuple[float, float]:
+    def get_actual_coords(self, x: float, y: float) -> tuple[float, float]:
         actual_x = (x - self.offset[0]) / self.ratio
         actual_y = (y - self.offset[1]) / self.ratio
         return actual_x, actual_y
 
-    def get_scaled_coords(self, x: float, y: float) -> Tuple[float, float]:
+    def get_scaled_coords(self, x: float, y: float) -> tuple[float, float]:
         scaled_x = (x * self.ratio) + self.offset[0]
         scaled_y = (y * self.ratio) + self.offset[1]
         return scaled_x, scaled_y
 
-    def inside_canvas(self, x: float, y: float) -> Tuple[bool, bool]:
+    def inside_canvas(self, x: float, y: float) -> tuple[bool, bool]:
         x1, y1, x2, y2 = self.bbox(self.rect)
         valid_x = x1 <= x <= x2
         valid_y = y1 <= y <= y2
         return valid_x and valid_y
 
-    def valid_position(self, x1: int, y1: int, x2: int, y2: int) -> Tuple[bool, bool]:
+    def valid_position(self, x1: int, y1: int, x2: int, y2: int) -> tuple[bool, bool]:
         valid_topleft = self.inside_canvas(x1, y1)
         valid_bottomright = self.inside_canvas(x2, y2)
         return valid_topleft and valid_bottomright
@@ -161,7 +161,7 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower(tags.GRIDLINE)
         self.tag_lower(self.rect)
 
-    def canvas_xy(self, event: tk.Event) -> Tuple[float, float]:
+    def canvas_xy(self, event: tk.Event) -> tuple[float, float]:
         """
         Convert window coordinate to canvas coordinate
         """
@@ -516,7 +516,7 @@ class CanvasGraph(tk.Canvas):
         self.nodes[node.id] = node
         self.core.set_canvas_node(core_node, node)
 
-    def width_and_height(self) -> Tuple[int, int]:
+    def width_and_height(self) -> tuple[int, int]:
         """
         retrieve canvas width and height in pixels
         """
@@ -601,7 +601,7 @@ class CanvasGraph(tk.Canvas):
         self.redraw_canvas((image.width(), image.height()))
         self.draw_wallpaper(image)
 
-    def redraw_canvas(self, dimensions: Tuple[int, int] = None) -> None:
+    def redraw_canvas(self, dimensions: tuple[int, int] = None) -> None:
         logger.debug("redrawing canvas to dimensions: %s", dimensions)
 
         # reset scale and move back to original position
@@ -814,7 +814,7 @@ class CanvasGraph(tk.Canvas):
         for edge_id in self.find_withtag(tags.EDGE):
             self.itemconfig(edge_id, width=int(EDGE_WIDTH * self.app.app_scale))
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> dict[str, Any]:
         wallpaper_path = None
         if self.wallpaper_file:
             wallpaper = Path(self.wallpaper_file)
@@ -830,7 +830,7 @@ class CanvasGraph(tk.Canvas):
             dimensions=self.current_dimensions,
         )
 
-    def parse_metadata(self, config: Dict[str, Any]) -> None:
+    def parse_metadata(self, config: dict[str, Any]) -> None:
         fit_image = config.get("fit_image", False)
         self.adjust_to_dim.set(fit_image)
         wallpaper_style = config.get("wallpaper_style", 1)

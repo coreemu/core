@@ -3,7 +3,7 @@ import math
 import tkinter as tk
 from tkinter import PhotoImage, font, messagebox, ttk
 from tkinter.ttk import Progressbar
-from typing import Any, Dict, Optional, Type
+from typing import Any, Optional
 
 import grpc
 
@@ -45,7 +45,7 @@ class Application(ttk.Frame):
         self.show_infobar: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # fonts
-        self.fonts_size: Dict[str, int] = {}
+        self.fonts_size: dict[str, int] = {}
         self.icon_text_font: Optional[font.Font] = None
         self.edge_font: Optional[font.Font] = None
 
@@ -145,7 +145,7 @@ class Application(ttk.Frame):
         self.statusbar = StatusBar(self.right_frame, self)
         self.statusbar.grid(sticky=tk.EW, columnspan=2)
 
-    def display_info(self, frame_class: Type[InfoFrameBase], **kwargs: Any) -> None:
+    def display_info(self, frame_class: type[InfoFrameBase], **kwargs: Any) -> None:
         if not self.show_infobar.get():
             return
         self.clear_info()

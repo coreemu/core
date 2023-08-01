@@ -5,7 +5,7 @@ Common support for configurable CORE objects.
 import logging
 from collections import OrderedDict
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import ConfigDataTypes
@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.location.mobility import WirelessModel
 
-    WirelessModelType = Type[WirelessModel]
+    WirelessModelType = type[WirelessModel]
 
-_BOOL_OPTIONS: Set[str] = {"0", "1"}
+_BOOL_OPTIONS: set[str] = {"0", "1"}
 
 
 @dataclass
@@ -43,7 +43,7 @@ class Configuration:
     type: ConfigDataTypes
     label: str = None
     default: str = ""
-    options: List[str] = field(default_factory=list)
+    options: list[str] = field(default_factory=list)
     group: str = "Configuration"
 
     def __post_init__(self) -> None:
@@ -118,10 +118,10 @@ class ConfigurableOptions:
     """
 
     name: Optional[str] = None
-    options: List[Configuration] = []
+    options: list[Configuration] = []
 
     @classmethod
-    def configurations(cls) -> List[Configuration]:
+    def configurations(cls) -> list[Configuration]:
         """
         Provides the configurations for this class.
 
@@ -130,7 +130,7 @@ class ConfigurableOptions:
         return cls.options
 
     @classmethod
-    def config_groups(cls) -> List[ConfigGroup]:
+    def config_groups(cls) -> list[ConfigGroup]:
         """
         Defines how configurations are grouped.
 
@@ -139,7 +139,7 @@ class ConfigurableOptions:
         return [ConfigGroup("Options", 1, len(cls.configurations()))]
 
     @classmethod
-    def default_values(cls) -> Dict[str, str]:
+    def default_values(cls) -> dict[str, str]:
         """
         Provides an ordered mapping of configuration keys to default values.
 
@@ -165,7 +165,7 @@ class ConfigurableManager:
         """
         self.node_configurations = {}
 
-    def nodes(self) -> List[int]:
+    def nodes(self) -> list[int]:
         """
         Retrieves the ids of all node configurations known by this manager.
 
@@ -208,7 +208,7 @@ class ConfigurableManager:
 
     def set_configs(
         self,
-        config: Dict[str, str],
+        config: dict[str, str],
         node_id: int = _default_node,
         config_type: str = _default_type,
     ) -> None:
@@ -250,7 +250,7 @@ class ConfigurableManager:
 
     def get_configs(
         self, node_id: int = _default_node, config_type: str = _default_type
-    ) -> Optional[Dict[str, str]]:
+    ) -> Optional[dict[str, str]]:
         """
         Retrieve configurations for a node and configuration type.
 
@@ -264,7 +264,7 @@ class ConfigurableManager:
             result = node_configs.get(config_type)
         return result
 
-    def get_all_configs(self, node_id: int = _default_node) -> Dict[str, Any]:
+    def get_all_configs(self, node_id: int = _default_node) -> dict[str, Any]:
         """
         Retrieve all current configuration types for a node.
 
@@ -284,11 +284,11 @@ class ModelManager(ConfigurableManager):
         Creates a ModelManager object.
         """
         super().__init__()
-        self.models: Dict[str, Any] = {}
-        self.node_models: Dict[int, str] = {}
+        self.models: dict[str, Any] = {}
+        self.node_models: dict[int, str] = {}
 
     def set_model_config(
-        self, node_id: int, model_name: str, config: Dict[str, str] = None
+        self, node_id: int, model_name: str, config: dict[str, str] = None
     ) -> None:
         """
         Set configuration data for a model.
@@ -317,7 +317,7 @@ class ModelManager(ConfigurableManager):
         # set configuration
         self.set_configs(model_config, node_id=node_id, config_type=model_name)
 
-    def get_model_config(self, node_id: int, model_name: str) -> Dict[str, str]:
+    def get_model_config(self, node_id: int, model_name: str) -> dict[str, str]:
         """
         Retrieve configuration data for a model.
 
@@ -342,7 +342,7 @@ class ModelManager(ConfigurableManager):
         self,
         node: Union[WlanNode, EmaneNet],
         model_class: "WirelessModelType",
-        config: Dict[str, str] = None,
+        config: dict[str, str] = None,
     ) -> None:
         """
         Set model and model configuration for node.
@@ -361,7 +361,7 @@ class ModelManager(ConfigurableManager):
 
     def get_models(
         self, node: Union[WlanNode, EmaneNet]
-    ) -> List[Tuple[Type, Dict[str, str]]]:
+    ) -> list[tuple[type, dict[str, str]]]:
         """
         Return a list of model classes and values for a net if one has been
         configured. This is invoked when exporting a session to XML.

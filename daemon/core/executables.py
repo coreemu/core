@@ -1,5 +1,3 @@
-from typing import List
-
 BASH: str = "bash"
 ETHTOOL: str = "ethtool"
 IP: str = "ip"
@@ -13,7 +11,7 @@ UMOUNT: str = "umount"
 VCMD: str = "vcmd"
 VNODED: str = "vnoded"
 
-COMMON_REQUIREMENTS: List[str] = [
+COMMON_REQUIREMENTS: list[str] = [
     BASH,
     ETHTOOL,
     IP,
@@ -26,10 +24,10 @@ COMMON_REQUIREMENTS: List[str] = [
     VCMD,
     VNODED,
 ]
-OVS_REQUIREMENTS: List[str] = [OVS_VSCTL]
+OVS_REQUIREMENTS: list[str] = [OVS_VSCTL]
 
 
-def get_requirements(use_ovs: bool) -> List[str]:
+def get_requirements(use_ovs: bool) -> list[str]:
     """
     Retrieve executable requirements needed to run CORE.
 

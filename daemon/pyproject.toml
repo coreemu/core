@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "9.0.2"
+version = "9.0.3"
 description = "CORE Common Open Research Emulator"
 authors = ["Boeing Research and Technology"]
 license = "BSD-2-Clause"
@@ -26,19 +26,19 @@ core-cleanup = "core.scripts.cleanup:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 fabric = "2.7.1"
-grpcio = "1.49.1"
+grpcio = "1.54.2"
 invoke = "1.7.3"
 lxml = "4.9.1"
 netaddr = "0.7.19"
 protobuf = "4.21.9"
 pyproj = "3.3.1"
-pyyaml = "5.4"
-Pillow = "9.2.0"
+Pillow = "9.4.0"
 Mako = "1.2.3"
+PyYAML = "6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "6.2.5"
-grpcio-tools = "1.49.1"
+grpcio-tools = "1.54.2"
 black = "22.12.0"
 flake8 = "3.8.2"
 isort = "4.3.21"

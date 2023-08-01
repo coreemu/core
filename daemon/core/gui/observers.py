@@ -1,13 +1,13 @@
 import tkinter as tk
 from functools import partial
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from core.gui.dialogs.observers import ObserverDialog
 
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-OBSERVERS: Dict[str, str] = {
+OBSERVERS: dict[str, str] = {
     "List Processes": "ps",
     "Show Interfaces": "ip address",
     "IPV4 Routes": "ip -4 route",

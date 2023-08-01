@@ -2,7 +2,7 @@ import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional, Set
+from typing import TYPE_CHECKING, Optional
 
 from PIL.ImageTk import PhotoImage
 
@@ -21,13 +21,13 @@ if TYPE_CHECKING:
 
 class ServicesSelectDialog(Dialog):
     def __init__(
-        self, master: tk.BaseWidget, app: "Application", current_services: Set[str]
+        self, master: tk.BaseWidget, app: "Application", current_services: set[str]
     ) -> None:
         super().__init__(app, "Node Config Services", master=master)
         self.groups: Optional[ListboxScroll] = None
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
-        self.current_services: Set[str] = current_services
+        self.current_services: set[str] = current_services
         self.draw()
 
     def draw(self) -> None:
@@ -114,7 +114,7 @@ class CustomNodesDialog(Dialog):
         self.image_button: Optional[ttk.Button] = None
         self.image: Optional[PhotoImage] = None
         self.image_file: Optional[str] = None
-        self.services: Set[str] = set()
+        self.services: set[str] = set()
         self.selected: Optional[str] = None
         self.selected_index: Optional[int] = None
         self.draw()

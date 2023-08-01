@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Set
+from typing import TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +12,16 @@ class ConfigServiceDependencies:
     Generates sets of services to start in order of their dependencies.
     """
 
-    def __init__(self, services: Dict[str, "ConfigService"]) -> None:
+    def __init__(self, services: dict[str, "ConfigService"]) -> None:
         """
         Create a ConfigServiceDependencies instance.
 
         :param services: services for determining dependency sets
         """
         # helpers to check validity
-        self.dependents: Dict[str, Set[str]] = {}
-        self.started: Set[str] = set()
-        self.node_services: Dict[str, "ConfigService"] = {}
+        self.dependents: dict[str, set[str]] = {}
+        self.started: set[str] = set()
+        self.node_services: dict[str, "ConfigService"] = {}
         for service in services.values():
             self.node_services[service.name] = service
             for dependency in service.dependencies:
@@ -29,11 +29,11 @@ class ConfigServiceDependencies:
                 dependents.add(service.name)
 
         # used to find paths
-        self.path: List["ConfigService"] = []
-        self.visited: Set[str] = set()
-        self.visiting: Set[str] = set()
+        self.path: list["ConfigService"] = []
+        self.visited: set[str] = set()
+        self.visiting: set[str] = set()
 
-    def startup_paths(self) -> List[List["ConfigService"]]:
+    def startup_paths(self) -> list[list["ConfigService"]]:
         """
         Find startup path sets based on service dependencies.
 
@@ -54,8 +54,8 @@ class ConfigServiceDependencies:
 
         if self.started != set(self.node_services):
             raise ValueError(
-                "failure to start all services: %s != %s"
-                % (self.started, self.node_services.keys())
+                f"failure to start all services: {self.started} != "
+                f"{self.node_services.keys()}"
             )
 
         return paths
@@ -70,7 +70,7 @@ class ConfigServiceDependencies:
         self.visited.clear()
         self.visiting.clear()
 
-    def _start(self, service: "ConfigService") -> List["ConfigService"]:
+    def _start(self, service: "ConfigService") -> list["ConfigService"]:
         """
         Starts a oath for checking dependencies for a given service.
 
@@ -81,7 +81,7 @@ class ConfigServiceDependencies:
         self._reset()
         return self._visit(service)
 
-    def _visit(self, current_service: "ConfigService") -> List["ConfigService"]:
+    def _visit(self, current_service: "ConfigService") -> list["ConfigService"]:
         """
         Visits a service when discovering dependency chains for service.
 
@@ -96,14 +96,14 @@ class ConfigServiceDependencies:
         for service_name in current_service.dependencies:
             if service_name not in self.node_services:
                 raise ValueError(
-                    "required dependency was not included in node services: %s"
-                    % service_name
+                    "required dependency was not included in node "
+                    f"services: {service_name}"
                 )
 
             if service_name in self.visiting:
                 raise ValueError(
-                    "cyclic dependency at service(%s): %s"
-                    % (current_service.name, service_name)
+                    f"cyclic dependency at service({current_service.name}): "
+                    f"{service_name}"
                 )
 
             if service_name not in self.visited:

@@ -4,7 +4,7 @@ PhysicalNode class for including real systems in the emulated network.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 
@@ -52,7 +52,7 @@ class Rj45Node(CoreNodeBase):
         )
         self.iface.transport_type = TransportType.RAW
         self.old_up: bool = False
-        self.old_addrs: List[Tuple[str, Optional[str]]] = []
+        self.old_addrs: list[tuple[str, Optional[str]]] = []
 
     def startup(self) -> None:
         """
@@ -159,7 +159,7 @@ class Rj45Node(CoreNodeBase):
         """
         # TODO: save/restore the PROMISC flag
         self.old_up = False
-        self.old_addrs: List[Tuple[str, Optional[str]]] = []
+        self.old_addrs: list[tuple[str, Optional[str]]] = []
         localname = self.iface.localname
         output = self.net_client.address_show(localname)
         for line in output.split("\n"):
@@ -171,7 +171,10 @@ class Rj45Node(CoreNodeBase):
                 if "UP" in flags:
                     self.old_up = True
             elif items[0] == "inet":
-                self.old_addrs.append((items[1], items[3]))
+                broadcast = None
+                if items[2] == "brd":
+                    broadcast = items[3]
+                self.old_addrs.append((items[1], broadcast))
             elif items[0] == "inet6":
                 if items[1][:4] == "fe80":
                     continue

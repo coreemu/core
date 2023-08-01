@@ -3,7 +3,7 @@ Defines Emane Models used within CORE.
 """
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 from core.config import ConfigBool, ConfigGroup, ConfigString, Configuration
 from core.emane import emanemanifest
@@ -28,38 +28,38 @@ class EmaneModel(WirelessModel):
     # default platform configuration settings
     platform_controlport: str = "controlportendpoint"
     platform_xml: str = "nemmanager.xml"
-    platform_defaults: Dict[str, str] = {
+    platform_defaults: dict[str, str] = {
         "eventservicedevice": DEFAULT_DEV,
         "eventservicegroup": "224.1.2.8:45703",
         "otamanagerdevice": DEFAULT_DEV,
         "otamanagergroup": "224.1.2.8:45702",
     }
-    platform_config: List[Configuration] = []
+    platform_config: list[Configuration] = []
 
     # default mac configuration settings
     mac_library: Optional[str] = None
     mac_xml: Optional[str] = None
-    mac_defaults: Dict[str, str] = {}
-    mac_config: List[Configuration] = []
+    mac_defaults: dict[str, str] = {}
+    mac_config: list[Configuration] = []
 
     # default phy configuration settings, using the universal model
     phy_library: Optional[str] = None
     phy_xml: str = "emanephy.xml"
-    phy_defaults: Dict[str, str] = {
+    phy_defaults: dict[str, str] = {
         "subid": "1",
         "propagationmodel": "2ray",
         "noisemode": "none",
     }
-    phy_config: List[Configuration] = []
+    phy_config: list[Configuration] = []
 
     # support for external configurations
-    external_config: List[Configuration] = [
+    external_config: list[Configuration] = [
         ConfigBool(id="external", default="0"),
         ConfigString(id="platformendpoint", default="127.0.0.1:40001"),
         ConfigString(id="transportendpoint", default="127.0.0.1:50002"),
     ]
 
-    config_ignore: Set[str] = set()
+    config_ignore: set[str] = set()
 
     @classmethod
     def load(cls, emane_prefix: Path) -> None:
@@ -94,7 +94,7 @@ class EmaneModel(WirelessModel):
             cls.platform_config.pop(controlport_index)
 
     @classmethod
-    def configurations(cls) -> List[Configuration]:
+    def configurations(cls) -> list[Configuration]:
         """
         Returns the combination all all configurations (mac, phy, and external).
 
@@ -105,7 +105,7 @@ class EmaneModel(WirelessModel):
         )
 
     @classmethod
-    def config_groups(cls) -> List[ConfigGroup]:
+    def config_groups(cls) -> list[ConfigGroup]:
         """
         Returns the defined configuration groups.
 
@@ -122,7 +122,7 @@ class EmaneModel(WirelessModel):
             ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
-    def build_xml_files(self, config: Dict[str, str], iface: CoreInterface) -> None:
+    def build_xml_files(self, config: dict[str, str], iface: CoreInterface) -> None:
         """
         Builds xml files for this emane model. Creates a nem.xml file that points to
         both mac.xml and phy.xml definitions.
@@ -146,7 +146,7 @@ class EmaneModel(WirelessModel):
         """
         logger.debug("emane model(%s) has no post setup tasks", self.name)
 
-    def update(self, moved_ifaces: List[CoreInterface]) -> None:
+    def update(self, moved_ifaces: list[CoreInterface]) -> None:
         """
         Invoked from MobilityModel when nodes are moved; this causes
         emane location events to be generated for the nodes in the moved

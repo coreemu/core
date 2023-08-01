@@ -2,7 +2,6 @@ import logging
 import pathlib
 import pkgutil
 from pathlib import Path
-from typing import Dict, List, Type
 
 from core import configservices, utils
 from core.configservice.base import ConfigService
@@ -20,9 +19,9 @@ class ConfigServiceManager:
         """
         Create a ConfigServiceManager instance.
         """
-        self.services: Dict[str, Type[ConfigService]] = {}
+        self.services: dict[str, type[ConfigService]] = {}
 
-    def get_service(self, name: str) -> Type[ConfigService]:
+    def get_service(self, name: str) -> type[ConfigService]:
         """
         Retrieve a service by name.
 
@@ -35,7 +34,7 @@ class ConfigServiceManager:
             raise CoreError(f"service does not exist {name}")
         return service_class
 
-    def add(self, service: Type[ConfigService]) -> None:
+    def add(self, service: type[ConfigService]) -> None:
         """
         Add service to manager, checking service requirements have been met.
 
@@ -62,7 +61,7 @@ class ConfigServiceManager:
         # make service available
         self.services[name] = service
 
-    def load_locals(self) -> List[str]:
+    def load_locals(self) -> list[str]:
         """
         Search and add config service from local core module.
 
@@ -81,7 +80,7 @@ class ConfigServiceManager:
                     logger.debug("not loading config service(%s): %s", service.name, e)
         return errors
 
-    def load(self, path: Path) -> List[str]:
+    def load(self, path: Path) -> list[str]:
         """
         Search path provided for config services and add them for being managed.
 

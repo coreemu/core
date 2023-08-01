@@ -9,7 +9,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import netaddr
 
@@ -29,10 +29,10 @@ if TYPE_CHECKING:
     from core.configservice.base import ConfigService
     from core.services.coreservices import CoreService
 
-    CoreServices = List[Union[CoreService, Type[CoreService]]]
-    ConfigServiceType = Type[ConfigService]
+    CoreServices = list[Union[CoreService, type[CoreService]]]
+    ConfigServiceType = type[ConfigService]
 
-PRIVATE_DIRS: List[Path] = [Path("/var/run"), Path("/var/log")]
+PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
 
 
 @dataclass
@@ -64,7 +64,7 @@ class Position:
         self.z = z
         return True
 
-    def get(self) -> Tuple[float, float, float]:
+    def get(self) -> tuple[float, float, float]:
         """
         Retrieve x,y,z position.
 
@@ -88,7 +88,7 @@ class Position:
         self.lat = lat
         self.alt = alt
 
-    def get_geo(self) -> Tuple[float, float, float]:
+    def get_geo(self) -> tuple[float, float, float]:
         """
         Retrieve current geo position lon, lat, alt.
 
@@ -113,9 +113,9 @@ class NodeOptions:
 class CoreNodeOptions(NodeOptions):
     model: str = "PC"
     """model is used for providing a default set of services"""
-    services: List[str] = field(default_factory=list)
+    services: list[str] = field(default_factory=list)
     """services to start within node"""
-    config_services: List[str] = field(default_factory=list)
+    config_services: list[str] = field(default_factory=list)
     """config services to start within node"""
     directory: Path = None
     """directory to define node, defaults to path under the session directory"""
@@ -152,7 +152,7 @@ class NodeBase(abc.ABC):
         self.server: "DistributedServer" = server
         self.model: Optional[str] = None
         self.services: CoreServices = []
-        self.ifaces: Dict[int, CoreInterface] = {}
+        self.ifaces: dict[int, CoreInterface] = {}
         self.iface_id: int = 0
         self.position: Position = Position()
         self.up: bool = False
@@ -201,7 +201,7 @@ class NodeBase(abc.ABC):
     def host_cmd(
         self,
         args: str,
-        env: Dict[str, str] = None,
+        env: dict[str, str] = None,
         cwd: Path = None,
         wait: bool = True,
         shell: bool = False,
@@ -246,7 +246,7 @@ class NodeBase(abc.ABC):
         """
         return self.position.set(x=x, y=y, z=z)
 
-    def getposition(self) -> Tuple[float, float, float]:
+    def getposition(self) -> tuple[float, float, float]:
         """
         Return an (x,y,z) tuple representing this object's position.
 
@@ -331,7 +331,7 @@ class NodeBase(abc.ABC):
             raise CoreError(f"node({self.name}) does not have interface({iface_id})")
         return self.ifaces[iface_id]
 
-    def get_ifaces(self, control: bool = True) -> List[CoreInterface]:
+    def get_ifaces(self, control: bool = True) -> list[CoreInterface]:
         """
         Retrieve sorted list of interfaces, optionally do not include control
         interfaces.
@@ -395,7 +395,7 @@ class CoreNodeBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server, options)
-        self.config_services: Dict[str, "ConfigService"] = {}
+        self.config_services: dict[str, "ConfigService"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 
@@ -481,7 +481,7 @@ class CoreNodeBase(NodeBase):
             raise CoreError(f"node({self.name}) already has service({name})")
         self.config_services[name] = service_class(self)
 
-    def set_service_config(self, name: str, data: Dict[str, str]) -> None:
+    def set_service_config(self, name: str, data: dict[str, str]) -> None:
         """
         Sets configuration service custom config data.
 
@@ -505,6 +505,15 @@ class CoreNodeBase(NodeBase):
         for startup_path in startup_paths:
             for service in startup_path:
                 service.start()
+
+    def stop_config_services(self) -> None:
+        """
+        Stop all configuration services.
+
+        :return: nothing
+        """
+        for service in self.config_services.values():
+            service.stop()
 
     def makenodedir(self) -> None:
         """
@@ -574,7 +583,7 @@ class CoreNode(CoreNodeBase):
         self.directory: Optional[Path] = options.directory
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.pid: Optional[int] = None
-        self._mounts: List[Tuple[Path, Path]] = []
+        self._mounts: list[tuple[Path, Path]] = []
         self.node_net_client: LinuxNetClient = self.create_node_net_client(
             self.session.use_ovs()
         )
@@ -928,7 +937,7 @@ class CoreNetworkBase(NodeBase):
         mtu = self.session.options.get_int("mtu")
         self.mtu: int = mtu if mtu > 0 else DEFAULT_MTU
         self.brname: Optional[str] = None
-        self.linked: Dict[CoreInterface, Dict[CoreInterface, bool]] = {}
+        self.linked: dict[CoreInterface, dict[CoreInterface, bool]] = {}
         self.linked_lock: threading.Lock = threading.Lock()
 
     def attach(self, iface: CoreInterface) -> None:

@@ -3,7 +3,6 @@ Provides conversions from x,y,z to lon,lat,alt.
 """
 
 import logging
-from typing import Tuple
 
 import pyproj
 from pyproj import Transformer
@@ -35,9 +34,9 @@ class GeoLocation:
         self.to_geo: Transformer = pyproj.Transformer.from_crs(
             CRS_PROJ, CRS_WGS84, always_xy=True
         )
-        self.refproj: Tuple[float, float, float] = (0.0, 0.0, 0.0)
-        self.refgeo: Tuple[float, float, float] = (0.0, 0.0, 0.0)
-        self.refxyz: Tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refproj: tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refgeo: tuple[float, float, float] = (0.0, 0.0, 0.0)
+        self.refxyz: tuple[float, float, float] = (0.0, 0.0, 0.0)
         self.refscale: float = 1.0
 
     def setrefgeo(self, lat: float, lon: float, alt: float) -> None:
@@ -84,7 +83,7 @@ class GeoLocation:
             return 0.0
         return SCALE_FACTOR * (value / self.refscale)
 
-    def getxyz(self, lat: float, lon: float, alt: float) -> Tuple[float, float, float]:
+    def getxyz(self, lat: float, lon: float, alt: float) -> tuple[float, float, float]:
         """
         Convert provided lon,lat,alt to x,y,z.
 
@@ -104,7 +103,7 @@ class GeoLocation:
         logger.debug("result x,y,z(%s, %s, %s)", x, y, z)
         return x, y, z
 
-    def getgeo(self, x: float, y: float, z: float) -> Tuple[float, float, float]:
+    def getgeo(self, x: float, y: float, z: float) -> tuple[float, float, float]:
         """
         Convert provided x,y,z to lon,lat,alt.
 

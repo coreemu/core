@@ -3,7 +3,7 @@ import tkinter as tk
 from enum import Enum
 from functools import partial
 from tkinter import ttk
-from typing import TYPE_CHECKING, Callable, List, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 from PIL.ImageTk import PhotoImage
 
@@ -90,7 +90,7 @@ class ButtonBar(ttk.Frame):
     def __init__(self, master: tk.Widget, app: "Application") -> None:
         super().__init__(master)
         self.app: "Application" = app
-        self.radio_buttons: List[ttk.Button] = []
+        self.radio_buttons: list[ttk.Button] = []
 
     def create_button(
         self, image_enum: ImageEnum, func: Callable, tooltip: str, radio: bool = False
@@ -303,7 +303,7 @@ class Toolbar(ttk.Frame):
         )
         task.start()
 
-    def start_callback(self, result: bool, exceptions: List[str]) -> None:
+    def start_callback(self, result: bool, exceptions: list[str]) -> None:
         self.set_runtime()
         self.app.core.show_mobility_players()
         if not result and exceptions:

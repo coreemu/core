@@ -13,4 +13,5 @@ sysctl -w net.ipv4.conf.default.rp_filter=0
 sysctl -w net.ipv4.conf.${devname}.forwarding=1
 sysctl -w net.ipv4.conf.${devname}.send_redirects=0
 sysctl -w net.ipv4.conf.${devname}.rp_filter=0
+sysctl -w net.ipv6.conf.${devname}.forwarding=1
 % endfor

@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, List, Optional, Type
+from typing import Optional
 
 import yaml
 
@@ -26,7 +26,7 @@ LOCAL_XMLS_PATH: Path = DATA_PATH.joinpath("xmls").absolute()
 LOCAL_MOBILITY_PATH: Path = DATA_PATH.joinpath("mobility").absolute()
 
 # configuration data
-TERMINALS: Dict[str, str] = {
+TERMINALS: dict[str, str] = {
     "xterm": "xterm -e",
     "aterm": "aterm -e",
     "eterm": "eterm -e",
@@ -36,7 +36,7 @@ TERMINALS: Dict[str, str] = {
     "xfce4-terminal": "xfce4-terminal -x",
     "gnome-terminal": "gnome-terminal --window --",
 }
-EDITORS: List[str] = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
+EDITORS: list[str] = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
 
 
 class IndentDumper(yaml.Dumper):
@@ -46,17 +46,17 @@ class IndentDumper(yaml.Dumper):
 
 class CustomNode(yaml.YAMLObject):
     yaml_tag: str = "!CustomNode"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
-    def __init__(self, name: str, image: str, services: List[str]) -> None:
+    def __init__(self, name: str, image: str, services: list[str]) -> None:
         self.name: str = name
         self.image: str = image
-        self.services: List[str] = services
+        self.services: list[str] = services
 
 
 class CoreServer(yaml.YAMLObject):
     yaml_tag: str = "!CoreServer"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, name: str, address: str) -> None:
         self.name: str = name
@@ -65,7 +65,7 @@ class CoreServer(yaml.YAMLObject):
 
 class Observer(yaml.YAMLObject):
     yaml_tag: str = "!Observer"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, name: str, cmd: str) -> None:
         self.name: str = name
@@ -74,7 +74,7 @@ class Observer(yaml.YAMLObject):
 
 class PreferencesConfig(yaml.YAMLObject):
     yaml_tag: str = "!PreferencesConfig"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -95,7 +95,7 @@ class PreferencesConfig(yaml.YAMLObject):
 
 class LocationConfig(yaml.YAMLObject):
     yaml_tag: str = "!LocationConfig"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
@@ -118,17 +118,17 @@ class LocationConfig(yaml.YAMLObject):
 
 class IpConfigs(yaml.YAMLObject):
     yaml_tag: str = "!IpConfigs"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(self, **kwargs) -> None:
         self.__setstate__(kwargs)
 
     def __setstate__(self, kwargs):
-        self.ip4s: List[str] = kwargs.get(
+        self.ip4s: list[str] = kwargs.get(
             "ip4s", ["10.0.0.0", "192.168.0.0", "172.16.0.0"]
         )
         self.ip4: str = kwargs.get("ip4", self.ip4s[0])
-        self.ip6s: List[str] = kwargs.get("ip6s", ["2001::", "2002::", "a::"])
+        self.ip6s: list[str] = kwargs.get("ip6s", ["2001::", "2002::", "a::"])
         self.ip6: str = kwargs.get("ip6", self.ip6s[0])
         self.enable_ip4: bool = kwargs.get("enable_ip4", True)
         self.enable_ip6: bool = kwargs.get("enable_ip6", True)
@@ -136,16 +136,16 @@ class IpConfigs(yaml.YAMLObject):
 
 class GuiConfig(yaml.YAMLObject):
     yaml_tag: str = "!GuiConfig"
-    yaml_loader: Type[yaml.SafeLoader] = yaml.SafeLoader
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
 
     def __init__(
         self,
         preferences: PreferencesConfig = None,
         location: LocationConfig = None,
-        servers: List[CoreServer] = None,
-        nodes: List[CustomNode] = None,
-        recentfiles: List[str] = None,
-        observers: List[Observer] = None,
+        servers: list[CoreServer] = None,
+        nodes: list[CustomNode] = None,
+        recentfiles: list[str] = None,
+        observers: list[Observer] = None,
         scale: float = 1.0,
         ips: IpConfigs = None,
         mac: str = "00:00:00:aa:00:00",
@@ -158,16 +158,16 @@ class GuiConfig(yaml.YAMLObject):
         self.location: LocationConfig = location
         if servers is None:
             servers = []
-        self.servers: List[CoreServer] = servers
+        self.servers: list[CoreServer] = servers
         if nodes is None:
             nodes = []
-        self.nodes: List[CustomNode] = nodes
+        self.nodes: list[CustomNode] = nodes
         if recentfiles is None:
             recentfiles = []
-        self.recentfiles: List[str] = recentfiles
+        self.recentfiles: list[str] = recentfiles
         if observers is None:
             observers = []
-        self.observers: List[Observer] = observers
+        self.observers: list[Observer] = observers
         self.scale: float = scale
         if ips is None:
             ips = IpConfigs()

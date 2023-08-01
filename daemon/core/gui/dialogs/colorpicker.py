@@ -3,7 +3,7 @@ custom color picker
 """
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from core.gui import validation
 from core.gui.dialogs.dialog import Dialog
@@ -11,6 +11,36 @@ from core.gui.themes import PADX, PADY
 
 if TYPE_CHECKING:
     from core.gui.app import Application
+
+
+def get_rgb(red: int, green: int, blue: int) -> str:
+    """
+    Convert rgb integers to an rgb hex code (#<red><green><blue>).
+
+    :param red: red value
+    :param green: green value
+    :param blue: blue value
+    :return: rgb hex code
+    """
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+
+def get_rgb_values(hex_code: str) -> tuple[int, int, int]:
+    """
+    Convert a valid rgb hex code (#<red><green><blue>) to rgb integers.
+
+    :param hex_code: valid rgb hex code
+    :return: a tuple of red, blue, and green values
+    """
+    if len(hex_code) == 4:
+        red = hex_code[1]
+        green = hex_code[2]
+        blue = hex_code[3]
+    else:
+        red = hex_code[1:3]
+        green = hex_code[3:5]
+        blue = hex_code[5:]
+    return int(red, 16), int(green, 16), int(blue, 16)
 
 
 class ColorPickerDialog(Dialog):
@@ -27,7 +57,7 @@ class ColorPickerDialog(Dialog):
         self.blue_label: Optional[ttk.Label] = None
         self.display: Optional[tk.Frame] = None
         self.color: str = initcolor
-        red, green, blue = self.get_rgb(initcolor)
+        red, green, blue = get_rgb_values(initcolor)
         self.red: tk.IntVar = tk.IntVar(value=red)
         self.blue: tk.IntVar = tk.IntVar(value=blue)
         self.green: tk.IntVar = tk.IntVar(value=green)
@@ -66,7 +96,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.red_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (self.red.get(), 0, 0), width=5
+            frame, background=get_rgb(self.red.get(), 0, 0), width=5
         )
         self.red_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -89,7 +119,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.green_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, self.green.get(), 0), width=5
+            frame, background=get_rgb(0, self.green.get(), 0), width=5
         )
         self.green_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -112,7 +142,7 @@ class ColorPickerDialog(Dialog):
         )
         scale.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         self.blue_label = ttk.Label(
-            frame, background="#%02x%02x%02x" % (0, 0, self.blue.get()), width=5
+            frame, background=get_rgb(0, 0, self.blue.get()), width=5
         )
         self.blue_label.grid(row=0, column=3, sticky=tk.EW)
 
@@ -150,39 +180,27 @@ class ColorPickerDialog(Dialog):
         self.color = self.hex.get()
         self.destroy()
 
-    def get_hex(self) -> str:
-        """
-        convert current RGB values into hex color
-        """
-        red = self.red_entry.get()
-        blue = self.blue_entry.get()
-        green = self.green_entry.get()
-        return "#%02x%02x%02x" % (int(red), int(green), int(blue))
-
     def current_focus(self, focus: str) -> None:
         self.focus = focus
 
     def update_color(self, arg1=None, arg2=None, arg3=None) -> None:
         if self.focus == "rgb":
-            red = self.red_entry.get()
-            blue = self.blue_entry.get()
-            green = self.green_entry.get()
+            red = int(self.red_entry.get() or 0)
+            blue = int(self.blue_entry.get() or 0)
+            green = int(self.green_entry.get() or 0)
             self.set_scale(red, green, blue)
-            if red and blue and green:
-                hex_code = "#%02x%02x%02x" % (int(red), int(green), int(blue))
-                self.hex.set(hex_code)
-                self.display.config(background=hex_code)
-                self.set_label(red, green, blue)
+            hex_code = get_rgb(red, green, blue)
+            self.hex.set(hex_code)
+            self.display.config(background=hex_code)
+            self.set_label(red, green, blue)
         elif self.focus == "hex":
             hex_code = self.hex.get()
             if len(hex_code) == 4 or len(hex_code) == 7:
-                red, green, blue = self.get_rgb(hex_code)
-            else:
-                return
-            self.set_entry(red, green, blue)
-            self.set_scale(red, green, blue)
-            self.display.config(background=hex_code)
-            self.set_label(str(red), str(green), str(blue))
+                red, green, blue = get_rgb_values(hex_code)
+                self.set_entry(red, green, blue)
+                self.set_scale(red, green, blue)
+                self.display.config(background=hex_code)
+                self.set_label(red, green, blue)
 
     def scale_callback(self, var: tk.IntVar, color_var: tk.IntVar) -> None:
         color_var.set(var.get())
@@ -199,21 +217,7 @@ class ColorPickerDialog(Dialog):
         self.green.set(green)
         self.blue.set(blue)
 
-    def set_label(self, red: str, green: str, blue: str) -> None:
-        self.red_label.configure(background="#%02x%02x%02x" % (int(red), 0, 0))
-        self.green_label.configure(background="#%02x%02x%02x" % (0, int(green), 0))
-        self.blue_label.configure(background="#%02x%02x%02x" % (0, 0, int(blue)))
-
-    def get_rgb(self, hex_code: str) -> Tuple[int, int, int]:
-        """
-        convert a valid hex code to RGB values
-        """
-        if len(hex_code) == 4:
-            red = hex_code[1]
-            green = hex_code[2]
-            blue = hex_code[3]
-        else:
-            red = hex_code[1:3]
-            green = hex_code[3:5]
-            blue = hex_code[5:]
-        return int(red, 16), int(green, 16), int(blue, 16)
+    def set_label(self, red: int, green: int, blue: int) -> None:
+        self.red_label.configure(background=get_rgb(red, 0, 0))
+        self.green_label.configure(background=get_rgb(0, green, 0))
+        self.blue_label.configure(background=get_rgb(0, 0, blue))

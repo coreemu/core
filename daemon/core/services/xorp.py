@@ -2,7 +2,7 @@
 xorp.py: defines routing services provided by the XORP routing suite.
 """
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import netaddr
 
@@ -19,15 +19,14 @@ class XorpRtrmgr(CoreService):
 
     name: str = "xorp_rtrmgr"
     group: str = "XORP"
-    executables: Tuple[str, ...] = ("xorp_rtrmgr",)
-    dirs: Tuple[str, ...] = ("/etc/xorp",)
-    configs: Tuple[str, ...] = ("/etc/xorp/config.boot",)
-    startup: Tuple[str, ...] = (
-        "xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid"
-        % (configs[0], name, name),
-    )
-    shutdown: Tuple[str, ...] = ("killall xorp_rtrmgr",)
-    validate: Tuple[str, ...] = ("pidof xorp_rtrmgr",)
+    executables: tuple[str, ...] = ("xorp_rtrmgr",)
+    dirs: tuple[str, ...] = ("/etc/xorp",)
+    configs: tuple[str, ...] = ("/etc/xorp/config.boot",)
+    startup: tuple[
+        str, ...
+    ] = f"xorp_rtrmgr -d -b {configs[0]} -l /var/log/{name}.log -P /var/run/{name}.pid"
+    shutdown: tuple[str, ...] = ("killall xorp_rtrmgr",)
+    validate: tuple[str, ...] = ("pidof xorp_rtrmgr",)
 
     @classmethod
     def generate_config(cls, node: CoreNode, filename: str) -> str:
@@ -38,8 +37,8 @@ class XorpRtrmgr(CoreService):
         """
         cfg = "interfaces {\n"
         for iface in node.get_ifaces():
-            cfg += "    interface %s {\n" % iface.name
-            cfg += "\tvif %s {\n" % iface.name
+            cfg += f"    interface {iface.name} {{\n"
+            cfg += f"\tvif {iface.name} {{\n"
             cfg += "".join(map(cls.addrstr, iface.ips()))
             cfg += cls.lladdrstr(iface)
             cfg += "\t}\n"
@@ -59,8 +58,8 @@ class XorpRtrmgr(CoreService):
         """
         helper for mapping IP addresses to XORP config statements
         """
-        cfg = "\t    address %s {\n" % ip.ip
-        cfg += "\t\tprefix-length: %s\n" % ip.prefixlen
+        cfg = f"\t    address {ip.ip} {{\n"
+        cfg += f"\t\tprefix-length: {ip.prefixlen}\n"
         cfg += "\t    }\n"
         return cfg
 
@@ -69,7 +68,7 @@ class XorpRtrmgr(CoreService):
         """
         helper for adding link-local address entries (required by OSPFv3)
         """
-        cfg = "\t    address %s {\n" % iface.mac.eui64()
+        cfg = f"\t    address {iface.mac.eui64()} {{\n"
         cfg += "\t\tprefix-length: 64\n"
         cfg += "\t    }\n"
         return cfg
@@ -83,8 +82,8 @@ class XorpService(CoreService):
 
     name: Optional[str] = None
     group: str = "XORP"
-    executables: Tuple[str, ...] = ("xorp_rtrmgr",)
-    dependencies: Tuple[str, ...] = ("xorp_rtrmgr",)
+    executables: tuple[str, ...] = ("xorp_rtrmgr",)
+    dependencies: tuple[str, ...] = ("xorp_rtrmgr",)
     meta: str = (
         "The config file for this service can be found in the xorp_rtrmgr service."
     )
@@ -95,7 +94,7 @@ class XorpService(CoreService):
         Helper to add a forwarding engine entry to the config file.
         """
         cfg = "fea {\n"
-        cfg += "    %s {\n" % forwarding
+        cfg += f"    {forwarding} {{\n"
         cfg += "\tdisable:false\n"
         cfg += "    }\n"
         cfg += "}\n"
@@ -111,10 +110,10 @@ class XorpService(CoreService):
             names.append(iface.name)
         names.append("register_vif")
         cfg = "plumbing {\n"
-        cfg += "    %s {\n" % forwarding
+        cfg += f"    {forwarding} {{\n"
         for name in names:
-            cfg += "\tinterface %s {\n" % name
-            cfg += "\t    vif %s {\n" % name
+            cfg += f"\tinterface {name} {{\n"
+            cfg += f"\t    vif {name} {{\n"
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
@@ -173,13 +172,13 @@ class XorpOspfv2(XorpService):
         rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    ospf4 {\n"
-        cfg += "\trouter-id: %s\n" % rtrid
+        cfg += f"\trouter-id: {rtrid}\n"
         cfg += "\tarea 0.0.0.0 {\n"
         for iface in node.get_ifaces(control=False):
-            cfg += "\t    interface %s {\n" % iface.name
-            cfg += "\t\tvif %s {\n" % iface.name
+            cfg += f"\t    interface {iface.name} {{\n"
+            cfg += f"\t\tvif {iface.name} {{\n"
             for ip4 in iface.ip4s:
-                cfg += "\t\t    address %s {\n" % ip4.ip
+                cfg += f"\t\t    address {ip4.ip} {{\n"
                 cfg += "\t\t    }\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -204,11 +203,11 @@ class XorpOspfv3(XorpService):
         rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    ospf6 0 { /* Instance ID 0 */\n"
-        cfg += "\trouter-id: %s\n" % rtrid
+        cfg += f"\trouter-id: {rtrid}\n"
         cfg += "\tarea 0.0.0.0 {\n"
         for iface in node.get_ifaces(control=False):
-            cfg += "\t    interface %s {\n" % iface.name
-            cfg += "\t\tvif %s {\n" % iface.name
+            cfg += f"\t    interface {iface.name} {{\n"
+            cfg += f"\t\tvif {iface.name} {{\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -234,7 +233,7 @@ class XorpBgp(XorpService):
         rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    bgp {\n"
-        cfg += "\tbgp-id: %s\n" % rtrid
+        cfg += f"\tbgp-id: {rtrid}\n"
         cfg += "\tlocal-as: 65001 /* change this */\n"
         cfg += '\texport: "export-connected"\n'
         cfg += "\tpeer 10.0.1.1 { /* change this */\n"
@@ -262,10 +261,10 @@ class XorpRip(XorpService):
         cfg += "    rip {\n"
         cfg += '\texport: "export-connected"\n'
         for iface in node.get_ifaces(control=False):
-            cfg += "\tinterface %s {\n" % iface.name
-            cfg += "\t    vif %s {\n" % iface.name
+            cfg += f"\tinterface {iface.name} {{\n"
+            cfg += f"\t    vif {iface.name} {{\n"
             for ip4 in iface.ip4s:
-                cfg += "\t\taddress %s {\n" % ip4.ip
+                cfg += f"\t\taddress {ip4.ip} {{\n"
                 cfg += "\t\t    disable: false\n"
                 cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -290,9 +289,9 @@ class XorpRipng(XorpService):
         cfg += "    ripng {\n"
         cfg += '\texport: "export-connected"\n'
         for iface in node.get_ifaces(control=False):
-            cfg += "\tinterface %s {\n" % iface.name
-            cfg += "\t    vif %s {\n" % iface.name
-            cfg += "\t\taddress %s {\n" % iface.mac.eui64()
+            cfg += f"\tinterface {iface.name} {{\n"
+            cfg += f"\t    vif {iface.name} {{\n"
+            cfg += f"\t\taddress {iface.mac.eui64()} {{\n"
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
@@ -317,8 +316,8 @@ class XorpPimSm4(XorpService):
         names = []
         for iface in node.get_ifaces(control=False):
             names.append(iface.name)
-            cfg += "\tinterface %s {\n" % iface.name
-            cfg += "\t    vif %s {\n" % iface.name
+            cfg += f"\tinterface {iface.name} {{\n"
+            cfg += f"\t    vif {iface.name} {{\n"
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
@@ -329,20 +328,20 @@ class XorpPimSm4(XorpService):
 
         names.append("register_vif")
         for name in names:
-            cfg += "\tinterface %s {\n" % name
-            cfg += "\t    vif %s {\n" % name
+            cfg += f"\tinterface {name} {{\n"
+            cfg += f"\t    vif {name} {{\n"
             cfg += "\t\tdr-priority: 1\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
         cfg += "\tbootstrap {\n"
         cfg += "\t    cand-bsr {\n"
         cfg += "\t\tscope-zone 224.0.0.0/4 {\n"
-        cfg += '\t\t    cand-bsr-by-vif-name: "%s"\n' % names[0]
+        cfg += f'\t\t    cand-bsr-by-vif-name: "{names[0]}"\n'
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t    cand-rp {\n"
         cfg += "\t\tgroup-prefix 224.0.0.0/4 {\n"
-        cfg += '\t\t    cand-rp-by-vif-name: "%s"\n' % names[0]
+        cfg += f'\t\t    cand-rp-by-vif-name: "{names[0]}"\n'
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -371,8 +370,8 @@ class XorpPimSm6(XorpService):
         names = []
         for iface in node.get_ifaces(control=False):
             names.append(iface.name)
-            cfg += "\tinterface %s {\n" % iface.name
-            cfg += "\t    vif %s {\n" % iface.name
+            cfg += f"\tinterface {iface.name} {{\n"
+            cfg += f"\t    vif {iface.name} {{\n"
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
@@ -383,20 +382,20 @@ class XorpPimSm6(XorpService):
 
         names.append("register_vif")
         for name in names:
-            cfg += "\tinterface %s {\n" % name
-            cfg += "\t    vif %s {\n" % name
+            cfg += f"\tinterface {name} {{\n"
+            cfg += f"\t    vif {name} {{\n"
             cfg += "\t\tdr-priority: 1\n"
             cfg += "\t    }\n"
             cfg += "\t}\n"
         cfg += "\tbootstrap {\n"
         cfg += "\t    cand-bsr {\n"
         cfg += "\t\tscope-zone ff00::/8 {\n"
-        cfg += '\t\t    cand-bsr-by-vif-name: "%s"\n' % names[0]
+        cfg += f'\t\t    cand-bsr-by-vif-name: "{names[0]}"\n'
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t    cand-rp {\n"
         cfg += "\t\tgroup-prefix ff00::/8 {\n"
-        cfg += '\t\t    cand-rp-by-vif-name: "%s"\n' % names[0]
+        cfg += f'\t\t    cand-rp-by-vif-name: "{names[0]}"\n'
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -423,12 +422,12 @@ class XorpOlsr(XorpService):
         rtrid = cls.router_id(node)
         cfg += "\nprotocols {\n"
         cfg += "    olsr4 {\n"
-        cfg += "\tmain-address: %s\n" % rtrid
+        cfg += f"\tmain-address: {rtrid}\n"
         for iface in node.get_ifaces(control=False):
-            cfg += "\tinterface %s {\n" % iface.name
-            cfg += "\t    vif %s {\n" % iface.name
+            cfg += f"\tinterface {iface.name} {{\n"
+            cfg += f"\t    vif {iface.name} {{\n"
             for ip4 in iface.ip4s:
-                cfg += "\t\taddress %s {\n" % ip4.ip
+                cfg += f"\t\taddress {ip4.ip} {{\n"
                 cfg += "\t\t}\n"
             cfg += "\t    }\n"
         cfg += "\t}\n"

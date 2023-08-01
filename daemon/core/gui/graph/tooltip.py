@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import TYPE_CHECKING, Optional
 
 from core.gui.themes import Styles
 
@@ -27,9 +27,9 @@ class CanvasTooltip:
         self,
         canvas: "CanvasGraph",
         *,
-        pad: Tuple[int, int, int, int] = (5, 3, 5, 3),
+        pad: tuple[int, int, int, int] = (5, 3, 5, 3),
         waittime: int = 400,
-        wraplength: int = 600
+        wraplength: int = 600,
     ) -> None:
         # in miliseconds, originally 500
         self.waittime: int = waittime
@@ -37,7 +37,7 @@ class CanvasTooltip:
         self.wraplength: int = wraplength
         self.canvas: "CanvasGraph" = canvas
         self.text: tk.StringVar = tk.StringVar()
-        self.pad: Tuple[int, int, int, int] = pad
+        self.pad: tuple[int, int, int, int] = pad
         self.id: Optional[str] = None
         self.tw: Optional[tk.Toplevel] = None
 
@@ -63,8 +63,8 @@ class CanvasTooltip:
             canvas: "CanvasGraph",
             label: ttk.Label,
             *,
-            tip_delta: Tuple[int, int] = (10, 5),
-            pad: Tuple[int, int, int, int] = (5, 3, 5, 3)
+            tip_delta: tuple[int, int] = (10, 5),
+            pad: tuple[int, int, int, int] = (5, 3, 5, 3),
         ):
             c = canvas
             s_width, s_height = c.winfo_screenwidth(), c.winfo_screenheight()
@@ -112,7 +112,7 @@ class CanvasTooltip:
         )
         label.grid(padx=(pad[0], pad[2]), pady=(pad[1], pad[3]), sticky=tk.NSEW)
         x, y = tip_pos_calculator(canvas, label, pad=pad)
-        self.tw.wm_geometry("+%d+%d" % (x, y))
+        self.tw.wm_geometry(f"+{x:d}+{y:d}")
 
     def hide(self) -> None:
         if self.tw:

@@ -4,10 +4,11 @@ gRpc client for interfacing with CORE.
 
 import logging
 import threading
+from collections.abc import Callable, Generator, Iterable
 from contextlib import contextmanager
 from pathlib import Path
 from queue import Queue
-from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple
+from typing import Any, Optional
 
 import grpc
 
@@ -235,7 +236,7 @@ class CoreGrpcClient:
 
     def start_session(
         self, session: wrappers.Session, definition: bool = False
-    ) -> Tuple[bool, List[str]]:
+    ) -> tuple[bool, list[str]]:
         """
         Start a session.
 
@@ -285,7 +286,7 @@ class CoreGrpcClient:
         response = self.stub.DeleteSession(request)
         return response.result
 
-    def get_sessions(self) -> List[wrappers.SessionSummary]:
+    def get_sessions(self) -> list[wrappers.SessionSummary]:
         """
         Retrieves all currently known sessions.
 
@@ -354,7 +355,7 @@ class CoreGrpcClient:
         self,
         session_id: int,
         handler: Callable[[wrappers.Event], None],
-        events: List[wrappers.EventType] = None,
+        events: list[wrappers.EventType] = None,
     ) -> grpc.Future:
         """
         Listen for session events.
@@ -428,7 +429,7 @@ class CoreGrpcClient:
 
     def get_node(
         self, session_id: int, node_id: int
-    ) -> Tuple[wrappers.Node, List[wrappers.Interface], List[wrappers.Link]]:
+    ) -> tuple[wrappers.Node, list[wrappers.Interface], list[wrappers.Link]]:
         """
         Get node details.
 
@@ -536,7 +537,7 @@ class CoreGrpcClient:
         command: str,
         wait: bool = True,
         shell: bool = False,
-    ) -> Tuple[int, str]:
+    ) -> tuple[int, str]:
         """
         Send command to a node and get the output.
 
@@ -575,7 +576,7 @@ class CoreGrpcClient:
 
     def add_link(
         self, session_id: int, link: wrappers.Link, source: str = None
-    ) -> Tuple[bool, wrappers.Interface, wrappers.Interface]:
+    ) -> tuple[bool, wrappers.Interface, wrappers.Interface]:
         """
         Add a link between nodes.
 
@@ -646,7 +647,7 @@ class CoreGrpcClient:
 
     def get_mobility_config(
         self, session_id: int, node_id: int
-    ) -> Dict[str, wrappers.ConfigOption]:
+    ) -> dict[str, wrappers.ConfigOption]:
         """
         Get mobility configuration for a node.
 
@@ -660,7 +661,7 @@ class CoreGrpcClient:
         return wrappers.ConfigOption.from_dict(response.config)
 
     def set_mobility_config(
-        self, session_id: int, node_id: int, config: Dict[str, str]
+        self, session_id: int, node_id: int, config: dict[str, str]
     ) -> bool:
         """
         Set mobility configuration for a node.
@@ -706,7 +707,7 @@ class CoreGrpcClient:
         response = self.stub.GetConfig(request)
         return wrappers.CoreConfig.from_proto(response)
 
-    def get_service_defaults(self, session_id: int) -> List[wrappers.ServiceDefault]:
+    def get_service_defaults(self, session_id: int) -> list[wrappers.ServiceDefault]:
         """
         Get default services for different default node models.
 
@@ -723,7 +724,7 @@ class CoreGrpcClient:
         return defaults
 
     def set_service_defaults(
-        self, session_id: int, service_defaults: Dict[str, List[str]]
+        self, session_id: int, service_defaults: dict[str, list[str]]
     ) -> bool:
         """
         Set default services for node models.
@@ -829,7 +830,7 @@ class CoreGrpcClient:
 
     def get_wlan_config(
         self, session_id: int, node_id: int
-    ) -> Dict[str, wrappers.ConfigOption]:
+    ) -> dict[str, wrappers.ConfigOption]:
         """
         Get wlan configuration for a node.
 
@@ -843,7 +844,7 @@ class CoreGrpcClient:
         return wrappers.ConfigOption.from_dict(response.config)
 
     def set_wlan_config(
-        self, session_id: int, node_id: int, config: Dict[str, str]
+        self, session_id: int, node_id: int, config: dict[str, str]
     ) -> bool:
         """
         Set wlan configuration for a node.
@@ -861,7 +862,7 @@ class CoreGrpcClient:
 
     def get_emane_model_config(
         self, session_id: int, node_id: int, model: str, iface_id: int = -1
-    ) -> Dict[str, wrappers.ConfigOption]:
+    ) -> dict[str, wrappers.ConfigOption]:
         """
         Get emane model configuration for a node or a node's interface.
 
@@ -909,7 +910,7 @@ class CoreGrpcClient:
         with open(file_path, "w") as xml_file:
             xml_file.write(response.data)
 
-    def open_xml(self, file_path: Path, start: bool = False) -> Tuple[bool, int]:
+    def open_xml(self, file_path: Path, start: bool = False) -> tuple[bool, int]:
         """
         Load a local scenario XML file to open as a new session.
 
@@ -940,7 +941,7 @@ class CoreGrpcClient:
         response = self.stub.EmaneLink(request)
         return response.result
 
-    def get_ifaces(self) -> List[str]:
+    def get_ifaces(self) -> list[str]:
         """
         Retrieves a list of interfaces available on the host machine that are not
         a part of a CORE session.
@@ -951,20 +952,26 @@ class CoreGrpcClient:
         response = self.stub.GetInterfaces(request)
         return list(response.ifaces)
 
-    def get_config_service_defaults(self, name: str) -> wrappers.ConfigServiceDefaults:
+    def get_config_service_defaults(
+        self, session_id: int, node_id: int, name: str
+    ) -> wrappers.ConfigServiceDefaults:
         """
         Retrieves config service default values.
 
+        :param session_id: session id to get node from
+        :param node_id: node id to get service data from
         :param name: name of service to get defaults for
         :return: config service defaults
         """
-        request = GetConfigServiceDefaultsRequest(name=name)
+        request = GetConfigServiceDefaultsRequest(
+            name=name, session_id=session_id, node_id=node_id
+        )
         response = self.stub.GetConfigServiceDefaults(request)
         return wrappers.ConfigServiceDefaults.from_proto(response)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Retrieves information for a specific config service on a node.
 
@@ -982,7 +989,7 @@ class CoreGrpcClient:
 
     def get_config_service_rendered(
         self, session_id: int, node_id: int, name: str
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Retrieve the rendered config service files for a node.
 
@@ -1129,7 +1136,7 @@ class CoreGrpcClient:
 
     def get_wireless_config(
         self, session_id: int, node_id: int
-    ) -> Dict[str, wrappers.ConfigOption]:
+    ) -> dict[str, wrappers.ConfigOption]:
         request = GetWirelessConfigRequest(session_id=session_id, node_id=node_id)
         response = self.stub.GetWirelessConfig(request)
         return wrappers.ConfigOption.from_dict(response.config)
@@ -1156,7 +1163,7 @@ class CoreGrpcClient:
             self.channel = None
 
     @contextmanager
-    def context_connect(self) -> Generator:
+    def context_connect(self) -> Generator[None, None, None]:
         """
         Makes a context manager based connection to the server, will close after
         context ends.

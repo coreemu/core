@@ -4,8 +4,9 @@ for a session.
 """
 
 import logging
+from collections.abc import ValuesView
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, ValuesView
+from typing import Optional
 
 from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import LinkTypes, MessageFlags
@@ -15,7 +16,7 @@ from core.nodes.interface import CoreInterface
 from core.nodes.network import PtpNet
 
 logger = logging.getLogger(__name__)
-LinkKeyType = Tuple[int, Optional[int], int, Optional[int]]
+LinkKeyType = tuple[int, Optional[int], int, Optional[int]]
 
 
 def create_key(
@@ -145,8 +146,8 @@ class LinkManager:
         """
         Create a LinkManager instance.
         """
-        self._links: Dict[LinkKeyType, CoreLink] = {}
-        self._node_links: Dict[int, Dict[LinkKeyType, CoreLink]] = {}
+        self._links: dict[LinkKeyType, CoreLink] = {}
+        self._node_links: dict[int, dict[LinkKeyType, CoreLink]] = {}
 
     def add(self, core_link: CoreLink) -> None:
         """

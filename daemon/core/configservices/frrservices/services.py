@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, List
+from typing import Any
 
 from core.config import Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
@@ -82,29 +82,30 @@ def rj45_check(iface: CoreInterface) -> bool:
 class FRRZebra(ConfigService):
     name: str = "FRRzebra"
     group: str = GROUP
-    directories: List[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
-    files: List[str] = [
+    directories: list[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
+    files: list[str] = [
         "/usr/local/etc/frr/frr.conf",
         "frrboot.sh",
         "/usr/local/etc/frr/vtysh.conf",
         "/usr/local/etc/frr/daemons",
     ]
-    executables: List[str] = ["zebra"]
-    dependencies: List[str] = []
-    startup: List[str] = ["bash frrboot.sh zebra"]
-    validate: List[str] = ["pidof zebra"]
-    shutdown: List[str] = ["killall zebra"]
+    executables: list[str] = ["zebra"]
+    dependencies: list[str] = []
+    startup: list[str] = ["bash frrboot.sh zebra"]
+    validate: list[str] = ["pidof zebra"]
+    shutdown: list[str] = ["killall zebra"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
-    default_configs: List[Configuration] = []
-    modes: Dict[str, Dict[str, str]] = {}
+    default_configs: list[Configuration] = []
+    modes: dict[str, dict[str, str]] = {}
 
-    def data(self) -> Dict[str, Any]:
+    def data(self) -> dict[str, Any]:
         frr_conf = self.files[0]
         frr_bin_search = self.node.session.options.get(
             "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
         frr_sbin_search = self.node.session.options.get(
-            "frr_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/frr"
+            "frr_sbin_search",
+            default="/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr",
         ).strip('"')
 
         services = []
@@ -145,16 +146,16 @@ class FRRZebra(ConfigService):
 
 class FrrService(abc.ABC):
     group: str = GROUP
-    directories: List[str] = []
-    files: List[str] = []
-    executables: List[str] = []
-    dependencies: List[str] = ["FRRzebra"]
-    startup: List[str] = []
-    validate: List[str] = []
-    shutdown: List[str] = []
+    directories: list[str] = []
+    files: list[str] = []
+    executables: list[str] = []
+    dependencies: list[str] = ["FRRzebra"]
+    startup: list[str] = []
+    validate: list[str] = []
+    shutdown: list[str] = []
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
-    default_configs: List[Configuration] = []
-    modes: Dict[str, Dict[str, str]] = {}
+    default_configs: list[Configuration] = []
+    modes: dict[str, dict[str, str]] = {}
     ipv4_routing: bool = False
     ipv6_routing: bool = False
 
@@ -175,8 +176,8 @@ class FRROspfv2(FrrService, ConfigService):
     """
 
     name: str = "FRROSPFv2"
-    shutdown: List[str] = ["killall ospfd"]
-    validate: List[str] = ["pidof ospfd"]
+    shutdown: list[str] = ["killall ospfd"]
+    validate: list[str] = ["pidof ospfd"]
     ipv4_routing: bool = True
 
     def frr_config(self) -> str:
@@ -227,8 +228,8 @@ class FRROspfv3(FrrService, ConfigService):
     """
 
     name: str = "FRROSPFv3"
-    shutdown: List[str] = ["killall ospf6d"]
-    validate: List[str] = ["pidof ospf6d"]
+    shutdown: list[str] = ["killall ospf6d"]
+    validate: list[str] = ["pidof ospf6d"]
     ipv4_routing: bool = True
     ipv6_routing: bool = True
 
@@ -264,8 +265,8 @@ class FRRBgp(FrrService, ConfigService):
     """
 
     name: str = "FRRBGP"
-    shutdown: List[str] = ["killall bgpd"]
-    validate: List[str] = ["pidof bgpd"]
+    shutdown: list[str] = ["killall bgpd"]
+    validate: list[str] = ["pidof bgpd"]
     custom_needed: bool = True
     ipv4_routing: bool = True
     ipv6_routing: bool = True
@@ -294,8 +295,8 @@ class FRRRip(FrrService, ConfigService):
     """
 
     name: str = "FRRRIP"
-    shutdown: List[str] = ["killall ripd"]
-    validate: List[str] = ["pidof ripd"]
+    shutdown: list[str] = ["killall ripd"]
+    validate: list[str] = ["pidof ripd"]
     ipv4_routing: bool = True
 
     def frr_config(self) -> str:
@@ -319,8 +320,8 @@ class FRRRipng(FrrService, ConfigService):
     """
 
     name: str = "FRRRIPNG"
-    shutdown: List[str] = ["killall ripngd"]
-    validate: List[str] = ["pidof ripngd"]
+    shutdown: list[str] = ["killall ripngd"]
+    validate: list[str] = ["pidof ripngd"]
     ipv6_routing: bool = True
 
     def frr_config(self) -> str:
@@ -345,8 +346,8 @@ class FRRBabel(FrrService, ConfigService):
     """
 
     name: str = "FRRBabel"
-    shutdown: List[str] = ["killall babeld"]
-    validate: List[str] = ["pidof babeld"]
+    shutdown: list[str] = ["killall babeld"]
+    validate: list[str] = ["pidof babeld"]
     ipv6_routing: bool = True
 
     def frr_config(self) -> str:
@@ -385,8 +386,8 @@ class FRRpimd(FrrService, ConfigService):
     """
 
     name: str = "FRRpimd"
-    shutdown: List[str] = ["killall pimd"]
-    validate: List[str] = ["pidof pimd"]
+    shutdown: list[str] = ["killall pimd"]
+    validate: list[str] = ["pidof pimd"]
     ipv4_routing: bool = True
 
     def frr_config(self) -> str:
