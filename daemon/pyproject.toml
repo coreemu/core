@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "core"
-version = "9.0.2"
+version = "9.0.3"
 description = "CORE Common Open Research Emulator"
 authors = ["Boeing Research and Technology"]
 license = "BSD-2-Clause"
