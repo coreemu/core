@@ -18,7 +18,7 @@ This section covers using the saved **scenario.xml** file to get and up and runn
 
 * Configure the Windows host VM to have a bridged network adapter
    <p align="center">
-     <img src="/static/tutorial5/VM-network-settings.png" width="80%">
+     <img src="/core/static/tutorial5/VM-network-settings.png" width="80%">
    </p>
 * Make sure the **core-daemon** is running in a terminal
    ```shell
@@ -30,15 +30,15 @@ This section covers using the saved **scenario.xml** file to get and up and runn
    ```
 * Open the **scenario.xml** with the unassigned RJ45 node
    <p align="center">
-     <img src="/static/tutorial5/rj45-unassigned.png" width="80%">
+     <img src="/core/static/tutorial5/rj45-unassigned.png" width="80%">
    </p>
 * Configure the RJ45 node name to use the bridged interface
    <p align="center">
-     <img src="/static/tutorial5/configure-the-rj45.png" width="80%">
+     <img src="/core/static/tutorial5/configure-the-rj45.png" width="80%">
    </p>
 * After configuring the RJ45, run the scenario:
    <p align="center">
-     <img src="/static/tutorial5/rj45-connector.png" width="80%">
+     <img src="/core/static/tutorial5/rj45-connector.png" width="80%">
    </p>
 * Double click node **n1** to open a terminal and add a route to the Windows host
    ```shell
@@ -97,7 +97,7 @@ This section covers leveraging the gRPC script to get up and running.
 
 * Configure the Windows host VM to have a bridged network adapter
    <p align="center">
-     <img src="/static/tutorial5/VM-network-settings.png" width="80%">
+     <img src="/core/static/tutorial5/VM-network-settings.png" width="80%">
    </p>
 * Make sure the **core-daemon** is running in a terminal
    ```shell
@@ -114,7 +114,7 @@ This section covers leveraging the gRPC script to get up and running.
    ```
 * In the **core-gui** connect to the running session that was created
    <p align="center">
-     <img src="/static/tutorial5/rj45-connector.png" width="80%">
+     <img src="/core/static/tutorial5/rj45-connector.png" width="80%">
    </p>
 * Double click node **n1** to open a terminal and add a route to the Windows host
    ```shell

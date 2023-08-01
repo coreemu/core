@@ -18,5 +18,5 @@ the remaining steps of a given section.
     ```
 4. You will be presented with sessions to join, select the one created by the script
    <p align="center">
-     <img src="/static/tutorial-common/running-join.png" width="75%">
+     <img src="/core/static/tutorial-common/running-join.png" width="75%">
    </p>

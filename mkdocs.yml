@@ -1,4 +1,7 @@
 site_name: CORE Documentation
+site_url: https://coreemu.github.io/core
+repo_name: coreemu/core
+repo_url: https://github.com/coreemu/core
 use_directory_urls: false
 theme:
   name: material

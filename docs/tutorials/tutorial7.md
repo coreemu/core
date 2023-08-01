@@ -6,7 +6,7 @@ This tutorial will cover basic usage and some concepts one may want to
 use or leverage when working with and creating EMANE based networks.
 
 <p align="center">
-  <img src="/static/tutorial7/scenario.png" width="75%">
+  <img src="/core/static/tutorial7/scenario.png" width="75%">
 </p>
 
 For more detailed information on EMANE see the following:
@@ -52,11 +52,11 @@ between nodes in CORE.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="/static/tutorial-common/running-open.png" width="75%">
+     <img src="/core/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="/static/tutorial7/scenario.png" width="75%">
+     <img src="/core/static/tutorial7/scenario.png" width="75%">
    </p>
 * Open a terminal on **n2** by double clicking it in the GUI
 * Run the following in **n2** terminal
@@ -90,11 +90,11 @@ traffic being sent/received among many other uses.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="/static/tutorial-common/running-open.png" width="75%">
+     <img src="/core/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="/static/tutorial7/scenario.png" width="75%">
+     <img src="/core/static/tutorial7/scenario.png" width="75%">
    </p>
 * Open a terminal on **n2** by double clicking it in the GUI
 * Open a terminal on **n3** by double clicking it in the GUI
@@ -129,11 +129,11 @@ within the nodes of our scenario.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario.xml**
    <p align="center">
-     <img src="/static/tutorial-common/running-open.png" width="75%">
+     <img src="/core/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="/static/tutorial7/scenario.png" width="75%">
+     <img src="/core/static/tutorial7/scenario.png" width="75%">
    </p>
 * Open a terminal on **n2** by double clicking it in the GUI
 * Run the following in **n2** terminal
@@ -179,11 +179,11 @@ using `tail -f` to observe the output of running software.
     ```
 * In the GUI menu bar select **File->Open...**, then navigate to and select **scenario_service.xml**
    <p align="center">
-     <img src="/static/tutorial-common/running-open.png" width="75%">
+     <img src="/core/static/tutorial-common/running-open.png" width="75%">
    </p>
 * You can now click on the **Start Session** button to run the scenario
    <p align="center">
-     <img src="/static/tutorial7/scenario.png" width="75%">
+     <img src="/core/static/tutorial7/scenario.png" width="75%">
    </p>
 * Open a terminal on **n2** by double clicking it in the GUI
 * Run the following in **n2** terminal

@@ -71,7 +71,7 @@ file, leveraging an NS2 file for mobility.
   known and when the routes are discovered, ping will work
 
 <p align="center">
-  <img src="/static/tutorial3/motion_from_ns2_file.png" width="80%" >
+  <img src="/core/static/tutorial3/motion_from_ns2_file.png" width="80%" >
 </p>
 
 ## Running with the gRPC Script
@@ -94,11 +94,11 @@ This section covers using a gRPC script to create and provide scenario movement.
 * You will now have joined the already running scenario
 * In the terminal running the **scenario.py**, hit a key to start motion
    <p align="center">
-     <img src="/static/tutorial3/mobility-script.png" width="80%" >
+     <img src="/core/static/tutorial3/mobility-script.png" width="80%" >
    </p>
 * Observe the link between **n3** and **n4** is shown and then as motion continues the link breaks
    <p align="center">
-     <img src="/static/tutorial3/motion_continued_breaks_link.png" width="80%" >
+     <img src="/core/static/tutorial3/motion_continued_breaks_link.png" width="80%" >
    </p>
 
 ## Running the Chat App Software
@@ -151,5 +151,5 @@ API.
 * Observe that node 2 moves and continues to move
 
 <p align="center">
-  <img src="/static/tutorial3/move-n2.png" width="80%" >
+  <img src="/core/static/tutorial3/move-n2.png" width="80%" >
 </p>
