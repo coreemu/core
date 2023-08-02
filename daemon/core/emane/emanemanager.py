@@ -612,10 +612,10 @@ class EmaneManager:
         emanecmd = f"emane -d -l {loglevel}"
         if realtime:
             emanecmd += " -r"
+        # start emane
         if isinstance(node, CoreNode):
-            # start emane
-            log_file = node.directory / f"{iface.name}-emane.log"
-            platform_xml = node.directory / emanexml.platform_file_name(iface)
+            log_file = f"{iface.name}-emane.log"
+            platform_xml = emanexml.platform_file_name(iface)
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             node.cmd(args)
         else:
