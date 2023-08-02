@@ -731,6 +731,7 @@ class CanvasGraph(tk.Canvas):
             node.core_node.config_service_configs = deepcopy(
                 core_node.config_service_configs
             )
+            node.core_node.image = core_node.image
 
             copy_map[canvas_node.id] = node.id
             self.nodes[node.id] = node
