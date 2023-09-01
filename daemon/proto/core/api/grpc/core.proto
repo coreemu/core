@@ -121,6 +121,8 @@ service CoreApi {
     }
     rpc EmaneLink (emane.EmaneLinkRequest) returns (emane.EmaneLinkResponse) {
     }
+    rpc EmaneEvents (stream emane.EmaneEventsRequest) returns (emane.EmaneEventsResponse) {
+    }
 
     // xml rpc
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {

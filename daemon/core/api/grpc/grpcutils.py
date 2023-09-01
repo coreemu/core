@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import grpc
+from google.protobuf.message import Message
 from grpc import ServicerContext
 
 from core import utils
@@ -906,3 +907,7 @@ def configure_node(
                 service.set_config(service_config.config)
             for name, template in service_config.templates.items():
                 service.set_template(name, template)
+
+
+def get_optional(message: Message, name: str) -> Optional[Any]:
+    return getattr(message, name) if message.HasField(name) else None

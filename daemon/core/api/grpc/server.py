@@ -43,6 +43,8 @@ from core.api.grpc.core_pb2 import (
     WirelessLinkedResponse,
 )
 from core.api.grpc.emane_pb2 import (
+    EmaneEventsRequest,
+    EmaneEventsResponse,
     EmaneLinkRequest,
     EmaneLinkResponse,
     EmanePathlossesRequest,
@@ -1375,7 +1377,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             nem1 = grpcutils.get_nem_id(session, node1, request.iface1_id, context)
             node2 = self.get_node(session, request.node2_id, context, CoreNode)
             nem2 = grpcutils.get_nem_id(session, node2, request.iface2_id, context)
-            session.emane.publish_pathloss(nem1, nem2, request.rx1, request.rx2)
+            session.emane.event_manager.publish_pathloss(
+                nem1, nem2, forward1=request.rx1, forward2=request.rx2
+            )
         return EmanePathlossesResponse()
 
     def Linked(
@@ -1434,3 +1438,114 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             )
             config_options[config.id] = config_option
         return GetWirelessConfigResponse(config=config_options)
+
+    def EmaneEvents(
+        self,
+        request_iterator: Iterable[EmaneEventsRequest],
+        context: ServicerContext,
+    ) -> EmaneEventsResponse:
+        for request in request_iterator:
+            session = self.get_session(request.session_id, context)
+            if request.HasField("location"):
+                location = request.location
+                if location.HasField("nem_id"):
+                    nem_id = location.nem_id
+                else:
+                    node = self.get_node(session, location.node_id, context, CoreNode)
+                    nem_id = grpcutils.get_nem_id(
+                        session, node, location.iface_id, context
+                    )
+                session.emane.event_manager.publish_location(
+                    nem_id,
+                    location.lon,
+                    location.lat,
+                    location.alt,
+                    grpcutils.get_optional(location, "azimuth"),
+                    grpcutils.get_optional(location, "elevation"),
+                    grpcutils.get_optional(location, "magnitude"),
+                    grpcutils.get_optional(location, "roll"),
+                    grpcutils.get_optional(location, "pitch"),
+                    grpcutils.get_optional(location, "yaw"),
+                )
+            elif request.HasField("comm_effect"):
+                comm_effect = request.comm_effect
+                if comm_effect.HasField("nem1_id"):
+                    nem1_id = comm_effect.nem1_id
+                else:
+                    node1 = self.get_node(
+                        session, comm_effect.node1_id, context, CoreNode
+                    )
+                    nem1_id = grpcutils.get_nem_id(
+                        session, node1, comm_effect.iface1_id, context
+                    )
+                if comm_effect.HasField("nem2_id"):
+                    nem2_id = comm_effect.nem2_id
+                else:
+                    node2 = self.get_node(
+                        session, comm_effect.node2_id, context, CoreNode
+                    )
+                    nem2_id = grpcutils.get_nem_id(
+                        session, node2, comm_effect.iface2_id, context
+                    )
+                session.emane.event_manager.publish_comm_effect(
+                    nem1_id,
+                    nem2_id,
+                    comm_effect.delay,
+                    comm_effect.jitter,
+                    comm_effect.loss,
+                    comm_effect.dup,
+                    comm_effect.unicast,
+                    comm_effect.broadcast,
+                )
+            elif request.HasField("pathloss"):
+                pathloss = request.pathloss
+                if pathloss.HasField("nem1_id"):
+                    nem1_id = pathloss.nem1_id
+                else:
+                    node1 = self.get_node(session, pathloss.node1_id, context, CoreNode)
+                    nem1_id = grpcutils.get_nem_id(
+                        session, node1, pathloss.iface1_id, context
+                    )
+                if pathloss.HasField("nem2_id"):
+                    nem2_id = pathloss.nem2_id
+                else:
+                    node2 = self.get_node(session, pathloss.node2_id, context, CoreNode)
+                    nem2_id = grpcutils.get_nem_id(
+                        session, node2, pathloss.iface2_id, context
+                    )
+                session.emane.event_manager.publish_pathloss(
+                    nem1_id,
+                    nem2_id,
+                    grpcutils.get_optional(pathloss, "forward1"),
+                    grpcutils.get_optional(pathloss, "reverse1"),
+                    grpcutils.get_optional(pathloss, "forward2"),
+                    grpcutils.get_optional(pathloss, "reverse2"),
+                )
+            elif request.HasField("antenna"):
+                antenna = request.antenna
+                if antenna.HasField("nem_id"):
+                    nem_id = antenna.nem_id
+                else:
+                    node = self.get_node(session, antenna.node_id, context, CoreNode)
+                    nem_id = grpcutils.get_nem_id(
+                        session, node, antenna.iface_id, context
+                    )
+                session.emane.event_manager.publish_antenna_profile(
+                    nem_id,
+                    antenna.profile,
+                    antenna.azimuth,
+                    antenna.elevation,
+                )
+            elif request.HasField("fading"):
+                fading = request.fading
+                if fading.HasField("nem_id"):
+                    nem_id = fading.nem_id
+                else:
+                    node = self.get_node(session, fading.node_id, context, CoreNode)
+                    nem_id = grpcutils.get_nem_id(
+                        session, node, fading.iface_id, context
+                    )
+                session.emane.event_manager.publish_fading_selection(
+                    nem_id, fading.model
+                )
+        return EmaneEventsResponse()

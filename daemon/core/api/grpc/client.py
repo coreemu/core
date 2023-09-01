@@ -118,6 +118,24 @@ class EmanePathlossesStreamer:
         return iter(self.next, None)
 
 
+class EmaneEventsStreamer:
+    def __init__(self) -> None:
+        self.queue: Queue = Queue()
+
+    def send(self, request: Optional[wrappers.EmaneEventsRequest]) -> None:
+        self.queue.put(request)
+
+    def next(self) -> Optional[emane_pb2.EmaneEventsRequest]:
+        request: Optional[wrappers.EmaneEventsRequest] = self.queue.get()
+        if request:
+            return request.to_proto()
+        else:
+            return request
+
+    def iter(self):
+        return iter(self.next, None)
+
+
 class InterfaceHelper:
     """
     Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
@@ -1065,6 +1083,16 @@ class CoreGrpcClient:
             exist
         """
         self.stub.EmanePathlosses(streamer.iter())
+
+    def emane_events(self, streamer: EmaneEventsStreamer) -> None:
+        """
+        Stream EMANE events.
+
+        :param streamer: emane events streamer
+        :return: nothing
+        :raises grpc.RpcError: when an event session, node, iface, or nem does not exist
+        """
+        self.stub.EmaneEvents(streamer.iter())
 
     def linked(
         self,

@@ -1200,6 +1200,154 @@ class EmanePathlossesRequest:
         )
 
 
+@dataclass
+class LocationEvent:
+    lon: float
+    lat: float
+    alt: float
+    nem_id: int = None
+    node_id: int = None
+    iface_id: int = None
+    azimuth: float = None
+    elevation: float = None
+    magnitude: float = None
+    roll: float = None
+    pitch: float = None
+    yaw: float = None
+
+    def to_proto(self) -> emane_pb2.LocationEvent:
+        return LocationEvent(
+            nem_id=self.nem_id,
+            node_id=self.node_id,
+            iface_id=self.iface_id,
+            lon=self.lon,
+            lat=self.lat,
+            alt=self.alt,
+            azimuth=self.azimuth,
+            elevation=self.elevation,
+            magnitude=self.magnitude,
+            roll=self.roll,
+            pitch=self.pitch,
+            yaw=self.yaw,
+        )
+
+
+@dataclass
+class CommEffectEvent:
+    delay: int
+    jitter: int
+    loss: float
+    dup: int
+    unicast: int
+    broadcast: int
+    nem1_id: int = None
+    node1_id: int = None
+    iface1_id: int = None
+    nem2_id: int = None
+    node2_id: int = None
+    iface2_id: int = None
+
+    def to_proto(self) -> emane_pb2.CommEffectEvent:
+        return emane_pb2.CommEffectEvent(
+            nem1_id=self.nem1_id,
+            node1_id=self.node1_id,
+            iface1_id=self.iface1_id,
+            nem2_id=self.nem2_id,
+            node2_id=self.node2_id,
+            iface2_id=self.iface2_id,
+            delay=self.delay,
+            jitter=self.jitter,
+            loss=self.loss,
+            dup=self.dup,
+            unicast=self.unicast,
+            broadcast=self.broadcast,
+        )
+
+
+@dataclass
+class PathlossEvent:
+    nem1_id: int = None
+    node1_id: int = None
+    iface1_id: int = None
+    nem2_id: int = None
+    node2_id: int = None
+    iface2_id: int = None
+    forward1: float = None
+    reverse1: float = None
+    forward2: float = None
+    reverse2: float = None
+
+    def to_proto(self) -> emane_pb2.PathlossEvent:
+        return emane_pb2.PathlossEvent(
+            nem1_id=self.nem1_id,
+            node1_id=self.node1_id,
+            iface1_id=self.iface1_id,
+            nem2_id=self.nem2_id,
+            node2_id=self.node2_id,
+            iface2_id=self.iface2_id,
+            forward1=self.forward1,
+            reverse1=self.reverse1,
+            forward2=self.forward2,
+            reverse2=self.reverse2,
+        )
+
+
+@dataclass
+class AntennaProfileEvent:
+    profile: int
+    azimuth: float
+    elevation: float
+    nem_id: int = None
+    node_id: int = None
+    iface_id: int = None
+
+    def to_proto(self) -> emane_pb2.AntennaProfileEvent:
+        return emane_pb2.AntennaProfileEvent(
+            nem_id=self.nem_id,
+            node_id=self.node_id,
+            iface_id=self.iface_id,
+            profile=self.profile,
+            azimuth=self.azimuth,
+            elevation=self.elevation,
+        )
+
+
+@dataclass
+class FadingSelectionEvent:
+    model: str
+    nem_id: int = None
+    node_id: int = None
+    iface_id: int = None
+
+    def to_proto(self) -> emane_pb2.FadingSelectionEvent:
+        return emane_pb2.FadingSelectionEvent(
+            nem_id=self.nem_id,
+            node_id=self.node_id,
+            iface_id=self.iface_id,
+            model=self.model,
+        )
+
+
+@dataclass
+class EmaneEventsRequest:
+    session_id: int
+    location: LocationEvent = None
+    comm_effect: CommEffectEvent = None
+    pathloss: PathlossEvent = None
+    antenna: AntennaProfileEvent = None
+    fading: FadingSelectionEvent = None
+
+    def to_proto(self) -> emane_pb2.EmaneEventsRequest:
+        return emane_pb2.EmaneEventsRequest(
+            session_id=self.session_id,
+            location=self.location.to_proto() if self.location else None,
+            comm_effect=self.comm_effect.to_proto() if self.comm_effect else None,
+            pathloss=self.pathloss.to_proto() if self.pathloss else None,
+            antenna=self.antenna.to_proto() if self.antenna else None,
+            fading=self.fading.to_proto() if self.fading else None,
+        )
+
+
 @dataclass(frozen=True)
 class MoveNodesRequest:
     session_id: int

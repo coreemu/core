@@ -78,3 +78,76 @@ message EmanePathlossesRequest {
 
 message EmanePathlossesResponse {
 }
+
+message LocationEvent {
+    optional int32 nem_id = 1;
+    int32 node_id = 2;
+    int32 iface_id = 3;
+    float lon = 4;
+    float lat = 5;
+    float alt = 6;
+    optional float azimuth = 7;
+    optional float elevation = 8;
+    optional float magnitude = 9;
+    optional float roll = 10;
+    optional float pitch = 11;
+    optional float yaw = 12;
+}
+
+message CommEffectEvent {
+    optional int32 nem1_id = 1;
+    int32 node1_id = 2;
+    int32 iface1_id = 3;
+    optional int32 nem2_id = 4;
+    int32 node2_id = 5;
+    int32 iface2_id = 6;
+    int32 delay = 7;
+    int32 jitter = 8;
+    float loss = 9;
+    int32 dup = 10;
+    int32 unicast = 11;
+    int32 broadcast = 12;
+}
+
+message PathlossEvent {
+    optional int32 nem1_id = 1;
+    int32 node1_id = 2;
+    int32 iface1_id = 3;
+    optional int32 nem2_id = 4;
+    int32 node2_id = 5;
+    int32 iface2_id = 6;
+    optional float forward1 = 7;
+    optional float reverse1 = 8;
+    optional float forward2 = 9;
+    optional float reverse2 = 10;
+}
+
+message AntennaProfileEvent {
+    optional int32 nem_id = 1;
+    int32 node_id = 2;
+    int32 iface_id = 3;
+    int32 profile = 4;
+    float azimuth = 5;
+    float elevation = 6;
+}
+
+message FadingSelectionEvent {
+    optional int32 nem_id = 1;
+    int32 node_id = 2;
+    int32 iface_id = 3;
+    string model = 4;
+}
+
+message EmaneEventsRequest {
+    int32 session_id = 1;
+    oneof event_type {
+        LocationEvent location = 2;
+        CommEffectEvent comm_effect = 3;
+        PathlossEvent pathloss = 4;
+        AntennaProfileEvent antenna = 5;
+        FadingSelectionEvent fading = 6;
+    }
+}
+
+message EmaneEventsResponse {
+}
