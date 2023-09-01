@@ -299,6 +299,7 @@ message ConfigEvent {
     int32 iface_id = 10;
     int32 network_id = 11;
     string opaque = 12;
+    string bitmap = 13;
 }
 
 message ExceptionEvent {

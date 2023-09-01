@@ -1092,12 +1092,12 @@ class ConfigEvent:
     data_types: list[int]
     data_values: str
     captions: str
-    bitmap: str
     possible_values: str
     groups: str
     iface_id: int
     network_id: int
     opaque: str
+    bitmap: str = None
 
     @classmethod
     def from_proto(cls, proto: core_pb2.ConfigEvent) -> "ConfigEvent":
