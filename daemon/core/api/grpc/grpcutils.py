@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 import grpc
+from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from google.protobuf.message import Message
 from grpc import ServicerContext
 
@@ -147,7 +148,7 @@ def add_link_data(
 
 
 def create_nodes(
-    session: Session, node_protos: list[core_pb2.Node]
+    session: Session, node_protos: RepeatedCompositeFieldContainer[core_pb2.Node]
 ) -> tuple[list[NodeBase], list[Exception]]:
     """
     Create nodes using a thread pool and wait for completion.
@@ -904,7 +905,7 @@ def configure_node(
         for service_name, service_config in node.config_service_configs.items():
             service = core_node.config_services[service_name]
             if service_config.config:
-                service.set_config(service_config.config)
+                service.set_config(dict(service_config.config))
             for name, template in service_config.templates.items():
                 service.set_template(name, template)
 

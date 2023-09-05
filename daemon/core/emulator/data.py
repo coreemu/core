@@ -176,7 +176,7 @@ class LinkOptions:
     mer: int = None
     burst: int = None
     mburst: int = None
-    unidirectional: int = None
+    unidirectional: bool = None
     key: int = None
     buffer: int = None
 

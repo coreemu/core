@@ -23,7 +23,6 @@ from core.api.grpc import (
     grpcutils,
 )
 from core.api.grpc.configservices_pb2 import (
-    ConfigService,
     GetConfigServiceDefaultsRequest,
     GetConfigServiceDefaultsResponse,
     GetConfigServiceRenderedRequest,
@@ -89,7 +88,7 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
-from core.configservice.base import ConfigServiceBootError
+from core.configservice.base import ConfigService, ConfigServiceBootError
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
@@ -238,7 +237,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services.append(service_proto)
         config_services = []
         for service in self.coreemu.service_manager.services.values():
-            service_proto = ConfigService(
+            service_proto = configservices_pb2.ConfigService(
                 name=service.name,
                 group=service.group,
                 executables=service.executables,
@@ -887,7 +886,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         mobility_config = request.mobility_config
         session.mobility.set_model_config(
-            mobility_config.node_id, Ns2ScriptedMobility.name, mobility_config.config
+            mobility_config.node_id,
+            Ns2ScriptedMobility.name,
+            dict(mobility_config.config),
         )
         return SetMobilityConfigResponse(result=True)
 
@@ -949,9 +950,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         session.services.default_services.clear()
         for service_defaults in request.defaults:
-            session.services.default_services[
-                service_defaults.model
-            ] = service_defaults.services
+            session.services.default_services[service_defaults.model] = list(
+                service_defaults.services
+            )
         return SetServiceDefaultsResponse(result=True)
 
     def GetNodeService(
@@ -1106,7 +1107,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logger.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
         node_id = request.wlan_config.node_id
-        config = request.wlan_config.config
+        config = dict(request.wlan_config.config)
         session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
         if session.is_running():
             node = self.get_node(session, node_id, context, WlanNode)
@@ -1147,7 +1148,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         model_config = request.emane_model_config
         _id = utils.iface_config_id(model_config.node_id, model_config.iface_id)
-        session.emane.set_config(_id, model_config.model, model_config.config)
+        session.emane.set_config(_id, model_config.model, dict(model_config.config))
         return SetEmaneModelConfigResponse(result=True)
 
     def SaveXml(
@@ -1163,7 +1164,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logger.debug("save xml: %s", request)
         session = self.get_session(request.session_id, context)
         _, temp_path = tempfile.mkstemp()
-        session.save_xml(temp_path)
+        session.save_xml(Path(temp_path))
         with open(temp_path, "r") as xml_file:
             data = xml_file.read()
         return core_pb2.SaveXmlResponse(data=data)
@@ -1315,7 +1316,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: GetEmaneEventChannelRequest, context: ServicerContext
     ) -> GetEmaneEventChannelResponse:
         session = self.get_session(request.session_id, context)
-        service = session.emane.nem_service.get(request.nem_id)
+        service = session.emane.event_manager.get_service(request.nem_id)
         if not service:
             context.abort(grpc.StatusCode.NOT_FOUND, f"unknown nem id {request.nem_id}")
         return GetEmaneEventChannelResponse(

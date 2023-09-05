@@ -3,6 +3,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
+from google.protobuf.internal.containers import MessageMap
+
 from core.api.grpc import (
     common_pb2,
     configservices_pb2,
@@ -131,13 +133,13 @@ class ConfigService:
         return ConfigService(
             group=proto.group,
             name=proto.name,
-            executables=proto.executables,
-            dependencies=proto.dependencies,
-            directories=proto.directories,
-            files=proto.files,
-            startup=proto.startup,
-            validate=proto.validate,
-            shutdown=proto.shutdown,
+            executables=list(proto.executables),
+            dependencies=list(proto.dependencies),
+            directories=list(proto.directories),
+            files=list(proto.files),
+            startup=list(proto.startup),
+            validate=list(proto.validate),
+            shutdown=list(proto.shutdown),
             validation_mode=ConfigServiceValidationMode(proto.validation_mode),
             validation_timer=proto.validation_timer,
             validation_period=proto.validation_period,
@@ -235,15 +237,15 @@ class NodeServiceData:
     @classmethod
     def from_proto(cls, proto: services_pb2.NodeServiceData) -> "NodeServiceData":
         return NodeServiceData(
-            executables=proto.executables,
-            dependencies=proto.dependencies,
-            dirs=proto.dirs,
-            configs=proto.configs,
-            startup=proto.startup,
-            validate=proto.validate,
+            executables=list(proto.executables),
+            dependencies=list(proto.dependencies),
+            dirs=list(proto.dirs),
+            configs=list(proto.configs),
+            startup=list(proto.startup),
+            validate=list(proto.validate),
             validation_mode=ServiceValidationMode(proto.validation_mode),
             validation_timer=proto.validation_timer,
-            shutdown=proto.shutdown,
+            shutdown=list(proto.shutdown),
             meta=proto.meta,
         )
 
@@ -433,12 +435,9 @@ class ConfigOption:
 
     @classmethod
     def from_dict(
-        cls, config: dict[str, common_pb2.ConfigOption]
+        cls, config: MessageMap[str, common_pb2.ConfigOption]
     ) -> dict[str, "ConfigOption"]:
-        d = {}
-        for key, value in config.items():
-            d[key] = ConfigOption.from_proto(value)
-        return d
+        return {k: ConfigOption.from_proto(v) for k, v in config.items()}
 
     @classmethod
     def to_dict(cls, config: dict[str, "ConfigOption"]) -> dict[str, str]:
@@ -453,7 +452,7 @@ class ConfigOption:
             value=proto.value,
             type=config_type,
             group=proto.group,
-            select=proto.select,
+            select=list(proto.select),
         )
 
     def to_proto(self) -> common_pb2.ConfigOption:

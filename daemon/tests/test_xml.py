@@ -410,7 +410,7 @@ class TestXml:
 
         # create link
         options1 = LinkOptions()
-        options1.unidirectional = 1
+        options1.unidirectional = True
         options1.bandwidth = 5000
         options1.delay = 10
         options1.loss = 10.5
@@ -421,7 +421,7 @@ class TestXml:
             node1.id, node2.id, iface1_data, iface2_data, options1
         )
         options2 = LinkOptions()
-        options2.unidirectional = 1
+        options2.unidirectional = True
         options2.bandwidth = 10000
         options2.delay = 20
         options2.loss = 10
