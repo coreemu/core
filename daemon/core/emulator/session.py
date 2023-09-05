@@ -23,7 +23,6 @@ from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     EventData,
     ExceptionData,
-    FileData,
     InterfaceData,
     LinkData,
     LinkOptions,
@@ -142,7 +141,6 @@ class Session:
         self.exception_handlers: list[Callable[[ExceptionData], None]] = []
         self.node_handlers: list[Callable[[NodeData], None]] = []
         self.link_handlers: list[Callable[[LinkData], None]] = []
-        self.file_handlers: list[Callable[[FileData], None]] = []
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
@@ -682,16 +680,6 @@ class Session:
         node_data = NodeData(node=node, message_type=message_type, source=source)
         for handler in self.node_handlers:
             handler(node_data)
-
-    def broadcast_file(self, file_data: FileData) -> None:
-        """
-        Handle file data that should be provided to file handlers.
-
-        :param file_data: file data to send out
-        :return: nothing
-        """
-        for handler in self.file_handlers:
-            handler(file_data)
 
     def broadcast_link(self, link_data: LinkData) -> None:
         """

@@ -88,8 +88,6 @@ session.event_handlers.append(event_listener)
 session.exception_handlers.append(event_listener)
 session.node_handlers.append(event_listener)
 session.link_handlers.append(event_listener)
-session.file_handlers.append(event_listener)
-session.config_handlers.append(event_listener)
 ```
 
 ### Configuring Links

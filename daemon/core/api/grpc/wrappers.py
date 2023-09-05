@@ -109,7 +109,6 @@ class EventType:
     NODE = 1
     LINK = 2
     EXCEPTION = 4
-    FILE = 5
 
 
 @dataclass
@@ -1055,33 +1054,6 @@ class SessionEvent:
 
 
 @dataclass
-class FileEvent:
-    message_type: MessageType
-    node_id: int
-    name: str
-    mode: str
-    number: int
-    type: str
-    source: str
-    data: str
-    compressed_data: str
-
-    @classmethod
-    def from_proto(cls, proto: core_pb2.FileEvent) -> "FileEvent":
-        return FileEvent(
-            message_type=MessageType(proto.message_type),
-            node_id=proto.node_id,
-            name=proto.name,
-            mode=proto.mode,
-            number=proto.number,
-            type=proto.type,
-            source=proto.source,
-            data=proto.data,
-            compressed_data=proto.compressed_data,
-        )
-
-
-@dataclass
 class Event:
     session_id: int
     source: str = None
@@ -1089,7 +1061,6 @@ class Event:
     node_event: NodeEvent = None
     link_event: LinkEvent = None
     exception_event: ExceptionEvent = None
-    file_event: FileEvent = None
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Event) -> "Event":
@@ -1098,7 +1069,6 @@ class Event:
         link_event = None
         exception_event = None
         session_event = None
-        file_event = None
         if proto.HasField("node_event"):
             node_event = NodeEvent.from_proto(proto.node_event)
         elif proto.HasField("link_event"):
@@ -1109,8 +1079,6 @@ class Event:
             )
         elif proto.HasField("session_event"):
             session_event = SessionEvent.from_proto(proto.session_event)
-        elif proto.HasField("file_event"):
-            file_event = FileEvent.from_proto(proto.file_event)
         return Event(
             session_id=proto.session_id,
             source=source,
@@ -1118,7 +1086,6 @@ class Event:
             link_event=link_event,
             exception_event=exception_event,
             session_event=session_event,
-            file_event=file_event,
         )
 
 

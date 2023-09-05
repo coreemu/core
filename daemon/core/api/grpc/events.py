@@ -5,7 +5,7 @@ from typing import Optional
 
 from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data
-from core.emulator.data import EventData, ExceptionData, FileData, LinkData, NodeData
+from core.emulator.data import EventData, ExceptionData, LinkData, NodeData
 from core.emulator.session import Session
 
 logger = logging.getLogger(__name__)
@@ -79,27 +79,6 @@ def handle_exception_event(exception_data: ExceptionData) -> core_pb2.Event:
     return core_pb2.Event(exception_event=exception_event)
 
 
-def handle_file_event(file_data: FileData) -> core_pb2.Event:
-    """
-    Handle file event
-
-    :param file_data: file data
-    :return: file event
-    """
-    file_event = core_pb2.FileEvent(
-        message_type=file_data.message_type.value,
-        node_id=file_data.node,
-        name=file_data.name,
-        mode=file_data.mode,
-        number=file_data.number,
-        type=file_data.type,
-        source=file_data.source,
-        data=file_data.data,
-        compressed_data=file_data.compressed_data,
-    )
-    return core_pb2.Event(file_event=file_event)
-
-
 class EventStreamer:
     """
     Processes session events to generate grpc events.
@@ -129,8 +108,6 @@ class EventStreamer:
             self.session.node_handlers.append(self.queue.put)
         if core_pb2.EventType.LINK in self.event_types:
             self.session.link_handlers.append(self.queue.put)
-        if core_pb2.EventType.FILE in self.event_types:
-            self.session.file_handlers.append(self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
             self.session.exception_handlers.append(self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:
@@ -153,8 +130,6 @@ class EventStreamer:
                 event = handle_session_event(data)
             elif isinstance(data, ExceptionData):
                 event = handle_exception_event(data)
-            elif isinstance(data, FileData):
-                event = handle_file_event(data)
             else:
                 logger.error("unknown event: %s", data)
         except Empty:
@@ -173,10 +148,6 @@ class EventStreamer:
             self.session.node_handlers.remove(self.queue.put)
         if core_pb2.EventType.LINK in self.event_types:
             self.session.link_handlers.remove(self.queue.put)
-        if core_pb2.EventType.CONFIG in self.event_types:
-            self.session.config_handlers.remove(self.queue.put)
-        if core_pb2.EventType.FILE in self.event_types:
-            self.session.file_handlers.remove(self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
             self.session.exception_handlers.remove(self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:

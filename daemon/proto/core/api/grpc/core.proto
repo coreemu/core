@@ -261,7 +261,6 @@ message Event {
         NodeEvent node_event = 2;
         LinkEvent link_event = 3;
         ExceptionEvent exception_event = 5;
-        FileEvent file_event = 6;
     }
     int32 session_id = 7;
     string source = 8;
@@ -292,18 +291,6 @@ message ExceptionEvent {
     string date = 4;
     string text = 5;
     string opaque = 6;
-}
-
-message FileEvent {
-    MessageType.Enum message_type = 1;
-    int32 node_id = 2;
-    string name = 3;
-    string mode = 4;
-    int32 number = 5;
-    string type = 6;
-    string source = 7;
-    string data = 8;
-    string compressed_data = 9;
 }
 
 message AddNodeRequest {

@@ -845,30 +845,6 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_file_events(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-        queue = Queue()
-
-        def handle_event(event: Event) -> None:
-            assert event.session_id == session.id
-            assert event.file_event is not None
-            queue.put(event)
-
-        # then
-        with client.context_connect():
-            client.events(session.id, handle_event)
-            time.sleep(0.1)
-            file_data = session.services.get_service_file(
-                node, "DefaultRoute", "defaultroute.sh"
-            )
-            session.broadcast_file(file_data)
-
-            # then
-            queue.get(timeout=5)
-
     def test_move_nodes(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
