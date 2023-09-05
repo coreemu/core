@@ -185,8 +185,6 @@ class CoreClient:
                 logger.warning("unknown session event: %s", session_event)
         elif event.node_event:
             self.app.after(0, self.handle_node_event, event.node_event)
-        elif event.config_event:
-            logger.info("config event: %s", event)
         elif event.exception_event:
             self.handle_exception_event(event.exception_event)
         else:

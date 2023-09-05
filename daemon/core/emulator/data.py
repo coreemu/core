@@ -19,24 +19,6 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class ConfigData:
-    message_type: int = None
-    node: int = None
-    object: str = None
-    type: int = None
-    data_types: tuple[int] = None
-    data_values: str = None
-    captions: str = None
-    bitmap: str = None
-    possible_values: str = None
-    groups: str = None
-    session: int = None
-    iface_id: int = None
-    network_id: int = None
-    opaque: str = None
-
-
-@dataclass
 class EventData:
     node: int = None
     event_type: EventTypes = None

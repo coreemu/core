@@ -5,14 +5,7 @@ from typing import Optional
 
 from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data
-from core.emulator.data import (
-    ConfigData,
-    EventData,
-    ExceptionData,
-    FileData,
-    LinkData,
-    NodeData,
-)
+from core.emulator.data import EventData, ExceptionData, FileData, LinkData, NodeData
 from core.emulator.session import Session
 
 logger = logging.getLogger(__name__)
@@ -66,31 +59,6 @@ def handle_session_event(event_data: EventData) -> core_pb2.Event:
         time=event_time,
     )
     return core_pb2.Event(session_event=session_event)
-
-
-def handle_config_event(config_data: ConfigData) -> core_pb2.Event:
-    """
-    Handle configuration event when there is configuration event
-
-    :param config_data: configuration data
-    :return: configuration event
-    """
-    config_event = core_pb2.ConfigEvent(
-        message_type=config_data.message_type,
-        node_id=config_data.node,
-        object=config_data.object,
-        type=config_data.type,
-        captions=config_data.captions,
-        bitmap=config_data.bitmap,
-        data_values=config_data.data_values,
-        possible_values=config_data.possible_values,
-        groups=config_data.groups,
-        iface_id=config_data.iface_id,
-        network_id=config_data.network_id,
-        opaque=config_data.opaque,
-        data_types=config_data.data_types,
-    )
-    return core_pb2.Event(config_event=config_event)
 
 
 def handle_exception_event(exception_data: ExceptionData) -> core_pb2.Event:
@@ -161,8 +129,6 @@ class EventStreamer:
             self.session.node_handlers.append(self.queue.put)
         if core_pb2.EventType.LINK in self.event_types:
             self.session.link_handlers.append(self.queue.put)
-        if core_pb2.EventType.CONFIG in self.event_types:
-            self.session.config_handlers.append(self.queue.put)
         if core_pb2.EventType.FILE in self.event_types:
             self.session.file_handlers.append(self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
@@ -185,8 +151,6 @@ class EventStreamer:
                 event = handle_link_event(data)
             elif isinstance(data, EventData):
                 event = handle_session_event(data)
-            elif isinstance(data, ConfigData):
-                event = handle_config_event(data)
             elif isinstance(data, ExceptionData):
                 event = handle_exception_event(data)
             elif isinstance(data, FileData):

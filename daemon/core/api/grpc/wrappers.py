@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from google.protobuf.internal.containers import MessageMap
 
@@ -108,7 +108,6 @@ class EventType:
     SESSION = 0
     NODE = 1
     LINK = 2
-    CONFIG = 3
     EXCEPTION = 4
     FILE = 5
 
@@ -1083,47 +1082,12 @@ class FileEvent:
 
 
 @dataclass
-class ConfigEvent:
-    message_type: MessageType
-    node_id: int
-    object: str
-    type: int
-    data_types: list[int]
-    data_values: str
-    captions: str
-    possible_values: str
-    groups: str
-    iface_id: int
-    network_id: int
-    opaque: str
-    bitmap: str = None
-
-    @classmethod
-    def from_proto(cls, proto: core_pb2.ConfigEvent) -> "ConfigEvent":
-        return ConfigEvent(
-            message_type=MessageType(proto.message_type),
-            node_id=proto.node_id,
-            object=proto.object,
-            type=proto.type,
-            data_types=list(proto.data_types),
-            data_values=proto.data_values,
-            captions=proto.captions,
-            possible_values=proto.possible_values,
-            groups=proto.groups,
-            iface_id=proto.iface_id,
-            network_id=proto.network_id,
-            opaque=proto.opaque,
-        )
-
-
-@dataclass
 class Event:
     session_id: int
     source: str = None
     session_event: SessionEvent = None
     node_event: NodeEvent = None
     link_event: LinkEvent = None
-    config_event: Any = None
     exception_event: ExceptionEvent = None
     file_event: FileEvent = None
 
@@ -1135,7 +1099,6 @@ class Event:
         exception_event = None
         session_event = None
         file_event = None
-        config_event = None
         if proto.HasField("node_event"):
             node_event = NodeEvent.from_proto(proto.node_event)
         elif proto.HasField("link_event"):
@@ -1148,8 +1111,6 @@ class Event:
             session_event = SessionEvent.from_proto(proto.session_event)
         elif proto.HasField("file_event"):
             file_event = FileEvent.from_proto(proto.file_event)
-        elif proto.HasField("config_event"):
-            config_event = ConfigEvent.from_proto(proto.config_event)
         return Event(
             session_id=proto.session_id,
             source=source,
@@ -1158,7 +1119,6 @@ class Event:
             exception_event=exception_event,
             session_event=session_event,
             file_event=file_event,
-            config_event=config_event,
         )
 
 

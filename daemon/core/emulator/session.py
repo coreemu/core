@@ -21,7 +21,6 @@ from core.configservice.manager import ConfigServiceManager
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
-    ConfigData,
     EventData,
     ExceptionData,
     FileData,
@@ -144,7 +143,6 @@ class Session:
         self.node_handlers: list[Callable[[NodeData], None]] = []
         self.link_handlers: list[Callable[[LinkData], None]] = []
         self.file_handlers: list[Callable[[FileData], None]] = []
-        self.config_handlers: list[Callable[[ConfigData], None]] = []
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
@@ -694,16 +692,6 @@ class Session:
         """
         for handler in self.file_handlers:
             handler(file_data)
-
-    def broadcast_config(self, config_data: ConfigData) -> None:
-        """
-        Handle config data that should be provided to config handlers.
-
-        :param config_data: config data to send out
-        :return: nothing
-        """
-        for handler in self.config_handlers:
-            handler(config_data)
 
     def broadcast_link(self, link_data: LinkData) -> None:
         """

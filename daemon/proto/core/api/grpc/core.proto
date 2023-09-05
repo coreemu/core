@@ -260,7 +260,6 @@ message Event {
         SessionEvent session_event = 1;
         NodeEvent node_event = 2;
         LinkEvent link_event = 3;
-        ConfigEvent config_event = 4;
         ExceptionEvent exception_event = 5;
         FileEvent file_event = 6;
     }
@@ -284,22 +283,6 @@ message SessionEvent {
     string name = 3;
     string data = 4;
     float time = 5;
-}
-
-message ConfigEvent {
-    MessageType.Enum message_type = 1;
-    int32 node_id = 2;
-    string object = 3;
-    int32 type = 4;
-    repeated int32 data_types = 5;
-    string data_values = 6;
-    string captions = 7;
-    string possible_values = 8;
-    string groups = 9;
-    int32 iface_id = 10;
-    int32 network_id = 11;
-    string opaque = 12;
-    string bitmap = 13;
 }
 
 message ExceptionEvent {
@@ -495,7 +478,6 @@ message EventType {
         SESSION = 0;
         NODE = 1;
         LINK = 2;
-        CONFIG = 3;
         EXCEPTION = 4;
         FILE = 5;
     }
