@@ -293,7 +293,25 @@ class CoreInterface:
         """
         return self.transport_type == TransportType.VIRTUAL
 
+    def update_options(self, options: LinkOptions) -> None:
+        """
+        Update the current link options, if a change occurred and the interface
+        is up, update the running interface.
+
+        :param options: link options to update with
+        :return: nothing
+        """
+        changed = self.options.update(options)
+        if self.up and changed:
+            self.set_config()
+
     def set_config(self) -> None:
+        """
+        Clears current link options if previously set and now empty.
+        Otherwise, updates to the current link option values.
+
+        :return: nothing
+        """
         # clear current settings
         if self.options.is_clear():
             if self.has_netem:

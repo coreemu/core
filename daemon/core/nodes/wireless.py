@@ -243,13 +243,11 @@ class WirelessNode(CoreNetworkBase):
             raise CoreError(f"invalid node links node1({node1_id}) node2({node2_id})")
         iface = link.iface
         has_netem = iface.has_netem
-        iface.options.update(options1)
-        iface.set_config()
+        iface.update_options(options1)
         name, localname = iface.name, iface.localname
         iface.name, iface.localname = localname, name
-        iface.options.update(options2)
         iface.has_netem = has_netem
-        iface.set_config()
+        iface.update_options(options2)
         iface.name, iface.localname = name, localname
         if options1 == options2:
             link.label = f"{options1.loss:.2f}%/{options1.delay}us"

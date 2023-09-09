@@ -320,8 +320,7 @@ class BasicRangeModel(WirelessModel):
                     loss=self.loss,
                     jitter=self.jitter,
                 )
-                iface.options.update(options)
-                iface.set_config()
+                iface.update_options(options)
 
     def get_position(self, iface: CoreInterface) -> tuple[float, float, float]:
         """

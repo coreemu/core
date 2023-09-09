@@ -451,12 +451,10 @@ class Session:
                 f"there is no link for node({node1.name}):interface({iface1_id}) "
                 f"node({node2.name}):interface({iface2_id})"
             )
-        if iface1:
-            iface1.options.update(options)
-            iface1.set_config()
-        if iface2 and not options.unidirectional:
-            iface2.options.update(options)
-            iface2.set_config()
+        if iface1 and options:
+            iface1.update_options(options)
+        if iface2 and options and not options.unidirectional:
+            iface2.update_options(options)
 
     def next_node_id(self) -> int:
         """
