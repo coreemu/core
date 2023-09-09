@@ -105,6 +105,7 @@ from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.wireless import WirelessNode
 from core.services.coreservices import ServiceManager
+from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
 _ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
@@ -1163,10 +1164,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logger.debug("save xml: %s", request)
         session = self.get_session(request.session_id, context)
-        _, temp_path = tempfile.mkstemp()
-        session.save_xml(Path(temp_path))
-        with open(temp_path, "r") as xml_file:
-            data = xml_file.read()
+        xml_writer = CoreXmlWriter(session)
+        data = xml_writer.get_data()
         return core_pb2.SaveXmlResponse(data=data)
 
     def OpenXml(

@@ -925,7 +925,7 @@ class CoreGrpcClient:
         """
         request = core_pb2.SaveXmlRequest(session_id=session_id)
         response = self.stub.SaveXml(request)
-        with open(file_path, "w") as xml_file:
+        with open(file_path, "wb") as xml_file:
             xml_file.write(response.data)
 
     def open_xml(self, file_path: Path, start: bool = False) -> tuple[bool, int]:

@@ -299,13 +299,15 @@ class CoreXmlWriter:
         self.write_session_metadata()
         self.write_default_services()
 
-    def write(self, path: Path) -> None:
-        self.scenario.set("name", str(path))
-        # write out generated xml
+    def get_data(self) -> bytes:
         xml_tree = etree.ElementTree(self.scenario)
-        xml_tree.write(
-            str(path), xml_declaration=True, pretty_print=True, encoding="UTF-8"
+        return etree.tostring(
+            xml_tree, xml_declaration=True, pretty_print=True, encoding="UTF-8"
         )
+
+    def write(self, path: Path) -> None:
+        data = self.get_data()
+        path.write_bytes(data)
 
     def write_session_origin(self) -> None:
         # origin: geolocation of cartesian coordinate 0,0,0

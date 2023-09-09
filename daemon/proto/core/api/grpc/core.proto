@@ -429,7 +429,7 @@ message SaveXmlRequest {
 }
 
 message SaveXmlResponse {
-    string data = 1;
+    bytes data = 1;
 }
 
 message OpenXmlRequest {
