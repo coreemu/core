@@ -5,7 +5,7 @@
 # peers, along with subnets to tunnel.
 
 # directory containing the certificate and key described below
-keydir=/etc/core/keys
+keydir=/opt/core/etc/keys
 
 # the name used for the "$certname.pem" x509 certificate and
 # "$certname.key" RSA private key, which can be generated using openssl

@@ -136,7 +136,7 @@ This section provides an example for running a script within a node, that
 leverages a control network in CORE for issuing mobility using the gRPC
 API.
 
-* Edit the following line in **/etc/core/core.conf**
+* Edit the following line in **/opt/core/etc/core.conf**
    ```shell
    grpcaddress = 0.0.0.0
    ```

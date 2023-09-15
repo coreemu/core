@@ -71,7 +71,7 @@ Every topic below assumes CORE, EMANE, and OSPF MDR have been installed.
 
 ## EMANE Configuration
 
-The CORE configuration file **/etc/core/core.conf** has options specific to
+The CORE configuration file **/opt/core/etc/core.conf** has options specific to
 EMANE. An example emane section from the **core.conf** file is shown below:
 
 ```shell

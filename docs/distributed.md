@@ -13,7 +13,7 @@ distributed CORE package and some configuration to allow SSH as root.
 
 CORE configuration settings required for using distributed functionality.
 
-Edit **/etc/core/core.conf** or specific configuration file being used.
+Edit **/opt/core/etc/core.conf** or specific configuration file being used.
 
 ```shell
 # uncomment and set this to the address that remote servers

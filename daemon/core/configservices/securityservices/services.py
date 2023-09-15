@@ -1,5 +1,6 @@
 from typing import Any
 
+from core import constants
 from core.config import ConfigString, Configuration
 from core.configservice.base import ConfigService, ConfigServiceMode
 
@@ -18,7 +19,9 @@ class VpnClient(ConfigService):
     shutdown: list[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: list[Configuration] = [
-        ConfigString(id="keydir", label="Key Dir", default="/etc/core/keys"),
+        ConfigString(
+            id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
+        ),
         ConfigString(id="keyname", label="Key Name", default="client1"),
         ConfigString(id="server", label="Server", default="10.0.2.10"),
     ]
@@ -37,7 +40,9 @@ class VpnServer(ConfigService):
     shutdown: list[str] = ["killall openvpn"]
     validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
     default_configs: list[Configuration] = [
-        ConfigString(id="keydir", label="Key Dir", default="/etc/core/keys"),
+        ConfigString(
+            id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
+        ),
         ConfigString(id="keyname", label="Key Name", default="server"),
         ConfigString(id="subnet", label="Subnet", default="10.0.200.0"),
     ]

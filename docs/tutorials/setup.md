@@ -70,7 +70,7 @@ optional arguments:
 
 ### Installing the Chat App Service
 
-1. You will first need to edit **/etc/core/core.conf** to update the config
+1. You will first need to edit **/opt/core/etc/core.conf** to update the config
    service path to pick up your service
     ``` shell
     custom_config_services_dir = <path for service>

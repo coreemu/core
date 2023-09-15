@@ -4,7 +4,7 @@
 # OpenVPN software and a virtual TUN/TAP device.
 
 # directory containing the certificate and key described below
-keydir=/etc/core/keys
+keydir=/opt/core/etc/keys
 
 # the name used for a "$keyname.crt" certificate and "$keyname.key" private key.
 keyname=client1

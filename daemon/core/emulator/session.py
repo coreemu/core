@@ -830,7 +830,7 @@ class Session:
         if state:
             env["SESSION_STATE"] = str(self.state)
         # try reading and merging optional environments from:
-        # /etc/core/environment
+        # /opt/core/environment
         # /home/user/.coregui/environment
         # /tmp/pycore.<session id>/environment
         core_env_path = constants.CORE_CONF_DIR / "environment"

@@ -159,7 +159,7 @@ ideas for a service before adding a new service type.
    be named the same as any python module, due to naming conflicts.
 
 3. Add a **custom_services_dir = `/home/<user>/.coregui/custom_services`** entry to the
-   /etc/core/core.conf file.
+   **/opt/core/etc/core.conf** file.
 
 4. Restart the CORE daemon (core-daemon). Any import errors (Python syntax)
    should be displayed in the daemon output.

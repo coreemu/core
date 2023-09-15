@@ -24,7 +24,8 @@ DEBIAN_LIKE = {
     "debian",
 }
 SUDOP: str = "sudo -E env PATH=$PATH"
-VENV_PATH: str = "/opt/core/venv"
+CORE_PATH: Path = Path("/opt/core")
+VENV_PATH: Path = CORE_PATH / "venv"
 VENV_PYTHON: str = f"{VENV_PATH}/bin/python"
 ACTIVATE_VENV: str = f". {VENV_PATH}/bin/activate"
 
@@ -218,7 +219,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
     else:
         args = "" if dev else "--only main"
         with c.cd(DAEMON_DIR):
-            c.run("sudo mkdir -p /opt/core", hide=hide)
+            c.run(f"sudo mkdir -p {CORE_PATH}", hide=hide)
             c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
             c.run(f"{ACTIVATE_VENV} && {SUDOP} poetry install {args}", hide=hide)
             if dev:
@@ -302,21 +303,16 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
         os.unlink(temp.name)
     # install core configuration file
-    config_dir = "/etc/core"
-    c.run(f"sudo mkdir -p {config_dir}", hide=hide)
-    c.run(f"sudo cp -n package/etc/core.conf {config_dir}", hide=hide)
-    c.run(f"sudo cp -n package/etc/logging.conf {config_dir}", hide=hide)
+    c.run(f"sudo cp -r -n package/etc {CORE_PATH}", hide=hide)
     # install examples
-    examples_dir = f"{prefix}/share/core"
-    c.run(f"sudo mkdir -p {examples_dir}", hide=hide)
-    c.run(f"sudo cp -r package/examples {examples_dir}", hide=hide)
+    c.run(f"sudo cp -r package/share {CORE_PATH}", hide=hide)
 
 
 @task(
     help={
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
-        "can be one of the following (redhat, debian)",
+                        "can be one of the following (redhat, debian)",
         "no-python": "avoid installing python system dependencies",
     },
 )
@@ -348,7 +344,7 @@ def build(
         "local": "determines if core will install to local system, default is False",
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "install-type": "used to force an install type, "
-        "can be one of the following (redhat, debian)",
+                        "can be one of the following (redhat, debian)",
         "ospf": "disable ospf installation",
         "no-python": "avoid installing python system dependencies",
     },
@@ -403,7 +399,7 @@ def install(
         "emane-version": "version of emane install",
         "verbose": "enable verbose",
         "install-type": "used to force an install type, "
-        "can be one of the following (redhat, debian)",
+                        "can be one of the following (redhat, debian)",
     },
 )
 def install_emane(c, emane_version, verbose=False, install_type=None):
@@ -523,7 +519,7 @@ def uninstall(
         "prefix": f"prefix where scripts are installed, default is {DEFAULT_PREFIX}",
         "branch": "branch to install latest code from, default is current branch",
         "install-type": "used to force an install type, "
-        "can be one of the following (redhat, debian)",
+                        "can be one of the following (redhat, debian)",
     },
 )
 def reinstall(

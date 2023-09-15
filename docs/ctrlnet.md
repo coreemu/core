@@ -22,7 +22,7 @@ interface configured with an address corresponding to its node number
 (e.g. *172.16.0.3* for *n3*.)
 
 A default for the primary control network may also be specified by setting
-the *controlnet* line in the */etc/core/core.conf* configuration file which
+the *controlnet* line in the */opt/core/etc/core.conf* configuration file which
 new sessions will use by default. To simultaneously run multiple sessions with
 control networks, the session option should be used instead of the *core.conf*
 default.
@@ -56,10 +56,10 @@ done
 !!! note
 
     If adjustments to the primary control network configuration made in
-    **/etc/core/core.conf** do not seem to take affect, check if there is anything
+    **/opt/core/etc/core.conf** do not seem to take affect, check if there is anything
     set in the *Session Menu*, the *Options...* dialog. They may need to be
     cleared. These per session settings override the defaults in
-    **/etc/core/core.conf**.
+    **/opt/core/etc/core.conf**.
 
 ## Control Network in Distributed Sessions
 
@@ -72,10 +72,10 @@ can be accessed, just like the single server case.
 In some situations, remote emulated nodes need to communicate with the host
 on which they are running and not the master server. Multiple control network
 prefixes can be specified in the either the session option or
-*/etc/core/core.conf*, separated by spaces and beginning with the master
+*/opt/core/etc/core.conf*, separated by spaces and beginning with the master
 server. Each entry has the form *"server:prefix"*. For example, if the servers
 *core1*,*core2*, and *core3*  are assigned with nodes in the scenario and using
-*/etc/core/core.conf* instead of the session option.
+*/opt/core/etc/core.conf* instead of the session option.
 
 ```shell
 controlnet=core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.1.0/24
@@ -94,7 +94,7 @@ is desired. The control network script may help with this.
 ## Control Network Script
 
 A control network script may be specified using the *controlnet_updown_script*
-option in the */etc/core/core.conf* file. This script will be run after the
+option in the */opt/core/etc/core.conf* file. This script will be run after the
 bridge has been built (and address assigned) with the first argument being the
 name of the bridge, and the second argument being the keyword *"startup"*.
 The script will again be invoked prior to bridge removal with the second
@@ -106,10 +106,10 @@ Starting with EMANE 0.9.2, CORE will run EMANE instances within namespaces.
 Since it is advisable to separate the OTA traffic from other traffic, we will
 need more than single channel leading out from the namespace. Up to three
 auxiliary control networks may be defined. Multiple control networks are set
-up in */etc/core/core.conf* file. Lines *controlnet1*, *controlnet2* and
+up in */opt/core/etc/core.conf* file. Lines *controlnet1*, *controlnet2* and
 *controlnet3* define the auxiliary networks.
 
-For example, having the following */etc/core/core.conf*:
+For example, having the following */opt/core/etc/core.conf*:
 
 ```shell
 controlnet = core1:172.17.1.0/24 core2:172.17.2.0/24 core3:172.17.3.0/24
@@ -135,7 +135,7 @@ configuration for auxiliary control networks.
 
 To extend the auxiliary control networks across a distributed test
 environment, host network interfaces need to be added to them. The following
-lines in */etc/core/core.conf* will add host devices *eth1*, *eth2* and *eth3*
+lines in */opt/core/etc/core.conf* will add host devices *eth1*, *eth2* and *eth3*
 to *controlnet1*, *controlnet2*, *controlnet3*:
 
 ```shell

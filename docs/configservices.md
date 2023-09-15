@@ -93,7 +93,7 @@ introduced to automate tasks.
 2. Put these files in a directory such as **~/.coregui/custom_services**.
 
 3. Add a **custom_config_services_dir = ~/.coregui/custom_services** entry to the
-   /etc/core/core.conf file.
+   /opt/core/etc/core.conf file.
 
 4. Restart the CORE daemon (core-daemon). Any import errors (Python syntax)
    should be displayed in the terminal (or service log, like journalctl).

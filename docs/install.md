@@ -46,7 +46,9 @@ The following is a list of files that would be installed after installation.
         * virtualenv `/opt/core/venv/bin`
         * local `/usr/local/bin`
 * configuration files
-    * `/etc/core/{core.conf, logging.conf}`
+    * `/opt/core/etc/{core.conf, logging.conf}`
+* examples and data files
+    * `/opt/core/share`
 * ospf mdr repository files when using script based install
     * `<repo>/../ospf-mdr`
 

@@ -7,7 +7,7 @@
 
 # directory containing the certificate and key described below, in addition to
 # a CA certificate and DH key
-keydir=/etc/core/keys
+keydir=/opt/core/etc/keys
 
 # the name used for a "$keyname.crt" certificate and "$keyname.key" private key.
 keyname=server2

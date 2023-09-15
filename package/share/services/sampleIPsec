@@ -5,9 +5,9 @@
 # peers, along with subnets to tunnel.
 
 # directory containing the certificate and key described below
-keydir=/etc/core/keys
+keydir=/opt/core/etc/keys
 
-# the name used for the "$certname.pem" x509 certificate and 
+# the name used for the "$certname.pem" x509 certificate and
 # "$certname.key" RSA private key, which can be generated using openssl
 certname=ipsec1
 
@@ -27,7 +27,7 @@ T2="172.16.4.0/24AND172.16.5.0/24 172.16.4.0/24AND172.16.6.0/24"
 
 # -------- END CUSTOMIZATION --------
 
-echo "building config $PWD/ipsec.conf..." 
+echo "building config $PWD/ipsec.conf..."
 echo "building config $PWD/ipsec.conf..." > $PWD/ipsec.log
 
 checkip=0
@@ -45,23 +45,23 @@ echo "#!/usr/sbin/setkey -f
     # Security policies  \
      " > $PWD/ipsec.conf
 i=0
-for hostpair in $tunnelhosts; do 
+for hostpair in $tunnelhosts; do
     i=`expr $i + 1`
     # parse tunnel host IP
     thishost=${hostpair%%AND*}
-    peerhost=${hostpair##*AND} 
+    peerhost=${hostpair##*AND}
     if [ $checkip = "0" ] &&
        [ "$(sipcalc "$thishost" "$peerhost" | grep ERR)" != "" ]; then
 	  echo "ERROR: invalid host address $thishost or $peerhost \
              " >> $PWD/ipsec.log
     fi
-    # parse each tunnel addresses 
+    # parse each tunnel addresses
     tunnel_list_var_name=T$i
     eval tunnels="$"$tunnel_list_var_name""
     for ttunnel in $tunnels; do
         lclnet=${ttunnel%%AND*}
-        rmtnet=${ttunnel##*AND} 
-    	if [ $checkip = "0" ] && 
+        rmtnet=${ttunnel##*AND}
+    	if [ $checkip = "0" ] &&
            [ "$(sipcalc "$lclnet" "$rmtnet"| grep ERR)" != "" ]; then
     	    echo "ERROR: invalid tunnel address $lclnet and $rmtnet \
                  " >> $PWD/ipsec.log
