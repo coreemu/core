@@ -5,13 +5,7 @@ from typing import Optional
 
 from google.protobuf.internal.containers import MessageMap
 
-from core.api.grpc import (
-    common_pb2,
-    configservices_pb2,
-    core_pb2,
-    emane_pb2,
-    services_pb2,
-)
+from core.api.grpc import common_pb2, configservices_pb2, core_pb2, emane_pb2
 
 
 class ConfigServiceValidationMode(Enum):
@@ -205,7 +199,7 @@ class ServiceDefault:
     services: list[str]
 
     @classmethod
-    def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
+    def from_proto(cls, proto: configservices_pb2.ServiceDefaults) -> "ServiceDefault":
         return ServiceDefault(model=proto.model, services=list(proto.services))
 
 
@@ -783,7 +777,7 @@ class Session:
         servers = [x.to_proto() for x in self.servers]
         default_services = []
         for model, services in self.default_services.items():
-            default_service = services_pb2.ServiceDefaults(
+            default_service = configservices_pb2.ServiceDefaults(
                 model=model, services=services
             )
             default_services.append(default_service)

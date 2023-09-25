@@ -4,6 +4,31 @@ package configservices;
 
 import "core/api/grpc/common.proto";
 
+message ServiceAction {
+    enum Enum {
+        START = 0;
+        STOP = 1;
+        RESTART = 2;
+        VALIDATE = 3;
+    }
+}
+
+message ServiceDefaults {
+    string model = 1;
+    repeated string services = 2;
+}
+
+message ServiceActionRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    string service = 3;
+    ServiceAction.Enum action = 4;
+}
+
+message ServiceActionResponse {
+    bool result = 1;
+}
+
 message ConfigServiceConfig {
     int32 node_id = 1;
     string name = 2;

@@ -9,7 +9,7 @@ from google.protobuf.message import Message
 from grpc import ServicerContext
 
 from core import utils
-from core.api.grpc import common_pb2, core_pb2, services_pb2, wrappers
+from core.api.grpc import common_pb2, configservices_pb2, core_pb2, wrappers
 from core.api.grpc.configservices_pb2 import ConfigServiceConfig
 from core.api.grpc.emane_pb2 import NodeEmaneConfig
 from core.config import ConfigurableOptions
@@ -759,7 +759,7 @@ def convert_session(session: Session) -> wrappers.Session:
     ]
     default_services = []
     for group, services in session.service_manager.defaults.items():
-        defaults = services_pb2.ServiceDefaults(model=group, services=services)
+        defaults = configservices_pb2.ServiceDefaults(model=group, services=services)
         default_services.append(defaults)
     return core_pb2.Session(
         id=session.id,

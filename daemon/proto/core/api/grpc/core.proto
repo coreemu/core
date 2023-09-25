@@ -6,7 +6,6 @@ import "core/api/grpc/configservices.proto";
 import "core/api/grpc/common.proto";
 import "core/api/grpc/emane.proto";
 import "core/api/grpc/mobility.proto";
-import "core/api/grpc/services.proto";
 import "core/api/grpc/wlan.proto";
 
 service CoreApi {
@@ -77,7 +76,7 @@ service CoreApi {
     }
     rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
     }
-    rpc ConfigServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
+    rpc ConfigServiceAction (configservices.ServiceActionRequest) returns (configservices.ServiceActionResponse) {
     }
     rpc GetConfigServiceRendered (configservices.GetConfigServiceRenderedRequest) returns (configservices.GetConfigServiceRenderedResponse) {
     }
@@ -549,7 +548,7 @@ message Session {
     repeated Link links = 4;
     string dir = 5;
     string user = 6;
-    repeated services.ServiceDefaults default_services = 7;
+    repeated configservices.ServiceDefaults default_services = 7;
     SessionLocation location = 8;
     repeated Hook hooks = 9;
     map<string, string> metadata = 10;

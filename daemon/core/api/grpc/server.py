@@ -29,6 +29,9 @@ from core.api.grpc.configservices_pb2 import (
     GetConfigServiceRenderedResponse,
     GetNodeConfigServiceRequest,
     GetNodeConfigServiceResponse,
+    ServiceAction,
+    ServiceActionRequest,
+    ServiceActionResponse,
 )
 from core.api.grpc.core_pb2 import (
     ExecuteScriptResponse,
@@ -65,11 +68,6 @@ from core.api.grpc.mobility_pb2 import (
     MobilityActionResponse,
     SetMobilityConfigRequest,
     SetMobilityConfigResponse,
-)
-from core.api.grpc.services_pb2 import (
-    ServiceAction,
-    ServiceActionRequest,
-    ServiceActionResponse,
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
