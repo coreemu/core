@@ -20,6 +20,13 @@ class ConfigServiceManager:
         Create a ConfigServiceManager instance.
         """
         self.services: dict[str, type[ConfigService]] = {}
+        self.defaults: dict[str, list[str]] = {
+            "mdr": ["zebra", "OSPFv3MDR", "IPForward"],
+            "PC": ["DefaultRoute"],
+            "prouter": [],
+            "router": ["zebra", "OSPFv2", "OSPFv3", "IPForward"],
+            "host": ["DefaultRoute", "SSH"],
+        }
 
     def get_service(self, name: str) -> type[ConfigService]:
         """

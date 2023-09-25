@@ -14,6 +14,7 @@ from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigOptionType,
+    ConfigServiceData,
     EmaneModelConfig,
     Event,
     Geo,
@@ -24,14 +25,13 @@ from core.api.grpc.wrappers import (
     MobilityAction,
     MoveNodesRequest,
     Node,
-    NodeServiceData,
     NodeType,
     Position,
     ServiceAction,
-    ServiceValidationMode,
     SessionLocation,
     SessionState,
 )
+from core.configservices.utilservices.services import DefaultRouteService
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, IpPrefixes, NodeData
@@ -93,25 +93,13 @@ class TestGrpc:
         wlan_node.set_mobility({mobility_config_key: mobility_config_value})
 
         # setup service config
-        service_name = "DefaultRoute"
-        service_validate = ["echo hello"]
-        node1.service_configs[service_name] = NodeServiceData(
-            executables=[],
-            dependencies=[],
-            dirs=[],
-            configs=[],
-            startup=[],
-            validate=service_validate,
-            validation_mode=ServiceValidationMode.NON_BLOCKING,
-            validation_timer=0,
-            shutdown=[],
-            meta="",
+        service_name = DefaultRouteService.name
+        file_name = DefaultRouteService.files[0]
+        file_data = "hello world"
+        service_data = ConfigServiceData(
+            templates={file_name: file_data},
         )
-
-        # setup service file config
-        service_file = "defaultroute.sh"
-        service_file_data = "echo hello"
-        node1.service_file_configs[service_name] = {service_file: service_file_data}
+        node1.config_service_configs[service_name] = service_data
 
         # setup session option
         option_key = "controlnet"
@@ -153,16 +141,11 @@ class TestGrpc:
             wlan_node.id, Ns2ScriptedMobility.name
         )
         assert set_mobility_config[mobility_config_key] == mobility_config_value
-        service = real_session.services.get_service(
-            node1.id, service_name, default_service=True
-        )
-        assert service.validate == tuple(service_validate)
         real_node1 = real_session.get_node(node1.id, CoreNode)
-        service_file = real_session.services.get_service_file(
-            real_node1, service_name, service_file
-        )
-        assert service_file.data == service_file_data
-        assert option_value == real_session.options.get(option_key)
+        real_service = real_node1.config_services[service_name]
+        real_templates = real_service.get_templates()
+        real_template_data = real_templates[file_name]
+        assert file_data == real_template_data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(
@@ -624,79 +607,6 @@ class TestGrpc:
         # then
         with client.context_connect():
             result = client.mobility_action(session.id, wlan.id, MobilityAction.STOP)
-
-        # then
-        assert result is True
-
-    def test_get_service_defaults(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-
-        # then
-        with client.context_connect():
-            defaults = client.get_service_defaults(session.id)
-
-        # then
-        assert len(defaults) > 0
-
-    def test_set_service_defaults(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        model = "test"
-        services = ["SSH"]
-
-        # then
-        with client.context_connect():
-            result = client.set_service_defaults(session.id, {model: services})
-
-        # then
-        assert result is True
-        assert session.services.default_services[model] == services
-
-    def test_get_node_service(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        with client.context_connect():
-            service = client.get_node_service(session.id, node.id, "DefaultRoute")
-
-        # then
-        assert len(service.configs) > 0
-
-    def test_get_node_service_file(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        node = session.add_node(CoreNode)
-
-        # then
-        with client.context_connect():
-            data = client.get_node_service_file(
-                session.id, node.id, "DefaultRoute", "defaultroute.sh"
-            )
-
-        # then
-        assert data is not None
-
-    def test_service_action(self, grpc_server: CoreGrpcServer):
-        # given
-        client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
-        options = CoreNode.create_options()
-        options.legacy = True
-        node = session.add_node(CoreNode, options=options)
-        service_name = "DefaultRoute"
-
-        # then
-        with client.context_connect():
-            result = client.service_action(
-                session.id, node.id, service_name, ServiceAction.STOP
-            )
 
         # then
         assert result is True

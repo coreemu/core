@@ -19,7 +19,6 @@ from core.nodes.lxd import LxcNode, LxcOptions
 from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
 from core.nodes.podman import PodmanNode, PodmanOptions
 from core.nodes.wireless import WirelessNode
-from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
 
@@ -148,68 +147,6 @@ class NodeElement:
         add_attribute(position, "alt", alt)
 
 
-class ServiceElement:
-    def __init__(self, service: type[CoreService]) -> None:
-        self.service: type[CoreService] = service
-        self.element: etree.Element = etree.Element("service")
-        add_attribute(self.element, "name", service.name)
-        self.add_directories()
-        self.add_startup()
-        self.add_validate()
-        self.add_shutdown()
-        self.add_files()
-
-    def add_directories(self) -> None:
-        # get custom directories
-        directories = etree.Element("directories")
-        for directory in self.service.dirs:
-            directory_element = etree.SubElement(directories, "directory")
-            directory_element.text = directory
-
-        if directories.getchildren():
-            self.element.append(directories)
-
-    def add_files(self) -> None:
-        file_elements = etree.Element("files")
-        for file_name in self.service.config_data:
-            data = self.service.config_data[file_name]
-            file_element = etree.SubElement(file_elements, "file")
-            add_attribute(file_element, "name", file_name)
-            file_element.text = etree.CDATA(data)
-        if file_elements.getchildren():
-            self.element.append(file_elements)
-
-    def add_startup(self) -> None:
-        # get custom startup
-        startup_elements = etree.Element("startups")
-        for startup in self.service.startup:
-            startup_element = etree.SubElement(startup_elements, "startup")
-            startup_element.text = startup
-
-        if startup_elements.getchildren():
-            self.element.append(startup_elements)
-
-    def add_validate(self) -> None:
-        # get custom validate
-        validate_elements = etree.Element("validates")
-        for validate in self.service.validate:
-            validate_element = etree.SubElement(validate_elements, "validate")
-            validate_element.text = validate
-
-        if validate_elements.getchildren():
-            self.element.append(validate_elements)
-
-    def add_shutdown(self) -> None:
-        # get custom shutdown
-        shutdown_elements = etree.Element("shutdowns")
-        for shutdown in self.service.shutdown:
-            shutdown_element = etree.SubElement(shutdown_elements, "shutdown")
-            shutdown_element.text = shutdown
-
-        if shutdown_elements.getchildren():
-            self.element.append(shutdown_elements)
-
-
 class DeviceElement(NodeElement):
     def __init__(self, session: "Session", node: NodeBase) -> None:
         super().__init__(session, node, "device")
@@ -234,8 +171,6 @@ class DeviceElement(NodeElement):
 
     def add_services(self) -> None:
         service_elements = etree.Element("services")
-        for service in self.node.services:
-            etree.SubElement(service_elements, "service", name=service.name)
         if service_elements.getchildren():
             self.element.append(service_elements)
 
@@ -290,7 +225,6 @@ class CoreXmlWriter:
         self.write_links()
         self.write_mobility_configs()
         self.write_emane_configs()
-        self.write_service_configs()
         self.write_configservice_configs()
         self.write_session_origin()
         self.write_servers()
@@ -413,17 +347,6 @@ class CoreXmlWriter:
         if mobility_configurations.getchildren():
             self.scenario.append(mobility_configurations)
 
-    def write_service_configs(self) -> None:
-        service_configurations = etree.Element("service_configurations")
-        service_configs = self.session.services.all_configs()
-        for node_id, service in service_configs:
-            service_element = ServiceElement(service)
-            add_attribute(service_element.element, "node", node_id)
-            service_configurations.append(service_element.element)
-
-        if service_configurations.getchildren():
-            self.scenario.append(service_configurations)
-
     def write_configservice_configs(self) -> None:
         service_configurations = etree.Element("configservice_configurations")
         for node in self.session.nodes.values():
@@ -452,8 +375,7 @@ class CoreXmlWriter:
 
     def write_default_services(self) -> None:
         models = etree.Element("default_services")
-        for model in self.session.services.default_services:
-            services = self.session.services.default_services[model]
+        for model, services in []:
             model = etree.SubElement(models, "node", type=model)
             for service in services:
                 etree.SubElement(model, "service", name=service)
@@ -585,7 +507,6 @@ class CoreXmlReader:
         self.read_session_hooks()
         self.read_servers()
         self.read_session_origin()
-        self.read_service_configs()
         self.read_mobility_configs()
         self.read_nodes()
         self.read_links()
@@ -603,7 +524,6 @@ class CoreXmlReader:
             for service in node.iterchildren():
                 services.append(service.get("name"))
             logger.info("reading default services for nodes(%s): %s", model, services)
-            self.session.services.default_services[model] = services
 
     def read_session_metadata(self) -> None:
         session_metadata = self.scenario.find("session_metadata")
@@ -676,50 +596,6 @@ class CoreXmlReader:
         if all([x, y]):
             logger.info("reading session reference xyz: %s, %s, %s", x, y, z)
             self.session.location.refxyz = (x, y, z)
-
-    def read_service_configs(self) -> None:
-        service_configurations = self.scenario.find("service_configurations")
-        if service_configurations is None:
-            return
-
-        for service_configuration in service_configurations.iterchildren():
-            node_id = get_int(service_configuration, "node")
-            service_name = service_configuration.get("name")
-            logger.info(
-                "reading custom service(%s) for node(%s)", service_name, node_id
-            )
-            self.session.services.set_service(node_id, service_name)
-            service = self.session.services.get_service(node_id, service_name)
-
-            directory_elements = service_configuration.find("directories")
-            if directory_elements is not None:
-                service.dirs = tuple(x.text for x in directory_elements.iterchildren())
-
-            startup_elements = service_configuration.find("startups")
-            if startup_elements is not None:
-                service.startup = tuple(x.text for x in startup_elements.iterchildren())
-
-            validate_elements = service_configuration.find("validates")
-            if validate_elements is not None:
-                service.validate = tuple(
-                    x.text for x in validate_elements.iterchildren()
-                )
-
-            shutdown_elements = service_configuration.find("shutdowns")
-            if shutdown_elements is not None:
-                service.shutdown = tuple(
-                    x.text for x in shutdown_elements.iterchildren()
-                )
-
-            file_elements = service_configuration.find("files")
-            if file_elements is not None:
-                files = set(service.configs)
-                for file_element in file_elements.iterchildren():
-                    name = file_element.get("name")
-                    data = file_element.text
-                    service.config_data[name] = data
-                    files.add(name)
-                service.configs = tuple(files)
 
     def read_emane_configs(self) -> None:
         emane_configurations = self.scenario.find("emane_configurations")

@@ -72,18 +72,6 @@ service CoreApi {
     rpc MobilityAction (mobility.MobilityActionRequest) returns (mobility.MobilityActionResponse) {
     }
 
-    // service rpc
-    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
-    }
-    rpc SetServiceDefaults (services.SetServiceDefaultsRequest) returns (services.SetServiceDefaultsResponse) {
-    }
-    rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
-    }
-    rpc GetNodeServiceFile (services.GetNodeServiceFileRequest) returns (services.GetNodeServiceFileResponse) {
-    }
-    rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
-    }
-
     // config services
     rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
     }
@@ -146,9 +134,8 @@ message GetConfigRequest {
 }
 
 message GetConfigResponse {
-    repeated services.Service services = 1;
-    repeated configservices.ConfigService config_services = 2;
-    repeated string emane_models = 3;
+    repeated configservices.ConfigService config_services = 1;
+    repeated string emane_models = 2;
 }
 
 
@@ -585,22 +572,20 @@ message Node {
     NodeType.Enum type = 3;
     string model = 4;
     Position position = 5;
-    repeated string services = 6;
-    string emane = 7;
-    string icon = 8;
-    string image = 9;
-    string server = 10;
-    repeated string config_services = 11;
-    Geo geo = 12;
-    string dir = 13;
-    string channel = 14;
-    int32 canvas = 15;
-    map<string, common.ConfigOption> wlan_config = 16;
-    map<string, common.ConfigOption> mobility_config = 17;
-    map<string, services.NodeServiceConfig> service_configs = 18;
-    map<string, configservices.ConfigServiceConfig> config_service_configs= 19;
-    repeated emane.NodeEmaneConfig emane_configs = 20;
-    map<string, common.ConfigOption> wireless_config = 21;
+    string emane = 6;
+    string icon = 7;
+    string image = 8;
+    string server = 9;
+    repeated string config_services = 10;
+    Geo geo = 11;
+    string dir = 12;
+    string channel = 13;
+    int32 canvas = 14;
+    map<string, common.ConfigOption> wlan_config = 15;
+    map<string, common.ConfigOption> mobility_config = 16;
+    map<string, configservices.ConfigServiceConfig> config_service_configs= 17;
+    repeated emane.NodeEmaneConfig emane_configs = 18;
+    map<string, common.ConfigOption> wireless_config = 19;
 }
 
 message Link {

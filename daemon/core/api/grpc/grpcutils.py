@@ -9,15 +9,9 @@ from google.protobuf.message import Message
 from grpc import ServicerContext
 
 from core import utils
-from core.api.grpc import common_pb2, core_pb2, wrappers
+from core.api.grpc import common_pb2, core_pb2, services_pb2, wrappers
 from core.api.grpc.configservices_pb2 import ConfigServiceConfig
 from core.api.grpc.emane_pb2 import NodeEmaneConfig
-from core.api.grpc.services_pb2 import (
-    NodeServiceConfig,
-    NodeServiceData,
-    ServiceConfig,
-    ServiceDefaults,
-)
 from core.config import ConfigurableOptions
 from core.emane.nodes import EmaneNet, EmaneOptions
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
@@ -40,7 +34,6 @@ from core.nodes.lxd import LxcNode, LxcOptions
 from core.nodes.network import CoreNetwork, CtrlNet, PtpNet, WlanNode
 from core.nodes.podman import PodmanNode, PodmanOptions
 from core.nodes.wireless import WirelessNode
-from core.services.coreservices import CoreService
 
 logger = logging.getLogger(__name__)
 WORKERS = 10
@@ -80,7 +73,6 @@ def add_node_data(
     options.canvas = node_proto.canvas
     if isinstance(options, CoreNodeOptions):
         options.model = node_proto.model
-        options.services = node_proto.services
         options.config_services = node_proto.config_services
     if isinstance(options, EmaneOptions):
         options.emane_model = node_proto.emane
@@ -303,7 +295,6 @@ def get_node_proto(
     geo = core_pb2.Geo(
         lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
     )
-    services = [x.name for x in node.services]
     node_dir = None
     config_services = []
     if isinstance(node, CoreNodeBase):
@@ -345,18 +336,6 @@ def get_node_proto(
     )
     if mobility_config:
         mobility_config = get_config_options(mobility_config, Ns2ScriptedMobility)
-    # check for service configs
-    custom_services = session.services.custom_services.get(node.id)
-    service_configs = {}
-    if custom_services:
-        for service in custom_services.values():
-            service_proto = get_service_configuration(service)
-            service_configs[service.name] = NodeServiceConfig(
-                node_id=node.id,
-                service=service.name,
-                data=service_proto,
-                files=service.config_data,
-            )
     # check for config service configs
     config_service_configs = {}
     if isinstance(node, CoreNode):
@@ -377,7 +356,6 @@ def get_node_proto(
         type=node_type.value,
         position=position,
         geo=geo,
-        services=services,
         icon=node.icon,
         image=image,
         config_services=config_services,
@@ -387,7 +365,6 @@ def get_node_proto(
         wlan_config=wlan_config,
         wireless_config=wireless_config,
         mobility_config=mobility_config,
-        service_configs=service_configs,
         config_service_configs=config_service_configs,
         emane_configs=emane_configs,
     )
@@ -626,49 +603,6 @@ def session_location(session: Session, location: core_pb2.SessionLocation) -> No
     session.location.refscale = location.scale
 
 
-def service_configuration(session: Session, config: ServiceConfig) -> None:
-    """
-    Convenience method for setting a node service configuration.
-
-    :param session: session for service configuration
-    :param config: service configuration
-    :return:
-    """
-    session.services.set_service(config.node_id, config.service)
-    service = session.services.get_service(config.node_id, config.service)
-    if config.files:
-        service.configs = tuple(config.files)
-    if config.directories:
-        service.dirs = tuple(config.directories)
-    if config.startup:
-        service.startup = tuple(config.startup)
-    if config.validate:
-        service.validate = tuple(config.validate)
-    if config.shutdown:
-        service.shutdown = tuple(config.shutdown)
-
-
-def get_service_configuration(service: CoreService) -> NodeServiceData:
-    """
-    Convenience for converting a service to service data proto.
-
-    :param service: service to get proto data for
-    :return: service proto data
-    """
-    return NodeServiceData(
-        executables=service.executables,
-        dependencies=service.dependencies,
-        dirs=service.dirs,
-        configs=service.configs,
-        startup=service.startup,
-        validate=service.validate,
-        validation_mode=service.validation_mode.value,
-        validation_timer=service.validation_timer,
-        shutdown=service.shutdown,
-        meta=service.meta,
-    )
-
-
 def iface_to_proto(session: Session, iface: CoreInterface) -> core_pb2.Interface:
     """
     Convenience for converting a core interface to the protobuf representation.
@@ -770,20 +704,6 @@ def get_hooks(session: Session) -> list[core_pb2.Hook]:
     return hooks
 
 
-def get_default_services(session: Session) -> list[ServiceDefaults]:
-    """
-    Retrieve the default service sets for a given session.
-
-    :param session: session to get default service sets for
-    :return: list of default service sets
-    """
-    default_services = []
-    for model, services in session.services.default_services.items():
-        default_service = ServiceDefaults(model=model, services=services)
-        default_services.append(default_service)
-    return default_services
-
-
 def get_mobility_node(
     session: Session, node_id: int, context: ServicerContext
 ) -> Union[WlanNode, EmaneNet]:
@@ -825,7 +745,6 @@ def convert_session(session: Session) -> wrappers.Session:
                 links.append(convert_link_data(link_data))
     for core_link in session.link_manager.links():
         links.extend(convert_core_link(core_link))
-    default_services = get_default_services(session)
     x, y, z = session.location.refxyz
     lat, lon, alt = session.location.refgeo
     location = core_pb2.SessionLocation(
@@ -838,6 +757,10 @@ def convert_session(session: Session) -> wrappers.Session:
         core_pb2.Server(name=x.name, host=x.host)
         for x in session.distributed.servers.values()
     ]
+    default_services = []
+    for group, services in session.service_manager.defaults.items():
+        defaults = services_pb2.ServiceDefaults(model=group, services=services)
+        default_services.append(defaults)
     return core_pb2.Session(
         id=session.id,
         state=session.state.value,
@@ -880,22 +803,6 @@ def configure_node(
     if isinstance(core_node, WirelessNode) and node.wireless_config:
         config = {k: v.value for k, v in node.wireless_config.items()}
         core_node.set_config(config)
-    for service_name, service_config in node.service_configs.items():
-        data = service_config.data
-        config = ServiceConfig(
-            node_id=node.id,
-            service=service_name,
-            startup=data.startup,
-            validate=data.validate,
-            shutdown=data.shutdown,
-            files=data.configs,
-            directories=data.dirs,
-        )
-        service_configuration(session, config)
-        for file_name, file_data in service_config.files.items():
-            session.services.set_service_file(
-                node.id, service_name, file_name, file_data
-            )
     if node.config_service_configs:
         if not isinstance(core_node, CoreNode):
             context.abort(

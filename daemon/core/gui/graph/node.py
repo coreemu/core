@@ -15,7 +15,6 @@ from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
 from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
-from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wirelessconfig import WirelessConfigDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.frames.node import NodeInfoFrame
@@ -263,9 +262,6 @@ class CanvasNode:
                 self.context.add_command(
                     label="Config Services", command=self.show_config_services
                 )
-                self.context.add_command(
-                    label="Services (Deprecated)", command=self.show_services
-                )
             if is_emane:
                 self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -376,10 +372,6 @@ class CanvasNode:
 
     def show_emane_config(self) -> None:
         dialog = EmaneConfigDialog(self.app, self.core_node)
-        dialog.show()
-
-    def show_services(self) -> None:
-        dialog = NodeServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def show_config_services(self) -> None:

@@ -9,7 +9,7 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import RLock
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 import netaddr
 
@@ -27,9 +27,7 @@ if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
     from core.configservice.base import ConfigService
-    from core.services.coreservices import CoreService
 
-    CoreServices = list[Union[CoreService, type[CoreService]]]
     ConfigServiceType = type[ConfigService]
 
 PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
@@ -151,7 +149,6 @@ class NodeBase(abc.ABC):
         self.name: str = name or f"{self.__class__.__name__}{self.id}"
         self.server: "DistributedServer" = server
         self.model: Optional[str] = None
-        self.services: CoreServices = []
         self.ifaces: dict[int, CoreInterface] = {}
         self.iface_id: int = 0
         self.position: Position = Position()
@@ -589,15 +586,16 @@ class CoreNode(CoreNodeBase):
         )
         options = options or CoreNodeOptions()
         self.model: Optional[str] = options.model
-        # setup services
-        if options.legacy or options.services:
-            logger.debug("set node type: %s", self.model)
-            self.session.services.add_services(self, self.model, options.services)
         # add config services
         config_services = options.config_services
-        if not options.legacy and not config_services and not options.services:
-            config_services = self.session.services.default_services.get(self.model, [])
-        logger.info("setting node config services: %s", config_services)
+        if not config_services:
+            config_services = self.session.service_manager.defaults.get(self.model, [])
+        logger.info(
+            "setting node(%s) model(%s) config services: %s",
+            self.name,
+            self.model,
+            config_services,
+        )
         for name in config_services:
             service_class = self.session.service_manager.get_service(name)
             self.add_config_service(service_class)

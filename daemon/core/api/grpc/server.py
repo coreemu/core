@@ -67,18 +67,9 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigResponse,
 )
 from core.api.grpc.services_pb2 import (
-    GetNodeServiceFileRequest,
-    GetNodeServiceFileResponse,
-    GetNodeServiceRequest,
-    GetNodeServiceResponse,
-    GetServiceDefaultsRequest,
-    GetServiceDefaultsResponse,
-    Service,
     ServiceAction,
     ServiceActionRequest,
     ServiceActionResponse,
-    SetServiceDefaultsRequest,
-    SetServiceDefaultsResponse,
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
@@ -104,7 +95,6 @@ from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.wireless import WirelessNode
-from core.services.coreservices import ServiceManager
 from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
@@ -231,11 +221,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetConfig(
         self, request: core_pb2.GetConfigRequest, context: ServicerContext
     ) -> core_pb2.GetConfigResponse:
-        services = []
-        for name in ServiceManager.services:
-            service = ServiceManager.services[name]
-            service_proto = Service(group=service.group, name=service.name)
-            services.append(service_proto)
         config_services = []
         for service in self.coreemu.service_manager.services.values():
             service_proto = configservices_pb2.ConfigService(
@@ -255,7 +240,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             config_services.append(service_proto)
         emane_models = [x.name for x in EmaneModelManager.models.values()]
         return core_pb2.GetConfigResponse(
-            services=services,
             config_services=config_services,
             emane_models=emane_models,
         )
@@ -921,119 +905,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         else:
             result = False
         return MobilityActionResponse(result=result)
-
-    def GetServiceDefaults(
-        self, request: GetServiceDefaultsRequest, context: ServicerContext
-    ) -> GetServiceDefaultsResponse:
-        """
-        Retrieve all the default services of all node types in a session
-
-        :param request: get-default-service request
-        :param context: context object
-        :return: get-service-defaults response about all the available default services
-        """
-        logger.debug("get service defaults: %s", request)
-        session = self.get_session(request.session_id, context)
-        defaults = grpcutils.get_default_services(session)
-        return GetServiceDefaultsResponse(defaults=defaults)
-
-    def SetServiceDefaults(
-        self, request: SetServiceDefaultsRequest, context: ServicerContext
-    ) -> SetServiceDefaultsResponse:
-        """
-        Set new default services to the session after whipping out the old ones
-
-        :param request: set-service-defaults request
-        :param context: context object
-        :return: set-service-defaults response
-        """
-        logger.debug("set service defaults: %s", request)
-        session = self.get_session(request.session_id, context)
-        session.services.default_services.clear()
-        for service_defaults in request.defaults:
-            session.services.default_services[service_defaults.model] = list(
-                service_defaults.services
-            )
-        return SetServiceDefaultsResponse(result=True)
-
-    def GetNodeService(
-        self, request: GetNodeServiceRequest, context: ServicerContext
-    ) -> GetNodeServiceResponse:
-        """
-        Retrieve a requested service from a node
-
-        :param request: get-node-service
-            request
-        :param context: context object
-        :return: get-node-service response about the requested service
-        """
-        logger.debug("get node service: %s", request)
-        session = self.get_session(request.session_id, context)
-        service = session.services.get_service(
-            request.node_id, request.service, default_service=True
-        )
-        service_proto = grpcutils.get_service_configuration(service)
-        return GetNodeServiceResponse(service=service_proto)
-
-    def GetNodeServiceFile(
-        self, request: GetNodeServiceFileRequest, context: ServicerContext
-    ) -> GetNodeServiceFileResponse:
-        """
-        Retrieve a requested service file from a node
-
-        :param request:
-            get-node-service request
-        :param context: context object
-        :return: get-node-service response about the requested service
-        """
-        logger.debug("get node service file: %s", request)
-        session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, CoreNode)
-        file_data = session.services.get_service_file(
-            node, request.service, request.file
-        )
-        return GetNodeServiceFileResponse(data=file_data.data)
-
-    def ServiceAction(
-        self, request: ServiceActionRequest, context: ServicerContext
-    ) -> ServiceActionResponse:
-        """
-        Take action whether to start, stop, restart, validate the service or none of
-        the above.
-
-        :param request: service-action request
-        :param context: context object
-        :return: service-action response about status of action
-        """
-        logger.debug("service action: %s", request)
-        session = self.get_session(request.session_id, context)
-        node = self.get_node(session, request.node_id, context, CoreNode)
-        service = None
-        for current_service in node.services:
-            if current_service.name == request.service:
-                service = current_service
-                break
-
-        if not service:
-            context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
-
-        status = -1
-        if request.action == ServiceAction.START:
-            status = session.services.startup_service(node, service, wait=True)
-        elif request.action == ServiceAction.STOP:
-            status = session.services.stop_service(node, service)
-        elif request.action == ServiceAction.RESTART:
-            status = session.services.stop_service(node, service)
-            if not status:
-                status = session.services.startup_service(node, service, wait=True)
-        elif request.action == ServiceAction.VALIDATE:
-            status = session.services.validate_service(node, service)
-
-        result = False
-        if not status:
-            result = True
-
-        return ServiceActionResponse(result=result)
 
     def ConfigServiceAction(
         self, request: ServiceActionRequest, context: ServicerContext

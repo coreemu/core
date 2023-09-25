@@ -27,12 +27,9 @@ from core.api.grpc.wrappers import (
     MessageType,
     Node,
     NodeEvent,
-    NodeServiceData,
     NodeType,
     Position,
     Server,
-    ServiceConfig,
-    ServiceFileConfig,
     Session,
     SessionLocation,
     SessionState,
@@ -76,7 +73,6 @@ class CoreClient:
         self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # global service settings
-        self.services: dict[str, set[str]] = {}
         self.config_services_groups: dict[str, set[str]] = {}
         self.config_services: dict[str, ConfigService] = {}
 
@@ -359,9 +355,6 @@ class CoreClient:
             # get current core configurations services/config services
             core_config = self.client.get_config()
             self.emane_models = sorted(core_config.emane_models)
-            for service in core_config.services:
-                group_services = self.services.setdefault(service.group, set())
-                group_services.add(service.name)
             for service in core_config.config_services:
                 self.config_services[service.name] = service
                 group_services = self.config_services_groups.setdefault(
@@ -558,30 +551,6 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Open XML Error", e)
 
-    def get_node_service(self, node_id: int, service_name: str) -> NodeServiceData:
-        node_service = self.client.get_node_service(
-            self.session.id, node_id, service_name
-        )
-        logger.debug(
-            "get node(%s) service(%s): %s", node_id, service_name, node_service
-        )
-        return node_service
-
-    def get_node_service_file(
-        self, node_id: int, service_name: str, file_name: str
-    ) -> str:
-        data = self.client.get_node_service_file(
-            self.session.id, node_id, service_name, file_name
-        )
-        logger.debug(
-            "get service file for node(%s), service: %s, file: %s, data: %s",
-            node_id,
-            service_name,
-            file_name,
-            data,
-        )
-        return data
-
     def close(self) -> None:
         """
         Clean ups when done using grpc
@@ -714,39 +683,6 @@ class CoreClient:
                     node_id=node.id, model=model, iface_id=iface_id, config=config
                 )
                 configs.append(config)
-        return configs
-
-    def get_service_configs(self) -> list[ServiceConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_configs:
-                continue
-            for name, config in node.service_configs.items():
-                config = ServiceConfig(
-                    node_id=node.id,
-                    service=name,
-                    files=config.configs,
-                    directories=config.dirs,
-                    startup=config.startup,
-                    validate=config.validate,
-                    shutdown=config.shutdown,
-                )
-                configs.append(config)
-        return configs
-
-    def get_service_file_configs(self) -> list[ServiceFileConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_file_configs:
-                continue
-            for service, file_configs in node.service_file_configs.items():
-                for file, data in file_configs.items():
-                    config = ServiceFileConfig(node.id, service, file, data)
-                    configs.append(config)
         return configs
 
     def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:

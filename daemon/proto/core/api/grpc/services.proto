@@ -2,31 +2,6 @@ syntax = "proto3";
 
 package services;
 
-message ServiceConfig {
-    int32 node_id = 1;
-    string service = 2;
-    repeated string startup = 3;
-    repeated string validate = 4;
-    repeated string shutdown = 5;
-    repeated string files = 6;
-    repeated string directories = 7;
-}
-
-message ServiceFileConfig {
-    int32 node_id = 1;
-    string service = 2;
-    string file = 3;
-    string data = 4;
-}
-
-message ServiceValidationMode {
-    enum Enum {
-        BLOCKING = 0;
-        NON_BLOCKING = 1;
-        TIMER = 2;
-    }
-}
-
 message ServiceAction {
     enum Enum {
         START = 0;
@@ -39,69 +14,6 @@ message ServiceAction {
 message ServiceDefaults {
     string model = 1;
     repeated string services = 2;
-}
-
-message Service {
-    string group = 1;
-    string name = 2;
-}
-
-message NodeServiceData {
-    repeated string executables = 1;
-    repeated string dependencies = 2;
-    repeated string dirs = 3;
-    repeated string configs = 4;
-    repeated string startup = 5;
-    repeated string validate = 6;
-    ServiceValidationMode.Enum validation_mode = 7;
-    int32 validation_timer = 8;
-    repeated string shutdown = 9;
-    string meta = 10;
-}
-
-message NodeServiceConfig {
-    int32 node_id = 1;
-    string service = 2;
-    NodeServiceData data = 3;
-    map<string, string> files = 4;
-}
-
-message GetServiceDefaultsRequest {
-    int32 session_id = 1;
-}
-
-message GetServiceDefaultsResponse {
-    repeated ServiceDefaults defaults = 1;
-}
-
-message SetServiceDefaultsRequest {
-    int32 session_id = 1;
-    repeated ServiceDefaults defaults = 2;
-}
-
-message SetServiceDefaultsResponse {
-    bool result = 1;
-}
-
-message GetNodeServiceRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-}
-
-message GetNodeServiceResponse {
-    NodeServiceData service = 1;
-}
-
-message GetNodeServiceFileRequest {
-    int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    string file = 4;
-}
-
-message GetNodeServiceFileResponse {
-    string data = 1;
 }
 
 message ServiceActionRequest {

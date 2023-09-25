@@ -38,14 +38,7 @@ from core.api.grpc.mobility_pb2 import (
     MobilityConfig,
     SetMobilityConfigRequest,
 )
-from core.api.grpc.services_pb2 import (
-    GetNodeServiceFileRequest,
-    GetNodeServiceRequest,
-    GetServiceDefaultsRequest,
-    ServiceActionRequest,
-    ServiceDefaults,
-    SetServiceDefaultsRequest,
-)
+from core.api.grpc.services_pb2 import ServiceActionRequest
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
     SetWlanConfigRequest,
@@ -724,103 +717,6 @@ class CoreGrpcClient:
         request = GetConfigRequest()
         response = self.stub.GetConfig(request)
         return wrappers.CoreConfig.from_proto(response)
-
-    def get_service_defaults(self, session_id: int) -> list[wrappers.ServiceDefault]:
-        """
-        Get default services for different default node models.
-
-        :param session_id: session id
-        :return: list of service defaults
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = GetServiceDefaultsRequest(session_id=session_id)
-        response = self.stub.GetServiceDefaults(request)
-        defaults = []
-        for default_proto in response.defaults:
-            default = wrappers.ServiceDefault.from_proto(default_proto)
-            defaults.append(default)
-        return defaults
-
-    def set_service_defaults(
-        self, session_id: int, service_defaults: dict[str, list[str]]
-    ) -> bool:
-        """
-        Set default services for node models.
-
-        :param session_id: session id
-        :param service_defaults: node models to lists of services
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        defaults = []
-        for model in service_defaults:
-            services = service_defaults[model]
-            default = ServiceDefaults(model=model, services=services)
-            defaults.append(default)
-        request = SetServiceDefaultsRequest(session_id=session_id, defaults=defaults)
-        response = self.stub.SetServiceDefaults(request)
-        return response.result
-
-    def get_node_service(
-        self, session_id: int, node_id: int, service: str
-    ) -> wrappers.NodeServiceData:
-        """
-        Get service data for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :return: node service data
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = GetNodeServiceRequest(
-            session_id=session_id, node_id=node_id, service=service
-        )
-        response = self.stub.GetNodeService(request)
-        return wrappers.NodeServiceData.from_proto(response.service)
-
-    def get_node_service_file(
-        self, session_id: int, node_id: int, service: str, file_name: str
-    ) -> str:
-        """
-        Get a service file for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :param file_name: file name to get data for
-        :return: file data
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = GetNodeServiceFileRequest(
-            session_id=session_id, node_id=node_id, service=service, file=file_name
-        )
-        response = self.stub.GetNodeServiceFile(request)
-        return response.data
-
-    def service_action(
-        self,
-        session_id: int,
-        node_id: int,
-        service: str,
-        action: wrappers.ServiceAction,
-    ) -> bool:
-        """
-        Send an action to a service for a node.
-
-        :param session_id: session id
-        :param node_id: node id
-        :param service: service name
-        :param action: action for service (start, stop, restart,
-            validate)
-        :return: True for success, False otherwise
-        :raises grpc.RpcError: when session or node doesn't exist
-        """
-        request = ServiceActionRequest(
-            session_id=session_id, node_id=node_id, service=service, action=action.value
-        )
-        response = self.stub.ServiceAction(request)
-        return response.result
 
     def config_service_action(
         self,

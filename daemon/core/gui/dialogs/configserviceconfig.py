@@ -317,16 +317,14 @@ class ConfigServiceConfigDialog(Dialog):
     def draw_buttons(self) -> None:
         frame = ttk.Frame(self.top)
         frame.grid(sticky=tk.EW)
-        for i in range(4):
+        for i in range(3):
             frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Defaults", command=self.click_defaults)
         button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
-        button = ttk.Button(frame, text="Copy...", command=self.click_copy)
-        button.grid(row=0, column=2, sticky=tk.EW, padx=PADX)
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=3, sticky=tk.EW)
+        button.grid(row=0, column=2, sticky=tk.EW)
 
     def click_apply(self) -> None:
         current_listbox = self.master.current.listbox
@@ -402,9 +400,6 @@ class ConfigServiceConfigDialog(Dialog):
         if self.config_frame:
             logger.info("resetting defaults: %s", self.default_config)
             self.config_frame.set_values(self.default_config)
-
-    def click_copy(self) -> None:
-        pass
 
     def append_commands(
         self, commands: list[str], listbox: tk.Listbox, to_add: list[str]
