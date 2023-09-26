@@ -71,7 +71,6 @@ from core.api.grpc.wlan_pb2 import (
     WlanLinkRequest,
     WlanLinkResponse,
 )
-from core.configservice.base import ConfigService, ConfigServiceBootError
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
@@ -87,6 +86,7 @@ from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.wireless import WirelessNode
+from core.services.base import Service, ServiceBootError
 from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
@@ -194,9 +194,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         source = source if source else None
         session.broadcast_node(node, source=source)
 
-    def validate_service(
-        self, name: str, context: ServicerContext
-    ) -> type[ConfigService]:
+    def validate_service(self, name: str, context: ServicerContext) -> type[Service]:
         """
         Validates a configuration service is a valid known service.
 
@@ -920,7 +918,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             try:
                 service.start()
                 result = True
-            except ConfigServiceBootError:
+            except ServiceBootError:
                 pass
         elif request.action == ServiceAction.STOP:
             service.stop()
@@ -930,13 +928,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             try:
                 service.start()
                 result = True
-            except ConfigServiceBootError:
+            except ServiceBootError:
                 pass
         elif request.action == ServiceAction.VALIDATE:
             try:
                 service.run_validation()
                 result = True
-            except ConfigServiceBootError:
+            except ServiceBootError:
                 pass
         return ServiceActionResponse(result=result)
 

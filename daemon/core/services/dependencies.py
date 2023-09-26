@@ -4,24 +4,24 @@ from typing import TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from core.configservice.base import ConfigService
+    from core.services.base import Service
 
 
-class ConfigServiceDependencies:
+class ServiceDependencies:
     """
     Generates sets of services to start in order of their dependencies.
     """
 
-    def __init__(self, services: dict[str, "ConfigService"]) -> None:
+    def __init__(self, services: dict[str, "Service"]) -> None:
         """
-        Create a ConfigServiceDependencies instance.
+        Create a ServiceDependencies instance.
 
         :param services: services for determining dependency sets
         """
         # helpers to check validity
         self.dependents: dict[str, set[str]] = {}
         self.started: set[str] = set()
-        self.node_services: dict[str, "ConfigService"] = {}
+        self.node_services: dict[str, "Service"] = {}
         for service in services.values():
             self.node_services[service.name] = service
             for dependency in service.dependencies:
@@ -29,15 +29,15 @@ class ConfigServiceDependencies:
                 dependents.add(service.name)
 
         # used to find paths
-        self.path: list["ConfigService"] = []
+        self.path: list["Service"] = []
         self.visited: set[str] = set()
         self.visiting: set[str] = set()
 
-    def startup_paths(self) -> list[list["ConfigService"]]:
+    def startup_paths(self) -> list[list["Service"]]:
         """
         Find startup path sets based on service dependencies.
 
-        :return: lists of lists of services that can be started in parallel
+        :return: list of lists of services that can be started in parallel
         """
         paths = []
         for name in self.node_services:
@@ -70,9 +70,9 @@ class ConfigServiceDependencies:
         self.visited.clear()
         self.visiting.clear()
 
-    def _start(self, service: "ConfigService") -> list["ConfigService"]:
+    def _start(self, service: "Service") -> list["Service"]:
         """
-        Starts a oath for checking dependencies for a given service.
+        Starts a path for checking dependencies for a given service.
 
         :param service: service to check dependencies for
         :return: list of config services to start in order
@@ -81,7 +81,7 @@ class ConfigServiceDependencies:
         self._reset()
         return self._visit(service)
 
-    def _visit(self, current_service: "ConfigService") -> list["ConfigService"]:
+    def _visit(self, current_service: "Service") -> list["Service"]:
         """
         Visits a service when discovering dependency chains for service.
 

@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 from core import utils
-from core.configservice.manager import ConfigServiceManager
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.session import Session
 from core.executables import get_requirements
+from core.services.manager import ServiceManager
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,7 @@ class CoreEmu:
 
         # load services
         self.service_errors: list[str] = []
-        self.service_manager: ConfigServiceManager = ConfigServiceManager()
+        self.service_manager: ServiceManager = ServiceManager()
         self._load_services()
 
         # check and load emane

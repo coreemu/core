@@ -14,21 +14,21 @@ from typing import TYPE_CHECKING, Optional
 import netaddr
 
 from core import utils
-from core.configservice.dependencies import ConfigServiceDependencies
 from core.emulator.data import InterfaceData, LinkOptions
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH, MOUNT, TEST, VCMD, VNODED
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.netclient import LinuxNetClient, get_net_client
+from core.services.dependencies import ServiceDependencies
 
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.configservice.base import ConfigService
+    from core.services.base import Service
 
-    ConfigServiceType = type[ConfigService]
+    ConfigServiceType = type[Service]
 
 PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
 
@@ -392,7 +392,7 @@ class CoreNodeBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server, options)
-        self.config_services: dict[str, "ConfigService"] = {}
+        self.config_services: dict[str, "Service"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 
@@ -498,7 +498,7 @@ class CoreNodeBase(NodeBase):
 
         :return: nothing
         """
-        startup_paths = ConfigServiceDependencies(self.config_services).startup_paths()
+        startup_paths = ServiceDependencies(self.config_services).startup_paths()
         for startup_path in startup_paths:
             for service in startup_path:
                 service.start()

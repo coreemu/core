@@ -115,11 +115,11 @@ running the shell files generated.
 from typing import Dict, List
 
 from core.config import ConfigString, ConfigBool, Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode, ShadowDir
+from core.services.base import Service, ServiceMode, ShadowDir
 
 
 # class that subclasses ConfigService
-class ExampleService(ConfigService):
+class ExampleService(Service):
     # unique name for your service within CORE
     name: str = "Example"
     # the group your service is associated with, used for display in GUI
@@ -145,7 +145,7 @@ class ExampleService(ConfigService):
     # commands to run to stop this service
     shutdown: List[str] = []
     # validation mode, blocking, non-blocking, and timer
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     # configurable values that this service can use, for file generation
     default_configs: List[Configuration] = [
         ConfigString(id="value1", label="Text"),

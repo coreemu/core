@@ -4,17 +4,13 @@ from unittest import mock
 import pytest
 
 from core.config import ConfigBool, ConfigString
-from core.configservice.base import (
-    ConfigService,
-    ConfigServiceBootError,
-    ConfigServiceMode,
-)
 from core.errors import CoreCommandError, CoreError
+from core.services.base import Service, ServiceBootError, ServiceMode
 
 TEMPLATE_TEXT = "echo hello"
 
 
-class MyService(ConfigService):
+class MyService(Service):
     name = "MyService"
     group = "MyGroup"
     directories = ["/usr/local/lib"]
@@ -24,7 +20,7 @@ class MyService(ConfigService):
     startup = [f"sh {files[0]}"]
     validate = [f"pidof {files[0]}"]
     shutdown = [f"pkill {files[0]}"]
-    validation_mode = ConfigServiceMode.BLOCKING
+    validation_mode = ServiceMode.BLOCKING
     default_configs = [
         ConfigString(id="value1", label="Text"),
         ConfigBool(id="value2", label="Boolean"),
@@ -42,7 +38,7 @@ class MyService(ConfigService):
         return TEMPLATE_TEXT
 
 
-class TestConfigServices:
+class TestServices:
     def test_set_template(self):
         # given
         node = mock.MagicMock()
@@ -113,7 +109,7 @@ class TestConfigServices:
         service = MyService(node)
 
         # when
-        with pytest.raises(ConfigServiceBootError):
+        with pytest.raises(ServiceBootError):
             service.run_startup(wait=True)
 
     def test_shutdown(self):
@@ -142,7 +138,7 @@ class TestConfigServices:
         # given
         node = mock.MagicMock()
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.TIMER
+        service.validation_mode = ServiceMode.TIMER
         service.validation_timer = 0
 
         # when
@@ -156,19 +152,19 @@ class TestConfigServices:
         node = mock.MagicMock()
         node.cmd.side_effect = CoreCommandError(1, "error")
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.TIMER
+        service.validation_mode = ServiceMode.TIMER
         service.validation_period = 0
         service.validation_timer = 0
 
         # when
-        with pytest.raises(ConfigServiceBootError):
+        with pytest.raises(ServiceBootError):
             service.run_validation()
 
     def test_run_validation_non_blocking(self):
         # given
         node = mock.MagicMock()
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.NON_BLOCKING
+        service.validation_mode = ServiceMode.NON_BLOCKING
         service.validation_period = 0
         service.validation_timer = 0
 
@@ -183,12 +179,12 @@ class TestConfigServices:
         node = mock.MagicMock()
         node.cmd.side_effect = CoreCommandError(1, "error")
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.NON_BLOCKING
+        service.validation_mode = ServiceMode.NON_BLOCKING
         service.validation_period = 0
         service.validation_timer = 0
 
         # when
-        with pytest.raises(ConfigServiceBootError):
+        with pytest.raises(ServiceBootError):
             service.run_validation()
 
     def test_render_config(self):
@@ -261,7 +257,7 @@ class TestConfigServices:
         # given
         node = mock.MagicMock()
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.TIMER
+        service.validation_mode = ServiceMode.TIMER
         service.create_dirs = mock.MagicMock()
         service.create_files = mock.MagicMock()
         service.run_startup = mock.MagicMock()
@@ -282,7 +278,7 @@ class TestConfigServices:
         # given
         node = mock.MagicMock()
         service = MyService(node)
-        service.validation_mode = ConfigServiceMode.NON_BLOCKING
+        service.validation_mode = ServiceMode.NON_BLOCKING
         service.create_dirs = mock.MagicMock()
         service.create_files = mock.MagicMock()
         service.run_startup = mock.MagicMock()

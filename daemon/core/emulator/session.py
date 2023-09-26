@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Callable, Optional, TypeVar, Union
 
 from core import constants, utils
-from core.configservice.manager import ConfigServiceManager
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
@@ -58,6 +57,7 @@ from core.nodes.physical import PhysicalNode, Rj45Node
 from core.nodes.podman import PodmanNode
 from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
+from core.services.manager import ServiceManager
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
@@ -155,7 +155,7 @@ class Session:
         self.sdt: Sdt = Sdt(self)
 
         # config services
-        self.service_manager: Optional[ConfigServiceManager] = None
+        self.service_manager: Optional[ServiceManager] = None
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> type[NodeBase]:

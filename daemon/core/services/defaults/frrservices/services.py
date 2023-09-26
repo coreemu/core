@@ -1,19 +1,17 @@
 import abc
-import logging
 from typing import Any
 
 from core.config import Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
+from core.services.base import Service, ServiceMode
 
-logger = logging.getLogger(__name__)
-GROUP: str = "Quagga"
-QUAGGA_STATE_DIR: str = "/var/run/quagga"
+GROUP: str = "FRR"
+FRR_STATE_DIR: str = "/var/run/frr"
 
 
 def is_wireless(node: NodeBase) -> bool:
@@ -28,7 +26,7 @@ def is_wireless(node: NodeBase) -> bool:
 
 def has_mtu_mismatch(iface: CoreInterface) -> bool:
     """
-    Helper to detect MTU mismatch and add the appropriate OSPF
+    Helper to detect MTU mismatch and add the appropriate FRR
     mtu-ignore command. This is needed when e.g. a node is linked via a
     GreTap device.
     """
@@ -42,7 +40,7 @@ def has_mtu_mismatch(iface: CoreInterface) -> bool:
     return False
 
 
-def get_min_mtu(iface: CoreInterface):
+def get_min_mtu(iface: CoreInterface) -> int:
     """
     Helper to discover the minimum MTU of interfaces linked with the
     given interface.
@@ -81,33 +79,34 @@ def rj45_check(iface: CoreInterface) -> bool:
     return False
 
 
-class Zebra(ConfigService):
-    name: str = "zebra"
+class FRRZebra(Service):
+    name: str = "FRRzebra"
     group: str = GROUP
-    directories: list[str] = ["/usr/local/etc/quagga", "/var/run/quagga"]
+    directories: list[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
     files: list[str] = [
-        "/usr/local/etc/quagga/Quagga.conf",
-        "quaggaboot.sh",
-        "/usr/local/etc/quagga/vtysh.conf",
+        "/usr/local/etc/frr/frr.conf",
+        "frrboot.sh",
+        "/usr/local/etc/frr/vtysh.conf",
+        "/usr/local/etc/frr/daemons",
     ]
     executables: list[str] = ["zebra"]
     dependencies: list[str] = []
-    startup: list[str] = ["bash quaggaboot.sh zebra"]
+    startup: list[str] = ["bash frrboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
     shutdown: list[str] = ["killall zebra"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        quagga_bin_search = self.node.session.options.get(
-            "quagga_bin_search", default="/usr/local/bin /usr/bin /usr/lib/quagga"
+        frr_conf = self.files[0]
+        frr_bin_search = self.node.session.options.get(
+            "frr_bin_search", default="/usr/local/bin /usr/bin /usr/lib/frr"
         ).strip('"')
-        quagga_sbin_search = self.node.session.options.get(
-            "quagga_sbin_search", default="/usr/local/sbin /usr/sbin /usr/lib/quagga"
+        frr_sbin_search = self.node.session.options.get(
+            "frr_sbin_search",
+            default="/usr/local/sbin /usr/sbin /usr/lib/frr /usr/libexec/frr",
         ).strip('"')
-        quagga_state_dir = QUAGGA_STATE_DIR
-        quagga_conf = self.files[0]
 
         services = []
         want_ip4 = False
@@ -115,7 +114,7 @@ class Zebra(ConfigService):
         for service in self.node.config_services.values():
             if self.name not in service.dependencies:
                 continue
-            if not isinstance(service, QuaggaService):
+            if not isinstance(service, FrrService):
                 continue
             if service.ipv4_routing:
                 want_ip4 = True
@@ -128,22 +127,16 @@ class Zebra(ConfigService):
             ip4s = []
             ip6s = []
             for ip4 in iface.ip4s:
-                ip4s.append(str(ip4))
+                ip4s.append(str(ip4.ip))
             for ip6 in iface.ip6s:
-                ip6s.append(str(ip6))
-            configs = []
-            if not iface.control:
-                for service in services:
-                    config = service.quagga_iface_config(iface)
-                    if config:
-                        configs.append(config.split("\n"))
-            ifaces.append((iface, ip4s, ip6s, configs))
+                ip6s.append(str(ip6.ip))
+            ifaces.append((iface, ip4s, ip6s, iface.control))
 
         return dict(
-            quagga_bin_search=quagga_bin_search,
-            quagga_sbin_search=quagga_sbin_search,
-            quagga_state_dir=quagga_state_dir,
-            quagga_conf=quagga_conf,
+            frr_conf=frr_conf,
+            frr_sbin_search=frr_sbin_search,
+            frr_bin_search=frr_bin_search,
+            frr_state_dir=FRR_STATE_DIR,
             ifaces=ifaces,
             want_ip4=want_ip4,
             want_ip6=want_ip6,
@@ -151,43 +144,61 @@ class Zebra(ConfigService):
         )
 
 
-class QuaggaService(abc.ABC):
+class FrrService(abc.ABC):
     group: str = GROUP
     directories: list[str] = []
     files: list[str] = []
     executables: list[str] = []
-    dependencies: list[str] = ["zebra"]
+    dependencies: list[str] = ["FRRzebra"]
     startup: list[str] = []
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
     ipv4_routing: bool = False
     ipv6_routing: bool = False
 
     @abc.abstractmethod
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         raise NotImplementedError
 
 
-class Ospfv2(QuaggaService, ConfigService):
+class FRROspfv2(FrrService, Service):
     """
     The OSPFv2 service provides IPv4 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
-    unified Quagga.conf file.
+    unified frr.conf file.
     """
 
-    name: str = "OSPFv2"
-    validate: list[str] = ["pidof ospfd"]
+    name: str = "FRROSPFv2"
     shutdown: list[str] = ["killall ospfd"]
+    validate: list[str] = ["pidof ospfd"]
     ipv4_routing: bool = True
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_config(self) -> str:
+        router_id = get_router_id(self.node)
+        addresses = []
+        for iface in self.node.get_ifaces(control=False):
+            for ip4 in iface.ip4s:
+                addresses.append(str(ip4))
+        data = dict(router_id=router_id, addresses=addresses)
+        text = """
+        router ospf
+          router-id ${router_id}
+          % for addr in addresses:
+          network ${addr} area 0
+          % endfor
+          ospf opaque-lsa
+        !
+        """
+        return self.render_text(text, data)
+
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         has_mtu = has_mtu_mismatch(iface)
         has_rj45 = rj45_check(iface)
         is_ptp = isinstance(iface.net, PtpNet)
@@ -208,45 +219,21 @@ class Ospfv2(QuaggaService, ConfigService):
         """
         return self.render_text(text, data)
 
-    def quagga_config(self) -> str:
-        router_id = get_router_id(self.node)
-        addresses = []
-        for iface in self.node.get_ifaces(control=False):
-            for ip4 in iface.ip4s:
-                addresses.append(str(ip4))
-        data = dict(router_id=router_id, addresses=addresses)
-        text = """
-        router ospf
-          router-id ${router_id}
-          % for addr in addresses:
-          network ${addr} area 0
-          % endfor
-        !
-        """
-        return self.render_text(text, data)
 
-
-class Ospfv3(QuaggaService, ConfigService):
+class FRROspfv3(FrrService, Service):
     """
     The OSPFv3 service provides IPv6 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
-    unified Quagga.conf file.
+    unified frr.conf file.
     """
 
-    name: str = "OSPFv3"
+    name: str = "FRROSPFv3"
     shutdown: list[str] = ["killall ospf6d"]
     validate: list[str] = ["pidof ospf6d"]
     ipv4_routing: bool = True
     ipv6_routing: bool = True
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
-        mtu = get_min_mtu(iface)
-        if mtu < iface.mtu:
-            return f"ipv6 ospf6 ifmtu {mtu}"
-        else:
-            return ""
-
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
@@ -254,7 +241,6 @@ class Ospfv3(QuaggaService, ConfigService):
         data = dict(router_id=router_id, ifnames=ifnames)
         text = """
         router ospf6
-          instance-id 65
           router-id ${router_id}
           % for ifname in ifnames:
           interface ${ifname} area 0.0.0.0
@@ -263,49 +249,29 @@ class Ospfv3(QuaggaService, ConfigService):
         """
         return self.render_text(text, data)
 
-
-class Ospfv3mdr(Ospfv3):
-    """
-    The OSPFv3 MANET Designated Router (MDR) service provides IPv6
-    routing for wireless networks. It does not build its own
-    configuration file but has hooks for adding to the
-    unified Quagga.conf file.
-    """
-
-    name: str = "OSPFv3MDR"
-
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
-        config = super().quagga_iface_config(iface)
-        if is_wireless(iface.net):
-            config = self.clean_text(
-                f"""
-                {config}
-                ipv6 ospf6 hello-interval 2
-                ipv6 ospf6 dead-interval 6
-                ipv6 ospf6 retransmit-interval 5
-                ipv6 ospf6 network manet-designated-router
-                ipv6 ospf6 twohoprefresh 3
-                ipv6 ospf6 adjacencyconnectivity uniconnected
-                ipv6 ospf6 lsafullness mincostlsa
-                """
-            )
-        return config
+    def frr_iface_config(self, iface: CoreInterface) -> str:
+        mtu = get_min_mtu(iface)
+        if mtu < iface.mtu:
+            return f"ipv6 ospf6 ifmtu {mtu}"
+        else:
+            return ""
 
 
-class Bgp(QuaggaService, ConfigService):
+class FRRBgp(FrrService, Service):
     """
     The BGP service provides interdomain routing.
     Peers must be manually configured, with a full mesh for those
     having the same AS number.
     """
 
-    name: str = "BGP"
+    name: str = "FRRBGP"
     shutdown: list[str] = ["killall bgpd"]
     validate: list[str] = ["pidof bgpd"]
+    custom_needed: bool = True
     ipv4_routing: bool = True
     ipv6_routing: bool = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         router_id = get_router_id(self.node)
         text = f"""
         ! BGP configuration
@@ -319,21 +285,21 @@ class Bgp(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
-class Rip(QuaggaService, ConfigService):
+class FRRRip(FrrService, Service):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
 
-    name: str = "RIP"
+    name: str = "FRRRIP"
     shutdown: list[str] = ["killall ripd"]
     validate: list[str] = ["pidof ripd"]
     ipv4_routing: bool = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         text = """
         router rip
           redistribute static
@@ -344,21 +310,21 @@ class Rip(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
-class Ripng(QuaggaService, ConfigService):
+class FRRRipng(FrrService, Service):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
 
-    name: str = "RIPNG"
+    name: str = "FRRRIPNG"
     shutdown: list[str] = ["killall ripngd"]
     validate: list[str] = ["pidof ripngd"]
     ipv6_routing: bool = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         text = """
         router ripng
           redistribute static
@@ -369,22 +335,22 @@ class Ripng(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         return ""
 
 
-class Babel(QuaggaService, ConfigService):
+class FRRBabel(FrrService, Service):
     """
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
 
-    name: str = "Babel"
+    name: str = "FRRBabel"
     shutdown: list[str] = ["killall babeld"]
     validate: list[str] = ["pidof babeld"]
     ipv6_routing: bool = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
@@ -394,13 +360,13 @@ class Babel(QuaggaService, ConfigService):
           network ${ifname}
           % endfor
           redistribute static
-          redistribute connected
+          redistribute ipv4 connected
         !
         """
         data = dict(ifnames=ifnames)
         return self.render_text(text, data)
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         if is_wireless(iface.net):
             text = """
             babel wireless
@@ -414,17 +380,17 @@ class Babel(QuaggaService, ConfigService):
         return self.clean_text(text)
 
 
-class Xpimd(QuaggaService, ConfigService):
+class FRRpimd(FrrService, Service):
     """
     PIM multicast routing based on XORP.
     """
 
-    name: str = "Xpimd"
-    shutdown: list[str] = ["killall xpimd"]
-    validate: list[str] = ["pidof xpimd"]
+    name: str = "FRRpimd"
+    shutdown: list[str] = ["killall pimd"]
+    validate: list[str] = ["pidof pimd"]
     ipv4_routing: bool = True
 
-    def quagga_config(self) -> str:
+    def frr_config(self) -> str:
         ifname = "eth0"
         for iface in self.node.get_ifaces():
             if iface.name != "lo":
@@ -445,9 +411,10 @@ class Xpimd(QuaggaService, ConfigService):
         """
         return self.clean_text(text)
 
-    def quagga_iface_config(self, iface: CoreInterface) -> str:
+    def frr_iface_config(self, iface: CoreInterface) -> str:
         text = """
         ip mfea
+        ip igmp
         ip pim
         """
         return self.clean_text(text)

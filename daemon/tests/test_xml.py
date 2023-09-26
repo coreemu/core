@@ -4,7 +4,6 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core.configservices.utilservices.services import DefaultRouteService
 from core.emulator.data import IpPrefixes, LinkOptions
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
@@ -12,6 +11,7 @@ from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode, WlanNode
+from core.services.defaults.utilservices.services import DefaultRouteService
 
 
 class TestXml:

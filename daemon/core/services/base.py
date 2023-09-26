@@ -33,17 +33,17 @@ def get_template_path(file_path: Path) -> str:
     return template_path
 
 
-class ConfigServiceMode(enum.Enum):
+class ServiceMode(enum.Enum):
     BLOCKING = 0
     NON_BLOCKING = 1
     TIMER = 2
 
 
-class ConfigServiceBootError(Exception):
+class ServiceBootError(Exception):
     pass
 
 
-class ConfigServiceTemplateError(Exception):
+class ServiceTemplateError(Exception):
     pass
 
 
@@ -55,9 +55,9 @@ class ShadowDir:
     has_node_paths: bool = False
 
 
-class ConfigService(abc.ABC):
+class Service(abc.ABC):
     """
-    Base class for creating configurable services.
+    Base class for creating services.
     """
 
     # validation period in seconds, how frequent validation is attempted
@@ -71,7 +71,7 @@ class ConfigService(abc.ABC):
 
     def __init__(self, node: CoreNode) -> None:
         """
-        Create ConfigService instance.
+        Create Service instance.
 
         :param node: node this service is assigned to
         """
@@ -153,7 +153,7 @@ class ConfigService(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def validation_mode(self) -> ConfigServiceMode:
+    def validation_mode(self) -> ServiceMode:
         raise NotImplementedError
 
     def start(self) -> None:
@@ -162,16 +162,16 @@ class ConfigService(abc.ABC):
         validation mode.
 
         :return: nothing
-        :raises ConfigServiceBootError: when there is an error starting service
+        :raises ServiceBootError: when there is an error starting service
         """
         logger.info("node(%s) service(%s) starting...", self.node.name, self.name)
         self.create_shadow_dirs()
         self.create_dirs()
         self.create_files()
-        wait = self.validation_mode == ConfigServiceMode.BLOCKING
+        wait = self.validation_mode == ServiceMode.BLOCKING
         self.run_startup(wait)
         if not wait:
-            if self.validation_mode == ConfigServiceMode.TIMER:
+            if self.validation_mode == ServiceMode.TIMER:
                 self.wait_validation()
             else:
                 self.run_validation()
@@ -265,7 +265,7 @@ class ConfigService(abc.ABC):
         :return: nothing
         :raises CoreError: when there is a failure creating a directory
         """
-        logger.debug("creating config service directories")
+        logger.debug("creating service directories")
         for directory in sorted(self.directories):
             dir_path = Path(directory)
             try:
@@ -323,7 +323,7 @@ class ConfigService(abc.ABC):
                 try:
                     template = self.get_text_template(file)
                 except Exception as e:
-                    raise ConfigServiceTemplateError(
+                    raise ServiceTemplateError(
                         f"node({self.node.name}) service({self.name}) file({file}) "
                         f"failure getting template: {e}"
                     )
@@ -351,7 +351,7 @@ class ConfigService(abc.ABC):
             try:
                 text = self.get_text_template(file)
             except Exception as e:
-                raise ConfigServiceTemplateError(
+                raise ServiceTemplateError(
                     f"node({self.node.name}) service({self.name}) file({file}) "
                     f"failure getting template: {e}"
                 )
@@ -380,13 +380,13 @@ class ConfigService(abc.ABC):
         :param wait: wait successful command exit status when True, ignore status
             otherwise
         :return: nothing
-        :raises ConfigServiceBootError: when a command that waits fails
+        :raises ServiceBootError: when a command that waits fails
         """
         for cmd in self.startup:
             try:
                 self.node.cmd(cmd, wait=wait)
             except CoreCommandError as e:
-                raise ConfigServiceBootError(
+                raise ServiceBootError(
                     f"node({self.node.name}) service({self.name}) failed startup: {e}"
                 )
 
@@ -403,7 +403,7 @@ class ConfigService(abc.ABC):
         Runs validation commands for service on node.
 
         :return: nothing
-        :raises ConfigServiceBootError: if there is a validation failure
+        :raises ServiceBootError: if there is a validation failure
         """
         start = time.monotonic()
         cmds = self.validate[:]
@@ -422,7 +422,7 @@ class ConfigService(abc.ABC):
                 time.sleep(self.validation_period)
 
             if cmds and time.monotonic() - start > self.validation_timer:
-                raise ConfigServiceBootError(
+                raise ServiceBootError(
                     f"node({self.node.name}) service({self.name}) failed to validate"
                 )
 
@@ -460,7 +460,7 @@ class ConfigService(abc.ABC):
 
     def render_template(self, template_path: str, data: dict[str, Any] = None) -> str:
         """
-        Renders file based template  providing all associated data to template.
+        Renders file based template providing all associated data to template.
 
         :param template_path: path of file to render
         :param data: service specific defined data for template

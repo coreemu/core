@@ -31,7 +31,6 @@ from core.api.grpc.wrappers import (
     SessionLocation,
     SessionState,
 )
-from core.configservices.utilservices.services import DefaultRouteService
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, IpPrefixes, NodeData
@@ -40,6 +39,7 @@ from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode, WlanNode
+from core.services.defaults.utilservices.services import DefaultRouteService
 from core.xml.corexml import CoreXmlWriter
 
 
