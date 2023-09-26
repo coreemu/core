@@ -142,7 +142,7 @@ class TestGrpc:
         )
         assert set_mobility_config[mobility_config_key] == mobility_config_value
         real_node1 = real_session.get_node(node1.id, CoreNode)
-        real_service = real_node1.config_services[service_name]
+        real_service = real_node1.services[service_name]
         real_templates = real_service.get_templates()
         real_template_data = real_templates[file_name]
         assert file_data == real_template_data
@@ -611,7 +611,7 @@ class TestGrpc:
         # then
         assert result is True
 
-    def test_config_service_action(self, grpc_server: CoreGrpcServer):
+    def test_service_action(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -620,7 +620,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            result = client.config_service_action(
+            result = client.service_action(
                 session.id, node.id, service_name, ServiceAction.STOP
             )
 

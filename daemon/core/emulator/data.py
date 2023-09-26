@@ -64,7 +64,6 @@ class NodeOptions:
     canvas: int = None
     icon: str = None
     services: list[str] = field(default_factory=list)
-    config_services: list[str] = field(default_factory=list)
     x: float = None
     y: float = None
     lat: float = None
@@ -73,7 +72,6 @@ class NodeOptions:
     server: str = None
     image: str = None
     emane: str = None
-    legacy: bool = False
     # src, dst
     binds: list[tuple[str, str]] = field(default_factory=list)
     # src, dst, unique, delete

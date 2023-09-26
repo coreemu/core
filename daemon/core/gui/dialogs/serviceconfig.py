@@ -25,11 +25,11 @@ if TYPE_CHECKING:
     from core.gui.coreclient import CoreClient
 
 
-class ConfigServiceConfigDialog(Dialog):
+class ServiceConfigDialog(Dialog):
     def __init__(
         self, master: tk.BaseWidget, app: "Application", service_name: str, node: Node
     ) -> None:
-        title = f"{service_name} Config Service"
+        title = f"{service_name} Service"
         super().__init__(app, title, master=master)
         self.core: "CoreClient" = app.core
         self.node: Node = node
@@ -76,7 +76,7 @@ class ConfigServiceConfigDialog(Dialog):
     def load(self) -> None:
         try:
             self.core.start_session(definition=True)
-            service = self.core.config_services[self.service_name]
+            service = self.core.services[self.service_name]
             self.dependencies = service.dependencies[:]
             self.executables = service.executables[:]
             self.directories = service.directories[:]
@@ -87,16 +87,14 @@ class ConfigServiceConfigDialog(Dialog):
             self.validation_mode = service.validation_mode
             self.validation_time = service.validation_timer
             self.validation_period.set(service.validation_period)
-            defaults = self.core.get_config_service_defaults(
-                self.node.id, self.service_name
-            )
+            defaults = self.core.get_service_defaults(self.node.id, self.service_name)
             self.original_service_files = defaults.templates
             self.temp_service_files = dict(self.original_service_files)
             self.modes = sorted(defaults.modes)
             self.mode_configs = defaults.modes
             self.config = ConfigOption.from_dict(defaults.config)
             self.default_config = {x.name: x.value for x in self.config.values()}
-            self.rendered = self.core.get_config_service_rendered(
+            self.rendered = self.core.get_service_rendered(
                 self.node.id, self.service_name
             )
             service_config = self.node.service_configs.get(self.service_name)
@@ -108,7 +106,7 @@ class ConfigServiceConfigDialog(Dialog):
                     self.modified_files.add(file)
                     self.temp_service_files[file] = data
         except grpc.RpcError as e:
-            self.app.show_grpc_exception("Get Config Service Error", e)
+            self.app.show_grpc_exception("Get Service Error", e)
             self.has_error = True
 
     def draw(self) -> None:
@@ -208,7 +206,7 @@ class ConfigServiceConfigDialog(Dialog):
             self.modes_combobox.bind("<<ComboboxSelected>>", self.handle_mode_changed)
             self.modes_combobox.grid(row=0, column=1, sticky=tk.EW, pady=PADY)
 
-        logger.info("config service config: %s", self.config)
+        logger.info("service config: %s", self.config)
         self.config_frame = ConfigFrame(tab, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
@@ -385,10 +383,8 @@ class ConfigServiceConfigDialog(Dialog):
         self.temp_service_files = dict(self.original_service_files)
         # reset session definition and retrieve default rendered templates
         self.core.start_session(definition=True)
-        self.rendered = self.core.get_config_service_rendered(
-            self.node.id, self.service_name
-        )
-        logger.info("cleared config service config: %s", self.node.service_configs)
+        self.rendered = self.core.get_service_rendered(self.node.id, self.service_name)
+        logger.info("cleared service config: %s", self.node.service_configs)
         # reset current selected file data and config data, if present
         template_name = self.templates_combobox.get()
         temp_data = self.temp_service_files[template_name]

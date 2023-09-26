@@ -154,7 +154,7 @@ class Session:
         self.emane: EmaneManager = EmaneManager(self)
         self.sdt: Sdt = Sdt(self)
 
-        # config services
+        # services
         self.service_manager: Optional[ServiceManager] = None
 
     @classmethod
@@ -1052,7 +1052,7 @@ class Session:
             funcs = []
             for node in self.nodes.values():
                 if isinstance(node, CoreNodeBase) and node.up:
-                    funcs.append((node.stop_config_services, (), {}))
+                    funcs.append((node.stop_services, (), {}))
             utils.threadpool(funcs)
 
         # shutdown emane
@@ -1084,11 +1084,11 @@ class Session:
         :return: nothing
         """
         logger.info(
-            "booting node(%s): config services(%s)",
+            "booting node(%s): services(%s)",
             node.name,
-            ", ".join(node.config_services.keys()),
+            ", ".join(node.services.keys()),
         )
-        node.start_config_services()
+        node.start_services()
 
     def boot_nodes(self) -> list[Exception]:
         """

@@ -72,7 +72,7 @@ def add_node_data(
     options.canvas = node_proto.canvas
     if isinstance(options, CoreNodeOptions):
         options.model = node_proto.model
-        options.config_services = node_proto.services
+        options.services = node_proto.services
     if isinstance(options, EmaneOptions):
         options.emane_model = node_proto.emane
     if isinstance(options, (DockerOptions, LxcOptions, PodmanOptions)):
@@ -295,10 +295,10 @@ def get_node_proto(
         lat=node.position.lat, lon=node.position.lon, alt=node.position.alt
     )
     node_dir = None
-    config_services = []
+    services = []
     if isinstance(node, CoreNodeBase):
         node_dir = str(node.directory)
-        config_services = [x for x in node.config_services]
+        services = [x for x in node.services]
     channel = None
     if isinstance(node, CoreNode):
         channel = str(node.ctrlchnlname)
@@ -335,15 +335,13 @@ def get_node_proto(
     )
     if mobility_config:
         mobility_config = get_config_options(mobility_config, Ns2ScriptedMobility)
-    # check for config service configs
-    config_service_configs = {}
+    # check for service configs
+    service_configs = {}
     if isinstance(node, CoreNode):
-        for service in node.config_services.values():
+        for service in node.services.values():
             if not service.custom_templates and not service.custom_config:
                 continue
-            config_service_configs[service.name] = services_pb2.ServiceConfig(
-                node_id=node.id,
-                name=service.name,
+            service_configs[service.name] = services_pb2.ServiceConfig(
                 templates=service.custom_templates,
                 config=service.custom_config,
             )
@@ -357,14 +355,14 @@ def get_node_proto(
         geo=geo,
         icon=node.icon,
         image=image,
-        services=config_services,
+        services=services,
         dir=node_dir,
         channel=channel,
         canvas=node.canvas,
         wlan_config=wlan_config,
         wireless_config=wireless_config,
         mobility_config=mobility_config,
-        service_configs=config_service_configs,
+        service_configs=service_configs,
         emane_configs=emane_configs,
     )
 
@@ -806,10 +804,10 @@ def configure_node(
         if not isinstance(core_node, CoreNode):
             context.abort(
                 grpc.StatusCode.INVALID_ARGUMENT,
-                "invalid node type with config service configs",
+                "invalid node type with service configs",
             )
         for service_name, service_config in node.service_configs.items():
-            service = core_node.config_services[service_name]
+            service = core_node.services[service_name]
             if service_config.config:
                 service.set_config(dict(service_config.config))
             for name, template in service_config.templates.items():

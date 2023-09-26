@@ -44,7 +44,7 @@ class NrlNhdp(Service):
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
@@ -66,8 +66,8 @@ class NrlSmf(Service):
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_nhdp = "NHDP" in self.node.config_services
-        has_olsr = "OLSR" in self.node.config_services
+        has_nhdp = "NHDP" in self.node.services
+        has_olsr = "OLSR" in self.node.services
         ifnames = []
         ip4_prefix = None
         for iface in self.node.get_ifaces(control=False):
@@ -96,8 +96,8 @@ class NrlOlsr(Service):
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
-        has_zebra = "zebra" in self.node.config_services
+        has_smf = "SMF" in self.node.services
+        has_zebra = "zebra" in self.node.services
         ifname = None
         for iface in self.node.get_ifaces(control=False):
             ifname = iface.name
@@ -120,7 +120,7 @@ class NrlOlsrv2(Service):
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
@@ -142,7 +142,7 @@ class OlsrOrg(Service):
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)

@@ -111,7 +111,7 @@ class FRRZebra(Service):
         services = []
         want_ip4 = False
         want_ip6 = False
-        for service in self.node.config_services.values():
+        for service in self.node.services.values():
             if self.name not in service.dependencies:
                 continue
             if not isinstance(service, FrrService):

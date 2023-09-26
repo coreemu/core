@@ -8,7 +8,7 @@ repository = "https://github.com/coreemu/core"
 documentation = "https://coreemu.github.io/core/"
 include = [
     "core/api/grpc/*",
-    "core/configservices/*/templates",
+    "core/services/defaults/*/templates",
     "core/constants.py",
     "core/gui/data/**/*",
 ]

@@ -718,7 +718,7 @@ class CoreGrpcClient:
         response = self.stub.GetConfig(request)
         return wrappers.CoreConfig.from_proto(response)
 
-    def config_service_action(
+    def service_action(
         self,
         session_id: int,
         node_id: int,
@@ -726,11 +726,11 @@ class CoreGrpcClient:
         action: wrappers.ServiceAction,
     ) -> bool:
         """
-        Send an action to a config service for a node.
+        Send an action to a service for a node.
 
         :param session_id: session id
         :param node_id: node id
-        :param service: config service name
+        :param service: service name
         :param action: action for service (start, stop, restart,
             validate)
         :return: True for success, False otherwise
@@ -866,16 +866,16 @@ class CoreGrpcClient:
         response = self.stub.GetInterfaces(request)
         return list(response.ifaces)
 
-    def get_config_service_defaults(
+    def get_service_defaults(
         self, session_id: int, node_id: int, name: str
     ) -> wrappers.ServiceDefaults:
         """
-        Retrieves config service default values.
+        Retrieves service default values.
 
         :param session_id: session id to get node from
         :param node_id: node id to get service data from
         :param name: name of service to get defaults for
-        :return: config service defaults
+        :return: service defaults
         """
         request = GetServiceDefaultsRequest(
             name=name, session_id=session_id, node_id=node_id
@@ -883,11 +883,11 @@ class CoreGrpcClient:
         response = self.stub.GetServiceDefaults(request)
         return wrappers.ServiceDefaults.from_proto(response)
 
-    def get_node_config_service(
+    def get_node_service(
         self, session_id: int, node_id: int, name: str
     ) -> dict[str, str]:
         """
-        Retrieves information for a specific config service on a node.
+        Retrieves information for a specific service on a node.
 
         :param session_id: session node belongs to
         :param node_id: id of node to get service information from
@@ -901,11 +901,11 @@ class CoreGrpcClient:
         response = self.stub.GetNodeService(request)
         return dict(response.config)
 
-    def get_config_service_rendered(
+    def get_service_rendered(
         self, session_id: int, node_id: int, name: str
     ) -> dict[str, str]:
         """
-        Retrieve the rendered config service files for a node.
+        Retrieve the rendered service files for a node.
 
         :param session_id: id of session
         :param node_id: id of node

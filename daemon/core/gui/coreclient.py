@@ -73,8 +73,8 @@ class CoreClient:
         self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # global service settings
-        self.config_services_groups: dict[str, set[str]] = {}
-        self.config_services: dict[str, Service] = {}
+        self.services_groups: dict[str, set[str]] = {}
+        self.services: dict[str, Service] = {}
 
         # loaded configuration data
         self.emane_models: list[str] = []
@@ -352,14 +352,12 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            # get current core configurations services/config services
+            # get current core configurations
             core_config = self.client.get_config()
             self.emane_models = sorted(core_config.emane_models)
             for service in core_config.services:
-                self.config_services[service.name] = service
-                group_services = self.config_services_groups.setdefault(
-                    service.group, set()
-                )
+                self.services[service.name] = service
+                group_services = self.services_groups.setdefault(service.group, set())
                 group_services.add(service.name)
             # join provided session, create new session, or show dialog to select an
             # existing session
@@ -685,11 +683,11 @@ class CoreClient:
                 configs.append(config)
         return configs
 
-    def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
-        return self.client.get_config_service_rendered(self.session.id, node_id, name)
+    def get_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
+        return self.client.get_service_rendered(self.session.id, node_id, name)
 
-    def get_config_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
-        return self.client.get_config_service_defaults(self.session.id, node_id, name)
+    def get_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
+        return self.client.get_service_defaults(self.session.id, node_id, name)
 
     def run(self, node_id: int) -> str:
         logger.info("running node(%s) cmd: %s", node_id, self.observer)

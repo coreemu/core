@@ -14,7 +14,7 @@ from core.gui import themes
 from core.gui.dialogs.emaneconfig import EmaneConfigDialog
 from core.gui.dialogs.mobilityconfig import MobilityConfigDialog
 from core.gui.dialogs.nodeconfig import NodeConfigDialog
-from core.gui.dialogs.nodeconfigservice import NodeConfigServiceDialog
+from core.gui.dialogs.nodeservice import NodeServiceDialog
 from core.gui.dialogs.wirelessconfig import WirelessConfigDialog
 from core.gui.dialogs.wlanconfig import WlanConfigDialog
 from core.gui.frames.node import NodeInfoFrame
@@ -259,9 +259,7 @@ class CanvasNode:
         else:
             self.context.add_command(label="Configure", command=self.show_config)
             if nutils.is_container(self.core_node):
-                self.context.add_command(
-                    label="Config Services", command=self.show_config_services
-                )
+                self.context.add_command(label="Services", command=self.show_services)
             if is_emane:
                 self.context.add_command(
                     label="EMANE Config", command=self.show_emane_config
@@ -374,8 +372,8 @@ class CanvasNode:
         dialog = EmaneConfigDialog(self.app, self.core_node)
         dialog.show()
 
-    def show_config_services(self) -> None:
-        dialog = NodeConfigServiceDialog(self.app, self.core_node)
+    def show_services(self) -> None:
+        dialog = NodeServiceDialog(self.app, self.core_node)
         dialog.show()
 
     def has_emane_link(self, iface_id: int) -> Node:
@@ -471,7 +469,7 @@ class CanvasNode:
     def _service_action(self, service: str, action: ServiceAction) -> None:
         session_id = self.app.core.session.id
         try:
-            result = self.app.core.client.config_service_action(
+            result = self.app.core.client.service_action(
                 session_id, self.core_node.id, service, action
             )
             if not result:

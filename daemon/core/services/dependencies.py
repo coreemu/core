@@ -75,7 +75,7 @@ class ServiceDependencies:
         Starts a path for checking dependencies for a given service.
 
         :param service: service to check dependencies for
-        :return: list of config services to start in order
+        :return: list of services to start in order
         """
         logger.debug("starting service dependency check: %s", service.name)
         self._reset()

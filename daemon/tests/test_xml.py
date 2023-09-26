@@ -125,7 +125,7 @@ class TestXml:
         session.add_link(node1.id, node2.id, iface1_data, iface2_data)
 
         # set custom values for node service
-        service = node1.config_services[DefaultRouteService.name]
+        service = node1.services[DefaultRouteService.name]
         file_name = DefaultRouteService.files[0]
         file_data = "# test"
         service.set_template(file_name, file_data)
@@ -156,7 +156,7 @@ class TestXml:
 
         # retrieve custom service
         node1_xml = session.get_node(node1.id, CoreNode)
-        service_xml = node1_xml.config_services[DefaultRouteService.name]
+        service_xml = node1_xml.services[DefaultRouteService.name]
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
     from core.services.base import Service
 
-    ConfigServiceType = type[Service]
+    ServiceType = type[Service]
 
 PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
 
@@ -113,12 +113,8 @@ class CoreNodeOptions(NodeOptions):
     """model is used for providing a default set of services"""
     services: list[str] = field(default_factory=list)
     """services to start within node"""
-    config_services: list[str] = field(default_factory=list)
-    """config services to start within node"""
     directory: Path = None
     """directory to define node, defaults to path under the session directory"""
-    legacy: bool = False
-    """legacy nodes default to standard services"""
 
 
 class NodeBase(abc.ABC):
@@ -385,14 +381,14 @@ class CoreNodeBase(NodeBase):
         """
         Create a CoreNodeBase instance.
 
-        :param session: CORE session object
-        :param _id: object id
-        :param name: object name
+        :param session: session owning this node
+        :param _id: id of this node
+        :param name: name of this node
         :param server: remote server node
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server, options)
-        self.config_services: dict[str, "Service"] = {}
+        self.services: dict[str, "Service"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 
@@ -466,17 +462,17 @@ class CoreNodeBase(NodeBase):
             directory = str(path.parent).strip("/").replace("/", ".")
             return self.directory / directory / path.name
 
-    def add_config_service(self, service_class: "ConfigServiceType") -> None:
+    def add_service(self, service_class: "ServiceType") -> None:
         """
-        Adds a configuration service to the node.
+        Adds a service to the node.
 
-        :param service_class: configuration service class to assign to node
+        :param service_class: service class to assign to node
         :return: nothing
         """
         name = service_class.name
-        if name in self.config_services:
+        if name in self.services:
             raise CoreError(f"node({self.name}) already has service({name})")
-        self.config_services[name] = service_class(self)
+        self.services[name] = service_class(self)
 
     def set_service_config(self, name: str, data: dict[str, str]) -> None:
         """
@@ -486,30 +482,30 @@ class CoreNodeBase(NodeBase):
         :param data: custom config data to set
         :return: nothing
         """
-        service = self.config_services.get(name)
+        service = self.services.get(name)
         if service is None:
             raise CoreError(f"node({self.name}) does not have service({name})")
         service.set_config(data)
 
-    def start_config_services(self) -> None:
+    def start_services(self) -> None:
         """
-        Determines startup paths and starts configuration services, based on their
+        Determines startup paths and starts services, based on their
         dependency chains.
 
         :return: nothing
         """
-        startup_paths = ServiceDependencies(self.config_services).startup_paths()
+        startup_paths = ServiceDependencies(self.services).startup_paths()
         for startup_path in startup_paths:
             for service in startup_path:
                 service.start()
 
-    def stop_config_services(self) -> None:
+    def stop_services(self) -> None:
         """
-        Stop all configuration services.
+        Stop all services.
 
         :return: nothing
         """
-        for service in self.config_services.values():
+        for service in self.services.values():
             service.stop()
 
     def makenodedir(self) -> None:
@@ -586,19 +582,19 @@ class CoreNode(CoreNodeBase):
         )
         options = options or CoreNodeOptions()
         self.model: Optional[str] = options.model
-        # add config services
-        config_services = options.config_services
-        if not config_services:
-            config_services = self.session.service_manager.defaults.get(self.model, [])
+        # add services
+        services = options.services
+        if not services:
+            services = self.session.service_manager.defaults.get(self.model, [])
         logger.info(
-            "setting node(%s) model(%s) config services: %s",
+            "setting node(%s) model(%s) services: %s",
             self.name,
             self.model,
-            config_services,
+            services,
         )
-        for name in config_services:
+        for name in services:
             service_class = self.session.service_manager.get_service(name)
-            self.add_config_service(service_class)
+            self.add_service(service_class)
 
     @classmethod
     def create_options(cls) -> CoreNodeOptions:

@@ -7,8 +7,8 @@ from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 from core.api.grpc.wrappers import Node
-from core.gui.dialogs.configserviceconfig import ConfigServiceConfigDialog
 from core.gui.dialogs.dialog import Dialog
+from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
@@ -18,11 +18,11 @@ if TYPE_CHECKING:
     from core.gui.app import Application
 
 
-class NodeConfigServiceDialog(Dialog):
+class NodeServiceDialog(Dialog):
     def __init__(
         self, app: "Application", node: Node, services: set[str] = None
     ) -> None:
-        title = f"{node.name} Config Services"
+        title = f"{node.name} Services"
         super().__init__(app, title)
         self.node: Node = node
         self.groups: Optional[ListboxScroll] = None
@@ -49,7 +49,7 @@ class NodeConfigServiceDialog(Dialog):
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
         self.groups.grid(sticky=tk.NSEW)
-        for group in sorted(self.app.core.config_services_groups):
+        for group in sorted(self.app.core.services_groups):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
@@ -94,7 +94,7 @@ class NodeConfigServiceDialog(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for name in sorted(self.app.core.config_services_groups[group]):
+            for name in sorted(self.app.core.services_groups[group]):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
@@ -110,7 +110,7 @@ class NodeConfigServiceDialog(Dialog):
     def click_configure(self) -> None:
         current_selection = self.current.listbox.curselection()
         if len(current_selection):
-            dialog = ConfigServiceConfigDialog(
+            dialog = ServiceConfigDialog(
                 self,
                 self.app,
                 self.current.listbox.get(current_selection[0]),
@@ -121,7 +121,7 @@ class NodeConfigServiceDialog(Dialog):
                 self.draw_current_services()
         else:
             messagebox.showinfo(
-                "Config Service Configuration",
+                "Service Configuration",
                 "Select a service to configure",
                 parent=self,
             )
@@ -135,7 +135,7 @@ class NodeConfigServiceDialog(Dialog):
 
     def click_save(self) -> None:
         self.node.services = self.current_services.copy()
-        logger.info("saved node config services: %s", self.node.services)
+        logger.info("saved node services: %s", self.node.services)
         self.destroy()
 
     def click_cancel(self) -> None:

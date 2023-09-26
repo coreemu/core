@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # node one
     options = CoreNode.create_options()
-    options.config_services = ["DefaultRoute", "IPForward"]
+    options.services = ["DefaultRoute", "IPForward"]
     node1 = session.add_node(CoreNode, options=options)
     interface = prefixes.create_iface(node1)
     session.add_link(node1.id, switch.id, iface1_data=interface)

@@ -174,11 +174,11 @@ class DeviceElement(NodeElement):
         if service_elements.getchildren():
             self.element.append(service_elements)
 
-        config_service_elements = etree.Element("configservices")
-        for name, service in self.node.config_services.items():
-            etree.SubElement(config_service_elements, "service", name=name)
-        if config_service_elements.getchildren():
-            self.element.append(config_service_elements)
+        service_elements = etree.Element("configservices")
+        for name, service in self.node.services.items():
+            etree.SubElement(service_elements, "service", name=name)
+        if service_elements.getchildren():
+            self.element.append(service_elements)
 
 
 class NetworkElement(NodeElement):
@@ -225,7 +225,7 @@ class CoreXmlWriter:
         self.write_links()
         self.write_mobility_configs()
         self.write_emane_configs()
-        self.write_configservice_configs()
+        self.write_service_configs()
         self.write_session_origin()
         self.write_servers()
         self.write_session_hooks()
@@ -347,12 +347,12 @@ class CoreXmlWriter:
         if mobility_configurations.getchildren():
             self.scenario.append(mobility_configurations)
 
-    def write_configservice_configs(self) -> None:
+    def write_service_configs(self) -> None:
         service_configurations = etree.Element("configservice_configurations")
         for node in self.session.nodes.values():
             if not isinstance(node, CoreNodeBase):
                 continue
-            for name, service in node.config_services.items():
+            for name, service in node.services.items():
                 service_element = etree.SubElement(
                     service_configurations, "service", name=name
                 )
@@ -511,7 +511,7 @@ class CoreXmlReader:
         self.read_nodes()
         self.read_links()
         self.read_emane_configs()
-        self.read_configservice_configs()
+        self.read_service_configs()
 
     def read_default_services(self) -> None:
         default_services = self.scenario.find("default_services")
@@ -699,15 +699,10 @@ class CoreXmlReader:
         # check for special options
         if isinstance(options, CoreNodeOptions):
             options.model = model
-            service_elements = device_element.find("services")
+            service_elements = device_element.find("configservices")
             if service_elements is not None:
                 options.services.extend(
                     x.get("name") for x in service_elements.iterchildren()
-                )
-            config_service_elements = device_element.find("configservices")
-            if config_service_elements is not None:
-                options.config_services.extend(
-                    x.get("name") for x in config_service_elements.iterchildren()
                 )
         if isinstance(options, (DockerOptions, LxcOptions, PodmanOptions)):
             options.image = image
@@ -766,18 +761,18 @@ class CoreXmlReader:
                     config[name] = value
                 node.set_config(config)
 
-    def read_configservice_configs(self) -> None:
-        configservice_configs = self.scenario.find("configservice_configurations")
-        if configservice_configs is None:
+    def read_service_configs(self) -> None:
+        service_configs = self.scenario.find("configservice_configurations")
+        if service_configs is None:
             return
 
-        for configservice_element in configservice_configs.iterchildren():
-            name = configservice_element.get("name")
-            node_id = get_int(configservice_element, "node")
+        for service_element in service_configs.iterchildren():
+            name = service_element.get("name")
+            node_id = get_int(service_element, "node")
             node = self.session.get_node(node_id, CoreNodeBase)
-            service = node.config_services[name]
+            service = node.services[name]
 
-            configs_element = configservice_element.find("configs")
+            configs_element = service_element.find("configs")
             if configs_element is not None:
                 config = {}
                 for config_element in configs_element.iterchildren():
@@ -786,7 +781,7 @@ class CoreXmlReader:
                     config[key] = value
                 service.set_config(config)
 
-            templates_element = configservice_element.find("templates")
+            templates_element = service_element.find("templates")
             if templates_element is not None:
                 for template_element in templates_element.iterchildren():
                     name = template_element.get("name")
