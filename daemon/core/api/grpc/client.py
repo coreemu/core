@@ -13,12 +13,6 @@ from typing import Any, Optional
 import grpc
 
 from core.api.grpc import core_pb2, core_pb2_grpc, emane_pb2, wrappers
-from core.api.grpc.configservices_pb2 import (
-    GetConfigServiceDefaultsRequest,
-    GetConfigServiceRenderedRequest,
-    GetNodeConfigServiceRequest,
-    ServiceActionRequest,
-)
 from core.api.grpc.core_pb2 import (
     ExecuteScriptRequest,
     GetConfigRequest,
@@ -38,6 +32,12 @@ from core.api.grpc.mobility_pb2 import (
     MobilityActionRequest,
     MobilityConfig,
     SetMobilityConfigRequest,
+)
+from core.api.grpc.services_pb2 import (
+    GetNodeServiceRequest,
+    GetServiceDefaultsRequest,
+    GetServiceRenderedRequest,
+    ServiceActionRequest,
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
@@ -739,7 +739,7 @@ class CoreGrpcClient:
         request = ServiceActionRequest(
             session_id=session_id, node_id=node_id, service=service, action=action.value
         )
-        response = self.stub.ConfigServiceAction(request)
+        response = self.stub.ServiceAction(request)
         return response.result
 
     def get_wlan_config(
@@ -877,10 +877,10 @@ class CoreGrpcClient:
         :param name: name of service to get defaults for
         :return: config service defaults
         """
-        request = GetConfigServiceDefaultsRequest(
+        request = GetServiceDefaultsRequest(
             name=name, session_id=session_id, node_id=node_id
         )
-        response = self.stub.GetConfigServiceDefaults(request)
+        response = self.stub.GetServiceDefaults(request)
         return wrappers.ConfigServiceDefaults.from_proto(response)
 
     def get_node_config_service(
@@ -895,10 +895,10 @@ class CoreGrpcClient:
         :return: config dict of names to values
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        request = GetNodeConfigServiceRequest(
+        request = GetNodeServiceRequest(
             session_id=session_id, node_id=node_id, name=name
         )
-        response = self.stub.GetNodeConfigService(request)
+        response = self.stub.GetNodeService(request)
         return dict(response.config)
 
     def get_config_service_rendered(
@@ -912,10 +912,10 @@ class CoreGrpcClient:
         :param name: name of service
         :return: dict mapping names of files to rendered data
         """
-        request = GetConfigServiceRenderedRequest(
+        request = GetServiceRenderedRequest(
             session_id=session_id, node_id=node_id, name=name
         )
-        response = self.stub.GetConfigServiceRendered(request)
+        response = self.stub.GetServiceRendered(request)
         return dict(response.rendered)
 
     def get_emane_event_channel(

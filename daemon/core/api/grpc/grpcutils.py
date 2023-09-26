@@ -9,8 +9,7 @@ from google.protobuf.message import Message
 from grpc import ServicerContext
 
 from core import utils
-from core.api.grpc import common_pb2, configservices_pb2, core_pb2, wrappers
-from core.api.grpc.configservices_pb2 import ConfigServiceConfig
+from core.api.grpc import common_pb2, core_pb2, services_pb2, wrappers
 from core.api.grpc.emane_pb2 import NodeEmaneConfig
 from core.config import ConfigurableOptions
 from core.emane.nodes import EmaneNet, EmaneOptions
@@ -73,7 +72,7 @@ def add_node_data(
     options.canvas = node_proto.canvas
     if isinstance(options, CoreNodeOptions):
         options.model = node_proto.model
-        options.config_services = node_proto.config_services
+        options.config_services = node_proto.services
     if isinstance(options, EmaneOptions):
         options.emane_model = node_proto.emane
     if isinstance(options, (DockerOptions, LxcOptions, PodmanOptions)):
@@ -342,7 +341,7 @@ def get_node_proto(
         for service in node.config_services.values():
             if not service.custom_templates and not service.custom_config:
                 continue
-            config_service_configs[service.name] = ConfigServiceConfig(
+            config_service_configs[service.name] = services_pb2.ServiceConfig(
                 node_id=node.id,
                 name=service.name,
                 templates=service.custom_templates,
@@ -358,14 +357,14 @@ def get_node_proto(
         geo=geo,
         icon=node.icon,
         image=image,
-        config_services=config_services,
+        services=config_services,
         dir=node_dir,
         channel=channel,
         canvas=node.canvas,
         wlan_config=wlan_config,
         wireless_config=wireless_config,
         mobility_config=mobility_config,
-        config_service_configs=config_service_configs,
+        service_configs=config_service_configs,
         emane_configs=emane_configs,
     )
 
@@ -759,7 +758,7 @@ def convert_session(session: Session) -> wrappers.Session:
     ]
     default_services = []
     for group, services in session.service_manager.defaults.items():
-        defaults = configservices_pb2.ServiceDefaults(model=group, services=services)
+        defaults = services_pb2.ServiceDefaults(model=group, services=services)
         default_services.append(defaults)
     return core_pb2.Session(
         id=session.id,
@@ -803,13 +802,13 @@ def configure_node(
     if isinstance(core_node, WirelessNode) and node.wireless_config:
         config = {k: v.value for k, v in node.wireless_config.items()}
         core_node.set_config(config)
-    if node.config_service_configs:
+    if node.service_configs:
         if not isinstance(core_node, CoreNode):
             context.abort(
                 grpc.StatusCode.INVALID_ARGUMENT,
                 "invalid node type with config service configs",
             )
-        for service_name, service_config in node.config_service_configs.items():
+        for service_name, service_config in node.service_configs.items():
             service = core_node.config_services[service_name]
             if service_config.config:
                 service.set_config(dict(service_config.config))

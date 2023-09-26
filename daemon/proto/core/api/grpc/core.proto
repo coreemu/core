@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package core;
 
-import "core/api/grpc/configservices.proto";
+import "core/api/grpc/services.proto";
 import "core/api/grpc/common.proto";
 import "core/api/grpc/emane.proto";
 import "core/api/grpc/mobility.proto";
@@ -71,14 +71,14 @@ service CoreApi {
     rpc MobilityAction (mobility.MobilityActionRequest) returns (mobility.MobilityActionResponse) {
     }
 
-    // config services
-    rpc GetConfigServiceDefaults (configservices.GetConfigServiceDefaultsRequest) returns (configservices.GetConfigServiceDefaultsResponse) {
+    // services
+    rpc GetServiceDefaults (services.GetServiceDefaultsRequest) returns (services.GetServiceDefaultsResponse) {
     }
-    rpc GetNodeConfigService (configservices.GetNodeConfigServiceRequest) returns (configservices.GetNodeConfigServiceResponse) {
+    rpc GetNodeService (services.GetNodeServiceRequest) returns (services.GetNodeServiceResponse) {
     }
-    rpc ConfigServiceAction (configservices.ServiceActionRequest) returns (configservices.ServiceActionResponse) {
+    rpc ServiceAction (services.ServiceActionRequest) returns (services.ServiceActionResponse) {
     }
-    rpc GetConfigServiceRendered (configservices.GetConfigServiceRenderedRequest) returns (configservices.GetConfigServiceRenderedResponse) {
+    rpc GetServiceRendered (services.GetServiceRenderedRequest) returns (services.GetServiceRenderedResponse) {
     }
 
     // wlan rpc
@@ -133,7 +133,7 @@ message GetConfigRequest {
 }
 
 message GetConfigResponse {
-    repeated configservices.ConfigService config_services = 1;
+    repeated services.Service services = 1;
     repeated string emane_models = 2;
 }
 
@@ -548,7 +548,7 @@ message Session {
     repeated Link links = 4;
     string dir = 5;
     string user = 6;
-    repeated configservices.ServiceDefaults default_services = 7;
+    repeated services.ServiceDefaults default_services = 7;
     SessionLocation location = 8;
     repeated Hook hooks = 9;
     map<string, string> metadata = 10;
@@ -575,14 +575,14 @@ message Node {
     string icon = 7;
     string image = 8;
     string server = 9;
-    repeated string config_services = 10;
+    repeated string services = 10;
     Geo geo = 11;
     string dir = 12;
     string channel = 13;
     int32 canvas = 14;
     map<string, common.ConfigOption> wlan_config = 15;
     map<string, common.ConfigOption> mobility_config = 16;
-    map<string, configservices.ConfigServiceConfig> config_service_configs= 17;
+    map<string, services.ServiceConfig> service_configs= 17;
     repeated emane.NodeEmaneConfig emane_configs = 18;
     map<string, common.ConfigOption> wireless_config = 19;
 }

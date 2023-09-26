@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Optional
 
 import grpc
 
-from core.api.grpc import client, configservices_pb2, core_pb2
+from core.api.grpc import client, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigService,
@@ -692,25 +692,6 @@ class CoreClient:
         self, node_id: int, name: str
     ) -> ConfigServiceDefaults:
         return self.client.get_config_service_defaults(self.session.id, node_id, name)
-
-    def get_config_service_configs_proto(
-        self,
-    ) -> list[configservices_pb2.ConfigServiceConfig]:
-        config_service_protos = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.config_service_configs:
-                continue
-            for name, service_config in node.config_service_configs.items():
-                config_proto = configservices_pb2.ConfigServiceConfig(
-                    node_id=node.id,
-                    name=name,
-                    templates=service_config.templates,
-                    config=service_config.config,
-                )
-                config_service_protos.append(config_proto)
-        return config_service_protos
 
     def run(self, node_id: int) -> str:
         logger.info("running node(%s) cmd: %s", node_id, self.observer)

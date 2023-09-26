@@ -15,24 +15,7 @@ import grpc
 from grpc import ServicerContext
 
 from core import utils
-from core.api.grpc import (
-    common_pb2,
-    configservices_pb2,
-    core_pb2,
-    core_pb2_grpc,
-    grpcutils,
-)
-from core.api.grpc.configservices_pb2 import (
-    GetConfigServiceDefaultsRequest,
-    GetConfigServiceDefaultsResponse,
-    GetConfigServiceRenderedRequest,
-    GetConfigServiceRenderedResponse,
-    GetNodeConfigServiceRequest,
-    GetNodeConfigServiceResponse,
-    ServiceAction,
-    ServiceActionRequest,
-    ServiceActionResponse,
-)
+from core.api.grpc import common_pb2, core_pb2, core_pb2_grpc, grpcutils, services_pb2
 from core.api.grpc.core_pb2 import (
     ExecuteScriptResponse,
     GetWirelessConfigRequest,
@@ -68,6 +51,17 @@ from core.api.grpc.mobility_pb2 import (
     MobilityActionResponse,
     SetMobilityConfigRequest,
     SetMobilityConfigResponse,
+)
+from core.api.grpc.services_pb2 import (
+    GetNodeServiceRequest,
+    GetNodeServiceResponse,
+    GetServiceDefaultsRequest,
+    GetServiceDefaultsResponse,
+    GetServiceRenderedRequest,
+    GetServiceRenderedResponse,
+    ServiceAction,
+    ServiceActionRequest,
+    ServiceActionResponse,
 )
 from core.api.grpc.wlan_pb2 import (
     GetWlanConfigRequest,
@@ -221,7 +215,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     ) -> core_pb2.GetConfigResponse:
         config_services = []
         for service in self.coreemu.service_manager.services.values():
-            service_proto = configservices_pb2.ConfigService(
+            service_proto = services_pb2.Service(
                 name=service.name,
                 group=service.group,
                 executables=service.executables,
@@ -238,7 +232,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             config_services.append(service_proto)
         emane_models = [x.name for x in EmaneModelManager.models.values()]
         return core_pb2.GetConfigResponse(
-            config_services=config_services,
+            services=config_services,
             emane_models=emane_models,
         )
 
@@ -904,7 +898,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             result = False
         return MobilityActionResponse(result=result)
 
-    def ConfigServiceAction(
+    def ServiceAction(
         self, request: ServiceActionRequest, context: ServicerContext
     ) -> ServiceActionResponse:
         """
@@ -1104,9 +1098,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         else:
             return EmaneLinkResponse(result=False)
 
-    def GetNodeConfigService(
-        self, request: GetNodeConfigServiceRequest, context: ServicerContext
-    ) -> GetNodeConfigServiceResponse:
+    def GetNodeService(
+        self, request: GetNodeServiceRequest, context: ServicerContext
+    ) -> GetNodeServiceResponse:
         """
         Gets configuration, for a given configuration service, for a given node.
 
@@ -1123,11 +1117,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         else:
             service = self.coreemu.service_manager.get_service(request.name)
             config = {x.id: x.default for x in service.default_configs}
-        return GetNodeConfigServiceResponse(config=config)
+        return GetNodeServiceResponse(config=config)
 
-    def GetConfigServiceRendered(
-        self, request: GetConfigServiceRenderedRequest, context: ServicerContext
-    ) -> GetConfigServiceRenderedResponse:
+    def GetServiceRendered(
+        self, request: GetServiceRenderedRequest, context: ServicerContext
+    ) -> GetServiceRenderedResponse:
         """
         Retrieves the rendered file data for a given config service on a node.
 
@@ -1144,11 +1138,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 grpc.StatusCode.NOT_FOUND, f"unknown node service {request.name}"
             )
         rendered = service.get_rendered_templates()
-        return GetConfigServiceRenderedResponse(rendered=rendered)
+        return GetServiceRenderedResponse(rendered=rendered)
 
-    def GetConfigServiceDefaults(
-        self, request: GetConfigServiceDefaultsRequest, context: ServicerContext
-    ) -> GetConfigServiceDefaultsResponse:
+    def GetServiceDefaults(
+        self, request: GetServiceDefaultsRequest, context: ServicerContext
+    ) -> GetServiceDefaultsResponse:
         """
         Get default values for a given configuration service.
 
@@ -1174,9 +1168,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             config[configuration.id] = config_option
         modes = []
         for name, mode_config in service.modes.items():
-            mode = configservices_pb2.ConfigMode(name=name, config=mode_config)
+            mode = services_pb2.ConfigMode(name=name, config=mode_config)
             modes.append(mode)
-        return GetConfigServiceDefaultsResponse(
+        return GetServiceDefaultsResponse(
             templates=templates, config=config, modes=modes
         )
 
