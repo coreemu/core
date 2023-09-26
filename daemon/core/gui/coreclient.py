@@ -16,8 +16,6 @@ import grpc
 from core.api.grpc import client, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
-    ConfigService,
-    ConfigServiceDefaults,
     EmaneModelConfig,
     Event,
     ExceptionEvent,
@@ -30,6 +28,8 @@ from core.api.grpc.wrappers import (
     NodeType,
     Position,
     Server,
+    Service,
+    ServiceDefaults,
     Session,
     SessionLocation,
     SessionState,
@@ -74,7 +74,7 @@ class CoreClient:
 
         # global service settings
         self.config_services_groups: dict[str, set[str]] = {}
-        self.config_services: dict[str, ConfigService] = {}
+        self.config_services: dict[str, Service] = {}
 
         # loaded configuration data
         self.emane_models: list[str] = []
@@ -355,7 +355,7 @@ class CoreClient:
             # get current core configurations services/config services
             core_config = self.client.get_config()
             self.emane_models = sorted(core_config.emane_models)
-            for service in core_config.config_services:
+            for service in core_config.services:
                 self.config_services[service.name] = service
                 group_services = self.config_services_groups.setdefault(
                     service.group, set()
@@ -605,12 +605,12 @@ class CoreClient:
         )
         if nutils.is_custom(node):
             services = nutils.get_custom_services(self.app.guiconfig, model)
-            node.config_services = set(services)
+            node.services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
             if services:
-                node.config_services = set(services)
+                node.services = set(services)
         logger.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
@@ -688,9 +688,7 @@ class CoreClient:
     def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
         return self.client.get_config_service_rendered(self.session.id, node_id, name)
 
-    def get_config_service_defaults(
-        self, node_id: int, name: str
-    ) -> ConfigServiceDefaults:
+    def get_config_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
         return self.client.get_config_service_defaults(self.session.id, node_id, name)
 
     def run(self, node_id: int) -> str:

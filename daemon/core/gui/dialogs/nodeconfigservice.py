@@ -29,7 +29,7 @@ class NodeConfigServiceDialog(Dialog):
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
         if services is None:
-            services = set(node.config_services)
+            services = set(node.services)
         self.current_services: set[str] = services
         self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
@@ -103,9 +103,9 @@ class NodeConfigServiceDialog(Dialog):
             self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
-            self.node.config_service_configs.pop(name, None)
+            self.node.service_configs.pop(name, None)
         self.draw_current_services()
-        self.node.config_services = self.current_services.copy()
+        self.node.services = self.current_services.copy()
 
     def click_configure(self) -> None:
         current_selection = self.current.listbox.curselection()
@@ -134,8 +134,8 @@ class NodeConfigServiceDialog(Dialog):
                 self.current.listbox.itemconfig(tk.END, bg="green")
 
     def click_save(self) -> None:
-        self.node.config_services = self.current_services.copy()
-        logger.info("saved node config services: %s", self.node.config_services)
+        self.node.services = self.current_services.copy()
+        logger.info("saved node config services: %s", self.node.services)
         self.destroy()
 
     def click_cancel(self) -> None:
@@ -148,11 +148,11 @@ class NodeConfigServiceDialog(Dialog):
             service = self.current.listbox.get(cur[0])
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
-            self.node.config_service_configs.pop(service, None)
+            self.node.service_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        return service in self.node.config_service_configs
+        return service in self.node.service_configs

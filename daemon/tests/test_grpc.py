@@ -14,7 +14,6 @@ from core.api.grpc.server import CoreGrpcServer
 from core.api.grpc.wrappers import (
     ConfigOption,
     ConfigOptionType,
-    ConfigServiceData,
     EmaneModelConfig,
     Event,
     Geo,
@@ -28,6 +27,7 @@ from core.api.grpc.wrappers import (
     NodeType,
     Position,
     ServiceAction,
+    ServiceData,
     SessionLocation,
     SessionState,
 )
@@ -96,10 +96,10 @@ class TestGrpc:
         service_name = DefaultRouteService.name
         file_name = DefaultRouteService.files[0]
         file_data = "hello world"
-        service_data = ConfigServiceData(
+        service_data = ServiceData(
             templates={file_name: file_data},
         )
-        node1.config_service_configs[service_name] = service_data
+        node1.service_configs[service_name] = service_data
 
         # setup session option
         option_key = "controlnet"

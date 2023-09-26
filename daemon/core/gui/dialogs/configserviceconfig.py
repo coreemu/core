@@ -10,8 +10,8 @@ import grpc
 
 from core.api.grpc.wrappers import (
     ConfigOption,
-    ConfigServiceData,
     Node,
+    ServiceData,
     ServiceValidationMode,
 )
 from core.gui.dialogs.dialog import Dialog
@@ -99,7 +99,7 @@ class ConfigServiceConfigDialog(Dialog):
             self.rendered = self.core.get_config_service_rendered(
                 self.node.id, self.service_name
             )
-            service_config = self.node.config_service_configs.get(self.service_name)
+            service_config = self.node.service_configs.get(self.service_name)
             if service_config:
                 for key, value in service_config.config.items():
                     self.config[key].value = value
@@ -329,12 +329,12 @@ class ConfigServiceConfigDialog(Dialog):
     def click_apply(self) -> None:
         current_listbox = self.master.current.listbox
         if not self.is_custom():
-            self.node.config_service_configs.pop(self.service_name, None)
+            self.node.service_configs.pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
             self.destroy()
             return
-        service_config = self.node.config_service_configs.setdefault(
-            self.service_name, ConfigServiceData()
+        service_config = self.node.service_configs.setdefault(
+            self.service_name, ServiceData()
         )
         if self.config_frame:
             self.config_frame.parse_config()
@@ -381,16 +381,14 @@ class ConfigServiceConfigDialog(Dialog):
     def click_defaults(self) -> None:
         # clear all saved state data
         self.modified_files.clear()
-        self.node.config_service_configs.pop(self.service_name, None)
+        self.node.service_configs.pop(self.service_name, None)
         self.temp_service_files = dict(self.original_service_files)
         # reset session definition and retrieve default rendered templates
         self.core.start_session(definition=True)
         self.rendered = self.core.get_config_service_rendered(
             self.node.id, self.service_name
         )
-        logger.info(
-            "cleared config service config: %s", self.node.config_service_configs
-        )
+        logger.info("cleared config service config: %s", self.node.service_configs)
         # reset current selected file data and config data, if present
         template_name = self.templates_combobox.get()
         temp_data = self.temp_service_files[template_name]

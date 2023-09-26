@@ -242,7 +242,7 @@ class CanvasNode:
                 )
             if nutils.is_container(self.core_node):
                 services_menu = tk.Menu(self.context)
-                for service in sorted(self.core_node.config_services):
+                for service in sorted(self.core_node.services):
                     service_menu = tk.Menu(services_menu)
                     themes.style_menu(service_menu)
                     start_func = functools.partial(self.start_service, service)

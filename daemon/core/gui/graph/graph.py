@@ -720,7 +720,7 @@ class CanvasGraph(tk.Canvas):
             )
             # copy configurations and services
             node.core_node.services = core_node.services.copy()
-            node.core_node.config_services = core_node.config_services.copy()
+            node.core_node.services = core_node.services.copy()
             node.core_node.emane_model_configs = deepcopy(core_node.emane_model_configs)
             node.core_node.wlan_config = deepcopy(core_node.wlan_config)
             node.core_node.mobility_config = deepcopy(core_node.mobility_config)
@@ -728,9 +728,7 @@ class CanvasGraph(tk.Canvas):
             node.core_node.service_file_configs = deepcopy(
                 core_node.service_file_configs
             )
-            node.core_node.config_service_configs = deepcopy(
-                core_node.config_service_configs
-            )
+            node.core_node.service_configs = deepcopy(core_node.service_configs)
             node.core_node.image = core_node.image
 
             copy_map[canvas_node.id] = node.id

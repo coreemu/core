@@ -868,7 +868,7 @@ class CoreGrpcClient:
 
     def get_config_service_defaults(
         self, session_id: int, node_id: int, name: str
-    ) -> wrappers.ConfigServiceDefaults:
+    ) -> wrappers.ServiceDefaults:
         """
         Retrieves config service default values.
 
@@ -881,7 +881,7 @@ class CoreGrpcClient:
             name=name, session_id=session_id, node_id=node_id
         )
         response = self.stub.GetServiceDefaults(request)
-        return wrappers.ConfigServiceDefaults.from_proto(response)
+        return wrappers.ServiceDefaults.from_proto(response)
 
     def get_node_config_service(
         self, session_id: int, node_id: int, name: str

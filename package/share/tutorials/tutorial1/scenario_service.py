@@ -19,7 +19,7 @@ def main():
     # create nodes
     position = Position(x=250, y=250)
     node1 = session.add_node(_id=1, name="n1", position=position)
-    node1.config_services.add("ChatApp Server")
+    node1.services.add("ChatApp Server")
     position = Position(x=500, y=250)
     node2 = session.add_node(_id=2, name="n2", position=position)
 
