@@ -5,19 +5,52 @@ message handlers are defined and some support for sending messages.
 """
 
 import argparse
+import json
 import logging
-import os
+import logging.config
 import time
 from configparser import ConfigParser
 from pathlib import Path
 
 from core import constants
 from core.api.grpc.server import CoreGrpcServer
-from core.constants import CORE_CONF_DIR, COREDPY_VERSION
+from core.constants import COREDPY_VERSION
 from core.emulator.coreemu import CoreEmu
-from core.utils import load_logging_config
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_GRPC_PORT: str = "50051"
+DEFAULT_GRPC_ADDRESS: str = "localhost"
+DEFAULT_LOG_CONFIG: Path = constants.CORE_CONF_DIR / "logging.conf"
+DEFAULT_CORE_CONFIG: Path = constants.CORE_CONF_DIR / "core.conf"
+
+
+def file_path(value: str) -> Path:
+    """
+    Checks value for being a valid file path.
+
+    :param value: file path to check
+    :return: valid file path
+    """
+    path = Path(value)
+    if not path.is_file():
+        raise argparse.ArgumentTypeError(f"{path} does not exist")
+    return path
+
+
+def load_logging_config(config_path: Path, debug: bool) -> None:
+    """
+    Load CORE logging configuration file.
+
+    :param config_path: path to logging config file
+    :param debug: enable debug logging
+    :return: nothing
+    """
+    with config_path.open("r") as f:
+        log_config = json.load(f)
+    if debug:
+        log_config["loggers"]["core"]["level"] = "DEBUG"
+    logging.config.dictConfig(log_config)
 
 
 def banner():
@@ -45,60 +78,23 @@ def cored(cfg):
     grpc_server.listen(grpc_address)
 
 
-def get_merged_config(filename):
+def get_merged_config(args: argparse.Namespace) -> dict[str, str]:
     """
     Return a configuration after merging config file and command-line arguments.
 
-    :param str filename: file name to merge configuration settings with
+    :param args: command line arguments
     :return: merged configuration
     :rtype: dict
     """
     # these are the defaults used in the config file
-    default_log = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
-    default_grpc_port = "50051"
-    default_address = "localhost"
     defaults = {
-        "grpcport": default_grpc_port,
-        "grpcaddress": default_address,
-        "logfile": default_log,
+        "grpcport": args.grpcport,
+        "grpcaddress": args.grpcaddress,
+        "logfile": args.log_config,
     }
-    parser = argparse.ArgumentParser(
-        description=f"CORE daemon v.{COREDPY_VERSION} instantiates Linux network namespace nodes."
-    )
-    parser.add_argument(
-        "-f",
-        "--configfile",
-        dest="configfile",
-        help=f"read config from specified file; default = {filename}",
-    )
-    parser.add_argument(
-        "--ovs",
-        action="store_true",
-        help="enable experimental ovs mode, default is false",
-    )
-    parser.add_argument(
-        "--grpc-port",
-        dest="grpcport",
-        help=f"grpc port to listen on; default {default_grpc_port}",
-    )
-    parser.add_argument(
-        "--grpc-address",
-        dest="grpcaddress",
-        help=f"grpc address to listen on; default {default_address}",
-    )
-    parser.add_argument(
-        "-l", "--logfile", help=f"core logging configuration; default {default_log}"
-    )
-    # parse command line options
-    args = parser.parse_args()
-    # convert ovs to internal format
-    args.ovs = "1" if args.ovs else "0"
     # read the config file
-    if args.configfile is not None:
-        filename = args.configfile
-    del args.configfile
     cfg = ConfigParser(defaults)
-    cfg.read(filename)
+    cfg.read(args.config)
     section = "core-daemon"
     if not cfg.has_section(section):
         cfg.add_section(section)
@@ -116,9 +112,59 @@ def main():
 
     :return: nothing
     """
-    cfg = get_merged_config(f"{CORE_CONF_DIR}/core.conf")
+    # parse arguments
+    parser = argparse.ArgumentParser(
+        description=f"CORE daemon v.{COREDPY_VERSION}",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="convenience for quickly enabling DEBUG logging",
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=file_path,
+        default=DEFAULT_CORE_CONFIG,
+        help="CORE configuration file",
+    )
+    parser.add_argument(
+        "-l",
+        "--log-config",
+        type=file_path,
+        default=DEFAULT_LOG_CONFIG,
+        help="CORE logging configuration file",
+    )
+    parser.add_argument(
+        "--grpc-port",
+        dest="grpcport",
+        default=DEFAULT_GRPC_PORT,
+        help="grpc port to listen on",
+    )
+    parser.add_argument(
+        "--grpc-address",
+        dest="grpcaddress",
+        default=DEFAULT_GRPC_ADDRESS,
+        help="grpc address to listen on",
+    )
+    parser.add_argument(
+        "--ovs",
+        action="store_true",
+        help="enable experimental ovs mode",
+    )
+    args = parser.parse_args()
+    # convert ovs to internal format
+    args.ovs = "1" if args.ovs else "0"
+    # validate files exist
+    if not args.log_config.is_file():
+        raise FileNotFoundError(f"{args.log_config} does not exist")
+    if not args.config.is_file():
+        raise FileNotFoundError(f"{args.config} does not exist")
+    cfg = get_merged_config(args)
     log_config_path = Path(cfg["logfile"])
-    load_logging_config(log_config_path)
+    load_logging_config(log_config_path, args.debug)
     banner()
     try:
         cored(cfg)

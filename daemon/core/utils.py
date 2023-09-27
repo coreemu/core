@@ -7,8 +7,6 @@ import fcntl
 import hashlib
 import importlib
 import inspect
-import json
-import logging
 import logging.config
 import os
 import random
@@ -399,18 +397,6 @@ def load_classes(path: Path, clazz: Generic[T]) -> list[T]:
         loaded = load_module(import_statement, clazz)
         classes.extend(loaded)
     return classes
-
-
-def load_logging_config(config_path: Path) -> None:
-    """
-    Load CORE logging configuration file.
-
-    :param config_path: path to logging config file
-    :return: nothing
-    """
-    with config_path.open("r") as f:
-        log_config = json.load(f)
-    logging.config.dictConfig(log_config)
 
 
 def run_cmds_threaded(
