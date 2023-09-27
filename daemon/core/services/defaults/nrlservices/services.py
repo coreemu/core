@@ -2,12 +2,12 @@ from typing import Any
 
 from core import utils
 from core.config import Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode
+from core.services.base import Service, ServiceMode
 
 GROUP: str = "ProtoSvc"
 
 
-class MgenSinkService(ConfigService):
+class MgenSinkService(Service):
     name: str = "MGEN_Sink"
     group: str = GROUP
     directories: list[str] = []
@@ -17,7 +17,7 @@ class MgenSinkService(ConfigService):
     startup: list[str] = ["bash mgensink.sh"]
     validate: list[str] = ["pidof mgen"]
     shutdown: list[str] = ["killall mgen"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -29,7 +29,7 @@ class MgenSinkService(ConfigService):
         return dict(ifnames=ifnames)
 
 
-class NrlNhdp(ConfigService):
+class NrlNhdp(Service):
     name: str = "NHDP"
     group: str = GROUP
     directories: list[str] = []
@@ -39,19 +39,19 @@ class NrlNhdp(ConfigService):
     startup: list[str] = ["bash nrlnhdp.sh"]
     validate: list[str] = ["pidof nrlnhdp"]
     shutdown: list[str] = ["killall nrlnhdp"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class NrlSmf(ConfigService):
+class NrlSmf(Service):
     name: str = "SMF"
     group: str = GROUP
     directories: list[str] = []
@@ -61,13 +61,13 @@ class NrlSmf(ConfigService):
     startup: list[str] = ["bash startsmf.sh"]
     validate: list[str] = ["pidof nrlsmf"]
     shutdown: list[str] = ["killall nrlsmf"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_nhdp = "NHDP" in self.node.config_services
-        has_olsr = "OLSR" in self.node.config_services
+        has_nhdp = "NHDP" in self.node.services
+        has_olsr = "OLSR" in self.node.services
         ifnames = []
         ip4_prefix = None
         for iface in self.node.get_ifaces(control=False):
@@ -81,7 +81,7 @@ class NrlSmf(ConfigService):
         )
 
 
-class NrlOlsr(ConfigService):
+class NrlOlsr(Service):
     name: str = "OLSR"
     group: str = GROUP
     directories: list[str] = []
@@ -91,13 +91,13 @@ class NrlOlsr(ConfigService):
     startup: list[str] = ["bash nrlolsrd.sh"]
     validate: list[str] = ["pidof nrlolsrd"]
     shutdown: list[str] = ["killall nrlolsrd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
-        has_zebra = "zebra" in self.node.config_services
+        has_smf = "SMF" in self.node.services
+        has_zebra = "zebra" in self.node.services
         ifname = None
         for iface in self.node.get_ifaces(control=False):
             ifname = iface.name
@@ -105,7 +105,7 @@ class NrlOlsr(ConfigService):
         return dict(has_smf=has_smf, has_zebra=has_zebra, ifname=ifname)
 
 
-class NrlOlsrv2(ConfigService):
+class NrlOlsrv2(Service):
     name: str = "OLSRv2"
     group: str = GROUP
     directories: list[str] = []
@@ -115,19 +115,19 @@ class NrlOlsrv2(ConfigService):
     startup: list[str] = ["bash nrlolsrv2.sh"]
     validate: list[str] = ["pidof nrlolsrv2"]
     shutdown: list[str] = ["killall nrlolsrv2"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class OlsrOrg(ConfigService):
+class OlsrOrg(Service):
     name: str = "OLSRORG"
     group: str = GROUP
     directories: list[str] = ["/etc/olsrd"]
@@ -137,19 +137,19 @@ class OlsrOrg(ConfigService):
     startup: list[str] = ["bash olsrd.sh"]
     validate: list[str] = ["pidof olsrd"]
     shutdown: list[str] = ["killall olsrd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
-        has_smf = "SMF" in self.node.config_services
+        has_smf = "SMF" in self.node.services
         ifnames = []
         for iface in self.node.get_ifaces(control=False):
             ifnames.append(iface.name)
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class MgenActor(ConfigService):
+class MgenActor(Service):
     name: str = "MgenActor"
     group: str = GROUP
     directories: list[str] = []
@@ -159,6 +159,6 @@ class MgenActor(ConfigService):
     startup: list[str] = ["bash start_mgen_actor.sh"]
     validate: list[str] = ["pidof mgen"]
     shutdown: list[str] = ["killall mgen"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}

@@ -3,11 +3,10 @@ import os
 from pathlib import Path
 
 from core import utils
-from core.configservice.manager import ConfigServiceManager
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.session import Session
 from core.executables import get_requirements
-from core.services.coreservices import ServiceManager
+from core.services.manager import ServiceManager
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class CoreEmu:
 
         # load services
         self.service_errors: list[str] = []
-        self.service_manager: ConfigServiceManager = ConfigServiceManager()
+        self.service_manager: ServiceManager = ServiceManager()
         self._load_services()
 
         # check and load emane
@@ -65,19 +64,9 @@ class CoreEmu:
         :return: nothing
         """
         # load default services
-        self.service_errors = ServiceManager.load_locals()
-        # load custom services
-        service_paths = self.config.get("custom_services_dir")
-        logger.debug("custom service paths: %s", service_paths)
-        if service_paths is not None:
-            for service_path in service_paths.split(","):
-                service_path = Path(service_path.strip())
-                custom_service_errors = ServiceManager.add_services(service_path)
-                self.service_errors.extend(custom_service_errors)
-        # load default config services
         self.service_manager.load_locals()
-        # load custom config services
-        custom_dir = self.config.get("custom_config_services_dir")
+        # load custom services
+        custom_dir = self.config.get("custom_services_dir")
         if custom_dir is not None:
             custom_dir = Path(custom_dir)
             self.service_manager.load(custom_dir)

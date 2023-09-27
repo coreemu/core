@@ -4,12 +4,12 @@ import netaddr
 
 from core import utils
 from core.config import Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode
+from core.services.base import Service, ServiceMode
 
 GROUP_NAME = "Utility"
 
 
-class DefaultRouteService(ConfigService):
+class DefaultRouteService(Service):
     name: str = "DefaultRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -19,7 +19,7 @@ class DefaultRouteService(ConfigService):
     startup: list[str] = ["bash defaultroute.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -37,7 +37,7 @@ class DefaultRouteService(ConfigService):
         return dict(routes=routes)
 
 
-class DefaultMulticastRouteService(ConfigService):
+class DefaultMulticastRouteService(Service):
     name: str = "DefaultMulticastRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -47,7 +47,7 @@ class DefaultMulticastRouteService(ConfigService):
     startup: list[str] = ["bash defaultmroute.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -59,7 +59,7 @@ class DefaultMulticastRouteService(ConfigService):
         return dict(ifname=ifname)
 
 
-class StaticRouteService(ConfigService):
+class StaticRouteService(Service):
     name: str = "StaticRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -69,7 +69,7 @@ class StaticRouteService(ConfigService):
     startup: list[str] = ["bash staticroute.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -87,7 +87,7 @@ class StaticRouteService(ConfigService):
         return dict(routes=routes)
 
 
-class IpForwardService(ConfigService):
+class IpForwardService(Service):
     name: str = "IPForward"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -97,7 +97,7 @@ class IpForwardService(ConfigService):
     startup: list[str] = ["bash ipforward.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -109,7 +109,7 @@ class IpForwardService(ConfigService):
         return dict(devnames=devnames)
 
 
-class SshService(ConfigService):
+class SshService(Service):
     name: str = "SSH"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/ssh", "/var/run/sshd"]
@@ -119,7 +119,7 @@ class SshService(ConfigService):
     startup: list[str] = ["bash startsshd.sh"]
     validate: list[str] = []
     shutdown: list[str] = ["killall sshd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -131,7 +131,7 @@ class SshService(ConfigService):
         )
 
 
-class DhcpService(ConfigService):
+class DhcpService(Service):
     name: str = "DHCP"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/dhcp", "/var/lib/dhcp"]
@@ -141,7 +141,7 @@ class DhcpService(ConfigService):
     startup: list[str] = ["touch /var/lib/dhcp/dhcpd.leases", "dhcpd"]
     validate: list[str] = ["pidof dhcpd"]
     shutdown: list[str] = ["killall dhcpd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -159,7 +159,7 @@ class DhcpService(ConfigService):
         return dict(subnets=subnets)
 
 
-class DhcpClientService(ConfigService):
+class DhcpClientService(Service):
     name: str = "DHCPClient"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -169,7 +169,7 @@ class DhcpClientService(ConfigService):
     startup: list[str] = ["bash startdhcpclient.sh"]
     validate: list[str] = ["pidof dhclient"]
     shutdown: list[str] = ["killall dhclient"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -180,7 +180,7 @@ class DhcpClientService(ConfigService):
         return dict(ifnames=ifnames)
 
 
-class FtpService(ConfigService):
+class FtpService(Service):
     name: str = "FTP"
     group: str = GROUP_NAME
     directories: list[str] = ["/var/run/vsftpd/empty", "/var/ftp"]
@@ -190,12 +190,12 @@ class FtpService(ConfigService):
     startup: list[str] = ["vsftpd ./vsftpd.conf"]
     validate: list[str] = ["pidof vsftpd"]
     shutdown: list[str] = ["killall vsftpd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
 
-class PcapService(ConfigService):
+class PcapService(Service):
     name: str = "pcap"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -205,7 +205,7 @@ class PcapService(ConfigService):
     startup: list[str] = ["bash pcap.sh start"]
     validate: list[str] = ["pidof tcpdump"]
     shutdown: list[str] = ["bash pcap.sh stop"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -216,7 +216,7 @@ class PcapService(ConfigService):
         return dict(ifnames=ifnames)
 
 
-class RadvdService(ConfigService):
+class RadvdService(Service):
     name: str = "radvd"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/radvd", "/var/run/radvd"]
@@ -228,7 +228,7 @@ class RadvdService(ConfigService):
     ]
     validate: list[str] = ["pidof radvd"]
     shutdown: list[str] = ["pkill radvd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
@@ -244,7 +244,7 @@ class RadvdService(ConfigService):
         return dict(ifaces=ifaces)
 
 
-class AtdService(ConfigService):
+class AtdService(Service):
     name: str = "atd"
     group: str = GROUP_NAME
     directories: list[str] = ["/var/spool/cron/atjobs", "/var/spool/cron/atspool"]
@@ -254,12 +254,12 @@ class AtdService(ConfigService):
     startup: list[str] = ["bash startatd.sh"]
     validate: list[str] = ["pidof atd"]
     shutdown: list[str] = ["pkill atd"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
 
-class HttpService(ConfigService):
+class HttpService(Service):
     name: str = "HTTP"
     group: str = GROUP_NAME
     directories: list[str] = [
@@ -280,7 +280,7 @@ class HttpService(ConfigService):
     startup: list[str] = ["chown www-data /var/lock/apache2", "apache2ctl start"]
     validate: list[str] = ["pidof apache2"]
     shutdown: list[str] = ["apache2ctl stop"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 

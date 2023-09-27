@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Callable, Optional, TypeVar, Union
 
 from core import constants, utils
-from core.configservice.manager import ConfigServiceManager
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
@@ -58,7 +57,7 @@ from core.nodes.physical import PhysicalNode, Rj45Node
 from core.nodes.podman import PodmanNode
 from core.nodes.wireless import WirelessNode
 from core.plugins.sdt import Sdt
-from core.services.coreservices import CoreServices
+from core.services.manager import ServiceManager
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
@@ -152,12 +151,11 @@ class Session:
         # initialize session feature helpers
         self.location: GeoLocation = GeoLocation()
         self.mobility: MobilityManager = MobilityManager(self)
-        self.services: CoreServices = CoreServices(self)
         self.emane: EmaneManager = EmaneManager(self)
         self.sdt: Sdt = Sdt(self)
 
-        # config services
-        self.service_manager: Optional[ConfigServiceManager] = None
+        # services
+        self.service_manager: Optional[ServiceManager] = None
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> type[NodeBase]:
@@ -606,7 +604,6 @@ class Session:
         self.emane.reset()
         self.emane.config_reset()
         self.location.reset()
-        self.services.reset()
         self.mobility.config_reset()
         self.link_colors.clear()
 
@@ -1055,9 +1052,7 @@ class Session:
             funcs = []
             for node in self.nodes.values():
                 if isinstance(node, CoreNodeBase) and node.up:
-                    args = (node,)
-                    funcs.append((self.services.stop_services, args, {}))
-                    funcs.append((node.stop_config_services, (), {}))
+                    funcs.append((node.stop_services, (), {}))
             utils.threadpool(funcs)
 
         # shutdown emane
@@ -1089,13 +1084,11 @@ class Session:
         :return: nothing
         """
         logger.info(
-            "booting node(%s): config services(%s) services(%s)",
+            "booting node(%s): services(%s)",
             node.name,
-            ", ".join(node.config_services.keys()),
-            ", ".join(x.name for x in node.services),
+            ", ".join(node.services.keys()),
         )
-        self.services.boot_services(node)
-        node.start_config_services()
+        node.start_services()
 
     def boot_nodes(self) -> list[Exception]:
         """

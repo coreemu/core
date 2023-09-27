@@ -1,18 +1,18 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<scenario name="/tmp/tmpa_gpqzdf">
+<scenario>
   <networks/>
   <devices>
     <device id="1" name="n1" icon="" canvas="1" type="PC" class="" image="">
       <position x="250.0" y="250.0" lat="47.57679395743362" lon="-122.12891511224676" alt="2.0"/>
-      <configservices>
+      <services>
         <service name="DefaultRoute"/>
-      </configservices>
+      </services>
     </device>
     <device id="2" name="n2" icon="" canvas="1" type="PC" class="" image="">
       <position x="500.0" y="250.0" lat="47.576775777287395" lon="-122.12534430899237" alt="2.0"/>
-      <configservices>
+      <services>
         <service name="DefaultRoute"/>
-      </configservices>
+      </services>
     </device>
   </devices>
   <links>

@@ -11,7 +11,7 @@ from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.base import CoreNode
 from core.nodes.network import SwitchNode, WlanNode
-from core.services.utility import SshService
+from core.services.defaults.utilservices.services import DefaultRouteService
 
 
 class TestXml:
@@ -125,12 +125,10 @@ class TestXml:
         session.add_link(node1.id, node2.id, iface1_data, iface2_data)
 
         # set custom values for node service
-        session.services.set_service(node1.id, SshService.name)
-        service_file = SshService.configs[0]
+        service = node1.services[DefaultRouteService.name]
+        file_name = DefaultRouteService.files[0]
         file_data = "# test"
-        session.services.set_service_file(
-            node1.id, SshService.name, service_file, file_data
-        )
+        service.set_template(file_name, file_data)
 
         # instantiate session
         session.instantiate()
@@ -157,12 +155,14 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
-        service = session.services.get_service(node1.id, SshService.name)
+        node1_xml = session.get_node(node1.id, CoreNode)
+        service_xml = node1_xml.services[DefaultRouteService.name]
 
         # verify nodes have been recreated
         assert session.get_node(node1.id, CoreNode)
         assert session.get_node(node2.id, CoreNode)
-        assert service.config_data.get(service_file) == file_data
+        templates = service_xml.get_templates()
+        assert file_data == templates[file_name]
 
     def test_xml_mobility(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes

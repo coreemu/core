@@ -13,11 +13,9 @@ from typing import TYPE_CHECKING, Optional
 
 import grpc
 
-from core.api.grpc import client, configservices_pb2, core_pb2
+from core.api.grpc import client, core_pb2
 from core.api.grpc.wrappers import (
     ConfigOption,
-    ConfigService,
-    ConfigServiceDefaults,
     EmaneModelConfig,
     Event,
     ExceptionEvent,
@@ -27,12 +25,11 @@ from core.api.grpc.wrappers import (
     MessageType,
     Node,
     NodeEvent,
-    NodeServiceData,
     NodeType,
     Position,
     Server,
-    ServiceConfig,
-    ServiceFileConfig,
+    Service,
+    ServiceDefaults,
     Session,
     SessionLocation,
     SessionState,
@@ -76,9 +73,8 @@ class CoreClient:
         self.show_throughputs: tk.BooleanVar = tk.BooleanVar(value=False)
 
         # global service settings
-        self.services: dict[str, set[str]] = {}
-        self.config_services_groups: dict[str, set[str]] = {}
-        self.config_services: dict[str, ConfigService] = {}
+        self.services_groups: dict[str, set[str]] = {}
+        self.services: dict[str, Service] = {}
 
         # loaded configuration data
         self.emane_models: list[str] = []
@@ -356,17 +352,12 @@ class CoreClient:
         """
         try:
             self.client.connect()
-            # get current core configurations services/config services
+            # get current core configurations
             core_config = self.client.get_config()
             self.emane_models = sorted(core_config.emane_models)
             for service in core_config.services:
-                group_services = self.services.setdefault(service.group, set())
-                group_services.add(service.name)
-            for service in core_config.config_services:
-                self.config_services[service.name] = service
-                group_services = self.config_services_groups.setdefault(
-                    service.group, set()
-                )
+                self.services[service.name] = service
+                group_services = self.services_groups.setdefault(service.group, set())
                 group_services.add(service.name)
             # join provided session, create new session, or show dialog to select an
             # existing session
@@ -558,30 +549,6 @@ class CoreClient:
         except grpc.RpcError as e:
             self.app.show_grpc_exception("Open XML Error", e)
 
-    def get_node_service(self, node_id: int, service_name: str) -> NodeServiceData:
-        node_service = self.client.get_node_service(
-            self.session.id, node_id, service_name
-        )
-        logger.debug(
-            "get node(%s) service(%s): %s", node_id, service_name, node_service
-        )
-        return node_service
-
-    def get_node_service_file(
-        self, node_id: int, service_name: str, file_name: str
-    ) -> str:
-        data = self.client.get_node_service_file(
-            self.session.id, node_id, service_name, file_name
-        )
-        logger.debug(
-            "get service file for node(%s), service: %s, file: %s, data: %s",
-            node_id,
-            service_name,
-            file_name,
-            data,
-        )
-        return data
-
     def close(self) -> None:
         """
         Clean ups when done using grpc
@@ -636,12 +603,12 @@ class CoreClient:
         )
         if nutils.is_custom(node):
             services = nutils.get_custom_services(self.app.guiconfig, model)
-            node.config_services = set(services)
+            node.services = set(services)
         # assign default services to CORE node
         else:
             services = self.session.default_services.get(model)
             if services:
-                node.config_services = set(services)
+                node.services = set(services)
         logger.info(
             "add node(%s) to session(%s), coordinates(%s, %s)",
             node.name,
@@ -716,65 +683,11 @@ class CoreClient:
                 configs.append(config)
         return configs
 
-    def get_service_configs(self) -> list[ServiceConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_configs:
-                continue
-            for name, config in node.service_configs.items():
-                config = ServiceConfig(
-                    node_id=node.id,
-                    service=name,
-                    files=config.configs,
-                    directories=config.dirs,
-                    startup=config.startup,
-                    validate=config.validate,
-                    shutdown=config.shutdown,
-                )
-                configs.append(config)
-        return configs
+    def get_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
+        return self.client.get_service_rendered(self.session.id, node_id, name)
 
-    def get_service_file_configs(self) -> list[ServiceFileConfig]:
-        configs = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.service_file_configs:
-                continue
-            for service, file_configs in node.service_file_configs.items():
-                for file, data in file_configs.items():
-                    config = ServiceFileConfig(node.id, service, file, data)
-                    configs.append(config)
-        return configs
-
-    def get_config_service_rendered(self, node_id: int, name: str) -> dict[str, str]:
-        return self.client.get_config_service_rendered(self.session.id, node_id, name)
-
-    def get_config_service_defaults(
-        self, node_id: int, name: str
-    ) -> ConfigServiceDefaults:
-        return self.client.get_config_service_defaults(self.session.id, node_id, name)
-
-    def get_config_service_configs_proto(
-        self,
-    ) -> list[configservices_pb2.ConfigServiceConfig]:
-        config_service_protos = []
-        for node in self.session.nodes.values():
-            if not nutils.is_container(node):
-                continue
-            if not node.config_service_configs:
-                continue
-            for name, service_config in node.config_service_configs.items():
-                config_proto = configservices_pb2.ConfigServiceConfig(
-                    node_id=node.id,
-                    name=name,
-                    templates=service_config.templates,
-                    config=service_config.config,
-                )
-                config_service_protos.append(config_proto)
-        return config_service_protos
+    def get_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
+        return self.client.get_service_defaults(self.session.id, node_id, name)
 
     def run(self, node_id: int) -> str:
         logger.info("running node(%s) cmd: %s", node_id, self.observer)

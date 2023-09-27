@@ -320,15 +320,9 @@ n1 = session.add_node(CoreNode, position=position, options=options)
 position = Position(x=300, y=100)
 n2 = session.add_node(CoreNode, position=position, options=options)
 
-# configure general emane settings
-config = session.emane.get_configs()
-config.update({
-    "eventservicettl": "2"
-})
-
-# configure emane model settings
-# using a dict mapping currently support values as strings
-session.emane.set_model_config(emane.id, EmaneIeee80211abgModel.name, {
+# configure emane model using a dict, which currently support values as strings
+session.emane.set_config(emane.id, EmaneIeee80211abgModel.name, {
+    "eventservicettl": "2",
     "unicastrate": "3",
 })
 
@@ -366,44 +360,39 @@ session.emane.set_config(config_id, EmaneIeee80211abgModel.name, {
 
 Services help generate and run bash scripts on nodes for a given purpose.
 
-Configuring the files of a service results in a specific hard coded script being
+Configuring the templates of a service results in a specific hard coded script being
 generated, instead of the default scripts, that may leverage dynamic generation.
 
 The following features can be configured for a service:
 
-* configs - files that will be generated
-* dirs - directories that will be mounted unique to the node
+* files - files that will be generated
+* directories - directories that will be mounted unique to the node
 * startup - commands to run start a service
 * validate - commands to run to validate a service
 * shutdown - commands to run to stop a service
 
 Editing service properties:
-
 ```python
 # configure a service, for a node, for a given session
-session.services.set_service(node_id, service_name)
-service = session.services.get_service(node_id, service_name)
-service.configs = ("file1.sh", "file2.sh")
-service.dirs = ("/etc/node",)
-service.startup = ("bash file1.sh",)
-service.validate = ()
-service.shutdown = ()
+node = session.get_node(node_id, CoreNode)
+service = node.services[service_name]
+service.files = ["file1.sh", "file2.sh"]
+service.directories = ["/etc/node"]
+service.startup = ["bash file1.sh"]
+service.validate = []
+service.shutdown = []
 ```
 
-When editing a service file, it must be the name of `config`
-file that the service will generate.
+When editing a service file, it must be the name of
+`file` that the service will generate.
 
 Editing a service file:
-
 ```python
 # to edit the contents of a generated file you can specify
 # the service, the file name, and its contents
-session.services.set_service_file(
-    node_id,
-    service_name,
-    file_name,
-    "echo hello",
-)
+node = session.get_node(node_id, CoreNode)
+service = node.services[service_name]
+service.set_template(file_name, "echo hello")
 ```
 
 ## File Examples

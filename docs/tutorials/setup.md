@@ -70,10 +70,10 @@ optional arguments:
 
 ### Installing the Chat App Service
 
-1. You will first need to edit **/opt/core/etc/core.conf** to update the config
+1. You will first need to edit **/opt/core/etc/core.conf** to update the custom
    service path to pick up your service
     ``` shell
-    custom_config_services_dir = <path for service>
+    custom_services_dir = <path for service>
     ```
 2. Then you will need to copy/move **chatapp/chatapp_service.py** to the directory
    configured above

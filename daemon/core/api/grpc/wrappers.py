@@ -5,19 +5,7 @@ from typing import Optional
 
 from google.protobuf.internal.containers import MessageMap
 
-from core.api.grpc import (
-    common_pb2,
-    configservices_pb2,
-    core_pb2,
-    emane_pb2,
-    services_pb2,
-)
-
-
-class ConfigServiceValidationMode(Enum):
-    BLOCKING = 0
-    NON_BLOCKING = 1
-    TIMER = 2
+from core.api.grpc import common_pb2, core_pb2, emane_pb2, services_pb2
 
 
 class ServiceValidationMode(Enum):
@@ -112,7 +100,7 @@ class EventType:
 
 
 @dataclass
-class ConfigService:
+class Service:
     group: str
     name: str
     executables: list[str]
@@ -122,13 +110,13 @@ class ConfigService:
     startup: list[str]
     validate: list[str]
     shutdown: list[str]
-    validation_mode: ConfigServiceValidationMode
+    validation_mode: ServiceValidationMode
     validation_timer: int
     validation_period: float
 
     @classmethod
-    def from_proto(cls, proto: configservices_pb2.ConfigService) -> "ConfigService":
-        return ConfigService(
+    def from_proto(cls, proto: services_pb2.Service) -> "Service":
+        return Service(
             group=proto.group,
             name=proto.name,
             executables=list(proto.executables),
@@ -138,50 +126,46 @@ class ConfigService:
             startup=list(proto.startup),
             validate=list(proto.validate),
             shutdown=list(proto.shutdown),
-            validation_mode=ConfigServiceValidationMode(proto.validation_mode),
+            validation_mode=ServiceValidationMode(proto.validation_mode),
             validation_timer=proto.validation_timer,
             validation_period=proto.validation_period,
         )
 
 
 @dataclass
-class ConfigServiceConfig:
+class ServiceConfig:
     node_id: int
     name: str
     templates: dict[str, str]
     config: dict[str, str]
 
     @classmethod
-    def from_proto(
-        cls, proto: configservices_pb2.ConfigServiceConfig
-    ) -> "ConfigServiceConfig":
-        return ConfigServiceConfig(
-            node_id=proto.node_id,
-            name=proto.name,
+    def from_proto(cls, proto: services_pb2.ServiceConfig) -> "ServiceConfig":
+        return ServiceConfig(
             templates=dict(proto.templates),
             config=dict(proto.config),
         )
 
 
 @dataclass
-class ConfigServiceData:
+class ServiceData:
     templates: dict[str, str] = field(default_factory=dict)
     config: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
-class ConfigServiceDefaults:
+class ServiceDefaults:
     templates: dict[str, str]
     config: dict[str, "ConfigOption"]
     modes: dict[str, dict[str, str]]
 
     @classmethod
     def from_proto(
-        cls, proto: configservices_pb2.GetConfigServiceDefaultsResponse
-    ) -> "ConfigServiceDefaults":
+        cls, proto: services_pb2.GetServiceDefaultsResponse
+    ) -> "ServiceDefaults":
         config = ConfigOption.from_dict(proto.config)
         modes = {x.name: dict(x.config) for x in proto.modes}
-        return ConfigServiceDefaults(
+        return ServiceDefaults(
             templates=dict(proto.templates), config=config, modes=modes
         )
 
@@ -200,16 +184,6 @@ class Server:
 
 
 @dataclass
-class Service:
-    group: str
-    name: str
-
-    @classmethod
-    def from_proto(cls, proto: services_pb2.Service) -> "Service":
-        return Service(group=proto.group, name=proto.name)
-
-
-@dataclass
 class ServiceDefault:
     model: str
     services: list[str]
@@ -217,101 +191,6 @@ class ServiceDefault:
     @classmethod
     def from_proto(cls, proto: services_pb2.ServiceDefaults) -> "ServiceDefault":
         return ServiceDefault(model=proto.model, services=list(proto.services))
-
-
-@dataclass
-class NodeServiceData:
-    executables: list[str] = field(default_factory=list)
-    dependencies: list[str] = field(default_factory=list)
-    dirs: list[str] = field(default_factory=list)
-    configs: list[str] = field(default_factory=list)
-    startup: list[str] = field(default_factory=list)
-    validate: list[str] = field(default_factory=list)
-    validation_mode: ServiceValidationMode = ServiceValidationMode.NON_BLOCKING
-    validation_timer: int = 5
-    shutdown: list[str] = field(default_factory=list)
-    meta: str = None
-
-    @classmethod
-    def from_proto(cls, proto: services_pb2.NodeServiceData) -> "NodeServiceData":
-        return NodeServiceData(
-            executables=list(proto.executables),
-            dependencies=list(proto.dependencies),
-            dirs=list(proto.dirs),
-            configs=list(proto.configs),
-            startup=list(proto.startup),
-            validate=list(proto.validate),
-            validation_mode=ServiceValidationMode(proto.validation_mode),
-            validation_timer=proto.validation_timer,
-            shutdown=list(proto.shutdown),
-            meta=proto.meta,
-        )
-
-    def to_proto(self) -> services_pb2.NodeServiceData:
-        return services_pb2.NodeServiceData(
-            executables=self.executables,
-            dependencies=self.dependencies,
-            dirs=self.dirs,
-            configs=self.configs,
-            startup=self.startup,
-            validate=self.validate,
-            validation_mode=self.validation_mode.value,
-            validation_timer=self.validation_timer,
-            shutdown=self.shutdown,
-            meta=self.meta,
-        )
-
-
-@dataclass
-class NodeServiceConfig:
-    node_id: int
-    service: str
-    data: NodeServiceData
-    files: dict[str, str] = field(default_factory=dict)
-
-    @classmethod
-    def from_proto(cls, proto: services_pb2.NodeServiceConfig) -> "NodeServiceConfig":
-        return NodeServiceConfig(
-            node_id=proto.node_id,
-            service=proto.service,
-            data=NodeServiceData.from_proto(proto.data),
-            files=dict(proto.files),
-        )
-
-
-@dataclass
-class ServiceConfig:
-    node_id: int
-    service: str
-    files: list[str] = None
-    directories: list[str] = None
-    startup: list[str] = None
-    validate: list[str] = None
-    shutdown: list[str] = None
-
-    def to_proto(self) -> services_pb2.ServiceConfig:
-        return services_pb2.ServiceConfig(
-            node_id=self.node_id,
-            service=self.service,
-            files=self.files,
-            directories=self.directories,
-            startup=self.startup,
-            validate=self.validate,
-            shutdown=self.shutdown,
-        )
-
-
-@dataclass
-class ServiceFileConfig:
-    node_id: int
-    service: str
-    file: str
-    data: str = field(repr=False)
-
-    def to_proto(self) -> services_pb2.ServiceFileConfig:
-        return services_pb2.ServiceFileConfig(
-            node_id=self.node_id, service=self.service, file=self.file, data=self.data
-        )
 
 
 @dataclass
@@ -724,7 +603,6 @@ class Node:
     model: str = None
     position: Position = Position(x=0, y=0)
     services: set[str] = field(default_factory=set)
-    config_services: set[str] = field(default_factory=set)
     emane: str = None
     icon: str = None
     image: str = None
@@ -741,32 +619,19 @@ class Node:
     wlan_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     wireless_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
     mobility_config: dict[str, ConfigOption] = field(default_factory=dict, repr=False)
-    service_configs: dict[str, NodeServiceData] = field(
-        default_factory=dict, repr=False
-    )
-    service_file_configs: dict[str, dict[str, str]] = field(
-        default_factory=dict, repr=False
-    )
-    config_service_configs: dict[str, ConfigServiceData] = field(
-        default_factory=dict, repr=False
-    )
+    service_configs: dict[str, ServiceData] = field(default_factory=dict, repr=False)
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Node) -> "Node":
-        service_configs = {}
-        service_file_configs = {}
-        for service, node_config in proto.service_configs.items():
-            service_configs[service] = NodeServiceData.from_proto(node_config.data)
-            service_file_configs[service] = dict(node_config.files)
         emane_configs = {}
         for emane_config in proto.emane_configs:
             iface_id = None if emane_config.iface_id == -1 else emane_config.iface_id
             model = emane_config.model
             key = (model, iface_id)
             emane_configs[key] = ConfigOption.from_dict(emane_config.config)
-        config_service_configs = {}
-        for service, service_config in proto.config_service_configs.items():
-            config_service_configs[service] = ConfigServiceData(
+        service_configs = {}
+        for service, service_config in proto.service_configs.items():
+            service_configs[service] = ServiceData(
                 templates=dict(service_config.templates),
                 config=dict(service_config.config),
             )
@@ -777,7 +642,6 @@ class Node:
             model=proto.model or None,
             position=Position.from_proto(proto.position),
             services=set(proto.services),
-            config_services=set(proto.config_services),
             emane=proto.emane,
             icon=proto.icon,
             image=proto.image,
@@ -789,8 +653,6 @@ class Node:
             wlan_config=ConfigOption.from_dict(proto.wlan_config),
             mobility_config=ConfigOption.from_dict(proto.mobility_config),
             service_configs=service_configs,
-            service_file_configs=service_file_configs,
-            config_service_configs=config_service_configs,
             emane_model_configs=emane_configs,
             wireless_config=ConfigOption.from_dict(proto.wireless_config),
         )
@@ -807,21 +669,8 @@ class Node:
             )
             emane_configs.append(emane_config)
         service_configs = {}
-        for service, service_data in self.service_configs.items():
-            service_configs[service] = services_pb2.NodeServiceConfig(
-                service=service, data=service_data.to_proto()
-            )
-        for service, file_configs in self.service_file_configs.items():
-            service_config = service_configs.get(service)
-            if service_config:
-                service_config.files.update(file_configs)
-            else:
-                service_configs[service] = services_pb2.NodeServiceConfig(
-                    service=service, files=file_configs
-                )
-        config_service_configs = {}
-        for service, service_config in self.config_service_configs.items():
-            config_service_configs[service] = configservices_pb2.ConfigServiceConfig(
+        for service, service_config in self.service_configs.items():
+            service_configs[service] = services_pb2.ServiceConfig(
                 templates=service_config.templates, config=service_config.config
             )
         return core_pb2.Node(
@@ -831,7 +680,6 @@ class Node:
             model=self.model,
             position=self.position.to_proto(),
             services=self.services,
-            config_services=self.config_services,
             emane=self.emane,
             icon=self.icon,
             image=self.image,
@@ -842,7 +690,6 @@ class Node:
             wlan_config={k: v.to_proto() for k, v in self.wlan_config.items()},
             mobility_config={k: v.to_proto() for k, v in self.mobility_config.items()},
             service_configs=service_configs,
-            config_service_configs=config_service_configs,
             emane_configs=emane_configs,
             wireless_config={k: v.to_proto() for k, v in self.wireless_config.items()},
         )
@@ -994,16 +841,13 @@ class Session:
 @dataclass
 class CoreConfig:
     services: list[Service] = field(default_factory=list)
-    config_services: list[ConfigService] = field(default_factory=list)
     emane_models: list[str] = field(default_factory=list)
 
     @classmethod
     def from_proto(cls, proto: core_pb2.GetConfigResponse) -> "CoreConfig":
         services = [Service.from_proto(x) for x in proto.services]
-        config_services = [ConfigService.from_proto(x) for x in proto.config_services]
         return CoreConfig(
             services=services,
-            config_services=config_services,
             emane_models=list(proto.emane_models),
         )
 

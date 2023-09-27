@@ -28,7 +28,7 @@ def main():
     )
     position = Position(x=250, y=250)
     node2 = session.add_node(_id=2, model="mdr", name="n2", position=position)
-    node2.config_services.add("ChatApp Server")
+    node2.services.add("ChatApp Server")
     position = Position(x=500, y=250)
     node3 = session.add_node(_id=3, model="mdr", name="n3", position=position)
 

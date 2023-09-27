@@ -1,6 +1,7 @@
 """
 core node services
 """
+import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
@@ -11,19 +12,24 @@ from core.gui.dialogs.serviceconfig import ServiceConfigDialog
 from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import CheckboxList, ListboxScroll
 
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from core.gui.app import Application
 
 
 class NodeServiceDialog(Dialog):
-    def __init__(self, app: "Application", node: Node) -> None:
-        title = f"{node.name} Services (Deprecated)"
+    def __init__(
+        self, app: "Application", node: Node, services: set[str] = None
+    ) -> None:
+        title = f"{node.name} Services"
         super().__init__(app, title)
         self.node: Node = node
         self.groups: Optional[ListboxScroll] = None
         self.services: Optional[CheckboxList] = None
         self.current: Optional[ListboxScroll] = None
-        services = set(node.services)
+        if services is None:
+            services = set(node.services)
         self.current_services: set[str] = services
         self.protocol("WM_DELETE_WINDOW", self.click_cancel)
         self.draw()
@@ -43,7 +49,7 @@ class NodeServiceDialog(Dialog):
         label_frame.columnconfigure(0, weight=1)
         self.groups = ListboxScroll(label_frame)
         self.groups.grid(sticky=tk.NSEW)
-        for group in sorted(self.app.core.services):
+        for group in sorted(self.app.core.services_groups):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
         self.groups.listbox.selection_set(0)
@@ -61,12 +67,10 @@ class NodeServiceDialog(Dialog):
         label_frame.grid(row=0, column=2, sticky=tk.NSEW)
         label_frame.rowconfigure(0, weight=1)
         label_frame.columnconfigure(0, weight=1)
+
         self.current = ListboxScroll(label_frame)
         self.current.grid(sticky=tk.NSEW)
-        for service in sorted(self.current_services):
-            self.current.listbox.insert(tk.END, service)
-            if self.is_custom_service(service):
-                self.current.listbox.itemconfig(tk.END, bg="green")
+        self.draw_current_services()
 
         frame = ttk.Frame(self.top)
         frame.grid(stick="ew")
@@ -90,7 +94,7 @@ class NodeServiceDialog(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for name in sorted(self.app.core.services[group]):
+            for name in sorted(self.app.core.services_groups[group]):
                 checked = name in self.current_services
                 self.services.add(name, checked)
 
@@ -100,12 +104,7 @@ class NodeServiceDialog(Dialog):
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
             self.node.service_configs.pop(name, None)
-            self.node.service_file_configs.pop(name, None)
-        self.current.listbox.delete(0, tk.END)
-        for name in sorted(self.current_services):
-            self.current.listbox.insert(tk.END, name)
-            if self.is_custom_service(name):
-                self.current.listbox.itemconfig(tk.END, bg="green")
+        self.draw_current_services()
         self.node.services = self.current_services.copy()
 
     def click_configure(self) -> None:
@@ -117,22 +116,30 @@ class NodeServiceDialog(Dialog):
                 self.current.listbox.get(current_selection[0]),
                 self.node,
             )
-
-            # if error occurred when creating ServiceConfigDialog, don't show the dialog
             if not dialog.has_error:
                 dialog.show()
-            else:
-                dialog.destroy()
+                self.draw_current_services()
         else:
             messagebox.showinfo(
-                "Service Configuration", "Select a service to configure", parent=self
+                "Service Configuration",
+                "Select a service to configure",
+                parent=self,
             )
 
-    def click_cancel(self) -> None:
-        self.destroy()
+    def draw_current_services(self) -> None:
+        self.current.listbox.delete(0, tk.END)
+        for name in sorted(self.current_services):
+            self.current.listbox.insert(tk.END, name)
+            if self.is_custom_service(name):
+                self.current.listbox.itemconfig(tk.END, bg="green")
 
     def click_save(self) -> None:
         self.node.services = self.current_services.copy()
+        logger.info("saved node services: %s", self.node.services)
+        self.destroy()
+
+    def click_cancel(self) -> None:
+        self.current_services = None
         self.destroy()
 
     def click_remove(self) -> None:
@@ -142,13 +149,10 @@ class NodeServiceDialog(Dialog):
             self.current.listbox.delete(cur[0])
             self.current_services.remove(service)
             self.node.service_configs.pop(service, None)
-            self.node.service_file_configs.pop(service, None)
             for checkbutton in self.services.frame.winfo_children():
                 if checkbutton["text"] == service:
                     checkbutton.invoke()
                     return
 
     def is_custom_service(self, service: str) -> bool:
-        has_service_config = service in self.node.service_configs
-        has_file_config = service in self.node.service_file_configs
-        return has_service_config or has_file_config
+        return service in self.node.service_configs

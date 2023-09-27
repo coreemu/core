@@ -1,10 +1,10 @@
 from typing import Dict, List
 
 from core.config import Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode, ShadowDir
+from core.services.base import Service, ServiceMode, ShadowDir
 
 
-class ChatAppService(ConfigService):
+class ChatAppService(Service):
     name: str = "ChatApp Server"
     group: str = "ChatApp"
     directories: List[str] = []
@@ -14,7 +14,7 @@ class ChatAppService(ConfigService):
     startup: List[str] = [f"bash {files[0]}"]
     validate: List[str] = []
     shutdown: List[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: List[Configuration] = []
     modes: Dict[str, Dict[str, str]] = {}
     shadow_directories: List[ShadowDir] = []

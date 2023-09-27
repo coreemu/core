@@ -2,12 +2,12 @@ from typing import Any
 
 from core import constants
 from core.config import ConfigString, Configuration
-from core.configservice.base import ConfigService, ConfigServiceMode
+from core.services.base import Service, ServiceMode
 
 GROUP_NAME: str = "Security"
 
 
-class VpnClient(ConfigService):
+class VpnClient(Service):
     name: str = "VPNClient"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -17,7 +17,7 @@ class VpnClient(ConfigService):
     startup: list[str] = ["bash vpnclient.sh"]
     validate: list[str] = ["pidof openvpn"]
     shutdown: list[str] = ["killall openvpn"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = [
         ConfigString(
             id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
@@ -28,7 +28,7 @@ class VpnClient(ConfigService):
     modes: dict[str, dict[str, str]] = {}
 
 
-class VpnServer(ConfigService):
+class VpnServer(Service):
     name: str = "VPNServer"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -38,7 +38,7 @@ class VpnServer(ConfigService):
     startup: list[str] = ["bash vpnserver.sh"]
     validate: list[str] = ["pidof openvpn"]
     shutdown: list[str] = ["killall openvpn"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = [
         ConfigString(
             id="keydir", label="Key Dir", default=f"{constants.CORE_CONF_DIR}/keys"
@@ -58,7 +58,7 @@ class VpnServer(ConfigService):
         return dict(address=address)
 
 
-class IPsec(ConfigService):
+class IPsec(Service):
     name: str = "IPsec"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -68,12 +68,12 @@ class IPsec(ConfigService):
     startup: list[str] = ["bash ipsec.sh"]
     validate: list[str] = ["pidof racoon"]
     shutdown: list[str] = ["killall racoon"]
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
 
-class Firewall(ConfigService):
+class Firewall(Service):
     name: str = "Firewall"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -83,12 +83,12 @@ class Firewall(ConfigService):
     startup: list[str] = ["bash firewall.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 
 
-class Nat(ConfigService):
+class Nat(Service):
     name: str = "NAT"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -98,7 +98,7 @@ class Nat(ConfigService):
     startup: list[str] = ["bash nat.sh"]
     validate: list[str] = []
     shutdown: list[str] = []
-    validation_mode: ConfigServiceMode = ConfigServiceMode.BLOCKING
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
     default_configs: list[Configuration] = []
     modes: dict[str, dict[str, str]] = {}
 

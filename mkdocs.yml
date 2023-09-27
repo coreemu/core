@@ -58,8 +58,7 @@ nav:
           - Docker: docker.md
           - LXC: lxc.md
       - Services:
-          - Config Services: configservices.md
-          - Services (Deprecated): services.md
+          - Overview: services.md
           - Provided:
               - Bird: services/bird.md
               - EMANE: services/emane.md
