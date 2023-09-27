@@ -78,16 +78,19 @@ Event types:
 * file - file events when the legacy gui joins a session
 
 ```python
+from core.emulator.data import EventData, ExceptionData, LinkData, NodeData
+
+
 def event_listener(event):
     print(event)
 
 
 # add an event listener to event type you want to listen to
 # each handler will receive an object unique to that type
-session.event_handlers.append(event_listener)
-session.exception_handlers.append(event_listener)
-session.node_handlers.append(event_listener)
-session.link_handlers.append(event_listener)
+session.broadcast_manager.add_handler(NodeData, event_listener)
+session.broadcast_manager.add_handler(LinkData, event_listener)
+session.broadcast_manager.add_handler(EventData, event_listener)
+session.broadcast_manager.add_handler(ExceptionData, event_listener)
 ```
 
 ### Configuring Links

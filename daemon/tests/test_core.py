@@ -8,7 +8,7 @@ from typing import List, Type
 
 import pytest
 
-from core.emulator.data import IpPrefixes
+from core.emulator.data import IpPrefixes, NodeData
 from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -134,7 +134,7 @@ class TestCore:
         def node_update(_):
             event.set()
 
-        session.node_handlers.append(node_update)
+        session.broadcast_manager.add_handler(NodeData, node_update)
 
         # instantiate session
         session.instantiate()

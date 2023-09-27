@@ -19,6 +19,7 @@ from typing import Callable, Optional, TypeVar, Union
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
+from core.emulator.broadcast import BroadcastManager
 from core.emulator.data import (
     EventData,
     ExceptionData,
@@ -136,10 +137,7 @@ class Session:
         )
 
         # handlers for broadcasting information
-        self.event_handlers: list[Callable[[EventData], None]] = []
-        self.exception_handlers: list[Callable[[ExceptionData], None]] = []
-        self.node_handlers: list[Callable[[NodeData], None]] = []
-        self.link_handlers: list[Callable[[LinkData], None]] = []
+        self.broadcast_manager: BroadcastManager = BroadcastManager()
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
@@ -638,25 +636,54 @@ class Session:
         if not preserve:
             shutil.rmtree(self.directory, ignore_errors=True)
 
-    def broadcast_event(self, event_data: EventData) -> None:
+    def broadcast_event(
+        self,
+        event_type: EventTypes,
+        *,
+        node_id: int = None,
+        name: str = None,
+        data: str = None,
+    ) -> None:
         """
         Handle event data that should be provided to event handler.
 
-        :param event_data: event data to send out
+        :param event_type: type of event to send
+        :param node_id: associated node id, default is None
+        :param name: name of event, default is None
+        :param data: data for event, default is None
         :return: nothing
         """
-        for handler in self.event_handlers:
-            handler(event_data)
+        event_data = EventData(
+            node=node_id,
+            event_type=event_type,
+            name=name,
+            data=data,
+            time=str(time.monotonic()),
+            session=self.id,
+        )
+        self.broadcast_manager.send(event_data)
 
-    def broadcast_exception(self, exception_data: ExceptionData) -> None:
+    def broadcast_exception(
+        self, level: ExceptionLevels, source: str, text: str, node_id: int = None
+    ) -> None:
         """
-        Handle exception data that should be provided to exception handlers.
+        Generate and broadcast an exception event.
 
-        :param exception_data: exception data to send out
+        :param level: exception level
+        :param source: source name
+        :param text: exception message
+        :param node_id: node related to exception, defaults to None
         :return: nothing
         """
-        for handler in self.exception_handlers:
-            handler(exception_data)
+        exception_data = ExceptionData(
+            node=node_id,
+            session=self.id,
+            level=level,
+            source=source,
+            date=time.ctime(),
+            text=text,
+        )
+        self.broadcast_manager.send(exception_data)
 
     def broadcast_node(
         self,
@@ -673,8 +700,7 @@ class Session:
         :return: nothing
         """
         node_data = NodeData(node=node, message_type=message_type, source=source)
-        for handler in self.node_handlers:
-            handler(node_data)
+        self.broadcast_manager.send(node_data)
 
     def broadcast_link(self, link_data: LinkData) -> None:
         """
@@ -683,8 +709,7 @@ class Session:
         :param link_data: link data to send out
         :return: nothing
         """
-        for handler in self.link_handlers:
-            handler(link_data)
+        self.broadcast_manager.send(link_data)
 
     def set_state(self, state: EventTypes, send_event: bool = False) -> None:
         """
@@ -702,8 +727,7 @@ class Session:
         self.run_hooks(state)
         self.run_state_hooks(state)
         if send_event:
-            event_data = EventData(event_type=state, time=str(time.monotonic()))
-            self.broadcast_event(event_data)
+            self.broadcast_event(state)
 
     def run_hooks(self, state: EventTypes) -> None:
         """
@@ -760,7 +784,9 @@ class Session:
         except Exception:
             message = f"exception occurred when running {state.name} state hook: {hook}"
             logger.exception(message)
-            self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", message)
+            self.broadcast_exception(
+                ExceptionLevels.ERROR, "Session.run_state_hooks", message
+            )
 
     def add_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -952,28 +978,6 @@ class Session:
         for node_id in nodes_ids:
             self.sdt.delete_node(node_id)
 
-    def exception(
-        self, level: ExceptionLevels, source: str, text: str, node_id: int = None
-    ) -> None:
-        """
-        Generate and broadcast an exception event.
-
-        :param level: exception level
-        :param source: source name
-        :param text: exception message
-        :param node_id: node related to exception
-        :return: nothing
-        """
-        exception_data = ExceptionData(
-            node=node_id,
-            session=self.id,
-            level=level,
-            source=source,
-            date=time.ctime(),
-            text=text,
-        )
-        self.broadcast_exception(exception_data)
-
     def instantiate(self) -> list[Exception]:
         """
         We have entered the instantiation state, invoke startup methods
@@ -1003,8 +1007,7 @@ class Session:
                     node.post_startup()
             self.mobility.startup()
             # notify listeners that instantiation is complete
-            event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE)
-            self.broadcast_event(event)
+            self.broadcast_event(EventTypes.INSTANTIATION_COMPLETE)
             # startup event loop
             self.event_loop.run()
         self.set_state(EventTypes.RUNTIME_STATE, send_event=True)

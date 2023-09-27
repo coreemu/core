@@ -105,13 +105,13 @@ class EventStreamer:
         :return: nothing
         """
         if core_pb2.EventType.NODE in self.event_types:
-            self.session.node_handlers.append(self.queue.put)
+            self.session.broadcast_manager.add_handler(NodeData, self.queue.put)
         if core_pb2.EventType.LINK in self.event_types:
-            self.session.link_handlers.append(self.queue.put)
+            self.session.broadcast_manager.add_handler(LinkData, self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
-            self.session.exception_handlers.append(self.queue.put)
+            self.session.broadcast_manager.add_handler(ExceptionData, self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:
-            self.session.event_handlers.append(self.queue.put)
+            self.session.broadcast_manager.add_handler(EventData, self.queue.put)
 
     def process(self) -> Optional[core_pb2.Event]:
         """
@@ -145,10 +145,10 @@ class EventStreamer:
         :return: nothing
         """
         if core_pb2.EventType.NODE in self.event_types:
-            self.session.node_handlers.remove(self.queue.put)
+            self.session.broadcast_manager.remove_handler(NodeData, self.queue.put)
         if core_pb2.EventType.LINK in self.event_types:
-            self.session.link_handlers.remove(self.queue.put)
+            self.session.broadcast_manager.remove_handler(LinkData, self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
-            self.session.exception_handlers.remove(self.queue.put)
+            self.session.broadcast_manager.remove_handler(ExceptionData, self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:
-            self.session.event_handlers.remove(self.queue.put)
+            self.session.broadcast_manager.remove_handler(EventData, self.queue.put)

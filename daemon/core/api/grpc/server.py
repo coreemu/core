@@ -435,7 +435,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         level = ExceptionLevels(request.level)
         node_id = request.node_id if request.node_id else None
-        session.exception(level, request.source, request.text, node_id)
+        session.broadcast_exception(level, request.source, request.text, node_id)
         return core_pb2.SessionAlertResponse(result=True)
 
     def Events(self, request: core_pb2.EventsRequest, context: ServicerContext) -> None:

@@ -208,14 +208,12 @@ class MobilityManager(ModelManager):
         start_time = int(model.lasttime - model.timezero)
         end_time = int(model.endtime)
         data = f"start={start_time} end={end_time}"
-        event_data = EventData(
-            node=model.id,
-            event_type=event_type,
+        self.session.broadcast_event(
+            event_type,
+            node_id=model.id,
             name=f"mobility:{model.name}",
             data=data,
-            time=str(time.monotonic()),
         )
-        self.session.broadcast_event(event_data)
 
 
 class WirelessModel(ConfigurableOptions):

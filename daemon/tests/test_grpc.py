@@ -33,7 +33,7 @@ from core.api.grpc.wrappers import (
 )
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, IpPrefixes, NodeData
+from core.emulator.data import IpPrefixes, NodeData
 from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -718,10 +718,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            event_data = EventData(
-                event_type=EventTypes.RUNTIME_STATE, time=str(time.monotonic())
-            )
-            session.broadcast_event(event_data)
+            session.broadcast_event(EventTypes.RUNTIME_STATE)
 
             # then
             queue.get(timeout=5)
@@ -750,7 +747,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.exception(exception_level, source, text, node_id)
+            session.broadcast_exception(exception_level, source, text, node_id)
 
             # then
             queue.get(timeout=5)
@@ -791,7 +788,7 @@ class TestGrpc:
             assert n.position.alt == alt
             queue.put(node_data)
 
-        session.node_handlers.append(node_handler)
+        session.broadcast_manager.add_handler(NodeData, node_handler)
 
         # then
         with client.context_connect():
