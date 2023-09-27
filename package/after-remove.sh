@@ -10,4 +10,6 @@ else
   ${PYTHON} -m venv /opt/core/venv
   . /opt/core/venv/bin/activate
   pip uninstall -y core
+  rm -rf /opt/core/venv
+  rm -rf /opt/core/share
 fi

@@ -1,6 +1,7 @@
 import inspect
 import itertools
 import os
+import shutil
 import sys
 import threading
 import time
@@ -25,9 +26,10 @@ DEBIAN_LIKE = {
 }
 SUDOP: str = "sudo -E env PATH=$PATH"
 CORE_PATH: Path = Path("/opt/core")
-VENV_PATH: Path = CORE_PATH / "venv"
-VENV_PYTHON: str = f"{VENV_PATH}/bin/python"
-ACTIVATE_VENV: str = f". {VENV_PATH}/bin/activate"
+CORE_DATA_PATH: Path = CORE_PATH / "share"
+CORE_VENV_PATH: Path = CORE_PATH / "venv"
+CORE_VENV_PYTHON: Path = CORE_VENV_PATH / "bin/python"
+ACTIVATE_VENV: str = f". {CORE_VENV_PATH}/bin/activate"
 
 
 class Progress:
@@ -220,7 +222,7 @@ def install_poetry(c: Context, dev: bool, local: bool, hide: bool) -> None:
         args = "" if dev else "--only main"
         with c.cd(DAEMON_DIR):
             c.run(f"sudo mkdir -p {CORE_PATH}", hide=hide)
-            c.run(f"sudo {python_bin} -m venv {VENV_PATH}")
+            c.run(f"sudo {python_bin} -m venv {CORE_VENV_PATH}")
             c.run(f"{ACTIVATE_VENV} && {SUDOP} poetry install {args}", hide=hide)
             if dev:
                 c.run(f"{ACTIVATE_VENV} && poetry run pre-commit install", hide=hide)
@@ -287,21 +289,23 @@ def install_core_files(c, local=False, verbose=False, prefix=DEFAULT_PREFIX):
     install core files (scripts, examples, and configuration)
     """
     hide = not verbose
-    bin_dir = Path(prefix).joinpath("bin")
     # setup core python helper
     if not local:
+        bin_dir = Path(prefix).joinpath("bin")
         core_python = bin_dir.joinpath("core-python")
         temp = NamedTemporaryFile("w", delete=False)
         temp.writelines(
             [
                 "#!/bin/bash\n",
-                f'exec "{VENV_PYTHON}" "$@"\n',
+                f'exec "{CORE_VENV_PYTHON}" "$@"\n',
             ]
         )
         temp.close()
         c.run(f"sudo cp {temp.name} {core_python}", hide=hide)
         c.run(f"sudo chmod 755 {core_python}", hide=hide)
         os.unlink(temp.name)
+        core_scripts = CORE_VENV_PATH / "bin/core-*"
+        c.run(f"sudo ln -s {core_scripts} {bin_dir}")
     # install core configuration file
     c.run(f"sudo cp -r -n package/etc {CORE_PATH}", hide=hide)
     # install examples
@@ -363,7 +367,7 @@ def install(
     install core, poetry, scripts, service, and ospf mdr
     """
     python_bin = get_env_python()
-    venv_path = None if local else VENV_PATH
+    venv_path = None if local else CORE_VENV_PATH
     print(
         f"installing core using python({python_bin}) venv({venv_path}) prefix({prefix})"
     )
@@ -466,7 +470,7 @@ def uninstall(
     uninstall core, scripts, service, virtual environment, and clean build directory
     """
     python_bin = get_env_python()
-    venv_path = None if local else VENV_PATH
+    venv_path = None if local else CORE_VENV_PATH
     print(
         f"uninstalling core using python({python_bin}) "
         f"venv({venv_path}) prefix({prefix})"
@@ -484,23 +488,21 @@ def uninstall(
             python_bin = get_env_python()
             c.run(f"sudo {python_bin} -m pip uninstall -y core", hide=hide)
         else:
-            if Path(VENV_PYTHON).is_file():
-                with c.cd(DAEMON_DIR):
-                    if dev:
+            if CORE_VENV_PATH.is_dir():
+                if dev:
+                    with c.cd(DAEMON_DIR):
                         c.run(
                             f"{ACTIVATE_VENV} && poetry run pre-commit uninstall",
                             hide=hide,
                         )
-                    c.run(f"sudo {VENV_PYTHON} -m pip uninstall -y core", hide=hide)
-    # remove installed files
-    bin_dir = Path(prefix).joinpath("bin")
-    with p.start("uninstalling examples"):
-        examples_dir = Path(prefix).joinpath("share/core")
-        c.run(f"sudo rm -rf {examples_dir}")
-    # remove core-python symlink
+                c.run(f"sudo rm -rf {CORE_VENV_PATH}", hide=hide)
+    # remove data files
+    with p.start("uninstalling data files"):
+        c.run(f"sudo rm -rf {CORE_DATA_PATH}")
+    # remove symlinks
     if not local:
-        core_python = bin_dir.joinpath("core-python")
-        c.run(f"sudo rm -f {core_python}", hide=hide)
+        core_symlinks = Path(prefix) / "bin/core-*"
+        c.run(f"sudo rm -f {core_symlinks}", hide=hide)
     # remove service
     systemd_dir = Path("/lib/systemd/system/")
     service_name = "core-daemon.service"

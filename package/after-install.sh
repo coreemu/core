@@ -13,4 +13,5 @@ else
   pip install --upgrade pip
   pip install /opt/core/core-*.whl
   echo "DAEMON=/opt/core/venv/bin/core-daemon" > /opt/core/service
+  ln -s /opt/core/venv/bin/core-* /usr/bin/
 fi
