@@ -250,7 +250,7 @@ class DistributedController:
     def tunnel_key(self, node1_id: int, node2_id: int) -> int:
         """
         Compute a 32-bit key used to uniquely identify a GRE tunnel.
-        The hash(n1num), hash(n2num) values are used, so node numbers may be
+        The hash(node1_id), hash(node2_id) values are used, so node numbers may be
         None or string values (used for e.g. "ctrlnet").
 
         :param node1_id: node one id

@@ -509,7 +509,6 @@ class Session:
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
         # boot core nodes after runtime
         if self.is_running() and isinstance(node, CoreNode):
-            self.control_net_manager.add_iface(node, 0)
             self.boot_node(node)
         self.sdt.add_node(node)
         return node
@@ -910,10 +909,6 @@ class Session:
         if self.is_running():
             logger.warning("ignoring instantiate, already in runtime state")
             return []
-        # create control net interfaces and network tunnels
-        # which need to exist for emane to sync on location events
-        # in distributed scenarios
-        self.control_net_manager.add_net(0)
         # initialize distributed tunnels
         self.distributed.start()
         # instantiate will be invoked again upon emane configure
@@ -985,9 +980,8 @@ class Session:
         # update control interface hosts
         self.control_net_manager.clear_etc_hosts()
 
-        # remove all four possible control networks
-        for i in range(4):
-            self.control_net_manager.remove_net(i)
+        # remove control networks
+        self.control_net_manager.remove_nets()
 
     def short_session_id(self) -> str:
         """
@@ -1012,7 +1006,9 @@ class Session:
             node.name,
             ", ".join(node.services.keys()),
         )
-        node.start_services()
+        self.control_net_manager.setup_ifaces(node)
+        with self.nodes_lock:
+            node.start_services()
 
     def boot_nodes(self) -> list[Exception]:
         """
@@ -1022,18 +1018,15 @@ class Session:
 
         :return: service boot exceptions
         """
-        with self.nodes_lock:
-            funcs = []
-            start = time.monotonic()
-            control_net = self.control_net_manager.add_net(0)
-            for node in self.nodes.values():
-                if isinstance(node, CoreNode):
-                    if control_net:
-                        self.control_net_manager.add_iface(node, 0)
-                    funcs.append((self.boot_node, (node,), {}))
-            results, exceptions = utils.threadpool(funcs)
-            total = time.monotonic() - start
-            logger.debug("boot run time: %s", total)
+        funcs = []
+        start = time.monotonic()
+        self.control_net_manager.setup_nets()
+        for node in self.nodes.values():
+            if isinstance(node, CoreNode):
+                funcs.append((self.boot_node, (node,), {}))
+        results, exceptions = utils.threadpool(funcs)
+        total = time.monotonic() - start
+        logger.debug("boot run time: %s", total)
         if not exceptions:
             self.control_net_manager.update_etc_hosts()
         return exceptions

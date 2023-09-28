@@ -124,6 +124,16 @@ class ControlNetManager:
         except CoreError:
             return None
 
+    def setup_nets(self) -> None:
+        """
+        Setup all configured control nets.
+
+        :return: nothing
+        """
+        for index, prefix in self.net_prefixes.items():
+            if prefix:
+                self.add_net(index)
+
     def add_net(self, index: int, conf_required: bool = True) -> Optional[CtrlNet]:
         """
         Create a control network bridge as necessary. The conf_reqd flag,
@@ -187,17 +197,28 @@ class ControlNetManager:
         control_net.startup()
         return control_net
 
-    def remove_net(self, index: int) -> None:
+    def remove_nets(self) -> None:
         """
-        Removes control net.
+        Removes control nets.
 
-        :param index: index of control net to remove
         :return: nothing
         """
-        control_net = self.get_net(index)
-        if control_net:
-            logger.info("removing control net index(%s)", index)
-            self.session.delete_node(control_net.id)
+        for index in self.net_prefixes:
+            control_net = self.get_net(index)
+            if control_net:
+                logger.info("removing control net index(%s)", index)
+                self.session.delete_node(control_net.id)
+
+    def setup_ifaces(self, node: CoreNode) -> None:
+        """
+        Setup all configured control net interfaces for node.
+
+        :param node: node to configure control net interfaces for
+        :return: nothing
+        """
+        for index in self.net_prefixes:
+            if self.get_net(index):
+                self.add_iface(node, index)
 
     def add_iface(self, node: CoreNode, index: int) -> None:
         """
@@ -214,7 +235,7 @@ class ControlNetManager:
             raise CoreError(f"control net index({index}) does not exist")
         iface_id = CTRL_NET_IFACE_ID + index
         if node.ifaces.get(iface_id):
-            raise CoreError(f"control iface({iface_id}) already exists")
+            return
         try:
             logger.info(
                 "node(%s) adding control net index(%s) interface(%s)",
