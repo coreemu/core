@@ -392,13 +392,6 @@ system and anything you change or do can impact the greater system. By default, 
 will open within the nodes home directory for the running session, but it is temporary and
 will be removed when the session is stopped.
 
-You can also launch GUI based applications from within standard CORE nodes, but you need to
-enable xhost  access to root.
-
-```shell
-xhost +local:root
-```
-
 ### Mobility Scripting
 
 CORE has a few ways to script mobility.
