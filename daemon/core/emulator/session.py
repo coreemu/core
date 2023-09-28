@@ -19,6 +19,7 @@ from core import constants, utils
 from core.emane.emanemanager import EmaneManager, EmaneState
 from core.emane.nodes import EmaneNet
 from core.emulator.broadcast import BroadcastManager
+from core.emulator.controlnets import ControlNetManager
 from core.emulator.data import (
     EventData,
     ExceptionData,
@@ -139,6 +140,7 @@ class Session:
         self.distributed: DistributedController = DistributedController(self)
 
         # initialize session feature helpers
+        self.control_net_manager: ControlNetManager = ControlNetManager(self)
         self.broadcast_manager: BroadcastManager = BroadcastManager()
         self.hook_manager: HookManager = HookManager()
         self.hook_manager.add_callback_hook(
@@ -507,7 +509,7 @@ class Session:
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
         # boot core nodes after runtime
         if self.is_running() and isinstance(node, CoreNode):
-            self.add_remove_control_iface(node, remove=False)
+            self.control_net_manager.add_iface(node, 0)
             self.boot_node(node)
         self.sdt.add_node(node)
         return node
@@ -911,7 +913,7 @@ class Session:
         # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
-        self.add_remove_control_net(0, remove=False)
+        self.control_net_manager.add_net(0)
         # initialize distributed tunnels
         self.distributed.start()
         # instantiate will be invoked again upon emane configure
@@ -981,11 +983,11 @@ class Session:
         self.emane.shutdown()
 
         # update control interface hosts
-        self.update_control_iface_hosts(remove=True)
+        self.control_net_manager.clear_etc_hosts()
 
         # remove all four possible control networks
         for i in range(4):
-            self.add_remove_control_net(i, remove=True)
+            self.control_net_manager.remove_net(i)
 
     def short_session_id(self) -> str:
         """
@@ -1023,232 +1025,18 @@ class Session:
         with self.nodes_lock:
             funcs = []
             start = time.monotonic()
+            control_net = self.control_net_manager.add_net(0)
             for node in self.nodes.values():
                 if isinstance(node, CoreNode):
-                    self.add_remove_control_iface(node, remove=False)
+                    if control_net:
+                        self.control_net_manager.add_iface(node, 0)
                     funcs.append((self.boot_node, (node,), {}))
             results, exceptions = utils.threadpool(funcs)
             total = time.monotonic() - start
             logger.debug("boot run time: %s", total)
         if not exceptions:
-            self.update_control_iface_hosts()
+            self.control_net_manager.update_etc_hosts()
         return exceptions
-
-    def get_control_net_prefixes(self) -> list[str]:
-        """
-        Retrieve control net prefixes.
-
-        :return: control net prefix list
-        """
-        p = self.options.get("controlnet")
-        p0 = self.options.get("controlnet0")
-        p1 = self.options.get("controlnet1")
-        p2 = self.options.get("controlnet2")
-        p3 = self.options.get("controlnet3")
-        if not p0 and p:
-            p0 = p
-        return [p0, p1, p2, p3]
-
-    def get_control_net_server_ifaces(self) -> list[str]:
-        """
-        Retrieve control net server interfaces.
-
-        :return: list of control net server interfaces
-        """
-        d0 = self.options.get("controlnetif0")
-        if d0:
-            logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.options.get("controlnetif1")
-        d2 = self.options.get("controlnetif2")
-        d3 = self.options.get("controlnetif3")
-        return [None, d1, d2, d3]
-
-    def get_control_net_index(self, dev: str) -> int:
-        """
-        Retrieve control net index.
-
-        :param dev: device to get control net index for
-        :return: control net index, -1 otherwise
-        """
-        if dev[0:4] == "ctrl" and int(dev[4]) in [0, 1, 2, 3]:
-            index = int(dev[4])
-            if index == 0:
-                return index
-            if index < 4 and self.get_control_net_prefixes()[index] is not None:
-                return index
-        return -1
-
-    def get_control_net(self, net_index: int) -> CtrlNet:
-        """
-        Retrieve a control net based on index.
-
-        :param net_index: control net index
-        :return: control net
-        :raises CoreError: when control net is not found
-        """
-        return self.get_node(CTRL_NET_ID + net_index, CtrlNet)
-
-    def add_remove_control_net(
-        self, net_index: int, remove: bool = False, conf_required: bool = True
-    ) -> Optional[CtrlNet]:
-        """
-        Create a control network bridge as necessary.
-        When the remove flag is True, remove the bridge that connects control
-        interfaces. The conf_reqd flag, when False, causes a control network
-        bridge to be added even if one has not been configured.
-
-        :param net_index: network index
-        :param remove: flag to check if it should be removed
-        :param conf_required: flag to check if conf is required
-        :return: control net node
-        """
-        logger.debug(
-            "add/remove control net: index(%s) remove(%s) conf_required(%s)",
-            net_index,
-            remove,
-            conf_required,
-        )
-        prefix_spec_list = self.get_control_net_prefixes()
-        prefix_spec = prefix_spec_list[net_index]
-        if not prefix_spec:
-            if conf_required:
-                # no controlnet needed
-                return None
-            else:
-                prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
-        logger.debug("prefix spec: %s", prefix_spec)
-        server_iface = self.get_control_net_server_ifaces()[net_index]
-
-        # return any existing controlnet bridge
-        try:
-            control_net = self.get_control_net(net_index)
-            if remove:
-                self.delete_node(control_net.id)
-                return None
-            return control_net
-        except CoreError:
-            if remove:
-                return None
-
-        # build a new controlnet bridge
-        _id = CTRL_NET_ID + net_index
-
-        # use the updown script for control net 0 only.
-        updown_script = None
-        if net_index == 0:
-            updown_script = self.options.get("controlnet_updown_script") or None
-            if not updown_script:
-                logger.debug("controlnet updown script not configured")
-
-        prefixes = prefix_spec.split()
-        if len(prefixes) > 1:
-            # a list of per-host prefixes is provided
-            try:
-                # split first (master) entry into server and prefix
-                prefix = prefixes[0].split(":", 1)[1]
-            except IndexError:
-                # no server name. possibly only one server
-                prefix = prefixes[0]
-        else:
-            prefix = prefixes[0]
-
-        logger.info(
-            "controlnet(%s) prefix(%s) updown(%s) serverintf(%s)",
-            _id,
-            prefix,
-            updown_script,
-            server_iface,
-        )
-        options = CtrlNet.create_options()
-        options.prefix = prefix
-        options.updown_script = updown_script
-        options.serverintf = server_iface
-        control_net = self.create_node(CtrlNet, False, _id, options=options)
-        control_net.brname = f"ctrl{net_index}.{self.short_session_id()}"
-        control_net.startup()
-        return control_net
-
-    def add_remove_control_iface(
-        self,
-        node: CoreNode,
-        net_index: int = 0,
-        remove: bool = False,
-        conf_required: bool = True,
-    ) -> None:
-        """
-        Add a control interface to a node when a 'controlnet' prefix is
-        listed in the config file or session options. Uses
-        addremovectrlnet() to build or remove the control bridge.
-        If conf_reqd is False, the control network may be built even
-        when the user has not configured one (e.g. for EMANE.)
-
-        :param node: node to add or remove control interface
-        :param net_index: network index
-        :param remove: flag to check if it should be removed
-        :param conf_required: flag to check if conf is required
-        :return: nothing
-        """
-        control_net = self.add_remove_control_net(net_index, remove, conf_required)
-        if not control_net:
-            return
-        if not node:
-            return
-        # ctrl# already exists
-        if node.ifaces.get(control_net.CTRLIF_IDX_BASE + net_index):
-            return
-        try:
-            ip4 = control_net.prefix[node.id]
-            ip4_mask = control_net.prefix.prefixlen
-            iface_data = InterfaceData(
-                id=control_net.CTRLIF_IDX_BASE + net_index,
-                name=f"ctrl{net_index}",
-                mac=utils.random_mac(),
-                ip4=ip4,
-                ip4_mask=ip4_mask,
-                mtu=DEFAULT_MTU,
-            )
-            iface = node.create_iface(iface_data)
-            control_net.attach(iface)
-            iface.control = True
-        except ValueError:
-            msg = f"Control interface not added to node {node.id}. "
-            msg += f"Invalid control network prefix ({control_net.prefix}). "
-            msg += "A longer prefix length may be required for this many nodes."
-            logger.exception(msg)
-
-    def update_control_iface_hosts(
-        self, net_index: int = 0, remove: bool = False
-    ) -> None:
-        """
-        Add the IP addresses of control interfaces to the /etc/hosts file.
-
-        :param net_index: network index to update
-        :param remove: flag to check if it should be removed
-        :return: nothing
-        """
-        if not self.options.get_bool("update_etc_hosts", False):
-            return
-
-        try:
-            control_net = self.get_control_net(net_index)
-        except CoreError:
-            logger.exception("error retrieving control net node")
-            return
-
-        header = f"CORE session {self.id} host entries"
-        if remove:
-            logger.info("Removing /etc/hosts file entries.")
-            utils.file_demunge("/etc/hosts", header)
-            return
-
-        entries = []
-        for iface in control_net.get_ifaces():
-            name = iface.node.name
-            for ip in iface.ips():
-                entries.append(f"{ip.ip} {name}")
-
-        logger.info("Adding %d /etc/hosts file entries.", len(entries))
-        utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
     def runtime(self) -> float:
         """
@@ -1340,3 +1128,11 @@ class Session:
         :return: True if in the runtime state, False otherwise
         """
         return self.state == EventTypes.RUNTIME_STATE
+
+    def parse_options(self) -> None:
+        """
+        Update configurations from latest session options.
+
+        :return: nothing
+        """
+        self.control_net_manager.parse_options(self.options)

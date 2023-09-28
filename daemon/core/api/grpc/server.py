@@ -263,6 +263,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if option.value:
                 session.options.set(option.name, option.value)
         session.metadata = dict(request.session.metadata)
+        session.parse_options()
 
         # add servers
         for server in request.session.servers:

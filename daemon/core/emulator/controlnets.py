@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Optional
 
 from core import utils
 from core.emulator.data import InterfaceData
+from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.nodes.base import CoreNode
 from core.nodes.interface import DEFAULT_MTU
@@ -14,54 +15,58 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 CTRL_NET_ID: int = 9001
+CTRL_NET_IFACE_ID: int = 99
 ETC_HOSTS_PATH: str = "/etc/hosts"
+DEFAULT_PREFIX_LIST: list[str] = [
+    "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
+    "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
+    "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
+    "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24",
+]
+
+
+def control_net_id(index: int) -> int:
+    """
+    Returns control net id to use, based on provided index.
+
+    :param index: index to get control net id for
+    :return: control net id
+    """
+    return CTRL_NET_ID + index
 
 
 class ControlNetManager:
     def __init__(self, session: "Session") -> None:
         self.session: "Session" = session
         self.etc_hosts_header: str = f"CORE session {self.session.id} host entries"
+        self.etc_hosted_enabled: bool = False
+        self.net_prefixes: dict[int, Optional[str]] = {}
+        self.net_ifaces: dict[int, Optional[str]] = {}
+        self.updown_script: Optional[str] = None
+        self.parse_options(session.options)
 
-    def _etc_hosts_enabled(self) -> bool:
+    def parse_options(self, options: SessionConfig) -> None:
         """
-        Determines if /etc/hosts should be configured.
+        Parse session options for current settings to use.
 
-        :return: True if /etc/hosts should be configured, False otherwise
+        :param options: options to parse
+        :return: nothing
         """
-        return self.session.options.get_bool("update_etc_hosts", False)
-
-    def _get_server_ifaces(
-        self,
-    ) -> tuple[None, Optional[str], Optional[str], Optional[str]]:
-        """
-        Retrieve control net server interfaces.
-
-        :return: control net server interfaces
-        """
-        d0 = self.session.options.get("controlnetif0")
-        if d0:
-            logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.session.options.get("controlnetif1")
-        d2 = self.session.options.get("controlnetif2")
-        d3 = self.session.options.get("controlnetif3")
-        return None, d1, d2, d3
-
-    def _get_prefixes(
-        self,
-    ) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
-        """
-        Retrieve control net prefixes.
-
-        :return: control net prefixes
-        """
-        p = self.session.options.get("controlnet")
-        p0 = self.session.options.get("controlnet0")
-        p1 = self.session.options.get("controlnet1")
-        p2 = self.session.options.get("controlnet2")
-        p3 = self.session.options.get("controlnet3")
-        if not p0 and p:
-            p0 = p
-        return p0, p1, p2, p3
+        self.etc_hosted_enabled: bool = options.get_bool("update_etc_hosts", False)
+        default_net = options.get("controlnet") or None
+        self.net_prefixes = {
+            0: (options.get("controlnet0") or None) or default_net,
+            1: options.get("controlnet1") or None,
+            2: options.get("controlnet2") or None,
+            3: options.get("controlnet3") or None,
+        }
+        self.net_ifaces = {
+            0: None,
+            1: options.get("controlnetif1") or None,
+            2: options.get("controlnetif2") or None,
+            3: options.get("controlnetif3") or None,
+        }
+        self.updown_script = options.get("controlnet_updown_script") or None
 
     def update_etc_hosts(self) -> None:
         """
@@ -69,9 +74,9 @@ class ControlNetManager:
 
         :return: nothing
         """
-        if not self._etc_hosts_enabled():
+        if not self.etc_hosted_enabled:
             return
-        control_net = self.get_control_net(0)
+        control_net = self.get_net(0)
         entries = ""
         for iface in control_net.get_ifaces():
             name = iface.node.name
@@ -86,12 +91,12 @@ class ControlNetManager:
 
         :return: nothing
         """
-        if not self._etc_hosts_enabled():
+        if not self.etc_hosted_enabled:
             return
         logger.info("removing /etc/hosts file entries")
         utils.file_demunge(ETC_HOSTS_PATH, self.etc_hosts_header)
 
-    def get_control_net_index(self, dev: str) -> int:
+    def get_net_index(self, dev: str) -> int:
         """
         Retrieve control net index.
 
@@ -102,11 +107,11 @@ class ControlNetManager:
             index = int(dev[4])
             if index == 0:
                 return index
-            if index < 4 and self._get_prefixes()[index] is not None:
+            if index < 4 and self.net_prefixes[index] is not None:
                 return index
         return -1
 
-    def get_control_net(self, index: int) -> Optional[CtrlNet]:
+    def get_net(self, index: int) -> Optional[CtrlNet]:
         """
         Retrieve a control net based on index.
 
@@ -114,13 +119,12 @@ class ControlNetManager:
         :return: control net when available, None otherwise
         """
         try:
-            return self.session.get_node(CTRL_NET_ID + index, CtrlNet)
+            _id = control_net_id(index)
+            return self.session.get_node(_id, CtrlNet)
         except CoreError:
             return None
 
-    def add_control_net(
-        self, index: int, conf_required: bool = True
-    ) -> Optional[CtrlNet]:
+    def add_net(self, index: int, conf_required: bool = True) -> Optional[CtrlNet]:
         """
         Create a control network bridge as necessary. The conf_reqd flag,
         when False, causes a control network bridge to be added even if
@@ -139,17 +143,17 @@ class ControlNetManager:
         if not (0 <= index <= 3):
             raise CoreError(f"invalid control net index({index})")
         # return any existing control net bridge
-        control_net = self.get_control_net(index)
+        control_net = self.get_net(index)
         if control_net:
             logger.info("control net index(%s) already exists", index)
             return control_net
         # retrieve prefix for current index
-        index_prefix = self._get_prefixes()[index]
+        index_prefix = self.net_prefixes[index]
         if not index_prefix:
             if conf_required:
                 return None
             else:
-                index_prefix = CtrlNet.DEFAULT_PREFIX_LIST[index]
+                index_prefix = DEFAULT_PREFIX_LIST[index]
         # retrieve valid prefix from old style values
         prefixes = index_prefix.split()
         if len(prefixes) > 1:
@@ -163,10 +167,10 @@ class ControlNetManager:
         # use the updown script for control net 0 only
         updown_script = None
         if index == 0:
-            updown_script = self.session.options.get("controlnet_updown_script")
+            updown_script = self.updown_script
         # build a new controlnet bridge
-        _id = CTRL_NET_ID + index
-        server_iface = self._get_server_ifaces()[index]
+        _id = control_net_id(index)
+        server_iface = self.net_ifaces[index]
         logger.info(
             "adding controlnet(%s) prefix(%s) updown(%s) server interface(%s)",
             _id,
@@ -183,19 +187,19 @@ class ControlNetManager:
         control_net.startup()
         return control_net
 
-    def remove_control_net(self, index: int) -> None:
+    def remove_net(self, index: int) -> None:
         """
         Removes control net.
 
         :param index: index of control net to remove
         :return: nothing
         """
-        control_net = self.get_control_net(index)
+        control_net = self.get_net(index)
         if control_net:
             logger.info("removing control net index(%s)", index)
             self.session.delete_node(control_net.id)
 
-    def add_control_iface(self, node: CoreNode, index: int) -> None:
+    def add_iface(self, node: CoreNode, index: int) -> None:
         """
         Adds a control net interface to a node.
 
@@ -205,10 +209,10 @@ class ControlNetManager:
         :raises CoreError: if control net doesn't exist, interface already exists,
             or there is an error creating the interface
         """
-        control_net = self.get_control_net(index)
+        control_net = self.get_net(index)
         if not control_net:
             raise CoreError(f"control net index({index}) does not exist")
-        iface_id = control_net.CTRLIF_IDX_BASE + index
+        iface_id = CTRL_NET_IFACE_ID + index
         if node.ifaces.get(iface_id):
             raise CoreError(f"control iface({iface_id}) already exists")
         try:
