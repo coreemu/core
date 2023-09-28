@@ -49,11 +49,9 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        runtime_hooks = session.hooks.get(state)
-        assert runtime_hooks
-        runtime_hook = runtime_hooks[0]
-        assert file_name == runtime_hook[0]
-        assert data == runtime_hook[1]
+        hooks = session.hook_manager.script_hooks[state]
+        runtime_data = hooks[file_name]
+        assert runtime_data == data
 
     def test_xml_ptp(
         self, session: Session, tmpdir: TemporaryFile, ip_prefixes: IpPrefixes

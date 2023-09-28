@@ -693,9 +693,8 @@ def get_hooks(session: Session) -> list[core_pb2.Hook]:
     :return: list of hook protobufs
     """
     hooks = []
-    for state in session.hooks:
-        state_hooks = session.hooks[state]
-        for file_name, file_data in state_hooks:
+    for state, state_hooks in session.hook_manager.script_hooks.items():
+        for file_name, file_data in state_hooks.items():
             hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
             hooks.append(hook)
     return hooks

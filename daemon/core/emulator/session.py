@@ -8,7 +8,6 @@ import math
 import os
 import pwd
 import shutil
-import subprocess
 import sys
 import tempfile
 import threading
@@ -35,6 +34,7 @@ from core.emulator.enumerations import (
     MessageFlags,
     NodeTypes,
 )
+from core.emulator.hooks import HookManager
 from core.emulator.links import CoreLink, LinkManager
 from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
@@ -130,14 +130,6 @@ class Session:
         # states and hooks handlers
         self.state: EventTypes = EventTypes.DEFINITION_STATE
         self.state_time: float = time.monotonic()
-        self.hooks: dict[EventTypes, list[tuple[str, str]]] = {}
-        self.state_hooks: dict[EventTypes, list[Callable[[EventTypes], None]]] = {}
-        self.add_state_hook(
-            state=EventTypes.RUNTIME_STATE, hook=self.runtime_state_hook
-        )
-
-        # handlers for broadcasting information
-        self.broadcast_manager: BroadcastManager = BroadcastManager()
 
         # session options/metadata
         self.options: SessionConfig = SessionConfig(config)
@@ -147,13 +139,16 @@ class Session:
         self.distributed: DistributedController = DistributedController(self)
 
         # initialize session feature helpers
+        self.broadcast_manager: BroadcastManager = BroadcastManager()
+        self.hook_manager: HookManager = HookManager()
+        self.hook_manager.add_callback_hook(
+            EventTypes.RUNTIME_STATE, self.runtime_state_hook
+        )
         self.location: GeoLocation = GeoLocation()
         self.mobility: MobilityManager = MobilityManager(self)
         self.emane: EmaneManager = EmaneManager(self)
-        self.sdt: Sdt = Sdt(self)
-
-        # services
         self.service_manager: Optional[ServiceManager] = None
+        self.sdt: Sdt = Sdt(self)
 
     @classmethod
     def get_node_class(cls, _type: NodeTypes) -> type[NodeBase]:
@@ -564,29 +559,19 @@ class Session:
         """
         CoreXmlWriter(self).write(file_path)
 
-    def add_hook(
-        self, state: EventTypes, file_name: str, data: str, src_name: str = None
-    ) -> None:
+    def add_hook(self, state: EventTypes, file_name: str, data: str) -> None:
         """
         Store a hook from a received file message.
 
         :param state: when to run hook
         :param file_name: file name for hook
-        :param data: hook data
-        :param src_name: source name
+        :param data: file data
         :return: nothing
         """
-        logger.info(
-            "setting state hook: %s - %s source(%s)", state, file_name, src_name
+        should_run = self.state == state
+        self.hook_manager.add_script_hook(
+            state, file_name, data, self.directory, self.get_environment(), should_run
         )
-        hook = file_name, data
-        state_hooks = self.hooks.setdefault(state, [])
-        state_hooks.append(hook)
-
-        # immediately run a hook if it is in the current state
-        if self.state == state:
-            logger.info("immediately running new state hook")
-            self.run_hook(hook)
 
     def clear(self) -> None:
         """
@@ -598,7 +583,7 @@ class Session:
         self.delete_nodes()
         self.link_manager.reset()
         self.distributed.shutdown()
-        self.hooks.clear()
+        self.hook_manager.reset()
         self.emane.reset()
         self.emane.config_reset()
         self.location.reset()
@@ -724,69 +709,9 @@ class Session:
         self.state = state
         self.state_time = time.monotonic()
         logger.info("changing session(%s) to state %s", self.id, state.name)
-        self.run_hooks(state)
-        self.run_state_hooks(state)
+        self.hook_manager.run_hooks(state, self.directory, self.get_environment())
         if send_event:
             self.broadcast_event(state)
-
-    def run_hooks(self, state: EventTypes) -> None:
-        """
-        Run hook scripts upon changing states. If hooks is not specified, run all hooks
-        in the given state.
-
-        :param state: state to run hooks for
-        :return: nothing
-        """
-        hooks = self.hooks.get(state, [])
-        for hook in hooks:
-            self.run_hook(hook)
-
-    def run_hook(self, hook: tuple[str, str]) -> None:
-        """
-        Run a hook.
-
-        :param hook: hook to run
-        :return: nothing
-        """
-        file_name, data = hook
-        logger.info("running hook %s", file_name)
-        file_path = self.directory / file_name
-        log_path = self.directory / f"{file_name}.log"
-        try:
-            with file_path.open("w") as f:
-                f.write(data)
-            with log_path.open("w") as f:
-                args = ["/bin/sh", file_name]
-                subprocess.check_call(
-                    args,
-                    stdout=f,
-                    stderr=subprocess.STDOUT,
-                    close_fds=True,
-                    cwd=self.directory,
-                    env=self.get_environment(),
-                )
-        except (OSError, subprocess.CalledProcessError):
-            logger.exception("error running hook: %s", file_path)
-
-    def run_state_hooks(self, state: EventTypes) -> None:
-        """
-        Run state hooks.
-
-        :param state: state to run hooks for
-        :return: nothing
-        """
-        for hook in self.state_hooks.get(state, []):
-            self.run_state_hook(state, hook)
-
-    def run_state_hook(self, state: EventTypes, hook: Callable[[EventTypes], None]):
-        try:
-            hook(state)
-        except Exception:
-            message = f"exception occurred when running {state.name} state hook: {hook}"
-            logger.exception(message)
-            self.broadcast_exception(
-                ExceptionLevels.ERROR, "Session.run_state_hooks", message
-            )
 
     def add_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -798,12 +723,8 @@ class Session:
         :param hook: hook callback for the state
         :return: nothing
         """
-        hooks = self.state_hooks.setdefault(state, [])
-        if hook in hooks:
-            raise CoreError("attempting to add duplicate state hook")
-        hooks.append(hook)
-        if self.state == state:
-            self.run_state_hook(state, hook)
+        should_run = self.state == state
+        self.hook_manager.add_callback_hook(state, hook, should_run)
 
     def del_state_hook(
         self, state: EventTypes, hook: Callable[[EventTypes], None]
@@ -815,9 +736,7 @@ class Session:
         :param hook: hook to delete
         :return: nothing
         """
-        hooks = self.state_hooks.get(state, [])
-        if hook in hooks:
-            hooks.remove(hook)
+        self.hook_manager.delete_callback_hook(state, hook)
 
     def runtime_state_hook(self, _state: EventTypes) -> None:
         """

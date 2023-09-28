@@ -123,9 +123,9 @@ class TestGrpc:
         assert wlan_node.id in real_session.nodes
         assert iface1_id in real_session.nodes[node1.id].ifaces
         assert iface2_id in real_session.nodes[node2.id].ifaces
-        hook_file, hook_data = real_session.hooks[EventTypes.RUNTIME_STATE][0]
-        assert hook_file == hook.file
-        assert hook_data == hook.data
+        hooks = real_session.hook_manager.script_hooks[EventTypes.RUNTIME_STATE]
+        real_hook = hooks[hook.file]
+        assert real_hook == hook.data
         assert real_session.location.refxyz == (location_x, location_y, location_z)
         assert real_session.location.refgeo == (
             location_lat,
