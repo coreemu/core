@@ -87,6 +87,7 @@ class CoreClient:
         self.iface_to_edge: dict[tuple[int, ...], CanvasEdge] = {}
         self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
         self.observer: Optional[str] = None
+        self.node_commands: dict[str, str] = {}
 
         # session data
         self.mobility_players: dict[int, MobilityPlayer] = {}
@@ -749,3 +750,6 @@ class CoreClient:
         result = self.client.edit_link(self.session.id, link, source=GUI_SOURCE)
         if not result:
             logger.error("error editing link: %s", link)
+
+    def run_cmd(self, node_id: int, cmd: str) -> None:
+        self.client.node_command(self.session.id, node_id, cmd)

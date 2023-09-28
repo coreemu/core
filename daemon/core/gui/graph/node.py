@@ -241,6 +241,15 @@ class CanvasNode:
                     label="Mobility Player", command=self.show_mobility_player
                 )
             if nutils.is_container(self.core_node):
+                cmds_menu = tk.Menu(self.context)
+                for name, cmd in self.app.core.node_commands.items():
+                    cmd_func = functools.partial(
+                        self.app.core.run_cmd, self.core_node.id, cmd
+                    )
+                    cmds_menu.add_command(label=name, command=cmd_func)
+                themes.style_menu(cmds_menu)
+                self.context.add_cascade(label="Commands", menu=cmds_menu)
+
                 services_menu = tk.Menu(self.context)
                 for service in sorted(self.core_node.services):
                     service_menu = tk.Menu(services_menu)
