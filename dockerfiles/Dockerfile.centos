@@ -12,6 +12,8 @@ WORKDIR /opt
 # install system dependencies
 RUN yum -y update && \
     yum install -y \
+    psmisc \
+    sysvinit-tools \
     xterm \
     git \
     sudo \
