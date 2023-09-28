@@ -7,7 +7,6 @@ ARG BRANCH=master
 ARG PROTOC_VERSION=3.19.6
 ARG VENV_PATH=/opt/core/venv
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PATH="$PATH:${VENV_PATH}/bin"
 WORKDIR /opt
 
 # install system dependencies

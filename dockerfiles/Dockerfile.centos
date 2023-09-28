@@ -7,7 +7,6 @@ ARG BRANCH=master
 ENV LANG en_US.UTF-8
 ARG PROTOC_VERSION=3.19.6
 ARG VENV_PATH=/opt/core/venv
-ENV PATH="$PATH:${VENV_PATH}/bin"
 WORKDIR /opt
 
 # install system dependencies

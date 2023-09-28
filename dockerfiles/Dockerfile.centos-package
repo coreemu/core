@@ -5,7 +5,6 @@ LABEL Description="CORE CentOS Image"
 ENV LANG en_US.UTF-8
 ARG PROTOC_VERSION=3.19.6
 ARG VENV_PATH=/opt/core/venv
-ENV PATH="$PATH:${VENV_PATH}/bin"
 WORKDIR /opt
 
 # install basic dependencies
@@ -87,3 +86,5 @@ RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC
     rm -rf protoc && \
     rm -rf emane && \
     rm -f protoc-${PROTOC_VERSION}-linux-x86_64.zip
+
+WORKDIR /root

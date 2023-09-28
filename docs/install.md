@@ -281,7 +281,7 @@ cd core
 # build image
 sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu> .
 # start container
-sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged core
+sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged --entrypoint core-daemon core
 # enable xhost access to the root user
 xhost +local:root
 # launch core-gui

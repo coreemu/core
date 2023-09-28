@@ -146,7 +146,7 @@ def close_onexec(fd: int) -> None:
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def which(command: str, required: bool) -> str:
+def which(command: str, required: bool) -> Optional[str]:
     """
     Find location of desired executable within current PATH.
 

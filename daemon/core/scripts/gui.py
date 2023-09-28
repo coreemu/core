@@ -1,9 +1,8 @@
 import argparse
 import logging
-import shlex
-import subprocess
 from logging.handlers import TimedRotatingFileHandler
 
+from core import utils
 from core.gui import appconfig, images
 from core.gui.app import Application
 
@@ -43,8 +42,8 @@ def main() -> None:
     logging.getLogger("PIL").setLevel(logging.ERROR)
 
     # enable xhost for root
-    cmd = shlex.split("xhost +SI:localuser:root")
-    subprocess.check_call(cmd)
+    if utils.which("xhost", False):
+        utils.cmd("xhost +SI:localuser:root")
 
     # start app
     images.load_all()
