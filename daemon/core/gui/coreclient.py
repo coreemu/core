@@ -629,6 +629,8 @@ class CoreClient:
             node = canvas_node.core_node
             del self.canvas_nodes[node.id]
             del self.session.nodes[node.id]
+            if nutils.is_wireless(node):
+                self.ifaces_manager.clear_wireless_nets(node.id)
 
     def deleted_canvas_edges(self, edges: Iterable[CanvasEdge]) -> None:
         links = []

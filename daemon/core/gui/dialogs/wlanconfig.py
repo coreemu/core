@@ -1,12 +1,13 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 import grpc
+from netaddr import AddrFormatError, IPNetwork
 
 from core.api.grpc.wrappers import ConfigOption, Node
 from core.gui.dialogs.dialog import Dialog
-from core.gui.themes import PADX, PADY
+from core.gui.themes import FRAME_PAD, PADX, PADY
 from core.gui.widgets import ConfigFrame
 
 if TYPE_CHECKING:
@@ -26,6 +27,9 @@ class WlanConfigDialog(Dialog):
         self.node: Node = canvas_node.core_node
         self.config_frame: Optional[ConfigFrame] = None
         self.range_entry: Optional[ttk.Entry] = None
+        subnets = self.app.core.ifaces_manager.get_wireless_nets(self.node.id)
+        self.ip4_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip4))
+        self.ip6_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip6))
         self.has_error: bool = False
         self.ranges: dict[int, int] = {}
         self.positive_int: int = self.app.master.register(self.validate_and_update)
@@ -56,8 +60,23 @@ class WlanConfigDialog(Dialog):
         self.config_frame = ConfigFrame(self.top, self.app, self.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky=tk.NSEW, pady=PADY)
+        self.draw_network_config()
         self.draw_apply_buttons()
         self.top.bind("<Destroy>", self.remove_ranges)
+
+    def draw_network_config(self) -> None:
+        frame = ttk.LabelFrame(self.top, text="Network Settings", padding=FRAME_PAD)
+        frame.grid(sticky=tk.EW, pady=PADY)
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        label = ttk.Label(frame, text="IPv4 Subnet")
+        label.grid(row=0, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip4_subnet)
+        entry.grid(row=0, column=1, sticky=tk.EW)
+        label = ttk.Label(frame, text="IPv6 Subnet")
+        label.grid(row=1, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip6_subnet)
+        entry.grid(row=1, column=1, sticky=tk.EW)
 
     def draw_apply_buttons(self) -> None:
         """
@@ -89,6 +108,16 @@ class WlanConfigDialog(Dialog):
             session_id = self.app.core.session.id
             self.app.core.client.set_wlan_config(session_id, self.node.id, config)
         self.remove_ranges()
+        # update wireless nets
+        try:
+            ip4_subnet = IPNetwork(self.ip4_subnet.get())
+            ip6_subnet = IPNetwork(self.ip6_subnet.get())
+            self.app.core.ifaces_manager.set_wireless_nets(
+                self.node.id, ip4_subnet, ip6_subnet
+            )
+        except AddrFormatError as e:
+            messagebox.showerror("IP Network Error", str(e))
+            return
         self.destroy()
 
     def remove_ranges(self, event=None) -> None:
