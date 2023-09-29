@@ -690,11 +690,6 @@ class CoreClient:
     def get_service_defaults(self, node_id: int, name: str) -> ServiceDefaults:
         return self.client.get_service_defaults(self.session.id, node_id, name)
 
-    def run(self, node_id: int) -> str:
-        logger.info("running node(%s) cmd: %s", node_id, self.observer)
-        _, output = self.client.node_command(self.session.id, node_id, self.observer)
-        return output
-
     def get_wlan_config(self, node_id: int) -> dict[str, ConfigOption]:
         config = self.client.get_wlan_config(self.session.id, node_id)
         logger.debug(
@@ -751,5 +746,6 @@ class CoreClient:
         if not result:
             logger.error("error editing link: %s", link)
 
-    def run_cmd(self, node_id: int, cmd: str) -> None:
-        self.client.node_command(self.session.id, node_id, cmd)
+    def run_cmd(self, node_id: int, cmd: str) -> str:
+        _, output = self.client.node_command(self.session.id, node_id, cmd)
+        return output

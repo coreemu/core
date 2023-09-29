@@ -197,7 +197,9 @@ class CanvasNode:
             self.tooltip.text.set("waiting...")
             self.tooltip.on_enter(event)
             try:
-                output = self.app.core.run(self.core_node.id)
+                output = self.app.core.run_cmd(
+                    self.core_node.id, self.app.core.observer
+                )
                 self.tooltip.text.set(output)
             except grpc.RpcError as e:
                 self.app.show_grpc_exception("Observer Error", e)
