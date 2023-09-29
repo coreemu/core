@@ -5,6 +5,7 @@ from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 import netaddr
+from netaddr import AddrFormatError, IPNetwork
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Node
@@ -191,6 +192,9 @@ class NodeConfigDialog(Dialog):
             server = self.node.server
         self.server: tk.StringVar = tk.StringVar(value=server)
         self.ifaces: dict[int, InterfaceData] = {}
+        subnets = self.app.core.ifaces_manager.get_wireless_nets(self.node.id)
+        self.ip4_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip4))
+        self.ip6_subnet: tk.StringVar = tk.StringVar(value=str(subnets.ip6))
         self.draw()
 
     def draw(self) -> None:
@@ -269,6 +273,9 @@ class NodeConfigDialog(Dialog):
             row += 1
             ifaces_scroll.listbox.bind("<<ListboxSelect>>", self.iface_select)
 
+        if nutils.is_wireless(self.node):
+            self.draw_network_config()
+
         # interfaces
         if nutils.is_container(self.node):
             self.draw_ifaces()
@@ -276,7 +283,23 @@ class NodeConfigDialog(Dialog):
         self.draw_spacer()
         self.draw_buttons()
 
+    def draw_network_config(self) -> None:
+        frame = ttk.LabelFrame(self.top, text="Network Settings", padding=FRAME_PAD)
+        frame.grid(sticky=tk.EW, pady=PADY)
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        label = ttk.Label(frame, text="IPv4 Subnet")
+        label.grid(row=0, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip4_subnet)
+        entry.grid(row=0, column=1, sticky=tk.EW)
+        label = ttk.Label(frame, text="IPv6 Subnet")
+        label.grid(row=1, column=0, sticky=tk.EW)
+        entry = ttk.Entry(frame, textvariable=self.ip6_subnet)
+        entry.grid(row=1, column=1, sticky=tk.EW)
+
     def draw_ifaces(self) -> None:
+        if not self.canvas_node.ifaces:
+            return
         notebook = ttk.Notebook(self.top)
         notebook.grid(sticky=tk.NSEW, pady=PADY)
         self.top.rowconfigure(notebook.grid_info()["row"], weight=1)
@@ -399,6 +422,18 @@ class NodeConfigDialog(Dialog):
             error = not data.validate(self, iface)
             if error:
                 break
+
+        # save custom network for wireless node types
+        if nutils.is_wireless(self.node):
+            try:
+                ip4_subnet = IPNetwork(self.ip4_subnet.get())
+                ip6_subnet = IPNetwork(self.ip6_subnet.get())
+                self.app.core.ifaces_manager.set_wireless_nets(
+                    self.node.id, ip4_subnet, ip6_subnet
+                )
+            except AddrFormatError as e:
+                messagebox.showerror("IP Network Error", str(e), parent=self.top)
+                return
 
         # redraw
         if not error:
