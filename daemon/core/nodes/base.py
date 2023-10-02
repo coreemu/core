@@ -661,7 +661,7 @@ class CoreNode(CoreNodeBase):
 
     def shutdown(self) -> None:
         """
-        Shutdown logic for simple lxc nodes.
+        Shutdown logic for nodes.
 
         :return: nothing
         """

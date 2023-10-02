@@ -48,7 +48,6 @@ class NodeTypes(Enum):
     PEER_TO_PEER = 12
     CONTROL_NET = 13
     DOCKER = 15
-    LXC = 16
     WIRELESS = 17
     PODMAN = 18
 

@@ -19,10 +19,9 @@ NODE_ICONS = {}
 CONTAINER_NODES: set[NodeType] = {
     NodeType.DEFAULT,
     NodeType.DOCKER,
-    NodeType.LXC,
     NodeType.PODMAN,
 }
-IMAGE_NODES: set[NodeType] = {NodeType.DOCKER, NodeType.LXC, NodeType.PODMAN}
+IMAGE_NODES: set[NodeType] = {NodeType.DOCKER, NodeType.PODMAN}
 WIRELESS_NODES: set[NodeType] = {
     NodeType.WIRELESS_LAN,
     NodeType.EMANE,
@@ -45,7 +44,6 @@ def setup() -> None:
         (ImageEnum.ROUTER, NodeType.DEFAULT, "Router", "router"),
         (ImageEnum.PROUTER, NodeType.DEFAULT, "PRouter", "prouter"),
         (ImageEnum.DOCKER, NodeType.DOCKER, "Docker", None),
-        (ImageEnum.LXC, NodeType.LXC, "LXC", None),
         (ImageEnum.PODMAN, NodeType.PODMAN, "Podman", None),
     ]
     for image_enum, node_type, label, model in nodes:

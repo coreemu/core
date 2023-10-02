@@ -61,10 +61,8 @@ inv test-mock
 
 ## Linux Network Namespace Commands
 
-Linux network namespace containers are often managed using the *Linux Container Tools* or *lxc-tools* package.
-The lxc-tools website is available here http://lxc.sourceforge.net/ for more information. CORE does not use these
-management utilities, but includes its own set of tools for instantiating and configuring network namespace containers.
-This section describes these tools.
+CORE includes its own set of tools for instantiating and configuring network namespace
+containers. This section describes these tools.
 
 ### vnoded
 

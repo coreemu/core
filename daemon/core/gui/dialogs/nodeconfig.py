@@ -223,42 +223,51 @@ class NodeConfigDialog(Dialog):
         self.image_button.grid(row=row, column=1, sticky=tk.EW)
         row += 1
 
-        # name field
-        label = ttk.Label(frame, text="Name")
-        label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-        entry = validation.NodeNameEntry(frame, textvariable=self.name, state=state)
-        entry.grid(row=row, column=1, sticky=tk.EW)
+        overview_frame = ttk.Labelframe(frame, text="Overview", padding=FRAME_PAD)
+        overview_frame.grid(row=row, columnspan=2, sticky=tk.EW, pady=PADY)
+        overview_row = 0
         row += 1
+
+        # name field
+        label = ttk.Label(overview_frame, text="Name")
+        label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+        entry = validation.NodeNameEntry(
+            overview_frame, textvariable=self.name, state=state
+        )
+        entry.grid(row=overview_row, column=1, sticky=tk.EW)
+        overview_row += 1
 
         # node type field
         if nutils.is_model(self.node):
-            label = ttk.Label(frame, text="Type")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            entry = ttk.Entry(frame, textvariable=self.type, state=tk.DISABLED)
-            entry.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
+            label = ttk.Label(overview_frame, text="Type")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(overview_frame, textvariable=self.type, state=tk.DISABLED)
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
 
         # container image field
         if nutils.has_image(self.node.type):
-            label = ttk.Label(frame, text="Image")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            entry = ttk.Entry(frame, textvariable=self.container_image, state=state)
-            entry.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
+            label = ttk.Label(overview_frame, text="Image")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(
+                overview_frame, textvariable=self.container_image, state=state
+            )
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
 
         if nutils.is_container(self.node):
-            # server
-            frame.grid(sticky=tk.EW)
-            frame.columnconfigure(1, weight=1)
-            label = ttk.Label(frame, text="Server")
-            label.grid(row=row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            label = ttk.Label(overview_frame, text="Server")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             servers = [DEFAULT_SERVER]
             servers.extend(list(sorted(self.app.core.servers.keys())))
             combobox = ttk.Combobox(
-                frame, textvariable=self.server, values=servers, state=combo_state
+                overview_frame,
+                textvariable=self.server,
+                values=servers,
+                state=combo_state,
             )
-            combobox.grid(row=row, column=1, sticky=tk.EW)
-            row += 1
+            combobox.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
 
         if nutils.is_rj45(self.node):
             ifaces = self.app.core.client.get_ifaces()
@@ -284,7 +293,7 @@ class NodeConfigDialog(Dialog):
         self.draw_buttons()
 
     def draw_network_config(self) -> None:
-        frame = ttk.LabelFrame(self.top, text="Network Settings", padding=FRAME_PAD)
+        frame = ttk.LabelFrame(self.top, text="Network", padding=FRAME_PAD)
         frame.grid(sticky=tk.EW, pady=PADY)
         for i in range(2):
             frame.columnconfigure(i, weight=1)

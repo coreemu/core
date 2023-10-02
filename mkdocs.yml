@@ -56,7 +56,6 @@ nav:
       - Node Types:
           - Overview: nodetypes.md
           - Docker: docker.md
-          - LXC: lxc.md
       - Services:
           - Overview: services.md
           - Provided:

@@ -45,7 +45,6 @@ from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNode, CoreNodeBase, NodeBase, NodeOptions, Position
 from core.nodes.docker import DockerNode
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
-from core.nodes.lxd import LxcNode
 from core.nodes.network import (
     CtrlNet,
     GreTapBridge,
@@ -79,7 +78,6 @@ NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.PEER_TO_PEER: PtpNet,
     NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
-    NodeTypes.LXC: LxcNode,
     NodeTypes.WIRELESS: WirelessNode,
     NodeTypes.PODMAN: PodmanNode,
 }
