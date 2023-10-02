@@ -23,7 +23,7 @@ from core.config import (
     ModelManager,
 )
 from core.emane.nodes import EmaneNet
-from core.emulator.data import EventData, LinkData, LinkOptions
+from core.emulator.data import LinkData, LinkOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags, RegisterTlvs
 from core.errors import CoreError
 from core.executables import BASH
@@ -91,7 +91,6 @@ class MobilityManager(ModelManager):
     """
 
     name = "MobilityManager"
-    config_type = RegisterTlvs.WIRELESS
 
     def __init__(self, session: "Session") -> None:
         """
@@ -141,54 +140,6 @@ class MobilityManager(ModelManager):
                 logger.warning(
                     "skipping mobility configuration for unknown node: %s", node_id
                 )
-
-    def handleevent(self, event_data: EventData) -> None:
-        """
-        Handle an Event Message used to start, stop, or pause
-        mobility scripts for a given mobility network.
-
-        :param event_data: event data to handle
-        :return: nothing
-        """
-        event_type = event_data.event_type
-        node_id = event_data.node
-        name = event_data.name
-        try:
-            node = get_mobility_node(self.session, node_id)
-        except CoreError:
-            logger.exception(
-                "ignoring event for model(%s), unknown node(%s)", name, node_id
-            )
-            return
-
-        # name is e.g. "mobility:ns2script"
-        models = name[9:].split(",")
-        for model in models:
-            cls = self.models.get(model)
-            if not cls:
-                logger.warning("ignoring event for unknown model '%s'", model)
-                continue
-            if cls.config_type in [RegisterTlvs.WIRELESS, RegisterTlvs.MOBILITY]:
-                model = node.mobility
-            else:
-                continue
-            if model is None:
-                logger.warning("ignoring event, %s has no model", node.name)
-                continue
-            if cls.name != model.name:
-                logger.warning(
-                    "ignoring event for %s wrong model %s,%s",
-                    node.name,
-                    cls.name,
-                    model.name,
-                )
-                continue
-            if event_type in [EventTypes.STOP, EventTypes.RESTART]:
-                model.stop(move_initial=True)
-            if event_type in [EventTypes.START, EventTypes.RESTART]:
-                model.start()
-            if event_type == EventTypes.PAUSE:
-                model.pause()
 
     def sendevent(self, model: "WayPointMobility") -> None:
         """

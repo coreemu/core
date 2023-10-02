@@ -7,8 +7,6 @@ import logging
 import pyproj
 from pyproj import Transformer
 
-from core.emulator.enumerations import RegisterTlvs
-
 logger = logging.getLogger(__name__)
 SCALE_FACTOR: float = 100.0
 CRS_WGS84: int = 4326
@@ -22,7 +20,6 @@ class GeoLocation:
     """
 
     name: str = "location"
-    config_type: RegisterTlvs = RegisterTlvs.UTILITY
 
     def __init__(self) -> None:
         """

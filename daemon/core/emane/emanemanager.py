@@ -14,7 +14,7 @@ from core.emane.linkmonitor import EmaneLinkMonitor
 from core.emane.modelmanager import EmaneModelManager
 from core.emane.nodes import EmaneNet, TunTap
 from core.emulator.data import LinkData
-from core.emulator.enumerations import LinkTypes, MessageFlags, RegisterTlvs
+from core.emulator.enumerations import LinkTypes, MessageFlags
 from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.interface import CoreInterface
@@ -51,7 +51,6 @@ class EmaneManager:
     """
 
     name: str = "emane"
-    config_type: RegisterTlvs = RegisterTlvs.EMULATION_SERVER
 
     def __init__(self, session: "Session") -> None:
         """

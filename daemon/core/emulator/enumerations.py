@@ -68,11 +68,6 @@ class RegisterTlvs(Enum):
 
     WIRELESS = 0x01
     MOBILITY = 0x02
-    UTILITY = 0x03
-    EXECUTE_SERVER = 0x04
-    GUI = 0x05
-    EMULATION_SERVER = 0x06
-    SESSION = 0x0A
 
 
 class ConfigDataTypes(Enum):
