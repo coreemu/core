@@ -125,7 +125,7 @@ class NodeBase(abc.ABC):
     def __init__(
         self,
         session: "Session",
-        _id: int = None,
+        _id: int,
         name: str = None,
         server: "DistributedServer" = None,
         options: NodeOptions = None,
@@ -141,7 +141,7 @@ class NodeBase(abc.ABC):
         :param options: options to create node with
         """
         self.session: "Session" = session
-        self.id: int = _id if _id is not None else self.session.next_node_id()
+        self.id: int = _id
         self.name: str = name or f"{self.__class__.__name__}{self.id}"
         self.server: "DistributedServer" = server
         self.model: Optional[str] = None

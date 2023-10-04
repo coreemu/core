@@ -13,11 +13,11 @@ from core.emulator.session import Session
 from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
-from core.nodes.network import HubNode, PtpNet, SwitchNode, WlanNode
+from core.nodes.network import HubNode, SwitchNode, WlanNode
 
 _PATH: Path = Path(__file__).resolve().parent
 _MOBILITY_FILE: Path = _PATH / "mobility.scen"
-_WIRED: List = [PtpNet, HubNode, SwitchNode]
+_WIRED: List = [HubNode, SwitchNode]
 
 
 def ping(from_node: CoreNode, to_node: CoreNode, ip_prefixes: IpPrefixes):

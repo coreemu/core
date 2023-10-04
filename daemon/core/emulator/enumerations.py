@@ -34,7 +34,6 @@ class NodeTypes(Enum):
     TUNNEL = 8
     EMANE = 10
     TAP_BRIDGE = 11
-    PEER_TO_PEER = 12
     CONTROL_NET = 13
     DOCKER = 15
     WIRELESS = 17

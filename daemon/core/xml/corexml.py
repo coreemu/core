@@ -19,7 +19,7 @@ from core.nodes.base import (
 )
 from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
-from core.nodes.network import CtrlNet, GreTapBridge, PtpNet, WlanNode
+from core.nodes.network import CtrlNet, GreTapBridge, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.podman import PodmanNode, PodmanOptions
 from core.nodes.wireless import WirelessNode
@@ -382,8 +382,7 @@ class CoreXmlWriter:
             # network node
             is_network_or_rj45 = isinstance(node, (CoreNetworkBase, Rj45Node))
             is_controlnet = isinstance(node, CtrlNet)
-            is_ptp = isinstance(node, PtpNet)
-            if is_network_or_rj45 and not (is_controlnet or is_ptp):
+            if is_network_or_rj45 and not is_controlnet:
                 self.write_network(node)
             # device node
             elif isinstance(node, CoreNodeBase):

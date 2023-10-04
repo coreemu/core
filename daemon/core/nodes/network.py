@@ -215,8 +215,8 @@ class CoreNetwork(CoreNetworkBase):
         options = options or NetworkOptions()
         super().__init__(session, _id, name, server, options)
         self.policy: NetworkPolicy = options.policy if options.policy else self.policy
-        sessionid = self.session.short_session_id()
-        self.brname: str = f"b.{self.id}.{sessionid}"
+        session_id = self.session.short_session_id()
+        self.brname: str = f"b.{self.id}.{session_id}"
         self.has_nftables_chain: bool = False
 
     @classmethod
@@ -627,6 +627,11 @@ class PtpNet(CoreNetwork):
     """
 
     policy: NetworkPolicy = NetworkPolicy.ACCEPT
+
+    def __init__(self, session: "Session", _id: int) -> None:
+        super().__init__(session, _id)
+        session_id = self.session.short_session_id()
+        self.brname: str = f"p.{self.id}.{session_id}"
 
     def attach(self, iface: CoreInterface) -> None:
         """

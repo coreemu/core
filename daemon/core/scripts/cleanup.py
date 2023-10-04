@@ -71,6 +71,7 @@ def cleanup_interfaces() -> None:
             or name.startswith("beth")
             or name.startswith("gt.")
             or name.startswith("b.")
+            or name.startswith("p.")
             or name.startswith("ctrl")
         ):
             name = name.split("@")[0]

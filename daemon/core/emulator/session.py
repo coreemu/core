@@ -75,7 +75,6 @@ NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.TUNNEL: TunnelNode,
     NodeTypes.EMANE: EmaneNet,
     NodeTypes.TAP_BRIDGE: GreTapBridge,
-    NodeTypes.PEER_TO_PEER: PtpNet,
     NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.WIRELESS: WirelessNode,
@@ -123,6 +122,7 @@ class Session:
 
         # dict of nodes: all nodes and nets
         self.nodes: dict[int, NodeBase] = {}
+        self.ptp_nodes: dict[int, PtpNet] = {}
         self.nodes_lock: threading.Lock = threading.Lock()
         self.link_manager: LinkManager = LinkManager()
 
@@ -348,7 +348,7 @@ class Session:
         iface1 = node1.create_iface(iface1_data, options)
         iface2 = node2.create_iface(iface2_data, options)
         # join and attach to ptp bridge
-        ptp = self.create_node(PtpNet, self.state.should_start())
+        ptp = self.create_ptp()
         ptp.attach(iface1)
         ptp.attach(iface2)
         # track link
@@ -447,18 +447,17 @@ class Session:
         if iface2 and options and not options.unidirectional:
             iface2.update_options(options)
 
-    def next_node_id(self) -> int:
+    def next_node_id(self, start_id: int = 1) -> int:
         """
         Find the next valid node id, starting from 1.
 
         :return: next node id
         """
-        _id = 1
         while True:
-            if _id not in self.nodes:
+            if start_id not in self.nodes:
                 break
-            _id += 1
-        return _id
+            start_id += 1
+        return start_id
 
     def add_node(
         self,
@@ -806,6 +805,29 @@ class Session:
         except OSError:
             logger.exception("failed to set permission on %s", self.directory)
 
+    def create_ptp(self) -> PtpNet:
+        """
+        Create node used to link wired nodes together.
+
+        :return: created node
+        """
+        with self.nodes_lock:
+            # get next ptp node id for creation
+            _id = 1
+            while _id in self.ptp_nodes:
+                _id += 1
+            node = PtpNet(self, _id=_id)
+            self.ptp_nodes[node.id] = node
+        logger.debug(
+            "created ptp node(%s) name(%s) start(%s)",
+            node.id,
+            node.name,
+            self.state.should_start(),
+        )
+        if self.state.should_start():
+            node.startup()
+        return node
+
     def create_node(
         self,
         _class: type[NT],
@@ -828,6 +850,7 @@ class Session:
         :raises core.CoreError: when id of the node to create already exists
         """
         with self.nodes_lock:
+            _id = _id if _id is not None else self.next_node_id()
             node = _class(self, _id=_id, name=name, server=server, options=options)
             if node.id in self.nodes:
                 node.shutdown()
@@ -892,6 +915,9 @@ class Session:
                 _, node = self.nodes.popitem()
                 nodes_ids.append(node.id)
                 funcs.append((node.shutdown, [], {}))
+            while self.ptp_nodes:
+                _, node = self.ptp_nodes.popitem()
+                funcs.append((node.shutdown, [], {}))
             utils.threadpool(funcs)
         for node_id in nodes_ids:
             self.sdt.delete_node(node_id)
@@ -937,11 +963,11 @@ class Session:
         with self.nodes_lock:
             count = 0
             for node in self.nodes.values():
-                is_p2p_ctrlnet = isinstance(node, (PtpNet, CtrlNet))
+                is_ctrlnet = isinstance(node, CtrlNet)
                 is_tap = isinstance(node, GreTapBridge) and not isinstance(
                     node, TunnelNode
                 )
-                if is_p2p_ctrlnet or is_tap:
+                if is_ctrlnet or is_tap:
                     continue
                 count += 1
         return count
