@@ -81,13 +81,13 @@ class CoreClient:
         self.servers: dict[str, CoreServer] = {}
         self.custom_nodes: dict[str, NodeDraw] = {}
         self.custom_observers: dict[str, Observer] = {}
+        self.node_commands: dict[str, str] = {}
         self.read_config()
 
         # helpers
         self.iface_to_edge: dict[tuple[int, ...], CanvasEdge] = {}
         self.ifaces_manager: InterfaceManager = InterfaceManager(self.app)
         self.observer: Optional[str] = None
-        self.node_commands: dict[str, str] = {}
 
         # session data
         self.mobility_players: dict[int, MobilityPlayer] = {}
@@ -150,6 +150,9 @@ class CoreClient:
         # read observers
         for observer in self.app.guiconfig.observers:
             self.custom_observers[observer.name] = observer
+        # read node commands
+        for node_cmd in self.app.guiconfig.node_commands:
+            self.node_commands[node_cmd.name] = node_cmd.cmd
 
     def handle_events(self, event: Event) -> None:
         if not self.session or event.source == GUI_SOURCE:

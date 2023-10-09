@@ -72,6 +72,15 @@ class Observer(yaml.YAMLObject):
         self.cmd: str = cmd
 
 
+class NodeCommand(yaml.YAMLObject):
+    yaml_tag: str = "!NodeCommand"
+    yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
+
+    def __init__(self, name: str, cmd: str) -> None:
+        self.name: str = name
+        self.cmd: str = cmd
+
+
 class PreferencesConfig(yaml.YAMLObject):
     yaml_tag: str = "!PreferencesConfig"
     yaml_loader: type[yaml.SafeLoader] = yaml.SafeLoader
@@ -149,6 +158,7 @@ class GuiConfig(yaml.YAMLObject):
         scale: float = 1.0,
         ips: IpConfigs = None,
         mac: str = "00:00:00:aa:00:00",
+        node_commands: list[NodeCommand] = None,
     ) -> None:
         if preferences is None:
             preferences = PreferencesConfig()
@@ -173,6 +183,12 @@ class GuiConfig(yaml.YAMLObject):
             ips = IpConfigs()
         self.ips: IpConfigs = ips
         self.mac: str = mac
+        self.node_commands: list[NodeCommand] = node_commands or []
+
+    @classmethod
+    def from_yaml(cls, loader, node):
+        values = loader.construct_mapping(node, deep=True)
+        return cls(**values)
 
 
 def copy_files(current_path: Path, new_path: Path) -> None:

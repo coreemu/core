@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
+from core.gui.appconfig import NodeCommand
 from core.gui.dialogs.dialog import Dialog
 from core.gui.themes import PADX, PADY
 from core.gui.widgets import ListboxScroll
@@ -88,9 +89,9 @@ class NodeCommandsDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_save_config(self) -> None:
-        self.app.guiconfig.observers.clear()
-        for observer in self.app.core.custom_observers.values():
-            self.app.guiconfig.observers.append(observer)
+        self.app.guiconfig.node_commands.clear()
+        for name, cmd in self.app.core.node_commands.items():
+            self.app.guiconfig.node_commands.append(NodeCommand(name, cmd))
         self.app.save_config()
         self.destroy()
 
