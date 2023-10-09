@@ -17,22 +17,12 @@ if TYPE_CHECKING:
 CTRL_NET_ID: int = 9001
 CTRL_NET_IFACE_ID: int = 99
 ETC_HOSTS_PATH: str = "/etc/hosts"
-DEFAULT_PREFIX_LIST: list[str] = [
-    "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
-    "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
-    "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
-    "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24",
-]
-
-
-def control_net_id(index: int) -> int:
-    """
-    Returns control net id to use, based on provided index.
-
-    :param index: index to get control net id for
-    :return: control net id
-    """
-    return CTRL_NET_ID + index
+DEFAULT_PREFIX_LIST: dict[int, str] = {
+    0: "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
+    1: "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
+    2: "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
+    3: "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24",
+}
 
 
 class ControlNetManager:
@@ -96,33 +86,29 @@ class ControlNetManager:
         logger.info("removing /etc/hosts file entries")
         utils.file_demunge(ETC_HOSTS_PATH, self.etc_hosts_header)
 
-    def get_net_index(self, dev: str) -> int:
+    def get_net_id(self, dev: str) -> int:
         """
-        Retrieve control net index.
+        Retrieve control net id.
 
-        :param dev: device to get control net index for
-        :return: control net index, -1 otherwise
+        :param dev: device to get control net id for
+        :return: control net id, -1 otherwise
         """
         if dev[0:4] == "ctrl" and int(dev[4]) in (0, 1, 2, 3):
-            index = int(dev[4])
-            if index == 0:
-                return index
-            if index < 4 and self.net_prefixes[index] is not None:
-                return index
+            _id = int(dev[4])
+            if _id == 0:
+                return _id
+            if _id < 4 and self.net_prefixes[_id] is not None:
+                return _id
         return -1
 
-    def get_net(self, index: int) -> Optional[CtrlNet]:
+    def get_net(self, _id: int) -> Optional[CtrlNet]:
         """
-        Retrieve a control net based on index.
+        Retrieve a control net based on id.
 
-        :param index: control net index
+        :param _id: id of control net to retrieve
         :return: control net when available, None otherwise
         """
-        try:
-            _id = control_net_id(index)
-            return self.session.get_node(_id, CtrlNet)
-        except CoreError:
-            return None
+        return self.session.control_nodes.get(_id)
 
     def setup_nets(self) -> None:
         """
@@ -130,42 +116,42 @@ class ControlNetManager:
 
         :return: nothing
         """
-        for index, prefix in self.net_prefixes.items():
+        for _id, prefix in self.net_prefixes.items():
             if prefix:
-                self.add_net(index)
+                self.add_net(_id)
 
-    def add_net(self, index: int, conf_required: bool = True) -> Optional[CtrlNet]:
+    def add_net(self, _id: int, conf_required: bool = True) -> Optional[CtrlNet]:
         """
         Create a control network bridge as necessary. The conf_reqd flag,
         when False, causes a control network bridge to be added even if
         one has not been configured.
 
-        :param index: network index to add
+        :param _id: id of control net to add
         :param conf_required: flag to check if conf is required
         :return: control net node
         """
         logger.info(
-            "checking to add control net index(%s) conf_required(%s)",
-            index,
+            "checking to add control net(%s) conf_required(%s)",
+            _id,
             conf_required,
         )
-        # check for valid index
-        if not (0 <= index <= 3):
-            raise CoreError(f"invalid control net index({index})")
+        # check for valid id
+        if not (0 <= _id <= 3):
+            raise CoreError(f"invalid control net id({_id})")
         # return any existing control net bridge
-        control_net = self.get_net(index)
+        control_net = self.get_net(_id)
         if control_net:
-            logger.info("control net index(%s) already exists", index)
+            logger.info("control net(%s) already exists", _id)
             return control_net
-        # retrieve prefix for current index
-        index_prefix = self.net_prefixes[index]
-        if not index_prefix:
+        # retrieve prefix for current id
+        id_prefix = self.net_prefixes[_id]
+        if not id_prefix:
             if conf_required:
                 return None
             else:
-                index_prefix = DEFAULT_PREFIX_LIST[index]
+                id_prefix = DEFAULT_PREFIX_LIST[_id]
         # retrieve valid prefix from old style values
-        prefixes = index_prefix.split()
+        prefixes = id_prefix.split()
         if len(prefixes) > 1:
             # a list of per-host prefixes is provided
             try:
@@ -176,26 +162,11 @@ class ControlNetManager:
             prefix = prefixes[0]
         # use the updown script for control net 0 only
         updown_script = None
-        if index == 0:
+        if _id == 0:
             updown_script = self.updown_script
         # build a new controlnet bridge
-        _id = control_net_id(index)
-        server_iface = self.net_ifaces[index]
-        logger.info(
-            "adding controlnet(%s) prefix(%s) updown(%s) server interface(%s)",
-            _id,
-            prefix,
-            updown_script,
-            server_iface,
-        )
-        options = CtrlNet.create_options()
-        options.prefix = prefix
-        options.updown_script = updown_script
-        options.serverintf = server_iface
-        control_net = self.session.create_node(CtrlNet, False, _id, options=options)
-        control_net.brname = f"ctrl{index}.{self.session.short_session_id()}"
-        control_net.startup()
-        return control_net
+        server_iface = self.net_ifaces[_id]
+        return self.session.create_control_net(_id, prefix, updown_script, server_iface)
 
     def remove_nets(self) -> None:
         """
@@ -203,11 +174,11 @@ class ControlNetManager:
 
         :return: nothing
         """
-        for index in self.net_prefixes:
-            control_net = self.get_net(index)
+        for _id in self.net_prefixes:
+            control_net = self.session.control_nodes.pop(_id, None)
             if control_net:
-                logger.info("removing control net index(%s)", index)
-                self.session.delete_node(control_net.id)
+                logger.info("shutting down control net(%s)", _id)
+                control_net.shutdown()
 
     def setup_ifaces(self, node: CoreNode) -> None:
         """
@@ -216,38 +187,38 @@ class ControlNetManager:
         :param node: node to configure control net interfaces for
         :return: nothing
         """
-        for index in self.net_prefixes:
-            if self.get_net(index):
-                self.add_iface(node, index)
+        for _id in self.net_prefixes:
+            if self.get_net(_id):
+                self.add_iface(node, _id)
 
-    def add_iface(self, node: CoreNode, index: int) -> None:
+    def add_iface(self, node: CoreNode, _id: int) -> None:
         """
         Adds a control net interface to a node.
 
         :param node: node to add control net interface to
-        :param index: index of control net to add interface to
+        :param _id: id of control net to add interface to
         :return: nothing
         :raises CoreError: if control net doesn't exist, interface already exists,
             or there is an error creating the interface
         """
-        control_net = self.get_net(index)
+        control_net = self.get_net(_id)
         if not control_net:
-            raise CoreError(f"control net index({index}) does not exist")
-        iface_id = CTRL_NET_IFACE_ID + index
+            raise CoreError(f"control net id({_id}) does not exist")
+        iface_id = CTRL_NET_IFACE_ID + _id
         if node.ifaces.get(iface_id):
             return
         try:
             logger.info(
-                "node(%s) adding control net index(%s) interface(%s)",
+                "node(%s) adding control net id(%s) interface(%s)",
                 node.name,
-                index,
+                _id,
                 iface_id,
             )
             ip4 = control_net.prefix[node.id]
             ip4_mask = control_net.prefix.prefixlen
             iface_data = InterfaceData(
                 id=iface_id,
-                name=f"ctrl{index}",
+                name=f"ctrl{_id}",
                 mac=utils.random_mac(),
                 ip4=ip4,
                 ip4_mask=ip4_mask,

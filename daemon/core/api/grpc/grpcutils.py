@@ -29,7 +29,7 @@ from core.nodes.base import (
 )
 from core.nodes.docker import DockerNode, DockerOptions
 from core.nodes.interface import CoreInterface
-from core.nodes.network import CoreNetwork, CtrlNet, WlanNode
+from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.podman import PodmanNode, PodmanOptions
 from core.nodes.wireless import WirelessNode
 
@@ -731,10 +731,9 @@ def convert_session(session: Session) -> wrappers.Session:
     links = []
     for _id in session.nodes:
         node = session.nodes[_id]
-        if not isinstance(node, CtrlNet):
-            node_emane_configs = emane_configs.get(node.id, [])
-            node_proto = get_node_proto(session, node, node_emane_configs)
-            nodes.append(node_proto)
+        node_emane_configs = emane_configs.get(node.id, [])
+        node_proto = get_node_proto(session, node, node_emane_configs)
+        nodes.append(node_proto)
         if isinstance(node, (WlanNode, EmaneNet)):
             for link_data in node.links():
                 links.append(convert_link_data(link_data))

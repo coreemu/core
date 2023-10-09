@@ -19,7 +19,7 @@ from core.emulator.links import CoreLink
 from core.errors import CoreCommandError, CoreError
 from core.executables import get_requirements
 from core.nodes.interface import GreTap
-from core.nodes.network import CoreNetwork, CtrlNet
+from core.nodes.network import CoreNetwork
 
 logger = logging.getLogger(__name__)
 
@@ -187,8 +187,8 @@ class DistributedController:
         :return: nothing
         """
         mtu = self.session.options.get_int("mtu")
-        for node in self.session.nodes.values():
-            if not isinstance(node, CtrlNet) or node.serverintf is not None:
+        for node in self.session.control_nodes.values():
+            if node.serverintf is not None:
                 continue
             for name in self.servers:
                 server = self.servers[name]

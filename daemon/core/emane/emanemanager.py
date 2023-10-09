@@ -296,14 +296,14 @@ class EmaneManager:
         # setup ota device
         otagroup, _otaport = config["otamanagergroup"].split(":")
         otadev = config["otamanagerdevice"]
-        ota_index = self.session.control_net_manager.get_net_index(otadev)
+        ota_index = self.session.control_net_manager.get_net_id(otadev)
         self.session.control_net_manager.add_net(ota_index, conf_required=False)
         if isinstance(node, CoreNode):
             self.session.control_net_manager.add_iface(node, ota_index)
         # setup event device
         eventgroup, eventport = config["eventservicegroup"].split(":")
         eventdev = config["eventservicedevice"]
-        event_index = self.session.control_net_manager.get_net_index(eventdev)
+        event_index = self.session.control_net_manager.get_net_id(eventdev)
         event_net = self.session.control_net_manager.add_net(
             event_index, conf_required=False
         )

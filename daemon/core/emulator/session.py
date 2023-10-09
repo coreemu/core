@@ -75,7 +75,6 @@ NODES: dict[NodeTypes, type[NodeBase]] = {
     NodeTypes.TUNNEL: TunnelNode,
     NodeTypes.EMANE: EmaneNet,
     NodeTypes.TAP_BRIDGE: GreTapBridge,
-    NodeTypes.CONTROL_NET: CtrlNet,
     NodeTypes.DOCKER: DockerNode,
     NodeTypes.WIRELESS: WirelessNode,
     NodeTypes.PODMAN: PodmanNode,
@@ -123,6 +122,7 @@ class Session:
         # dict of nodes: all nodes and nets
         self.nodes: dict[int, NodeBase] = {}
         self.ptp_nodes: dict[int, PtpNet] = {}
+        self.control_nodes: dict[int, CtrlNet] = {}
         self.nodes_lock: threading.Lock = threading.Lock()
         self.link_manager: LinkManager = LinkManager()
 
@@ -828,6 +828,43 @@ class Session:
             node.startup()
         return node
 
+    def create_control_net(
+        self,
+        _id: int,
+        prefix: str,
+        updown_script: Optional[str],
+        server_iface: Optional[str],
+    ) -> CtrlNet:
+        """
+        Create a control net node, used to provide a common network between
+        the host running CORE and created nodes.
+
+        :param _id: id of the control net to create
+        :param prefix: network prefix to create control net with
+        :param updown_script: updown script for the control net
+        :param server_iface: interface name to use for control net
+        :return: created control net
+        """
+        with self.nodes_lock:
+            if _id in self.control_nodes:
+                raise CoreError(f"control net({_id}) already exists")
+            options = CtrlNet.create_options()
+            options.prefix = prefix
+            options.updown_script = updown_script
+            options.serverintf = server_iface
+            control_net = CtrlNet(self, _id, options=options)
+            self.control_nodes[_id] = control_net
+            logger.info(
+                "created control net(%s) prefix(%s) updown(%s) server interface(%s)",
+                _id,
+                prefix,
+                updown_script,
+                server_iface,
+            )
+            if self.state.should_start():
+                control_net.startup()
+        return control_net
+
     def create_node(
         self,
         _class: type[NT],
@@ -963,11 +1000,10 @@ class Session:
         with self.nodes_lock:
             count = 0
             for node in self.nodes.values():
-                is_ctrlnet = isinstance(node, CtrlNet)
                 is_tap = isinstance(node, GreTapBridge) and not isinstance(
                     node, TunnelNode
                 )
-                if is_ctrlnet or is_tap:
+                if is_tap:
                     continue
                 count += 1
         return count

@@ -536,6 +536,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address: bool = options.assign_address
         self.updown_script: Optional[str] = options.updown_script
         self.serverintf: Optional[str] = options.serverintf
+        self.brname = f"ctrl{_id}.{self.session.short_session_id()}"
 
     @classmethod
     def create_options(cls) -> CtrlNetOptions:

@@ -114,6 +114,7 @@ def grpc_server(module_grpc):
 def session(global_session):
     global_session.set_state(EventTypes.CONFIGURATION_STATE)
     yield global_session
+    global_session.data_collect()
     global_session.clear()
 
 
