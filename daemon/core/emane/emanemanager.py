@@ -59,7 +59,6 @@ class EmaneManager:
         :param session: session this manager is tied to
         :return: nothing
         """
-        super().__init__()
         self.session: "Session" = session
         self.nems_to_ifaces: dict[int, CoreInterface] = {}
         self.ifaces_to_nems: dict[CoreInterface, int] = {}

@@ -87,11 +87,7 @@ def get_merged_config(args: argparse.Namespace) -> dict[str, str]:
     :rtype: dict
     """
     # these are the defaults used in the config file
-    defaults = {
-        "grpcport": args.grpcport,
-        "grpcaddress": args.grpcaddress,
-        "logfile": args.log_config,
-    }
+    defaults = dict(logfile=args.log_config)
     # read the config file
     cfg = ConfigParser(defaults)
     cfg.read(args.config)
@@ -140,14 +136,12 @@ def main():
     parser.add_argument(
         "--grpc-port",
         dest="grpcport",
-        default=DEFAULT_GRPC_PORT,
-        help="grpc port to listen on",
+        help="override grpc port to listen on",
     )
     parser.add_argument(
         "--grpc-address",
         dest="grpcaddress",
-        default=DEFAULT_GRPC_ADDRESS,
-        help="grpc address to listen on",
+        help="override grpc address to listen on",
     )
     parser.add_argument(
         "--ovs",
