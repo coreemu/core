@@ -417,6 +417,12 @@ class BasicRangeModel(WirelessModel):
             node1_id=iface1.node.id,
             node2_id=iface2.node.id,
             network_id=self.wlan.id,
+            options=LinkOptions(
+                bandwidth=self.bw,
+                delay=self.delay,
+                loss=self.loss,
+                jitter=self.jitter,
+            ),
             color=color,
         )
 
