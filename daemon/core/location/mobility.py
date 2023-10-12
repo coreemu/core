@@ -415,7 +415,9 @@ class BasicRangeModel(WirelessModel):
             message_type=message_type,
             type=LinkTypes.WIRELESS,
             node1_id=iface1.node.id,
+            iface1=iface1.get_data(),
             node2_id=iface2.node.id,
+            iface2=iface2.get_data(),
             network_id=self.wlan.id,
             options=LinkOptions(
                 bandwidth=self.bw,
