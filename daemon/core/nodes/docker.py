@@ -4,7 +4,9 @@ import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+
+from mako.template import Template
 
 from core import utils
 from core.emulator.distributed import DistributedServer
@@ -18,6 +20,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 DOCKER: str = "docker"
+DOCKER_COMPOSE: str = "docker compose"
 
 
 @dataclass
@@ -32,6 +35,10 @@ class DockerOptions(CoreNodeOptions):
 
     unique is True for node unique volume naming
     delete is True for deleting volume mount during shutdown
+    """
+    compose: str = None
+    """
+    Path to a compose file, if one should be used for this node.
     """
 
 
@@ -75,6 +82,7 @@ class DockerNode(CoreNode):
         options = options or DockerOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
+        self.compose: Optional[str] = options.compose
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, DockerVolume] = {}
         self.env: dict[str, str] = {}
@@ -154,24 +162,43 @@ class DockerNode(CoreNode):
                 raise CoreError(f"starting node({self.name}) that is already up")
             # create node directory
             self.makenodedir()
-            # setup commands for creating bind/volume mounts
-            binds = ""
-            for src, dst in self.binds:
-                binds += f"--mount type=bind,source={src},target={dst} "
-            volumes = ""
-            for volume in self.volumes.values():
-                volumes += (
-                    f"--mount type=volume," f"source={volume.src},target={volume.dst} "
-                )
-            # normalize hostname
             hostname = self.name.replace("_", "-")
-            # create container and retrieve the created containers PID
-            self.host_cmd(
-                f"{DOCKER} run -td --init --net=none --hostname {hostname} "
-                f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
-                f"{binds} {volumes} "
-                f"--privileged {self.image} tail -f /dev/null"
-            )
+            if self.compose:
+                data = self.host_cmd(f"cat {self.compose}")
+                template = Template(data)
+                rendered = template.render_unicode(node=self, hostname=hostname)
+                rendered = "\\n".join(rendered.splitlines())
+                compose_path = self.directory / "docker-compose.yml"
+                self.host_cmd(f"printf '{rendered}' >> {compose_path}", shell=True)
+                self.host_cmd(f"{DOCKER_COMPOSE} up -d", cwd=self.directory)
+            else:
+                # setup commands for creating bind/volume mounts
+                binds = ""
+                for src, dst in self.binds:
+                    binds += f"--mount type=bind,source={src},target={dst} "
+                volumes = ""
+                for volume in self.volumes.values():
+                    volumes += (
+                        f"--mount type=volume,"
+                        f"source={volume.src},target={volume.dst} "
+                    )
+                # create container and retrieve the created containers PID
+                self.host_cmd(
+                    f"{DOCKER} run -td --init --net=none --hostname {hostname} "
+                    f"--name {self.name} --sysctl net.ipv6.conf.all.disable_ipv6=0 "
+                    f"{binds} {volumes} "
+                    f"--privileged {self.image} tail -f /dev/null"
+                )
+                # setup symlinks for bind and volume mounts within
+                for src, dst in self.binds:
+                    link_path = self.host_path(Path(dst), True)
+                    self.host_cmd(f"ln -s {src} {link_path}")
+                for volume in self.volumes.values():
+                    volume.path = self.host_cmd(
+                        f"{DOCKER} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
+                    )
+                    link_path = self.host_path(Path(volume.dst), True)
+                    self.host_cmd(f"ln -s {volume.path} {link_path}")
             # retrieve pid and process environment for use in nsenter commands
             self.pid = self.host_cmd(
                 f"{DOCKER} inspect -f '{{{{.State.Pid}}}}' {self.name}"
@@ -182,16 +209,6 @@ class DockerNode(CoreNode):
                     continue
                 key, value = line.split("=")
                 self.env[key] = value
-            # setup symlinks for bind and volume mounts within
-            for src, dst in self.binds:
-                link_path = self.host_path(Path(dst), True)
-                self.host_cmd(f"ln -s {src} {link_path}")
-            for volume in self.volumes.values():
-                volume.path = self.host_cmd(
-                    f"{DOCKER} volume inspect -f '{{{{.Mountpoint}}}}' {volume.src}"
-                )
-                link_path = self.host_path(Path(volume.dst), True)
-                self.host_cmd(f"ln -s {volume.path} {link_path}")
             logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 

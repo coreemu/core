@@ -81,9 +81,9 @@ class PodmanNode(CoreNode):
         options = options or PodmanOptions()
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
+        self.compose: Optional[str] = options.compose
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, VolumeMount] = {}
-        self.compose: Optional[str] = options.compose
         for src, dst, unique, delete in options.volumes:
             src_name = self._unique_name(src) if unique else src
             self.volumes[src] = VolumeMount(src_name, dst, unique, delete)
@@ -148,13 +148,10 @@ class PodmanNode(CoreNode):
                 data = self.host_cmd(f"cat {self.compose}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
-                compose_path = self.directory / "docker-compose.yml"
                 rendered = "\\n".join(rendered.splitlines())
+                compose_path = self.directory / "podman-compose.yml"
                 self.host_cmd(f"printf '{rendered}' >> {compose_path}", shell=True)
                 self.host_cmd(f"{PODMAN_COMPOSE} up -d", cwd=self.directory)
-                self.pid = self.host_cmd(
-                    f"{PODMAN} inspect -f '{{{{.State.Pid}}}}' {self.name}"
-                )
             else:
                 # setup commands for creating bind/volume mounts
                 binds = ""
@@ -175,10 +172,6 @@ class PodmanNode(CoreNode):
                     f"{binds} {volumes} "
                     f"--privileged {self.image} tail -f /dev/null"
                 )
-                # retrieve pid and process environment for use in nsenter commands
-                self.pid = self.host_cmd(
-                    f"{PODMAN} inspect -f '{{{{.State.Pid}}}}' {self.name}"
-                )
                 # setup symlinks for bind and volume mounts within
                 for src, dst in self.binds:
                     link_path = self.host_path(Path(dst), True)
@@ -189,7 +182,10 @@ class PodmanNode(CoreNode):
                     )
                     link_path = self.host_path(Path(volume.dst), True)
                     self.host_cmd(f"ln -s {volume.path} {link_path}")
-                logger.debug("node(%s) pid: %s", self.name, self.pid)
+            self.pid = self.host_cmd(
+                f"{PODMAN} inspect -f '{{{{.State.Pid}}}}' {self.name}"
+            )
+            logger.debug("node(%s) pid: %s", self.name, self.pid)
             self.up = True
 
     def shutdown(self) -> None:
