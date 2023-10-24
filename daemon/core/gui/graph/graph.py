@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
 
 from PIL import Image
+from PIL.Image import Resampling
 from PIL.ImageTk import PhotoImage
 
 from core.api.grpc.wrappers import Interface, Link
@@ -528,7 +529,7 @@ class CanvasGraph(tk.Canvas):
     def get_wallpaper_image(self) -> Image.Image:
         width = int(self.wallpaper.width * self.ratio)
         height = int(self.wallpaper.height * self.ratio)
-        image = self.wallpaper.resize((width, height), Image.ANTIALIAS)
+        image = self.wallpaper.resize((width, height), Resampling.LANCZOS)
         return image
 
     def draw_wallpaper(
@@ -591,7 +592,9 @@ class CanvasGraph(tk.Canvas):
         """
         self.delete(self.wallpaper_id)
         canvas_w, canvas_h = self.width_and_height()
-        image = self.wallpaper.resize((int(canvas_w), int(canvas_h)), Image.ANTIALIAS)
+        image = self.wallpaper.resize(
+            (int(canvas_w), int(canvas_h)), Resampling.LANCZOS
+        )
         image = PhotoImage(image)
         self.draw_wallpaper(image)
 
@@ -720,16 +723,12 @@ class CanvasGraph(tk.Canvas):
             )
             # copy configurations and services
             node.core_node.services = core_node.services.copy()
-            node.core_node.services = core_node.services.copy()
             node.core_node.emane_model_configs = deepcopy(core_node.emane_model_configs)
             node.core_node.wlan_config = deepcopy(core_node.wlan_config)
             node.core_node.mobility_config = deepcopy(core_node.mobility_config)
             node.core_node.service_configs = deepcopy(core_node.service_configs)
-            node.core_node.service_file_configs = deepcopy(
-                core_node.service_file_configs
-            )
-            node.core_node.service_configs = deepcopy(core_node.service_configs)
             node.core_node.image = core_node.image
+            node.core_node.compose = core_node.compose
 
             copy_map[canvas_node.id] = node.id
             self.nodes[node.id] = node

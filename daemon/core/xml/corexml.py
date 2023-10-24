@@ -162,14 +162,14 @@ class DeviceElement(NodeElement):
     def add_class(self) -> None:
         clazz = ""
         image = ""
-        if isinstance(self.node, DockerNode):
-            clazz = "docker"
+        compose = ""
+        if isinstance(self.node, (DockerNode, PodmanNode)):
+            clazz = "docker" if isinstance(self.node, DockerNode) else "podman"
             image = self.node.image
-        elif isinstance(self.node, PodmanNode):
-            clazz = "podman"
-            image = self.node.image
+            compose = self.node.compose
         add_attribute(self.element, "class", clazz)
         add_attribute(self.element, "image", image)
+        add_attribute(self.element, "compose", compose)
 
     def add_services(self) -> None:
         service_elements = etree.Element("services")
@@ -660,6 +660,7 @@ class CoreXmlReader:
         icon = device_element.get("icon")
         clazz = device_element.get("class")
         image = device_element.get("image")
+        compose = device_element.get("compose")
         server = device_element.get("server")
         canvas = get_int(device_element, "canvas")
         node_type = NodeTypes.DEFAULT
@@ -683,6 +684,7 @@ class CoreXmlReader:
                 )
         if isinstance(options, (DockerOptions, PodmanOptions)):
             options.image = image
+            options.compose = compose
         # get position information
         position_element = device_element.find("position")
         position = None

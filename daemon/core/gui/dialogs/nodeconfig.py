@@ -1,7 +1,8 @@
 import logging
 import tkinter as tk
 from functools import partial
-from tkinter import messagebox, ttk
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 import netaddr
@@ -187,6 +188,7 @@ class NodeConfigDialog(Dialog):
         self.name: tk.StringVar = tk.StringVar(value=self.node.name)
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
+        self.compose_file: tk.StringVar = tk.StringVar(value=self.node.compose)
         server = DEFAULT_SERVER
         if self.node.server:
             server = self.node.server
@@ -245,16 +247,6 @@ class NodeConfigDialog(Dialog):
             entry.grid(row=overview_row, column=1, sticky=tk.EW)
             overview_row += 1
 
-        # container image field
-        if nutils.has_image(self.node.type):
-            label = ttk.Label(overview_frame, text="Image")
-            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
-            entry = ttk.Entry(
-                overview_frame, textvariable=self.container_image, state=state
-            )
-            entry.grid(row=overview_row, column=1, sticky=tk.EW)
-            overview_row += 1
-
         if nutils.is_container(self.node):
             label = ttk.Label(overview_frame, text="Server")
             label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
@@ -267,6 +259,35 @@ class NodeConfigDialog(Dialog):
                 state=combo_state,
             )
             combobox.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
+
+        # container image field
+        if nutils.has_image(self.node.type):
+            label = ttk.Label(overview_frame, text="Image")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(
+                overview_frame, textvariable=self.container_image, state=state
+            )
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
+            overview_row += 1
+
+            compose_frame = ttk.Frame(overview_frame)
+            compose_frame.columnconfigure(0, weight=2)
+            compose_frame.columnconfigure(1, weight=1)
+            compose_frame.columnconfigure(2, weight=1)
+            entry = ttk.Entry(compose_frame, textvariable=self.compose_file)
+            entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
+            button = ttk.Button(
+                compose_frame, text="Compose", command=self.click_compose
+            )
+            button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
+            button = ttk.Button(
+                compose_frame, text="Clear", command=self.click_compose_clear
+            )
+            button.grid(row=0, column=2, sticky=tk.EW)
+            compose_frame.grid(
+                row=overview_row, column=0, columnspan=2, sticky=tk.EW, pady=PADY
+            )
             overview_row += 1
 
         if nutils.is_rj45(self.node):
@@ -410,7 +431,8 @@ class NodeConfigDialog(Dialog):
         # update core node
         self.node.name = self.name.get()
         if nutils.has_image(self.node.type):
-            self.node.image = self.container_image.get()
+            self.node.image = self.container_image.get() or None
+            self.node.compose = self.compose_file.get() or None
         server = self.server.get()
         if nutils.is_container(self.node):
             if server == DEFAULT_SERVER:
@@ -455,3 +477,19 @@ class NodeConfigDialog(Dialog):
         if cur:
             iface = listbox.get(cur[0])
             self.name.set(iface)
+
+    def click_compose(self) -> None:
+        file_path = filedialog.askopenfilename(
+            parent=self,
+            initialdir=str(Path.home()),
+            title="Select Compose File",
+            filetypes=(
+                ("yaml", "*.yml *.yaml ..."),
+                ("All Files", "*"),
+            ),
+        )
+        if file_path:
+            self.compose_file.set(file_path)
+
+    def click_compose_clear(self) -> None:
+        self.compose_file.set("")

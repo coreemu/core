@@ -76,6 +76,7 @@ def add_node_data(
         options.emane_model = node_proto.emane
     if isinstance(options, (DockerOptions, PodmanOptions)):
         options.image = node_proto.image
+        options.compose = node_proto.compose
     position = Position()
     position.set(node_proto.position.x, node_proto.position.y)
     if node_proto.HasField("geo"):
@@ -305,8 +306,10 @@ def get_node_proto(
     if isinstance(node, EmaneNet):
         emane_model = node.wireless_model.name
     image = None
+    compose = None
     if isinstance(node, (DockerNode, PodmanNode)):
         image = node.image
+        compose = node.compose
     # check for wlan config
     wlan_config = session.mobility.get_configs(
         node.id, config_type=BasicRangeModel.name
@@ -354,6 +357,7 @@ def get_node_proto(
         geo=geo,
         icon=node.icon,
         image=image,
+        compose=compose,
         services=services,
         dir=node_dir,
         channel=channel,
