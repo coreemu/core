@@ -90,7 +90,6 @@ from core.services.base import Service, ServiceBootError
 from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
-_ONE_DAY_IN_SECONDS: int = 60 * 60 * 24
 _INTERFACE_REGEX: Pattern[str] = re.compile(r"beth(?P<node>[0-9a-fA-F]+)")
 _MAX_WORKERS = 1000
 
@@ -134,10 +133,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         core_pb2_grpc.add_CoreApiServicer_to_server(self, self.server)
         self.server.add_insecure_port(address)
         self.server.start()
-
         try:
-            while True:
-                time.sleep(_ONE_DAY_IN_SECONDS)
+            self.server.wait_for_termination()
         except KeyboardInterrupt:
             self.server.stop(None)
 
