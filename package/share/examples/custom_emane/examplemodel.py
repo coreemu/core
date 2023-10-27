@@ -2,7 +2,7 @@
 Example custom emane model.
 """
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Optional
 
 from core.config import Configuration
 from core.emane import emanemanifest, emanemodel
@@ -41,19 +41,19 @@ class ExampleModel(emanemodel.EmaneModel):
     name: str = "emane_example"
     mac_library: str = "rfpipemaclayer"
     mac_xml: str = "rfpipemaclayer.xml"
-    mac_defaults: Dict[str, str] = {
+    mac_defaults: dict[str, str] = {
         "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
     }
-    mac_config: List[Configuration] = []
+    mac_config: list[Configuration] = []
     phy_library: Optional[str] = None
     phy_xml: str = "emanephy.xml"
-    phy_defaults: Dict[str, str] = {
+    phy_defaults: dict[str, str] = {
         "subid": "1",
         "propagationmodel": "2ray",
         "noisemode": "none",
     }
-    phy_config: List[Configuration] = []
-    config_ignore: Set[str] = set()
+    phy_config: list[Configuration] = []
+    config_ignore: set[str] = set()
 
     @classmethod
     def load(cls, emane_prefix: Path) -> None:
