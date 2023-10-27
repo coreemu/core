@@ -329,18 +329,17 @@ class ServiceConfigDialog(Dialog):
         if not self.is_custom():
             self.node.service_configs.pop(self.service_name, None)
             current_listbox.itemconfig(current_listbox.curselection()[0], bg="")
-            self.destroy()
-            return
-        service_config = self.node.service_configs.setdefault(
-            self.service_name, ServiceData()
-        )
-        if self.config_frame:
-            self.config_frame.parse_config()
-            service_config.config = {x.name: x.value for x in self.config.values()}
-        for file in self.modified_files:
-            service_config.templates[file] = self.temp_service_files[file]
-        all_current = current_listbox.get(0, tk.END)
-        current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
+        else:
+            service_config = self.node.service_configs.setdefault(
+                self.service_name, ServiceData()
+            )
+            if self.config_frame:
+                self.config_frame.parse_config()
+                service_config.config = {x.name: x.value for x in self.config.values()}
+            for file in self.modified_files:
+                service_config.templates[file] = self.temp_service_files[file]
+            all_current = current_listbox.get(0, tk.END)
+            current_listbox.itemconfig(all_current.index(self.service_name), bg="green")
         self.destroy()
 
     def handle_template_changed(self, event: tk.Event) -> None:
@@ -358,11 +357,12 @@ class ServiceConfigDialog(Dialog):
 
     def update_template_file_data(self, _event: tk.Event) -> None:
         template = self.templates_combobox.get()
-        self.temp_service_files[template] = self.rendered_text.get_text()
+        # check for change
+        self.temp_service_files[template] = self.rendered_text.get_text().strip()
         if self.rendered[template] != self.temp_service_files[template]:
             self.modified_files.add(template)
             return
-        self.temp_service_files[template] = self.template_text.get_text()
+        self.temp_service_files[template] = self.template_text.get_text().strip()
         if self.temp_service_files[template] != self.original_service_files[template]:
             self.modified_files.add(template)
         else:

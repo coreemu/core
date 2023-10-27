@@ -80,6 +80,7 @@ class ConfigBool(Configuration):
 
     type: ConfigDataTypes = ConfigDataTypes.BOOL
     value: bool = False
+    default: str = "0"
 
 
 @dataclass
