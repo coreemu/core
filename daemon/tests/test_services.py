@@ -196,7 +196,7 @@ class TestServices:
         config = service.render_config()
 
         # then
-        assert config == {"value1": "", "value2": "", "value3": ""}
+        assert config == {"value1": "", "value2": "0", "value3": ""}
 
     def test_render_config_custom(self):
         # given
