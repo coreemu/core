@@ -1,4 +1,4 @@
-* Table of Contents
+# gRPC API
 
 ## Overview
 
