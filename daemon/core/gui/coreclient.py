@@ -216,7 +216,9 @@ class CoreClient:
                 logger.warning("unknown link event: %s", event)
         else:
             if event.message_type == MessageType.ADD:
-                self.app.manager.add_wired_edge(canvas_node1, canvas_node2, event.link)
+                self.app.manager.add_wired_edge(
+                    canvas_node1, canvas_node2, event.link, organize=True
+                )
             elif event.message_type == MessageType.DELETE:
                 self.app.manager.delete_wired_edge(event.link)
             elif event.message_type == MessageType.NONE:

@@ -167,7 +167,7 @@ class Edge:
             return False
         return self.src.canvas != self.dst.canvas
 
-    def draw(self, state: str) -> None:
+    def draw(self, state: str, organize: bool = True) -> None:
         if not self.has_shadows():
             dst = self.dst if self.dst else self.src
             self.id = self.draw_edge(self.src.canvas, self.src, dst, state)
@@ -188,9 +188,10 @@ class Edge:
             self.dst_shadow = self.src.canvas.get_shadow(self.dst)
             self.id = self.draw_edge(self.src.canvas, self.src, self.dst_shadow, state)
             self.id2 = self.draw_edge(self.dst.canvas, self.src_shadow, self.dst, state)
-        self.src.canvas.organize()
-        if self.has_shadows():
-            self.dst.canvas.organize()
+        if organize:
+            self.src.canvas.organize()
+            if self.has_shadows():
+                self.dst.canvas.organize()
 
     def draw_edge(
         self,
@@ -531,7 +532,11 @@ class CanvasEdge(Edge):
     """
 
     def __init__(
-        self, app: "Application", src: "CanvasNode", dst: "CanvasNode" = None
+        self,
+        app: "Application",
+        src: "CanvasNode",
+        dst: "CanvasNode" = None,
+        organize: bool = True,
     ) -> None:
         """
         Create an instance of canvas edge object
@@ -541,7 +546,7 @@ class CanvasEdge(Edge):
         self.text_dst: Optional[int] = None
         self.asymmetric_link: Optional[Link] = None
         self.throughput: Optional[float] = None
-        self.draw(tk.NORMAL)
+        self.draw(tk.NORMAL, organize)
 
     def is_customized(self) -> bool:
         return self.width != EDGE_WIDTH or self.color != EDGE_COLOR
@@ -626,7 +631,9 @@ class CanvasEdge(Edge):
         if not self.linked_wireless:
             self.draw_link_options()
 
-    def complete(self, dst: "CanvasNode", link: Link = None) -> None:
+    def complete(
+        self, dst: "CanvasNode", link: Link = None, organize: bool = True
+    ) -> None:
         logger.debug(
             "completing wired link from node(%s) to node(%s)",
             self.src.core_node.name,
@@ -653,9 +660,10 @@ class CanvasEdge(Edge):
         self.draw_labels()
         self.check_visibility()
         self.app.core.save_edge(self)
-        self.src.canvas.organize()
-        if self.has_shadows():
-            self.dst.canvas.organize()
+        if organize:
+            self.src.canvas.organize()
+            if self.has_shadows():
+                self.dst.canvas.organize()
         self.manager.edges[self.token] = self
 
     def check_wireless(self) -> None:
