@@ -8,7 +8,7 @@ from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
-from core.services.base import Service, ServiceMode
+from core.services.base import CoreService, ServiceMode
 
 GROUP: str = "FRR"
 FRR_STATE_DIR: str = "/var/run/frr"
@@ -79,7 +79,7 @@ def rj45_check(iface: CoreInterface) -> bool:
     return False
 
 
-class FRRZebra(Service):
+class FRRZebra(CoreService):
     name: str = "FRRzebra"
     group: str = GROUP
     directories: list[str] = ["/usr/local/etc/frr", "/var/run/frr", "/var/log/frr"]
@@ -168,7 +168,7 @@ class FrrService(abc.ABC):
         raise NotImplementedError
 
 
-class FRROspfv2(FrrService, Service):
+class FRROspfv2(FrrService, CoreService):
     """
     The OSPFv2 service provides IPv4 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
@@ -220,7 +220,7 @@ class FRROspfv2(FrrService, Service):
         return self.render_text(text, data)
 
 
-class FRROspfv3(FrrService, Service):
+class FRROspfv3(FrrService, CoreService):
     """
     The OSPFv3 service provides IPv6 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
@@ -257,7 +257,7 @@ class FRROspfv3(FrrService, Service):
             return ""
 
 
-class FRRBgp(FrrService, Service):
+class FRRBgp(FrrService, CoreService):
     """
     The BGP service provides interdomain routing.
     Peers must be manually configured, with a full mesh for those
@@ -289,7 +289,7 @@ class FRRBgp(FrrService, Service):
         return ""
 
 
-class FRRRip(FrrService, Service):
+class FRRRip(FrrService, CoreService):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
@@ -314,7 +314,7 @@ class FRRRip(FrrService, Service):
         return ""
 
 
-class FRRRipng(FrrService, Service):
+class FRRRipng(FrrService, CoreService):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
@@ -339,7 +339,7 @@ class FRRRipng(FrrService, Service):
         return ""
 
 
-class FRRBabel(FrrService, Service):
+class FRRBabel(FrrService, CoreService):
     """
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
@@ -380,7 +380,7 @@ class FRRBabel(FrrService, Service):
         return self.clean_text(text)
 
 
-class FRRpimd(FrrService, Service):
+class FRRpimd(FrrService, CoreService):
     """
     PIM multicast routing based on XORP.
     """

@@ -88,7 +88,12 @@ from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.wireless import WirelessNode
-from core.services.base import CustomCoreService, Service, ServiceBootError, ServiceMode
+from core.services.base import (
+    CoreService,
+    CustomCoreService,
+    ServiceBootError,
+    ServiceMode,
+)
 from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
@@ -193,7 +198,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         source = source if source else None
         session.broadcast_node(node, source=source)
 
-    def validate_service(self, name: str, context: ServicerContext) -> type[Service]:
+    def validate_service(
+        self, name: str, context: ServicerContext
+    ) -> type[CoreService]:
         """
         Validates a configuration service is a valid known service.
 

@@ -5,12 +5,12 @@ import pytest
 
 from core.config import ConfigBool, ConfigString
 from core.errors import CoreCommandError, CoreError
-from core.services.base import Service, ServiceBootError, ServiceMode
+from core.services.base import CoreService, ServiceBootError, ServiceMode
 
 TEMPLATE_TEXT = "echo hello"
 
 
-class MyService(Service):
+class MyService(CoreService):
     name = "MyService"
     group = "MyGroup"
     directories = ["/usr/local/lib"]
@@ -100,7 +100,7 @@ class TestServices:
         service.run_startup(wait=wait)
 
         # then
-        node.cmd.assert_called_with(MyService.startup[0], wait=wait)
+        node.cmd.assert_called_with(MyService.startup[0], wait=wait, shell=True)
 
     def test_run_startup_exception(self):
         # given
@@ -121,7 +121,7 @@ class TestServices:
         service.stop()
 
         # then
-        node.cmd.assert_called_with(MyService.shutdown[0])
+        node.cmd.assert_called_with(MyService.shutdown[0], shell=True)
 
     def test_run_validation(self):
         # given
@@ -132,7 +132,7 @@ class TestServices:
         service.run_validation()
 
         # then
-        node.cmd.assert_called_with(MyService.validate[0])
+        node.cmd.assert_called_with(MyService.validate[0], shell=True)
 
     def test_run_validation_timer(self):
         # given
@@ -145,7 +145,7 @@ class TestServices:
         service.run_validation()
 
         # then
-        node.cmd.assert_called_with(MyService.validate[0])
+        node.cmd.assert_called_with(MyService.validate[0], shell=True)
 
     def test_run_validation_timer_exception(self):
         # given
@@ -172,7 +172,7 @@ class TestServices:
         service.run_validation()
 
         # then
-        node.cmd.assert_called_with(MyService.validate[0])
+        node.cmd.assert_called_with(MyService.validate[0], shell=True)
 
     def test_run_validation_non_blocking_exception(self):
         # given

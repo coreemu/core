@@ -9,7 +9,7 @@ from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
-from core.services.base import Service, ServiceMode
+from core.services.base import CoreService, ServiceMode
 
 logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
@@ -81,7 +81,7 @@ def rj45_check(iface: CoreInterface) -> bool:
     return False
 
 
-class Zebra(Service):
+class Zebra(CoreService):
     name: str = "zebra"
     group: str = GROUP
     directories: list[str] = ["/usr/local/etc/quagga", "/var/run/quagga"]
@@ -175,7 +175,7 @@ class QuaggaService(abc.ABC):
         raise NotImplementedError
 
 
-class Ospfv2(QuaggaService, Service):
+class Ospfv2(QuaggaService, CoreService):
     """
     The OSPFv2 service provides IPv4 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
@@ -226,7 +226,7 @@ class Ospfv2(QuaggaService, Service):
         return self.render_text(text, data)
 
 
-class Ospfv3(QuaggaService, Service):
+class Ospfv3(QuaggaService, CoreService):
     """
     The OSPFv3 service provides IPv6 routing for wired networks. It does
     not build its own configuration file but has hooks for adding to the
@@ -292,7 +292,7 @@ class Ospfv3mdr(Ospfv3):
         return config
 
 
-class Bgp(QuaggaService, Service):
+class Bgp(QuaggaService, CoreService):
     """
     The BGP service provides interdomain routing.
     Peers must be manually configured, with a full mesh for those
@@ -323,7 +323,7 @@ class Bgp(QuaggaService, Service):
         return ""
 
 
-class Rip(QuaggaService, Service):
+class Rip(QuaggaService, CoreService):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
@@ -348,7 +348,7 @@ class Rip(QuaggaService, Service):
         return ""
 
 
-class Ripng(QuaggaService, Service):
+class Ripng(QuaggaService, CoreService):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
@@ -373,7 +373,7 @@ class Ripng(QuaggaService, Service):
         return ""
 
 
-class Babel(QuaggaService, Service):
+class Babel(QuaggaService, CoreService):
     """
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
@@ -414,7 +414,7 @@ class Babel(QuaggaService, Service):
         return self.clean_text(text)
 
 
-class Xpimd(QuaggaService, Service):
+class Xpimd(QuaggaService, CoreService):
     """
     PIM multicast routing based on XORP.
     """

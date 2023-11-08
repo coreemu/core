@@ -2,12 +2,12 @@ from typing import Any
 
 from core import constants
 from core.config import ConfigString, Configuration
-from core.services.base import Service, ServiceMode
+from core.services.base import CoreService, ServiceMode
 
 GROUP_NAME: str = "Security"
 
 
-class VpnClient(Service):
+class VpnClient(CoreService):
     name: str = "VPNClient"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -28,7 +28,7 @@ class VpnClient(Service):
     modes: dict[str, dict[str, str]] = {}
 
 
-class VpnServer(Service):
+class VpnServer(CoreService):
     name: str = "VPNServer"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -58,7 +58,7 @@ class VpnServer(Service):
         return dict(address=address)
 
 
-class IPsec(Service):
+class IPsec(CoreService):
     name: str = "IPsec"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -73,7 +73,7 @@ class IPsec(Service):
     modes: dict[str, dict[str, str]] = {}
 
 
-class Firewall(Service):
+class Firewall(CoreService):
     name: str = "Firewall"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -88,7 +88,7 @@ class Firewall(Service):
     modes: dict[str, dict[str, str]] = {}
 
 
-class Nat(Service):
+class Nat(CoreService):
     name: str = "NAT"
     group: str = GROUP_NAME
     directories: list[str] = []

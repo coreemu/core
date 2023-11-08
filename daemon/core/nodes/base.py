@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.emulator.distributed import DistributedServer
     from core.emulator.session import Session
-    from core.services.base import Service
+    from core.services.base import CoreService
 
-    ServiceType = type[Service]
+    ServiceType = type[CoreService]
 
 PRIVATE_DIRS: list[Path] = [Path("/var/run"), Path("/var/log")]
 
@@ -388,7 +388,7 @@ class CoreNodeBase(NodeBase):
             will run on, default is None for localhost
         """
         super().__init__(session, _id, name, server, options)
-        self.services: dict[str, "Service"] = {}
+        self.services: dict[str, "CoreService"] = {}
         self.directory: Optional[Path] = None
         self.tmpnodedir: bool = False
 

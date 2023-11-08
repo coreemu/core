@@ -4,12 +4,12 @@ import netaddr
 
 from core import utils
 from core.config import Configuration
-from core.services.base import Service, ServiceMode
+from core.services.base import CoreService, ServiceMode
 
 GROUP_NAME = "Utility"
 
 
-class DefaultRouteService(Service):
+class DefaultRouteService(CoreService):
     name: str = "DefaultRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -37,7 +37,7 @@ class DefaultRouteService(Service):
         return dict(routes=routes)
 
 
-class DefaultMulticastRouteService(Service):
+class DefaultMulticastRouteService(CoreService):
     name: str = "DefaultMulticastRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -59,7 +59,7 @@ class DefaultMulticastRouteService(Service):
         return dict(ifname=ifname)
 
 
-class StaticRouteService(Service):
+class StaticRouteService(CoreService):
     name: str = "StaticRoute"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -87,7 +87,7 @@ class StaticRouteService(Service):
         return dict(routes=routes)
 
 
-class IpForwardService(Service):
+class IpForwardService(CoreService):
     name: str = "IPForward"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -109,7 +109,7 @@ class IpForwardService(Service):
         return dict(devnames=devnames)
 
 
-class SshService(Service):
+class SshService(CoreService):
     name: str = "SSH"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/ssh", "/var/run/sshd"]
@@ -131,7 +131,7 @@ class SshService(Service):
         )
 
 
-class DhcpService(Service):
+class DhcpService(CoreService):
     name: str = "DHCP"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/dhcp", "/var/lib/dhcp"]
@@ -159,7 +159,7 @@ class DhcpService(Service):
         return dict(subnets=subnets)
 
 
-class DhcpClientService(Service):
+class DhcpClientService(CoreService):
     name: str = "DHCPClient"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -180,7 +180,7 @@ class DhcpClientService(Service):
         return dict(ifnames=ifnames)
 
 
-class FtpService(Service):
+class FtpService(CoreService):
     name: str = "FTP"
     group: str = GROUP_NAME
     directories: list[str] = ["/var/run/vsftpd/empty", "/var/ftp"]
@@ -195,7 +195,7 @@ class FtpService(Service):
     modes: dict[str, dict[str, str]] = {}
 
 
-class PcapService(Service):
+class PcapService(CoreService):
     name: str = "pcap"
     group: str = GROUP_NAME
     directories: list[str] = []
@@ -216,7 +216,7 @@ class PcapService(Service):
         return dict(ifnames=ifnames)
 
 
-class RadvdService(Service):
+class RadvdService(CoreService):
     name: str = "radvd"
     group: str = GROUP_NAME
     directories: list[str] = ["/etc/radvd", "/var/run/radvd"]
@@ -244,7 +244,7 @@ class RadvdService(Service):
         return dict(ifaces=ifaces)
 
 
-class AtdService(Service):
+class AtdService(CoreService):
     name: str = "atd"
     group: str = GROUP_NAME
     directories: list[str] = ["/var/spool/cron/atjobs", "/var/spool/cron/atspool"]
@@ -259,7 +259,7 @@ class AtdService(Service):
     modes: dict[str, dict[str, str]] = {}
 
 
-class HttpService(Service):
+class HttpService(CoreService):
     name: str = "HTTP"
     group: str = GROUP_NAME
     directories: list[str] = [

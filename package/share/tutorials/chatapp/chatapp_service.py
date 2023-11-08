@@ -1,10 +1,10 @@
 from typing import Dict, List
 
 from core.config import Configuration
-from core.services.base import Service, ServiceMode, ShadowDir
+from core.services.base import CoreService, ServiceMode, ShadowDir
 
 
-class ChatAppService(Service):
+class ChatAppService(CoreService):
     name: str = "ChatApp Server"
     group: str = "ChatApp"
     directories: List[str] = []

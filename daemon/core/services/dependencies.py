@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from core.services.base import Service
+    from core.services.base import CoreService
 
 
 class ServiceDependencies:
@@ -12,7 +12,7 @@ class ServiceDependencies:
     Generates sets of services to start in order of their dependencies.
     """
 
-    def __init__(self, services: dict[str, "Service"]) -> None:
+    def __init__(self, services: dict[str, "CoreService"]) -> None:
         """
         Create a ServiceDependencies instance.
 
@@ -21,7 +21,7 @@ class ServiceDependencies:
         # helpers to check validity
         self.dependents: dict[str, set[str]] = {}
         self.started: set[str] = set()
-        self.node_services: dict[str, "Service"] = {}
+        self.node_services: dict[str, "CoreService"] = {}
         for service in services.values():
             self.node_services[service.name] = service
             for dependency in service.dependencies:
@@ -29,11 +29,11 @@ class ServiceDependencies:
                 dependents.add(service.name)
 
         # used to find paths
-        self.path: list["Service"] = []
+        self.path: list["CoreService"] = []
         self.visited: set[str] = set()
         self.visiting: set[str] = set()
 
-    def startup_paths(self) -> list[list["Service"]]:
+    def startup_paths(self) -> list[list["CoreService"]]:
         """
         Find startup path sets based on service dependencies.
 
@@ -70,7 +70,7 @@ class ServiceDependencies:
         self.visited.clear()
         self.visiting.clear()
 
-    def _start(self, service: "Service") -> list["Service"]:
+    def _start(self, service: "CoreService") -> list["CoreService"]:
         """
         Starts a path for checking dependencies for a given service.
 
@@ -81,7 +81,7 @@ class ServiceDependencies:
         self._reset()
         return self._visit(service)
 
-    def _visit(self, current_service: "Service") -> list["Service"]:
+    def _visit(self, current_service: "CoreService") -> list["CoreService"]:
         """
         Visits a service when discovering dependency chains for service.
 

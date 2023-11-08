@@ -6,7 +6,7 @@ from pathlib import Path
 from core import utils
 from core.errors import CoreError
 from core.services import defaults
-from core.services.base import Service
+from core.services.base import CoreService
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class ServiceManager:
         """
         Create a ServiceManager instance.
         """
-        self.services: dict[str, type[Service]] = {}
+        self.services: dict[str, type[CoreService]] = {}
         self.defaults: dict[str, list[str]] = {
             "mdr": ["zebra", "OSPFv3MDR", "IPForward"],
             "PC": ["DefaultRoute"],
@@ -29,7 +29,7 @@ class ServiceManager:
             "host": ["DefaultRoute", "SSH"],
         }
 
-    def get_service(self, name: str) -> type[Service]:
+    def get_service(self, name: str) -> type[CoreService]:
         """
         Retrieve a service by name.
 
@@ -42,7 +42,7 @@ class ServiceManager:
             raise CoreError(f"service does not exist {name}")
         return service_class
 
-    def add(self, service: type[Service]) -> None:
+    def add(self, service: type[CoreService]) -> None:
         """
         Add service to manager, checking service requirements have been met.
 
@@ -79,7 +79,7 @@ class ServiceManager:
         for module_info in pkgutil.walk_packages(
             defaults.__path__, f"{defaults.__name__}."
         ):
-            services = utils.load_module(module_info.name, Service)
+            services = utils.load_module(module_info.name, CoreService)
             for service in services:
                 try:
                     self.add(service)
@@ -101,7 +101,7 @@ class ServiceManager:
         service_errors = []
         for subdir in subdirs:
             logger.debug("loading services from: %s", subdir)
-            services = utils.load_classes(subdir, Service)
+            services = utils.load_classes(subdir, CoreService)
             for service in services:
                 try:
                     self.add(service)

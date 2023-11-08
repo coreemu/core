@@ -2,12 +2,12 @@ from typing import Any
 
 from core import utils
 from core.config import Configuration
-from core.services.base import Service, ServiceMode
+from core.services.base import CoreService, ServiceMode
 
 GROUP: str = "ProtoSvc"
 
 
-class MgenSinkService(Service):
+class MgenSinkService(CoreService):
     name: str = "MGEN_Sink"
     group: str = GROUP
     directories: list[str] = []
@@ -29,7 +29,7 @@ class MgenSinkService(Service):
         return dict(ifnames=ifnames)
 
 
-class NrlNhdp(Service):
+class NrlNhdp(CoreService):
     name: str = "NHDP"
     group: str = GROUP
     directories: list[str] = []
@@ -51,7 +51,7 @@ class NrlNhdp(Service):
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class NrlSmf(Service):
+class NrlSmf(CoreService):
     name: str = "SMF"
     group: str = GROUP
     directories: list[str] = []
@@ -81,7 +81,7 @@ class NrlSmf(Service):
         )
 
 
-class NrlOlsr(Service):
+class NrlOlsr(CoreService):
     name: str = "OLSR"
     group: str = GROUP
     directories: list[str] = []
@@ -105,7 +105,7 @@ class NrlOlsr(Service):
         return dict(has_smf=has_smf, has_zebra=has_zebra, ifname=ifname)
 
 
-class NrlOlsrv2(Service):
+class NrlOlsrv2(CoreService):
     name: str = "OLSRv2"
     group: str = GROUP
     directories: list[str] = []
@@ -127,7 +127,7 @@ class NrlOlsrv2(Service):
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class OlsrOrg(Service):
+class OlsrOrg(CoreService):
     name: str = "OLSRORG"
     group: str = GROUP
     directories: list[str] = ["/etc/olsrd"]
@@ -149,7 +149,7 @@ class OlsrOrg(Service):
         return dict(has_smf=has_smf, ifnames=ifnames)
 
 
-class MgenActor(Service):
+class MgenActor(CoreService):
     name: str = "MgenActor"
     group: str = GROUP
     directories: list[str] = []

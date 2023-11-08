@@ -55,7 +55,7 @@ class ShadowDir:
     has_node_paths: bool = False
 
 
-class Service(abc.ABC):
+class CoreService(abc.ABC):
     """
     Base class for creating services.
     """
@@ -510,7 +510,7 @@ class Service(abc.ABC):
             self.custom_config[key] = value
 
 
-class CustomCoreService(Service):
+class CustomCoreService(CoreService):
     name: str = ""
     group: str = ""
     directories: list[str] = []

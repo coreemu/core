@@ -112,11 +112,11 @@ running the shell files generated.
 Describes what an example service could be
 """
 from core.config import ConfigString, ConfigBool, Configuration
-from core.services.base import Service, ShadowDir, ServiceMode
+from core.services.base import CoreService, ShadowDir, ServiceMode
 
 
 # class that subclasses ConfigService
-class ExampleService(Service):
+class ExampleService(CoreService):
     # unique name for your service within CORE
     name: str = "Example"
     # the group your service is associated with, used for display in GUI
