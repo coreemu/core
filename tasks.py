@@ -1,7 +1,6 @@
 import inspect
 import itertools
 import os
-import shutil
 import sys
 import threading
 import time
@@ -252,13 +251,18 @@ def install_ospf_mdr(c: Context, os_info: OsInfo, hide: bool) -> None:
         c.run("sudo make install", hide=hide)
 
 
-def install_service(c, verbose=False, prefix=DEFAULT_PREFIX):
+def install_service(
+    c: Context, os_info: OsInfo, verbose: bool = False, prefix: str = DEFAULT_PREFIX
+):
     """
     install systemd core service
     """
     hide = not verbose
     bin_dir = Path(prefix).joinpath("bin")
-    systemd_dir = Path("/lib/systemd/system/")
+    if os_info.like == OsLike.REDHAT:
+        systemd_dir = Path("/usr/lib/systemd/system")
+    else:
+        systemd_dir = Path("/lib/systemd/system/")
     service_file = systemd_dir.joinpath("core-daemon.service")
     if systemd_dir.exists():
         service_data = inspect.cleandoc(
@@ -391,7 +395,7 @@ def install(
     with p.start("installing scripts, examples, and configuration"):
         install_core_files(c, local, hide, prefix)
     with p.start("installing systemd service"):
-        install_service(c, hide, prefix)
+        install_service(c, os_info, hide, prefix)
     if ospf:
         with p.start("installing ospf mdr"):
             install_ospf_mdr(c, os_info, hide)

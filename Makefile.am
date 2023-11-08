@@ -94,9 +94,8 @@ fpm -s dir -t rpm -n core \
 	--vendor "$(PACKAGE_VENDOR)" \
 	-p core_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
-	--rpm-init package/core-daemon \
-	--after-install package/after-install.sh \
-	--after-remove package/after-remove.sh \
+	--after-install package/after-install-rpm.sh \
+	--after-remove package/after-remove-rpm.sh \
 	-d "ethtool" \
 	-d "tk" \
 	-d "procps-ng" \
@@ -108,6 +107,7 @@ fpm -s dir -t rpm -n core \
 	-d "nftables" \
 	netns/vnoded=/usr/bin/ \
 	netns/vcmd=/usr/bin/ \
+	package/core-daemon.service=/usr/lib/systemd/system/ \
 	package/etc/core.conf=/opt/core/etc/ \
 	package/etc/logging.conf=/opt/core/etc/ \
 	package/share=/opt/core/ \
@@ -125,8 +125,8 @@ fpm -s dir -t deb -n core \
 	-v $(PACKAGE_VERSION) \
 	--deb-systemd package/core-daemon.service \
 	--deb-no-default-config-files \
-	--after-install package/after-install.sh \
-	--after-remove package/after-remove.sh \
+	--after-install package/after-install-deb.sh \
+	--after-remove package/after-remove-deb.sh \
 	-d "ethtool" \
 	-d "tk" \
 	-d "libtk-img" \
