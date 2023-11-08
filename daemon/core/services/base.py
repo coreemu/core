@@ -184,7 +184,7 @@ class Service(abc.ABC):
         """
         for cmd in self.shutdown:
             try:
-                self.node.cmd(cmd)
+                self.node.cmd(cmd, shell=True)
             except CoreCommandError:
                 logger.exception(
                     f"node({self.node.name}) service({self.name}) "
@@ -384,7 +384,7 @@ class Service(abc.ABC):
         """
         for cmd in self.startup:
             try:
-                self.node.cmd(cmd, wait=wait)
+                self.node.cmd(cmd, wait=wait, shell=True)
             except CoreCommandError as e:
                 raise ServiceBootError(
                     f"node({self.node.name}) service({self.name}) failed startup: {e}"
@@ -411,7 +411,7 @@ class Service(abc.ABC):
         while cmds:
             cmd = cmds[index]
             try:
-                self.node.cmd(cmd)
+                self.node.cmd(cmd, shell=True)
                 del cmds[index]
                 index += 1
             except CoreCommandError:
