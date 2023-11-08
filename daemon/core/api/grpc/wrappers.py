@@ -102,16 +102,16 @@ class EventType:
 class Service:
     group: str
     name: str
-    executables: list[str]
-    dependencies: list[str]
-    directories: list[str]
-    files: list[str]
-    startup: list[str]
-    validate: list[str]
-    shutdown: list[str]
-    validation_mode: ServiceValidationMode
-    validation_timer: int
-    validation_period: float
+    executables: list[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
+    directories: list[str] = field(default_factory=list)
+    files: list[str] = field(default_factory=list)
+    startup: list[str] = field(default_factory=list)
+    validate: list[str] = field(default_factory=list)
+    shutdown: list[str] = field(default_factory=list)
+    validation_mode: ServiceValidationMode = ServiceValidationMode.NON_BLOCKING
+    validation_timer: int = 0
+    validation_period: float = 0.0
 
     @classmethod
     def from_proto(cls, proto: services_pb2.Service) -> "Service":
@@ -128,6 +128,22 @@ class Service:
             validation_mode=ServiceValidationMode(proto.validation_mode),
             validation_timer=proto.validation_timer,
             validation_period=proto.validation_period,
+        )
+
+    def to_proto(self) -> services_pb2.Service:
+        return services_pb2.Service(
+            group=self.group,
+            name=self.name,
+            executables=self.executables,
+            dependencies=self.dependencies,
+            directories=self.directories,
+            files=self.files,
+            startup=self.startup,
+            validate=self.validate,
+            shutdown=self.shutdown,
+            validation_mode=self.validation_mode.value,
+            validation_timer=self.validation_timer,
+            validation_period=self.validation_period,
         )
 
 

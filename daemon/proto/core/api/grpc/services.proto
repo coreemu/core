@@ -93,3 +93,13 @@ message GetServiceRenderedRequest {
 message GetServiceRenderedResponse {
     map<string, string> rendered = 1;
 }
+
+message CreateServiceRequest {
+  Service service = 1;
+  map<string, string> templates = 2;
+  bool recreate = 3;
+}
+
+message CreateServiceResponse {
+  bool result = 1;
+}

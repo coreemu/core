@@ -508,3 +508,50 @@ class Service(abc.ABC):
             if key not in self.config:
                 raise CoreError(f"unknown config: {key}")
             self.custom_config[key] = value
+
+
+class CustomCoreService(Service):
+    name: str = ""
+    group: str = ""
+    directories: list[str] = []
+    files: list[str] = []
+    executables: list[str] = []
+    dependencies: list[str] = []
+    startup: list[str] = []
+    validate: list[str] = []
+    shutdown: list[str] = []
+    validation_mode: ServiceMode = ServiceMode.NON_BLOCKING
+    default_configs: list[Configuration] = []
+    modes: dict[str, dict[str, str]] = {}
+    defined_templates: dict[str, str] = {}
+
+    def get_templates(self) -> dict[str, str]:
+        """
+        Retrieves mapping of file names to templates for all cases, which
+        includes custom templates, file templates, and text templates.
+
+        :return: mapping of files to templates
+        """
+        templates = {}
+        for file in self.files:
+            if file in self.defined_templates:
+                template = self.defined_templates[file]
+                template = self.clean_text(template)
+            else:
+                raise ServiceTemplateError(
+                    f"node({self.node.name}) service({self.name}) file({file}) "
+                    f"failure getting template"
+                )
+            templates[file] = template
+        return templates
+
+    def _get_rendered_template(self, file: str, data: dict[str, Any]) -> str:
+        if file in self.defined_templates:
+            text = self.defined_templates[file]
+            rendered = self.render_text(text, data)
+        else:
+            raise ServiceTemplateError(
+                f"node({self.node.name}) service({self.name}) file({file}) "
+                f"failure getting template"
+            )
+        return rendered

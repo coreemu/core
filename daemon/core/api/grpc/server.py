@@ -53,6 +53,8 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigResponse,
 )
 from core.api.grpc.services_pb2 import (
+    CreateServiceRequest,
+    CreateServiceResponse,
     GetNodeServiceRequest,
     GetNodeServiceResponse,
     GetServiceDefaultsRequest,
@@ -86,7 +88,7 @@ from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode, NodeBase
 from core.nodes.network import CoreNetwork, WlanNode
 from core.nodes.wireless import WirelessNode
-from core.services.base import Service, ServiceBootError
+from core.services.base import CustomCoreService, Service, ServiceBootError, ServiceMode
 from core.xml.corexml import CoreXmlWriter
 
 logger = logging.getLogger(__name__)
@@ -1410,3 +1412,37 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     nem_id, fading.model
                 )
         return EmaneEventsResponse()
+
+    def CreateService(
+        self,
+        request: CreateServiceRequest,
+        context: ServicerContext,
+    ) -> CreateServiceResponse:
+        service = request.service
+        class_name = f"{service.name.capitalize()}Class"
+        custom_class = type(
+            class_name, (CustomCoreService,), dict(__init__=CustomCoreService.__init__)
+        )
+        custom_class.name = service.name
+        custom_class.group = service.group
+        custom_class.executables = list(service.executables)
+        custom_class.dependencies = list(service.dependencies)
+        custom_class.directories = list(service.directories)
+        custom_class.files = list(service.files)
+        custom_class.startup = list(service.startup)
+        custom_class.validate = list(service.validate)
+        custom_class.shutdown = list(service.shutdown)
+        custom_class.validation_mode = ServiceMode(service.validation_mode)
+        custom_class.validation_timer = service.validation_timer
+        custom_class.validation_period = service.validation_period
+        custom_class.defined_templates = dict(request.templates)
+        result = False
+        if request.recreate:
+            self.coreemu.service_manager.services.pop(custom_class.name, None)
+        try:
+            if issubclass(custom_class, CustomCoreService):
+                self.coreemu.service_manager.add(custom_class)
+                result = True
+        except CoreError as e:
+            logger.error("error creating custom service: %s", e)
+        return CreateServiceResponse(result=result)

@@ -34,6 +34,7 @@ from core.api.grpc.mobility_pb2 import (
     SetMobilityConfigRequest,
 )
 from core.api.grpc.services_pb2 import (
+    CreateServiceRequest,
     GetNodeServiceRequest,
     GetServiceDefaultsRequest,
     GetServiceRenderedRequest,
@@ -1064,6 +1065,20 @@ class CoreGrpcClient:
         request = GetWirelessConfigRequest(session_id=session_id, node_id=node_id)
         response = self.stub.GetWirelessConfig(request)
         return wrappers.ConfigOption.from_dict(response.config)
+
+    def create_service(
+        self,
+        service: wrappers.Service,
+        templates: dict[str, str],
+        recreate: bool = False,
+    ) -> bool:
+        request = CreateServiceRequest(
+            service=service.to_proto(),
+            templates=templates,
+            recreate=recreate,
+        )
+        response = self.stub.CreateService(request)
+        return response.result
 
     def connect(self) -> None:
         """

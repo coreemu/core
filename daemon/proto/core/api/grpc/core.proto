@@ -80,6 +80,8 @@ service CoreApi {
     }
     rpc GetServiceRendered (services.GetServiceRenderedRequest) returns (services.GetServiceRenderedResponse) {
     }
+    rpc CreateService (services.CreateServiceRequest) returns (services.CreateServiceResponse) {
+    }
 
     // wlan rpc
     rpc GetWlanConfig (wlan.GetWlanConfigRequest) returns (wlan.GetWlanConfigResponse) {
