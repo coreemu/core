@@ -732,7 +732,7 @@ class CoreXmlReader:
         node = self.session.add_node(_class, node_id, name, server, position, options)
         if isinstance(node, WirelessNode):
             wireless_element = network_element.find("wireless")
-            if wireless_element:
+            if wireless_element is not None:
                 config = {}
                 for config_element in wireless_element.iterchildren():
                     name = config_element.get("name")

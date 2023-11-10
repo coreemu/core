@@ -16,7 +16,7 @@
     </network>
   </networks>
   <devices>
-    <device id="1" name="n1" icon="/usr/share/core/examples/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
+    <device id="1" name="n1" icon="/opt/core/share/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
       <position x="303.0" y="25.0" lat="47.57893917036898" lon="-122.12824137578366" alt="2.0"/>
       <services>
         <service name="zebra"/>
@@ -24,7 +24,7 @@
         <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="2" name="n2" icon="/usr/share/core/examples/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
+    <device id="2" name="n2" icon="/opt/core/share/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
       <position x="205.0" y="158.0" lat="47.57773022643051" lon="-122.12956189925131" alt="2.0"/>
       <services>
         <service name="zebra"/>
@@ -32,7 +32,7 @@
         <service name="OSPFv3MDR"/>
       </services>
     </device>
-    <device id="3" name="n3" icon="/usr/share/core/examples/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
+    <device id="3" name="n3" icon="/opt/core/share/tutorials/tutorial6/drone.png" canvas="1" type="mdr" class="" image="">
       <position x="120.0" y="316.0" lat="47.57629400111251" lon="-122.13070725123856" alt="2.0"/>
       <services>
         <service name="zebra"/>
@@ -77,7 +77,7 @@
     <configuration name="shapes" value="[]"/>
     <configuration name="edges" value="[]"/>
     <configuration name="hidden" value="[4]"/>
-    <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: &quot;/usr/share/core/examples/tutorials/tutorial6/terrain.png&quot;, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 750]}]}"/>
+    <configuration name="canvas" value="{&quot;gridlines&quot;: true, &quot;canvases&quot;: [{&quot;id&quot;: 1, &quot;wallpaper&quot;: &quot;/opt/core/share/tutorials/tutorial6/terrain.png&quot;, &quot;wallpaper_style&quot;: 1, &quot;fit_image&quot;: false, &quot;dimensions&quot;: [1000, 750]}]}"/>
   </session_metadata>
   <default_services>
     <node type="mdr">

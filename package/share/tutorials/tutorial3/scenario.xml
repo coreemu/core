@@ -52,7 +52,7 @@
       <configuration name="promiscuous" value="0"/>
     </mobility_configuration>
     <mobility_configuration node="3" model="ns2script">
-      <configuration name="file" value="/usr/share/core/examples/tutorials/tutorial3/movements1.txt"/>
+      <configuration name="file" value="/opt/core/share/tutorials/tutorial3/movements1.txt"/>
       <configuration name="refresh_ms" value="50"/>
       <configuration name="loop" value="1"/>
       <configuration name="autostart" value=""/>
