@@ -50,8 +50,13 @@ logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from core.gui.app import Application
 
-GUI_SOURCE = "gui"
-CPU_USAGE_DELAY = 3
+GUI_SOURCE: str = "gui"
+CPU_USAGE_DELAY: int = 3
+MOBILITY_ACTIONS: dict[int, str] = {
+    7: "PLAY",
+    8: "STOP",
+    9: "PAUSE",
+}
 
 
 def to_dict(config: dict[str, ConfigOption]) -> dict[str, str]:
@@ -167,11 +172,21 @@ class CoreClient:
         if event.link_event:
             self.app.after(0, self.handle_link_event, event.link_event)
         elif event.session_event:
-            logger.info("session event: %s", event)
             session_event = event.session_event
             if session_event.event <= SessionState.SHUTDOWN.value:
                 self.session.state = SessionState(session_event.event)
-            elif session_event.event in {7, 8, 9}:
+                logger.info(
+                    "session(%s) state(%s)",
+                    event.session_id,
+                    self.session.state,
+                )
+            elif session_event.event in MOBILITY_ACTIONS:
+                action = MOBILITY_ACTIONS[session_event.event]
+                logger.info(
+                    "session(%s) mobility action(%s)",
+                    event.session_id,
+                    action,
+                )
                 node_id = session_event.node_id
                 dialog = self.mobility_players.get(node_id)
                 if dialog:
@@ -181,6 +196,8 @@ class CoreClient:
                         dialog.set_stop()
                     else:
                         dialog.set_pause()
+            elif session_event.event == 15:
+                logger.info("session(%s) instantiation complete", event.session_id)
             else:
                 logger.warning("unknown session event: %s", session_event)
         elif event.node_event:
