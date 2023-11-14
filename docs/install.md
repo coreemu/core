@@ -362,38 +362,13 @@ Place the file contents below in **/etc/docker/docker.json**
 }
 ```
 
-### Resolving Path Issues
-
-One problem running CORE you may run into, using the virtual environment or locally
-can be issues related to your path.
-
-To add support for your user to run scripts from the virtual environment:
-
-```shell
-# can add to ~/.bashrc
-export PATH=$PATH:/opt/core/venv/bin
-```
-
-This will not solve the path issue when running as sudo, so you can do either
-of the following to compensate.
-
-```shell
-# run command passing in the right PATH to pickup from the user running the command
-sudo env PATH=$PATH core-daemon
-
-# add an alias to ~/.bashrc or something similar
-alias sudop='sudo env PATH=$PATH'
-# now you can run commands like so
-sudop core-daemon
-```
-
 ### Running CORE
 
-The following assumes I have resolved PATH issues and setup the `sudop` alias.
+In typical usage CORE is made up of two parts, the **core-daemon** (server) and the **core-gui** (client).
 
 ```shell
-# in one terminal run the server daemon using the alias above
-sudop core-daemon
+# in one terminal run the server daemon
+sudo core-daemon
 # in another terminal run the gui client
 core-gui
 ```

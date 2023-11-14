@@ -20,7 +20,7 @@ XML scenario file, leveraging an NS2 mobility file.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell
@@ -97,7 +97,7 @@ gRPC python script and providing mobility over the gRPC interface.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell

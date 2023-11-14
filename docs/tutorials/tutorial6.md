@@ -20,7 +20,7 @@ This section will cover running this sample tutorial that develops a scenario fi
 * Ensure that **/opt/core/etc/core.conf** has **grpcaddress** set to **0.0.0.0**
 * Make sure the **core-daemon** is running in a terminal
     ```shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 * In another terminal run the GUI
     ```shell

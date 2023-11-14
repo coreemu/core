@@ -6,7 +6,7 @@ the remaining steps of a given section.
 
 1. Make sure the CORE daemon is running a terminal, if not already
     ``` shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 2. From another terminal run the tutorial python script, which will create a session to join
     ``` shell

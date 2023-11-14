@@ -2,16 +2,7 @@
 
 ## Setup for CORE
 
-We assume the prior installation of CORE, using a virtual environment. You can
-then adjust your PATH and add an alias to help more conveniently run CORE
-commands.
-
-This can be setup in your **.bashrc**
-
-```shell
-export PATH=$PATH:/opt/core/venv/bin
-alias sudop='sudo env PATH=$PATH'
-```
+We assume the prior installation of CORE, using a virtual environment.
 
 ## Setup for Chat App
 

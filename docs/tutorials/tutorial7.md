@@ -44,7 +44,7 @@ between nodes in CORE.
 
 * Make sure the CORE daemon is running a terminal, if not already
     ``` shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 * In another terminal run the GUI
     ``` shell
@@ -82,7 +82,7 @@ traffic being sent/received among many other uses.
 
 * Make sure the CORE daemon is running a terminal, if not already
     ``` shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 * In another terminal run the GUI
     ``` shell
@@ -121,7 +121,7 @@ within the nodes of our scenario.
 
 * Make sure the CORE daemon is running a terminal, if not already
     ``` shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 * In another terminal run the GUI
     ``` shell
@@ -171,7 +171,7 @@ using `tail -f` to observe the output of running software.
 
 * Make sure the CORE daemon is running a terminal, if not already
     ``` shell
-    sudop core-daemon
+    sudo core-daemon
     ```
 * In another terminal run the GUI
     ``` shell

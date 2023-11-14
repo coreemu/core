@@ -90,27 +90,13 @@ PATH=~/Documents/protoc/bin:$PATH make
 sudo /opt/core/venv/bin/python -m pip install .
 ```
 
-## Setup PATH
+## Running CORE
 
-The CORE virtual environment and related scripts will not be found on your PATH,
-so some adjustments needs to be made.
-
-To add support for your user to run scripts from the virtual environment:
+This install will place CORE within a virtual environment, symlinks to CORE scripts will be added to **/usr/bin**.
 
 ```shell
-# can add to ~/.bashrc
-export PATH=$PATH:/opt/core/venv/bin
-```
-
-This will not solve the path issue when running as sudo, so you can do either
-of the following to compensate.
-
-```shell
-# run command passing in the right PATH to pickup from the user running the command
-sudo env PATH=$PATH core-daemon
-
-# add an alias to ~/.bashrc or something similar
-alias sudop='sudo env PATH=$PATH'
-# now you can run commands like so
-sudop core-daemon
+# in one terminal run the server daemon
+sudo core-daemon
+# in another terminal run the gui client
+core-gui
 ```

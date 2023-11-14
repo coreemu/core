@@ -21,7 +21,7 @@ file, leveraging an NS2 file for mobility.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * In another terminal run the GUI
    ```shell
@@ -80,7 +80,7 @@ This section covers using a gRPC script to create and provide scenario movement.
 
 * Make sure the **core-daemon** is running a terminal
    ```shell
-   sudop core-daemon
+   sudo core-daemon
    ```
 * From another terminal run the **scenario.py** script
    ```shell
