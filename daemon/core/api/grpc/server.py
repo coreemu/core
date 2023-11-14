@@ -76,12 +76,7 @@ from core.api.grpc.wlan_pb2 import (
 from core.emane.modelmanager import EmaneModelManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.data import InterfaceData, LinkData, LinkOptions
-from core.emulator.enumerations import (
-    EventTypes,
-    ExceptionLevels,
-    MessageFlags,
-    NodeTypes,
-)
+from core.emulator.enumerations import AlertLevels, EventTypes, MessageFlags, NodeTypes
 from core.emulator.session import NT, Session
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
@@ -440,9 +435,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         self, request: core_pb2.SessionAlertRequest, context: ServicerContext
     ) -> core_pb2.SessionAlertResponse:
         session = self.get_session(request.session_id, context)
-        level = ExceptionLevels(request.level)
+        level = AlertLevels(request.level)
         node_id = request.node_id if request.node_id else None
-        session.broadcast_exception(level, request.source, request.text, node_id)
+        session.broadcast_alert(level, request.source, request.text, node_id)
         return core_pb2.SessionAlertResponse(result=True)
 
     def Events(self, request: core_pb2.EventsRequest, context: ServicerContext) -> None:

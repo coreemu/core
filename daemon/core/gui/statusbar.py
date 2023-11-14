@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import ttk
 from typing import TYPE_CHECKING, Optional
 
-from core.api.grpc.wrappers import ExceptionEvent, ExceptionLevel
+from core.api.grpc.wrappers import AlertEvent, AlertLevel
 from core.gui.dialogs.alerts import AlertsDialog
 from core.gui.themes import Styles
 
@@ -24,7 +24,7 @@ class StatusBar(ttk.Frame):
         self.alerts_button: Optional[ttk.Button] = None
         self.alert_style = Styles.no_alert
         self.running: bool = False
-        self.core_alarms: list[ExceptionEvent] = []
+        self.core_alarms: list[AlertEvent] = []
         self.draw()
 
     def draw(self) -> None:
@@ -66,17 +66,17 @@ class StatusBar(ttk.Frame):
     def set_zoom(self, zoom: float) -> None:
         self.zoom.config(text=f"ZOOM {zoom * 100:.0f}%")
 
-    def add_alert(self, event: ExceptionEvent) -> None:
+    def add_alert(self, event: AlertEvent) -> None:
         self.core_alarms.append(event)
         level = event.level
         self._set_alert_style(level)
         label = f"Alerts ({len(self.core_alarms)})"
         self.alerts_button.config(text=label, style=self.alert_style)
 
-    def _set_alert_style(self, level: ExceptionLevel) -> None:
-        if level in [ExceptionLevel.FATAL, ExceptionLevel.ERROR]:
+    def _set_alert_style(self, level: AlertLevel) -> None:
+        if level in [AlertLevel.FATAL, AlertLevel.ERROR]:
             self.alert_style = Styles.red_alert
-        elif level == ExceptionLevel.WARNING and self.alert_style != Styles.red_alert:
+        elif level == AlertLevel.WARNING and self.alert_style != Styles.red_alert:
             self.alert_style = Styles.yellow_alert
         elif self.alert_style == Styles.no_alert:
             self.alert_style = Styles.green_alert

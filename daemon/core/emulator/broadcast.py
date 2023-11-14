@@ -1,10 +1,10 @@
 from collections.abc import Callable
 from typing import TypeVar, Union
 
-from core.emulator.data import EventData, ExceptionData, LinkData, NodeData
+from core.emulator.data import AlertData, EventData, LinkData, NodeData
 from core.errors import CoreError
 
-T = TypeVar("T", bound=Union[EventData, ExceptionData, NodeData, LinkData])
+T = TypeVar("T", bound=Union[EventData, AlertData, NodeData, LinkData])
 
 
 class BroadcastManager:

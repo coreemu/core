@@ -338,7 +338,7 @@ class CoreGrpcClient:
     def alert(
         self,
         session_id: int,
-        level: wrappers.ExceptionLevel,
+        level: wrappers.AlertLevel,
         source: str,
         text: str,
         node_id: int = None,

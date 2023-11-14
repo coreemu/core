@@ -34,7 +34,7 @@ from core.api.grpc.wrappers import (
 from core.emane.models.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emulator.data import IpPrefixes, NodeData
-from core.emulator.enumerations import EventTypes, ExceptionLevels, MessageFlags
+from core.emulator.enumerations import AlertLevels, EventTypes, MessageFlags
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNode
@@ -723,31 +723,31 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_exception_events(self, grpc_server: CoreGrpcServer):
+    def test_alert_events(self, grpc_server: CoreGrpcServer):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         queue = Queue()
-        exception_level = ExceptionLevels.FATAL
+        alert_level = AlertLevels.FATAL
         source = "test"
         node_id = None
-        text = "exception message"
+        text = "alert message"
 
         def handle_event(event: Event) -> None:
             assert event.session_id == session.id
-            assert event.exception_event is not None
-            exception_event = event.exception_event
-            assert exception_event.level.value == exception_level.value
-            assert exception_event.node_id == 0
-            assert exception_event.source == source
-            assert exception_event.text == text
+            assert event.alert_event is not None
+            alert_event = event.alert_event
+            assert alert_event.level.value == alert_level.value
+            assert alert_event.node_id == 0
+            assert alert_event.source == source
+            assert alert_event.text == text
             queue.put(event)
 
         # then
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            session.broadcast_exception(exception_level, source, text, node_id)
+            session.broadcast_alert(alert_level, source, text, node_id)
 
             # then
             queue.get(timeout=5)

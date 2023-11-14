@@ -460,11 +460,11 @@ create a bridge or namespace, or the failure to launch EMANE processes for an
 EMANE-based network.
 
 Clicking on an alert displays details for that
-exceptio. The exception source is a text string
-to help trace where the exception occurred; "service:UserDefined" for example,
+alert. The alert source is a text string
+to help trace where the alert occurred; "service:UserDefined" for example,
 would appear for a failed validation command with the UserDefined service.
 
-A button is available at the bottom of the dialog for clearing the exception
+A button is available at the bottom of the dialog for clearing the alert
 list.
 
 ## Customizing your Topology's Look

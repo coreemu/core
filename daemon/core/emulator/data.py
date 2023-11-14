@@ -7,12 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional
 import netaddr
 
 from core import utils
-from core.emulator.enumerations import (
-    EventTypes,
-    ExceptionLevels,
-    LinkTypes,
-    MessageFlags,
-)
+from core.emulator.enumerations import AlertLevels, EventTypes, LinkTypes, MessageFlags
 
 if TYPE_CHECKING:
     from core.nodes.base import CoreNode, NodeBase
@@ -29,10 +24,10 @@ class EventData:
 
 
 @dataclass
-class ExceptionData:
+class AlertData:
     node: int = None
     session: int = None
-    level: ExceptionLevels = None
+    level: AlertLevels = None
     source: str = None
     date: str = None
     text: str = None

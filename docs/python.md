@@ -74,11 +74,11 @@ Event types:
 * node - events for node movements and icon changes
 * link - events for link configuration changes and wireless link add/delete
 * config - configuration events when legacy gui joins a session
-* exception - alert/error events
+* alert - alert events
 * file - file events when the legacy gui joins a session
 
 ```python
-from core.emulator.data import EventData, ExceptionData, LinkData, NodeData
+from core.emulator.data import EventData, AlertData, LinkData, NodeData
 
 
 def event_listener(event):
@@ -90,7 +90,7 @@ def event_listener(event):
 session.broadcast_manager.add_handler(NodeData, event_listener)
 session.broadcast_manager.add_handler(LinkData, event_listener)
 session.broadcast_manager.add_handler(EventData, event_listener)
-session.broadcast_manager.add_handler(ExceptionData, event_listener)
+session.broadcast_manager.add_handler(AlertData, event_listener)
 ```
 
 ### Configuring Links

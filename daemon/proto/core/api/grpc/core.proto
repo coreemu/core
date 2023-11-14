@@ -199,7 +199,7 @@ message GetSessionResponse {
 
 message SessionAlertRequest {
     int32 session_id = 1;
-    ExceptionLevel.Enum level = 2;
+    AlertLevel.Enum level = 2;
     string source = 3;
     string text = 4;
     int32 node_id = 5;
@@ -248,7 +248,7 @@ message Event {
         SessionEvent session_event = 1;
         NodeEvent node_event = 2;
         LinkEvent link_event = 3;
-        ExceptionEvent exception_event = 5;
+        AlertEvent alert_event = 5;
     }
     int32 session_id = 7;
     string source = 8;
@@ -272,9 +272,9 @@ message SessionEvent {
     float time = 5;
 }
 
-message ExceptionEvent {
+message AlertEvent {
     int32 node_id = 1;
-    ExceptionLevel.Enum level = 2;
+    AlertLevel.Enum level = 2;
     string source = 3;
     string date = 4;
     string text = 5;
@@ -524,7 +524,7 @@ message ConfigOptionType {
     }
 }
 
-message ExceptionLevel {
+message AlertLevel {
     enum Enum {
         DEFAULT = 0;
         FATAL = 1;

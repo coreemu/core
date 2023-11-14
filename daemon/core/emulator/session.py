@@ -21,20 +21,15 @@ from core.emane.nodes import EmaneNet
 from core.emulator.broadcast import BroadcastManager
 from core.emulator.controlnets import ControlNetManager
 from core.emulator.data import (
+    AlertData,
     EventData,
-    ExceptionData,
     InterfaceData,
     LinkData,
     LinkOptions,
     NodeData,
 )
 from core.emulator.distributed import DistributedController
-from core.emulator.enumerations import (
-    EventTypes,
-    ExceptionLevels,
-    MessageFlags,
-    NodeTypes,
-)
+from core.emulator.enumerations import AlertLevels, EventTypes, MessageFlags, NodeTypes
 from core.emulator.hooks import HookManager
 from core.emulator.links import CoreLink, LinkManager
 from core.emulator.sessionconfig import SessionConfig
@@ -646,19 +641,19 @@ class Session:
         )
         self.broadcast_manager.send(event_data)
 
-    def broadcast_exception(
-        self, level: ExceptionLevels, source: str, text: str, node_id: int = None
+    def broadcast_alert(
+        self, level: AlertLevels, source: str, text: str, node_id: int = None
     ) -> None:
         """
-        Generate and broadcast an exception event.
+        Generate and broadcast an alert event.
 
-        :param level: exception level
+        :param level: alert level
         :param source: source name
-        :param text: exception message
-        :param node_id: node related to exception, defaults to None
+        :param text: alert message
+        :param node_id: node related to alert, defaults to None
         :return: nothing
         """
-        exception_data = ExceptionData(
+        alert_data = AlertData(
             node=node_id,
             session=self.id,
             level=level,
@@ -666,7 +661,7 @@ class Session:
             date=time.ctime(),
             text=text,
         )
-        self.broadcast_manager.send(exception_data)
+        self.broadcast_manager.send(alert_data)
 
     def broadcast_node(
         self,

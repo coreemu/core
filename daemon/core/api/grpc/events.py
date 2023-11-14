@@ -5,7 +5,7 @@ from typing import Optional
 
 from core.api.grpc import core_pb2, grpcutils
 from core.api.grpc.grpcutils import convert_link_data
-from core.emulator.data import EventData, ExceptionData, LinkData, NodeData
+from core.emulator.data import AlertData, EventData, LinkData, NodeData
 from core.emulator.session import Session
 
 logger = logging.getLogger(__name__)
@@ -61,22 +61,22 @@ def handle_session_event(event_data: EventData) -> core_pb2.Event:
     return core_pb2.Event(session_event=session_event)
 
 
-def handle_exception_event(exception_data: ExceptionData) -> core_pb2.Event:
+def handle_alert_event(alert_data: AlertData) -> core_pb2.Event:
     """
-    Handle exception event when there is exception event
+    Handle alert data, when there is an alert event.
 
-    :param exception_data: exception data
-    :return: exception event
+    :param alert_data: alert data
+    :return: alert event
     """
-    exception_event = core_pb2.ExceptionEvent(
-        node_id=exception_data.node,
-        level=exception_data.level.value,
-        source=exception_data.source,
-        date=exception_data.date,
-        text=exception_data.text,
-        opaque=exception_data.opaque,
+    alert_event = core_pb2.AlertEvent(
+        node_id=alert_data.node,
+        level=alert_data.level.value,
+        source=alert_data.source,
+        date=alert_data.date,
+        text=alert_data.text,
+        opaque=alert_data.opaque,
     )
-    return core_pb2.Event(exception_event=exception_event)
+    return core_pb2.Event(alert_event=alert_event)
 
 
 class EventStreamer:
@@ -109,7 +109,7 @@ class EventStreamer:
         if core_pb2.EventType.LINK in self.event_types:
             self.session.broadcast_manager.add_handler(LinkData, self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
-            self.session.broadcast_manager.add_handler(ExceptionData, self.queue.put)
+            self.session.broadcast_manager.add_handler(AlertData, self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:
             self.session.broadcast_manager.add_handler(EventData, self.queue.put)
 
@@ -128,8 +128,8 @@ class EventStreamer:
                 event = handle_link_event(data)
             elif isinstance(data, EventData):
                 event = handle_session_event(data)
-            elif isinstance(data, ExceptionData):
-                event = handle_exception_event(data)
+            elif isinstance(data, AlertData):
+                event = handle_alert_event(data)
             else:
                 logger.error("unknown event: %s", data)
         except Empty:
@@ -149,6 +149,6 @@ class EventStreamer:
         if core_pb2.EventType.LINK in self.event_types:
             self.session.broadcast_manager.remove_handler(LinkData, self.queue.put)
         if core_pb2.EventType.EXCEPTION in self.event_types:
-            self.session.broadcast_manager.remove_handler(ExceptionData, self.queue.put)
+            self.session.broadcast_manager.remove_handler(AlertData, self.queue.put)
         if core_pb2.EventType.SESSION in self.event_types:
             self.session.broadcast_manager.remove_handler(EventData, self.queue.put)

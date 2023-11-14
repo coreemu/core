@@ -65,7 +65,7 @@ class LinkType(Enum):
     WIRED = 1
 
 
-class ExceptionLevel(Enum):
+class AlertLevel(Enum):
     DEFAULT = 0
     FATAL = 1
     ERROR = 2
@@ -292,23 +292,21 @@ class SessionLocation:
 
 
 @dataclass
-class ExceptionEvent:
+class AlertEvent:
     session_id: int
     node_id: int
-    level: ExceptionLevel
+    level: AlertLevel
     source: str
     date: str
     text: str
     opaque: str
 
     @classmethod
-    def from_proto(
-        cls, session_id: int, proto: core_pb2.ExceptionEvent
-    ) -> "ExceptionEvent":
-        return ExceptionEvent(
+    def from_proto(cls, session_id: int, proto: core_pb2.AlertEvent) -> "AlertEvent":
+        return AlertEvent(
             session_id=session_id,
             node_id=proto.node_id,
-            level=ExceptionLevel(proto.level),
+            level=AlertLevel(proto.level),
             source=proto.source,
             date=proto.date,
             text=proto.text,
@@ -922,23 +920,21 @@ class Event:
     session_event: SessionEvent = None
     node_event: NodeEvent = None
     link_event: LinkEvent = None
-    exception_event: ExceptionEvent = None
+    alert_event: AlertEvent = None
 
     @classmethod
     def from_proto(cls, proto: core_pb2.Event) -> "Event":
         source = proto.source if proto.source else None
         node_event = None
         link_event = None
-        exception_event = None
+        alert_event = None
         session_event = None
         if proto.HasField("node_event"):
             node_event = NodeEvent.from_proto(proto.node_event)
         elif proto.HasField("link_event"):
             link_event = LinkEvent.from_proto(proto.link_event)
-        elif proto.HasField("exception_event"):
-            exception_event = ExceptionEvent.from_proto(
-                proto.session_id, proto.exception_event
-            )
+        elif proto.HasField("alert_event"):
+            alert_event = AlertEvent.from_proto(proto.session_id, proto.alert_event)
         elif proto.HasField("session_event"):
             session_event = SessionEvent.from_proto(proto.session_event)
         return Event(
@@ -946,7 +942,7 @@ class Event:
             source=source,
             node_event=node_event,
             link_event=link_event,
-            exception_event=exception_event,
+            alert_event=alert_event,
             session_event=session_event,
         )
 

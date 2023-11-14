@@ -104,9 +104,9 @@ class EventTypes(Enum):
         return self.value >= self.DATACOLLECT_STATE.value
 
 
-class ExceptionLevels(Enum):
+class AlertLevels(Enum):
     """
-    Exception levels.
+    Alert levels.
     """
 
     NONE = 0

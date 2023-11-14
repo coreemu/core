@@ -15,10 +15,10 @@ import grpc
 
 from core.api.grpc import client, core_pb2
 from core.api.grpc.wrappers import (
+    AlertEvent,
     ConfigOption,
     EmaneModelConfig,
     Event,
-    ExceptionEvent,
     Link,
     LinkEvent,
     LinkType,
@@ -202,8 +202,8 @@ class CoreClient:
                 logger.warning("unknown session event: %s", session_event)
         elif event.node_event:
             self.app.after(0, self.handle_node_event, event.node_event)
-        elif event.exception_event:
-            self.handle_exception_event(event.exception_event)
+        elif event.alert_event:
+            self.handle_alert_event(event.alert_event)
         else:
             logger.info("unhandled event: %s", event)
 
@@ -308,8 +308,8 @@ class CoreClient:
     def handle_cpu_event(self, event: core_pb2.CpuUsageEvent) -> None:
         self.app.after(0, self.app.statusbar.set_cpu, event.usage)
 
-    def handle_exception_event(self, event: ExceptionEvent) -> None:
-        logger.info("exception event: %s", event)
+    def handle_alert_event(self, event: AlertEvent) -> None:
+        logger.info("alert event: %s", event)
         self.app.statusbar.add_alert(event)
 
     def update_session_title(self) -> None:
