@@ -581,7 +581,7 @@ message Node {
     int32 canvas = 14;
     map<string, common.ConfigOption> wlan_config = 15;
     map<string, common.ConfigOption> mobility_config = 16;
-    map<string, services.ServiceConfig> service_configs= 17;
+    map<string, services.ServiceConfig> service_configs = 17;
     repeated emane.NodeEmaneConfig emane_configs = 18;
     map<string, common.ConfigOption> wireless_config = 19;
     string compose = 20;

@@ -148,21 +148,6 @@ class Service:
 
 
 @dataclass
-class ServiceConfig:
-    node_id: int
-    name: str
-    templates: dict[str, str]
-    config: dict[str, str]
-
-    @classmethod
-    def from_proto(cls, proto: services_pb2.ServiceConfig) -> "ServiceConfig":
-        return ServiceConfig(
-            templates=dict(proto.templates),
-            config=dict(proto.config),
-        )
-
-
-@dataclass
 class ServiceData:
     templates: dict[str, str] = field(default_factory=dict)
     config: dict[str, str] = field(default_factory=dict)
