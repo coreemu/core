@@ -11,7 +11,6 @@ option being preferred.
 
 * [Package based install (rpm/deb)](#package-based-install)
 * [Script based install](#script-based-install)
-* [Dockerfile based install](#dockerfile-based-install)
 
 ### Requirements
 
@@ -19,6 +18,7 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 containers, as a general rule you should select a machine having as much RAM and CPU resources as possible.
 
 * Linux Kernel v3.3+
+* Python 3.9+
 * iproute2 4.5+ is a requirement for bridge related commands
 * nftables compatible kernel and nft command line tool
 
@@ -47,7 +47,7 @@ The following is a list of files that would be installed after installation.
         * local `/usr/local/bin`
 * configuration files
     * `/opt/core/etc/{core.conf, logging.conf}`
-* examples and data files
+* examples, tutorials, and data files
     * `/opt/core/share`
 * ospf mdr repository files when using script based install
     * `<repo>/../ospf-mdr`
@@ -266,29 +266,6 @@ an installation to your use case.
 # the basis for translating to your OS
 inv install --dry -v -p <prefix> -i <install type>
 ```
-
-## Dockerfile Based Install
-
-You can leverage one of the provided Dockerfiles, to run and launch CORE within a Docker container.
-
-Since CORE nodes will leverage software available within the system for a given use case,
-make sure to update and build the Dockerfile with desired software.
-
-```shell
-# clone core
-git clone https://github.com/coreemu/core.git
-cd core
-# build image
-sudo docker build -t core -f dockerfiles/Dockerfile.<centos,ubuntu> .
-# start container
-sudo docker run -itd --name core -e DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw --privileged --entrypoint core-daemon core
-# enable xhost access to the root user
-xhost +local:root
-# launch core-gui
-sudo docker exec -it core core-gui
-```
-
-When done see [Post Install](#post-install).
 
 ## Installing EMANE
 

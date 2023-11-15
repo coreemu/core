@@ -3,9 +3,6 @@ FROM ubuntu:22.04
 LABEL Description="CORE Docker Ubuntu Image"
 
 ENV DEBIAN_FRONTEND=noninteractive
-ARG PROTOC_VERSION=3.19.6
-ARG VENV_PATH=/opt/core/venv
-WORKDIR /opt
 
 # install basic dependencies
 RUN apt-get update -y && \
@@ -36,8 +33,10 @@ RUN apt-get update -y && \
     apt-get autoremove -y
 
 # install core
-COPY core_*.deb .
-RUN apt-get install -y ./core_*.deb && \
+WORKDIR /opt
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/core_9.0.3_amd64.deb
+RUN wget ${PACKAGE_URL} && \
+    apt-get install -y ./core_*.deb && \
     rm -f core_*.deb
 
 # install ospf mdr
@@ -53,6 +52,8 @@ RUN git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
     rm -rf ospf-mdr
 
 # install emane
+ARG VENV_PATH=/opt/core/venv
+ARG PROTOC_VERSION=3.19.6
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
     mkdir protoc && \
     unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \

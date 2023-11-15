@@ -2,12 +2,7 @@
 FROM ubuntu:22.04
 LABEL Description="CORE Docker Ubuntu Image"
 
-ARG PREFIX=/usr/local
-ARG BRANCH=master
-ARG PROTOC_VERSION=3.19.6
-ARG VENV_PATH=/opt/core/venv
 ENV DEBIAN_FRONTEND=noninteractive
-WORKDIR /opt
 
 # install system dependencies
 RUN apt-get update -y && \
@@ -30,6 +25,9 @@ RUN apt-get update -y && \
     apt-get autoremove -y
 
 # install core
+WORKDIR /opt
+ARG PREFIX=/usr/local
+ARG BRANCH=master
 RUN git clone https://github.com/coreemu/core && \
     cd core && \
     git checkout ${BRANCH} && \
@@ -39,6 +37,8 @@ RUN git clone https://github.com/coreemu/core && \
     rm -rf ospf-mdr
 
 # install emane
+ARG VENV_PATH=/opt/core/venv
+ARG PROTOC_VERSION=3.19.6
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
     mkdir protoc && \
     unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \

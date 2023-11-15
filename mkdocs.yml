@@ -41,6 +41,7 @@ nav:
       - Overview: install.md
       - Ubuntu: install_ubuntu.md
       - CentOS: install_centos.md
+      - Docker: install_docker.md
   - Tutorials:
       - Overview: tutorials/overview.md
       - Setup: tutorials/setup.md
