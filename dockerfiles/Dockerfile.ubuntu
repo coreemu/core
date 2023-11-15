@@ -37,19 +37,28 @@ RUN git clone https://github.com/coreemu/core && \
     rm -rf ospf-mdr
 
 # install emane
+ARG EMANE_RELEASE=emane-1.5.1-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-22_04.amd64.tar.gz
+RUN wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
+    tar xf ${EMANE_PACKAGE} && \
+    cd ${EMANE_RELEASE}/debs/ubuntu-22_04/amd64 && \
+    apt-get install -y ./openstatistic*.deb ./emane*.deb ./python3-emane_*.deb && \
+    cd ../../../.. && \
+    rm ${EMANE_PACKAGE} && \
+    rm -rf ${EMANE_RELEASE}
+
+# install emane python bindings
 ARG VENV_PATH=/opt/core/venv
 ARG PROTOC_VERSION=3.19.6
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
+RUN wget -q https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
     mkdir protoc && \
     unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d protoc && \
     git clone https://github.com/adjacentlink/emane.git && \
     cd emane && \
+    git checkout v1.5.1 && \
     ./autogen.sh && \
-    ./configure --prefix=/usr && \
-    make -j$(nproc)  && \
-    make install && \
+    PYTHON=${VENV_PATH}/bin/python ./configure --prefix=/usr && \
     cd src/python && \
-    make clean && \
     PATH=/opt/protoc/bin:$PATH make && \
     ${VENV_PATH}/bin/python -m pip install . && \
     cd /opt && \

@@ -29,17 +29,22 @@ inv install
 
 # install emane
 cd ~/Documents
+wget https://adjacentlink.com/downloads/emane/emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+tar xf emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+cd emane-1.5.1-release-1/debs/ubuntu-22_04/amd64
+apt-get install -y ./openstatistic*.deb ./emane*.deb ./python3-emane_*.deb
+
+# install emane python bindings
+cd ~/Documents
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
 mkdir protoc
 unzip protoc-3.19.6-linux-x86_64.zip -d protoc
 git clone https://github.com/adjacentlink/emane.git
 cd emane
+git checkout v1.5.1
 ./autogen.sh
 ./configure --prefix=/usr
-make -j$(nproc)
-sudo make install
 cd src/python
-make clean
 PATH=~/Documents/protoc/bin:$PATH make
 sudo /opt/core/venv/bin/python -m pip install .
 ```
@@ -60,6 +65,7 @@ sudo apt-get install -y ca-certificates python3 python3-tk python3-pip python3-v
 
 # install core
 cd ~/Documents
+wget https://github.com/coreemu/core/releases/latest/download/core_<version>_amd64.deb
 sudo apt-get install -y ./core_*.deb
 
 # install ospf mdr
@@ -75,17 +81,22 @@ sudo make install
 
 # install emane
 cd ~/Documents
+wget https://adjacentlink.com/downloads/emane/emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+tar xf emane-1.5.1-release-1.ubuntu-22_04.amd64.tar.gz
+cd emane-1.5.1-release-1/debs/ubuntu-22_04/amd64
+apt-get install -y ./openstatistic*.deb ./emane*.deb ./python3-emane_*.deb
+
+# install emane python bindings
+cd ~/Documents
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
 mkdir protoc
 unzip protoc-3.19.6-linux-x86_64.zip -d protoc
 git clone https://github.com/adjacentlink/emane.git
 cd emane
+git checkout v1.5.1
 ./autogen.sh
 ./configure --prefix=/usr
-make -j$(nproc)
-sudo make install
 cd src/python
-make clean
 PATH=~/Documents/protoc/bin:$PATH make
 sudo /opt/core/venv/bin/python -m pip install .
 ```

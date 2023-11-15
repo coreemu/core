@@ -83,6 +83,7 @@ python3.9 -m pip install --upgrade pip
 
 # install core
 cd ~/Documents
+wget https://github.com/coreemu/core/releases/latest/download/core_<version>_x86_64.rpm
 sudo PYTHON=python3.9 yum install -y ./core_*.rpm
 
 # install ospf mdr
