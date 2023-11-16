@@ -31,13 +31,15 @@ RUN apt-get update -y && \
     apt-get autoremove -y
 
 # install core
-RUN git clone https://github.com/coreemu/core && \
+RUN apt-get update && \
+    git clone https://github.com/coreemu/core && \
     cd core && \
     git checkout ${BRANCH} && \
     ./setup.sh && \
     PATH=/root/.local/bin:$PATH inv install -v -p ${PREFIX} && \
     cd /opt && \
-    rm -rf ospf-mdr
+    rm -rf ospf-mdr && \
+    rm -rf /var/lib/apt/lists/*
 
 # install emane
 RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && \
