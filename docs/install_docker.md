@@ -12,22 +12,18 @@ The example Dockerfiles are not meant to be an end all solution, but a solid sta
 
 Provided Dockerfiles:
 
-* Dockerfile.centos - CentOS 7, CORE from source, OSPF MDR, and EMANE
-* Dockerfile.centos-package - CentOS 7, CORE from local package, OSPF MDR, and EMANE
-* Dockerfile.ubuntu - Ubuntu 22.04, CORE from source, OSPF MDR, and EMANE
-* Dockerfile.ubuntu-package - Ubuntu 22.04, CORE from local package, OSPF MDR, and EMANE
+* Dockerfile.emane-python - Build EMANE python bindings for use in files below
+* Dockerfile.rocky - Rocky Linux 8, CORE from latest package, OSPF MDR, and EMANE
+* Dockerfile.ubuntu - Ubuntu 22.04, CORE from latest package, OSPF MDR, and EMANE
 
 ```shell
 # clone core
 git clone https://github.com/coreemu/core.git
-# build image
+# first you must build EMANE python bindings
+docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
+# build desired CORE image
 cd core
 sudo docker build -t core -f dockerfiles/<Dockerfile> .
-```
-
-For the example files that build from source, you can have it build from develop or another branch.
-```shell
-sudo docker build -t core --build-arg BRANCH=develop -f dockerfiles/<Dockerfile> .
 ```
 
 ## Run Container

@@ -1,0 +1,80 @@
+# syntax=docker/dockerfile:1
+FROM rockylinux:8
+ENV LANG en_US.UTF-8
+
+# install system dependencies
+RUN yum update -y && \
+    yum install -y \
+    xterm \
+    wget \
+    tcpdump \
+    python39 \
+    python39-tkinter \
+    iproute-tc && \
+    yum autoremove -y && \
+    yum clean all
+
+# install ospf mdr
+RUN yum update -y && \
+    yum install -y \
+    automake \
+    gcc-c++ \
+    libtool \
+    make \
+    pkg-config \
+    readline-devel \
+    git && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    cd ospf-mdr && \
+    ./bootstrap.sh && \
+    ./configure --disable-doc --enable-user=root --enable-group=root \
+        --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+        --localstatedir=/var/run/quagga && \
+    make -j$(nproc) && \
+    make install && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
+    yum remove -y \
+    automake \
+    gcc-c++ \
+    libtool \
+    make \
+    pkg-config \
+    readline-devel \
+    git && \
+    yum autoremove -y --skip-broken && \
+    yum clean all
+
+# install emane
+ARG EMANE_VERSION=1.5.1
+ARG EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+ARG EMANE_PACKAGE=${EMANE_RELEASE}.el8.x86_64.tar.gz
+RUN yum update -y && \
+    wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE} && \
+    tar xf ${EMANE_PACKAGE} && \
+    cd ${EMANE_RELEASE}/rpms/el8/x86_64 && \
+    rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm && \
+    rm *devel*.rpm && \
+    yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm && \
+    cd ../../../.. && \
+    rm ${EMANE_PACKAGE} && \
+    rm -rf ${EMANE_RELEASE} && \
+    yum autoremove -y && \
+    yum clean all
+
+# install core
+WORKDIR /opt
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/core_9.0.3_x86_64.rpm
+RUN yum update -y && \
+    wget -q ${PACKAGE_URL} && \
+    PYTHON=python3.9 yum install -y ./core_*.rpm && \
+    rm -f core_*.rpm && \
+    yum autoremove -y && \
+    yum clean all
+
+# install emane python bindings
+ARG VENV_PATH=/opt/core/venv
+COPY --from=emane-python /opt/emane-*.whl .
+RUN ${VENV_PATH}/bin/python -m pip install ./emane-*.whl
+
+WORKDIR /root
