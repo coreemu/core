@@ -1,14 +1,13 @@
 import abc
 from typing import Any
 
-from core.config import Configuration
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
-from core.services.base import CoreService, ServiceMode
+from core.services.base import CoreService
 
 GROUP: str = "FRR"
 FRR_STATE_DIR: str = "/var/run/frr"
@@ -90,13 +89,9 @@ class FRRZebra(CoreService):
         "/usr/local/etc/frr/daemons",
     ]
     executables: list[str] = ["zebra"]
-    dependencies: list[str] = []
     startup: list[str] = ["bash frrboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
     shutdown: list[str] = ["killall zebra"]
-    validation_mode: ServiceMode = ServiceMode.BLOCKING
-    default_configs: list[Configuration] = []
-    modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
         frr_conf = self.files[0]
@@ -146,16 +141,7 @@ class FRRZebra(CoreService):
 
 class FrrService(abc.ABC):
     group: str = GROUP
-    directories: list[str] = []
-    files: list[str] = []
-    executables: list[str] = []
     dependencies: list[str] = ["FRRzebra"]
-    startup: list[str] = []
-    validate: list[str] = []
-    shutdown: list[str] = []
-    validation_mode: ServiceMode = ServiceMode.BLOCKING
-    default_configs: list[Configuration] = []
-    modes: dict[str, dict[str, str]] = {}
     ipv4_routing: bool = False
     ipv6_routing: bool = False
 

@@ -2,14 +2,13 @@ import abc
 import logging
 from typing import Any
 
-from core.config import Configuration
 from core.emane.nodes import EmaneNet
 from core.nodes.base import CoreNodeBase, NodeBase
 from core.nodes.interface import DEFAULT_MTU, CoreInterface
 from core.nodes.network import PtpNet, WlanNode
 from core.nodes.physical import Rj45Node
 from core.nodes.wireless import WirelessNode
-from core.services.base import CoreService, ServiceMode
+from core.services.base import CoreService
 
 logger = logging.getLogger(__name__)
 GROUP: str = "Quagga"
@@ -91,13 +90,9 @@ class Zebra(CoreService):
         "/usr/local/etc/quagga/vtysh.conf",
     ]
     executables: list[str] = ["zebra"]
-    dependencies: list[str] = []
     startup: list[str] = ["bash quaggaboot.sh zebra"]
     validate: list[str] = ["pidof zebra"]
     shutdown: list[str] = ["killall zebra"]
-    validation_mode: ServiceMode = ServiceMode.BLOCKING
-    default_configs: list[Configuration] = []
-    modes: dict[str, dict[str, str]] = {}
 
     def data(self) -> dict[str, Any]:
         quagga_bin_search = self.node.session.options.get(
@@ -153,16 +148,7 @@ class Zebra(CoreService):
 
 class QuaggaService(abc.ABC):
     group: str = GROUP
-    directories: list[str] = []
-    files: list[str] = []
-    executables: list[str] = []
     dependencies: list[str] = ["zebra"]
-    startup: list[str] = []
-    validate: list[str] = []
-    shutdown: list[str] = []
-    validation_mode: ServiceMode = ServiceMode.BLOCKING
-    default_configs: list[Configuration] = []
-    modes: dict[str, dict[str, str]] = {}
     ipv4_routing: bool = False
     ipv6_routing: bool = False
 

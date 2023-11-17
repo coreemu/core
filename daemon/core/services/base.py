@@ -60,12 +60,34 @@ class CoreService(abc.ABC):
     Base class for creating services.
     """
 
+    # globally unique name for service
+    name: Optional[str] = None
+    # group to categorize service within
+    group: Optional[str] = None
+    # directories to create unique mount points for
+    directories: list[str] = []
+    # files to create for service
+    files: list[str] = []
+    # configurable values that this service can use, for file generation
+    default_configs: list[Configuration] = []
+    # executables that should exist on path, that this service depends on
+    executables: list[str] = []
+    # other services that this service depends on, defines service start order
+    dependencies: list[str] = []
+    # commands to run to start this service
+    startup: list[str] = []
+    # commands to run to validate this service
+    validate: list[str] = []
+    # commands to run to stop this service
+    shutdown: list[str] = []
+    # validation mode, blocking, non-blocking, and timer
+    validation_mode: ServiceMode = ServiceMode.BLOCKING
+    # predefined configuration value groupings
+    modes: dict[str, dict[str, str]] = {}
     # validation period in seconds, how frequent validation is attempted
     validation_period: float = 0.5
-
     # time to wait in seconds for determining if service started successfully
     validation_timer: int = 5
-
     # directories to shadow and copy files from
     shadow_directories: list[ShadowDir] = []
 
@@ -95,66 +117,6 @@ class CoreService(abc.ABC):
         :return: cleaned text
         """
         return inspect.cleandoc(text)
-
-    @property
-    @abc.abstractmethod
-    def name(self) -> str:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def group(self) -> str:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def directories(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def files(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def default_configs(self) -> list[Configuration]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def modes(self) -> dict[str, dict[str, str]]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def executables(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def dependencies(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def startup(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def validate(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def shutdown(self) -> list[str]:
-        raise NotImplementedError
-
-    @property
-    @abc.abstractmethod
-    def validation_mode(self) -> ServiceMode:
-        raise NotImplementedError
 
     def start(self) -> None:
         """
@@ -511,18 +473,6 @@ class CoreService(abc.ABC):
 
 
 class CustomCoreService(CoreService):
-    name: str = ""
-    group: str = ""
-    directories: list[str] = []
-    files: list[str] = []
-    executables: list[str] = []
-    dependencies: list[str] = []
-    startup: list[str] = []
-    validate: list[str] = []
-    shutdown: list[str] = []
-    validation_mode: ServiceMode = ServiceMode.NON_BLOCKING
-    default_configs: list[Configuration] = []
-    modes: dict[str, dict[str, str]] = {}
     defined_templates: dict[str, str] = {}
 
     def get_templates(self) -> dict[str, str]:

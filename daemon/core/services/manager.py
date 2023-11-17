@@ -50,14 +50,20 @@ class ServiceManager:
         :return: nothing
         :raises CoreError: when service is a duplicate or has unmet executables
         """
-        name = service.name
         logger.debug(
-            "loading service: class(%s) name(%s)", service.__class__.__name__, name
+            "loading service: class(%s) name(%s)",
+            service.__class__.__name__,
+            service.name,
         )
+        # avoid undefined services
+        if service.name is None or service.group is None:
+            raise CoreError(
+                f"service name({service.name}) and group({service.group}) must be defined"
+            )
 
         # avoid duplicate services
-        if name in self.services:
-            raise CoreError(f"duplicate service being added: {name}")
+        if service.name in self.services:
+            raise CoreError(f"duplicate service being added: {service.name}")
 
         # validate dependent executables are present
         for executable in service.executables:
@@ -67,7 +73,7 @@ class ServiceManager:
                 raise CoreError(f"service({service.name}): {e}")
 
         # make service available
-        self.services[name] = service
+        self.services[service.name] = service
 
     def load_locals(self) -> list[str]:
         """

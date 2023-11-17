@@ -107,15 +107,29 @@ Then define the **files** to generate and implement the
 the **startup** commands would be supplied, which typically tend to be
 running the shell files generated.
 
+This is a very simple service using the bare minimum needed.
 ```python
-"""
-Describes what an example service could be
-"""
+from core.services.base import CoreService
+
+class ExampleService(CoreService):
+    name: str = "Node Name"
+    group: str = "ExampleGroup"
+    files: list[str] = ["node_name.sh"]
+    startup: list[str] = [f"bash {files[0]}"]
+
+    def get_text_template(self, name: str) -> str:
+        return """
+        echo '${node.name}' > node_name.log
+        """
+```
+
+This fleshes out all the fields and helps document their purpose.
+```python
 from core.config import ConfigString, ConfigBool, Configuration
 from core.services.base import CoreService, ShadowDir, ServiceMode
 
 
-# class that subclasses ConfigService
+# class that subclasses CoreService
 class ExampleService(CoreService):
     # unique name for your service within CORE
     name: str = "Example"
