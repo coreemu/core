@@ -104,7 +104,7 @@ CORE and related utilities on fresh installations. Otherwise, a breakdown for in
 different components and the options available are detailed below.
 
 * [Ubuntu 22.04](install_ubuntu.md)
-* [CentOS 7](install_centos.md)
+* [Rocky Linux 8](install_rocky.md)
 
 ## Package Based Install
 

@@ -1,4 +1,6 @@
-# Overview
+# Install Docker
+
+## Overview
 
 CORE can be installed into and ran from a Docker container. This section will cover how you can build and run
 CORE from a Docker based image.

@@ -40,7 +40,7 @@ nav:
   - Installation:
       - Overview: install.md
       - Ubuntu: install_ubuntu.md
-      - CentOS: install_centos.md
+      - Rocky: install_rocky.md
       - Docker: install_docker.md
   - Tutorials:
       - Overview: tutorials/overview.md

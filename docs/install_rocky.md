@@ -1,9 +1,10 @@
-# Install Ubuntu
+# Install Rocky
 
 ## Overview
 
-Below is a detailed path for installing CORE and related tooling on a fresh
-Ubuntu 22.04 installation. Both of the examples below will install CORE into its
+This helps provide an example for installation into a RHEL 8 like
+environment. Below is a detailed example for installing CORE and related tooling on a fresh
+Rocky Linux 8 install. Both of the examples below will install CORE into its
 own virtual environment located at **/opt/core/venv**. Both examples below
 also assume using **~/Documents** as the working directory.
 
@@ -15,29 +16,24 @@ the package based installation path. This will require downloading a package fro
 
 ``` shell
 # install system packages
-sudo apt-get update -y
-sudo apt-get install -y \
-    ca-certificates \
+sudo yum -y update
+sudo yum install -y \
     xterm \
-    psmisc \
-    python3 \
-    python3-tk \
-    python3-pip \
-    python3-venv \
     wget \
-    iproute2 \
-    iputils-ping \
-    tcpdump
+    tcpdump \
+    python39 \
+    python39-tkinter \
+    iproute-tc
 
 # install ospf mdr
-apt-get install -y \
+cd ~/Documents
+sudo yum install -y \
     automake \
-    gawk \
-    g++ \
-    libreadline-dev \
+    gcc-c++ \
     libtool \
     make \
     pkg-config \
+    readline-devel \
     git
 git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git
 cd ospf-mdr
@@ -50,40 +46,36 @@ sudo make install
 
 # install emane
 cd ~/Documents
-EMANE_RELEASE=emane-1.5.1-release-1
-EMANE_PACKAGE=${EMANE_RELEASE}.ubuntu-22_04.amd64.tar.gz
+EMANE_VERSION=1.5.1
+EMANE_RELEASE=emane-${EMANE_VERSION}-release-1
+EMANE_PACKAGE=${EMANE_RELEASE}.el8.x86_64.tar.gz
 wget -q https://adjacentlink.com/downloads/emane/${EMANE_PACKAGE}
 tar xf ${EMANE_PACKAGE}
-cd ${EMANE_RELEASE}/debs/ubuntu-22_04/amd64
-rm emane-spectrum-tools*.deb emane-model-lte*.deb
-rm *dev*.deb
-sudo apt-get install -y ./emane*.deb ./python3-emane_*.deb
+cd ${EMANE_RELEASE}/rpms/el8/x86_64
+rm emane-spectrum-tools-*.rpm emane-model-lte*.rpm
+rm *devel*.rpm
+sudo yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm
 
 # install core
-cd ~/Documents
-CORE_PACKAGE=core_9.0.3_amd64.deb
-PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
-wget -q ${PACKAGE_URL}
-sudo apt-get install -y ./${CORE_PACKAGE}
+WORKDIR /opt
+PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/core_9.0.3_x86_64.rpm
+RUN yum update -y && \
+    wget -q ${PACKAGE_URL} && \
+    PYTHON=python3.9 yum install -y ./core_*.rpm && \
+    rm -f core_*.rpm && \
+    yum autoremove -y && \
+    yum clean all
 
-# install emane python bindings
+# install emane python bindings into CORE virtual environment
 cd ~/Documents
-sudo apt-get install -y \
-    unzip \
-    libpcap-dev \
-    libpcre3-dev \
-    libprotobuf-dev \
-    libxml2-dev \
-    protobuf-compiler \
-    uuid-dev
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
 mkdir protoc
 unzip protoc-3.19.6-linux-x86_64.zip -d protoc
 git clone https://github.com/adjacentlink/emane.git
 cd emane
-git checkout v1.5.1
+git checkout v${EMANE_VERSION}
 ./autogen.sh
-./configure --prefix=/usr
+PYTHON=/opt/core/venv/bin/python ./configure --prefix=/usr
 cd src/python
 PATH=~/Documents/protoc/bin:$PATH make
 sudo /opt/core/venv/bin/python -m pip install .

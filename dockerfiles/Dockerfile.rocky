@@ -64,11 +64,12 @@ RUN yum update -y && \
 
 # install core
 WORKDIR /opt
-ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/core_9.0.3_x86_64.rpm
+CORE_PACKAGE=core_9.0.3_x86_64.rpm
+ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN yum update -y && \
     wget -q ${PACKAGE_URL} && \
-    PYTHON=python3.9 yum install -y ./core_*.rpm && \
-    rm -f core_*.rpm && \
+    PYTHON=python3.9 yum install -y ./${CORE_PACKAGE} && \
+    rm -f ${CORE_PACKAGE} && \
     yum autoremove -y && \
     yum clean all
 
