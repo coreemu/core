@@ -64,7 +64,7 @@ RUN yum update -y && \
 
 # install core
 WORKDIR /opt
-CORE_PACKAGE=core_9.0.3_x86_64.rpm
+ARG CORE_PACKAGE=core_9.0.3_x86_64.rpm
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN yum update -y && \
     wget -q ${PACKAGE_URL} && \

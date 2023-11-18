@@ -57,17 +57,23 @@ rm *devel*.rpm
 sudo yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.rpm
 
 # install core
-WORKDIR /opt
-PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/core_9.0.3_x86_64.rpm
-RUN yum update -y && \
-    wget -q ${PACKAGE_URL} && \
-    PYTHON=python3.9 yum install -y ./core_*.rpm && \
-    rm -f core_*.rpm && \
-    yum autoremove -y && \
-    yum clean all
+cd ~/Documents
+CORE_PACKAGE=core_9.0.3_x86_64.rpm
+PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
+wget -q ${PACKAGE_URL}
+PYTHON=python3.9 yum install -y ./${CORE_PACKAGE}
 
 # install emane python bindings into CORE virtual environment
 cd ~/Documents
+sudo yum install -y dnf-plugins-core
+sudo yum config-manager --set-enabled devel
+sudo yum update -y
+sudo yum install -y \
+    protobuf-devel \
+    libxml2-devel \
+    pcre-devel \
+    libuuid-devel \
+    libpcap-devel
 wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.6/protoc-3.19.6-linux-x86_64.zip
 mkdir protoc
 unzip protoc-3.19.6-linux-x86_64.zip -d protoc

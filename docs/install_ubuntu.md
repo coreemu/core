@@ -30,6 +30,7 @@ sudo apt-get install -y \
     tcpdump
 
 # install ospf mdr
+cd ~/Documents
 apt-get install -y \
     automake \
     gawk \
