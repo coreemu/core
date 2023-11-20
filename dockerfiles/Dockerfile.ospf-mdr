@@ -27,38 +27,42 @@ RUN yum update -y && \
     ./configure && \
     (make -f quagga.rpm.mk build || make -f quagga.rpm.mk build) && \
     mv .rpmbuild/RPMS/x86_64/quagga-mr-0.99*.rpm /opt/ && \
+    cd /opt && \
+    rm -rf ospf-mdr && \
     yum autoremove -y && \
     yum clean all
 
-FROM ubuntu:18.04 as ospf-deb
+FROM ubuntu:22.04 as ospf-deb
+#    fakeroot && \
+WORKDIR /opt
+COPY dockerfiles/ospf-deb.patch .
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    automake \
-    build-essential:native \
-    ca-certificates \
-    debhelper \
-    dpkg-dev \
-    fakeroot \
-    g++ \
-    gawk \
     git \
-    groff \
-    imagemagick \
-    libreadline-dev \
-    libtool \
+    ca-certificates \
+    automake \
     make \
+    libtool \
+    pkg-config \
+    gawk \
+    g++ \
+    dpkg-dev \
+    debhelper \
+    libreadline-dev \
     texinfo \
-    texlive-generic-recommended \
+    imagemagick \
+    groff \
+    build-essential:native \
     texlive-latex-base \
-    pkg-config && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/*
-WORKDIR /opt
-RUN git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+    texlive-plain-generic && \
+    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
     cd ospf-mdr && \
+    git apply /opt/ospf-deb.patch && \
     ./bootstrap.sh && \
     ./configure && \
-    make -j$(nproc) && \
-    make -f qua.deb.mk build || true && \
+    (make -f quagga.deb.mk build || make -f quagga.deb.mk build) && \
+    mv quagga-mr_0.99*.deb /opt/ && \
     cd /opt && \
-    rm -rf ospf-mdr
+    rm -rf ospf-mdr && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*

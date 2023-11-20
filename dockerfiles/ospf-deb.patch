@@ -1,0 +1,20 @@
+diff --git a/debian/compat b/debian/compat
+index 7ed6ff8..f599e28 100644
+--- a/debian/compat
++++ b/debian/compat
+@@ -1 +1 @@
+-5
++10
+diff --git a/debian/control.in b/debian/control.in
+index f722ada..c427137 100644
+--- a/debian/control.in
++++ b/debian/control.in
+@@ -3,7 +3,7 @@ Section: net
+ Priority: optional
+ Maintainer: @MAINTAINER@ <@MAINTAINER_EMAIL@>
+ Build-Depends: debhelper (>= 5), autotools-dev, gawk, libreadline-dev, pkg-config
+-Build-Depends-Indep: texinfo (>= 4.7), imagemagick, texlive-latex-base, texlive-generic-recommended, groff
++Build-Depends-Indep: texinfo (>= 4.7), imagemagick, texlive-latex-base, texlive-plain-generic, groff
+ Standards-Version: 3.8.4
+ Homepage: http://www.nrl.navy.mil/itd/ncs/products/ospf-manet
+ 
