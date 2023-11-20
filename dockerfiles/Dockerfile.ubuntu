@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
+WORKDIR /opt
 
 # install system dependencies
 RUN apt-get update -y && \
@@ -69,7 +70,6 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 
 # install core
-WORKDIR /opt
 ARG CORE_PACKAGE=core_9.0.3_amd64.deb
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN apt-get update -y && \

@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM rockylinux:8
 ENV LANG en_US.UTF-8
+WORKDIR /opt
 
 # install system dependencies
 RUN yum update -y && \
@@ -63,7 +64,6 @@ RUN yum update -y && \
     yum clean all
 
 # install core
-WORKDIR /opt
 ARG CORE_PACKAGE=core_9.0.3_x86_64.rpm
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN yum update -y && \
