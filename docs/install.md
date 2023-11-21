@@ -6,11 +6,16 @@
 
 ## Overview
 
-CORE currently supports and provides the following installation options, with the package
-option being preferred.
+This page will provide details on various options that can be used
+when installing CORE.
 
-* [Package based install (rpm/deb)](#package-based-install)
-* [Script based install](#script-based-install)
+### Complete Examples
+
+For complete examples installing CORE, OSPF MDR, EMANE, and the EMANE python
+bindings, see the pages below.
+
+* [Installing on Ubuntu 22.04](install_ubuntu.md)
+* [Installing on Rocky Linux 8](install_rocky.md)
 
 ### Requirements
 
@@ -96,15 +101,6 @@ sudo yum remove core
 # ubuntu
 sudo apt remove core
 ```
-
-## Installation Examples
-
-The below links will take you to sections providing complete examples for installing
-CORE and related utilities on fresh installations. Otherwise, a breakdown for installing
-different components and the options available are detailed below.
-
-* [Ubuntu 22.04](install_ubuntu.md)
-* [Rocky Linux 8](install_rocky.md)
 
 ## Package Based Install
 
