@@ -33,7 +33,6 @@ RUN yum update -y && \
     yum clean all
 
 FROM ubuntu:22.04 as ospf-deb
-#    fakeroot && \
 WORKDIR /opt
 COPY dockerfiles/ospf-deb.patch .
 RUN apt-get update -y && \

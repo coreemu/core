@@ -21,37 +21,43 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 
 # install ospf mdr
+COPY --from=ospf-deb /opt/quagga-mr_0.99*.deb .
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends \
-    automake \
-    gawk \
-    g++ \
-    libreadline-dev \
-    libtool \
-    make \
-    pkg-config \
-    git && \
-    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
-    cd ospf-mdr && \
-    ./bootstrap.sh && \
-    ./configure --disable-doc --enable-user=root --enable-group=root \
-        --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
-        --localstatedir=/var/run/quagga && \
-    make -j$(nproc) && \
-    make install && \
-    cd /opt && \
-    rm -rf ospf-mdr && \
-    apt-get remove -y \
-    automake \
-    gawk \
-    g++ \
-    libreadline-dev \
-    libtool \
-    make \
-    pkg-config \
-    git && \
+    ./quagga-mr_0.99*.deb && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
+#RUN apt-get update -y && \
+#    apt-get install -y --no-install-recommends \
+#    automake \
+#    gawk \
+#    g++ \
+#    libreadline-dev \
+#    libtool \
+#    make \
+#    pkg-config \
+#    git && \
+#    git clone https://github.com/USNavalResearchLaboratory/ospf-mdr.git && \
+#    cd ospf-mdr && \
+#    ./bootstrap.sh && \
+#    ./configure --disable-doc --enable-user=root --enable-group=root \
+#        --with-cflags=-ggdb --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+#        --localstatedir=/var/run/quagga && \
+#    make -j$(nproc) && \
+#    make install && \
+#    cd /opt && \
+#    rm -rf ospf-mdr && \
+#    apt-get remove -y \
+#    automake \
+#    gawk \
+#    g++ \
+#    libreadline-dev \
+#    libtool \
+#    make \
+#    pkg-config \
+#    git && \
+#    apt-get autoremove -y && \
+#    rm -rf /var/lib/apt/lists/*
 
 # install emane
 ARG EMANE_RELEASE=emane-1.5.1-release-1
