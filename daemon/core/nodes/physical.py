@@ -263,7 +263,8 @@ class PhysicalNode(CoreNode):
         if iface_id == -1:
             raise CoreError(f"adopting unknown iface({iface.name})")
         # turn checksums off
-        self.node_net_client.checksums_off(iface.name)
+        if self.session.options.get_int("checksums", 0) == 0:
+            self.node_net_client.checksums_off(iface.name)
         # retrieve flow id for container
         iface.flow_id = self.node_net_client.get_ifindex(iface.name)
         logger.debug("interface flow index: %s - %s", iface.name, iface.flow_id)
