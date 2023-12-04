@@ -21,10 +21,13 @@ Provided Dockerfiles:
 ```shell
 # clone core
 git clone https://github.com/coreemu/core.git
-# first you must build EMANE python bindings
-docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
-# build desired CORE image
 cd core
+# first you must build EMANE python bindings
+sudo docker build -t emane-python -f dockerfiles/Dockerfile.emane-python .
+# build ospf packages
+sudo docker build -t ospf-rpm -f dockerfiles/Dockerfile.ospf-mdr-rpm .
+sudo docker build -t ospf-deb -f dockerfiles/Dockerfile.ospf-mdr-deb .
+# build desired CORE image
 sudo docker build -t core -f dockerfiles/<Dockerfile> .
 ```
 
