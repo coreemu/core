@@ -90,15 +90,6 @@ class LinuxNetClient:
         """
         return self.run_net(f"{IP} address show {device}")
 
-    def get_mac(self, device: str) -> str:
-        """
-        Retrieve MAC address for a given device.
-
-        :param device: device to get mac for
-        :return: MAC address
-        """
-        return self.run(f"cat /sys/class/net/{device}/address")
-
     def get_ifindex(self, device: str) -> int:
         """
         Retrieve ifindex for a given device.
@@ -183,7 +174,7 @@ class LinuxNetClient:
             # IPv6 addresses are removed by default on interface down.
             # Make sure that the IPv6 address we add is not removed
             device = utils.sysctl_devname(device)
-            self.run(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
+            self.run_net(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
 
     def delete_address(self, device: str, address: str) -> None:
         """
