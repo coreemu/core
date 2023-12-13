@@ -317,7 +317,7 @@ class CoreInterface:
             if self.has_netem:
                 cmd = tc_clear_cmd(self.name)
                 if self.node:
-                    self.node.net_cmd(cmd)
+                    self.node.node_net_client.run(cmd)
                 else:
                     self.host_cmd(cmd)
                 self.has_netem = False
@@ -325,7 +325,7 @@ class CoreInterface:
         else:
             cmd = tc_cmd(self.name, self.options, self.mtu)
             if self.node:
-                self.node.net_cmd(cmd)
+                self.node.node_net_client.run(cmd)
             else:
                 self.host_cmd(cmd)
             self.has_netem = True

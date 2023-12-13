@@ -153,9 +153,18 @@ class NodeBase(abc.ABC):
         self.net_client: LinuxNetClient = get_net_client(
             self.session.use_ovs(), self.host_cmd
         )
+        self.node_net_client: LinuxNetClient = self._get_node_net_client()
         options = options if options else NodeOptions()
         self.canvas: Optional[int] = options.canvas
         self.icon: Optional[str] = options.icon
+
+    def _get_node_net_client(self) -> LinuxNetClient:
+        """
+        Create and return network command client to run within context of the node.
+
+        :return: network command client
+        """
+        return get_net_client(self.session.use_ovs(), self.cmd)
 
     @classmethod
     def create_options(cls) -> NodeOptions:
@@ -227,19 +236,6 @@ class NodeBase(abc.ABC):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         return self.host_cmd(args, wait=wait, shell=shell)
-
-    def net_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        """
-        Runs a network command that is in the context of a node, default is to run a
-        standard host command.
-
-        :param args: command to run
-        :param wait: True to wait for status, False otherwise
-        :param shell: True to use shell, False otherwise
-        :return: combined stdout and stderr
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        return self.cmd(args, wait, shell)
 
     def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
@@ -590,9 +586,6 @@ class CoreNode(CoreNodeBase):
         self.ctrlchnlname: Path = self.session.directory / self.name
         self.pid: Optional[int] = None
         self._mounts: list[tuple[Path, Path]] = []
-        self.node_net_client: LinuxNetClient = self.create_node_net_client(
-            self.session.use_ovs()
-        )
         options = options or CoreNodeOptions()
         self.model: Optional[str] = options.model
         # add services
@@ -609,19 +602,17 @@ class CoreNode(CoreNodeBase):
             service_class = self.session.service_manager.get_service(name)
             self.add_service(service_class)
 
+    def _get_node_net_client(self) -> LinuxNetClient:
+        """
+        Create and return network command client to run within context of the node.
+
+        :return: network command client
+        """
+        return get_net_client(self.session.use_ovs(), self.net_cmd)
+
     @classmethod
     def create_options(cls) -> CoreNodeOptions:
         return CoreNodeOptions()
-
-    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
-        """
-        Create node network client for running network commands within the nodes
-        container.
-
-        :param use_ovs: True for OVS bridges, False for Linux bridges
-        :return: node network client
-        """
-        return get_net_client(use_ovs, self.cmd)
 
     def alive(self) -> bool:
         """
@@ -665,7 +656,8 @@ class CoreNode(CoreNodeBase):
             self.node_net_client.device_up("lo")
             # set hostname for node
             logger.debug("setting hostname: %s", self.name)
-            self.node_net_client.set_hostname(self.name)
+            hostname = self.name.replace("_", "-")
+            self.cmd(f"hostname {hostname}")
             # mark node as up
             self.up = True
             # create private directories
@@ -735,6 +727,33 @@ class CoreNode(CoreNodeBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         args = self.create_cmd(args, shell)
+        if self.server is None:
+            return utils.cmd(args, wait=wait, shell=shell)
+        else:
+            return self.server.remote_cmd(args, wait=wait)
+
+    def create_net_cmd(self, args: str, shell: bool = False) -> str:
+        """
+        Create command used to run network commands within the context of a node.
+
+        :param args: command arguments
+        :param shell: True to run shell like, False otherwise
+        :return: node command
+        """
+        return self.create_cmd(args, shell)
+
+    def net_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command that is used to configure and setup the network within a
+        node.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        args = self.create_net_cmd(args, shell)
         if self.server is None:
             return utils.cmd(args, wait=wait, shell=shell)
         else:

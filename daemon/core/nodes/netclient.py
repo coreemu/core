@@ -14,25 +14,13 @@ class LinuxNetClient:
     Client for creating Linux bridges and ip interfaces for nodes.
     """
 
-    def __init__(self, run: Callable[..., str], run_net: Callable[..., str]) -> None:
+    def __init__(self, run: Callable[..., str]) -> None:
         """
         Create LinuxNetClient instance.
 
         :param run: function to run commands within node context
-        :param run_net: function to run commands within network context only
         """
         self.run: Callable[..., str] = run
-        self.run_net: Callable[..., str] = run_net
-
-    def set_hostname(self, name: str) -> None:
-        """
-        Set network hostname.
-
-        :param name: name for hostname
-        :return: nothing
-        """
-        name = name.replace("_", "-")
-        self.run(f"hostname {name}")
 
     def create_route(self, route: str, device: str) -> None:
         """
@@ -42,7 +30,7 @@ class LinuxNetClient:
         :param device: device to add route to
         :return: nothing
         """
-        self.run_net(f"{IP} route replace {route} dev {device}")
+        self.run(f"{IP} route replace {route} dev {device}")
 
     def device_up(self, device: str) -> None:
         """
@@ -51,7 +39,7 @@ class LinuxNetClient:
         :param device: device to bring up
         :return: nothing
         """
-        self.run_net(f"{IP} link set {device} up")
+        self.run(f"{IP} link set {device} up")
 
     def device_down(self, device: str) -> None:
         """
@@ -60,7 +48,7 @@ class LinuxNetClient:
         :param device: device to bring down
         :return: nothing
         """
-        self.run_net(f"{IP} link set {device} down")
+        self.run(f"{IP} link set {device} down")
 
     def device_name(self, device: str, name: str) -> None:
         """
@@ -70,7 +58,7 @@ class LinuxNetClient:
         :param name: name to set
         :return: nothing
         """
-        self.run_net(f"{IP} link set {device} name {name}")
+        self.run(f"{IP} link set {device} name {name}")
 
     def device_show(self, device: str) -> str:
         """
@@ -79,7 +67,7 @@ class LinuxNetClient:
         :param device: device to get information for
         :return: device information
         """
-        return self.run_net(f"{IP} link show {device}")
+        return self.run(f"{IP} link show {device}")
 
     def address_show(self, device: str) -> str:
         """
@@ -88,7 +76,7 @@ class LinuxNetClient:
         :param device: device name
         :return: address information
         """
-        return self.run_net(f"{IP} address show {device}")
+        return self.run(f"{IP} address show {device}")
 
     def get_ifindex(self, device: str) -> int:
         """
@@ -97,7 +85,8 @@ class LinuxNetClient:
         :param device: device to get ifindex for
         :return: ifindex
         """
-        return int(self.run(f"cat /sys/class/net/{device}/ifindex"))
+        output = self.run(f"{IP} link show {device}")
+        return int(output.split()[0].strip(":"))
 
     def device_ns(self, device: str, namespace: str) -> None:
         """
@@ -107,7 +96,7 @@ class LinuxNetClient:
         :param namespace: namespace to set device to
         :return: nothing
         """
-        self.run_net(f"{IP} link set {device} netns {namespace}")
+        self.run(f"{IP} link set {device} netns {namespace}")
 
     def device_flush(self, device: str) -> None:
         """
@@ -116,7 +105,7 @@ class LinuxNetClient:
         :param device: device to flush
         :return: nothing
         """
-        self.run_net(f"{IP} address flush dev {device}")
+        self.run(f"{IP} address flush dev {device}")
 
     def device_mac(self, device: str, mac: str) -> None:
         """
@@ -126,7 +115,7 @@ class LinuxNetClient:
         :param mac: mac to set
         :return: nothing
         """
-        self.run_net(f"{IP} link set dev {device} address {mac}")
+        self.run(f"{IP} link set dev {device} address {mac}")
 
     def delete_device(self, device: str) -> None:
         """
@@ -135,7 +124,7 @@ class LinuxNetClient:
         :param device: device to delete
         :return: nothing
         """
-        self.run_net(f"{IP} link delete {device}")
+        self.run(f"{IP} link delete {device}")
 
     def delete_tc(self, device: str) -> None:
         """
@@ -144,7 +133,7 @@ class LinuxNetClient:
         :param device: device to remove tc
         :return: nothing
         """
-        self.run_net(f"{TC} qdisc delete dev {device} root")
+        self.run(f"{TC} qdisc delete dev {device} root")
 
     def checksums_off(self, iface_name: str) -> None:
         """
@@ -153,7 +142,7 @@ class LinuxNetClient:
         :param iface_name: interface to update
         :return: nothing
         """
-        self.run_net(f"{ETHTOOL} -K {iface_name} rx off tx off")
+        self.run(f"{ETHTOOL} -K {iface_name} rx off tx off")
 
     def create_address(self, device: str, address: str, broadcast: str = None) -> None:
         """
@@ -165,16 +154,14 @@ class LinuxNetClient:
         :return: nothing
         """
         if broadcast is not None:
-            self.run_net(
-                f"{IP} address add {address} broadcast {broadcast} dev {device}"
-            )
+            self.run(f"{IP} address add {address} broadcast {broadcast} dev {device}")
         else:
-            self.run_net(f"{IP} address add {address} dev {device}")
+            self.run(f"{IP} address add {address} dev {device}")
         if netaddr.valid_ipv6(address.split("/")[0]):
             # IPv6 addresses are removed by default on interface down.
             # Make sure that the IPv6 address we add is not removed
             device = utils.sysctl_devname(device)
-            self.run_net(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
+            self.run(f"{SYSCTL} -w net.ipv6.conf.{device}.keep_addr_on_down=1")
 
     def delete_address(self, device: str, address: str) -> None:
         """
@@ -184,7 +171,7 @@ class LinuxNetClient:
         :param address: address to remove
         :return: nothing
         """
-        self.run_net(f"{IP} address delete {address} dev {device}")
+        self.run(f"{IP} address delete {address} dev {device}")
 
     def create_veth(self, name: str, peer: str) -> None:
         """
@@ -194,7 +181,7 @@ class LinuxNetClient:
         :param peer: peer name
         :return: nothing
         """
-        self.run_net(f"{IP} link add name {name} type veth peer name {peer}")
+        self.run(f"{IP} link add name {name} type veth peer name {peer}")
 
     def create_gretap(
         self, device: str, address: str, local: str, ttl: int, key: int
@@ -216,7 +203,7 @@ class LinuxNetClient:
             cmd += f" ttl {ttl}"
         if key is not None:
             cmd += f" key {key}"
-        self.run_net(cmd)
+        self.run(cmd)
 
     def create_bridge(self, name: str) -> None:
         """
@@ -225,11 +212,11 @@ class LinuxNetClient:
         :param name: bridge name
         :return: nothing
         """
-        self.run_net(f"{IP} link add name {name} type bridge")
-        self.run_net(f"{IP} link set {name} type bridge stp_state 0")
-        self.run_net(f"{IP} link set {name} type bridge forward_delay 0")
-        self.run_net(f"{IP} link set {name} type bridge mcast_snooping 0")
-        self.run_net(f"{IP} link set {name} type bridge group_fwd_mask 65528")
+        self.run(f"{IP} link add name {name} type bridge")
+        self.run(f"{IP} link set {name} type bridge stp_state 0")
+        self.run(f"{IP} link set {name} type bridge forward_delay 0")
+        self.run(f"{IP} link set {name} type bridge mcast_snooping 0")
+        self.run(f"{IP} link set {name} type bridge group_fwd_mask 65528")
         self.device_up(name)
 
     def delete_bridge(self, name: str) -> None:
@@ -240,7 +227,7 @@ class LinuxNetClient:
         :return: nothing
         """
         self.device_down(name)
-        self.run_net(f"{IP} link delete {name} type bridge")
+        self.run(f"{IP} link delete {name} type bridge")
 
     def set_iface_master(self, bridge_name: str, iface_name: str) -> None:
         """
@@ -250,7 +237,7 @@ class LinuxNetClient:
         :param iface_name: interface name
         :return: nothing
         """
-        self.run_net(f"{IP} link set dev {iface_name} master {bridge_name}")
+        self.run(f"{IP} link set dev {iface_name} master {bridge_name}")
         self.device_up(iface_name)
 
     def delete_iface(self, bridge_name: str, iface_name: str) -> None:
@@ -261,7 +248,7 @@ class LinuxNetClient:
         :param iface_name: interface name
         :return: nothing
         """
-        self.run_net(f"{IP} link set dev {iface_name} nomaster")
+        self.run(f"{IP} link set dev {iface_name} nomaster")
 
     def existing_bridges(self, _id: int) -> bool:
         """
@@ -270,7 +257,7 @@ class LinuxNetClient:
         :param _id: node id to check bridges for
         :return: True if there are existing bridges, False otherwise
         """
-        output = self.run_net(f"{IP} -o link show type bridge")
+        output = self.run(f"{IP} -o link show type bridge")
         lines = output.split("\n")
         for line in lines:
             values = line.split(":")
@@ -292,7 +279,7 @@ class LinuxNetClient:
         :param value: ageing time value
         :return: nothing
         """
-        self.run_net(f"{IP} link set {name} type bridge ageing_time {value}")
+        self.run(f"{IP} link set {name} type bridge ageing_time {value}")
 
     def set_mtu(self, name: str, value: int) -> None:
         """
@@ -302,7 +289,7 @@ class LinuxNetClient:
         :param value: mtu value to set
         :return: nothing
         """
-        self.run_net(f"{IP} link set {name} mtu {value}")
+        self.run(f"{IP} link set {name} mtu {value}")
 
 
 class OvsNetClient(LinuxNetClient):
@@ -380,20 +367,15 @@ class OvsNetClient(LinuxNetClient):
         self.run(f"{OVS_VSCTL} set bridge {name} other_config:mac-aging-time={value}")
 
 
-def get_net_client(
-    use_ovs: bool, run: Callable[..., str], run_net: Callable[..., str] = None
-) -> LinuxNetClient:
+def get_net_client(use_ovs: bool, run: Callable[..., str]) -> LinuxNetClient:
     """
     Retrieve desired net client for running network commands.
 
     :param use_ovs: True for OVS bridges, False for Linux bridges
     :param run: function to run commands within node context
-    :param run_net: function to run commands within network context only
     :return: net client class
     """
-    if run_net is None:
-        run_net = run
     if use_ovs:
-        return OvsNetClient(run, run_net)
+        return OvsNetClient(run)
     else:
-        return LinuxNetClient(run, run_net)
+        return LinuxNetClient(run)

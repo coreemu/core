@@ -8,12 +8,10 @@ from typing import TYPE_CHECKING, Optional
 
 from mako.template import Template
 
-from core import utils
 from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH
 from core.nodes.base import CoreNode, CoreNodeOptions
-from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
 
@@ -99,16 +97,6 @@ class PodmanNode(CoreNode):
         """
         return PodmanOptions()
 
-    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
-        """
-        Create node network client for running network commands within the nodes
-        container.
-
-        :param use_ovs: True for OVS bridges, False for Linux bridges
-        :return: node network client
-        """
-        return get_net_client(use_ovs, self.cmd, self.net_cmd)
-
     def create_cmd(self, args: str, shell: bool = False) -> str:
         """
         Create command used to run commands within the context of a node.
@@ -132,23 +120,6 @@ class PodmanNode(CoreNode):
         if shell:
             args = f"{BASH} -c {shlex.quote(args)}"
         return f"nsenter -t {self.pid} -n -- {args}"
-
-    def net_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
-        """
-        Runs a command that is used to configure and setup the network within a
-        node.
-
-        :param args: command to run
-        :param wait: True to wait for status, False otherwise
-        :param shell: True to use shell, False otherwise
-        :return: combined stdout and stderr
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        args = self.create_net_cmd(args, shell)
-        if self.server is None:
-            return utils.cmd(args, wait=wait, shell=shell)
-        else:
-            return self.server.remote_cmd(args, wait=wait)
 
     def _unique_name(self, name: str) -> str:
         """

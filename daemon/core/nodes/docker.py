@@ -13,7 +13,6 @@ from core.emulator.distributed import DistributedServer
 from core.errors import CoreCommandError, CoreError
 from core.executables import BASH
 from core.nodes.base import CoreNode, CoreNodeOptions
-from core.nodes.netclient import LinuxNetClient, get_net_client
 
 logger = logging.getLogger(__name__)
 
@@ -99,16 +98,6 @@ class DockerNode(CoreNode):
         :return: docker options
         """
         return DockerOptions()
-
-    def create_node_net_client(self, use_ovs: bool) -> LinuxNetClient:
-        """
-        Create node network client for running network commands within the nodes
-        container.
-
-        :param use_ovs: True for OVS bridges, False for Linux bridges
-        :return: node network client
-        """
-        return get_net_client(use_ovs, self.cmd, self.net_cmd)
 
     def create_cmd(self, args: str, shell: bool = False) -> str:
         """
