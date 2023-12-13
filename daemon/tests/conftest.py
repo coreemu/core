@@ -16,7 +16,6 @@ from core.emulator.distributed import DistributedServer
 from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
 from core.nodes.base import CoreNode
-from core.nodes.netclient import LinuxNetClient
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -57,9 +56,6 @@ def patcher(request):
         patch_manager.patch("core.emulator.hooks._run_callback")
         patch_manager.patch("core.emulator.hooks._run_script")
         patch_manager.patch("core.nodes.netclient.get_net_client")
-        patch_manager.patch_obj(
-            LinuxNetClient, "get_mac", return_value="00:00:00:00:00:00"
-        )
         patch_manager.patch_obj(CoreNode, "create_file")
     yield patch_manager
     patch_manager.shutdown()
