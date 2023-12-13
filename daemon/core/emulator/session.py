@@ -582,6 +582,7 @@ class Session:
         self.location.reset()
         self.mobility.config_reset()
         self.link_colors.clear()
+        self.control_net_manager.remove_nets()
 
     def set_location(self, lat: float, lon: float, alt: float, scale: float) -> None:
         """
@@ -1034,9 +1035,6 @@ class Session:
 
         # update control interface hosts
         self.control_net_manager.clear_etc_hosts()
-
-        # remove control networks
-        self.control_net_manager.remove_nets()
 
     def short_session_id(self) -> str:
         """

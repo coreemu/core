@@ -228,6 +228,19 @@ class NodeBase(abc.ABC):
         """
         return self.host_cmd(args, wait=wait, shell=shell)
 
+    def net_cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a network command that is in the context of a node, default is to run a
+        standard host command.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        return self.cmd(args, wait, shell)
+
     def setposition(self, x: float = None, y: float = None, z: float = None) -> bool:
         """
         Set the (x,y,z) position of the object.

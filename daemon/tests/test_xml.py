@@ -46,6 +46,7 @@ class TestXml:
         session.shutdown()
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -96,6 +97,7 @@ class TestXml:
         assert len(session.link_manager.links()) == 0
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -150,6 +152,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
@@ -209,6 +212,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # retrieve configuration we set originally
@@ -256,6 +260,7 @@ class TestXml:
             assert not session.get_node(switch2.id, SwitchNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -312,6 +317,7 @@ class TestXml:
             assert not session.get_node(switch.id, SwitchNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -375,6 +381,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
@@ -450,6 +457,7 @@ class TestXml:
             assert not session.get_node(node2.id, CoreNode)
 
         # load saved xml
+        session.directory.mkdir()
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
