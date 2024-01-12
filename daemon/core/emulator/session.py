@@ -496,9 +496,11 @@ class Session:
             self.set_node_geo(node, position.lon, position.lat, position.alt)
         else:
             self.set_node_pos(node, position.x, position.y)
-        # setup default wlan
+        # setup default wlan and startup if already running
         if isinstance(node, WlanNode):
             self.mobility.set_model_config(node.id, BasicRangeModel.name)
+            if self.is_running():
+                self.mobility.startup([node.id])
         # boot core nodes after runtime
         if self.is_running() and isinstance(node, CoreNode):
             self.boot_node(node)
