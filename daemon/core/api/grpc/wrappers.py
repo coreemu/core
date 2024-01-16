@@ -605,6 +605,7 @@ class Node:
     icon: str = None
     image: str = None
     compose: str = None
+    compose_name: str = None
     server: str = None
     geo: Geo = None
     dir: str = None
@@ -645,6 +646,7 @@ class Node:
             icon=proto.icon,
             image=proto.image,
             compose=proto.compose,
+            compose_name=proto.compose_name,
             server=proto.server,
             geo=Geo.from_proto(proto.geo),
             dir=proto.dir,
@@ -684,6 +686,7 @@ class Node:
             icon=self.icon,
             image=self.image,
             compose=self.compose,
+            compose_name=self.compose_name,
             server=self.server,
             dir=self.dir,
             channel=self.channel,

@@ -189,6 +189,7 @@ class NodeConfigDialog(Dialog):
         self.type: tk.StringVar = tk.StringVar(value=self.node.model)
         self.container_image: tk.StringVar = tk.StringVar(value=self.node.image)
         self.compose_file: tk.StringVar = tk.StringVar(value=self.node.compose)
+        self.compose_name: tk.StringVar = tk.StringVar(value=self.node.compose_name)
         server = DEFAULT_SERVER
         if self.node.server:
             server = self.node.server
@@ -227,6 +228,7 @@ class NodeConfigDialog(Dialog):
 
         overview_frame = ttk.Labelframe(frame, text="Overview", padding=FRAME_PAD)
         overview_frame.grid(row=row, columnspan=2, sticky=tk.EW, pady=PADY)
+        overview_frame.columnconfigure(1, weight=1)
         overview_row = 0
         row += 1
 
@@ -263,6 +265,7 @@ class NodeConfigDialog(Dialog):
 
         # container image field
         if nutils.has_image(self.node.type):
+            # image name
             label = ttk.Label(overview_frame, text="Image")
             label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
             entry = ttk.Entry(
@@ -270,7 +273,7 @@ class NodeConfigDialog(Dialog):
             )
             entry.grid(row=overview_row, column=1, sticky=tk.EW)
             overview_row += 1
-
+            # compose file
             compose_frame = ttk.Frame(overview_frame)
             compose_frame.columnconfigure(0, weight=2)
             compose_frame.columnconfigure(1, weight=1)
@@ -278,7 +281,7 @@ class NodeConfigDialog(Dialog):
             entry = ttk.Entry(compose_frame, textvariable=self.compose_file)
             entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
             button = ttk.Button(
-                compose_frame, text="Compose", command=self.click_compose
+                compose_frame, text="Compose File", command=self.click_compose
             )
             button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
             button = ttk.Button(
@@ -288,6 +291,14 @@ class NodeConfigDialog(Dialog):
             compose_frame.grid(
                 row=overview_row, column=0, columnspan=2, sticky=tk.EW, pady=PADY
             )
+            overview_row += 1
+            # compose name
+            label = ttk.Label(overview_frame, text="Compose Name")
+            label.grid(row=overview_row, column=0, sticky=tk.EW, padx=PADX, pady=PADY)
+            entry = ttk.Entry(
+                overview_frame, textvariable=self.compose_name, state=state
+            )
+            entry.grid(row=overview_row, column=1, sticky=tk.EW)
             overview_row += 1
 
         if nutils.is_rj45(self.node):
@@ -433,6 +444,14 @@ class NodeConfigDialog(Dialog):
         if nutils.has_image(self.node.type):
             self.node.image = self.container_image.get() or None
             self.node.compose = self.compose_file.get() or None
+            self.node.compose_name = self.compose_name.get() or None
+            if not self.node.compose_name:
+                messagebox.showerror(
+                    "Compose Error",
+                    "Name required when using a compose file",
+                    parent=self.top,
+                )
+                return
         server = self.server.get()
         if nutils.is_container(self.node):
             if server == DEFAULT_SERVER:

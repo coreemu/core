@@ -77,6 +77,7 @@ def add_node_data(
     if isinstance(options, (DockerOptions, PodmanOptions)):
         options.image = node_proto.image
         options.compose = node_proto.compose
+        options.compose_name = node_proto.compose_name
     position = Position()
     position.set(node_proto.position.x, node_proto.position.y)
     if node_proto.HasField("geo"):
@@ -307,9 +308,11 @@ def get_node_proto(
         emane_model = node.wireless_model.name
     image = None
     compose = None
+    compose_name = None
     if isinstance(node, (DockerNode, PodmanNode)):
         image = node.image
         compose = node.compose
+        compose_name = node.compose_name
     # check for wlan config
     wlan_config = session.mobility.get_configs(
         node.id, config_type=BasicRangeModel.name
@@ -358,6 +361,7 @@ def get_node_proto(
         icon=node.icon,
         image=image,
         compose=compose,
+        compose_name=compose_name,
         services=services,
         dir=node_dir,
         channel=channel,

@@ -40,6 +40,10 @@ class DockerOptions(CoreNodeOptions):
     """
     Path to a compose file, if one should be used for this node.
     """
+    compose_name: str = None
+    """
+    Service name to start, within the provided compose file.
+    """
 
 
 @dataclass
@@ -83,6 +87,7 @@ class DockerNode(CoreNode):
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
         self.compose: Optional[str] = options.compose
+        self.compose_name: Optional[str] = options.compose_name
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, DockerVolume] = {}
         self.env: dict[str, str] = {}
@@ -193,13 +198,20 @@ class DockerNode(CoreNode):
             self.makenodedir()
             hostname = self.name.replace("_", "-")
             if self.compose:
+                if not self.compose_name:
+                    raise CoreError(
+                        "a compose name is required when using a compose file"
+                    )
                 data = self.host_cmd(f"cat {self.compose}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
                 rendered = "\\n".join(rendered.splitlines())
                 compose_path = self.directory / "docker-compose.yml"
                 self.host_cmd(f"printf '{rendered}' >> {compose_path}", shell=True)
-                self.host_cmd(f"{DOCKER_COMPOSE} up -d", cwd=self.directory)
+                self.host_cmd(
+                    f"{DOCKER_COMPOSE} up -d {self.compose_name}",
+                    cwd=self.directory,
+                )
             else:
                 # setup commands for creating bind/volume mounts
                 binds = ""
