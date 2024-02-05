@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -20,7 +21,7 @@ if TYPE_CHECKING:
     from core.emulator.session import Session
 
 DOCKER: str = "docker"
-DOCKER_COMPOSE: str = "docker compose"
+DOCKER_COMPOSE: str = os.environ.get("DOCKER_COMPOSE", "docker compose")
 
 
 @dataclass
