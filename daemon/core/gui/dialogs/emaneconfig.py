@@ -3,7 +3,7 @@ emane configuration
 """
 import tkinter as tk
 import webbrowser
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from typing import TYPE_CHECKING, Optional
 
 import grpc
@@ -70,10 +70,13 @@ class EmaneModelDialog(Dialog):
         button.grid(row=0, column=1, sticky=tk.EW)
 
     def click_apply(self) -> None:
-        self.config_frame.parse_config()
-        key = (self.model, self.iface_id)
-        self.node.emane_model_configs[key] = self.config
-        self.destroy()
+        try:
+            self.config_frame.parse_config()
+            key = (self.model, self.iface_id)
+            self.node.emane_model_configs[key] = self.config
+            self.destroy()
+        except ValueError as e:
+            messagebox.showerror("EMANE Config Error", str(e))
 
 
 class EmaneConfigDialog(Dialog):

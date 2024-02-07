@@ -32,24 +32,6 @@ def _type_value(config_type: str) -> ConfigDataTypes:
     return ConfigDataTypes[config_type]
 
 
-def _get_possible(config_type: str, config_regex: str) -> list[str]:
-    """
-    Retrieve possible config value options based on emane regexes.
-
-    :param config_type: emane configuration type
-    :param config_regex: emane configuration regex
-    :return: a string listing comma delimited values, if needed, empty string otherwise
-    """
-    if config_type == "bool":
-        return ["On", "Off"]
-
-    if config_type == "string" and config_regex:
-        possible = config_regex[2:-2]
-        return possible.split("|")
-
-    return []
-
-
 def _get_default(config_type_name: str, config_value: list[str]) -> str:
     """
     Convert default configuration values to one used by core.
@@ -111,7 +93,9 @@ def parse(manifest_path: Path, defaults: dict[str, str]) -> list[Configuration]:
 
         # map to possible values used as options within the gui
         config_regex = config_info.get("regex")
-        possible = _get_possible(config_type_name, config_regex)
+        options = None
+        if config_type == "bool":
+            options = ["On", "Off"]
 
         # define description and account for gui quirks
         config_descriptions = config_name
@@ -122,8 +106,9 @@ def parse(manifest_path: Path, defaults: dict[str, str]) -> list[Configuration]:
             id=config_name,
             type=config_type_value,
             default=config_default,
-            options=possible,
+            options=options,
             label=config_descriptions,
+            regex=config_regex,
         )
         configurations.append(configuration)
 

@@ -266,6 +266,7 @@ def get_config_options(
             value=value,
             type=configuration.type.value,
             select=configuration.options,
+            regex=configuration.regex,
         )
         results[configuration.id] = config_option
     for config_group in configurable_options.config_groups():

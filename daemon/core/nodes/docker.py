@@ -206,9 +206,10 @@ class DockerNode(CoreNode):
                 data = self.host_cmd(f"cat {self.compose}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
+                rendered = rendered.replace('"', r"\"")
                 rendered = "\\n".join(rendered.splitlines())
                 compose_path = self.directory / "docker-compose.yml"
-                self.host_cmd(f"printf '{rendered}' >> {compose_path}", shell=True)
+                self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
                 self.host_cmd(
                     f"{DOCKER_COMPOSE} up -d {self.compose_name}",
                     cwd=self.directory,

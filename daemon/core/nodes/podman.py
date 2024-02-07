@@ -160,9 +160,10 @@ class PodmanNode(CoreNode):
                 data = self.host_cmd(f"cat {self.compose}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
+                rendered = rendered.replace('"', r"\"")
                 rendered = "\\n".join(rendered.splitlines())
                 compose_path = self.directory / "podman-compose.yml"
-                self.host_cmd(f"printf '{rendered}' >> {compose_path}", shell=True)
+                self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
                 self.host_cmd(f"{PODMAN_COMPOSE} up -d", cwd=self.directory)
             else:
                 # setup commands for creating bind/volume mounts

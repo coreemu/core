@@ -9,6 +9,7 @@ message ConfigOption {
     int32 type = 4;
     repeated string select = 5;
     string group = 6;
+    string regex = 7;
 }
 
 message MappedConfig {

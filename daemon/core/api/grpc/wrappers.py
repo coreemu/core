@@ -307,6 +307,7 @@ class ConfigOption:
     type: ConfigOptionType = None
     group: str = None
     select: list[str] = None
+    regex: str = None
 
     @classmethod
     def from_dict(
@@ -328,6 +329,7 @@ class ConfigOption:
             type=config_type,
             group=proto.group,
             select=list(proto.select),
+            regex=proto.regex,
         )
 
     def to_proto(self) -> common_pb2.ConfigOption:
