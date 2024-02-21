@@ -21,7 +21,7 @@ Custom configuration required to avoid iptable rules being added and removing
 the need for the default docker network, since core will be orchestrating
 connections between nodes.
 
-Place the file below in **/etc/docker/docker.json**
+Place the file below in **/etc/docker/daemon.json**
 
 ```json
 {
