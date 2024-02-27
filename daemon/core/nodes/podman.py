@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -38,6 +39,10 @@ class PodmanOptions(CoreNodeOptions):
     compose: str = None
     """
     Path to a compose file, if one should be used for this node.
+    """
+    compose_name: str = None
+    """
+    Service name to start, within the provided compose file.
     """
 
 
@@ -82,6 +87,7 @@ class PodmanNode(CoreNode):
         super().__init__(session, _id, name, server, options)
         self.image: str = options.image
         self.compose: Optional[str] = options.compose
+        self.compose_name: Optional[str] = options.compose_name
         self.binds: list[tuple[str, str]] = options.binds
         self.volumes: dict[str, VolumeMount] = {}
         for src, dst, unique, delete in options.volumes:
@@ -157,14 +163,21 @@ class PodmanNode(CoreNode):
             self.makenodedir()
             hostname = self.name.replace("_", "-")
             if self.compose:
-                data = self.host_cmd(f"cat {self.compose}")
+                if not self.compose_name:
+                    raise CoreError(
+                        "a compose name is required when using a compose file"
+                    )
+                compose_path = os.path.expandvars(self.compose)
+                data = self.host_cmd(f"cat {compose_path}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
                 rendered = rendered.replace('"', r"\"")
                 rendered = "\\n".join(rendered.splitlines())
                 compose_path = self.directory / "podman-compose.yml"
                 self.host_cmd(f'printf "{rendered}" >> {compose_path}', shell=True)
-                self.host_cmd(f"{PODMAN_COMPOSE} up -d", cwd=self.directory)
+                self.host_cmd(
+                    f"{PODMAN_COMPOSE} up -d {self.compose_name}", cwd=self.directory
+                )
             else:
                 # setup commands for creating bind/volume mounts
                 binds = ""

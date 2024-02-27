@@ -203,7 +203,8 @@ class DockerNode(CoreNode):
                     raise CoreError(
                         "a compose name is required when using a compose file"
                     )
-                data = self.host_cmd(f"cat {self.compose}")
+                compose_path = os.path.expandvars(self.compose)
+                data = self.host_cmd(f"cat {compose_path}")
                 template = Template(data)
                 rendered = template.render_unicode(node=self, hostname=hostname)
                 rendered = rendered.replace('"', r"\"")

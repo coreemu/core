@@ -278,14 +278,22 @@ class NodeConfigDialog(Dialog):
             compose_frame.columnconfigure(0, weight=2)
             compose_frame.columnconfigure(1, weight=1)
             compose_frame.columnconfigure(2, weight=1)
-            entry = ttk.Entry(compose_frame, textvariable=self.compose_file)
+            entry = ttk.Entry(
+                compose_frame, textvariable=self.compose_file, state=state
+            )
             entry.grid(row=0, column=0, sticky=tk.EW, padx=PADX)
             button = ttk.Button(
-                compose_frame, text="Compose File", command=self.click_compose
+                compose_frame,
+                text="Compose File",
+                command=self.click_compose,
+                state=state,
             )
             button.grid(row=0, column=1, sticky=tk.EW, padx=PADX)
             button = ttk.Button(
-                compose_frame, text="Clear", command=self.click_compose_clear
+                compose_frame,
+                text="Clear",
+                command=self.click_compose_clear,
+                state=state,
             )
             button.grid(row=0, column=2, sticky=tk.EW)
             compose_frame.grid(
