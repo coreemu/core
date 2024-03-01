@@ -137,6 +137,7 @@ class CanvasNode:
         self.canvas.itemconfig(self.id, image=self.image)
         label = self.get_label()
         self.canvas.itemconfig(self.text_id, text=label)
+        self.scale_text()
         for edge in self.edges:
             edge.redraw()
 
@@ -146,9 +147,10 @@ class CanvasNode:
 
     def scale_text(self) -> None:
         text_bound = self.canvas.bbox(self.text_id)
-        prev_y = (text_bound[3] + text_bound[1]) / 2
-        new_y = self._get_label_y()
-        self.canvas.move(self.text_id, 0, new_y - prev_y)
+        if text_bound:
+            prev_y = (text_bound[3] + text_bound[1]) / 2
+            new_y = self._get_label_y()
+            self.canvas.move(self.text_id, 0, new_y - prev_y)
 
     def move(self, x: float, y: float) -> None:
         x, y = self.canvas.get_scaled_coords(x, y)
