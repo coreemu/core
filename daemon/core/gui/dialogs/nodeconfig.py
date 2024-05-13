@@ -453,7 +453,7 @@ class NodeConfigDialog(Dialog):
             self.node.image = self.container_image.get() or None
             self.node.compose = self.compose_file.get() or None
             self.node.compose_name = self.compose_name.get() or None
-            if not self.node.compose_name:
+            if self.node.compose and not self.node.compose_name:
                 messagebox.showerror(
                     "Compose Error",
                     "Name required when using a compose file",
