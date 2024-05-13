@@ -1,3 +1,30 @@
+## 2024-XX-XX CORE 9.1.0
+
+* Installation
+    * most install files are now consolidated under /opt/core
+    * \#830 / \#831 - fixed issues with systemd service support
+* Documentation
+    * added notes about MaxSession configuration for SSH when running distributed
+    * \#826 - updated tutorial 3 documentation
+* core-daemon
+    * updated Docker nodes to use docker exec by default for commands
+    * added Podman nodes
+    * Docker/Podman compose support for nodes to allow greater configuration
+    * Docker/Podman node images no longer require network tools for orchestration
+    * EMANE configuration parsing updated to treat regexes as provided
+    * executables are now symlinks under $prefix/bin to avoid PATH issues
+    * new flag added to quickly enable debug logging
+    * code refactoring for handling internal nodes like control nets and ptp
+    * \#789 - wlan nodes can now configure the subnet for connected nodes
+    * \#801 - fixed issue running EMANE within Docker/Podman
+    * \#816 - fixed split link configuration saving to XML
+    * \#823 - config services are now the default and only services available
+    * \#842 - gRPC WLAN add node during runtime fixed
+* core-gui
+    * fixed copy/paste nodes to include image name
+    * adds root to xhost by default when running
+    * \#811 - added convenience shortcut to run arbitrary commands from nodes, like wireshark
+
 ## 2023-08-01 CORE 9.0.3
 
 * Installation
