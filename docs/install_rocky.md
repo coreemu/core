@@ -58,7 +58,7 @@ sudo yum install -y ./emane*.rpm ./python3-emane-${EMANE_VERSION}-1.el8.noarch.r
 
 # install core
 cd ~/Documents
-CORE_PACKAGE=core_9.0.3_x86_64.rpm
+CORE_PACKAGE=core_9.1.0_x86_64.rpm
 PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 wget -q ${PACKAGE_URL}
 PYTHON=python3.9 yum install -y ./${CORE_PACKAGE}

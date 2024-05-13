@@ -62,7 +62,7 @@ sudo apt-get install -y ./emane*.deb ./python3-emane_*.deb
 
 # install core
 cd ~/Documents
-CORE_PACKAGE=core_9.0.3_amd64.deb
+CORE_PACKAGE=core_9.1.0_amd64.deb
 PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 wget -q ${PACKAGE_URL}
 sudo apt-get install -y ./${CORE_PACKAGE}

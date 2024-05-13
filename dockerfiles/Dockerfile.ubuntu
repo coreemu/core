@@ -45,7 +45,7 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/*
 
 # install core
-ARG CORE_PACKAGE=core_9.0.3_amd64.deb
+ARG CORE_PACKAGE=core_9.1.0_amd64.deb
 ARG PACKAGE_URL=https://github.com/coreemu/core/releases/latest/download/${CORE_PACKAGE}
 RUN apt-get update -y && \
     wget -q ${PACKAGE_URL} && \
