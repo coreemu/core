@@ -115,12 +115,11 @@ class DockerNode(CoreNode):
         """
         if shell:
             args = f"{BASH} -c {shlex.quote(args)}"
-        return f"nsenter -t {self.pid} -m -u -i -p -n -- {args}"
+        return f"{DOCKER} exec {self.name} {args}"
 
     def cmd(self, args: str, wait: bool = True, shell: bool = False) -> str:
         """
-        Runs a command that is used to configure and setup the network within a
-        node.
+        Runs a command within the context of the Docker node.
 
         :param args: command to run
         :param wait: True to wait for status, False otherwise
@@ -129,6 +128,25 @@ class DockerNode(CoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         args = self.create_cmd(args, shell)
+        if self.server is None:
+            return utils.cmd(args, wait=wait, shell=shell, env=self.env)
+        else:
+            return self.server.remote_cmd(args, wait=wait, env=self.env)
+
+    def cmd_perf(self, args: str, wait: bool = True, shell: bool = False) -> str:
+        """
+        Runs a command within the Docker node using nsenter to avoid
+        client/server overhead.
+
+        :param args: command to run
+        :param wait: True to wait for status, False otherwise
+        :param shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        if shell:
+            args = f"{BASH} -c {shlex.quote(args)}"
+        args = f"nsenter -t {self.pid} -m -u -i -p -n -- {args}"
         if self.server is None:
             return utils.cmd(args, wait=wait, shell=shell, env=self.env)
         else:
