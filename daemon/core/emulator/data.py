@@ -231,7 +231,7 @@ class LinkData:
     network_id: int = None
     iface1: InterfaceData = None
     iface2: InterfaceData = None
-    options: LinkOptions = LinkOptions()
+    options: LinkOptions = field(default_factory=LinkOptions())
     color: str = None
     source: str = None
 
