@@ -6,7 +6,7 @@
 <p>The web server software is running but no content has been added, yet.</p>
 <ul>
 % for iface in ifaces:
-    <li>${iface.name} - ${iface.addrlist}</li>
+    <li>${iface.name} - ${[str(x) for x in iface.ip4s]}</li>
 % endfor
 </ul>
 </body>
