@@ -601,7 +601,7 @@ class Node:
     name: str = None
     type: NodeType = NodeType.DEFAULT
     model: str = None
-    position: Position = Position(x=0, y=0)
+    position: Position = field(default_factory=lambda: Position(x=0, y=0))
     services: set[str] = field(default_factory=set)
     emane: str = None
     icon: str = None
@@ -729,8 +729,10 @@ class Session:
     dir: str = None
     user: str = None
     default_services: dict[str, set[str]] = field(default_factory=dict)
-    location: SessionLocation = SessionLocation(
-        x=0.0, y=0.0, z=0.0, lat=47.57917, lon=-122.13232, alt=2.0, scale=150.0
+    location: SessionLocation = field(
+        default_factory=lambda: SessionLocation(
+            x=0.0, y=0.0, z=0.0, lat=47.57917, lon=-122.13232, alt=2.0, scale=150.0
+        )
     )
     hooks: dict[str, Hook] = field(default_factory=dict)
     metadata: dict[str, str] = field(default_factory=dict)

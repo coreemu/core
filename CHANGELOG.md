@@ -20,6 +20,7 @@
     * \#816 - fixed split link configuration saving to XML
     * \#823 - config services are now the default and only services available
     * \#842 - gRPC WLAN add node during runtime fixed
+    * \#875 - fix dataclass creation for python 3.11+
 * core-gui
     * fixed copy/paste nodes to include image name
     * adds root to xhost by default when running
