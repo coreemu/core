@@ -1,4 +1,4 @@
-## 2024-XX-XX CORE 9.1.0
+## 2024-07-04 CORE 9.1.0
 
 * Installation
     * most install files are now consolidated under /opt/core
